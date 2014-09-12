@@ -64,6 +64,7 @@ const char* const ConfigManager::enableCharOffsetIndexString =
         "enablecharoffsetindex";
 const char* const ConfigManager::expandString = "expand";
 const char* const ConfigManager::facetEnabledString = "facetenabled";
+const char* const ConfigManager::attributeAclFileString = "attributeaclfile";
 const char* const ConfigManager::facetEndString = "facetend";
 const char* const ConfigManager::facetFieldString = "facetfield";
 const char* const ConfigManager::facetFieldsString = "facetfields";
@@ -80,6 +81,7 @@ const char* const ConfigManager::fuzzyMatchPenaltyString = "fuzzymatchpenalty";
 const char* const ConfigManager::indexConfigString = "indexconfig";
 const char* const ConfigManager::indexedString = "indexed";
 const char* const ConfigManager::multiValuedString = "multivalued";
+const char* const ConfigManager::aclString = "acl";
 const char* const ConfigManager::indexTypeString = "indextype";
 //const char* const ConfigManager::licenseFileString = "licensefile";
 const char* const ConfigManager::listenerWaitTimeString = "listenerwaittime";
@@ -127,7 +129,8 @@ const char* const ConfigManager::supportSwapInEditDistanceString =
         "supportswapineditdistance";
 const char* const ConfigManager::synonymFilterString = "synonymFilter";
 const char* const ConfigManager::synonymsString = "synonyms";
-const char* const ConfigManager::textEnString = "text_en";
+const char* const ConfigManager::textEnString = "text_standard";
+const char* const ConfigManager::textZhString = "text_chinese";
 const char* const ConfigManager::typeString = "type";
 const char* const ConfigManager::typesString = "types";
 const char* const ConfigManager::uniqueKeyString = "uniquekey";
@@ -162,6 +165,13 @@ const char* const ConfigManager::exactTagPost = "exacttagpost";
 const char* const ConfigManager::fuzzyTagPre = "fuzzytagpre";
 const char* const ConfigManager::fuzzyTagPost = "fuzzytagpost";
 const char* const ConfigManager::snippetSize = "snippetsize";
+
+const char* const ConfigManager::multipleAccessControlString = "access-controls";
+const char* const ConfigManager::resourceCore = "resourcecore";
+const char* const ConfigManager::roleCore = "rolecore";
+const char* const ConfigManager::accessControlDataFile = "acldatafile";
+const char* const ConfigManager::aclRoleId = "roleId";
+const char* const ConfigManager::aclResourceId = "resourceId";
 
 const char* const ConfigManager::defaultFuzzyPreTag = "<b>";
 const char* const ConfigManager::defaultFuzzyPostTag = "</b>";
@@ -338,9 +348,13 @@ CoreInfo_t::CoreInfo_t(const CoreInfo_t &src) {
     stopFilterFilePath = src.stopFilterFilePath;
     protectedWordsFilePath = src.protectedWordsFilePath;
 
+    analyzerType = src.analyzerType;
+    chineseDictionaryFilePath = src.chineseDictionaryFilePath;
+
     allowedRecordTokenizerCharacters = src.allowedRecordTokenizerCharacters;
 
     ports = src.ports;
+    accessControlInfo = src.accessControlInfo;
 }
 
 void ConfigManager::parseIndexConfig(const xml_node &indexConfigNode,
@@ -850,6 +864,63 @@ void ConfigManager::parseSingleCore(const xml_node &parentNode,
     }
 }
 
+// parse single access control in the config file here is an example:
+/*
+   <access-control>
+        <resourceCore> Product</resourceCore>
+        <roleCore> Company </roleCore>
+        <aclDataFile>data.json</aclDataFile>
+   </access-control>
+ */
+void ConfigManager::parseSingleAccessControl(const xml_node &parentNode,
+		bool &configSuccess, std::stringstream &parseError,
+		std::stringstream &parseWarnings){
+	// 1- extract the resource core name-->  <resourceCore> Product </resourceCore>
+	xml_node resourceCoreNode = parentNode.child(resourceCore);
+	// 2- extract the role core name.-->   <roleCore> Company </roleCore>
+	xml_node roleCoreNode = parentNode.child(roleCore);
+	// both resourceCore and roleCore are requiered
+	if(resourceCoreNode && resourceCoreNode.text()){
+		if(roleCoreNode && roleCoreNode.text()){
+			string resourceCoreName = string(resourceCoreNode.text().get());
+			string roleCoreName = string(roleCoreNode.text().get());
+			// first we need to check if these cores exist
+			CoreInfoMap_t::iterator resourceIt = coreInfoMap.find(resourceCoreName);
+			if(resourceIt == coreInfoMap.end()){
+				parseError << resourceCoreName
+				<< " core does not exist\n";
+				configSuccess = false;
+				return;
+			}
+			CoreInfoMap_t::iterator roleIt = coreInfoMap.find(roleCoreName);
+			if(roleIt == coreInfoMap.end()){
+				parseError << roleCoreName
+						<< " core does not exist\n";
+				configSuccess = false;
+				return;
+			}
+			AccessControlInfo* newAccessControlInfo = new AccessControlInfo(resourceCoreName, roleCoreName);
+			// 3- extract the name of the data file for bulk load -->    <aclDataFile> data.json </aclDataFile>
+			xml_node dataFileNode = parentNode.child(accessControlDataFile);
+			if(dataFileNode && dataFileNode.text()){
+				newAccessControlInfo->aclDataFileName = srch2Home + string("")
+                            + (*resourceIt).second->getName() + string("/") + string(dataFileNode.text().get());
+			}
+			(*resourceIt).second->setAccessControlInfo(newAccessControlInfo);
+		}else{
+			parseError
+			<< " access-control roleCore is not set\n";
+			configSuccess = false;
+			return;
+		}
+	}else{
+		parseError
+		<< " access-control resourceCore is not set\n";
+		configSuccess = false;
+		return;
+	}
+}
+
 // only called by parseDataConfiguration()
 void ConfigManager::parseMultipleCores(const xml_node &coresNode,
         bool &configSuccess, std::stringstream &parseError,
@@ -882,6 +953,21 @@ void ConfigManager::parseMultipleCores(const xml_node &coresNode,
             }
         }
     }
+}
+
+void ConfigManager::parseAccessControls(const xml_node &accessControlsNode,
+        bool &configSuccess, std::stringstream &parseError,
+        std::stringstream &parseWarnings){
+	if(accessControlsNode){
+		// parse zero or more access-control settings
+		for ( xml_node accessControlNode = accessControlsNode.first_child(); accessControlNode;
+				accessControlNode = accessControlNode.next_sibling()){
+			parseSingleAccessControl(accessControlNode, configSuccess, parseError, parseWarnings);
+			if (configSuccess == false){
+				return;
+			}
+		}
+	}
 }
 
 /*
@@ -1082,7 +1168,8 @@ void ConfigManager::parseDataFieldSettings(const xml_node &parentNode,
                             coreParseState.searchableAttributesDefaultVector[i],
                             0, 1,
                             coreParseState.searchableAttributesIsMultiValued[i],
-                            coreParseState.searchableAttributesHighlight[i]);
+                            coreParseState.searchableAttributesHighlight[i],
+                            coreParseState.searchableAttributesAclFlags[i]);
         } else {
             coreInfo->searchableAttributesInfo[coreParseState.searchableFieldsVector[i]] =
                     SearchableAttributeInfoContainer(
@@ -1093,7 +1180,8 @@ void ConfigManager::parseDataFieldSettings(const xml_node &parentNode,
                             0,
                             boostsMap[coreParseState.searchableFieldsVector[i]],
                             coreParseState.searchableAttributesIsMultiValued[i],
-                            coreParseState.searchableAttributesHighlight[i]);
+                            coreParseState.searchableAttributesHighlight[i],
+                            coreParseState.searchableAttributesAclFlags[i]);
         }
     }
 
@@ -1190,10 +1278,19 @@ void ConfigManager::parseDataConfiguration(const xml_node &configNode,
             return;
         }
     }
+
+    // <access-controls>
+    childNode = configNode.child(multipleAccessControlString);
+    if(childNode){
+    	parseAccessControls(childNode, configSuccess, parseError, parseWarnings);
+    	if (configSuccess == false){
+    		return;
+    	}
+    }
 }
 
 bool ConfigManager::setCoreParseStateVector(bool isSearchable, bool isRefining,
-        bool isMultiValued, bool isHighlightEnabled,
+        bool isMultiValued, bool isHighlightEnabled, bool isAclEnabled,
         CoreConfigParseState_t *coreParseState, CoreInfo_t *coreInfo,
         std::stringstream &parseError, const xml_node &field) {
     string temporaryString = "";
@@ -1231,6 +1328,9 @@ bool ConfigManager::setCoreParseStateVector(bool isSearchable, bool isRefining,
         }
         coreParseState->searchableAttributesIsMultiValued.push_back(
                 isMultiValued);
+
+        coreParseState->searchableAttributesAclFlags.push_back(
+                        isAclEnabled);
     }
     return true;
 }
@@ -1242,6 +1342,8 @@ bool ConfigManager::setRefiningStateVectors(const xml_node &field,
         vector<bool> &RefiningAttributesRequiredFlagVector,
         vector<string> &RefiningAttributesDefaultVector,
         vector<bool> &RefiningAttributesIsMultiValued,
+        vector<bool> &refiningAttributesAclEnabledFlags,
+        bool isAclEnabled,
         std::stringstream &parseError, CoreInfo_t *coreInfo) {
 
     string temporaryString = "";
@@ -1319,6 +1421,8 @@ bool ConfigManager::setRefiningStateVectors(const xml_node &field,
         }
 
         RefiningAttributesIsMultiValued.push_back(isMultiValued);
+
+        refiningAttributesAclEnabledFlags.push_back(isAclEnabled);
     }
 
     return true;
@@ -1475,6 +1579,151 @@ void ConfigManager::parseFacetFields(const xml_node &schemaNode,
     }
 }
 
+
+void ConfigManager::setUpStemmer(CoreInfo_t *coreInfo, const xml_node &field, std::stringstream &parseWarnings){
+    std::string path = field.attribute(dictionaryString).value();
+    if (path.compare("") != 0) { 
+        // the dictionary for porter stemmer is set.
+        coreInfo->stemmerFlag = true;
+        trimSpacesFromValue(path, porterStemFilterString, parseWarnings);
+        coreInfo->stemmerFile = boost::filesystem::path(this->srch2Home + path).normalize().string();
+    } else {
+        Logger::warn("In core %s : Dictionary file is not set for PorterStemFilter, so stemming is disabled", coreInfo->name.c_str());
+    }
+}
+
+void ConfigManager::setUpChineseDictionary(CoreInfo_t * coreInfo, string &dictionaryPath, std::stringstream &parseWarnings){
+    if (dictionaryPath.compare("") != 0) { 
+        coreInfo->analyzerType = CHINESE_ANALYZER;
+        trimSpacesFromValue(dictionaryPath, dictionaryString, parseWarnings);
+        coreInfo->chineseDictionaryFilePath = 
+            boost::filesystem::path(this->srch2Home + dictionaryPath).normalize().string();
+    } else {
+        Logger::warn("In core %s : Dictionary file is not set for tokenizerFilter, so ChineseAnalyzer is disabled", coreInfo->name.c_str());
+        coreInfo->analyzerType = STANDARD_ANALYZER;
+    }   
+}
+
+void ConfigManager::setUpStopword(CoreInfo_t *coreInfo, const xml_node &field, std::stringstream &parseWarnings){
+    std::string path = field.attribute(wordsString).value();
+    if (path.compare("") != 0) { // the words file for stop filter is set.
+        trimSpacesFromValue(path, stopFilterString, parseWarnings);
+        coreInfo->stopFilterFilePath =
+            boost::filesystem::path(srch2Home + path).normalize().string();
+    } else {
+        Logger::warn("In core %s : Words parameter in StopFilter is empty, so stop word filter is disabled.", coreInfo->name.c_str());
+    }
+}
+
+void ConfigManager::setUpProtectedWord(CoreInfo_t *coreInfo, const xml_node &field, std::stringstream &parseWarnings){
+    std::string path = field.attribute(wordsString).value();
+    if (path.compare("") != 0) { 
+         // the file for protected words filter is set.
+        trimSpacesFromValue(path, protectedWordFilterString, parseWarnings);
+        coreInfo->protectedWordsFilePath = boost::filesystem::path(srch2Home + path).normalize().string();
+    } else {
+        Logger::warn("In core %s : Words parameter for protected keywords is empty, so protected words filter is disabled.", coreInfo->name.c_str());
+    }
+}
+
+void ConfigManager::setUpSynonym(CoreInfo_t *coreInfo, const xml_node &field, std::stringstream &parseWarnings){
+    std::string path = field.attribute(synonymsString).value();
+    if (path.compare("") != 0) { 
+        // the file for synonyms filter is set.
+        trimSpacesFromValue(path, synonymsString, parseWarnings);
+        coreInfo->synonymFilterFilePath = boost::filesystem::path(srch2Home + path).normalize().string();
+    } else {
+        Logger::warn("In core %s : Synonym filter is disabled because synonym parameter is empty.", coreInfo->name.c_str());
+    }
+    std::string expand = field.attribute(expandString).value();
+    if ( expand.compare("") != 0) {
+        if (isValidBool(expand)) {
+            coreInfo->synonymKeepOrigFlag = field.attribute(expandString).as_bool(true);
+        }
+    } else {
+        Logger::warn("In core %s : Synonym filter's expand attribute is missing. Using default = true.", coreInfo->name.c_str());
+    }
+}
+
+void ConfigManager::setUpRecordSpecialCharacters(CoreInfo_t *coreInfo, const xml_node &field){
+    CharSet charTyper;
+    string in = field.text().get(), out; // TODO: Using type string NOT multi-lingual?
+
+    // validate allowed characters
+    for (std::string::iterator iterator = in.begin();
+        iterator != in.end(); iterator++) {
+        switch (charTyper.getCharacterType(*iterator)) {
+        case CharSet::DELIMITER_TYPE:
+            out += *iterator;
+            break;
+        case CharSet::LATIN_TYPE:
+        case CharSet::BOPOMOFO_TYPE:
+        case CharSet::HANZI_TYPE:
+            Logger::warn(
+                    "%s character %c already included in terms, ignored",
+                    allowedRecordSpecialCharactersString,
+                    *iterator);
+            break;
+        case CharSet::WHITESPACE:
+            Logger::warn(
+                    "%s character %c is whitespace and cannot be treated as part of a term, ignored",
+                    allowedRecordSpecialCharactersString,
+                    *iterator);
+            break;
+        default:
+            Logger::warn(
+                    "%s character %c of unexpected type %d, ignored",
+                    allowedRecordSpecialCharactersString,
+                    *iterator,
+                    static_cast<int>(charTyper.getCharacterType(
+                            *iterator)));
+            break;
+        }
+    }
+    coreInfo->allowedRecordTokenizerCharacters = out;
+}
+
+void ConfigManager::setUpEnglishAnalyzer(CoreInfo_t * coreInfo, const xml_node &childNodeTemp, std::stringstream &parseWarnings){
+    // Checking if the values are empty or not
+    for (xml_node field = childNodeTemp.first_child(); field; field = field.next_sibling()) {
+        std::string nameTag = field.attribute(nameString).value();
+        if ( nameTag.compare(porterStemFilterString) == 0){
+            setUpStemmer(coreInfo, field, parseWarnings);
+        } else if ( nameTag.compare(stopFilterString) == 0) { 
+            setUpStopword(coreInfo, field, parseWarnings);
+        } else if ( nameTag.compare(protectedWordFilterString) == 0){
+            setUpProtectedWord(coreInfo, field, parseWarnings);
+        } else if ( nameTag.compare(synonymFilterString) == 0){
+            setUpSynonym(coreInfo, field, parseWarnings);
+        } else if ( nameTag.compare(allowedRecordSpecialCharactersString) == 0){
+            setUpRecordSpecialCharacters(coreInfo, field);
+        } else {
+            Logger::error(" In core %s : Valid tag is not set, it can only be filter or allowedrecordspecialcharacters.", coreInfo->name.c_str());
+        }
+    }
+}
+
+// The Chinese Analyzer doesn't have the stemmer. 
+// In addition, we need one more field of the Chinese dictionary to tokenize the sentence.
+void ConfigManager::setUpChineseAnalyzer(CoreInfo_t * coreInfo, string& dictionaryPath, const xml_node &childNodeTemp, std::stringstream &parseWarnings){
+    setUpChineseDictionary(coreInfo, dictionaryPath, parseWarnings);
+    coreInfo->stemmerFlag = false;
+    for (xml_node field = childNodeTemp.first_child(); field; field = field.next_sibling()) {
+        std::string nameTag = field.attribute(nameString).value();
+        if ( nameTag.compare(stopFilterString) == 0) { 
+            setUpStopword(coreInfo, field, parseWarnings);
+        } else if ( nameTag.compare(protectedWordFilterString) == 0){
+            setUpProtectedWord(coreInfo, field, parseWarnings);
+        } else if ( nameTag.compare(synonymFilterString) == 0){
+            setUpSynonym(coreInfo, field, parseWarnings);
+        } else if ( nameTag.compare(allowedRecordSpecialCharactersString) == 0){
+            setUpRecordSpecialCharacters(coreInfo, field);
+        } else {
+            Logger::error(" In core %s : Valid tag is not set, it can only be filter or allowedrecordspecialcharacters.", coreInfo->name.c_str());
+        }
+    }
+}
+
 void ConfigManager::parseSchemaType(const xml_node &childNode,
         CoreInfo_t *coreInfo, std::stringstream &parseWarnings) {
 
@@ -1485,143 +1734,15 @@ void ConfigManager::parseSchemaType(const xml_node &childNode,
             if ((string(fieldType.name()).compare(fieldTypeString) == 0)) { // Finds the fieldTypes
                 if (string(fieldType.attribute(nameString).value()).compare(
                         textEnString) == 0) {
-                    // Checking if the values are empty or not
                     xml_node childNodeTemp = fieldType.child(analyzerString); // looks for analyzer
-                    for (xml_node field = childNodeTemp.first_child(); field;
-                            field = field.next_sibling()) {
-                        if (string(field.name()).compare(filterString) == 0) {
-                            if (string(field.attribute(nameString).value()).compare(
-                                    porterStemFilterString) == 0) { // STEMMER FILTER
-                                if (string(
-                                        field.attribute(dictionaryString).value()).compare(
-                                        "") != 0) { // the dictionary for porter stemmer is set.
-                                    coreInfo->stemmerFlag = true;
-                                    temporaryString =
-                                            string(
-                                                    field.attribute(
-                                                            dictionaryString).value());
-                                    trimSpacesFromValue(temporaryString,
-                                            porterStemFilterString,
-                                            parseWarnings);
-                                    coreInfo->stemmerFile =
-                                            boost::filesystem::path(
-                                                    this->srch2Home
-                                                            + temporaryString).normalize().string();
-                                } else {
-                                    Logger::warn("In core %s : Dictionary file is not set for PorterStemFilter, so stemming is disabled", coreInfo->name.c_str());
-                                }
-                            } else if (string(
-                                    field.attribute(nameString).value()).compare(
-                                    stopFilterString) == 0) { // STOP FILTER
-                                if (string(field.attribute(wordsString).value()).compare(
-                                        "") != 0) { // the words file for stop filter is set.
-                                    temporaryString =
-                                            string(
-                                                    field.attribute(wordsString).value());
-                                    trimSpacesFromValue(temporaryString,
-                                            stopFilterString, parseWarnings);
-                                    coreInfo->stopFilterFilePath =
-                                            boost::filesystem::path(
-                                                    srch2Home + temporaryString).normalize().string();
-                                } else {
-                                    Logger::warn("In core %s : Words parameter in StopFilter is empty, so stop word filter is disabled.", coreInfo->name.c_str());
-                                }
-                            } else if (string(
-                                    field.attribute(nameString).value()).compare(
-                                    protectedWordFilterString) == 0) {
-                                if (string(field.attribute(wordsString).value()).compare(
-                                        "") != 0) { // the file for protected words filter is set.
-                                    temporaryString =
-                                            string(
-                                                    field.attribute(wordsString).value());
-                                    trimSpacesFromValue(temporaryString,
-                                            protectedWordFilterString,
-                                            parseWarnings);
-                                    coreInfo->protectedWordsFilePath =
-                                            boost::filesystem::path(
-                                                    srch2Home + temporaryString).normalize().string();
-                                } else {
-                                    Logger::warn("In core %s : Words parameter for protected keywords is empty, so protected words filter is disabled.", coreInfo->name.c_str());
-                                }
-                            } else if (string(
-                                    field.attribute(nameString).value()).compare(
-                                    synonymFilterString) == 0) {
-                                if (string(
-                                        field.attribute(synonymsString).value()).compare(
-                                        "") != 0) { // the file for synonyms filter is set.
-                                    temporaryString =
-                                            string(
-                                                    field.attribute(
-                                                            synonymsString).value());
-                                    trimSpacesFromValue(temporaryString,
-                                            synonymsString, parseWarnings);
-                                    coreInfo->synonymFilterFilePath =
-                                            boost::filesystem::path(
-                                                    srch2Home + temporaryString).normalize().string();
-                                } else {
-                                    Logger::warn("In core %s : Synonym filter is disabled because synonym parameter is empty.", coreInfo->name.c_str());
-                                }
-                                if (string(
-                                        field.attribute(expandString).value()).compare(
-                                        "") != 0) {
-                                    temporaryString =
-                                            string(
-                                                    field.attribute(
-                                                            expandString).value());
-                                    if (isValidBool(temporaryString)) {
-                                        coreInfo->synonymKeepOrigFlag =
-                                                field.attribute(expandString).as_bool(
-                                                        true);
-                                    }
-                                } else {
-                                    Logger::warn("In core %s : Synonym filter's expand attribute is missing. Using default = true.", coreInfo->name.c_str());
-                                }
-                            }
-
-                        } else if (string(field.name()).compare(
-                                allowedRecordSpecialCharactersString) == 0) {
-                            CharSet charTyper;
-                            string in = field.text().get(), out; // TODO: Using type string NOT multi-lingual?
-
-                            // validate allowed characters
-                            for (std::string::iterator iterator = in.begin();
-                                    iterator != in.end(); iterator++) {
-                                switch (charTyper.getCharacterType(*iterator)) {
-                                case CharSet::DELIMITER_TYPE:
-                                    out += *iterator;
-                                    break;
-                                case CharSet::LATIN_TYPE:
-                                case CharSet::BOPOMOFO_TYPE:
-                                case CharSet::HANZI_TYPE:
-                                    Logger::warn(
-                                            "%s character %c already included in terms, ignored",
-                                            allowedRecordSpecialCharactersString,
-                                            *iterator);
-                                    break;
-                                case CharSet::WHITESPACE:
-                                    Logger::warn(
-                                            "%s character %c is whitespace and cannot be treated as part of a term, ignored",
-                                            allowedRecordSpecialCharactersString,
-                                            *iterator);
-                                    break;
-                                default:
-                                    Logger::warn(
-                                            "%s character %c of unexpected type %d, ignored",
-                                            allowedRecordSpecialCharactersString,
-                                            *iterator,
-                                            static_cast<int>(charTyper.getCharacterType(
-                                                    *iterator)));
-                                    break;
-                                }
-                            }
-
-                            coreInfo->allowedRecordTokenizerCharacters = out;
-                        } else {
-                            Logger::error(" In core %s : Valid tag is not set, it can only be filter or allowedrecordspecialcharacters.", coreInfo->name.c_str());
-                        }
-                    }
+                    setUpEnglishAnalyzer(coreInfo, childNodeTemp, parseWarnings);
+                } else if (string(fieldType.attribute(nameString).value()).compare(
+                        textZhString) == 0) {
+                    string dictionaryPath = fieldType.attribute(dictionaryString).value();
+                    xml_node childNodeTemp = fieldType.child(analyzerString); // looks for analyzer
+                    setUpChineseAnalyzer(coreInfo, dictionaryPath, childNodeTemp, parseWarnings);
                 } else {
-                    Logger::error(" In core %s : Not a valid fieldType name in config file, currently we only support text_en.", coreInfo->name.c_str());
+                    Logger::error(" In core %s : Not a valid fieldType name in config file, currently we only support text_standard and text_chinese.", coreInfo->name.c_str());
                 }
             }
         }
@@ -1641,6 +1762,7 @@ void ConfigManager::parseSchema(const xml_node &schemaNode,
     vector<bool> RefiningAttributesRequiredFlagVector;
     vector<string> RefiningAttributesDefaultVector;
     vector<bool> RefiningAttributesIsMultiValued;
+    vector<bool> refiningAttributesAclEnabledFlags;
 
     /*
      * <field>  in config.xml file
@@ -1658,9 +1780,11 @@ void ConfigManager::parseSchema(const xml_node &schemaNode,
                 bool isSearchable = false;
                 bool isRefining = false;
                 bool isHighlightEnabled = false;
+                bool isAclEnabled = false;
                 if (!setFieldFlagsFromFile(field, isMultiValued, isSearchable,
-                        isRefining, isHighlightEnabled, parseError,
+                        isRefining, isHighlightEnabled, isAclEnabled, parseError,
                         configSuccess, coreInfo)) {
+
                     configSuccess = false;
                     return;
                 }
@@ -1693,6 +1817,7 @@ void ConfigManager::parseSchema(const xml_node &schemaNode,
                         // primary key is always required.
                         coreParseState->searchableAttributesRequiredFlagVector.push_back(
                                 true);
+                        coreParseState->searchableAttributesAclFlags.push_back(isAclEnabled);
                         coreParseState->searchableAttributesHighlight.push_back(
                                 isHighlightEnabled);
                         coreParseState->searchableAttributesIsMultiValued.push_back(
@@ -1707,6 +1832,7 @@ void ConfigManager::parseSchema(const xml_node &schemaNode,
                         RefiningAttributesRequiredFlagVector.push_back(true);
                         RefiningAttributesIsMultiValued.push_back(
                                 isMultiValued);
+                        refiningAttributesAclEnabledFlags.push_back(isAclEnabled);
                     }
                     continue;
                 }
@@ -1738,7 +1864,7 @@ void ConfigManager::parseSchema(const xml_node &schemaNode,
                 	}
 
                     if (!setCoreParseStateVector(isSearchable, isRefining,
-                            isMultiValued, isHighlightEnabled, coreParseState,
+                            isMultiValued, isHighlightEnabled, isAclEnabled, coreParseState,
                             coreInfo, parseError, field)) {
                         configSuccess = false;
                         return;
@@ -1749,7 +1875,8 @@ void ConfigManager::parseSchema(const xml_node &schemaNode,
                             RefiningFieldTypesVector,
                             RefiningAttributesRequiredFlagVector,
                             RefiningAttributesDefaultVector,
-                            RefiningAttributesIsMultiValued, parseError, coreInfo)) {
+                            RefiningAttributesIsMultiValued,
+                            refiningAttributesAclEnabledFlags, isAclEnabled, parseError, coreInfo)) {
                         configSuccess = false;
                         return;
                     }
@@ -1787,8 +1914,18 @@ void ConfigManager::parseSchema(const xml_node &schemaNode,
                             RefiningFieldTypesVector[iter],
                             RefiningAttributesDefaultVector[iter],
                             RefiningAttributesRequiredFlagVector[iter],
-                            RefiningAttributesIsMultiValued[iter]);
+                            RefiningAttributesIsMultiValued[iter],
+                            refiningAttributesAclEnabledFlags[iter]);
         }
+    }
+
+    /*
+     * <attributeAclFile> in config.xml file
+     */
+    xml_node aclFileNode = schemaNode.child(attributeAclFileString);
+    if (aclFileNode && aclFileNode.text()) {
+    	string tempString = aclFileNode.text().get();
+    	coreInfo->attrAclFilePath = boost::filesystem::path(getSrch2Home() + tempString).normalize().string();
     }
 
     /*
@@ -1820,6 +1957,8 @@ void ConfigManager::parseSchema(const xml_node &schemaNode,
     coreInfo->synonymFilterFilePath = "";
     coreInfo->protectedWordsFilePath = "";
     coreInfo->synonymKeepOrigFlag = true;
+    coreInfo->analyzerType = STANDARD_ANALYZER;
+    coreInfo->chineseDictionaryFilePath = "";
 
     childNode = schemaNode.child(typesString);
 
@@ -1924,8 +2063,9 @@ bool ConfigManager::setSearchableAndRefining(const xml_node &field,
 
 bool ConfigManager::setFieldFlagsFromFile(const xml_node &field,
         bool &isMultiValued, bool &isSearchable, bool &isRefining,
-        bool &isHighlightEnabled, std::stringstream &parseError,
+        bool &isHighlightEnabled, bool& isAclEnabled, std::stringstream &parseError,
         bool &configSuccess, CoreInfo_t *coreInfo) {
+
     string temporaryString = "";
     if (string(field.attribute(multiValuedString).value()).compare("") != 0) {
         temporaryString = string(field.attribute(multiValuedString).value());
@@ -1949,6 +2089,15 @@ bool ConfigManager::setFieldFlagsFromFile(const xml_node &field,
             configSuccess = false;
             return false;
         }
+    }
+
+    if (string(field.attribute(aclString).value()).compare("") != 0) {
+    	temporaryString = string(field.attribute(aclString).value());
+    	if (isValidBool(temporaryString)) {
+    		if (field.attribute(aclString).as_bool()) {
+    			isAclEnabled = true;
+    		}
+    	}
     }
 
     //set highlight flags

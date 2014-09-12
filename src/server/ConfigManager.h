@@ -38,6 +38,7 @@ public:
 	boost = 1;
 	isMultiValued = false;
 	highlight = false;
+	isAclEnabled = false;
     }
     SearchableAttributeInfoContainer(const string & name,
             srch2::instantsearch::FilterType type,
@@ -46,7 +47,8 @@ public:
 				     const unsigned offset,
 				     const unsigned boost,
 				     const bool isMultiValued,
-				     bool highlight = false){
+				     bool highlight = false,
+				     bool isAclEnabled = false){
         this->attributeName = name;
         this->attributeType = type;
         this->required = required;
@@ -55,6 +57,7 @@ public:
         this->boost = boost;
         this->isMultiValued = isMultiValued;
         this->highlight = highlight;
+        this->isAclEnabled = isAclEnabled;
     }
     // NO GETTER OR SETTERS ARE IMPLEMENTED FOR THESE MEMBERS
     // BECAUSE THIS CLASS IS MEANT TO BE A VERY SIMPLE CONTAINER WHICH ONLY CONTAINS THE
@@ -67,6 +70,7 @@ public:
     unsigned boost;
     bool isMultiValued;
     bool highlight;
+    bool isAclEnabled;
 };
 
 class RefiningAttributeInfoContainer {
@@ -83,12 +87,14 @@ public:
 				   srch2::instantsearch::FilterType type,
 				   const string & defaultValue,
 				   const bool required,
-				   const bool isMultiValued){
+				   const bool isMultiValued,
+				   const bool isAclEnabled){
         this->attributeName = name;
 	this->attributeType = type;
 	this->defaultValue = defaultValue;
 	this->required = required;
 	this->isMultiValued = isMultiValued;
+	this->isAclEnabled = isAclEnabled;
     }
     // NO GETTER OR SETTERS ARE IMPLEMENTED FOR THESE MEMBERS
     // BECAUSE THIS CLASS IS MEANT TO BE A VERY SIMPLE CONTAINER WHICH ONLY CONTAINS THE
@@ -98,6 +104,7 @@ public:
     string defaultValue;
     bool required;
     bool isMultiValued;
+    bool isAclEnabled;
 };
 
 class CoreInfo_t;
@@ -111,8 +118,8 @@ struct CoreConfigParseState_t {
     vector<bool> searchableAttributesRequiredFlagVector;
     vector<string> searchableAttributesDefaultVector;
     vector<bool> searchableAttributesIsMultiValued;
+    vector<bool> searchableAttributesAclFlags;
     vector<bool> searchableAttributesHighlight;
-
     CoreConfigParseState_t() : hasLatitude(false), hasLongitude(false) {};
 };
 
@@ -128,6 +135,12 @@ enum PortType_t {
     ResetLoggerPort,
     SearchAllPort,
     ShutDownAllPort,
+    AttributeAclAdd,
+    AttributeAclAppend,
+    AttributeAclDelete,
+    RecordAclAdd,
+    RecordAclAppend,
+    RecordAclDelete,
     EndOfPortType // stop value - not valid (also used to indicate all/default ports)
 };
 
@@ -248,6 +261,10 @@ protected:
 
     void parseMultipleCores(const xml_node &coresNode, bool &configSuccess, std::stringstream &parseError, std::stringstream &parseWarnings);
 
+    void parseSingleAccessControl(const xml_node &parentNode, bool &configSuccess, std::stringstream &parseError, std::stringstream &parseWarnings);
+
+    void parseAccessControls(const xml_node &accessControlsNode, bool &configSuccess, std::stringstream &parseError, std::stringstream &parseWarnings);
+
     // parse all data source settings (can handle multiple cores or default/no core)
     void parseDataConfiguration(const xml_node &configNode, bool &configSuccess, std::stringstream &parseError, std::stringstream &parseWarnings);
 
@@ -266,26 +283,38 @@ protected:
             bool &isRefining, std::stringstream &parseError,
             bool &configSuccess, CoreInfo_t *coreInfo);
 
-    bool setFieldFlagsFromFile(const xml_node &field, bool &isMultiValued,
-            bool &isSearchable, bool &isRefining, bool &isHighlightEnabled,
-            std::stringstream &parseError, bool &configSuccess,
-            CoreInfo_t *coreInfo);
+    bool setFieldFlagsFromFile(const xml_node &field, bool &isMultiValued, bool &isSearchable,
+    		bool &isRefining, bool &isHighlightEnabled, bool & isAclEnabled,
+    		std::stringstream &parseError, bool &configSuccess,
+    		CoreInfo_t *coreInfo);
 
-    bool setCoreParseStateVector(bool isSearchable, bool isRefining, bool isMultiValued, bool isHighlightEnabled, CoreConfigParseState_t *coreParseState, CoreInfo_t *coreInfo, std::stringstream &parseError, const xml_node &field);
+    bool setCoreParseStateVector(bool isSearchable, bool isRefining, bool isMultiValued,
+    		bool isHighlightEnabled, bool isAclEnabled, CoreConfigParseState_t *coreParseState,
+    		CoreInfo_t *coreInfo, std::stringstream &parseError, const xml_node &field);
 
     bool setRefiningStateVectors(const xml_node &field, bool isMultiValued,
-            bool isRefining, vector<string> &RefiningFieldsVector,
-            vector<srch2::instantsearch::FilterType> &RefiningFieldTypesVector,
-            vector<bool> &RefiningAttributesRequiredFlagVector,
-            vector<string> &RefiningAttributesDefaultVector,
-            vector<bool> &RefiningAttributesIsMultiValued,
-            std::stringstream &parseError, CoreInfo_t *coreInfo);
+    		bool isRefining, vector<string> &RefiningFieldsVector,
+    		vector<srch2::instantsearch::FilterType> &RefiningFieldTypesVector,
+    		vector<bool> &RefiningAttributesRequiredFlagVector,
+    		vector<string> &RefiningAttributesDefaultVector,
+    		vector<bool> &RefiningAttributesIsMultiValued,
+    		vector<bool> &refiningAttributesAclEnabledFlags, bool isAclEnabled,
+    		std::stringstream &parseError, CoreInfo_t *coreInfo);
 
     void parseFacetFields(const xml_node &schemaNode, CoreInfo_t *coreInfo, std::stringstream &parseError);
 
     void parseSchemaType(const xml_node &childNode, CoreInfo_t *coreInfo, std::stringstream &parseWarnings);
 
 
+    void setUpStemmer(CoreInfo_t *coreInfo, const xml_node &field, std::stringstream &parseWarnings);
+    
+    void setUpChineseDictionary(CoreInfo_t * coreInfo, string &dictionaryPath, std::stringstream &parseWarnings);
+    void setUpStopword(CoreInfo_t *coreInfo, const xml_node &field, std::stringstream &parseWarnings);
+    void setUpProtectedWord(CoreInfo_t *coreInfo, const xml_node &field, std::stringstream &parseWarnings);
+    void setUpSynonym(CoreInfo_t *coreInfo, const xml_node &field, std::stringstream &parseWarnings);
+    void setUpRecordSpecialCharacters(CoreInfo_t *coreInfo, const xml_node &field);
+    void setUpEnglishAnalyzer(CoreInfo_t * coreInfo, const xml_node &childNodeTemp, std::stringstream &parseWarnings);
+    void setUpChineseAnalyzer(CoreInfo_t * coreInfo, string& dictionaryPath, const xml_node &childNodeTemp, std::stringstream &parseWarnings);
 public:
     ConfigManager(const string& configfile);
     virtual ~ConfigManager();
@@ -311,7 +340,6 @@ public:
     //const vector<unsigned>* getAttributesBoosts() const;
     const std::string& getAttributeRecordBoostName(const string &coreName) const;
     //string getDefaultAttributeRecordBoost() const;
-
     const std::string& getRecordAllowedSpecialCharacters(const string &coreName) const;
     int getSearchType(const string &coreName) const;
     int getIsPrimSearchable(const string &coreName) const;
@@ -395,6 +423,14 @@ public:
 
     static void setAuthorizationKey(string &key);
 
+    static const char* getRoleId(){
+    	return aclRoleId;
+    }
+
+    static const char* getResourceId(){
+    	return aclResourceId;
+    }
+
 private:
 
 // configuration file tag and attribute names for ConfigManager
@@ -420,6 +456,7 @@ private:
     static const char* const enableCharOffsetIndexString;
     static const char* const expandString;
     static const char* const facetEnabledString;
+    static const char* const attributeAclFileString;
     static const char* const facetEndString;
     static const char* const facetFieldString;
     static const char* const facetFieldsString;
@@ -435,6 +472,7 @@ private:
     static const char* const fuzzyMatchPenaltyString;
     static const char* const indexConfigString;
     static const char* const indexedString;
+    static const char* const aclString;
     static const char* const multiValuedString;
     static const char* const indexTypeString;
     //static const char* const licenseFileString;
@@ -452,6 +490,7 @@ private:
     static const char* const mergePolicyString;
     static const char* const nameString;
     static const char* const porterStemFilterString;
+    static const char* const tokenizerFilterString;
     static const char* const prefixMatchPenaltyString;
     static const char* const queryString;
     static const char* const queryResponseWriterString;
@@ -477,6 +516,7 @@ private:
     static const char* const synonymFilterString;
     static const char* const synonymsString;
     static const char* const textEnString;
+    static const char* const textZhString;
     static const char* const typeString;
     static const char* const typesString;
     static const char* const uniqueKeyString;
@@ -511,20 +551,39 @@ private:
     static const char* const fuzzyTagPost;
     static const char* const snippetSize;
 
+    static const char* const multipleAccessControlString;
+    static const char* const resourceCore;
+    static const char* const roleCore;
+    static const char* const accessControlDataFile;
+    static const char* const aclRoleId;
+    static const char* const aclResourceId;
+
     static const char* const defaultFuzzyPreTag;
     static const char* const defaultFuzzyPostTag;
     static const char* const defaultExactPreTag;
     static const char* const defaultExactPostTag;
 
+    static const char* const heartBeatTimerTag;
+public:
     static const char* const defaultCore;
-    static const char* const heartBeatTimerTag; 
+};
+
+class AccessControlInfo{
+public:
+	string resourceCoreName;
+	string roleCoreName;
+	string aclDataFileName;
+	AccessControlInfo(string &resourceCoreName, string &roleCoreName){
+		this->resourceCoreName = resourceCoreName;
+		this->roleCoreName = roleCoreName;
+	};
 };
 
 // definitions for data source(s) (srch2Server objects within one HTTP server)
 class CoreInfo_t {
 
 public:
-    CoreInfo_t(class ConfigManager *manager) : configManager(manager) {};
+    CoreInfo_t(class ConfigManager *manager) : configManager(manager), accessControlInfo(NULL) {};
     CoreInfo_t(const CoreInfo_t &src);
 
     friend class ConfigManager;
@@ -582,6 +641,7 @@ public:
     bool getSupportSwapInEditDistance() const
         { return supportSwapInEditDistance; }
     bool getSupportAttributeBasedSearch() const { return supportAttributeBasedSearch; }
+    void setSupportAttributeBasedSearch(bool flag) { supportAttributeBasedSearch = flag; }
     unsigned getQueryTermBoost() const { return queryTermBoost; }
     int getOrdering() const { return configManager->getOrdering(); }
 
@@ -610,6 +670,9 @@ public:
     const string &getProtectedWordsFilePath() const { return protectedWordsFilePath; }
     const string& getRecordAllowedSpecialCharacters() const
         { return allowedRecordTokenizerCharacters; }
+    AnalyzerType getAnalyzerType() const { return analyzerType; }
+
+    const string& getChineseDictionaryPath() const { return chineseDictionaryFilePath;}
 
     uint32_t getDocumentLimit() const;
     uint64_t getMemoryLimit() const;
@@ -671,6 +734,17 @@ public:
     unsigned short getPort(PortType_t portType) const;
     void setPort(PortType_t portType, unsigned short portNumber);
 
+    AccessControlInfo* getAccessControlInfo() const{
+    	return this->accessControlInfo;
+    }
+
+    void setAccessControlInfo(AccessControlInfo* accessControlInfo){
+    	this->accessControlInfo = accessControlInfo;
+    }
+
+    const std::string& getAttibutesAclFile() const {
+    	return attrAclFilePath;
+    }
 
 protected:
     string name; // of core
@@ -761,6 +835,10 @@ protected:
     bool synonymKeepOrigFlag;
     std::string stopFilterFilePath;
     std::string protectedWordsFilePath;
+    std::string attrAclFilePath;
+
+    AnalyzerType analyzerType;
+    std::string chineseDictionaryFilePath;
 
     // characters to specially treat as part of words, and not as a delimiter
     std::string allowedRecordTokenizerCharacters;
@@ -785,6 +863,9 @@ protected:
 
     // array of local HTTP ports (if any) index by port type enum
     vector<unsigned short> ports;
+
+    // keep the access control info for this core
+    AccessControlInfo* accessControlInfo;
 
 };
 

@@ -1,0 +1,151 @@
+<!--
+    Configuration file for SRCH2 search server. 
+
+    For more information about how to use this configuration file, please
+    visit http://www.srch2.com/downloads.html and select the correct
+    documentation version.
+
+    Please email contact@srch2.com if you have questions.
+
+    This configuration file defines 2 separate cores (data sources) in order to allow testing of
+    access control functionality.  
+-->
+
+<config>
+    <srch2Home>./</srch2Home>
+    <licenseFile>../../conf/srch2_license_key.txt</licenseFile>
+    <listeningHostname>0.0.0.0</listeningHostname>
+    <listeningPort>8087</listeningPort>
+
+    <maxSearchThreads>2</maxSearchThreads>
+
+    <cores defaultCoreName="Product">
+            <core name="Product">
+                <dataFile>Product.json</dataFile>
+                <dataDir>productData</dataDir>
+                <dataSourceType>1</dataSourceType>
+                <indexConfig>
+                    <indexType>0</indexType>
+                    <supportSwapInEditDistance>true</supportSwapInEditDistance>
+                    <fieldBoost>name^2 description^1</fieldBoost>
+                    <defaultQueryTermBoost>1</defaultQueryTermBoost>
+                    <enablePositionIndex>1</enablePositionIndex> 
+                </indexConfig>
+                <query>
+                    <rankingAlgorithm>
+                        <recordScoreExpression>idf_score*doc_boost</recordScoreExpression>
+                    </rankingAlgorithm>
+                    <fuzzyMatchPenalty>0.9</fuzzyMatchPenalty>
+                    <queryTermSimilarityThreshold>0.75</queryTermSimilarityThreshold>
+                    <prefixMatchPenalty>0.95</prefixMatchPenalty>
+                    <cacheSize>65536000</cacheSize>
+                    <rows>5</rows>
+                    <fieldBasedSearch>1</fieldBasedSearch>
+                    <searcherType>0</searcherType>
+
+                    <queryTermFuzzyType>0</queryTermFuzzyType>
+
+                    <queryTermPrefixType>1</queryTermPrefixType>
+
+                    <queryResponseWriter>
+                        <responseFormat>1</responseFormat>
+                    </queryResponseWriter>
+                </query>
+                <schema>
+                    <fields>
+			<field name="pid" type="text"/>
+      			<field name="name" type="text" indexed="true" acl="true"/>
+       			<field name="description" type="text" indexed="true" acl="true"/>
+       			<field name="price" type="integer" indexed="false" required="true" refining="true"/>
+      			<field name="manufacturer" type="text" indexed="true" refining="true"/>
+       			<field name="state" type="text" refining="true" indexed="false" acl="true"/>
+                    </fields>
+
+                    <uniqueKey>pid</uniqueKey>
+
+                    <facetEnabled>true</facetEnabled>
+                    <facetFields>
+                        <facetField name="state" facetType="categorical"/>
+                        <facetField name="price"  facetType="range" facetStart="100" facetEnd="2000"
+                            facetGap="10"/>
+                    </facetFields>
+
+                </schema>
+		<attributeAclFile>./attribute-acl-data.json</attributeAclFile>
+                <updatehandler>
+                    <maxDocs>15000000</maxDocs>
+                    <maxMemory>10000000</maxMemory>
+                    <mergePolicy>
+                        <mergeEveryNSeconds>10</mergeEveryNSeconds>
+                        <mergeEveryMWrites>10</mergeEveryMWrites>
+                    </mergePolicy>
+                    <updateLog>
+                        <logLevel>3</logLevel>
+                        <accessLogFile>srch2-log.txt</accessLogFile>
+                    </updateLog>
+                </updatehandler>
+            </core>
+
+	    <core name="User">
+                <dataFile>User.json</dataFile>
+                <dataDir>userData</dataDir>
+                <dataSourceType>1</dataSourceType>
+                <indexConfig>
+                    <indexType>0</indexType>
+                    <supportSwapInEditDistance>true</supportSwapInEditDistance>
+                    <defaultQueryTermBoost>1</defaultQueryTermBoost>
+                    <enablePositionIndex>1</enablePositionIndex> 
+                </indexConfig>
+                <query>
+                    <rankingAlgorithm>
+                        <recordScoreExpression>idf_score*doc_boost</recordScoreExpression>
+                    </rankingAlgorithm>
+                    <fuzzyMatchPenalty>0.9</fuzzyMatchPenalty>
+                    <queryTermSimilarityThreshold>0.75</queryTermSimilarityThreshold>
+                    <prefixMatchPenalty>0.95</prefixMatchPenalty>
+                    <cacheSize>65536000</cacheSize>
+                    <rows>5</rows>
+                    <fieldBasedSearch>1</fieldBasedSearch>
+                    <searcherType>0</searcherType>
+
+                    <queryTermFuzzyType>0</queryTermFuzzyType>
+
+                    <queryTermPrefixType>1</queryTermPrefixType>
+
+                    <queryResponseWriter>
+                        <responseFormat>1</responseFormat>
+                    </queryResponseWriter>
+                </query>
+                <schema>
+                    <fields>
+			<field name="uid" type="text"/>
+                        <field name="name" type="text" indexed="true"/>
+                    </fields>
+
+                    <uniqueKey>uid</uniqueKey>
+                </schema>
+                <updatehandler>
+                    <maxDocs>15000000</maxDocs>
+                    <maxMemory>10000000</maxMemory>
+                    <mergePolicy>
+                        <mergeEveryNSeconds>10</mergeEveryNSeconds>
+                        <mergeEveryMWrites>10</mergeEveryMWrites>
+                    </mergePolicy>
+                    <updateLog>
+                        <logLevel>3</logLevel>
+                        <accessLogFile>srch2-log.txt</accessLogFile>
+                    </updateLog>
+                </updatehandler>
+            </core>
+
+    </cores>
+
+    <access-controls>
+        <access-control>
+            <resourceCore>Product</resourceCore>
+     	    <roleCore>User</roleCore>
+            <aclDataFile>record-acl-product-user.json</aclDataFile>
+   </access-control>
+</access-controls>
+
+</config>

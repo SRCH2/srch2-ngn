@@ -24,6 +24,7 @@
 #include "boost/algorithm/string/split.hpp"
 #include "boost/algorithm/string/classification.hpp"
 #include "util/RecordSerializerUtil.h"
+#include "include/instantsearch/Constants.h"
 
 using namespace snappy;
 
@@ -73,7 +74,7 @@ bool JSONRecordParser::setRecordPrimaryKey(srch2is::Record *record,
                     primaryKeyStringValue);
         }
     } else {
-        error << "\nFailed to parse JSON - No primary key found.";
+        error << "Failed to parse JSON - No primary key found.";
         return false; // Raise Error
     }
 
@@ -474,6 +475,91 @@ bool JSONRecordParser::_JSONValueObjectToRecord(srch2is::Record *record,
     return true;
 }
 
+// this function finds roleId in the query
+// and return false if there is not roleId in the query
+// sample: {"pid" : "234", ..... , “roleId”: ["33", "45"]}
+//
+bool JSONRecordParser::_extractRoleIds(vector<string> &roleIds, const Json::Value &root,
+    		const CoreInfo_t *indexDataContainerConf, std::stringstream &error){
+	if (root.type() != Json::objectValue)
+	{
+		error << "\nFailed to parse JSON.";
+		return false;// Raise Error
+	}
+	string aclRoleId = ConfigManager::getRoleId();
+
+	if(!getJsonValueString(root, aclRoleId, roleIds, "roleId")){
+		return false;
+	}
+
+	return true;
+}
+
+// this function finds resourceID and roleId in the query
+// and return false if there is not roleId or resourceId in the query
+// sample: {“resourceId”: “1234", “roleId”: ["33", "45"]}
+//
+bool JSONRecordParser::_extractResourceAndRoleIds(std::vector<string> &roleIds, string& resourcePrimaryKeyID, const Json::Value &root, const CoreInfo_t *indexDataContainerConf, std::stringstream &error){
+	if (root.type() != Json::objectValue)
+	{
+		error << "\nFailed to parse JSON.";
+		return false;// Raise Error
+	}
+	string aclRoleId = ConfigManager::getRoleId();
+
+    string primaryKeyName = ConfigManager::getResourceId();
+
+    std::vector<string> stringValues;
+
+    getJsonValueString(root, primaryKeyName, stringValues, "primary-key");
+
+    if (!stringValues.empty() && stringValues.at(0).compare("") != 0) {
+        string primaryKeyStringValue = stringValues.at(0);
+        // trim to avoid any mismatch due to leading and trailing white space
+        boost::algorithm::trim(primaryKeyStringValue);
+        resourcePrimaryKeyID = primaryKeyStringValue.c_str();
+
+    } else {
+        error << "\nFailed to parse JSON - No primary key found.";
+        return false; // Raise Error
+    }
+
+	if(!getJsonValueString(root, aclRoleId, roleIds, "roleId")){
+		return false;
+	}
+
+	return true;
+}
+
+// this function extracts the role ids from a JSON object
+// and returns false if parsing the json object was not successful
+// sample:  {“resourceId”: “1234", “roleId”: ["33", "45"]}
+bool JSONRecordParser::getAclInfoFromJSON(vector<string> &roleIds, string &primaryKeyID,
+    		const string& inputLine, const CoreInfo_t *indexDataContainerConf, std::stringstream &error){
+	string::const_iterator end_it = utf8::find_invalid(inputLine.begin(), inputLine.end());
+	if (end_it != inputLine.end()) {
+		error << "Invalid UTF-8 encoding detected.";
+		return false;
+	}
+
+	// Parse example data
+	Json::Value root;
+	Json::Reader reader;
+
+	bool parseSuccess = reader.parse(inputLine, root, false);
+
+	if (!parseSuccess)
+	{
+		error << "\nFailed to parse JSON - " << reader.getFormatedErrorMessages();
+		return false;
+	}
+	else
+	{
+		parseSuccess = JSONRecordParser::_extractResourceAndRoleIds(roleIds, primaryKeyID, root, indexDataContainerConf, error);
+	}
+	return parseSuccess;
+}
+
 bool JSONRecordParser::populateRecordFromJSON(const string &inputLine,
         const CoreInfo_t *indexDataContainerConf, srch2is::Record *record, std::stringstream &error,
         RecordSerializer& compactRecSerializer)
@@ -547,19 +633,30 @@ srch2is::Schema* JSONRecordParser::createAndPopulateSchema(const CoreInfo_t *ind
         schema->setSearchableAttribute(primaryKey); // searchable primaryKey
     }
 
+    vector<unsigned> aclSearchableAttrIds;
+    vector<unsigned> nonAclSearchableAttrIds;
     // Set SearchableAttributes
     // map<string, pair<bool, pair<string, pair<unsigned,pair<unsigned , bool> > > > >
     map<string, SearchableAttributeInfoContainer>::const_iterator searchableAttributeIter = indexDataContainerConf->getSearchableAttributes()->begin();
     for ( ; searchableAttributeIter != indexDataContainerConf->getSearchableAttributes()->end();
                     searchableAttributeIter++)
     {
-        schema->setSearchableAttribute(searchableAttributeIter->first,
+        unsigned id = schema->setSearchableAttribute(searchableAttributeIter->first,
                 searchableAttributeIter->second.boost ,
                 searchableAttributeIter->second.isMultiValued,
                 searchableAttributeIter->second.highlight); // searchable text
+        if (searchableAttributeIter->second.isAclEnabled) {
+        	aclSearchableAttrIds.push_back(id);
+        } else {
+        	nonAclSearchableAttrIds.push_back(id);
+        }
+
     }
+    schema->setAclSearchableAttrIdsList(aclSearchableAttrIds);
+    schema->setNonAclSearchableAttrIdsList(nonAclSearchableAttrIds);
 
-
+    vector<unsigned> aclRefiningAttrIds;
+    vector<unsigned> nonAclRefiningAttrIds;
     // Set NonSearchableAttributes
     map<string, RefiningAttributeInfoContainer >::const_iterator
         nonSearchableAttributeIter = indexDataContainerConf->getRefiningAttributes()->begin();
@@ -567,13 +664,26 @@ srch2is::Schema* JSONRecordParser::createAndPopulateSchema(const CoreInfo_t *ind
     for ( ; nonSearchableAttributeIter != indexDataContainerConf->getRefiningAttributes()->end(); ++nonSearchableAttributeIter)
     {
 
-        schema->setRefiningAttribute(nonSearchableAttributeIter->first,
+    	unsigned id = schema->setRefiningAttribute(nonSearchableAttributeIter->first,
                 nonSearchableAttributeIter->second.attributeType,
                 nonSearchableAttributeIter->second.defaultValue,
                 nonSearchableAttributeIter->second.isMultiValued);
+
+        if (nonSearchableAttributeIter->second.isAclEnabled) {
+        	aclRefiningAttrIds.push_back(id);
+        } else {
+        	nonAclRefiningAttrIds.push_back(id);
+        }
     }
+    schema->setAclRefiningAttrIdsList(aclRefiningAttrIds);
+    schema->setNonAclRefiningAttrIdsList(nonAclRefiningAttrIds);
 
-
+    if (aclSearchableAttrIds.size() > 0 && !isEnabledAttributeBasedSearch(positionIndexType)) {
+    	//make sure to enable attributes position index if ACL on attributes is set.
+    	positionIndexType = srch2::instantsearch::POSITION_INDEX_FIELDBIT;
+    	schema->setPositionIndexType(positionIndexType);
+    	const_cast<CoreInfo_t *>(indexDataContainerConf)->setSupportAttributeBasedSearch(true);
+    }
     std::string scoringExpressionString = indexDataContainerConf->getScoringExpressionString();
     schema->setScoringExpression(scoringExpressionString);
     schema->setSupportSwapInEditDistance(indexDataContainerConf->getSupportSwapInEditDistance());
@@ -665,6 +775,92 @@ unsigned DaemonDataSource::createNewIndexFromFile(srch2is::Indexer* indexer, Sch
     delete analyzer;
     delete record;
     return indexedRecordsCount;
+}
+
+// Each line of the file is like this:
+//  {“resourceId”: “1234", “roleId”: ["33", "45"]}
+void DaemonDataSource::addAccessControlsFromFile(srch2is::Indexer *indexer,
+                const CoreInfo_t *indexDataContainerConf, srch2is::Indexer *roleCoreIndexer){
+	AccessControlInfo* accessControl = indexDataContainerConf->getAccessControlInfo();
+	if(accessControl == NULL)
+		return;
+
+	string filePath = accessControl->aclDataFileName;
+	ifstream in(filePath.c_str());
+	if (in.fail()){
+		Logger::error("Access-Control DataSource file not found at: %s", filePath.c_str());
+		return;
+	}
+
+	string line;
+
+    unsigned lineCounter = 0;
+    unsigned indexedRecordsCount = 0;
+
+	if(in.good()){
+		bool isArrayOfJsonRecords = false;
+		while(getline(in, line)){
+			bool parseSuccess = false;
+
+			// remove the trailing space or "," characters
+			while (!line.empty() && (
+					line.at(line.length() - 1) == ' ' ||
+					line.at(line.length() - 1) == ','
+			)
+			) {
+				line.erase(line.length() - 1);
+			}
+
+			boost::trim(line);
+			if (indexedRecordsCount == 0 &&  line == "[") {
+				// Solr style data source - array of JSON records
+				isArrayOfJsonRecords = true;
+				continue;
+			}
+			if (isArrayOfJsonRecords == true && line == "]") {
+				// end of JSON array in Solr style data source
+				break; // assume nothing follows array (will ignore more records or another array)
+			}
+
+			std::stringstream error;
+			vector<string> roleIds;
+			string resourcePrimaryKeyID;
+			// extract the the primarykey of the resource record and all the role ids from the json object.
+			parseSuccess = JSONRecordParser::getAclInfoFromJSON(roleIds, resourcePrimaryKeyID,
+					line, indexDataContainerConf, error);
+
+			if(parseSuccess){
+				// Add the role ids to the record
+				// first check that all role ids exist
+				bool roleIdsExist = true;
+				for(unsigned i = 0 ; i < roleIds.size() ; i++){
+					INDEXLOOKUP_RETVAL returnValue = roleCoreIndexer->lookupRecord(roleIds[i]);
+					if(returnValue == LU_ABSENT_OR_TO_BE_DELETED){
+						roleIdsExist = false;
+						break;
+					}
+				}
+				if(roleIdsExist){
+					indexer->aclModifyRoles(resourcePrimaryKeyID, roleIds, srch2::instantsearch::AddRoles);
+					indexedRecordsCount++;
+				}
+			}
+			else{
+				Logger::error("at line: %d" , lineCounter);
+				Logger::error("%s", error.str().c_str());
+			}
+			int reportFreq = 10000;
+			++lineCounter;
+			if ( indexedRecordsCount > 0 && indexedRecordsCount % reportFreq == 0) {
+				Logger::console("Adding first %d record's access control info.\r", indexedRecordsCount);
+			}
+
+		}
+	}
+	Logger::console("Added access controls %d / %d records.", indexedRecordsCount, lineCounter);
+    in.close();
+
+	return;
 }
 
 // convert other types to string

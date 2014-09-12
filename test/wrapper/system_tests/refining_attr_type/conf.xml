@@ -356,7 +356,7 @@
 	  		- By default it is disabled.
 	  -->
 	  <types>
-	    <fieldType name="text_en">
+	    <fieldType name="text_standard">
 		<analyzer>
 		    <!--
 		        Stemmer

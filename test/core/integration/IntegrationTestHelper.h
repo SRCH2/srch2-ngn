@@ -44,6 +44,7 @@
 #include <string>
 #include <cstring>
 #include <vector>
+#include <algorithm>
 
 using namespace std;
 
@@ -114,7 +115,7 @@ void buildIndex(string indexDir)
     		updateHistogramEveryPMerges, updateHistogramEveryQWrites,
     		indexDir);
     Indexer *indexer = Indexer::create(indexMetaData, analyzer, schema);
-    
+
     Record *record = new Record(schema);
 
     std::string line;
@@ -204,7 +205,7 @@ void buildFactualIndex(string indexDir, unsigned docsToIndex)
     		updateHistogramEveryPMerges, updateHistogramEveryQWrites,
     		indexDir);
     Indexer *indexer = Indexer::create(indexMetaData, analyzer, schema);
-    
+
     Record *record = new Record(schema);
 
     std::string line;
@@ -400,7 +401,7 @@ void parseFuzzyQueryWithEdSet(const Analyzer *analyzer, Query *query, const stri
     srch2is::TermType termType = TERM_TYPE_COMPLETE;
     for (unsigned i = 0; i < queryKeywords.size(); ++i){
         //cout << "(" << queryKeywords[i] << ")("<< getNormalizedThreshold(queryKeywords[i].size()) << ")\t";
-        
+
         Term *term;
         if(i == (queryKeywords.size()-1)){
             termType = TERM_TYPE_PREFIX;
@@ -599,6 +600,48 @@ bool checkResults(QueryResults *queryResults, unsigned numberofHits ,const vecto
     return returnvalue;
 }
 
+bool checkResultsAsSets(QueryResults *queryResults, unsigned numberofHits ,const vector<unsigned> &recordIDs){
+    bool returnValue = false;
+
+    if (numberofHits != queryResults->getNumberOfResults()) {
+        Logger::debug("%u | %d", numberofHits, queryResults->getNumberOfResults());
+        for (unsigned resultCounter = 0;
+                        resultCounter < queryResults->getNumberOfResults(); resultCounter++ ) {
+                Logger::debug("%u", (unsigned)atoi(queryResults->getRecordId(resultCounter).c_str()));
+        }
+        return false;
+    } else {
+        returnValue = true;
+        for (unsigned resultCounter = 0;
+                resultCounter < queryResults->getNumberOfResults(); resultCounter++ ){
+            vector<string> matchingKeywords;
+            vector<unsigned> editDistances;
+            vector<string>::iterator it1;
+            vector<unsigned>::iterator it2;
+
+            queryResults->getMatchingKeywords(resultCounter, matchingKeywords);
+            queryResults->getEditDistances(resultCounter, editDistances);
+
+            bool hasElement = false;
+            for(unsigned i = 0; i < recordIDs.size(); ++i){
+
+            	if(static_cast<unsigned int>(strtoul(queryResults->getRecordId(resultCounter).c_str(), NULL, 10)) == recordIDs[i]){
+            		hasElement = true;
+            		break;
+            	}
+            }
+
+            if(hasElement){
+                returnValue = true;
+            }
+            else{
+                return false;
+            }
+        }
+    }
+    return returnValue;
+}
+
 bool checkOutput(QueryResults *queryResults, unsigned numberofHits, bool isStemmed)
 {
     //cout << numberofHits << " | " << queryResults->getNumberOfResults() << endl;
@@ -737,7 +780,7 @@ void getGetAllResultsQueryResults(const Analyzer *analyzer, QueryEvaluator *quer
     QueryEvaluatorInternal * queryEvaluatorInternal = queryEvaluator->impl;
     Query *query = new Query(srch2::instantsearch::SearchTypeGetAllResultsQuery);
     parseExactPrefixQuery(analyzer, query, queryString, attributeIdToFilter, attrOps);
-    
+
     ResultsPostProcessorPlan * plan = NULL;
     plan = new ResultsPostProcessorPlan();
     srch2::httpwrapper::SortFilterEvaluator * eval =
@@ -883,6 +926,30 @@ bool ping(const Analyzer *analyzer, QueryEvaluator *queryEvaluator, string query
 }
 
 
+bool ping_WithACL(const Analyzer *analyzer, QueryEvaluator *queryEvaluator, string queryString,
+		unsigned numberofHits , const vector<unsigned> &recordIDs,
+		ATTRIBUTES_OP attrOps, string roleId)
+{
+	vector<unsigned> attributeIdToFilter;
+    Query *query = new Query(srch2::instantsearch::SearchTypeTopKQuery);
+    parseFuzzyPrefixQuery(analyzer, query, queryString, attributeIdToFilter, attrOps);
+    int resultCount = 10;
+
+    //cout << "[" << queryString << "]" << endl;
+
+    // for each keyword in the user input, add a term to the query
+    QueryResults *queryResults = new QueryResults(new QueryResultFactory(),queryEvaluator, query);
+
+    LogicalPlan * logicalPlan = prepareLogicalPlanForACLTests(query , NULL, 0, resultCount, false, srch2::instantsearch::SearchTypeTopKQuery, roleId);
+    queryEvaluator->search(logicalPlan , queryResults);
+    bool returnvalue =  checkResults(queryResults, numberofHits, recordIDs);
+    //printResults(queryResults);
+    queryResults->printStats();
+    delete queryResults;
+    delete query;
+    return returnvalue;
+}
+
 bool ping_WithGeo(const Analyzer *analyzer, QueryEvaluator *queryEvaluator, string queryString, float lat, float lng, float radius, unsigned numberofHits , const vector<unsigned> &recordIDs, vector<unsigned> attributeIdToFilter, ATTRIBUTES_OP attrOps)
 {
     Query *query = new Query(srch2::instantsearch::SearchTypeTopKQuery);
@@ -896,7 +963,7 @@ bool ping_WithGeo(const Analyzer *analyzer, QueryEvaluator *queryEvaluator, stri
 
     LogicalPlan * logicalPlan = prepareLogicalPlanForGeoTest(query , NULL, 0, resultCount, false, srch2::instantsearch::SearchTypeTopKQuery);
     queryEvaluator->search(logicalPlan , queryResults);
-    bool returnvalue =  checkResults(queryResults, numberofHits, recordIDs);
+    bool returnvalue =  checkResultsAsSets(queryResults, numberofHits, recordIDs);
     //printResults(queryResults);
     //cout << "-------------------------" << endl;
     queryResults->printStats();

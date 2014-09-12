@@ -367,7 +367,7 @@
       
       
       <types>
-        <fieldType name="text_en">
+        <fieldType name="text_standard">
             <analyzer>
                 <!--
                     Stemmer
