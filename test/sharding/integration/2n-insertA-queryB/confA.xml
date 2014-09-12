@@ -27,7 +27,7 @@
     <srch2Home>/home/jamshid/workspace-srch2-v4/srch2-ngn/test/sharding/integration</srch2Home>
  
     <ping>
-        <ping-interval>2000</ping-interval>
+        <ping-interval>2</ping-interval>
         <ping-timeout>8</ping-timeout>
         <retry-count>3</retry-count>
     </ping>    
@@ -36,7 +36,7 @@
         <ipaddress>127.0.0.1</ipaddress>
     </transport>    
     
-    <WellKnownHosts>127.0.0.1:3096</WellKnownHosts>
+    <WellKnownHosts>127.0.0.1:3095,127.0.0.1:3096,127.0.0.1:3097,127.0.0.1:3098</WellKnownHosts>
     <listeningHostname>127.0.0.1</listeningHostname>
     <listeningPort>7049</listeningPort>
 
