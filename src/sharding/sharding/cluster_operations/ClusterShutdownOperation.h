@@ -29,7 +29,11 @@ public:
 	ClusterShutdownOperation():OperationState(this->getOperationId()){
 		this->saveOperation = NULL;
 	}
-	~ClusterShutdownOperation(){}
+	~ClusterShutdownOperation(){
+		if(saveOperation != NULL){
+			delete saveOperation;
+		}
+	}
 
 private:
 
