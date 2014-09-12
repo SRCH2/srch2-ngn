@@ -87,7 +87,7 @@ final class IndexInternal {
     }
 
     void searchRawString(String rawString) {
-        SRCH2Engine.lastQuery.set(new SRCH2Engine.IndexQueryPair(this,
+        SRCH2Engine.lastQuery.set(new SRCH2Engine.IndexQueryPair(indexDescription.getIndexName(),
                 rawString));
         if (currentSearchTask != null) {
             currentSearchTask.cancel();

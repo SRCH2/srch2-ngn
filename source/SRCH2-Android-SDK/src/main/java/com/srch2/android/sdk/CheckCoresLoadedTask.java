@@ -42,6 +42,7 @@ final class CheckCoresLoadedTask extends HttpTask {
         int superCount = 0;
         while (true) {
             if (superCount > 100) {
+
                 noNetworkConnection = true;
                 break;
             }

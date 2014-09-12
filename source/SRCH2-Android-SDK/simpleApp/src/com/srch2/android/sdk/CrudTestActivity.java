@@ -79,7 +79,7 @@ public class CrudTestActivity extends TestableActivity {
     public void initializeSRCH2Engine() {
         deleteSrch2Files();
         SRCH2Engine.setIndexables(mIndex1, mIndex2, mIndexGeo);
-        SRCH2Engine.onStart();
+        SRCH2Engine.initialize();
         SRCH2Engine.setSearchResultsListener(mResultListener);
         SRCH2Engine.setAutomatedTestingMode(true);
     }

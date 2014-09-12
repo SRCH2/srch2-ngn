@@ -211,10 +211,13 @@ final public class SRCH2Service extends Service implements AutoPing.ValidatePing
 
     private void signalSRCH2EngineToProceed(int portNumberForSRCH2EngineToReuse, String oAuthCodeForSRCH2EngineToReuse) {
         int totalSleepTime = 0;
+        Cat.d(TAG, "signalSRCH2EngineToProceed - start");
         while (!ps(executableProcessPath)) {
             try {
+
+                Cat.d(TAG, "signalSRCH2EngineToProceed - waiting in the while loop waited so far : " + totalSleepTime);
                 Thread.currentThread().sleep(200);
-                if (totalSleepTime > 1000) {
+                if (totalSleepTime > 3000) {
                     break;
                 }
                 totalSleepTime += 200;

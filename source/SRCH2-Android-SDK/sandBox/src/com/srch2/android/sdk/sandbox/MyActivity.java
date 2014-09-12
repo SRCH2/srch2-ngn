@@ -39,30 +39,20 @@ public class MyActivity extends Activity implements InstantSearchEditText.Search
         resultsAdapter = new SearchResultsAdapter(this);
         searchResultsListView.setAdapter(resultsAdapter);
 
-        //index = new Idx();
+        index = new Idx();
         //indexTwo = new IdxTwo();
 
 
-        dbHelper = new DatabaseHelper(this);
+       // dbHelper = new DatabaseHelper(this);
 
 
 
         sr = new SearchResults();
-
-
-    }
-
-    @Override
-    protected void onStart() {
-        super.onStart();
-        Log.d("s2sdk::Sandbox", "onStart------------------------------------------!!!");
-
         SRCH2Engine.setAutomatedTestingMode(true);
-        SRCH2Engine.setSearchResultsListener(sr, true);
-       // SRCH2Engine.setIndexables(index);
-        SRCH2Engine.setSQLiteIndexables(dbHelper.idx);
-        SRCH2Engine.onStart();
+
     }
+
+
 
     class SearchResults implements SearchResultsListener {
         @Override
@@ -125,7 +115,10 @@ public class MyActivity extends Activity implements InstantSearchEditText.Search
     protected void onResume() {
         super.onResume();
         Log.d("s2sdk::Sandbox", "onResume------------------------------------------!!!");
-        SRCH2Engine.onResume(this);
+
+         SRCH2Engine.setIndexables(index);
+        //SRCH2Engine.setSQLiteIndexables(dbHelper.idx);
+        SRCH2Engine.onResume(this, sr, true);
         InstantSearchEditText.checkIfSearchInputShouldOpenSoftKeyboard(this, (InstantSearchEditText) findViewById(R.id.et_instant_search_input));
     }
 
@@ -137,12 +130,7 @@ public class MyActivity extends Activity implements InstantSearchEditText.Search
         SRCH2Engine.onPause(this);
     }
 
-    @Override
-    protected void onStop() {
-        super.onStop();
-        Log.d("s2sdk::Sandbox", "onStop------------------------------------------!!!");
-        SRCH2Engine.onStop();
-    }
+
 
     @Override
     public void onNewSearchInput(String newSearchText) {

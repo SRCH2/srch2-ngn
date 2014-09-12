@@ -85,7 +85,7 @@ abstract class IndexableCore {
      * The default value of this method, if not overridden, is ten.
      * <br><br>
      * This method will cause an <code>IllegalArgumentException</code> to be thrown when calling
-     * {@link SRCH2Engine#onStart()} and passing this
+     * {@link SRCH2Engine#initialize()} and passing this
      * <code>Indexable</code> or <code>SQLiteIndexable</code> if the returned value
      *  is less than one.
      * @return the number of results to return per search
@@ -107,7 +107,7 @@ abstract class IndexableCore {
      * The default value of this method, if not overridden, is 0.65.
      * <br><br>
      * This method will cause an <code>IllegalArgumentException</code> to be thrown when calling
-     * {@link SRCH2Engine#onStart()} and passing this <code>Indexable</code> or
+     * {@link SRCH2Engine#initialize()} and passing this <code>Indexable</code> or
      * <code>SQLiteIndexable</code> if the
      * value returned is less than zero or greater than one.
      * @return the fuzziness similarity ratio to match against search keywords against

@@ -5,7 +5,7 @@ import android.content.Context;
 import android.content.Intent;
 import android.os.Handler;
 import android.os.Looper;
-import org.json.JSONObject;
+import android.os.SystemClock;
 
 import java.io.IOException;
 import java.net.ServerSocket;
@@ -77,7 +77,7 @@ import java.util.concurrent.atomic.AtomicReference;
  * <br>
  * &nbsp&nbsp&nbsp&nbsp{@link #sqliteIndexablesUserSets} and/or {@link #indexablesUserSets} (<i>required</i>) <br>
  * &nbsp&nbsp&nbsp&nbsp{@link #setAutomatedTestingMode(boolean)} (<i>optional</i>) <br>
- * &nbsp&nbsp&nbsp&nbsp{@link #onStart()} (<i>required</i>) <br>
+ * &nbsp&nbsp&nbsp&nbsp{@link #initialize()} (<i>required</i>) <br>
  * &nbsp&nbsp&nbsp&nbsp{@link #onResume(android.content.Context)} (<i>required</i>) <br>
  * &nbsp&nbsp&nbsp&nbsp{@link #onPause(android.content.Context)} (<i>required</i>) <br>
  * Note that registering the search result listener can be done at anytime and changed,
@@ -100,7 +100,7 @@ final public class SRCH2Engine {
 
 
     /** Note: these two lists are only used between calls to {@link #setIndexables(Indexable, Indexable...)}/
-     * {@link #setSQLiteIndexables(SQLiteIndexable, SQLiteIndexable...)} and {@link #onStart()} and are
+     * {@link #setSQLiteIndexables(SQLiteIndexable, SQLiteIndexable...)} and {@link #initialize()} and are
      * dereference-ed afterwards.
      */
     static ArrayList<Indexable> indexablesUserSets;
@@ -109,7 +109,6 @@ final public class SRCH2Engine {
     static final AtomicReference<IndexQueryPair> lastQuery = new AtomicReference<IndexQueryPair>();
     static final AtomicBoolean isChanged = new AtomicBoolean(false);
     static final AtomicBoolean isReady = new AtomicBoolean(false);
-    private static AtomicBoolean onPauseHasCompleted;
 
 
     static boolean isDebugAndTestingMode = false;
@@ -133,50 +132,13 @@ final public class SRCH2Engine {
 
     private SRCH2Engine() { }
 
-    /**
-     * Initializes the state of the <code>SRCH2Engine</code> and prepares it for performing searches.
-     * <br><br>
-     * This method should only be called once per application life-cycle such as when an instance of
-     * an activity requiring search is created (thus from the activity's <code>onCreate</code> method).
-     * Calling this method will not start the SRCH2 search server and <b>must</b> be called before any
-     * call to the method {@link #onResume(android.content.Context)} is made.
-     * Additionally, callers <b>must</b> call {@link #indexablesUserSets} or {@link #sqliteIndexablesUserSets} and pass at
-     * least one <code>Indexable</code> or <code>SQLiteIndexable</code> for the <code>SRCH2Engine</code>
-     * to onStart properly <b>before</b> calling this method.
-     * <br><br>
-     * This method will throw an exception if no indexes have been set.
-     */
-    public static void onStart() {
-        Cat.d(TAG, "onResume");
 
-        SRCH2Engine.lastQuery.set(null);
-        SRCH2Engine.isChanged.set(false);
-        SRCH2Engine.isReady.set(false);
-        SRCH2Engine.isStarted = false;
-        SRCH2Engine.allIndexSearchTask = null;
-
-        ArrayList<IndexableCore> indexes = new ArrayList<IndexableCore>();
-        if (indexablesUserSets != null) {
-            indexes.addAll(indexablesUserSets);
-        }
-        if (sqliteIndexablesUserSets != null) {
-            indexes.addAll(sqliteIndexablesUserSets);
-        }
-        if (indexes.size() < 1) {
-            throw new IllegalStateException("No Indexable or SQLiteIndexable present during initialization: SRCH2Engine must be initialized" +
-                    "after calling either indexablesUserSets() or sqliteIndexablesUserSets() and passing at least one index to search on.");
-        }
-
-        SRCH2Engine.conf = new SRCH2Configuration(indexes);
-        indexablesUserSets = null;
-        sqliteIndexablesUserSets = null;
-    }
 
     /**
      * Registers any instances of {@link com.srch2.android.sdk.Indexable} that represent indexes in the SRCH2 search server.
      * <br><br>
      * This method (or {@link #setSQLiteIndexables(SQLiteIndexable, SQLiteIndexable...)}) <b>must be called</b> and one
-     * <code>Indexable</code> or <code>SQLiteIndexable</code> be passed <b>before</b> the call to {@link #onStart()}
+     * <code>Indexable</code> or <code>SQLiteIndexable</code> be passed <b>before</b> the call to {@link #initialize()}
      * is made.
      * @param firstIndexable at least one <code>Indexable</code> representing an index in the SRCH2 search server
      * @param additionalIndexables any additional <code>Indexable</code> instances representing indexes in the SRCH2 search server
@@ -199,7 +161,7 @@ final public class SRCH2Engine {
      * Registers any instances of {@link com.srch2.android.sdk.SQLiteIndexable} that represent indexes in the SRCH2 search server.
      * <br><br>
      * This method (or {@link #setIndexables(Indexable, Indexable...)}) <b>must be called</b> and one
-     * <code>Indexable</code> or <code>SQLiteIndexable</code> be passed <b>before</b> the call to {@link #onStart()}
+     * <code>Indexable</code> or <code>SQLiteIndexable</code> be passed <b>before</b> the call to {@link #initialize()}
      * is made.
      * @param firstSQLiteIndexable at least one <code>SQLiteIndexable</code> representing an index in the SRCH2 search server
      * @param additionalSQLiteIndexables any additional <code>SQLiteIndexable</code> instances representing indexes in the SRCH2 search server
@@ -227,7 +189,7 @@ final public class SRCH2Engine {
      * <br><br>
      * If this key is not specified, it will be automatically generated by the <code>SRCH2Engine</code>.
      * <br><br>
-     * This method will throw an exception if {@link #onStart()} has not been called.
+     * This method will throw an exception if {@link #initialize()} has not been called.
      * @param authorizationKey the key that any request on the SRCH2 search server will have to supply in order for the
      *                         SRCH2 search server to carry out the command or task
      */
@@ -297,6 +259,21 @@ final public class SRCH2Engine {
     }
 
     /**
+     *
+     * Initializes the state of the <code>SRCH2Engine</code> and prepares it for performing searches.
+     * <br><br>
+     * This method should only be called once per application life-cycle such as when an instance of
+     * an activity requiring search is created (thus from the activity's <code>onCreate</code> method).
+     * Calling this method will not start the SRCH2 search server and <b>must</b> be called before any
+     * call to the method {@link #onResume(android.content.Context)} is made.
+     * Additionally, callers <b>must</b> call {@link #indexablesUserSets} or {@link #sqliteIndexablesUserSets} and pass at
+     * least one <code>Indexable</code> or <code>SQLiteIndexable</code> for the <code>SRCH2Engine</code>
+     * to initialize properly <b>before</b> calling this method.
+     * <br><br>
+     * This method will throw an exception if no indexes have been set.
+     *
+     *
+     *
      * Causes the SRCH2 search server powering the search to start.
      * <br><br>
      * This method should be called anytime the activity requiring search functionality comes to the
@@ -314,15 +291,54 @@ final public class SRCH2Engine {
      * reference to this context is not kept.
      * @param context needed to start a remote service, any context will do
      */
-    public static void onResume(Context context) {
+    public static void onResume(Context context, SearchResultsListener searchResultsListener,  boolean callbackSearchResultsToUiThread) {
+
+        long t = SystemClock.uptimeMillis();
+
         Cat.d(TAG, "onResume");
-        if (isStarted) { return; }
-        onPauseHasCompleted = new AtomicBoolean(false);
         registerReciever(context);
-        checkConfIsNullThrowIfIs();
+        setSearchResultsListener(searchResultsListener, callbackSearchResultsToUiThread);
+
+        initialize();
         initializeConfiguration(context);
         startSRCH2Service(context, SRCH2Configuration.generateConfigurationFileString(SRCH2Engine.conf));
         isStarted = true;
+
+        long e = SystemClock.uptimeMillis() - t;
+        Cat.d(TAG, "onResume - initialization took " + e + " ms");
+    }
+
+    public static void onResume(Context context) {
+        Cat.d(TAG, "onResume");
+        registerReciever(context);
+
+        initialize();
+        initializeConfiguration(context);
+        startSRCH2Service(context, SRCH2Configuration.generateConfigurationFileString(SRCH2Engine.conf));
+        isStarted = true;
+    }
+
+    static void initialize() {
+        SRCH2Engine.isStarted = false;
+        SRCH2Engine.isReady.set(false);
+        SRCH2Engine.isChanged.set(false);
+        SRCH2Engine.allIndexSearchTask = null;
+
+        ArrayList<IndexableCore> indexes = new ArrayList<IndexableCore>();
+        if (indexablesUserSets != null) {
+            indexes.addAll(indexablesUserSets);
+        }
+        if (sqliteIndexablesUserSets != null) {
+            indexes.addAll(sqliteIndexablesUserSets);
+        }
+        if (indexes.size() < 1) {
+            throw new IllegalStateException("No Indexable or SQLiteIndexable present during initialization: SRCH2Engine must be initialized" +
+                    "after calling either indexablesUserSets() or sqliteIndexablesUserSets() and passing at least one index to search on.");
+        }
+
+        SRCH2Engine.conf = new SRCH2Configuration(indexes);
+        indexablesUserSets = null;
+        sqliteIndexablesUserSets = null;
     }
 
     // moved out for testing of remote service
@@ -378,8 +394,6 @@ final public class SRCH2Engine {
             indexUrlMap.put(index.indexInternal.getIndexCoreName(),
                     UrlBuilder.getInfoUrl(conf, index.indexInternal.getConf()));
         }
-
-        resetState();
         CheckCoresLoadedTask task = new CheckCoresLoadedTask(indexUrlMap, isCheckingAfterCrash);
         HttpTask.executeTask(task);
     }
@@ -400,13 +414,6 @@ final public class SRCH2Engine {
         return isReady.get();
     }
 
-    private static void resetState() {
-        Cat.d(TAG, "resetState");
-        isReady.set(false);
-        lastQuery.set(null);
-        isChanged.set(false);
-    }
-
     /**
      * Tells the <code>SRCH2Engine</code> to bring the SRCH2 search server to a stop. The SRCH2
      * search server will not halt immediately, but instead wait a short duration in case the user
@@ -424,78 +431,31 @@ final public class SRCH2Engine {
         if (!isStarted) {
             return;
         }
-
-        if (onPauseHasCompleted != null) {
-            onPauseHasCompleted.set(false);
-        }
-        try {
-            ArrayList<Indexable> dirtyIndexList = new ArrayList<Indexable>();
-            for (IndexableCore idx : conf.indexableMap.values()) {
-                if (Indexable.class.isAssignableFrom(idx.getClass())) {
-                    Cat.d(TAG, "indexable " + idx.getIndexName() + " was dirty adding to save task");
-                    dirtyIndexList.add((Indexable) idx);
-                } else {
-                    Cat.d(TAG, "indexable " + idx.getIndexName() + " was not dirty NOT adding to save task");
-                }
-            }
-            if (dirtyIndexList.size() > 0 && !isDebugAndTestingMode) {
-                MultiSaveTask mst = new MultiSaveTask(dirtyIndexList);
-                HttpTask.executeTask(mst);
-            }
-            resetState();
-            if (searchResultsUiCallbackHandler != null) {
-                searchResultsUiCallbackHandler = null;
-            }
-            stopExecutable(context);
-            isStarted = false;
-            unregisterReciever(context);
-        } finally {
-            onPauseHasCompleted.set(true);
-        }
-
-    }
-
-
-
-    public static void onStop() {
-        Cat.d(TAG, "onStop");
-        if (onPauseHasCompleted != null) {
-            // onResume was called
-            Thread t = new Thread(new Runnable() {
-                @Override
-                public void run() {
-                    Cat.d(TAG, "onStop running thread");
-                    while (!onPauseHasCompleted.get()) {
-                        Cat.d(TAG, "onStop running thread while pause has not completed");
-                        try {
-                            Thread.currentThread().sleep(50);
-                        } catch (InterruptedException e) {
-                            break;
-                        }
-                    }
-                    Cat.d(TAG, "onStop running thread on pause has completed");
-                    if (searchResultsObserver != null) {
-                        searchResultsObserver = null;
-                    }
-
-                    if (getConfig().indexableMap != null && getConfig().indexableMap.size() > 0) {
-                        getConfig().indexableMap.clear();
-                    }
-                    onPauseHasCompleted = null;
-                }
-            });
-            t.start();
-        } else {
-            // onResume was not called but onStart may have been, so clear the maps and anything else
-            Cat.d(TAG, "onStop - onStart was not called");
-            if (searchResultsObserver != null) {
-                searchResultsObserver = null;
-            }
-
-            if (getConfig().indexableMap != null && getConfig().indexableMap.size() > 0) {
-                getConfig().indexableMap.clear();
+        ArrayList<Indexable> dirtyIndexList = new ArrayList<Indexable>();
+        for (IndexableCore idx : conf.indexableMap.values()) {
+            if (Indexable.class.isAssignableFrom(idx.getClass())) {
+                Cat.d(TAG, "indexable " + idx.getIndexName() + " was dirty adding to save task");
+                dirtyIndexList.add((Indexable) idx);
+            } else {
+                Cat.d(TAG, "indexable " + idx.getIndexName() + " was not dirty NOT adding to save task");
             }
         }
+        if (dirtyIndexList.size() > 0 && !isDebugAndTestingMode) {
+            MultiSaveTask mst = new MultiSaveTask(dirtyIndexList);
+            HttpTask.executeTask(mst);
+        }
+        if (searchResultsUiCallbackHandler != null) {
+            searchResultsUiCallbackHandler = null;
+        }
+        if (searchResultsObserver != null) {
+            searchResultsObserver = null;
+        }
+        if (getConfig().indexableMap != null && getConfig().indexableMap.size() > 0) {
+            getConfig().indexableMap.clear();
+        }
+        stopExecutable(context);
+        unregisterReciever(context);
+        isStarted = false;
     }
 
     private static void stopExecutable(final Context context) {
@@ -519,32 +479,12 @@ final public class SRCH2Engine {
     static void reQueryLastOne() {
         Cat.d(TAG, "reQueryLastOne");
         IndexQueryPair pair = lastQuery.get();
-        if (pair == null || pair.query == null || pair.query.length() < 1) {
-            final HashMap<String, ArrayList<JSONObject>> emptyResultSet = SearchTask.getEmptyResultSet(conf.indexableMap.values());
-            final String JSONresponse = SearchTask.getEmptyResultJSONResponse(conf.indexableMap.values());
-            if (searchResultsObserver != null) {
-                if (SRCH2Engine.searchResultsPublishedToUiThread) {
-                    Handler uiHandler = SRCH2Engine.getSearchResultsUiCallbackHandler();
-                    if (uiHandler != null) {
-                        uiHandler.post(new Runnable() {
-                            @Override
-                            public void run() {
-                                searchResultsObserver.onNewSearchResults(200,
-                                        JSONresponse, emptyResultSet);
-                            }
-                        });
-                    }
-                } else {
-                    searchResultsObserver.onNewSearchResults(200,
-                            JSONresponse, emptyResultSet);
-                }
+        if (pair != null && pair.query != null && pair.query.length() > 0) {
+            if (pair.indexName != null) {
+                getConfig().indexableMap.get(pair.indexName).search(pair.query);
+            } else {
+                searchAllRawString(pair.query);
             }
-            return;
-        }
-        if (pair.index == null) {
-            SRCH2Engine.searchAllRawString(pair.query);
-        } else {
-            pair.index.searchRawString(pair.query);
         }
     }
 
@@ -561,7 +501,7 @@ final public class SRCH2Engine {
     /**
      * Searches all <code>Indexable</code>s and <code>SQLiteIndexable</code>s that were initialized
      * when included in the argument set
-     * of the method call {@link #onStart()} that is,
+     * of the method call {@link #initialize()} that is,
      * this method makes searching
      * all indexes at once easy.
      * <br><br>
@@ -572,7 +512,7 @@ final public class SRCH2Engine {
      * JSONObject</code>s as they were originally inserted (and updated).
      * <br><br>
      * This method will throw exceptions if the <code>searchInput</code> is null or if
-     * {@link #onStart()} has not been called; or if the value of
+     * {@link #initialize()} has not been called; or if the value of
      * <code>searchInput</code> is null or has a length less than one.
      * @param searchInput the textual input to search on
      */
@@ -586,7 +526,7 @@ final public class SRCH2Engine {
     /**
      * Performs an advanced searches on all <code>Indexable</code>s and <code>SQLiteIndexable</code>s
      * that were initialized when included
-     * in the argument set of the method call {@link #onStart()} ; that is, this method
+     * in the argument set of the method call {@link #initialize()} ; that is, this method
      * makes performing an advanced search on all indexes at once easy.
      * <br><br>
      * When the SRCH2 server is finished performing the search task, the method
@@ -596,7 +536,7 @@ final public class SRCH2Engine {
      * JSONObject</code>s as they were originally inserted (and updated).
      * <br><br>
      * This method will throw exceptions if the <code>query</code> forming the advanced search is null;
-     * or if {@link #onStart()} has not been called; or if the value  of
+     * or if {@link #initialize()} has not been called; or if the value  of
      * <code>query</code> is null;
      * @param query the formation of the advanced search
      */
@@ -612,7 +552,7 @@ final public class SRCH2Engine {
      * <code>indexName</code> as it was defined in {@link Indexable#getIndexName()}. This method is a
      * convenience getter, offering static access
      * to the <code>Indexable</code> references as they were supplied to
-     * {@link SRCH2Engine#onStart()}:
+     * {@link SRCH2Engine#initialize()}:
      * by obtaining the <code>Indexable</code>, its methods can be called to search, insert, update or
      * perform any other <code>Indexable</code> function.
      * @param indexName the name of the index as defined by the <code>Indexable</code> implementation of <code>getIndexName()</code>
@@ -628,7 +568,7 @@ final public class SRCH2Engine {
      * <code>indexName</code> as it was defined in the {@link SQLiteIndexable#getIndexName()}.
      * This method is a convenience getter, offering static access
      * to the <code>SQLiteIndexable</code> references as they were supplied to
-     * {@link SRCH2Engine#onStart()}.
+     * {@link SRCH2Engine#initialize()}.
      * @param indexName the name of the index as defined by the <code>SQliteIndexable</code> implementation of <code>getIndexName()</code>
      * @return the <code>SQLiteIndexable</code> representing the index with the specified <code>indexName</code>
      */
@@ -726,12 +666,12 @@ final public class SRCH2Engine {
     }
 
     static class IndexQueryPair {
-        public IndexInternal index = null;
+        public String indexName = null;
         public String query = null;
 
-        public IndexQueryPair(IndexInternal index, String query) {
+        public IndexQueryPair(String indexName, String query) {
             Cat.d(TAG, "IndexQueryPair()");
-            this.index = index;
+            this.indexName = indexName;
             this.query = query;
         }
     }

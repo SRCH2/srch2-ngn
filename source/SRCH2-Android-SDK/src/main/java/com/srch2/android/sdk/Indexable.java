@@ -32,7 +32,7 @@ import org.json.JSONObject;
  * There is also one method that returns the number of records in the index: {@link #getRecordCount()}. The
  * value this method will return will be updated each time the SRCH2 search server comes online and each time an
  * insert, upsert or delete occurs. Note it can return {@link #INDEX_RECORD_COUNT_NOT_SET} if the SRCH2 search server
- * is not online such as when {@link com.srch2.android.sdk.SRCH2Engine#onStart()}
+ * is not online such as when {@link com.srch2.android.sdk.SRCH2Engine#initialize()}
  * has been called but {@link com.srch2.android.sdk.SRCH2Engine#onResume(android.content.Context)} has not yet been
  * called).
  */
