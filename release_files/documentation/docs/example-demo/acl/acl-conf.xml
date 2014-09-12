@@ -13,16 +13,15 @@
 
 <config>
     <srch2Home>./</srch2Home>
-    <licenseFile>../../conf/srch2_license_key.txt</licenseFile>
     <listeningHostname>0.0.0.0</listeningHostname>
-    <listeningPort>8087</listeningPort>
+    <listeningPort>8081</listeningPort>
 
     <maxSearchThreads>2</maxSearchThreads>
 
-    <cores defaultCoreName="Product">
-            <core name="Product">
-                <dataFile>Product.json</dataFile>
-                <dataDir>productData</dataDir>
+    <cores defaultCoreName="product">
+            <core name="product">
+                <dataFile>product.json</dataFile>
+                <dataDir>product-indexes</dataDir>
                 <dataSourceType>1</dataSourceType>
                 <indexConfig>
                     <indexType>0</indexType>
@@ -54,11 +53,14 @@
                 <schema>
                     <fields>
 			<field name="pid" type="text"/>
-      			<field name="name" type="text" indexed="true" acl="true"/>
-       			<field name="description" type="text" indexed="true" acl="true"/>
+      			<field name="name" type="text" indexed="true"
+      			acl="true"/>
+       			<field name="description" type="text"
+      			indexed="true" acl="true"/>
        			<field name="price" type="integer" indexed="false" required="true" refining="true"/>
       			<field name="manufacturer" type="text" indexed="true" refining="true"/>
-       			<field name="state" type="text" refining="true" indexed="false" acl="true"/>
+       			<field name="state" type="text"
+      			refining="true" indexed="false" acl="true"/>
                     </fields>
 
                     <uniqueKey>pid</uniqueKey>
@@ -69,9 +71,17 @@
                         <facetField name="price"  facetType="range" facetStart="100" facetEnd="2000"
                             facetGap="10"/>
                     </facetFields>
+                    
+                    <types>
+                        <fieldType name="text_en">
+                            <analyzer>
+                                <filter name="protectedKeyWordsFilter" words="srch2_protected_words.txt" />
+                            </analyzer>
+                        </fieldType>
+                    </types>
 
+                    <attributeAclFile>./attribute-acl-product-user.json</attributeAclFile>
                 </schema>
-		<attributeAclFile>./attribute-acl-data.json</attributeAclFile>
                 <updatehandler>
                     <maxDocs>15000000</maxDocs>
                     <maxMemory>10000000</maxMemory>
@@ -79,16 +89,12 @@
                         <mergeEveryNSeconds>10</mergeEveryNSeconds>
                         <mergeEveryMWrites>10</mergeEveryMWrites>
                     </mergePolicy>
-                    <updateLog>
-                        <logLevel>3</logLevel>
-                        <accessLogFile>srch2-log.txt</accessLogFile>
-                    </updateLog>
                 </updatehandler>
             </core>
 
-	    <core name="User">
-                <dataFile>User.json</dataFile>
-                <dataDir>userData</dataDir>
+	    <core name="user">
+                <dataFile>user.json</dataFile>
+                <dataDir>user-indexes</dataDir>
                 <dataSourceType>1</dataSourceType>
                 <indexConfig>
                     <indexType>0</indexType>
@@ -123,6 +129,14 @@
                     </fields>
 
                     <uniqueKey>uid</uniqueKey>
+                   
+                    <types>
+                        <fieldType name="text_en">
+                            <analyzer>
+                                <filter name="protectedKeyWordsFilter" words="srch2_protected_words.txt" />
+                            </analyzer>
+                        </fieldType>
+                    </types>                 
                 </schema>
                 <updatehandler>
                     <maxDocs>15000000</maxDocs>
@@ -131,21 +145,21 @@
                         <mergeEveryNSeconds>10</mergeEveryNSeconds>
                         <mergeEveryMWrites>10</mergeEveryMWrites>
                     </mergePolicy>
-                    <updateLog>
-                        <logLevel>3</logLevel>
-                        <accessLogFile>srch2-log.txt</accessLogFile>
-                    </updateLog>
                 </updatehandler>
             </core>
-
     </cores>
 
     <access-controls>
         <access-control>
-            <resourceCore>Product</resourceCore>
-     	    <roleCore>User</roleCore>
-            <aclDataFile>record-acl-product-user.json</aclDataFile>
-   </access-control>
-</access-controls>
+            <resourceCore>product</resourceCore>
+     	    <roleCore>user</roleCore>
+            <recordAclFile>record-acl-product-user.json</recordAclFile>
+        </access-control>
+    </access-controls>
+
+    <updateLog>
+        <logLevel>3</logLevel>
+        <accessLogFile>srch2-log.txt</accessLogFile>
+    </updateLog>   
 
 </config>

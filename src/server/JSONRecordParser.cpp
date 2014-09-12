@@ -802,7 +802,6 @@ unsigned DaemonDataSource::createNewIndexFromFile(srch2is::Indexer* indexer, Sch
             }
         }
     }
-    Logger::console("                                                     \r");
     Logger::console("Indexed %d / %d records.", indexedRecordsCount, lineCounter);
     Logger::console("Finalizing ...");
     in.close();
@@ -813,8 +812,8 @@ unsigned DaemonDataSource::createNewIndexFromFile(srch2is::Indexer* indexer, Sch
 }
 
 // Each line of the file is like this:
-//  {"resourceId”: "1234", "roleId”: ["33", "45"]}
-void DaemonDataSource::addAccessControlsFromFile(srch2is::Indexer *indexer,
+//  {"resourceId": "1234", "roleId": ["33", "45"]}
+void DaemonDataSource::addRecordAclFile(srch2is::Indexer *indexer,
                 const CoreInfo_t *indexDataContainerConf, srch2is::Indexer *roleCoreIndexer){
 	AccessControlInfo* accessControl = indexDataContainerConf->getAccessControlInfo();
 	if(accessControl == NULL)
@@ -823,7 +822,7 @@ void DaemonDataSource::addAccessControlsFromFile(srch2is::Indexer *indexer,
 	string filePath = accessControl->aclDataFileName;
 	ifstream in(filePath.c_str());
 	if (in.fail()){
-		Logger::error("Access-Control DataSource file not found at: %s", filePath.c_str());
+		Logger::error("Record-based ACL file not found at: %s", filePath.c_str());
 		return;
 	}
 
@@ -876,7 +875,7 @@ void DaemonDataSource::addAccessControlsFromFile(srch2is::Indexer *indexer,
 					}
 				}
 				if(roleIdsExist){
-					indexer->aclModifyRoles(resourcePrimaryKeyID, roleIds, srch2::instantsearch::AddRoles);
+					indexer->aclRecordModifyRoles(resourcePrimaryKeyID, roleIds, srch2::instantsearch::AddRoles);
 					indexedRecordsCount++;
 				}
 			}

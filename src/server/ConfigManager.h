@@ -557,7 +557,7 @@ private:
     static const char* const multipleAccessControlString;
     static const char* const resourceCore;
     static const char* const roleCore;
-    static const char* const accessControlDataFile;
+    static const char* const recordAclFile;
     static const char* const aclRoleId;
     static const char* const aclResourceId;
 

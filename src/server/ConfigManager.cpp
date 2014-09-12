@@ -169,7 +169,7 @@ const char* const ConfigManager::snippetSize = "snippetsize";
 const char* const ConfigManager::multipleAccessControlString = "access-controls";
 const char* const ConfigManager::resourceCore = "resourcecore";
 const char* const ConfigManager::roleCore = "rolecore";
-const char* const ConfigManager::accessControlDataFile = "acldatafile";
+const char* const ConfigManager::recordAclFile = "recordaclfile";
 const char* const ConfigManager::aclRoleId = "roleId";
 const char* const ConfigManager::aclResourceId = "resourceId";
 
@@ -901,7 +901,7 @@ void ConfigManager::parseSingleAccessControl(const xml_node &parentNode,
 			}
 			AccessControlInfo* newAccessControlInfo = new AccessControlInfo(resourceCoreName, roleCoreName);
 			// 3- extract the name of the data file for bulk load -->    <aclDataFile> data.json </aclDataFile>
-			xml_node dataFileNode = parentNode.child(accessControlDataFile);
+			xml_node dataFileNode = parentNode.child(recordAclFile);
 			if(dataFileNode && dataFileNode.text()){
 				newAccessControlInfo->aclDataFileName = srch2Home + string("")
                             + (*resourceIt).second->getName() + string("/") + string(dataFileNode.text().get());
@@ -1747,7 +1747,7 @@ void ConfigManager::parseSchemaType(const xml_node &childNode,
             }
         }
     } else {
-        Logger::warn("In core %s : Analyzer Filters will be disabled.", coreInfo->name.c_str());
+        Logger::warn("In core %s : Inside <schema>, <types> tag is missing therefore analyzer filters will be disabled.", coreInfo->name.c_str());
     }
 
 }
@@ -1925,7 +1925,13 @@ void ConfigManager::parseSchema(const xml_node &schemaNode,
     xml_node aclFileNode = schemaNode.child(attributeAclFileString);
     if (aclFileNode && aclFileNode.text()) {
     	string tempString = aclFileNode.text().get();
-    	coreInfo->attrAclFilePath = boost::filesystem::path(getSrch2Home() + tempString).normalize().string();
+    	string attrAclFilePath;
+    	if (coreInfo->getName() == defaultCore) {
+    		attrAclFilePath = getSrch2Home() + tempString;
+    	} else {
+    		attrAclFilePath = getSrch2Home() + "/" + coreInfo->getName() + "/" + tempString;
+    	}
+    	coreInfo->attrAclFilePath = boost::filesystem::path(attrAclFilePath).normalize().string();
     }
 
     /*
@@ -2216,50 +2222,87 @@ void ConfigManager::parse(const pugi::xml_document& configDoc,
     xml_node childNode = configNode.child(srch2HomeString);
     if (childNode && childNode.text()) { // checks if the config/srch2Home has any text in it or not
         temporaryString = string(childNode.text().get());
-        trimSpacesFromValue(temporaryString, srch2HomeString, parseWarnings,
-                "/");
-        srch2Home = temporaryString;
+        trimSpacesFromValue(temporaryString, srch2HomeString, parseWarnings);
+        int lastPosition = temporaryString.length() - 1;
+
+        //If config file has "/" in srch2Home we don't append "/", otherwise we do
+        if(temporaryString.length() > 0 && temporaryString[lastPosition] == '/')
+            srch2Home = temporaryString;
+        else
+            srch2Home = temporaryString + "/";
     } else {
         Logger::error("srch2Home is not set.");
         configSuccess = false;
         return;
     }
 
-      // logLevel is optional. To make loglevel optional the llflag's initial value has been set to false.
+      // logLevel is optional.
       // llflag is false, if log level is not set in config file or wrong value is given by the user, otherwise llflag remains true.
       this->loglevel = Logger::SRCH2_LOG_INFO;
-      xml_node updateLog = configNode.child(updateLogString);
-      childNode = updateLog.child(logLevelString);
-      bool llflag = false;
-      if (childNode && childNode.text()) {
-          string ll = childNode.text().get();
-          if (this->isValidLogLevel(ll)) {
-              this->loglevel =
-                      static_cast<Logger::LogLevel>(childNode.text().as_int());
-              llflag = true;
-          } else {
-              llflag = false;
-          }
-      }
-      if (!llflag) {
-          Logger::warn("Log Level is either not set or not set correctly, so the engine will use the"
-                          " default value 3");
-      }
-
       this->httpServerAccessLogFile = this->srch2Home + "logs" + "/" + "srch2-log.txt";
-      // accessLogFile is optional. The default value is "srch2Home/logs/srch2-log.txt"
-      childNode = updateLog.child(accessLogFileString);
-      if (childNode && childNode.text()) {
-          temporaryString = string(childNode.text().get());
-          trimSpacesFromValue(temporaryString, updateLogString, parseWarnings);
-          if(temporaryString != ""){
-              this->httpServerAccessLogFile = this->srch2Home
-                       + temporaryString;
+      xml_node updateLog = configNode.child(updateLogString);
+
+      //If <updateLog> exists, check for <logLevel> and <accessLogFile>
+      if(updateLog){
+
+          //To check if log level has been set or not, or if it is invalid, we use llflag
+          bool llflag = false;
+          childNode = updateLog.child(logLevelString);
+          if (childNode && childNode.text()) {
+              string ll = childNode.text().get();
+              if (this->isValidLogLevel(ll)) {
+                  this->loglevel =
+                          static_cast<Logger::LogLevel>(childNode.text().as_int());
+                  llflag = true;
+              } else {
+                  llflag = false;
+              }
           }
-      } else {
+          if (!llflag) {
+              Logger::warn("Log Level is not set, so the engine will use the"
+                              " default value 3");
+          }
+
+          // accessLogFile is optional. The default value is "srch2Home/logs/srch2-log.txt"
+          childNode = updateLog.child(accessLogFileString);
+          if (childNode && childNode.text()) {
+              temporaryString = string(childNode.text().get());
+              trimSpacesFromValue(temporaryString, updateLogString, parseWarnings);
+              if(temporaryString != ""){
+                  this->httpServerAccessLogFile = this->srch2Home
+                           + temporaryString;
+              }
+          } else {
+              //When srch2Home is "." or "./" warning message will be "httpServerAccessLogFile is not set, so the engine will use default location ./logs/srch2-log.txt"
+              string warning = "httpServerAccessLogFile is not set, so the engine will use default location ";
+              warning = warning + this->srch2Home + "logs" + "/" + "srch2-log.txt";
+              Logger::warn(warning.c_str());
+          }
+      }
+      else{
+          Logger::warn("<updateLog> is missing under <config> in configuration file.");
+
+          //Display warning message about default log file being used by engine
           string warning = "httpServerAccessLogFile is not set, so the engine will use default location ";
-          warning = warning + this->srch2Home + "/" + "logs" + "/" + "srch2-log.txt";
+          warning = warning + this->srch2Home + "logs" + "/" + "srch2-log.txt";
           Logger::warn(warning.c_str());
+
+          //Display warning message about default log level being used by engine
+          Logger::warn("Log Level is not set, so the engine will use the"
+                          " default value 3");
+
+          //This displays warning message if <updateLog> is present inside <cores>
+          xml_node coresTag = configNode.child("cores");
+          if(coresTag){
+              for(xml_node coreTag = coresTag.first_child(); coreTag; coreTag = coreTag.next_sibling()){
+                  xml_node updateHandlerTag = coreTag.child(updateHandlerString);
+                  xml_node updateLogTag = updateHandlerTag.child(updateLogString);
+                  if(updateLogTag){
+                      Logger::warn("<updateLog> should not be inside <core>. Please move it outside <core> and under <config>.");
+                      break;
+                  }
+              }
+          }
       }
 
     string authKey = "";

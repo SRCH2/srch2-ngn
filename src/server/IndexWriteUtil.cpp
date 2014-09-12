@@ -279,12 +279,12 @@ Json::Value IndexWriteUtil::_commitCommand(Indexer *indexer,
 	return response;
 }
 
-Json::Value IndexWriteUtil::_aclEditRoles(Indexer *indexer,
+Json::Value IndexWriteUtil::_aclRecordModifyRoles(Indexer *indexer,
 		string &primaryKeyID, vector<string> &roleIds,
 		srch2::instantsearch::RecordAclCommandType commandType) {
 
 	Json::Value response(Json::objectValue);
-	srch2::instantsearch::INDEXWRITE_RETVAL returnValue = indexer->aclModifyRoles(
+	srch2::instantsearch::INDEXWRITE_RETVAL returnValue = indexer->aclRecordModifyRoles(
 			primaryKeyID, roleIds, commandType);
 
 	switch (commandType) {
@@ -349,7 +349,7 @@ Json::Value IndexWriteUtil::_aclModifyRecordsOfRole(Indexer *indexer, string &ro
 	roleIds.push_back(roleId);
 	srch2::instantsearch::INDEXWRITE_RETVAL returnValue;
 	for(unsigned i = 0 ; i < resourceIds.size(); ++i){
-		returnValue = indexer->aclModifyRoles(resourceIds[i], roleIds, commandType);
+		returnValue = indexer->aclRecordModifyRoles(resourceIds[i], roleIds, commandType);
 		switch(returnValue){
 		case srch2::instantsearch::OP_SUCCESS:
 			break;

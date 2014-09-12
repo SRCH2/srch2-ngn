@@ -853,7 +853,7 @@ void HTTPRequestHandler::addRoleIdsToRecord(vector<string> &roleIds, Srch2Server
 
 // this function gets the acl command and does the appropriate operations
 // the acl command could be add, append or delete
-void HTTPRequestHandler::aclEditRolesOfRecord(evhttp_request *req, Srch2Server *server, srch2::instantsearch::RecordAclCommandType commandType){
+void HTTPRequestHandler::aclModifyRolesOfRecord(evhttp_request *req, Srch2Server *server, srch2::instantsearch::RecordAclCommandType commandType){
 
 	Json::Value response(Json::objectValue);
 	bool isSuccess = true;
@@ -915,7 +915,7 @@ void HTTPRequestHandler::aclEditRolesOfRecord(evhttp_request *req, Srch2Server *
 						}
 
 						if(roleIds.size() != 0){
-							log_str << global_customized_writer.write(IndexWriteUtil::_aclEditRoles(server->indexer, primaryKeyID, roleIds, commandType));
+							log_str << global_customized_writer.write(IndexWriteUtil::_aclRecordModifyRoles(server->indexer, primaryKeyID, roleIds, commandType));
 						}
 					}
 
@@ -955,7 +955,7 @@ void HTTPRequestHandler::aclEditRolesOfRecord(evhttp_request *req, Srch2Server *
 					}
 
 					if(roleIds.size() != 0){
-						log_str << global_customized_writer.write(IndexWriteUtil::_aclEditRoles(server->indexer, primaryKeyID, roleIds, commandType));
+						log_str << global_customized_writer.write(IndexWriteUtil::_aclRecordModifyRoles(server->indexer, primaryKeyID, roleIds, commandType));
 					}
 				}
 				edit_responses.append(log_str.str());
@@ -1131,26 +1131,26 @@ void HTTPRequestHandler::aclModifyRecordsOfRoles(evhttp_request *req, Srch2Serve
 
 // overwrites role ids in a record's access list
 // example : Suppose we have a resource core called "product" with a primary key attribute called "pid then the query is like:
-// curl "http://localhost:8081/product/aclRecordRoleAdd" -i -X PUT -d '{“pid”: “1234", “roleId”: ["33", "45"]}'
+// curl "http://localhost:8081/product/aclRecordRoleAdd" -i -X PUT -d '{���pid���: ���1234", ���roleId���: ["33", "45"]}'
 //
 void HTTPRequestHandler::aclAddRolesForRecord(evhttp_request *req, Srch2Server *server){
-	aclEditRolesOfRecord(req, server, srch2::instantsearch::AddRoles);
+	aclModifyRolesOfRecord(req, server, srch2::instantsearch::AddRoles);
 }
 
 // add role ids to a record
 // example : Suppose we have a resource core called "product" with a primary key attribute called "pid then the query is like:
-// curl "http://localhost:8081/product/aclRecordRoleAppend" -i -X PUT -d '{“pid”: “1234", “roleId”: ["33", "45"]}'
+// curl "http://localhost:8081/product/aclRecordRoleAppend" -i -X PUT -d '{���pid���: ���1234", ���roleId���: ["33", "45"]}'
 //
 void HTTPRequestHandler::aclAppendRolesForRecord(evhttp_request *req, Srch2Server *server){
-	aclEditRolesOfRecord(req, server, srch2::instantsearch::AppendRoles);
+	aclModifyRolesOfRecord(req, server, srch2::instantsearch::AppendRoles);
 }
 
 // delete role ids from a records access list
 // example : Suppose we have a resource core called "product" with a primary key attribute called "pid then the query is like:
-// curl "http://localhost:8081/product/aclRecordRoleDelete" -i -X PUT -d '{“pid”: “1234", “roleId”: ["33", "45"]}'
+// curl "http://localhost:8081/product/aclRecordRoleDelete" -i -X PUT -d '{���pid���: ���1234", ���roleId���: ["33", "45"]}'
 //
 void HTTPRequestHandler::aclDeleteRolesForRecord(evhttp_request *req, Srch2Server *server){
-	aclEditRolesOfRecord(req, server, srch2::instantsearch::DeleteRoles);
+	aclModifyRolesOfRecord(req, server, srch2::instantsearch::DeleteRoles);
 }
 
 
