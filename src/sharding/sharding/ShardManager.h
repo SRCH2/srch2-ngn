@@ -48,7 +48,9 @@ public:
 	~ShardManager();
 	void start();
 	void save(evhttp_request *req);
-	void shutdown();
+	void shutdown(evhttp_request *req);
+
+	void _shutdown();
 
 	// sends this sharding notification to destination using TM
 	bool send(ShardingNotification * notification);

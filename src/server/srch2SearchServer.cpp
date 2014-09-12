@@ -426,7 +426,7 @@ static void cb_shutdown(evhttp_request *req, void *arg) {
 
 	try {
 //		dpExternalAndCoreId->dpExternal->externalResetLogCommand(req, dpExternalAndCoreId->coreId);
-		srch2http::ShardManager::getShardManager()->shutdown();
+		srch2http::ShardManager::getShardManager()->shutdown(req);
 	} catch (exception& e) {
 		// exception caught
 		Logger::error(e.what());

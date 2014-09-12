@@ -8,6 +8,7 @@
 #include "./metadata_manager/Cluster.h"
 #include "./metadata_manager/MetadataInitializer.h"
 #include "./cluster_operations/ClusterSaveOperation.h"
+#include "./cluster_operations/ClusterShutdownOperation.h"
 #include "./notifications/Notification.h"
 #include "./notifications/NewNodeLockNotification.h"
 #include "./notifications/CommitNotification.h"
@@ -222,8 +223,28 @@ void ShardManager::save(evhttp_request *req){
  * Shuts the cluster down.
  * In this process, we first save all the indices and the cluster metadata and then shut the entire cluster down.
  */
-void ShardManager::shutdown(){
-	srch2::util::Logger::console("Cluster shutting down ...");
+void ShardManager::shutdown(evhttp_request *req){
+	boost::unique_lock<boost::mutex> shardManagerGlobalLock(shardManagerGlobalMutex);
+	srch2::util::Logger::console("Shutting down the cluster ...");
+    switch (req->type) {
+    case EVHTTP_REQ_PUT: {
+    	ClusterShutdownOperation * shutdownOperation = new ClusterShutdownOperation();
+    	this->stateMachine->registerOperation(shutdownOperation);
+        break;
+    }
+    default: {
+        bmhelper_evhttp_send_reply2(req, HTTP_BADREQUEST, "INVALID REQUEST",
+                "{\"error\":\"The request has an invalid or missing argument. See Srch2 API documentation for details.\"}");
+        Logger::error(
+                "The request has an invalid or missing argument. See Srch2 API documentation for details");
+        break;
+    }
+    };
+}
+
+void ShardManager::_shutdown(){
+	exit(0);
+	//TODO
 }
 
 // sends this sharding notification to destination using TM
