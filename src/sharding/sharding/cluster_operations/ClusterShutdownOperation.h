@@ -26,7 +26,9 @@ namespace httpwrapper {
 class ClusterShutdownOperation : public OperationState {
 public:
 
-	ClusterShutdownOperation():OperationState(this->getOperationId()){}
+	ClusterShutdownOperation():OperationState(this->getOperationId()){
+		this->saveOperation = NULL;
+	}
 	~ClusterShutdownOperation(){}
 
 private:
