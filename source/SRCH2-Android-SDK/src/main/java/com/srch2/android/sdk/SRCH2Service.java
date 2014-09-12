@@ -24,7 +24,7 @@ import java.util.concurrent.atomic.AtomicBoolean;
  * process that the SRCH2 search server resides in. If you are using the {@code SRCH2-Android-SDK.aar} this
  * service will be automatically included in the application's manifest. The life cycle of this remote service
  * is controlled by broadcast receivers, and it is not bound to by the {@code SRCH2Engine}. Users of the
- * SRCH2-Android-SDK should have no reason to modify this service in any way.
+ * SRCH2 Android SDK should have no reason to modify this service in any way.
  */
 final public class SRCH2Service extends Service implements AutoPing.ValidatePingCommandCallback {
 

@@ -16,34 +16,96 @@ import java.util.concurrent.ExecutionException;
  * SRCH2 Android SDK should implement a separate subclass instance of this class. This class only contains
  * methods for searching the data in the SQLite table as the SRCH2 search server will automatically observe
  * data content in the database's table. Note that it is
- * always possible to retrieve a reference to a specific <code>SQLiteIndexable</code> from the static method
- * {@link com.srch2.android.sdk.SRCH2Engine#getSQLiteIndex(String)}  where <code>
- * indexName</code> matches the return value of {@link #getIndexName()}.
+ * always possible to retrieve a reference to a specific {@code SQLiteIndexable} from the static method
+ * {@link com.srch2.android.sdk.SRCH2Engine#getSQLiteIndex(String)}  where {@code 
+ * indexName} matches the return value of {@link #getIndexName()}.
  * <br><br>
- * <b>For each implementation of this class, it is necessary</b> to override the four methods:
- * {@link #getIndexName()} and {@link #getSchema()} which determine the basic configuration for the index
- * as it resides in the SRCH2 search server; additionally, {@link #getDatabaseName()} and {@link #getTableName()}
- * must be overridden returning the values as they are used in the {@link android.database.sqlite.SQLiteOpenHelper}
- * instance to create the database and table.
+ * Each {@code Indexable } instance should be registered prior to calling
+ * {@link com.srch2.android.sdk.SRCH2Engine#onResume(android.content.Context)} by calling
+ * {@link com.srch2.android.sdk.SRCH2Engine#setSQLiteIndexables(SQLiteIndexable, SQLiteIndexable...)} and passing in all
+ * {@code SQLiteIndexable } instances.
  * <br><br>
- * In addition, each implementation can optionally chose to override the methods {@link #getTopK()}
- * (which sets the number of search results returned per search) and {@link #getFuzzinessSimilarityThreshold()}
- * (which determines the number of wildcard substitutions that can occur per search input string). If
- * not overridden, these will take the default values {@link #DEFAULT_NUMBER_OF_SEARCH_RESULTS_TO_RETURN_AKA_TOPK} and
- * {@link #DEFAULT_FUZZINESS_SIMILARITY_THRESHOLD} respectively.
+ * For each implementation of this class, it is necessary to override the following methods:
+ * <br>
+ * &nbsp;&nbsp;&nbsp;&nbsp;{@link #getIndexName()} (index's handle) <br>
+ * &nbsp;&nbsp;&nbsp;&nbsp;{@link #getDatabaseName()} (name of source database) <br>
+ * &nbsp;&nbsp;&nbsp;&nbsp;{@link #getTableName()} (name of source database table) <br>
+ * &nbsp;&nbsp;&nbsp;&nbsp;{@link #getSQLiteOpenHelper()} (instance used to manage the database)
+ * <br><br>
+ * Unlike a {@code Indexable} where a {@code Schema} must be created, the {@code Schema} is generated automatically:
+ * for the specified table in the specified database, all columns of that table that are of type {@code TEXT} will
+ * be resolved as searchable fields, and all columns of type {@code REAL} or {@code INTEGER} will be resolved as
+ * refining fields. This table must contain one column that is created as the {@code PRIMARY KEY} when creating
+ * the table.
+ * <br><br>
+ * To set the {@code RecordBoostField}, field boost values, and highlighted fields use the methods:
+ * <br>
+ * &nbsp;&nbsp;&nbsp;&nbsp;{@link #getRecordBoostColumnName()} (name of column with the record boost values) <br>
+ * &nbsp;&nbsp;&nbsp;&nbsp;{@link #getColumnBoostValue(String)} (value of boost to assign to each {@code TEXT} type column) <br>
+ * &nbsp;&nbsp;&nbsp;&nbsp;{@link #getColumnIsHighlighted(String)} (whether to highlight each {@code TEXT} type column)
+ * <br><br>
+ * The first of these methods should return the name of the column that should serve as the {@link com.srch2.android.sdk.RecordBoostField}
+ * for the index this {@code Indexable} represents. The two second two methods will pass each the name of each column
+ * of type {@code TEXT} and should return the appropriate values for that column.
+ * <br><br>
+ * In addition, each implementation can customize search results from the index this {@code SQLiteIndexable} represents
+ * by optionally overriding the methods:
+ * <br>
+ * &nbsp;&nbsp;&nbsp;&nbsp;{@link #getTopK()} (number of search results) <br>
+ * &nbsp;&nbsp;&nbsp;&nbsp;{@link #getFuzzinessSimilarityThreshold()} (number of typos per search input) <br>
+ * &nbsp;&nbsp;&nbsp;&nbsp;{@link #getHighlighter()} (formatting of search results)
  * <br><br>
  * This class contains one state callback {@link #onIndexReady()} which will be triggered when the index the
- * <code>SQLiteIndexable</code> represents comes online and is available for searching the SRCH2 search server.
+ * {@code SQLiteIndexable} represents comes online and is available for searching the SRCH2 search server.
  * <br><br>
  * There is also one method that returns the number of records in the index: {@link #getRecordCount()}. The
  * value this method will return will be updated each time the SRCH2 search server comes online and each time an
  * insert, upsert or delete occurs in the original SQLite database table.
  * Note it can return {@link #INDEX_RECORD_COUNT_NOT_SET} if the SRCH2 search server
- * is not online such as when {@link com.srch2.android.sdk.SRCH2Engine#initialize()}
- * has been called but {@link com.srch2.android.sdk.SRCH2Engine#onResume(android.content.Context)} has not yet been
- * called).
+ * is not online and has not loaded the indexes into memory yet.
  */
 public abstract class SQLiteIndexable extends IndexableCore {
+
+    /**
+     * If returned from {@link #getRecordCount()} indicates this value has not yet been set.
+     * <br><br>
+     * Constant Value: {@value}
+     */
+    public static final int INDEX_RECORD_COUNT_NOT_SET = -1;
+
+    /**
+     * The JSON key to use to retrieve each original record from each {@code JSONObject } in
+     * the {@code ArrayList<JSONObject>} of the callback method
+     * {@link com.srch2.android.sdk.SearchResultsListener#onNewSearchResults(int, String, java.util.HashMap)}.
+     * <br><br>
+     * Constant Value: "{@value}"
+     */
+    public static final String SEARCH_RESULT_JSON_KEY_RECORD = "record";
+
+    /**
+     * The JSON key to use to retrieve each set of highlighted fields from each record from each {@code JSONObject} in
+     * the {@code ArrayList<JSONObject>} of the callback method
+     * {@link com.srch2.android.sdk.SearchResultsListener#onNewSearchResults(int, String, java.util.HashMap)}.
+     * <br><br>
+     * Constant Value: "{@value}"
+     */
+    public static final String SEARCH_RESULT_JSON_KEY_HIGHLIGHTED = "highlighted";
+
+    /**
+     * The default value for the numbers of search results to return per search request.
+     * <br><br>
+     * Constant Value: {@value}
+     */
+    public static final int DEFAULT_NUMBER_OF_SEARCH_RESULTS_TO_RETURN_AKA_TOPK = 10;
+
+    /**
+     * The default value for the fuzziness similarity threshold. Approximately one character
+     * per every three characters will be allowed to act as a wildcard during a search.
+     * <br><br>
+     * Constant Value: {@value}
+     */
+    public static final float DEFAULT_FUZZINESS_SIMILARITY_THRESHOLD = 0.65f;
+
 
     final Schema getSchema() {
 
@@ -145,17 +207,47 @@ public abstract class SQLiteIndexable extends IndexableCore {
     }
 
 
+    /**
+     * Determines the column that functions as the {@link com.srch2.android.sdk.RecordBoostField} for the index
+     * this {@code SQLiteIndexable} represents. This column should of type {@code INTEGER} or {@code REAL} and
+     * should contain values greater than or equal to 1 and less than 100.
+     * @return the name of the column that should serve as the {@code RecordBoostField} for the index
+     */
     public String getRecordBoostColumnName() { return null; }
 
+
+    /**
+     * Determines the field boost value for each column of type {@code TEXT} in the table. Each column of
+     * type {@code TEXT} will be resolved as a searchable field for the schema of the index this {@code SQLiteIndexable}
+     * represents: by returning an integer value for each column name of type {@code TEXT} in the table, the
+     * field's boost value can be set. This is equivalent to constructing a field using the
+     * {@link Field#createSearchablePrimaryKeyField(String, int)}; the name of the column will be passed
+     * as the argument and the boost value that column should take should be returned.
+     * <br><br>
+     * By default each column
+     * of type {@code TEXT} will receive a boost value of 1.
+     * @return the value of boost to give to the column with the name corresponding to the value of {@code textTypeColumnName} passed
+     */
     public int getColumnBoostValue(String textTypeColumnName) { return 1; }
 
+
+    /**
+     * Determines whether a column of type {@code TEXT} should be highlighted or not. This is equivalent to calling
+     * {@link com.srch2.android.sdk.Field#enableHighlighting()} on an instance of a field; the name of each column
+     * of type {@code TEXT}
+     * will be passed and whether that column should be highlighted when returned as a search result record should
+     * be returned.
+     * <br><br>
+     * By default highlighting is disabled for each column of type {@code TEXT}.
+     * @return whether to highlight the column with the name corresponding to the value of {@code textTypeColumnName} passed
+     */
     public boolean getColumnIsHighlighted(String textTypeColumnName) { return false; }
 
     /**
      * Implementing this method enables the SRCH2 search server to automatically observe data content
-     * of the table that will be used to create and update the index this <code>SQLiteIndexable</code> represents.
+     * of the table that will be used to create and update the index this {@code SQLiteIndexable} represents.
      * <br><br>
-     * The instance of the <code>SQLiteOpenHelper</code> is momentarily used to read the database table
+     * The instance of the {@code SQLiteOpenHelper} is momentarily used to read the database table
      * information when {@link SRCH2Engine#initialize()} is called; a reference is not kept: a cursor is obtained
      * to read the database information, then both the readable database and cursor are closed within milliseconds.
      * @return the SQLiteOpenHelper used to manage the database
@@ -164,7 +256,7 @@ public abstract class SQLiteIndexable extends IndexableCore {
 
     /**
      * Implementing this method enables the SRCH2 search server to automatically observe data content
-     * of the table that will be used to create and update the index this <code>SQLiteIndexable</code> represents.
+     * of the table that will be used to create and update the index this {@code SQLiteIndexable} represents.
      * <br><br>
      * <b>It should exactly match</b> the value used in the create table string.
      * @return the table name <b>exactly</b> as it was specified in the create table string
@@ -173,17 +265,17 @@ public abstract class SQLiteIndexable extends IndexableCore {
 
     /**
      * Implementing this method enables the SRCH2 search server to automatically observe data content
-     * of the table that will be used to create and update the index this <code>SQLiteIndexable</code> represents.
+     * of the table that will be used to create and update the index this {@code SQLiteIndexable} represents.
      * <br><br>
      * <b>It should exactly match</b> the value used in the super constructor call of the
      * {@link android.database.sqlite.SQLiteOpenHelper} used to manage the database.
-     * @return the database name <b>exactly</b> as it was specified in the constructor of the <code>SQLiteOpenHelper</code>
+     * @return the database name <b>exactly</b> as it was specified in the constructor of the {@code SQLiteOpenHelper}
      */
     public abstract String getDatabaseName();
 
     /**
      * Implementing this method enables the SRCH2 search server to automatically observe data content
-     * of the table that will be used to create and update the index this <code>SQLiteIndexable</code> represents.
+     * of the table that will be used to create and update the index this {@code SQLiteIndexable} represents.
      * <br><br>
      * This method (and {@link #getLongitudeColumnName()}) must be overridden if the SQLite table contains geodata
      * that is to be searched on. <b>It should exactly match</b> the value used in the CREATE TABLE string matching
@@ -197,7 +289,7 @@ public abstract class SQLiteIndexable extends IndexableCore {
 
     /**
      * Implementing this method enables the SRCH2 search server to automatically observe data content
-     * of the table that will be used to create and update the index this <code>SQLiteIndexable</code> represents.
+     * of the table that will be used to create and update the index this {@code SQLiteIndexable} represents.
      * <br><br>
      * This method (and {@link #getLatitudeColumnName()}) must be overridden if the SQLite table contains geodata
      * that is to be searched on. <b>It should exactly match</b> the value used in the CREATE TABLE string matching
@@ -477,9 +569,9 @@ public abstract class SQLiteIndexable extends IndexableCore {
 
     /**
      * Returns the number of records that are currently in the index that this
-     * <code>SQLiteIndexable</code> represents.
+     * {@code SQLiteIndexable} represents.
      * <br><br>
-     * <b>Note that this is a blocking call</b>: however it typically will block less than 50ms.
+     * <b>Note that this is a blocking call</b>: however it typically will block less than a dozen milliseconds.
      * @return the number of records in the index
      */
     public final int getRecordCount() {

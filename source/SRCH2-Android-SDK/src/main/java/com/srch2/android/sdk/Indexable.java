@@ -17,17 +17,18 @@ import org.json.JSONObject;
  * {@link com.srch2.android.sdk.SRCH2Engine#setIndexables(Indexable, Indexable...)} and passing in all
  * {@code Indexable } instances.
  * <br><br>
- * <b>For each implementation of this class, it is necessary</b> to override the two methods:
- * {@link #getIndexName()} and {@link #getSchema()} which determine the basic configuration for the index
- * as it resides in the SRCH2 search server.
+ * For each implementation of this class, it is necessary to override the two methods:<br>
+ * &nbsp;&nbsp;&nbsp;&nbsp;{@link #getIndexName()} (index's handle) <br>
+ * &nbsp;&nbsp;&nbsp;&nbsp;{@link #getSchema()} (configuration of the index)
  * <br><br>
- * In addition, each implementation can optionally chose to override the methods:
+ * In addition, each implementation can customize search results from the index this {@code Indexable} represents by
+ * optionally overriding the methods:
  * <br>
  * &nbsp;&nbsp;&nbsp;&nbsp;{@link #getTopK()} (number of search results) <br>
  * &nbsp;&nbsp;&nbsp;&nbsp;{@link #getFuzzinessSimilarityThreshold()} (number of typos per search input) <br>
  * &nbsp;&nbsp;&nbsp;&nbsp;{@link #getHighlighter()} (formatting of search results)
  * <br><br>
- * Additionally, if the following callback methods are overridden, they will be executed after their corresponding CRUD action:
+ * If the following callback methods are overridden, they will be executed after their corresponding CRUD action:
  * <br>
  * &nbsp;&nbsp;&nbsp;&nbsp;{@link #onInsertComplete(int, int, String)}<br>
  * &nbsp;&nbsp;&nbsp;&nbsp;{@link #onUpdateComplete(int, int, int, String)}<br>

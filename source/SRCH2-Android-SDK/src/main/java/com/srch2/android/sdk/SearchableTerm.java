@@ -16,10 +16,12 @@ abstract class Term {
 }
 
 /**
- * The SearchableTerm encapsulates the search string with all the advanced search
- * options. The default setting is copied from the override method from
- * <code>Indexable</code>. User can call the setting functions to override
- * the default settings.
+ * Encapsulates the search string with all the advanced search
+ * options. Enables configuring the search in way such as overriding
+ * the default field boost values and fuzziness matching threshold value.
+ * <br><br>
+ * This class is used in combination with the {@link com.srch2.android.sdk.Query} class
+ * to perform advanced searches.
  */
 final public class SearchableTerm extends Term {
 
@@ -39,11 +41,7 @@ final public class SearchableTerm extends Term {
      * Creates the term into keyword. The string passed into this function is
      * treated as a single search term. For example, if "George Lucas" is passed, the two words will be
      * treated as one word.
-     * <p/>
-     * The prefix, fuzziness, boostValue is set using the default value present
-     * in {@link Indexable}.
-     *
-     * @param keywords the search key word[s]
+     * @param keywords the search input
      */
     public SearchableTerm(String keywords) {
         checkString(keywords, "search keywords is not valid");
@@ -69,8 +67,12 @@ final public class SearchableTerm extends Term {
     }
 
     /**
-     * Overrides the prefix matching setting.
-     *
+     * Overrides the prefix matching setting. This is equivalent to having all search
+     * results be matched against the search input concatenated with the {@code |*} regex
+     * operation. Thus if the search input is "d" any word beginning with the letter d will
+     * be returned as a search result.
+     * <br><br>
+     * By default this is enabled.
      * @param isPrefixMatching disable or enable prefix match on the current query
      * @return this
      */
@@ -80,9 +82,17 @@ final public class SearchableTerm extends Term {
     }
 
     /**
-     * Overrides the default Index fuzziness similarity setting
-     *
-     * @param similarity the fuzziness similarity
+     * Overrides the fuzziness similarity threshold value. This determines the number
+     * of wildcard substitutions that can occur in the character set of the search input.
+     * A {@code similarity} value of 0 is the same forcing the search result text to exactly
+     * match the search input; a value of 1 will permit all characters to be substituted for
+     * any other character.
+     * <br><br>
+     * By default it takes the value of
+     * {@link com.srch2.android.sdk.Indexable#getFuzzinessSimilarityThreshold()} which by
+     * default
+     * approximately allows 1 in 3 characters to be substituted as wildcards.
+     * @param similarity the fuzziness similarity threshold ratio
      * @return this
      */
     public SearchableTerm enableFuzzyMatching(float similarity) {
@@ -92,9 +102,12 @@ final public class SearchableTerm extends Term {
     }
 
     /**
-     * Enable the fuzzy matching. The fuzziness similarity setting
-     * will get from the {@link Indexable#getFuzzinessSimilarityThreshold()}.
-     *
+     * Overrides the fuzziness similarity threshold value. This determines the number
+     * of wildcard substitutions that can occur in the character set of the search input.
+     * This method will takes the value set from
+     * {@link com.srch2.android.sdk.Indexable#getFuzzinessSimilarityThreshold()} which by
+     * default
+     * approximately allows 1 in 3 characters to be substituted as wildcards.
      * @return this
      */
      public SearchableTerm enableFuzzyMatching() {
@@ -103,8 +116,8 @@ final public class SearchableTerm extends Term {
     }
 
     /**
-     * Disables the fuzzy matching.
-     *
+     * Disables the fuzzy matching meaning all text in index records will have to
+     * exactly match the search input.
      * @return this
      */
     public SearchableTerm disableFuzzyMatching() {
@@ -113,10 +126,9 @@ final public class SearchableTerm extends Term {
     }
 
     /**
-     * To boost the importance of a given term.The boost value must be a
+     * Boosts the importance of a given term. The boost value must be a
      * positive integer, and its default value is 1.
-     *
-     * @param boostValue the importance of the current term.
+     * @param boostValue the importance of the current term
      * @return this
      */
     public SearchableTerm setBoostValue(int boostValue) {
@@ -129,7 +141,7 @@ final public class SearchableTerm extends Term {
     }
 
     /**
-     * It specifies a field to search on. Otherwise the query is searched on all the
+     * Specifies a field to search on. Otherwise the query is searched on all the
      * searchable fields.
      *
      * @param fieldName name of the searchable field
@@ -142,7 +154,7 @@ final public class SearchableTerm extends Term {
     }
 
     /**
-     * Create a composite term by <code>AND</code> operator.
+     * Creates a composite term by <code>AND</code> operator.
      *
      * @param rightTerm the right operand
      * @return a new CompositeTerm as a result of <code>this AND rightTerm</code>
@@ -152,7 +164,7 @@ final public class SearchableTerm extends Term {
     }
 
     /**
-     * Create a composite term by <code>AND</code> operator, inverse match the rightTerm.
+     * Creates a composite term by <code>AND</code> operator, the logical negation of the matching right term.
      *
      * @param rightTerm the right operand
      * @return a new CompositeTerm as a result of <code>this AND NOT rightTerm</code>
@@ -162,7 +174,7 @@ final public class SearchableTerm extends Term {
     }
 
     /**
-     * Create a composite term by <code>OR</code> operator.
+     * Creates a composite term by <code>OR</code> operator.
      *
      * @param rightTerm the right operand
      * @return a new CompositeTerm as a result of <code>this OR rightTerm</code>
@@ -171,7 +183,7 @@ final public class SearchableTerm extends Term {
         return new CompositeTerm(BooleanOperator.OR, this, rightTerm);
     }
     /**
-     * Create a composite term by <code>NOT</code> operator.
+     * Creates a composite term by <code>NOT</code> operator.
      *
      * @return a new CompositeTerm as a result of <code>NOT this</code>.
      */
@@ -215,7 +227,7 @@ final public class SearchableTerm extends Term {
     }
 
     /**
-     * The CompositeTerm that enable the boolean selection on the query terms.
+     * Enables boolean selection on the query terms.
      */
     final public static class CompositeTerm extends Term {
 
@@ -260,7 +272,7 @@ final public class SearchableTerm extends Term {
         }
 
         /**
-         * Create a composite term by <code>AND</code> operator
+         * Create a composite term by <code>AND</code> operator.
          *
          * @param rightTerm the right operand
          * @return a new CompositeTerm as a result of <code>this AND rightTerm</code>
@@ -271,7 +283,7 @@ final public class SearchableTerm extends Term {
         }
 
         /**
-         * Create a composite term by <code>AND NOT</code> operator. The rightTerm will be inverse matching
+         * Create a composite term by <code>AND NOT</code> operator. The rightTerm will be inverse matching.
          *
          * @param rightTerm the right operand
          * @return a new CompositeTerm as a result of <code>this AND NOT rightTerm</code>
@@ -281,7 +293,7 @@ final public class SearchableTerm extends Term {
             return new CompositeTerm(BooleanOperator.AND, this, rightTerm.UNARY_NOT());
         }
         /**
-         * Create a composite term by <code>OR</code> operator
+         * Create a composite term by <code>OR</code> operator.
          *
          * @param rightTerm the right operand
          * @return a new CompositeTerm as a result of <code>this OR rightTerm</code>
@@ -292,7 +304,7 @@ final public class SearchableTerm extends Term {
         }
 
         /**
-         * Create a composite term by <code>NOT</code> operator
+         * Create a composite term by <code>NOT</code> operator.
          *
          * @return a new CompositeTerm as a result of <code>NOT this</code>
          */

@@ -6,32 +6,32 @@ abstract class IndexableCore {
     /**
      * If returned from {@link #getRecordCount()} indicates this value has not yet been set.
      * <br><br>
-     * Has the <b>constant</b> value of <code>-1</code>.
+     * Has the <b>constant</b> value of {@code -1}.
      */
     public static final int INDEX_RECORD_COUNT_NOT_SET = -1;
 
     /**
-     * The JSON key to use to retrieve each original record from each <code>JSONObject</code> in
-     * the <code>ArrayList<JSONObject</code> of the callback method
+     * The JSON key to use to retrieve each original record from each {@code JSONObject} in
+     * the {@code ArrayList<JSONObject} of the callback method
      * {@link com.srch2.android.sdk.SearchResultsListener#onNewSearchResults(int, String, java.util.HashMap)}.
      * <br><br>
-     * Has the <b>constant</b> value '<code>record</code>';
+     * Has the <b>constant</b> value '{@code record}';
      */
     public static final String SEARCH_RESULT_JSON_KEY_RECORD = "record";
 
     /**
-     * The JSON key to use to retrieve each set of highlighted fields from each record from each <code>JSONObject</code> in
-     * the <code>ArrayList<JSONObject</code> of the callback method
+     * The JSON key to use to retrieve each set of highlighted fields from each record from each {@code JSONObject} in
+     * the {@code ArrayList<JSONObject} of the callback method
      * {@link com.srch2.android.sdk.SearchResultsListener#onNewSearchResults(int, String, java.util.HashMap)}.
      * <br><br>
-     * Has the <b>constant</b> value '<code>highlighted</code>';
+     * Has the <b>constant</b> value '{@code highlighted}';
      */
     public static final String SEARCH_RESULT_JSON_KEY_HIGHLIGHTED = "highlighted";
 
     /**
      * The default value for the numbers of search results to return per search request.
      * <br><br>
-     * Has the <b>constant</b> value of <code>10</code>.
+     * Has the <b>constant</b> value of {@code 10}.
      */
     public static final int DEFAULT_NUMBER_OF_SEARCH_RESULTS_TO_RETURN_AKA_TOPK = 10;
 
@@ -39,7 +39,7 @@ abstract class IndexableCore {
      * The default value for the fuzziness similarity threshold. Approximately one character
      * per every three characters will be allowed to act as a wildcard during a search.
      * <br><br>
-     * Has the <b>constant</b> value of <code>0.65</code>.
+     * Has the <b>constant</b> value of {@code 0.65}.
      */
     public static final float DEFAULT_FUZZINESS_SIMILARITY_THRESHOLD = 0.65f;
 
@@ -47,16 +47,16 @@ abstract class IndexableCore {
     IndexInternal indexInternal;
 
     /**
-     * Implementing this method sets the name of the index this <code>Indexable</code>
-     * or <code>SQLiteIndexable</code> represents.
-     * @return the name of the index this <code>Indexable</code> or <code>SQLiteIndexable</code> represents
+     * Implementing this method sets the name of the index this {@code Indexable}
+     * or {@code SQLiteIndexable} represents.
+     * @return the name of the index this {@code Indexable} or {@code SQLiteIndexable} represents
      */
     abstract public String getIndexName();
 
 
     /**
-     * Implementing this method sets the highlighter for this <code>Indexable</code> or
-     * <code>SQLiteIndexable</code>. If this method is not overridden the default highlighter
+     * Implementing this method sets the highlighter for this {@code Indexable} or
+     * {@code SQLiteIndexable}. If this method is not overridden the default highlighter
      * will be returned which will make prefix and fuzzy matching text bold using HTML tagging.
      * See {@link com.srch2.android.sdk.Highlighter} and {@link com.srch2.android.sdk.Highlighter.SimpleHighlighter}
      * for more information.
@@ -68,7 +68,7 @@ abstract class IndexableCore {
     int numberOfDocumentsInTheIndex = INDEX_RECORD_COUNT_NOT_SET;
     /**
      * Returns the number of records that are currently in the index that this
-     * <code>Indexable</code> or <code>SQLiteIndexable</code> represents.
+     * {@code Indexable} or {@code SQLiteIndexable} represents.
      * @return the number of records in the index
      */
     public int getRecordCount() {
@@ -84,9 +84,9 @@ abstract class IndexableCore {
      * <br><br>
      * The default value of this method, if not overridden, is ten.
      * <br><br>
-     * This method will cause an <code>IllegalArgumentException</code> to be thrown when calling
+     * This method will cause an {@code IllegalArgumentException} to be thrown when calling
      * {@link SRCH2Engine#initialize()} and passing this
-     * <code>Indexable</code> or <code>SQLiteIndexable</code> if the returned value
+     * {@code Indexable} or {@code SQLiteIndexable} if the returned value
      *  is less than one.
      * @return the number of results to return per search
      */
@@ -100,25 +100,25 @@ abstract class IndexableCore {
      * the search performed will include results as if half of the characters of the original
      * search input were replaced by wild card characters.
      * <br><br>
-     * <b>Note:</b> In the the formation of a {@link Query}, each <code>Term</code> can
+     * <b>Note:</b> In the the formation of a {@link Query}, each {@code Term} can
      * have its own fuzziness similarity threshold value set by calling the method
      * {@link SearchableTerm#enableFuzzyMatching(float)}; by default it is disabled for terms.
      * <br><br>
      * The default value of this method, if not overridden, is 0.65.
      * <br><br>
-     * This method will cause an <code>IllegalArgumentException</code> to be thrown when calling
-     * {@link SRCH2Engine#initialize()} and passing this <code>Indexable</code> or
-     * <code>SQLiteIndexable</code> if the
+     * This method will cause an {@code IllegalArgumentException} to be thrown when calling
+     * {@link SRCH2Engine#initialize()} and passing this {@code Indexable} or
+     * {@code SQLiteIndexable} if the
      * value returned is less than zero or greater than one.
      * @return the fuzziness similarity ratio to match against search keywords against
      */
     public float getFuzzinessSimilarityThreshold() { return DEFAULT_FUZZINESS_SIMILARITY_THRESHOLD; }
 
     /**
-     * Does a basic search on the index that this <code>Indexable</code> pr
-     * <code>SQLiteIndexable</code> represents. A basic
+     * Does a basic search on the index that this {@code Indexable} pr
+     * {@code SQLiteIndexable} represents. A basic
      * search means that all distinct keywords (delimited by white space) of the
-     * <code>searchInput</code> are treated as fuzzy, and the last keyword will
+     * {@code searchInput} are treated as fuzzy, and the last keyword will
      * be treated as fuzzy and prefix.
      * <br><br>
      * For more configurable searches, use the
@@ -128,11 +128,12 @@ abstract class IndexableCore {
      * When the SRCH2 server is finished performing the search task, the method
      * {@link SearchResultsListener#onNewSearchResults(int, String, java.util.HashMap)}
      *  will be triggered. The
-     * <code>HashMap resultMap</code> argument will contain the search results in the form of <code>
-     * JSONObject</code>s as they were originally inserted (and updated).
+     * {@code HashMap resultMap} argument will contain the search results in the form of {@code 
+     * JSONObject}s as they were originally inserted (and updated).
      * <br><br>
-     * This method will throw an exception is the value of <code>searchInput</code> is null
-     * or has a length less than one.
+     * This method will do nothing if the search input is null, an empty string or
+     * {@link com.srch2.android.sdk.SRCH2Engine#onResume(android.content.Context)} has not yet
+     * been called.
      * @param searchInput the textual input to search on
      */
     public final void search(String searchInput) {
@@ -150,10 +151,12 @@ abstract class IndexableCore {
      * When the SRCH2 server is finished performing the search task, the method
      * {@link SearchResultsListener#onNewSearchResults(int, String, java.util.HashMap)}
      * will be triggered. The argument
-     * <code>HashMap resultMap</code> will contain the search results in the form of <code>
-     * JSONObject</code>s as they were originally inserted (and updated).
+     * {@code HashMap resultMap} will contain the search results in the form of {@code 
+     * JSONObject}s as they were originally inserted (and updated).
      * <br><br>
-     * This method will throw an exception if the value of <code>query</code> is null.
+     * This method will do nothing if the query is null or
+     * {@link com.srch2.android.sdk.SRCH2Engine#onResume(android.content.Context)} has not yet
+     * been called.
      * @param query the formation of the query to do the advanced search
      */
     public final void advancedSearch(Query query) {
@@ -165,14 +168,14 @@ abstract class IndexableCore {
     /**
      * Callback executed very shortly after the call to
      * {@link com.srch2.android.sdk.SRCH2Engine#onResume(android.content.Context)} is made:
-     * when the SRCH2 search server is initialized by the <code>SRCH2Engine</code> (by the method just
+     * when the SRCH2 search server is initialized by the {@code SRCH2Engine} (by the method just
      * mentioned), it will load each index into memory; this can take anywhere from a couple of milliseconds
      * to three seconds (depending on the number of records, how much data each record contains, and the
-     * processing power of the device). When the index this <code>Indexable</code> or <code>SQLiteIndexable</code></code>
+     * processing power of the device). When the index this {@code Indexable} or {@code SQLiteIndexable}}
      * represents is finished loading,
      * this method is thus triggered. At this point, all state operations on this index if it is
-     * an <code>Indexable</code> are valid: insert, update, et
-     * cetera; for both <code>Indexable</code> and <code>SQLiteIndexable</code> instances searches are now ready
+     * an {@code Indexable} are valid: insert, update, et
+     * cetera; for both {@code Indexable} and {@code SQLiteIndexable} instances searches are now ready
      * at this point.
      * <br><br>
      * By overriding this method, its implementation can be used to verify the integrity of the index such as if
@@ -181,8 +184,8 @@ abstract class IndexableCore {
      * <br><br>
      * <i>This method does not have to be overridden</i> (thought it is <b>strongly encouraged</b> to do so). If it is
      * not, the number of records it contains upon being loaded will be printed to logcat
-     * under the tag 'SRCH2' with the message prefixed by the name of the index this <code>Indexable</code> or
-     * <code>SQLiteIndexable</code> represents.
+     * under the tag 'SRCH2' with the message prefixed by the name of the index this {@code Indexable} or
+     * {@code SQLiteIndexable} represents.
      */
     public void onIndexReady() {
         Log.d("SRCH2", "Index " + getIndexName() + " is ready to be accessed and contains " + getRecordCount() + " records");
