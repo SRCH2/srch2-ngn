@@ -345,6 +345,10 @@ final public class SRCH2Service extends Service implements AutoPing.ValidatePing
                 connection.disconnect();
             }
         }
+
+        if (p != null) {
+            p.destroy();
+        }
     }
 
     private void checkToStopSelf() {
@@ -376,17 +380,20 @@ final public class SRCH2Service extends Service implements AutoPing.ValidatePing
         signalSRCH2EngineToProceed(executablePortNumber, executableOAuthLiteral);
     }
 
+    Process p;
+
     private void startRunningExecutable(final int portBeingUsedToStartService, final String shutDownUrl, final String oAuthCode, final String pingUrl) {
         Cat.d(TAG, "startRunningExecutable");
         Thread t = new Thread(new Runnable() {
             @Override
             public void run() {
                 ProcessBuilder pb = new ProcessBuilder(executableProcessPath, "--config-file", xmlConfigurationFilePath);
-                Process p;
+
                 try {
                     updateServerLog(portBeingUsedToStartService, shutDownUrl, oAuthCode, executableProcessPath, pingUrl);
                     Cat.d(TAG, "startRunningExecutable - starting process");
                     p = pb.start();
+
                     Cat.d(TAG, "startRunningExe - after pbstart isShuttingDown is " + isShuttingDown.get());
                     if (p.getInputStream() != null) {
                         Cat.d(TAG, "PRINTING INPUT STREAM\n" + readInputStream(p.getInputStream()));
@@ -398,7 +405,7 @@ final public class SRCH2Service extends Service implements AutoPing.ValidatePing
                     } else {
                         Cat.d(TAG, "NO ERROR STREAM from process");
                     }
-                    p.destroy();
+                   // p.destroy();
                     if (!isShuttingDown.get()) {
                         clearServerLogEntries();
                         Cat.d(TAG, "startRunningExe - after p.destory engine may have crash validating ... ");
@@ -425,6 +432,9 @@ final public class SRCH2Service extends Service implements AutoPing.ValidatePing
                 } catch (IOException e) {
                     Cat.d(TAG, "IOEXCEPTION starting executable!");
                     Cat.ex(TAG, "starting executable io error", e);
+                } catch (Exception e) {
+                    Cat.d(TAG, "EXCEPTION starting executable!");
+                    Cat.ex(TAG, "starting executable general error", e);
                 }
             }
         });
