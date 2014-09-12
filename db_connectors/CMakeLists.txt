@@ -10,7 +10,6 @@
 
 cmake_minimum_required(VERSION 2.8)
 SET(RELEASE_BUILD ON CACHE BOOL "")
-SET(ANDROID OFF CACHE BOOL "")
 
 #Find the platform information.
 SET(MAC_OS OFF CACHE BOOL "")
