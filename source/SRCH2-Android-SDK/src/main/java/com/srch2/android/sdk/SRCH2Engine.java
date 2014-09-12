@@ -308,6 +308,10 @@ final public class SRCH2Engine {
         Cat.d(TAG, "onResume - initialization took " + e + " ms");
     }
 
+    public static void onCreate() {
+        lastQuery.set(new IndexQueryPair(null, null));
+    }
+
     public static void onResume(Context context) {
         Cat.d(TAG, "onResume");
         registerReciever(context);
@@ -488,6 +492,20 @@ final public class SRCH2Engine {
         }
     }
 
+    static boolean validateSearchInput(String searchInput) {
+        if (searchInput == null) {
+            return false;
+        } else if (searchInput.length() < 1) {
+            if (lastQuery != null) {
+                lastQuery.get().indexName = null;
+                lastQuery.get().query = null;
+            }
+            return false;
+        } else {
+            return true;
+        }
+    }
+
     private static void searchAllRawString(String rawQueryString) {
         lastQuery.set(new IndexQueryPair(null, rawQueryString));
         if (allIndexSearchTask != null) {
@@ -518,9 +536,11 @@ final public class SRCH2Engine {
      */
     public static void searchAllIndexes(String searchInput) {
         Cat.d(TAG, "searchAllIndexes");
-        checkConfIsNullThrowIfIs();
-        String rawString= IndexInternal.formatDefaultQueryURL(searchInput);
-        searchAllRawString(rawString);
+        if (validateSearchInput(searchInput)) {
+            checkConfIsNullThrowIfIs();
+            String rawString = IndexInternal.formatDefaultQueryURL(searchInput);
+            searchAllRawString(rawString);
+        }
     }
 
     /**
@@ -541,6 +561,9 @@ final public class SRCH2Engine {
      * @param query the formation of the advanced search
      */
     public static void advancedSearchOnAllIndexes(Query query) {
+        if (query == null) {
+            return;
+        }
         Cat.d(TAG, "searchAllIndexes");
         checkConfIsNullThrowIfIs();
         String rawString = query.toString();
@@ -609,7 +632,7 @@ final public class SRCH2Engine {
         return port;
     }
 
-    private static void checkConfIsNullThrowIfIs() {
+    static void checkConfIsNullThrowIfIs() {
         if (conf == null) {
             throw new NullPointerException(
                     "Cannot start SRCH2Engine without configuration being set.");

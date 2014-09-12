@@ -210,21 +210,6 @@ final public class SRCH2Service extends Service implements AutoPing.ValidatePing
     }
 
     private void signalSRCH2EngineToProceed(int portNumberForSRCH2EngineToReuse, String oAuthCodeForSRCH2EngineToReuse) {
-        int totalSleepTime = 0;
-        Cat.d(TAG, "signalSRCH2EngineToProceed - start");
-        while (!ps(executableProcessPath)) {
-            try {
-
-                Cat.d(TAG, "signalSRCH2EngineToProceed - waiting in the while loop waited so far : " + totalSleepTime);
-                Thread.currentThread().sleep(200);
-                if (totalSleepTime > 3000) {
-                    break;
-                }
-                totalSleepTime += 200;
-            } catch (InterruptedException e) {
-                Cat.ex(TAG, "startingexecutable InterrupedException", e);
-            }
-        }
         Cat.d(TAG, "signalSRCH2EngineToProceed");
         Intent i = new Intent(IPCConstants.getSRCH2EngineBroadcastRecieverIntentAction(getApplicationContext()));
         i.putExtra(IPCConstants.INTENT_KEY_BROADCAST_ACTION, IPCConstants.INTENT_VALUE_BROADCAST_ACTION_ENGINE_STARTED_PROCEED);
@@ -235,18 +220,6 @@ final public class SRCH2Service extends Service implements AutoPing.ValidatePing
     }
 
     private void signalSRCH2EngineToResume(int portNumberForSRCH2EngineToReuse, String oAuthCodeForSRCH2EngineToReuse) {
-        int totalSleepTime = 0;
-        while (!ps(executableProcessPath)) {
-            try {
-                Thread.currentThread().sleep(200);
-                if (totalSleepTime > 1000) {
-                    break;
-                }
-                totalSleepTime += 200;
-            } catch (InterruptedException e) {
-                Cat.ex(TAG, "startingexecutable InterrupedException", e);
-            }
-        }
         Cat.d(TAG, "signalSRCH2EngineToResume");
         Intent i = new Intent(IPCConstants.getSRCH2EngineBroadcastRecieverIntentAction(getApplicationContext()));
         i.putExtra(IPCConstants.INTENT_KEY_BROADCAST_ACTION, IPCConstants.INTENT_VALUE_BROADCAST_ACTION_ENGINE_CRASHED_BUT_CAN_RESUME);

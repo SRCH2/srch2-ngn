@@ -7,6 +7,7 @@ import java.util.TimerTask;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 import java.util.concurrent.RejectedExecutionException;
+import java.util.concurrent.atomic.AtomicReference;
 
 class AutoPing {
 
@@ -23,7 +24,7 @@ class AutoPing {
     synchronized void setPingUrl(URL url) { pingUrl = url; }
     ExecutorService pingPool;
     Timer timer;
-    static AutoPing instance;
+    static AtomicReference<AutoPing> instance;
     ValidatePingCommandCallback callback;
 
     AutoPing() {
@@ -36,16 +37,19 @@ class AutoPing {
         Cat.d(TAG, "start");
         if (instance == null) {
             Cat.d(TAG, "start - instance null - initializing");
-            instance = new AutoPing();
+            instance = new AtomicReference<AutoPing>(new AutoPing());
         }
         URL url = null;
         try {
             url = new URL(pingUrlString);
         } catch (MalformedURLException ignore) {
         }
-        instance.setPingUrl(url);
-        instance.pingAndRepeat();
-        instance.callback = theCallback;
+        AutoPing autoPing = instance.get();
+
+
+        autoPing.setPingUrl(url);
+        autoPing.pingAndRepeat();
+        autoPing.callback = theCallback;
     }
 
 
@@ -59,31 +63,41 @@ class AutoPing {
             timer.schedule(new TimerTask() {
                 @Override
                 public void run() {
-                   if (instance.callback != null) {
-                       instance.callback.validateIfSRCH2EngineAlive();
-                   }
+                    if (instance != null) {
+                        AutoPing autoPing = instance.get();
+
+                        if (autoPing != null && autoPing.callback != null) {
+                            autoPing.callback.validateIfSRCH2EngineAlive();
+                        }
+                    }
                 }
             }, HEART_BEAT_PING_DELAY);
         }
     }
 
     static void doPing() {
-        PingTask pt = new PingTask(instance);
-        try {
-            Cat.d(TAG, "doing autoping");
-            instance.pingPool.execute(pt);
-        } catch (RejectedExecutionException ignore) {
+        if (instance != null) {
+            AutoPing autoPing = instance.get();
+
+            PingTask pt = new PingTask(autoPing);
+            try {
+                Cat.d(TAG, "doing autoping");
+                autoPing.pingPool.execute(pt);
+            } catch (RejectedExecutionException ignore) {
+            }
         }
+
     }
 
     // call before beforing any CRUD that will itself serve as the ping (not necessary)
     static void interrupt() {
         Cat.d(TAG, "interrupt");
         if (instance != null) {
+            AutoPing autoPing = instance.get();
             Cat.d(TAG, "interrupt - instance not null");
-            if (instance.timer != null) {
-                instance.timer.cancel();
-                instance.timer = null;
+            if (autoPing != null && autoPing.timer != null) {
+                autoPing.timer.cancel();
+                autoPing.timer = null;
             }
         }
     }
@@ -93,9 +107,15 @@ class AutoPing {
         Cat.d(TAG, "stop");
         interrupt();
         if (instance != null) {
-            instance.pingPool.shutdownNow();
-            Cat.d(TAG, "stop - instaqnce assigned to null");
-            instance = null;
+            AutoPing autoPing = instance.get();
+            if (autoPing != null) {
+                autoPing.pingPool.shutdownNow();
+                Cat.d(TAG, "stop - instaqnce assigned to null");
+                autoPing = null;
+                instance.set(null);
+                instance = null;
+            }
+
         }
     }
 

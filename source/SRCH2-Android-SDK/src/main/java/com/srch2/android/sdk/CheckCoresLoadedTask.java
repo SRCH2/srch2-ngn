@@ -25,9 +25,9 @@ final class CheckCoresLoadedTask extends HttpTask {
         targetCoreUrlsMap = theTargetCoreUrls;
     }
 
-    @Override
-    public void run() {
-        Thread.currentThread().setName("CHECK CORES LOADED");
+
+    public void doCheckCoresLoadedTask() {
+
         Cat.d(TAG, "run start");
 
         int coreCount = targetCoreUrlsMap.size();
@@ -40,9 +40,21 @@ final class CheckCoresLoadedTask extends HttpTask {
         int pingCountSuccess = 0;
         int i = 0;
         int superCount = 0;
-        while (true) {
-            if (superCount > 100) {
 
+        int failsInARow = 0;
+
+        while (true) {
+            if (failsInARow > 10) {
+                try {
+                    Thread.currentThread().sleep(100);
+                } catch (InterruptedException e) {
+                    noNetworkConnection = true;
+                    break;
+                }
+                failsInARow = 0;
+            }
+
+            if (superCount > 100) {
                 noNetworkConnection = true;
                 break;
             }
@@ -70,6 +82,7 @@ final class CheckCoresLoadedTask extends HttpTask {
                 }
             } else {
                 Cat.d(TAG, "@ iteration " + i + " was not valid info response ");
+                ++failsInARow;
             }
 
             i = ++i % coreCount;
@@ -94,5 +107,17 @@ final class CheckCoresLoadedTask extends HttpTask {
         }
         onExecutionCompleted(TASK_ID_SEARCH);
         onExecutionCompleted(TASK_ID_INSERT_UPDATE_DELETE_GETRECORD);
+
+    }
+
+    @Override
+    public void run() {
+        Thread.currentThread().setName("CHECK CORES LOADED");
+        try {
+            doCheckCoresLoadedTask();
+        } catch (Exception e) {
+            SRCH2Engine.isReady.set(false);
+            Cat.ex(TAG, "GeneralException", e);
+        }
     }
 }

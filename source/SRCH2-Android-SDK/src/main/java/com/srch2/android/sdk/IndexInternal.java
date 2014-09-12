@@ -102,20 +102,21 @@ final class IndexInternal {
     }
 
     void search(String searchInput) {
-        if (searchInput == null || searchInput.trim().length() < 1) {
-            throw new IllegalArgumentException("Invalid searchInput");
+        if (SRCH2Engine.validateSearchInput(searchInput)) {
+            SRCH2Engine.checkConfIsNullThrowIfIs();
+            searchInput = formatDefaultQueryURL(searchInput);
+            // if (this.indexDescription.isGeoIndex()) {
+            // //searchInput += formatDefaultGeoCircle();
+            // }
+            searchRawString(searchInput);
         }
-        searchInput = formatDefaultQueryURL(searchInput);
-        // if (this.indexDescription.isGeoIndex()) {
-        // //searchInput += formatDefaultGeoCircle();
-        // }
-        searchRawString(searchInput);
     }
 
     void advancedSearch(Query query) {
         if (query == null) {
-            throw new IllegalArgumentException("the query parameter is null");
+            return;
         }
+        SRCH2Engine.checkConfIsNullThrowIfIs();
         String queryString = query.toString();
         searchRawString(queryString);
     }
