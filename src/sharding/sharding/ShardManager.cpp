@@ -7,7 +7,7 @@
 #include "./metadata_manager/Cluster_Writeview.h"
 #include "./metadata_manager/Cluster.h"
 #include "./metadata_manager/MetadataInitializer.h"
-#include "./metadata_manager/ClusterSaveOperation.h"
+#include "./cluster_operations/ClusterSaveOperation.h"
 #include "./notifications/Notification.h"
 #include "./notifications/NewNodeLockNotification.h"
 #include "./notifications/CommitNotification.h"
