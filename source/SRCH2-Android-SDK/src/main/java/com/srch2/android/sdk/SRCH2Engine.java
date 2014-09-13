@@ -5,7 +5,7 @@ import android.content.Context;
 import android.content.Intent;
 import android.os.Handler;
 import android.os.Looper;
-import android.os.SystemClock;
+import android.util.Log;
 
 import java.io.IOException;
 import java.net.ServerSocket;
@@ -78,16 +78,19 @@ import java.util.concurrent.atomic.AtomicReference;
  * <b>When starting an activity utilizing the {@code SRCH2Engine} the order of calls to initialize should
  * go</b>:
  * <br>
- * &nbsp&nbsp&nbsp&nbsp{@link #onCreate()} (<i>required</i>) <br>
- * &nbsp&nbsp&nbsp&nbsp{@link #setAutomatedTestingMode(boolean)} (<i>optional</i>) <br>
- * <br>
+ * &nbsp&nbsp&nbsp&nbsp{@link #setAutomatedTestingMode(boolean)} (<i>optional</i>)
  * &nbsp&nbsp&nbsp&nbsp{@link #setIndexables(Indexable, Indexable...)} (<i>required</i> if there are any Indexables) <br>
  * &nbsp&nbsp&nbsp&nbsp{@link #setSQLiteIndexables(SQLiteIndexable, SQLiteIndexable...)}  (<i>required</i> if there are any SQLiteIndexables) <br>
  * &nbsp&nbsp&nbsp&nbsp{@link #setSearchResultsListener(SearchResultsListener)} (<i>required</i> for search results)
- * &nbsp&nbsp&nbsp&nbsp{@link #onResume(android.content.Context)} (<i>required</i>) <br><br>
+ * &nbsp&nbsp&nbsp&nbsp{@link #onResume(android.content.Context)} (<i>required</i>)
+ * <br><br>
  * &nbsp&nbsp&nbsp&nbsp{@link #onPause(android.content.Context)} (<i>required</i>) <br><br>
- * These are grouped by association and should be called in the corresponding {@code Activity} life-cycle callback. The
- * {@code SRCH2Engine} can also be accessed from a service if {@link #onResume(android.content.Context)} is called
+ * These are grouped by association and should be called in the corresponding {@code Activity} life-cycle callback.
+ * Specifically at least one {@code Indexable} or {@code SQLiteIndexable} must be set before the call to
+ * {@link #onResume(android.content.Context)} is made, or that method call will do nothing but
+ * print an error message to the logcat under the tag 'SRCH2'.
+ * <br><br>
+ * The {@code SRCH2Engine} can also be accessed from a service if {@link #onResume(android.content.Context)} is called
  * after {@link android.app.Service#onStartCommand(android.content.Intent, int, int)} or
  * {@link android.app.Service#onBind(android.content.Intent)} and {@link #onPause(android.content.Context)}
  * after {@link android.app.Service#onDestroy()}. To avoid leaking memory or context, references to instances of
@@ -118,10 +121,10 @@ final public class SRCH2Engine {
     static ArrayList<Indexable> indexablesUserSets;
     static ArrayList<SQLiteIndexable> sqliteIndexablesUserSets;
 
+
     static final AtomicReference<IndexQueryPair> lastQuery = new AtomicReference<IndexQueryPair>();
     static final AtomicBoolean isChanged = new AtomicBoolean(false);
     static final AtomicBoolean isReady = new AtomicBoolean(false);
-
 
     static boolean isDebugAndTestingMode = false;
     static SRCH2EngineBroadcastReciever incomingIntentReciever;
@@ -143,16 +146,6 @@ final public class SRCH2Engine {
     }
 
     private SRCH2Engine() { }
-
-    /**
-     * Initializes the state of the {@code SRCH2Engine} and prepares it for performing searches.
-     * <br><br>
-     * It should typically be called from the {@link android.app.Activity#onCreate(android.os.Bundle)} life-cycle
-     * callback.
-     */
-    public static void onCreate() {
-        lastQuery.set(new IndexQueryPair(null, null));
-    }
 
     /**
      * If JUnit or Android automated tests are to be run, calling this method and passing <b>true</b>
@@ -264,7 +257,9 @@ final public class SRCH2Engine {
      * Causes the SRCH2 search server powering the search to start after initializing any
      * {@code Indexable} or {@code SQLiteIndexable} instances registered. This method
      * must be preceded by {@link #setIndexables(Indexable, Indexable...)} and
-     * {@link #setSQLiteIndexables(SQLiteIndexable, SQLiteIndexable...)} each time it is called.
+     * {@link #setSQLiteIndexables(SQLiteIndexable, SQLiteIndexable...)} each time it is called. If no
+     * {@code Indexable} or {@code SQLiteIndexable} instances are set, this call will do nothing but
+     * print an error message to the logcat under the tag 'SRCH2'.
      * <br><br>
      * This method should be called anytime the activity requiring search functionality comes to the
      * foreground and is visible--that is, when it can be interacted with by a user who might perform searches.
@@ -290,6 +285,10 @@ final public class SRCH2Engine {
      */
     public static void onResume(Context context) {
         Cat.d(TAG, "onResume");
+        if (!checkResumeReady()) {
+            return;
+        }
+
         registerReciever(context);
 
         initialize();
@@ -302,7 +301,9 @@ final public class SRCH2Engine {
      * Causes the SRCH2 search server powering the search to start after initializing any
      * {@code Indexable} or {@code SQLiteIndexable} instances registered. This method
      * must be preceded by {@link #setIndexables(Indexable, Indexable...)} and
-     * {@link #setSQLiteIndexables(SQLiteIndexable, SQLiteIndexable...)} each time it is called.
+     * {@link #setSQLiteIndexables(SQLiteIndexable, SQLiteIndexable...)} each time it is called. If no
+     * {@code Indexable} or {@code SQLiteIndexable} instances are set, this call will do nothing but
+     * print an error message to the logcat under the tag 'SRCH2'.
      * <br><br>
      * This method should be called anytime the activity requiring search functionality comes to the
      * foreground and is visible--that is, when it can be interacted with by a user who might perform searches.
@@ -331,9 +332,9 @@ final public class SRCH2Engine {
      * @param callbackToUiThread whether to push the search results to the Ui thread
      */
     public static void onResume(Context context, SearchResultsListener searchResultsListener,  boolean callbackToUiThread) {
-
-        long t = SystemClock.uptimeMillis();
-
+        if (!checkResumeReady()) {
+            return;
+        }
         Cat.d(TAG, "onResume");
         registerReciever(context);
         setSearchResultsListener(searchResultsListener, callbackToUiThread);
@@ -342,9 +343,22 @@ final public class SRCH2Engine {
         initializeConfiguration(context);
         startSRCH2Service(context, SRCH2Configuration.generateConfigurationFileString(SRCH2Engine.conf));
         isStarted = true;
+    }
 
-        long e = SystemClock.uptimeMillis() - t;
-        Cat.d(TAG, "onResume - initialization took " + e + " ms");
+    private static boolean checkResumeReady() {
+        boolean resumeReady = true;
+        if (sqliteIndexablesUserSets == null && indexablesUserSets == null) {
+            resumeReady = false;
+        } else if ((sqliteIndexablesUserSets != null && sqliteIndexablesUserSets.size() < 1)
+                    && (indexablesUserSets != null && indexablesUserSets.size() < 1)) {
+            resumeReady = false;
+        }
+
+        if (!resumeReady) {
+            Log.d("SRCH2", "SRCH2Engine error - no indexables/sqlitindexables set before call to SRCH2Engine.onResume(). " +
+                    "At least one indexable must be set before calling SRCH2Engine.onResume()");
+        }
+        return resumeReady;
     }
 
     /**
@@ -361,7 +375,10 @@ final public class SRCH2Engine {
      *                         SRCH2 search server to carry out the command or task
      */
     public static void setAuthorizationKey(String authorizationKey) {
-        checkConfIsNullThrowIfIs();
+        if (getConfig() == null) {
+            Log.d("SRCH2", "SRCH2 Engine error - tried to set authorization key before calling SRCH2Engine.onResume()");
+            return;
+        }
         conf.setAuthorizationKey(authorizationKey);
     }
 
@@ -424,6 +441,7 @@ final public class SRCH2Engine {
         if (getConfig().indexableMap != null && getConfig().indexableMap.size() > 0) {
             getConfig().indexableMap.clear();
         }
+        lastQuery.set(new IndexQueryPair(null, null));
         stopExecutable(context);
         unregisterReciever(context);
         isStarted = false;

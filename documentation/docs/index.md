@@ -358,7 +358,7 @@ movie records that match the keywords "beaty ame":
 
 The SDK also provides a function *SRCH2Engine.searchAllIndexes()*
 that can return results from all indexes registered using the
-*SRCH2Engine.initialize()* function. 
+*SRCH2Engine.setIndexables()* function. 
 
 By default, the engine uses the space delimiter to tokenize the string to multiple keywords 
 ("beaty" and "ame"). It treats the last keyword ("ame") as a prefix condition,

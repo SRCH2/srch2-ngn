@@ -49,7 +49,7 @@ public class MyActivity extends Activity implements InstantSearchEditText.Search
 
         sr = new SearchResults();
         SRCH2Engine.setAutomatedTestingMode(true);
-        SRCH2Engine.onCreate();
+
     }
 
 
@@ -116,7 +116,7 @@ public class MyActivity extends Activity implements InstantSearchEditText.Search
         super.onResume();
         Log.d("s2sdk::Sandbox", "onResume------------------------------------------!!!");
 
-         SRCH2Engine.setIndexables(index, indexTwo);
+        SRCH2Engine.setIndexables(index, indexTwo);
         SRCH2Engine.setSQLiteIndexables(dbHelper.idx);
         SRCH2Engine.onResume(this, sr, true);
         InstantSearchEditText.checkIfSearchInputShouldOpenSoftKeyboard(this, (InstantSearchEditText) findViewById(R.id.et_instant_search_input));
@@ -134,7 +134,7 @@ public class MyActivity extends Activity implements InstantSearchEditText.Search
 
     @Override
     public void onNewSearchInput(String newSearchText) {
-   
+
         SRCH2Engine.searchAllIndexes(newSearchText);
     }
 

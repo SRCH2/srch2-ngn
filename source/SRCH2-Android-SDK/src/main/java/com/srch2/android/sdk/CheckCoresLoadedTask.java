@@ -107,7 +107,6 @@ final class CheckCoresLoadedTask extends HttpTask {
         }
         onExecutionCompleted(TASK_ID_SEARCH);
         onExecutionCompleted(TASK_ID_INSERT_UPDATE_DELETE_GETRECORD);
-
     }
 
     @Override
