@@ -212,7 +212,6 @@ void Srch2Server::createAndBootStrapIndexer() {
             unsigned fileSize = getFileSize(indexDataConfig->getDataFilePath().c_str());
             //Logger::console("The size of the data file is %lu KB", fileSize/(1024));
 
-#ifndef ANDROID
             struct statvfs *buff;
             if (!(buff = (struct statvfs *) malloc(sizeof(struct statvfs)))) {
                 Logger::error("Failed to allocate memory to buffer.");
@@ -235,10 +234,9 @@ void Srch2Server::createAndBootStrapIndexer() {
                 }
                 free(buff);
             }
-#endif
 
             // Create from JSON and save to index-dir
-            Logger::console("Creating indexes from JSON file...");
+            Logger::console("%s: Creating indexes from JSON file...",this->coreName.c_str());
             unsigned indexedCounter = DaemonDataSource::createNewIndexFromFile(
                     indexer, storedAttrSchema, indexDataConfig);
             /*
@@ -246,7 +244,15 @@ void Srch2Server::createAndBootStrapIndexer() {
              *  if number of indexed record is > 0.
              */
             indexer->commit();
-            if (indexedCounter > 0) {
+
+            // Load ACL list from disk
+            indexer->getAttributeAcl().bulkLoadAclJSON(indexDataConfig->getAttibutesAclFile());
+            /*
+             *  if the roleCore is null it means that this core doesn't have any access control
+             *  so we can save it now.
+             *  otherwise first we should read the data for acl and we will save this core after that.
+             */
+            if (indexedCounter > 0 && this->roleCore == NULL) {
                 indexer->save();
                 Logger::console("Indexes saved.");
             }
@@ -254,6 +260,8 @@ void Srch2Server::createAndBootStrapIndexer() {
         }
         default: {
             indexer->commit();
+            // Load ACL list from disk
+            indexer->getAttributeAcl().bulkLoadAclJSON(indexDataConfig->getAttibutesAclFile());
             Logger::console("Creating new empty index");
         }
         };
