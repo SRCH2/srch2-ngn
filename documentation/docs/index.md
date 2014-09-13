@@ -378,21 +378,17 @@ the implementation of the interface *SearchResultsListener*.
 
 This method will be executed by background threads. So in order
 to update the user interface of your application, the search results
-must be passed to the UI thread. Here we assume you are familiar with
+must be passed to the UI thread. This can be done by implementing your own Handler
+on the UI thread and pushing the search results to the UI thread; or more simply be
+registering the SearchResultsListener to call back to the UI thread by calling:
+```
+SRCH2Engine.onResume(mContext, mSearchResultsListener, true);
+```
+ Here we assume you are familiar with
 how an
 [*android.widget.BaseAdapter*](http://developer.android.com/reference/android/widget/BaseAdapter.html)
 works to populate an
 [*android.widget.ListView*](http://developer.android.com/reference/android/widget/ListView.html). 
-Familiarity with how to communicate with the UI thread via an
-[*android.os.Handler*](http://developer.android.com/reference/android/os/Handler.html)
-is also helpful, but you can read more about it on the 
-[Android developer
-web site](https://developer.android.com/training/multiple-threads/communicate-ui.html).  
-
-In this tutorial we will use a subclass of the *android.os.Handler*
-class to implement the *SearchResultsListener* interface. However, other means
-of propagating the search results to the UI thread can also be implemented, e.g., 
-by using *runOnUiThread()*.
 
 In the source code of this tutorial, there is a class called *SearchResultsAdapter* that
 extends *BaseAdapter*. Here we connect this adapter to
@@ -400,114 +396,48 @@ a handler implementing *SearchResultsListener*. In the class
 *SearchResultsAdapter*, there is a nested subclass of the *Handler* class:
 
 ```
-public class SearchResultsAdapter extends BaseAdapter {
+public class SearchResultsAdapter extends BaseAdapter implements SearchResultsListener {
 
 	...
 
-    private static class SearchResultsUiHandler extends Handler implements
-            SearchResultsListener {
-	}
-}
-```
-
-In this nested class, two constant *int* fields are used as the
-message keys for this handler: 
-
-```
-public class SearchResultsAdapter extends BaseAdapter {
-
-	...
-	
-    private static class SearchResultsUiHandler extends Handler implements
-            SearchResultsListener {
-			
-		private static final int MESSAGE_WHAT_PUBLISH_NEW_RESULTS = 001;
-		private static final int MESSAGE_WHAT_PUBLISH_NO_NEW_RESULTS = 002;
-
-	}
-}
-```
-
-Also declared is a *WeakReference<T>* of type *SearchResultsAdapter*. The
-*WeakReference<SearchResultsAdapter>* is necessary to prevent leaking the
-context (you can read more about why this is necessary
-[here](http://www.androiddesignpatterns.com/2013/01/inner-class-handler-memory-leak.html))
-and can be defined in the constructor such as:
-
-```
-public class SearchResultsAdapter extends BaseAdapter {
-
-	...
-	
-    private static class SearchResultsUiHandler extends Handler implements
-            SearchResultsListener {
-			
-		... 
-		
-		private final WeakReference<SearchResultsAdapter> mSearchResultsAdapterWeakReference;
-		
-        public SearchResultsUiHandler(SearchResultsAdapter searchResultsAdapter) {
-            mSearchResultsAdapterWeakReference = new WeakReference<SearchResultsAdapter>(
-                    searchResultsAdapter);
-        }
-	}
-}
-```
-
-Now this handler subclass is ready to pass results from the *SRCH2Engine*
-callback to the adapter populating the list view. This handler implements
-*SearchResultsListener*, which necessarily overrides its interface method
-*onNewSearchResults()* as follows:
-
-```
-public class SearchResultsAdapter extends BaseAdapter {
-
-	...
-	
-    private static class SearchResultsUiHandler extends Handler implements
-            SearchResultsListener {
-			
-		... 
-		
-        @Override
-        public void onNewSearchResults(int HTTPresponseCode,
-                                       String JSONresponse,
+  @Override
+    public void onNewSearchResults(int HTTPresponseCode,
+                                     String JSONresponse,
                                        HashMap<String, ArrayList<JSONObject>> resultMap) {
-            if (HTTPresponseCode == HttpURLConnection.HTTP_OK) {
-                ArrayList<MovieSearchResult> newResults = new ArrayList<MovieSearchResult>();
+      if (HTTPresponseCode == HttpURLConnection.HTTP_OK) {
+        ArrayList<MovieSearchResult> newResults = new ArrayList<MovieSearchResult>();
 
-                ArrayList<JSONObject> movieResults = resultMap
-                        .get(MovieIndex.INDEX_NAME);
-                if (movieResults != null && movieResults.size() > 0) {
-                    for (JSONObject jsonObject : movieResults) {
-                        MovieSearchResult searchResult = null;
-                        try {
-							JSONObject originalRecord = 
+          ArrayList<JSONObject> movieResults = resultMap
+            .get(MovieIndex.INDEX_NAME);
+          if (movieResults != null && movieResults.size() > 0) {
+            for (JSONObject jsonObject : movieResults) {
+              MovieSearchResult searchResult = null;
+                try {
+				  JSONObject originalRecord = 
 								jsonObject.getJSONObject(Indexable.SEARCH_RESULT_JSON_KEY_RECORD);
-                            searchResult = new MovieSearchResult(
+                  searchResult = new MovieSearchResult(
                                     originalRecord 
                                             .getString(MovieIndex.INDEX_FIELD_TITLE),
                                     originalRecord
                                             .getString(MovieIndex.INDEX_FIELD_GENRE),
                                     originalRecord
                                             .getInt(MovieIndex.INDEX_FIELD_YEAR));
-                        } catch (JSONException oops) {
-                            continue;
-                        }
-
-                        if (searchResult != null) {
-                            newResults.add(searchResult);
-                        }
-                    }
+                } catch (JSONException oops) {
+                  continue;
                 }
-                sendMessage(Message
-                        .obtain(this,
-                                newResults.size() > 0 ? MESSAGE_WHAT_PUBLISH_NEW_RESULTS
-                                        : MESSAGE_WHAT_PUBLISH_NO_NEW_RESULTS,
-                                newResults));
+
+                if (searchResult != null) {
+                  newResults.add(searchResult);
+                }
             }
-        }
-	}
+          }
+		    if (newResults.size() > 0) {
+			  updateDisplayedSearchResults(newResults);
+			} else {
+			  clearDisplayedSearchResults();
+			}
+      }
+
 }
 ```
 
@@ -530,6 +460,7 @@ the indexes you've defined, the corresponding values for
 Each *ArrayList<JSONObject>* will contain a set of records that were
 returned as search results. This JSONObject contains the original record in the index, 
 which can be obtained by 
+
 ```
   jsonObject.getJSONObject(Indexable.SEARCH_RESULT_JSON_KEY_RECORD);
 ```
@@ -538,64 +469,29 @@ In addition, if we set up the highlight field, the search results will also cont
 highlight information. Please read the [Highlighting section](advanced.md#highlighting) for 
 more details.
 
-The next step is to push the results to the UI thread by overriding the 
-handler's *handleMessage()* superclass method. Following code is the example.
-
-```
-	private static class SearchResultsUiHandler extends Handler implements SearchResultsListener {
-	
-		... 
-		
-        @Override
-        public void handleMessage(Message msg) {
-
-            SearchResultsAdapter searchResultAdapter = mSearchResultsAdapterWeakReference
-                    .get();
-
-            if (searchResultAdapter != null) {
-                switch (msg.what) {
-                    case MESSAGE_WHAT_PUBLISH_NEW_RESULTS:
-                        ArrayList<MovieSearchResult> newResults = null;
-                        try {
-                            newResults = (ArrayList<MovieSearchResult>) msg.obj;
-                        } catch (ClassCastException oops) {
-                        }
-
-                        if (newResults != null) {
-                            searchResultAdapter
-                                    .updateDisplayedSearchResults(newResults);
-                        }
-                        return;
-                    case MESSAGE_WHAT_PUBLISH_NO_NEW_RESULTS:
-                        searchResultAdapter.clearDisplayedSearchResults();
-                        return;
-                }
-            }
-        }
-		
-		...
-		
-	}
-```
+The next step is to update the ListView of the SearchResultsAdapter by calling 
+updateDisplayedSearchResults() and passing the search results or clearing the list if
+there were no search results.
   
 ##Completing Lifecycle
 
-The *SRCH2Engine* lifecycle methods can be called in the following sequence:
+The two *SRCH2Engine* lifecycle methods are *SRCH2Engine.onResume()* and 
+*SRCH2Engine.onPause()*. For every call to *SRCH2Engine.onResume()* it is *imperative* 
+that the complementary call to *stop()* is made in order to let the SRCH2 server stop, 
+so that it does not take up the device's resources or leak references.
 
-1. In *Activity.onCreate()*, call *SRCH2Engine.initialize()* by
-passing all the *Indexable* objects to initialize the server;
-2. Register the *SearchResultsListener* implementation by calling *setSearchResultsListener()*;
-3. Start the server by calling *start()*;
-4. Stop the server by calling *stop()*.
+The call to *SRCH2Engine.onResume()* must be preceded by the calls to register any
+*Indexable* or *SQLiteIndexable* instances. These methods are *SRCH2Engine.setIndexables()*
+and *SRCH2Engine.setSQLiteIndexables()*. If no instances of *Indexable* or *SQLiteIndexable*
+are set the *SRCH2Engine* will not start and output an error message to the logcat. When
+calling *SRCH2Engine.onResume()* it also necessary to register the *SearchResultsListener* so
+there is a method overload of the *onResume()* function that takes an instance of the
+*SearchResultsListener* as a parameter--which we saw earlier when registering the *SearchResultsListener*
+to call back to the UI thread.
 
-For an activity requiring search, it is recommended to call
-*SRCH2Engine.start()* in *Activity.onResume()*, and call *SRCH2Engine.stop()* in
-*Activity.onPause()*. It is *imperative* that for every call to
-*start()*, the complementary call to *stop()* is made in order to let the
-SRCH2 server stop, so that it does not take up the device's resources.
-
-The following code shows how to setup the engine in the corresponding methods in the 
-lifecycle of the Android application:
+The calls to *SRCH2Engine.onResume()* and *SRCH2Engine.onPause()* should typically be placed
+in the *Activity* life-cycle callbacks of the same name. The following code shows how to setup 
+the *SRCH2Engine* in the corresponding methods of the lifecycle of the Android application:
 
 ```
 public class SearchActivity extends Activity implements
@@ -615,26 +511,20 @@ public class SearchActivity extends Activity implements
         mSearchResultsAdapter = new SearchResultsAdapter(this);
         mSearchResultsListView.setAdapter(mSearchResultsAdapter);
 
-        setupSRCH2Engine();
+		mMovieIndex = new MovieIndex();
     }
-
-    private void setupSRCH2Engine() {
-        mMovieIndex = new MovieIndex();
-        SRCH2Engine.initialize(mMovieIndex);
-        SRCH2Engine.setSearchResultsListener(mSearchResultsAdapter
-                .getSearchResultsListener());
-    }
-
+	
     @Override
     protected void onResume() {
         super.onResume();
-        SRCH2Engine.onStart(this);
+		SRCH2Engine.setIndexables(mMovieIndex);
+        SRCH2Engine.onResume(this, mSearchResultsAdapter, true);
     }
 
     @Override
     protected void onPause() {
         super.onPause();
-        SRCH2Engine.onStop(this);
+        SRCH2Engine.onPause(this);
     }
 	
 	@Override

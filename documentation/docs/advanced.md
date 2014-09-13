@@ -513,9 +513,10 @@ as creating and updating table data should be managed by the *SQLiteOpenHelper* 
 It is important to note the return value of *getDatabaseName()* **should exactly match the value used
 in the super constructor call used to initialize the *SQLiteOpenHelper*** and the return value of
 *getTableName()* **should exactly match the value used in the create table string** (usually used
-in *SQLiteOpenHelper's* *onCreate(SQLiteDatabase db)* method). Exceptions will be thrown once
-*SRCH2Engine.initialize()* is called if there are any mistakes, specifying which data values are
-incorrect. 
+in *SQLiteOpenHelper's* *onCreate(SQLiteDatabase db)* method). 
+
+Like for an *Indexable*, *SQLiteIndexable* should be registered by calling *SRCH2Engine.setSQLiteIndexables()*
+before calling *SRCH2Engine.onResume()*.
 
 The following code illustrates implementing an *SQLiteIndex* to connect the SRCH2 search server to
 a SQLite database table:
@@ -616,13 +617,18 @@ public class DatabaseIndexable extends SQLiteIndexable {
 	  return 1;
 	}
   }
+  
+  @Override
+  public boolean getColumnIsHighlighted(String textColumnName) {
+    return true; 
+  }
 }
 ```
 
-These last two methods *getRecordBoostColumnName()* and  *getColumnBoostValue()* do not have to be 
-overridden; however by doing so the properties set during the construction of an *Indexable* schema 
-corresponding to the *RecordBoostField* and the *boost* argument of the *Field.getSearchableString(String name, int boost)* 
-can be set for this *SQLiteIndexable*.
+These last three methods *getRecordBoostColumnName()*,  *getColumnBoostValue()* and *getColumnIsHighlighted()* 
+do not have to be  overridden; however by doing so the properties set during the construction of an *Indexable* schema 
+corresponding to the *RecordBoostField*, the *boost* argument of the *Field.getSearchableString(String name, int boost)*,
+and if a *Field* instance has *enableHighlighting()* can be set for this *SQLiteIndexable*.
 
 If *getRecordBoostColumnName()* is overridden it must correspond to the name of a column that is of type *REAL* or *FLOAT* and should
 contain positive values less than 100 and greater than or equal to 1. Here the column named score is used as the *RecordBoostField* which will
@@ -632,34 +638,30 @@ During the resolution of the schema for the index this *SQLiteIndexable* represe
 the method *getColumnBoostValue(String textColumnName)* for each column of type *TEXT* found in the table. The value returns will
 determine the relative importance of each column of type TEXT. Since books are generally looked for by title, 3 is returned for 
 the column title, 2 is returned for the column author, and 1 (the default value) for all other columns of type *TEXT*. Returning
-a value less than 0 from this method will set the default value of 1 for that column.
+a value less than 0 from this method will set the default value of 1 for that column. The same method is used to determine which
+columns of type TEXT are to be highlighted with the method *getColumnIsHighlighted(String textColumnName)*.
 
 To initialize the *DatabaseIndexable* in the *SRCH2Engine*:
 
 ```
 public class SearchActivity {
 
-  DatabaseHelper mDatabaseHelper;
-  DatabaseIndexable mDatabaseIndexable = new DatabaseIndexable(
+  DatabaseHelper mDatabaseHelper = new DatabaseHelper();
+  DatabaseIndexable mDatabaseIndexable = new DatabaseIndexable(mDatabaseHelper);
 
   @Override
-  protected void onCreate(Bundle savedInstanceState) {
-	super.onCreate(savedInstanceStateBundle);
-	
-	mDatabaseHelper = new DatabaseHelper(this);
-	mDatabaseIndexable = new DatabaseIndexable(mDatabaseHelper);
+  protected void onResume() {
 	SRCH2Engine.setSQLiteIndexables(mDatabaseIndexable);
-	SRCH2Engine.initialize();
-	...
+	SRCH2Engine.onResume(this);
   }
- 
+  
   ...
 
 }
 ```
 
 Note that in the *DatabaseHelper* *onCreate(SQLiteDatabase db)* method the table is created. It
-is necessary that the table be created before *SRCH2Engine.initialize()* is called, or the table will
+is necessary that the table be created before *SRCH2Engine.onResume()* is called, or the table will
 not be able to be found and *IllegalStateException* will be thrown. 
 
 This is all it takes to the connect the database's 'library' table to the SRCH2 search server. Now the
