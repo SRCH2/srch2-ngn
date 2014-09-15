@@ -480,7 +480,7 @@ to the proguard configuration file:
 -dontwarn enum com.srch2.** { *; } 
 ```
 
-##Connecting to SQLite Database Tables
+##Connecting to SQLite
 
 The SRCH2 Android SDK supports automatic generation of indexes from SQLite database tables. Additionally, the
 SRCH2 search server will create triggers inside each table connected to the SRCH2 Android SDK that enables
