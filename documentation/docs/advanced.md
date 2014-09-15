@@ -546,7 +546,7 @@ public class DatabaseHelper extends SQLiteOpenHelper {
 				COLUMN_YEAR + " INTEGER, " +
 				COLUMN_DESCRIPTION + " TEXT, " +
                 COLUMN_SCORE + " REAL, " +
-                COLUMN_THUMBNAIL + " BLOB +
+                COLUMN_THUMBNAIL + " BLOB " +
 			" )";
     }
 	
@@ -641,6 +641,11 @@ the column title, 2 is returned for the column author, and 1 (the default value)
 a value less than 0 from this method will set the default value of 1 for that column. The same method is used to determine which
 columns of type TEXT are to be highlighted with the method *getColumnIsHighlighted(String textColumnName)*.
 
+
+Note that implementations of the *SQLiteIndexable* class can support creating a geo-index. If two columns of the table contain longitudinal and latitude 
+data, override both *getLatitudeColumnName()* and *getLongitudeColumnName()* returning the column names as they appear in the 
+create table string used to create the table. These columns should by of type *REAL*. 
+
 To initialize the *DatabaseIndexable* in the *SRCH2Engine*:
 
 ```
@@ -717,11 +722,6 @@ public class DatabaseHelper extends SQLiteOpenHelper {
 }
 ```
 Now if the call to *insertRecords(ArrayList<Book> insertSet)* returns false, the operation can be reapplied. 
-
-Finally there are two more points about the *SQLiteIndexable* class. Implementations can support creating a 
-geo-index if two columns of the table to be indexed contain longitudinal and latitude data: to do so override
-both *getLatitudeColumnName()* and *getLongitudeColumnName()* returning the values as they appear in the 
-create table string used to create the table. 
 
 [//]: (##Using the Eclipse IDE	)
 [//]: (##Using the IntelliJ IDE	)
