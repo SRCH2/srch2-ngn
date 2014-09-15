@@ -130,16 +130,18 @@ class AutoPing {
         @Override
         public void run() {
             Cat.d(TAG, "run");
+            boolean wasValid = true;
             if (autoPingInstance != null && !Thread.currentThread().isInterrupted()) {
                 URL pingUrl = autoPingInstance.getPingUrl();
                 if (pingUrl != null) {
                     Cat.d(TAG, "autopinging info url " + pingUrl);
                     InternalInfoTask t = new InternalInfoTask(autoPingInstance.pingUrl , 250, false);
                     InternalInfoResponse iir = t.getInfo();
+                    wasValid = iir.isValidInfoResponse;
                     Cat.d(TAG, "run - got info is valid? " + iir.isValidInfoResponse);
                 }
             }
-            if (autoPingInstance != null && !Thread.currentThread().isInterrupted()) {
+            if (wasValid && autoPingInstance != null && !Thread.currentThread().isInterrupted()) {
                 Cat.d(TAG, "run - finished doing info heartbeatping not null ping and repeating");
                 autoPingInstance.pingAndRepeat();
             }

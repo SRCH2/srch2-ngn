@@ -59,7 +59,7 @@ the cloned project:
 <center>![Opening the cloned Hello SRCH2 Android SDK application project][tutorial-010]</center>
 
 (3) Connect an Android device to your computer. From the 'Run' menu
-option, select 'Run app'.
+option, select 'Run demo-basic'.
 
 (4) Once the app has launched, enter characters in the text input
 field. You should instantly see search results. The app is doing

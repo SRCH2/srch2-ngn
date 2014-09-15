@@ -569,58 +569,71 @@ public class DatabaseHelper extends SQLiteOpenHelper {
     ...
   }
 }
+```
+The SQLiteIndexable class linking to this SQLite database table:
+```
+public class SQLiteBookIndex extends SQLiteIndexable {
+  private final DatabaseHelper mSQLiteOpenHelper;
 
-public class DatabaseIndexable extends SQLiteIndexable {
-  private SQLiteOpenHelper mSQLiteOpenHelper;
-  
-  public DatabaseIndexable(SQLiteOpenHelper mHelper) {
-    mSQLiteOpenHelper = mHelper;
+  public SQLiteBookIndex(DatabaseHelper databaseHelper) {
+	mSQLiteOpenHelper = databaseHelper;
   }
-  
+
   @Override
   public String getIndexName() {
     return DatabaseHelper.TABLE_NAME;
   }
- 
-  @Override
-  public String getDatabaseName() {
-    return DatabaseHelper.DATABASE_NAME;
-  }
-  
-  @Override
-  public String getTableName() {
-    return DatabaseHelper.TABLE_NAME;
-  }
-  
+
   @Override
   public SQLiteOpenHelper getSQLiteOpenHelper() {
     return mSQLiteOpenHelper;
   }
-  
+
   @Override
-  public void onIndexReady() {
-    super.onIndexReady();
+  public String getDatabaseName() {
+    return DatabaseHelper.DATABASE_NAME;
   }
-  
+
+  @Override
+  public String getTableName() {
+    return DatabaseHelper.TABLE_NAME;
+  }
+
   @Override
   public String getRecordBoostColumnName() {
     return DatabaseHelper.COLUMN_SCORE;
   }
-  
+
   @Override
-  public int getColumnBoostValue(String textColumnName) {
-    if (textColumnName.equals(DatabaseHelper.COLUMN_TITLE)) {
-      return 3;
-	} else if (textColumnName.equals(DatabaseHelper.COLUMN_AUTHOR) {
-	  return 2;
-	} else {
-	  return 1;
-	}
+  public int getColumnBoostValue(String textTypeColumnName) {
+    int fieldBoostValue = 1;
+    if (textTypeColumnName.equals(DatabaseHelper.COLUMN_AUTHOR)) {
+      fieldBoostValue = 25;
+    } else if (textTypeColumnName.equals(DatabaseHelper.COLUMN_TITLE)) {
+      fieldBoostValue = 50;
+    } else if (textTypeColumnName.equals(DatabaseHelper.COLUMN_DESCRIPTION)) {
+      fieldBoostValue = 10;
+    } else if (textTypeColumnName.equals(DatabaseHelper.COLUMN_GENRE)) {
+       fieldBoostValue = 10;
+    }
+    return fieldBoostValue;
   }
-  
+
   @Override
-  public boolean getColumnIsHighlighted(String textColumnName) {
-    return true; 
+  public boolean getColumnIsHighlighted(String textTypeColumnName) {
+    return true;
+  }
+
+  @Override
+  public Highlighter getHighlighter() {
+    return Highlighter.createHighlighter()
+                .formatExactTextMatches(true, false, "#FF0000")
+                .formatFuzzyTextMatches(true, false, "#FF00FF");
+  }
+
+  @Override
+  public void onIndexReady() {
+    super.onIndexReady();
   }
 }
 ```
@@ -649,15 +662,29 @@ create table string used to create the table. These columns should by of type *R
 To initialize the *DatabaseIndexable* in the *SRCH2Engine*:
 
 ```
-public class SearchActivity {
+public class SearchActivity extends Activity {
 
-  DatabaseHelper mDatabaseHelper = new DatabaseHelper();
-  DatabaseIndexable mDatabaseIndexable = new DatabaseIndexable(mDatabaseHelper);
+  DatabaseHelper mDatabaseHelper;
+  SQLiteBookIndex mDatabaseIndexable;
 
   @Override
+  protected void onCreate(Bundle savedInstanceState) {
+	super.onCreate(savedInstanceState);
+	mDatabaseHelper = new DatabaseHelper(this);
+	mDatabaseIndexable = new SQLiteBookIndex(mDatabaseHelper);
+  }
+  
+  @Override
   protected void onResume() {
+    super.onResume();
 	SRCH2Engine.setSQLiteIndexables(mDatabaseIndexable);
 	SRCH2Engine.onResume(this);
+  }
+  
+  @Override
+  protected void onPause() {
+	super.onPause();
+	SRCH2Engine.onPause();
   }
   
   ...
@@ -708,7 +735,14 @@ public class DatabaseHelper extends SQLiteOpenHelper {
 	  ContentValues cv = new ContentValues();
 	  for (Book b : insertSet) {
 		cv.clear();
-		Book.toContentValues(b, cv);
+		cv.put(DatabaseHelper.COLUMN_AUTHOR, b.mAuthor);
+		cv.put(DatabaseHelper.COLUMN_TITLE, b.mTitle);
+		cv.put(DatabaseHelper.COLUMN_GENRE, b.mGenre);
+		cv.put(DatabaseHelper.COLUMN_YEAR, b.mYear);
+		cv.put(DatabaseHelper.COLUMN_DESCRIPTION, b.mDescription);
+		cv.put(DatabaseHelper.COLUMN_SCORE, b.mUserRating);
+		cv.put(DatabaseHelper.COLUMN_THUMBNAIL,
+				b.mThumbnail.getBytes(Charset.forName("UTF-8")));
 		db.insert(TABLE_NAME, null, cv);
 	  }
 	  db.setTransactionSuccessful();

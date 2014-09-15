@@ -420,7 +420,7 @@ final class IndexDescription {
             .append(TAB_QUADRUPLE)
                 .append("<types>\n")
             .append(TAB_QUINTUPLE)
-                .append("<fieldType name=\"text_en\">\n")
+                .append("<fieldType name=\"text_standard\">\n")
             .append(TAB_QUINTUPLE).append(TAB_SINGLE)
                 .append("<analyzer>\n")
             .append(TAB_QUINTUPLE).append(TAB_DOUBLE)
