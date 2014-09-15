@@ -19,6 +19,8 @@
 
 namespace{
 #ifdef ANDROID
+// For some reason, when we declare a string on 
+// Android, it needs to be initialized to a non-empty string
 const char* DEFAULT_STRING_VALUE = "DEFAULT";
 #else
 const char* DEFAULT_STRING_VALUE = "";
@@ -29,7 +31,6 @@ using srch2::util::Logger;
 
 int indexedRecordsCount = 0;
 int totalRecordsCount = 0;
-
 
 SQLiteConnector::SQLiteConnector() {
     serverHandle = NULL;
