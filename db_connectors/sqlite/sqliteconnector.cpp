@@ -14,12 +14,17 @@
 #include <cstring>
 #include <iostream>
 #include <fstream>
-#include <boost/filesystem.hpp>
+#include <unistd.h>
+#include "io.h"
 
 using srch2::util::Logger;
 
 int indexedRecordsCount = 0;
 int totalRecordsCount = 0;
+
+namespace {
+
+}
 
 SQLiteConnector::SQLiteConnector() {
     serverHandle = NULL;
@@ -709,7 +714,7 @@ void SQLiteConnector::loadLastAccessedLogRecordTime(std::string & lastAccessedLo
     this->serverHandle->configLookUp("srch2Home", srch2Home);
     this->serverHandle->configLookUp("dataDir", path);
     path = srch2Home + "/" + path + "/" + "sqlite_data/data.bin";
-    if (access(path.c_str(), F_OK) == 0) {
+    if (checkFileExisted(path.c_str())) {
         std::ifstream a_file(path.c_str(), std::ios::in | std::ios::binary);
         a_file >> lastAccessedLogRecordTime;
         a_file.close();
@@ -725,9 +730,12 @@ void SQLiteConnector::saveLastAccessedLogRecordTime(const std::string & lastAcce
     this->serverHandle->configLookUp("srch2Home", srch2Home);
     this->serverHandle->configLookUp("dataDir", path);
     path = srch2Home + "/" + path + "/" + "sqlite_data/";
-    if (access(path.c_str(), F_OK) != 0) {
-        boost::filesystem::create_directories(path);
+    if (!checkDirExisted(path.c_str())){
+        // S_IRWXU : Read, write, and execute by owner.
+        // S_IRWXG : Read, write, and execute by group.
+        mkdir(path.c_str(), S_IRWXU | S_IRWXG);
     }
+
     std::string pt = path + "data.bin";
     std::ofstream a_file(pt.c_str(), std::ios::trunc | std::ios::binary);
     a_file << lastAccessedLogRecordTime;

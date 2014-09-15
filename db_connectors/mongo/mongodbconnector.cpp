@@ -10,8 +10,8 @@
 #include "mongo/client/dbclient.h"
 #include <iomanip>
 #include <fstream>
-#include <boost/filesystem.hpp>
 #include <stdlib.h>
+#include "io.h"
 
 using namespace std;
 
@@ -61,7 +61,7 @@ bool MongoDBConnector::checkConfigValidity() {
     int value = strtol(port.c_str(), NULL, 10);
     if (value <= 0 || value > USHRT_MAX) {
         printf("MOGNOLISTENER: database port must be between 1 and %d\n",
-                USHRT_MAX);
+        USHRT_MAX);
         return false;
     }
 
@@ -80,7 +80,7 @@ bool MongoDBConnector::connectToDB() {
     int listenerWaitTime = 1;
     if (listenerWaitTimeStr.size() != 0) {
         listenerWaitTime = static_cast<int>(strtol(listenerWaitTimeStr.c_str(),
-                NULL, 10));
+        NULL, 10));
     }
 
     string hostAndport = host;
@@ -199,7 +199,7 @@ bool MongoDBConnector::getLastAccessedLogRecordTime(time_t& t) {
     std::string path = srch2Home + "/" + dataDir + "/mongodb_data/"
             + "data.bin";
 
-    if (access(path.c_str(), F_OK) == 0) {
+    if (checkFileExisted(path.c_str())) {
         ifstream a_file(path.c_str(), ios::in | ios::binary);
         a_file >> t;
         a_file.close();
@@ -220,9 +220,12 @@ void MongoDBConnector::setLastAccessedLogRecordTime(const time_t t) {
     this->serverHandle->configLookUp("dataDir", dataDir);
     std::string path = srch2Home + "/" + dataDir + "/mongodb_data/";
 
-    if (access(path.c_str(), F_OK) != 0) {
-        boost::filesystem::create_directories(path);
+    if (!checkDirExisted(path.c_str())) {
+        // S_IRWXU : Read, write, and execute by owner.
+        // S_IRWXG : Read, write, and execute by group.
+        mkdir(path.c_str(), S_IRWXU | S_IRWXG);
     }
+
     std::string pt = path + "data.bin";
     ofstream a_file(pt.c_str(), ios::trunc | ios::binary);
     a_file << t;
@@ -242,7 +245,7 @@ int MongoDBConnector::runListener() {
     int listenerWaitTime = 1;
     if (listenerWaitTimeStr.size() != 0) {
         listenerWaitTime = static_cast<int>(strtol(listenerWaitTimeStr.c_str(),
-                NULL, 10));
+        NULL, 10));
     }
 
     do {
