@@ -4,7 +4,14 @@
 #include "Srch2Server.h"
 #include "util/RecordSerializerUtil.h"
 #include "operation/AttributeAccessControl.h"
-#include <sys/statvfs.h>
+
+#ifndef ANDROID
+#   include <sys/statvfs.h>
+#else
+#   include <sys/vfs.h>
+#   define statvfs statfs
+#endif
+
 
 namespace srch2 {
 namespace httpwrapper {

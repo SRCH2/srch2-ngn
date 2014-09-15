@@ -103,7 +103,7 @@ void testStandardAnalyzer()
 }
 
 void testChineseAnalyzer(const string &dataDir){
-    string dictPath = dataDir + "/srch2_dict_ch.core";
+    string dictPath = dataDir + "/srch2_dictionary_zh_cn.bin";
     string src="We are美丽 Chineseㄓㄠ我是一个中国人。，上海自来水来自海上，从４月１０号起，“一票制” 朱镕基";
     src +="!，。》@##%     在民国时期，插画Picture在中国曾经盛极一时。";
     src += "END";
@@ -399,7 +399,7 @@ void testStopFilter(string dataDir) {
     stop->free();
 
     stop = StopWordContainer::getInstance(dataDir + "/stopWordsFile.txt");
-    ChineseDictionaryContainer * dict = ChineseDictionaryContainer::getInstance(dataDir +"/srch2_dict_ch.core");
+    ChineseDictionaryContainer * dict = ChineseDictionaryContainer::getInstance(dataDir +"/srch2_dictionary_zh_cn.bin");
     AnalyzerInternal *chineseAnalyzer = new ChineseAnalyzer(
             dict,
             stop,
@@ -815,7 +815,7 @@ void testSynonymFilter(string dataDir) {
 
     // TEST 11 : Test ChineseAnayzer
     Logger::info("current dir:%s", dataDir.c_str());
-    ChineseDictionaryContainer* dict = ChineseDictionaryContainer::getInstance(dataDir + "/srch2_dict_ch.core");
+    ChineseDictionaryContainer* dict = ChineseDictionaryContainer::getInstance(dataDir + "/srch2_dictionary_zh_cn.bin");
     AnalyzerInternal* chineseAnalyzer = new ChineseAnalyzer( dict
             , stop, NULL, syn, "");
     tokenStream = chineseAnalyzer->createOperatorFlow();
@@ -1185,9 +1185,9 @@ int buildChineseDictionary(const string & builder, const string & textFile, cons
     Logger::debug("outputBin: %s", outputBin.c_str());
     struct stat stResult;
     if ( stat(builder.c_str(), &stResult) != 0){
-        Logger::warn("utility bin not found, the test will not rebuild the ChineseDictionary.%s"
+        Logger::error("utility bin not found, the test will not rebuild the ChineseDictionary.%s"
                 , outputBin.c_str());
-        return 0;
+        return -1;
     }
     string command = builder + " " + textFile + " " + outputBin;
     int ret = system(command.c_str());
@@ -1210,7 +1210,7 @@ int main() {
 
     string chineseDictionaryBuilder(getenv("cnDictBuilder"));
     string chineseDictionaryTextFile(getenv("cnDictTxt"));
-    const string chineseDictionaryBinary = dataDir +"/srch2_dict_ch.core";
+    const string chineseDictionaryBinary = dataDir +"/srch2_dictionary_zh_cn.bin";
 
     int ret = buildChineseDictionary(chineseDictionaryBuilder, chineseDictionaryTextFile, 
             chineseDictionaryBinary);

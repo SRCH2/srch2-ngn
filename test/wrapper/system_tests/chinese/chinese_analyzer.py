@@ -1,7 +1,7 @@
 #!/usr/bin/python
 # -*- coding: utf-8 -*-
 # This test is to test the Chinese language support.
-# We need to set the fieldType name to "text_zh" inside the schema configuration to 
+# We need to set the fieldType name to "text_chinese" inside the schema configuration to 
 # enable the Chinese Analyzer. And we need to provide the Chinese Dictionary to 
 # tokenize the sentence. The conf.xml has all the details.
 #
@@ -30,7 +30,7 @@ def check_expected_hit(expected_hit, search_url):
         response = open_url_get(search_url + encoded)
         ret = check_array_contains(response['results'], hit[1])
         if ret != 0:
-            print "hit assert failed:", hit
+            print "hit assert failed:", hit[0]
             return ret
     return 0
 

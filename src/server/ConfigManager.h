@@ -308,14 +308,13 @@ protected:
 
     void setUpStemmer(CoreInfo_t *coreInfo, const xml_node &field, std::stringstream &parseWarnings);
     
-    void setUpChineseDictionary(CoreInfo_t * coreInfo, const xml_node &field, std::stringstream &parseWarnings);
-    
+    void setUpChineseDictionary(CoreInfo_t * coreInfo, string &dictionaryPath, std::stringstream &parseWarnings);
     void setUpStopword(CoreInfo_t *coreInfo, const xml_node &field, std::stringstream &parseWarnings);
     void setUpProtectedWord(CoreInfo_t *coreInfo, const xml_node &field, std::stringstream &parseWarnings);
     void setUpSynonym(CoreInfo_t *coreInfo, const xml_node &field, std::stringstream &parseWarnings);
     void setUpRecordSpecialCharacters(CoreInfo_t *coreInfo, const xml_node &field);
     void setUpEnglishAnalyzer(CoreInfo_t * coreInfo, const xml_node &childNodeTemp, std::stringstream &parseWarnings);
-    void setUpChineseAnalyzer(CoreInfo_t * coreInfo, const xml_node &childNodeTemp, std::stringstream &parseWarnings);
+    void setUpChineseAnalyzer(CoreInfo_t * coreInfo, string& dictionaryPath, const xml_node &childNodeTemp, std::stringstream &parseWarnings);
 public:
     ConfigManager(const string& configfile);
     virtual ~ConfigManager();
