@@ -26,7 +26,7 @@ ENDIF()
 #  1.  MongoDB connector 
 #
 IF(NOT ANDROID)
-    FILE(GLOB_RECURSE MONGO_DB_CONNECTOR_SRC RELATIVE ${CMAKE_CURRENT_SOURCE_DIR} "mongo/*.cpp" "util/*.cpp")
+    FILE(GLOB_RECURSE MONGO_DB_CONNECTOR_SRC RELATIVE ${CMAKE_CURRENT_SOURCE_DIR} "mongo/*.cpp" "util/*.cpp" "../src/core/util/Logger.cpp")
 
     MESSAGE(STATUS "This is SOURCE dir " ${CMAKE_SOURCE_DIR})
 
@@ -36,12 +36,14 @@ IF(NOT ANDROID)
             ${CMAKE_SOURCE_DIR}/../thirdparty/mongo-cxx-driver/mongo-cxx-driver/build/osx-version-min_10.7/use-system-boost/srch2/include/
             ${CMAKE_SOURCE_DIR}/../src/adapter/
             ${CMAKE_SOURCE_DIR}/util/
+            ${CMAKE_SOURCE_DIR}/../src/core/util
         )
     ELSE()
         INCLUDE_DIRECTORIES(
             ${CMAKE_SOURCE_DIR}/../thirdparty/mongo-cxx-driver/mongo-cxx-driver/build/use-system-boost/srch2/include/
             ${CMAKE_SOURCE_DIR}/../src/adapter/
             ${CMAKE_SOURCE_DIR}/util/
+            ${CMAKE_SOURCE_DIR}/../src/core/util
         )
     ENDIF()
 

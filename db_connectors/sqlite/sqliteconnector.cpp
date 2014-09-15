@@ -30,9 +30,6 @@ using srch2::util::Logger;
 int indexedRecordsCount = 0;
 int totalRecordsCount = 0;
 
-namespace {
-
-}
 
 SQLiteConnector::SQLiteConnector() {
     serverHandle = NULL;
