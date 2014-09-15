@@ -1,7 +1,7 @@
 #  How to use this cmake file.
 # > mdkir build
 # > cd build
-# > cmake ..
+# > cmake -DSTATIC_LINK_BOOST=0 ..
 # > make
 # 
 # To build on android, please use
@@ -10,6 +10,7 @@
 
 cmake_minimum_required(VERSION 2.8)
 
+SET(STATIC_LINK_BOOST OFF CACHE BOOL "")
 #Find the platform information.
 SET(MAC_OS OFF CACHE BOOL "")
 SET(LINUX_OS OFF CACHE BOOL "")
@@ -64,8 +65,14 @@ IF(NOT ANDROID)
     ELSE()
         set(MONGO_CLIENT_LIBRARY ${CMAKE_SOURCE_DIR}/../thirdparty/mongo-cxx-driver/mongo-cxx-driver/build/use-system-boost/libmongoclient.a)
     ENDIF()
+    
+    IF (STATIC_LINK_BOOST)
+        SET(Boost_USE_STATIC_LIBS ON)
+    ENDIF()
+    SET(Boost_USE_MULTITHREAD ON)
+    FIND_PACKAGE( Boost COMPONENTS program_options system filesystem thread REQUIRED )
 
-    TARGET_LINK_LIBRARIES(mongodbConnector ${MONGO_CLIENT_LIBRARY} -pthread )
+    TARGET_LINK_LIBRARIES(mongodbConnector ${Boost_LIBRARIES}  ${MONGO_CLIENT_LIBRARY} -pthread )
 ENDIF()
 
 #
