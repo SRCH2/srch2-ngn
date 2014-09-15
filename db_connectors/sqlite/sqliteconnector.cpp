@@ -17,6 +17,14 @@
 #include <unistd.h>
 #include "io.h"
 
+namespace{
+#ifdef ANDROID
+const char* DEFAULT_STRING_VALUE = "DEFAULT";
+#else
+const char* DEFAULT_STRING_VALUE = "";
+#endif
+}
+
 using srch2::util::Logger;
 
 int indexedRecordsCount = 0;
@@ -38,7 +46,7 @@ SQLiteConnector::SQLiteConnector() {
 //Initialize the connector. Establish a connection to Sqlite.
 int SQLiteConnector::init(ServerInterface * serverHandle) {
     this->serverHandle = serverHandle;
-    std::string tableName = "1";
+    std::string tableName = DEFAULT_STRING_VALUE;
     this->serverHandle->configLookUp("tableName", tableName);
     //Set the default log table name and default log attributes name.
     LOG_TABLE_NAME = "SRCH2_LOG_";
@@ -56,7 +64,7 @@ int SQLiteConnector::init(ServerInterface * serverHandle) {
     TRIGGER_UPDATE_NAME.append(tableName.c_str());
 
     //Get listenerWaitTime value from the config file.
-    std::string listenerWaitTimeStr = "1";
+    std::string listenerWaitTimeStr = DEFAULT_STRING_VALUE;
     this->serverHandle->configLookUp("listenerWaitTime", listenerWaitTimeStr);
     listenerWaitTime = static_cast<int>(strtol(listenerWaitTimeStr.c_str(),
     NULL, 10));
@@ -95,9 +103,9 @@ int SQLiteConnector::init(ServerInterface * serverHandle) {
 
 //Connect to the sqlite database
 bool SQLiteConnector::connectToDB() {
-    std::string db_name = "1";
-    std::string db_path = "1";
-    std::string srch2Home = "1";
+    std::string db_name = DEFAULT_STRING_VALUE;
+    std::string db_path = DEFAULT_STRING_VALUE;
+    std::string srch2Home = DEFAULT_STRING_VALUE;
     this->serverHandle->configLookUp("db", db_name);
     this->serverHandle->configLookUp("dbPath", db_path);
     this->serverHandle->configLookUp("srch2Home", srch2Home);
@@ -133,10 +141,10 @@ bool SQLiteConnector::connectToDB() {
  * the primary key. Otherwise, the check fails.
  */
 bool SQLiteConnector::checkConfigValidity() {
-    std::string dbPath = "1";
-    std::string db = "1";
-    std::string uniqueKey = "1";
-    std::string tableName = "1";
+    std::string dbPath = DEFAULT_STRING_VALUE;
+    std::string db = DEFAULT_STRING_VALUE;
+    std::string uniqueKey = DEFAULT_STRING_VALUE;
+    std::string tableName = DEFAULT_STRING_VALUE;
     this->serverHandle->configLookUp("dbPath", dbPath);
     this->serverHandle->configLookUp("db", db);
     this->serverHandle->configLookUp("uniqueKey", uniqueKey);
@@ -157,7 +165,7 @@ bool SQLiteConnector::checkConfigValidity() {
 //Sqlite will return an error if the table doesn't exist.
 //Query: SELECT COUNT(*) FROM table;
 bool SQLiteConnector::checkTableExistence() {
-    std::string tableName = "1";
+    std::string tableName = DEFAULT_STRING_VALUE;
     this->serverHandle->configLookUp("tableName", tableName);
 
     /* Create SQL statement */
@@ -170,7 +178,6 @@ bool SQLiteConnector::checkTableExistence() {
         if (rc == SQLITE_OK) {
             return true;
         }
-
         Logger::error( "SQLITECONNECTOR: SQL error %d : %s", rc, zErrMsg);
         sqlite3_free(zErrMsg);
 
@@ -189,7 +196,7 @@ bool SQLiteConnector::checkTableExistence() {
  * Query: SELECT * FROM table;
  */
 int SQLiteConnector::createNewIndexes() {
-    std::string tableName = "1";
+    std::string tableName = DEFAULT_STRING_VALUE;
     this->serverHandle->configLookUp("tableName", tableName);
 
     /* Create SQL statement */
@@ -248,8 +255,8 @@ int addRecord_callback(void *dbConnector, int argc, char **argv,
  * corresponding requests to the SRCH2 engine
  */
 int SQLiteConnector::runListener() {
-    std::string tableName = "1";
-    std::string lastAccessedLogRecordTime = "1";
+    std::string tableName = DEFAULT_STRING_VALUE;
+    std::string lastAccessedLogRecordTime = DEFAULT_STRING_VALUE;
     this->serverHandle->configLookUp("tableName", tableName);
 
     //A timestamp that indicates the last time the SRCH2 engine
@@ -473,7 +480,7 @@ const char* SQLiteConnector::getLogTableIdAttr() {
 //Get the table's schema and save them into a map<schema_name, schema_type>
 //Query: PRAGMA table_info(table_name);
 bool SQLiteConnector::populateTableSchema() {
-    std::string tableName = "1";
+    std::string tableName = DEFAULT_STRING_VALUE;
     this->serverHandle->configLookUp("tableName", tableName);
     /* Create SQL statement */
     char *zErrMsg = 0;
@@ -506,8 +513,8 @@ bool SQLiteConnector::populateTableSchema() {
 int populateTableSchema_callback(void * dbConnector, int argc, char ** argv,
         char **azColName) {
     SQLiteConnector * sqliteConnector = (SQLiteConnector *) dbConnector;
-    std::string key = "1";
-    std::string value = "1";
+    std::string key = DEFAULT_STRING_VALUE;
+    std::string value = DEFAULT_STRING_VALUE;
     for (int i = 0; i < argc; i++) {
         if (strcmp(azColName[i], "name") == 0) {
             key = argv[i] ? argv[i] : "NULL";
@@ -596,7 +603,7 @@ bool SQLiteConnector::createPreparedStatement() {
  *  new.ID , new.NAME , new.SALARY );END;
  */
 bool SQLiteConnector::createTriggerIfNotExistence() {
-    std::string tableName = "1";
+    std::string tableName = DEFAULT_STRING_VALUE;
     this->serverHandle->configLookUp("tableName", tableName);
 
     /* Insert Trigger Create SQL statement */
@@ -709,8 +716,8 @@ bool SQLiteConnector::createTriggerIfNotExistence() {
 
 //Load the lastAccessedLogRecordTime from disk
 void SQLiteConnector::loadLastAccessedLogRecordTime(std::string & lastAccessedLogRecordTime) {
-    std::string path = "1";
-    std::string srch2Home = "1";
+    std::string path = DEFAULT_STRING_VALUE;
+    std::string srch2Home = DEFAULT_STRING_VALUE;
     this->serverHandle->configLookUp("srch2Home", srch2Home);
     this->serverHandle->configLookUp("dataDir", path);
     path = srch2Home + "/" + path + "/" + "sqlite_data/data.bin";
@@ -725,8 +732,8 @@ void SQLiteConnector::loadLastAccessedLogRecordTime(std::string & lastAccessedLo
 
 //Save lastAccessedLogRecordTime to disk
 void SQLiteConnector::saveLastAccessedLogRecordTime(const std::string & lastAccessedLogRecordTime) {
-    std::string path = "1";
-    std::string srch2Home = "1";
+    std::string path = DEFAULT_STRING_VALUE;
+    std::string srch2Home = DEFAULT_STRING_VALUE;
     this->serverHandle->configLookUp("srch2Home", srch2Home);
     this->serverHandle->configLookUp("dataDir", path);
     path = srch2Home + "/" + path + "/" + "sqlite_data/";
@@ -752,7 +759,7 @@ bool SQLiteConnector::deleteProcessedLog(
             lastAccessedLogRecordTime.c_str(), lastAccessedLogRecordTime.size(),
             SQLITE_STATIC);
     if (rc != SQLITE_OK && rc != SQLITE_DONE) {
-        Logger::error("SQLITECONNECTOR: SQL error %d : %s", rc,
+        Logger::error("SQLITECONNECTOR: SQL deleteProcessedLog: bind lastAccessedLogRecordTime error %d : %s", rc,
                 sqlite3_errmsg(db));
         return false;
     }
@@ -761,7 +768,7 @@ bool SQLiteConnector::deleteProcessedLog(
     rc = sqlite3_step(deleteLogStmt);
 
     if (rc != SQLITE_OK && rc != SQLITE_DONE) {
-        Logger::error( "SQLITECONNECTOR: SQL error %d : %s", rc,
+        Logger::error( "SQLITECONNECTOR: SQL deleteProcessedLog: Execute delete query error %d : %s", rc,
                 sqlite3_errmsg(db));
         sqlite3_reset(deleteLogStmt);
         return false;
@@ -771,7 +778,7 @@ bool SQLiteConnector::deleteProcessedLog(
     rc = sqlite3_reset(deleteLogStmt);
 
     if (rc != SQLITE_OK && rc != SQLITE_DONE) {
-        Logger::error( "SQLITECONNECTOR: SQL error %d : %s", rc,
+        Logger::error( "SQLITECONNECTOR: SQL deleteProcessedLog: Reset the prepared statement error %d : %s", rc,
                 sqlite3_errmsg(db));
         return false;
     }
