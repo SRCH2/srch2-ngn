@@ -13,7 +13,7 @@ import android.util.Log;
  * tag field adding 's2sdk::|'. The OR operator | enables oring against other whatever follows the tag
  * prefix.
  * <br><br>
- * <b>When compiling for release be sure to set <code>isLogging</code> to false</b>.
+ * <b>When compiling for release be sure to set {@code isLogging} to false</b>.
  */
 class Cat {
     private static boolean isLogging = false;

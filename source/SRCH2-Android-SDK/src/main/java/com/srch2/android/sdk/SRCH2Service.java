@@ -58,6 +58,9 @@ final public class SRCH2Service extends Service implements AutoPing.ValidatePing
         }
     }
 
+
+    Process executableProcess;
+
     private AtomicBoolean SRCH2EngineSignaledThatItIsAlive;
 
     private ExecutableServiceBroadcastReciever incomingIntentReciever;
@@ -107,9 +110,9 @@ final public class SRCH2Service extends Service implements AutoPing.ValidatePing
         } catch (IllegalArgumentException ignore) {
         }
         AutoPing.stop();
-        if (p != null) {
+        if (executableProcess != null) {
             try {
-                p.destroy();
+                executableProcess.destroy();
             } catch (Exception e) {
                 //ignore
             }
@@ -354,8 +357,8 @@ final public class SRCH2Service extends Service implements AutoPing.ValidatePing
             }
         }
 
-        if (p != null) {
-            p.destroy();
+        if (executableProcess != null) {
+            executableProcess.destroy();
         }
     }
 
@@ -388,8 +391,6 @@ final public class SRCH2Service extends Service implements AutoPing.ValidatePing
         signalSRCH2EngineToProceed(executablePortNumber, executableOAuthLiteral);
     }
 
-    Process p;
-
     private void startRunningExecutable(final int portBeingUsedToStartService, final String shutDownUrl, final String oAuthCode, final String pingUrl) {
         Cat.d(TAG, "startRunningExecutable");
         Thread t = new Thread(new Runnable() {
@@ -400,23 +401,23 @@ final public class SRCH2Service extends Service implements AutoPing.ValidatePing
                 try {
                     updateServerLog(portBeingUsedToStartService, shutDownUrl, oAuthCode, executableProcessPath, pingUrl);
                     Cat.d(TAG, "startRunningExecutable - starting process");
-                    p = pb.start();
+                    executableProcess = pb.start();
 
                     Cat.d(TAG, "startRunningExe - after pbstart isShuttingDown is " + isShuttingDown.get());
-                    if (p.getInputStream() != null) {
-                        Cat.d(TAG, "PRINTING INPUT STREAM\n" + readInputStream(p.getInputStream()));
+                    if (executableProcess.getInputStream() != null) {
+                        Cat.d(TAG, "PRINTING INPUT STREAM\n" + readInputStream(executableProcess.getInputStream()));
                     } else {
                         Cat.d(TAG, "NO INPUT STREAM from process");
                     }
-                    if (p.getErrorStream() != null) {
-                        Cat.d(TAG, "PRINTING ERROR STREAM\n" + readInputStream(p.getErrorStream()));
+                    if (executableProcess.getErrorStream() != null) {
+                        Cat.d(TAG, "PRINTING ERROR STREAM\n" + readInputStream(executableProcess.getErrorStream()));
                     } else {
                         Cat.d(TAG, "NO ERROR STREAM from process");
                     }
-                   // p.destroy();
+                   // executableProcess.destroy();
                     if (!isShuttingDown.get()) {
                         clearServerLogEntries();
-                        Cat.d(TAG, "startRunningExe - after p.destory engine may have crash validating ... ");
+                        Cat.d(TAG, "startRunningExe - after executableProcess.destory engine may have crash validating ... ");
                         AutoPing.interrupt();
                         SRCH2EngineSignaledThatItIsAlive.set(false);
                         signalSRCH2EngineIsAlive(false);
@@ -436,7 +437,7 @@ final public class SRCH2Service extends Service implements AutoPing.ValidatePing
                         }
                         SRCH2EngineSignaledThatItIsAlive.set(false);
                     }
-                    Cat.d(TAG, "startRunningExe - after p.destory isShuttingDown is " + isShuttingDown.get());
+                    Cat.d(TAG, "startRunningExe - after executableProcess.destory isShuttingDown is " + isShuttingDown.get());
                 } catch (IOException e) {
                     Cat.d(TAG, "IOEXCEPTION starting executable!");
                     Cat.ex(TAG, "starting executable io error", e);

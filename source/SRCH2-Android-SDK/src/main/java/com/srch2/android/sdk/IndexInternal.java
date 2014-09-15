@@ -103,20 +103,15 @@ final class IndexInternal {
 
     void search(String searchInput) {
         if (SRCH2Engine.validateSearchInput(searchInput)) {
-            searchInput = formatDefaultQueryURL(searchInput);
-            // if (this.indexDescription.isGeoIndex()) {
-            // //searchInput += formatDefaultGeoCircle();
-            // }
-            searchRawString(searchInput);
+            searchRawString(formatDefaultQueryURL(searchInput));
         }
     }
 
     void advancedSearch(Query query) {
-        if (query == null) {
+        if (query == null || SRCH2Engine.getConfig() == null) {
             return;
         }
-        String queryString = query.toString();
-        searchRawString(queryString);
+        searchRawString(query.toString());
     }
 
     void getRecordbyID(String id) {

@@ -210,9 +210,10 @@ final public class SRCH2Engine {
     /**
      * Registers any instances of {@link com.srch2.android.sdk.Indexable} that represent indexes in the SRCH2 search server.
      * <br><br>
-     * This method (or {@link #setSQLiteIndexables(SQLiteIndexable, SQLiteIndexable...)}) <b>must be called before
+     * This method (or {@link #setSQLiteIndexables(SQLiteIndexable, SQLiteIndexable...)})<b> must be called before
      * every call</b> to {@link #onResume(android.content.Context)} and at least one
-     * {@code Indexable} or {@code SQLiteIndexable} be passed.
+     * {@code Indexable} or {@code SQLiteIndexable} be passed; this call should be made from
+     * {@link android.app.Activity#onResume()} for an {@code Activity} utilizing search.
      * @param firstIndexable at least one {@code Indexable} representing an index in the SRCH2 search server
      * @param additionalIndexables any additional {@code Indexable} instances representing indexes in the SRCH2 search server
      */
@@ -235,7 +236,8 @@ final public class SRCH2Engine {
      * <br><br>
      * This method (or {@link #setIndexables(Indexable, Indexable...)}) <b>must be called before
      * every call</b> to {@link #onResume(android.content.Context)} and at least one
-     * {@code Indexable} or {@code SQLiteIndexable} be passed.
+     * {@code Indexable} or {@code SQLiteIndexable} be passed; this call should be made from
+     * {@link android.app.Activity#onResume()} for an {@code Activity} utilizing search.
      * @param firstSQLiteIndexable at least one {@code SQLiteIndexable} representing an index in the SRCH2 search server
      * @param additionalSQLiteIndexables any additional {@code SQLiteIndexable} instances representing indexes in the SRCH2 search server
      */
