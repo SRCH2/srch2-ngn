@@ -504,9 +504,8 @@ performed when *SRCH2Engine.initialize()* is called to configure the indexes. Fo
 technical details, the SQLite command `PRAGMA table_info(...)` is this query and returns the columns of
 the specified table in order for the columns of that table to be mapped to the *Field* attributes so
 the correct *Schema* can be generated. The return value of the method *getTableName()* specifies which
-table in the database the *SQLiteOpenHelper* manages to be indexed, while *getDatabaseName()* is only
-necessary for backwards compatibility (since the name of the database can be returned from the 
-*SQLiteOpenHelper* only on KitKat and above). These should **exactly match** the values used in the create table
+table in the database the *SQLiteOpenHelper* manages to be indexed, while *getDatabaseName()* specifies
+which database contains the table to be indexed. These should **exactly match** the values used in the create table
 string and the *SQLiteOpenHelper* constructor. 
 
 Another critical difference is only search requests are possible on *SQLiteIndexable* implementations,
