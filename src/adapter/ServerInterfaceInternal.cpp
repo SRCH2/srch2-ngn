@@ -155,7 +155,6 @@ int ServerInterfaceInternal::configLookUp(const std::string& key,
         std::string & value) {
     std::string newKey = key;
     std::transform(newKey.begin(), newKey.end(), newKey.begin(), ::tolower);
-
     std::map<std::string, std::string>::const_iterator it;
     const std::map<std::string, std::string> & dbParameters =
             *this->server->indexDataConfig->getDbParameters();

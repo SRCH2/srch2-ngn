@@ -239,7 +239,6 @@ void Srch2Server::createAndBootStrapIndexer() {
             Logger::console("%s: Creating indexes from JSON file...",this->coreName.c_str());
             unsigned indexedCounter = DaemonDataSource::createNewIndexFromFile(
                     indexer, storedAttrSchema, indexDataConfig);
-
             /*
              *  commit the indexes once bulk load is done and then save it to the disk only
              *  if number of indexed record is > 0.

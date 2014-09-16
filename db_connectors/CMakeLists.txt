@@ -1,7 +1,7 @@
 #  How to use this cmake file.
 # > mdkir build
 # > cd build
-# > cmake -DRELEASE_BUILD=0 ..
+# > cmake -DSTATIC_LINK_BOOST=0 ..
 # > make
 # 
 # To build on android, please use
@@ -9,8 +9,6 @@
 
 
 cmake_minimum_required(VERSION 2.8)
-SET(RELEASE_BUILD ON CACHE BOOL "")
-SET(ANDROID OFF CACHE BOOL "")
 
 #Find the platform information.
 SET(MAC_OS OFF CACHE BOOL "")
@@ -28,7 +26,7 @@ ENDIF()
 #  1.  MongoDB connector 
 #
 IF(NOT ANDROID)
-    FILE(GLOB_RECURSE MONGO_DB_CONNECTOR_SRC RELATIVE ${CMAKE_CURRENT_SOURCE_DIR} "mongo/*.cpp")
+    FILE(GLOB_RECURSE MONGO_DB_CONNECTOR_SRC RELATIVE ${CMAKE_CURRENT_SOURCE_DIR} "mongo/*.cpp" "util/*.cpp" "../src/core/util/Logger.cpp")
 
     MESSAGE(STATUS "This is SOURCE dir " ${CMAKE_SOURCE_DIR})
 
@@ -37,11 +35,13 @@ IF(NOT ANDROID)
         INCLUDE_DIRECTORIES(
             ${CMAKE_SOURCE_DIR}/../thirdparty/mongo-cxx-driver/mongo-cxx-driver/build/osx-version-min_10.7/use-system-boost/srch2/include/
             ${CMAKE_SOURCE_DIR}/../src/adapter/
+            ${CMAKE_SOURCE_DIR}/util/
         )
     ELSE()
         INCLUDE_DIRECTORIES(
             ${CMAKE_SOURCE_DIR}/../thirdparty/mongo-cxx-driver/mongo-cxx-driver/build/use-system-boost/srch2/include/
             ${CMAKE_SOURCE_DIR}/../src/adapter/
+            ${CMAKE_SOURCE_DIR}/util/
         )
     ENDIF()
 
@@ -62,10 +62,10 @@ IF(NOT ANDROID)
     ELSE()
         set(MONGO_CLIENT_LIBRARY ${CMAKE_SOURCE_DIR}/../thirdparty/mongo-cxx-driver/mongo-cxx-driver/build/use-system-boost/libmongoclient.a)
     ENDIF()
-
-    if (RELEASE_BUILD)
+    
+    IF (STATIC_LINK_BOOST)
         SET(Boost_USE_STATIC_LIBS ON)
-    endif()
+    ENDIF()
     SET(Boost_USE_MULTITHREAD ON)
     FIND_PACKAGE( Boost COMPONENTS program_options system filesystem thread REQUIRED )
     
@@ -76,34 +76,42 @@ ENDIF()
 #  2.  SQLite connector 
 #
 
-MESSAGE(STATUS "Boost_VERSION=" ${Boost_VERSION})
-MESSAGE(STATUS "Boost_LIBRARIES=" ${Boost_LIBRARIES})
-MESSAGE(STATUS "Boost_INCLUDE_DIRS=" ${Boost_INCLUDE_DIRS})
+IF (ANDROID)
+    SET(sys_LIBRARY_DIRS "${ANDROID_TOOLCHAIN_ROOT}/user/lib")
+ELSE()
+    SET(sys_LIBRARY_DIRS "/usr/lib64/" "/lib/" "/lib64/")
+ENDIF()
 
 EXEC_PROGRAM( ${CMAKE_CXX_COMPILER}
                       ARGS  -dumpversion
                   OUTPUT_VARIABLE gcc_compiler_version)
 
 
-FILE(GLOB_RECURSE SQLITE_CONNECTOR_SRC RELATIVE ${CMAKE_CURRENT_SOURCE_DIR} "sqlite/*.cpp")
+FILE(GLOB_RECURSE SQLITE_CONNECTOR_SRC RELATIVE ${CMAKE_CURRENT_SOURCE_DIR} "sqlite/*.cpp" "util/*.cpp" "../src/core/util/Logger.cpp")
 					
 INCLUDE_DIRECTORIES(
+    ${CMAKE_SOURCE_DIR}/sqlite/
     ${CMAKE_SOURCE_DIR}/../src/adapter/
     ${CMAKE_SOURCE_DIR}/../thirdparty/json/jsoncpp-src/include
-    ${Boost_INCLUDE_DIRS}
+    ${CMAKE_SOURCE_DIR}/util/
 )
 
 IF (ANDROID) 
+    FIND_LIBRARY(log_LIBRARY NAMES log PATHS ${sys_LIBRARY_DIRS})
+    
+    MESSAGE(STATUS "liblog = ${log_LIBRARY}")
+
     SET( jsoncpp_LIBRARY ${CMAKE_SOURCE_DIR}/../thirdparty/json/jsoncpp-src/android/libs/armeabi-v7a/libjsoncpp.a)
-    SET(CMAKE_REQUIRED_LIBRARIES stdc++ crypto ${CMAKE_REQUIRED_LIBRARIES})
+    SET(CMAKE_REQUIRED_LIBRARIES stdc++ ${CMAKE_REQUIRED_LIBRARIES} ${log_LIBRARY})
+    LINK_DIRECTORIES("${sys_LIBRARY_DIRS}")
 ELSE()
     SET( jsoncpp_LIBRARY ${CMAKE_SOURCE_DIR}/../thirdparty/json/jsoncpp-src/build/libjsoncpp.a)
-    IF (LINUX_OS)
-        SET(CMAKE_REQUIRED_LIBRARIES dl pthread stdc++ rt z ${CMAKE_REQUIRED_LIBRARIES})
-    ELSE()
-	SET (CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -stdlib=libstdc++")
-        SET(CMAKE_REQUIRED_LIBRARIES pthread stdc++ ${CMAKE_REQUIRED_LIBRARIES})
+    IF (MAC_OS)
+        SET (CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -stdlib=libstdc++")
     ENDIF()
+
+    SET(CMAKE_REQUIRED_LIBRARIES pthread stdc++ ${CMAKE_REQUIRED_LIBRARIES})
+    
 ENDIF()
 
 ADD_LIBRARY(sqliteConnector SHARED ${SQLITE_CONNECTOR_SRC} )
@@ -118,5 +126,9 @@ set_target_properties(sqliteConnector PROPERTIES VERSION ${SQLITE_VERSION_STRING
 
 SET_TARGET_PROPERTIES(sqliteConnector PROPERTIES COMPILE_FLAGS -fPIC)
 
-TARGET_LINK_LIBRARIES(sqliteConnector ${jsoncpp_LIBRARY} ${CMAKE_REQUIRED_LIBRARIES} ${Boost_LIBRARIES} sqlite3)
+IF (ANDROID) 
+    TARGET_LINK_LIBRARIES(sqliteConnector ${jsoncpp_LIBRARY} ${CMAKE_REQUIRED_LIBRARIES} libsqlite.so)
+ELSE()
+    TARGET_LINK_LIBRARIES(sqliteConnector ${jsoncpp_LIBRARY} ${CMAKE_REQUIRED_LIBRARIES} sqlite3)
+ENDIF()
 
