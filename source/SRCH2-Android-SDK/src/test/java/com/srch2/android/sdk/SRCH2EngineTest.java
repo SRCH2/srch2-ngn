@@ -14,11 +14,6 @@ public class SRCH2EngineTest {
         PrepareEngine.prepareEngine();
     }
 
-    @Test(expected = IllegalStateException.class)
-    public void nullConfiguration() {
-        SRCH2Engine.initialize();
-    }
-
     @Test
     public void listenerCouldBeNull() {
         SRCH2Engine.setIndexables(PrepareEngine.musicIndex, PrepareEngine.movieIndex, PrepareEngine.geoIndex);
@@ -57,10 +52,5 @@ public class SRCH2EngineTest {
         SRCH2Engine.setIndexables(PrepareEngine.musicIndex);
         SRCH2Engine.initialize();
         SRCH2Engine.getSQLiteIndex(PrepareEngine.musicIndex.getIndexName());
-    }
-
-    @Test(expected = IllegalStateException.class)
-    public void shouldNotStartWithoutIndexableOrSqliteIndexableSet() {
-        SRCH2Engine.initialize();
     }
 }

@@ -484,7 +484,7 @@ to the proguard configuration file:
 ##Connecting to SQLite
 
 The SRCH2 Android SDK supports automatic generation of indexes from SQLite database tables. Additionally, the
-SRCH2 search server will create triggers inside each table connected to the SRCH2 Android SDK that enables
+SRCH2 search server will create triggers inside each table connected to the SDK that enables
 automatic observation of the change's the tables data, much like how it is possible to register a 
 *android.database.ContentObserver* within the Android SDK. To do so, extend the abstract class
 *com.srch2.android.sdk.SQLiteIndexable* in your Android application project: this class, like 
@@ -693,7 +693,7 @@ SRCH2 search server will generate an index representing this table and automatic
 index to reflect any changes in that table's data content.
 
 **There are three important notes** that must be taken into consideration when incorporating a SQLite database
-table into the SRCH2 Android SDK:
+table into the SDK:
 
 1. The first is that **the table must contain one column specified as the
 *PRIMARY KEY* that is of type *INTEGER* in the create table string**: it does not have to be auto incrementing, but

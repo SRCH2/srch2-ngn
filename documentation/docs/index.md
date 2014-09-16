@@ -76,7 +76,7 @@ it for your projects.
 
 ##Installing SDK
  
-We first show how to install the SRCH2 Android SDK using the built-in
+We first show how to install the SDK using the built-in
 [Gradle build system](http://www.gradle.org/). Suppose we have an
 existing Android project in Android Studio and we want to incorporate
 the SDK. We need to add the SRCH2 server Maven repository to the 
@@ -96,7 +96,7 @@ as shown in the following figure:
 
 <center>![Including the SRCH2 server Maven repository in the top-level build.gradle file][tutorial-012] </center>
 
-(2) Next we need to add the SRCH2 Android SDK into the dependencies of
+(2) Next we need to add the SDK into the dependencies of
 the project. To do so, on the left panel, click 'app', then click
 'build.gradle'. On the right panel, add the following line into the
 *dependencies* node:

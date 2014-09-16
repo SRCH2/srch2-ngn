@@ -478,8 +478,8 @@ final public class SRCH2Engine {
             indexes.addAll(sqliteIndexablesUserSets);
         }
         if (indexes.size() < 1) {
-            throw new IllegalStateException("No Indexable or SQLiteIndexable present during initialization: SRCH2Engine must be initialized" +
-                    "after calling either indexablesUserSets() or sqliteIndexablesUserSets() and passing at least one index to search on.");
+            Log.d("SRCH2", "SRCH2Engine error - no indexables/sqlitindexables set before call to SRCH2Engine.onResume(). " +
+                    "At least one indexable must be set before calling SRCH2Engine.onResume()");
         }
 
         SRCH2Engine.conf = new SRCH2Configuration(indexes);
