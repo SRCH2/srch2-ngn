@@ -24,12 +24,11 @@ public class LifeCycleTestActivity extends TestableActivity {
 
     @Override
     public void beforeAll() {
+        SRCH2Service.clearServerLogEntriesForTest(getApplicationContext());
         deleteSrch2Files();
         index = new DumbIndex();
         searchResultsCallback = new SearchResultsCallback();
-        SRCH2Engine.setIndexables(index);
-        SRCH2Engine.initialize();
-        SRCH2Engine.setSearchResultsListener(searchResultsCallback);
+
     }
 
     @Override
@@ -62,20 +61,27 @@ public class LifeCycleTestActivity extends TestableActivity {
         super.onPause();
     }
 
+    private void initializeOnResume() {
+        SRCH2Engine.setIndexables(index);;
+        SRCH2Engine.setSearchResultsListener(searchResultsCallback);
+    }
 
     public void testLifeCycle() {
         assertFalse(SRCH2Engine.isReady());
+        initializeOnResume();
         onStartAndWaitForIsReady(this, 60000);
         assertTrue(SRCH2Engine.isReady());
         String serverUrl = SRCH2Engine.getConfig().getUrlString();
-        onStopAndWaitForNotIsReady(this, 60000);
+        onStopAndWaitForNotIsReady(this, 15000);
         assertFalse(SRCH2Engine.isReady());
+        initializeOnResume();
         onStartAndWaitForIsReady(this, 60000);
         assertTrue(SRCH2Engine.isReady());
         assertEquals(serverUrl, SRCH2Engine.getConfig().getUrlString());
         onStopAndWaitForNotIsReady(this, 60000);
         assertFalse(SRCH2Engine.isReady());
-        sleep(80000);
+        sleep(30000);
+        initializeOnResume();
         onStartAndWaitForIsReady(this, 60000);
         assertTrue(SRCH2Engine.isReady());
         assertNotSame(serverUrl, SRCH2Engine.getConfig().getUrlString());

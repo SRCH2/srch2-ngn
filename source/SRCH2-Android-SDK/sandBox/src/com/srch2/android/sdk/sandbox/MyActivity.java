@@ -9,7 +9,6 @@ import android.widget.ListView;
 import com.srch2.android.sdk.SRCH2Engine;
 import com.srch2.android.sdk.SearchResultsListener;
 import org.json.JSONObject;
-
 import java.util.ArrayList;
 import java.util.HashMap;
 

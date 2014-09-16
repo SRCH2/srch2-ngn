@@ -218,8 +218,10 @@ final public class SRCH2Engine {
      * @param additionalIndexables any additional {@code Indexable} instances representing indexes in the SRCH2 search server
      */
     public static void setIndexables(Indexable firstIndexable, Indexable... additionalIndexables) {
+        Cat.d(TAG, "settingIndexables");
         indexablesUserSets = new ArrayList<Indexable>();
         if (firstIndexable != null) {
+            Cat.d(TAG, "settingIndexables -adding first");
             indexablesUserSets.add(firstIndexable);
         }
         if (additionalIndexables != null) {
@@ -242,8 +244,10 @@ final public class SRCH2Engine {
      * @param additionalSQLiteIndexables any additional {@code SQLiteIndexable} instances representing indexes in the SRCH2 search server
      */
     public static void setSQLiteIndexables(SQLiteIndexable firstSQLiteIndexable, SQLiteIndexable... additionalSQLiteIndexables) {
+        Cat.d(TAG, "settingSQLiteIndexables");
         sqliteIndexablesUserSets = new ArrayList<SQLiteIndexable>();
         if (firstSQLiteIndexable != null) {
+            Cat.d(TAG, "settingSQLiteIndexables -adding first");
             sqliteIndexablesUserSets.add(firstSQLiteIndexable);
         }
         if (additionalSQLiteIndexables != null) {
@@ -349,11 +353,21 @@ final public class SRCH2Engine {
 
     private static boolean checkResumeReady() {
         boolean resumeReady = true;
+
+        if (sqliteIndexablesUserSets == null) {
+            Cat.d(TAG, "sqliteIndexableUserSet NULL");
+        }
+        if (indexablesUserSets == null) {
+            Cat.d(TAG, "indexableUserset NULL");
+        }
+
         if (sqliteIndexablesUserSets == null && indexablesUserSets == null) {
             resumeReady = false;
+            Cat.d(TAG, "both sets null");
         } else if ((sqliteIndexablesUserSets != null && sqliteIndexablesUserSets.size() < 1)
                     && (indexablesUserSets != null && indexablesUserSets.size() < 1)) {
             resumeReady = false;
+            Cat.d(TAG, "one of the sets not of size");
         }
 
         if (!resumeReady) {
@@ -446,6 +460,7 @@ final public class SRCH2Engine {
         lastQuery.set(new IndexQueryPair(null, null));
         stopExecutable(context);
         unregisterReciever(context);
+        isReady.set(false);
         isStarted = false;
     }
 

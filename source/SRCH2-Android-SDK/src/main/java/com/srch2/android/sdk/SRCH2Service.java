@@ -81,19 +81,22 @@ final public class SRCH2Service extends Service implements AutoPing.ValidatePing
     private AtomicBoolean isShuttingDown;
     private Semaphore shutdownMutex;
 
-    private final String PREFERENCES_NAME_SERVER_STARTED_LOG = "srch2-server-started-log";
-    private final String PREFERENCES_KEY_SERVER_LOG_SHUTDOWN_URLS = "srch2-server-log-shutdown-urls";
-    private final String PREFERENCES_KEY_SERVER_LOG_USED_PORT_NUMBER = "srch2-server-log-port-number";
-    private final String PREFERENCES_KEY_SERVER_LOG_PREVIOUS_O_AUTH_CODE = "srch2-server-o-auth";
-    private final String PREFERENCES_KEY_SERVER_LOG_EXECUTABLE_PATH = "exe-path";
-    private final String PREFERENCES_KEY_SERVER_LOG_PING_URL = "ping-url";
+    private static final String PREFERENCES_NAME_SERVER_STARTED_LOG = "srch2-server-started-log";
+    private static final String PREFERENCES_KEY_SERVER_LOG_SHUTDOWN_URLS = "srch2-server-log-shutdown-urls";
+    private static final String PREFERENCES_KEY_SERVER_LOG_USED_PORT_NUMBER = "srch2-server-log-port-number";
+    private static final String PREFERENCES_KEY_SERVER_LOG_PREVIOUS_O_AUTH_CODE = "srch2-server-o-auth";
+    private static final String PREFERENCES_KEY_SERVER_LOG_EXECUTABLE_PATH = "exe-path";
+    private static final String PREFERENCES_KEY_SERVER_LOG_PING_URL = "ping-url";
 
     private final static String PREFERENCES_DEFAULT_NO_VALUE = "no-value";
+
+    private Context context;
 
     @Override
     public void onCreate() {
         super.onCreate();
         Cat.d(TAG, "onCreate");
+        context = getApplicationContext();
         SRCH2EngineSignaledThatItIsAlive = new AtomicBoolean(false);
         shutdownMutex = new Semaphore(1);
         isAwaitingShutdown = new AtomicBoolean(false);
@@ -176,9 +179,9 @@ final public class SRCH2Service extends Service implements AutoPing.ValidatePing
         editor.commit();
     }
 
-    private void clearServerLogEntries() {
+    static private void clearServerLogEntries(Context context) {
         Cat.d(TAG, "clearServerLogEntries");
-        SharedPreferences sharedpreferences = getSharedPreferences(PREFERENCES_NAME_SERVER_STARTED_LOG, Context.MODE_PRIVATE);
+        SharedPreferences sharedpreferences = context.getSharedPreferences(PREFERENCES_NAME_SERVER_STARTED_LOG, Context.MODE_PRIVATE);
         SharedPreferences.Editor editor = sharedpreferences.edit();
         editor.remove(PREFERENCES_KEY_SERVER_LOG_SHUTDOWN_URLS);
         editor.remove(PREFERENCES_KEY_SERVER_LOG_USED_PORT_NUMBER);
@@ -186,6 +189,11 @@ final public class SRCH2Service extends Service implements AutoPing.ValidatePing
         editor.remove(PREFERENCES_KEY_SERVER_LOG_EXECUTABLE_PATH);
         editor.remove(PREFERENCES_KEY_SERVER_LOG_PING_URL);
         editor.commit();
+    }
+
+    /** Only to be used for testing, use when manually deleting indexes to reset to "fresh state". */
+    static void clearServerLogEntriesForTest(Context context) {
+        clearServerLogEntries(context);
     }
 
     private void resolveLifeCycleAction(final Intent startCommandIntent) {
@@ -307,7 +315,7 @@ final public class SRCH2Service extends Service implements AutoPing.ValidatePing
                                 Cat.ex(TAG, "shutting down whiling while ", e);
                             }
                         }
-                        clearServerLogEntries();
+                        clearServerLogEntries(context);
                         } finally {
                             Cat.d(TAG, "shutting down finally block finished - releasing and setting to false");
                             shutdownMutex.release();
@@ -416,7 +424,7 @@ final public class SRCH2Service extends Service implements AutoPing.ValidatePing
                     }
                    // executableProcess.destroy();
                     if (!isShuttingDown.get()) {
-                        clearServerLogEntries();
+                        clearServerLogEntries(context);
                         Cat.d(TAG, "startRunningExe - after executableProcess.destory engine may have crash validating ... ");
                         AutoPing.interrupt();
                         SRCH2EngineSignaledThatItIsAlive.set(false);
@@ -432,7 +440,6 @@ final public class SRCH2Service extends Service implements AutoPing.ValidatePing
                         }
                         if (!SRCH2EngineSignaledThatItIsAlive.get()) {
                             Cat.d(TAG, "startRunningExe - did not get validation should be stopping self");
-                            clearServerLogEntries();
                             stopSelf();
                         }
                         SRCH2EngineSignaledThatItIsAlive.set(false);

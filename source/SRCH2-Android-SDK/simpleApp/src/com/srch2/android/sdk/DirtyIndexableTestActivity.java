@@ -26,12 +26,10 @@ public class DirtyIndexableTestActivity extends TestableActivity {
 
     @Override
     public void beforeAll() {
+        SRCH2Service.clearServerLogEntriesForTest(getApplicationContext());
         deleteSrch2Files();
         index = new DumbIndex();
         searchResultsCallback = new SearchResultsCallback();
-        SRCH2Engine.setIndexables(index);
-        SRCH2Engine.initialize();
-        SRCH2Engine.setSearchResultsListener(searchResultsCallback);
     }
 
     @Override
@@ -65,14 +63,21 @@ public class DirtyIndexableTestActivity extends TestableActivity {
     }
 
 
+    private void initializeOnResumeCall() {
+        SRCH2Engine.setIndexables(index);
+        SRCH2Engine.setSearchResultsListener(searchResultsCallback);
+    }
+
     public void testSaveIfDirtyIndexable() {
         assertFalse(SRCH2Engine.isReady());
+        initializeOnResumeCall();
         onStartAndWaitForIsReady(this, 30000);
         assertTrue(SRCH2Engine.isReady());
         assertFalse(SRCH2Engine.conf.indexableMap.get(DumbIndex.INDEX_NAME).indexInternal.isDirty.get());
         onStopAndWaitForNotIsReady(this, 30000);
         assertFalse(SRCH2Engine.isReady());
         sleep(1000);
+        initializeOnResumeCall();
         onStartAndWaitForIsReady(this, 30000);
         assertTrue(SRCH2Engine.isReady());
         assertFalse(SRCH2Engine.conf.indexableMap.get(DumbIndex.INDEX_NAME).indexInternal.isDirty.get());
@@ -93,8 +98,12 @@ public class DirtyIndexableTestActivity extends TestableActivity {
         onStopAndWaitForNotIsReady(this, 30000);
         assertFalse(SRCH2Engine.isReady());
         sleep(30000);
-        assertFalse(SRCH2Engine.conf.indexableMap.get(DumbIndex.INDEX_NAME).indexInternal.isDirty.get());
 
+
+        // NOTE there is a serious problem: how to test? since onPause no clears (stopping the SRCH2Engine)
+        // the indexable map list, this will always work. HOWEVER, key is to test whether the save task did
+        // actually execute at 98. for now assume, is it was dirty at line 97 multitask save task in
+        // SRCH2Engine.onPause does start.
 
     }
 

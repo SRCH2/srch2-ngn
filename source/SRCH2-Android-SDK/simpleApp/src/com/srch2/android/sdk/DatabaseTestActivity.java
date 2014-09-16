@@ -44,10 +44,10 @@ public class DatabaseTestActivity extends TestableActivity {
     public void beforeEach() {
         Log.d("SRCH2", "before each!");
         long t = SystemClock.uptimeMillis();
-        onStopAndWaitForNotIsReady(getApplicationContext(), 10000);
+        onStopAndWaitForNotIsReady(getApplicationContext(), 12000);
         long e = SystemClock.uptimeMillis() - t;
 
-
+        SRCH2Service.clearServerLogEntriesForTest(getApplicationContext());
         deleteSrch2Files();
         getApplicationContext().deleteDatabase(SQLiteSchema.DATABASE_NAME);
         SRCH2Engine.setSearchResultsListener(searchResultsCallback);
@@ -78,6 +78,7 @@ public class DatabaseTestActivity extends TestableActivity {
 
 
     public void testAll() {
+
         // "Unit Tests" (requires context hence here in integration testing)
         Log.d("s2sdk:: databasetest", "%%%%%%%%%% test null database");
         testNullDatabaseName();
@@ -380,28 +381,22 @@ public class DatabaseTestActivity extends TestableActivity {
         dbHelper = new DbHelper(getApplicationContext(), DbIndex.GeoFailureMode.GeoValid);
         dbIndex = new DbIndex(SQLiteSchema.DATABASE_NAME, SQLiteSchema.TABLE_NAME, dbHelper, DbIndex.GeoFailureMode.GeoValid);
         SRCH2Engine.setSQLiteIndexables(dbIndex);
-        SRCH2Engine.initialize();
         onStartAndWaitForIsReady(this, 60000);
         assertTrue(SRCH2Engine.isReady());
         dbHelper.insertRecords();
         sleep(20000);
 
         assertEquals(dbIndex.getRecordCount(), SQLiteSchema.NUMBER_OF_RECORDS_TO_INSERT);
-        onStopAndWaitForNotIsReady(this, 7000);
-        assertFalse(SRCH2Engine.isReady());
     }
 
     public void testValid() {
         dbHelper = new DbHelper(getApplicationContext(), DbIndex.GeoFailureMode.NotGeo);
         dbIndex = new DbIndex(SQLiteSchema.DATABASE_NAME, SQLiteSchema.TABLE_NAME, dbHelper, DbIndex.GeoFailureMode.NotGeo);
         SRCH2Engine.setSQLiteIndexables(dbIndex);
-        SRCH2Engine.initialize();
         onStartAndWaitForIsReady(this, 60000);
         assertTrue(SRCH2Engine.isReady());
         sleep(5000);
         assertEquals(dbIndex.getRecordCount(), SQLiteSchema.NUMBER_OF_RECORDS_TO_INSERT);
-        onStopAndWaitForNotIsReady(this, 7000);
-        assertFalse(SRCH2Engine.isReady());
     }
 
     public void testNullSQLiteOpenHelper() {

@@ -501,12 +501,16 @@ final class IndexDescription {
                 .append(TAB_QUADRUPLE)
                 .append("<dbKeyValue key=\"db\" value=\"" +
                         sqliteDatabaseProperties.getProperty(DB_DATABASE_NAME) + "\" />\n")
+                .append(TAB_QUADRUPLE)
                 .append("<dbKeyValue key=\"dbPath\" value=\"" +
                         sqliteDatabaseProperties.getProperty(DB_APP_DATABASE_PATH) + "\" />\n")
+                .append(TAB_QUADRUPLE)
                 .append("<dbKeyValue key=\"tableName\" value=\"" +
                         sqliteDatabaseProperties.getProperty(DB_DATABASE_TABLE_NAME) + "\" />\n")
+                .append(TAB_QUADRUPLE)
                 .append("<dbKeyValue key=\"listenerWaitTime\" value=\"" +
                         sqliteDatabaseProperties.getProperty(DB_LISTENER_WAIT_TIME) + "\"/>\n")
+                .append(TAB_QUADRUPLE)
                 .append("<dbKeyValue key=\"maxRetryOnFailure\" value=\"" +
                         sqliteDatabaseProperties.getProperty(DB_MAX_RETRY_ON_FAILURE) + "\"/>\n")
                 .append(TAB_TRIPLE)
