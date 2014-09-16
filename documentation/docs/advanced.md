@@ -28,7 +28,7 @@ All the conditions set on the *Term* object will be taken into the
 *Query* object. In addition, it allows us to set a filter, a sorter, and
 other operators to refine the returned query results.
 
-###Examples
+##Query Examples
 
 The following examples show some of these advanced features.
 Suppose we have defined two query terms: term 1 specifies a condition 
@@ -73,7 +73,7 @@ ascending order.</li>
 
 Next we explain the details of these advanced features.
 
-###Search on Fields
+##Search on Fields
 
 By default a record is a matching answer for a keyword as long as the keyword
 appears in one of the *searchable* fields defined in the schema
@@ -86,7 +86,7 @@ field *title*.
   new SearchableTerm("wind").searchSpecificField("title");
 ```
 
-###Prefix Condition
+##Prefix Condition
 
 In type-ahead search, we may want to treat a term, especially the
 last term in a query ("ame" in the example query "beaty ame") as a prefix
@@ -105,7 +105,7 @@ and the "beau" as a prefix keyword:
   Query query = new Query(term1.AND(term2));
 ```
 
-###Fuzzy Condition
+##Fuzzy Condition
 
 The SRCH2 engine supports fuzzy search based on [Levenshtein distance (edit
 distance)](http://en.wikipedia.org/wiki/Levenshtein_distance). 
@@ -140,7 +140,7 @@ the engine will use the similarity threshold specified in the
 override this getter method, we will use the system's default threshold
 of 0.65f.
 
-###Term Boost
+##Term Boost
 
 The engine allows us to specify a boost value for a term to indicate
 how important this term is in the [ranking function](http://srch2.com/documentation/ranking/).
@@ -158,7 +158,7 @@ We can specify prefix, fuzziness, and boosting conditions to a single term, e.g.
 ```
   new SearchableTerm("sta").enableFuzzyMatching(0.6f).setBoostValue(4).setIsPrefixMatching(true);
 ```
-###Boolean Expression
+##Boolean Expression
 
 The engine supports three boolean operators: AND, OR, and NOT. 
 Each operator generates a *CompositeTerm*
@@ -180,7 +180,7 @@ The following are a few more examples:
    SearchableTerm("MacGregor").enableFuzzyMatching(0.5f)))); 
 ```
 
-###Filter by Range
+##Filter by Range
 
 We can specify a range filter restricting the set of records by using
 the *filterByFieldInRange*, *filterByFieldEqualsTo*,
@@ -211,7 +211,7 @@ predicates (i.e., using the "AND" semantic).  If we want the engine to
 treat them as disjunctive predicates (i.e., using the "OR" semantic), 
 we can call the *setFilterRelationOR()* method.
 
-###Sorting
+##Sorting
 
 By default the engine sorts the results using a descending order based on
 the overall score of each record.  We can specify sorting by other
@@ -230,7 +230,7 @@ in the ascending order on the *year* field:
   new Query(new SearchableTerm("star")).sortOnFields("director", "year", "title").orderByAscending();
 ```
 
-###Pagination
+##Pagination
 
 To implement pagination, we want to return some of the results
 by specifying a starting offset and number of records.  
@@ -247,7 +247,7 @@ the 25th to the 34th of all the results.
   new Query(new SearchableTerm("star")).pagingStartFrom(25).pagingSize(10);
 ```
 
-###Geo Search
+##Geo Search
 
 The engine can index records with location information specified as a latitude
 and a longitude, and do search based on both keywords and locations. For
@@ -275,15 +275,15 @@ For example:
 
 We can use the *Query* object to search results inside a geo region,
 such as a rectangle region or a circle region.
-To search using a rectangle region, we can use the *Query.insideRectangleRegion()* method by
+To search using a rectangle region, we can use the *Query.insideRectangle()* method by
 specifying the latitudes and the longitudes of the left-bottom location and the top-right location.
-To search using a circle region, we can use the *Query.insideCircleRegion()* method by 
+To search using a circle region, we can use the *Query.insideCircle()* method by 
 specifying the latitude and the longitude of the center point, and also the radius of the circle.
 
 Here are some examples:
 ```
-  new Query(new SearchableTerm("ghirardelli")).insideRectangleRegion(61.2, -149.9, 61.2, -149.7);
-  new Query(new SearchableTerm("ghirardelli")).insideCircleRegion(61.2, -149.9, 5);
+  new Query(new SearchableTerm("ghirardelli")).insideRectangle(61.2, -149.9, 61.2, -149.7);
+  new Query(new SearchableTerm("ghirardelli")).insideCircle(61.2, -149.9, 5);
 ```
 
 Often we want to search records within a region without specifying keywords.
@@ -316,18 +316,18 @@ public class MovieIndex extends Indexable {
   ...
   @Override
   public Schema getSchema() {
-      PrimaryKeyField primaryKey = Field.createDefaultPrimaryKeyField(INDEX_FIELD_PRIMARY_KEY);
-      Field title = Field.createSearchableField(INDEX_FIELD_TITLE, 3).enableHighlighting();
-	  Field genre = Field.createSearchableField(INDEX_FIELD_GENRE).enableHighlighting();
-      ...
-      return Schema.createSchema(primaryKey, title, genre);
+    PrimaryKeyField primaryKey = Field.createDefaultPrimaryKeyField(INDEX_FIELD_PRIMARY_KEY);
+    Field title = Field.createSearchableField(INDEX_FIELD_TITLE, 3).enableHighlighting();
+	Field genre = Field.createSearchableField(INDEX_FIELD_GENRE).enableHighlighting();
+    ...
+    return Schema.createSchema(primaryKey, title, genre);
   }
 
   @Override
   public Highlighter getHighlighter() {
-      return Highlighter.createHighlighter()
-              .formatExactTextMatches(true, false, "#FF0000")
-              .formatFuzzyTextMatches(true, false, "#FF00FF");
+    return Highlighter.createHighlighter()
+            .formatExactTextMatches(true, false, "#FF0000")
+            .formatFuzzyTextMatches(true, false, "#FF00FF");
   }
 }
 ```
@@ -349,47 +349,48 @@ produce the output of
 
 The highlighted result should be used in conjunction with *Html.fromHtml(...)* such as
 *mTextView.setText(Html.fromHtml(mHighlightTitleText))* to display it
-properly on the UI.  
+properly on the UI. If custom tags are used, *SpannableString* can also be used to
+present the formatted text properly.
 
-The following code shows how to get the highlighted "title" field into the Adapter.
+The following code shows how to get the highlighted "title" field into the Adapter:
 ```
   @Override
   public void onNewSearchResults(int HTTPresponseCode,
                                  String JSONresponse,
                                  HashMap<String, ArrayList<JSONObject>> resultMap) {
-      if (HTTPresponseCode == HttpURLConnection.HTTP_OK) {
-          ArrayList<MovieSearchResult> newResults = new ArrayList<MovieSearchResult>();
+    if (HTTPresponseCode == HttpURLConnection.HTTP_OK) {
+      ArrayList<MovieSearchResult> newResults = new ArrayList<MovieSearchResult>();
 
-          ArrayList<JSONObject> movieResults = resultMap
-                  .get(MovieIndex.INDEX_NAME);
-          if (movieResults != null && movieResults.size() > 0) {
-              for (JSONObject jsonObject : movieResults) {
-                  MovieSearchResult searchResult = null;
-                  try {
-                      JSONObject originalRecord = 
+      ArrayList<JSONObject> movieResults = resultMap
+										   	 .get(MovieIndex.INDEX_NAME);
+      if (movieResults != null && movieResults.size() > 0) {
+        for (JSONObject jsonObject : movieResults) {
+          MovieSearchResult searchResult = null;
+          try {
+            JSONObject originalRecord = 
                           jsonObject.getJSONObject(Indexable.SEARCH_RESULT_JSON_KEY_RECORD);
-                      JSONObject highlightedFields = 
+            JSONObject highlightedFields = 
                           jsonObject.getJSONObject(Indexable.SEARCH_RESULT_JSON_KEY_HIGHLIGHTED);
-                      searchResult = new MovieSearchResult(
-                              highlightedFields
+            searchResult = new MovieSearchResult(
+									highlightedFields
                                       .getString(MovieIndex.INDEX_FIELD_TITLE),
-                              highlightedFields
+                                    highlightedFields
                                       .getString(MovieIndex.INDEX_FIELD_GENRE),
-                  } catch (JSONException oops) {
-                      continue;
-                  }
-
-                  if (searchResult != null) {
-                      newResults.add(searchResult);
-                  }
-              }
+          } catch (JSONException oops) {
+            continue;
           }
-          sendMessage(Message
-                  .obtain(this,
-                          newResults.size() > 0 ? MESSAGE_WHAT_PUBLISH_NEW_RESULTS
-                                  : MESSAGE_WHAT_PUBLISH_NO_NEW_RESULTS,
-                          newResults));
+          if (searchResult != null) {
+            newResults.add(searchResult);
+          }
+        }
       }
+	  
+      if (newResults.size() > 0) {
+        updateDisplayedSearchResults(newResults);
+      } else {
+        clearDisplayedSearchResults();
+      }
+    }
   }
 
 ```
@@ -400,7 +401,7 @@ search results. This field will always be float in type, and should be set
 from 1 to 100. 
 
 The following code tells the SDK to take the value of the "recordBoost" field from the record
-as the *RecordBoostField*. 
+as the *RecordBoostField*:
 ```
 public class MovieIndex extends Indexable {
   public static final String INDEX_FIELD_PRIMARY_KEY = "id";
@@ -420,7 +421,7 @@ public class MovieIndex extends Indexable {
 
 For instance, assume the user of the app was able to enter their favorite movie genres and they 
 entered the genre 'science fiction'. Then when inserting the initial movie records (or by updating
-each record) we can assign the value of the recordBoost field for a record like the following
+each record) we can assign the value of the recordBoost field for a record like the following:
 
 ```
   public JSONArray getAFewRecordsToInsert() {
@@ -457,7 +458,7 @@ each record) we can assign the value of the recordBoost field for a record like 
     return genre.contains("Science Fiction") ? 50 : 1;
   }
 ```	
-so that any movie of the genre "Science Fiction" will be boosted 50 times higher in the search results. 
+Any movie of the genre "Science Fiction" will be boosted 50 times higher in the search results. 
 
 ##Testing and Proguard
 
@@ -489,13 +490,13 @@ automatic observation of the change's the tables data, much like how it is possi
 *com.srch2.android.sdk.SQLiteIndexable* in your Android application project: this class, like 
 *com.srch2.android.sdk.Indexable* requires that the method *getIndexName()* be overridden to return
 the name of the index as handle; other methods like *getHighlighter()*, *getRecordCount()* and *getTopk()*
-are also available to customize the behaviour of the *SQLiteIndexable* just like doing so for
-*Indexable* instances. One critical difference is it is not necessary to override *getSchema()* as
-it will be automatically generated by the *SRCH2Engine*. 
+are also available to customize the behaviour of the *SQLiteIndexable* search result output like doing so for
+*Indexable* instances. 
 
-That is because the *SRCH2Engine* will resolve the schema for the index representing a table in the 
-database automatically. To do so, implementations of *SQLiteIndexable* **must override** a few
-additional methods: *getSQLiteOpenHelper()*, *getTableName()*, and *getDatabaseName()*. 
+One critical difference between implementing the *Indexable* and *SQLiteIndexable* classes, is that it is 
+not necessary to override *getSchema()* as it will be automatically generated by the *SRCH2Engine*. For this 
+to work, implementations of *SQLiteIndexable* **must override** a few additional methods: 
+*getSQLiteOpenHelper()*, *getTableName()*, and *getDatabaseName()*. 
 
 The method *getSQLiteOpenHelper()* should return the subclass instance of the *SQLiteOpenHelper* used
 to manage the database; a reference to the *SQLiteOpenHelper* is not kept, and only a simply query is 
@@ -505,18 +506,14 @@ the specified table in order for the columns of that table to be mapped to the *
 the correct *Schema* can be generated. The return value of the method *getTableName()* specifies which
 table in the database the *SQLiteOpenHelper* manages to be indexed, while *getDatabaseName()* is only
 necessary for backwards compatibility (since the name of the database can be returned from the 
-*SQLiteOpenHelper* only on KitKat and above). 
+*SQLiteOpenHelper* only on KitKat and above). These should **exactly match** the values used in the create table
+string and the *SQLiteOpenHelper* constructor. 
 
-The other critical difference is only search requests are possible on *SQLiteIndexable* implementations,
-as creating and updating table data should be managed by the *SQLiteOpenHelper* as is convention.
-
-It is important to note the return value of *getDatabaseName()* **should exactly match the value used
-in the super constructor call used to initialize the *SQLiteOpenHelper*** and the return value of
-*getTableName()* **should exactly match the value used in the create table string** (usually used
-in *SQLiteOpenHelper's* *onCreate(SQLiteDatabase db)* method). 
-
-Like for an *Indexable*, *SQLiteIndexable* should be registered by calling *SRCH2Engine.setSQLiteIndexables()*
-before calling *SRCH2Engine.onResume()*.
+Another critical difference is only search requests are possible on *SQLiteIndexable* implementations,
+as creating and editing table data should be managed by the *SQLiteOpenHelper*. Thus the *SQLiteIndexable*
+class does not contain the *Indexable* CRUD callbacks such as *onInsertComplete*: it does, however, 
+have the *onIndexReady* callback notifying when the index the *SQLiteIndexable* represents is ready
+for searching. 
 
 The following code illustrates implementing an *SQLiteIndex* to connect the SRCH2 search server to
 a SQLite database table:
@@ -639,23 +636,27 @@ do not have to be  overridden; however by doing so the properties set during the
 corresponding to the *RecordBoostField*, the *boost* argument of the *Field.getSearchableString(String name, int boost)*,
 and if a *Field* instance has *enableHighlighting()* can be set for this *SQLiteIndexable*.
 
-If *getRecordBoostColumnName()* is overridden it must correspond to the name of a column that is of type *REAL* or *FLOAT* and should
+If *getRecordBoostColumnName()* is overridden it must correspond to the name of a column that is of type *REAL* and should
 contain positive values less than 100 and greater than or equal to 1. Here the column named score is used as the *RecordBoostField* which will
 set the relative rank of each row or record as it is returned as a search result. 
 
 During the resolution of the schema for the index this *SQLiteIndexable* represents, the *SRCH2Engine* will call 
 the method *getColumnBoostValue(String textColumnName)* for each column of type *TEXT* found in the table. The value returns will
-determine the relative importance of each column of type TEXT. Since books are generally looked for by title, 3 is returned for 
-the column title, 2 is returned for the column author, and 1 (the default value) for all other columns of type *TEXT*. Returning
-a value less than 0 from this method will set the default value of 1 for that column. The same method is used to determine which
-columns of type TEXT are to be highlighted with the method *getColumnIsHighlighted(String textColumnName)*.
+determine the relative importance of each column of type *TEXT*--that is, the searchable fields in the index. Since books are 
+generally looked for by title, 50 is returned for the title column, 25 is returned for the author column, and 10 for the genre
+column. In event a value less than 1 or greater than 100, or column boost it not specified, the default value of 1 will be set
+for that column.
 
+The same logic is used to determine which
+columns of type *TEXT* are to be highlighted with the method *getColumnIsHighlighted(String textColumnName)*. Here we enable
+highlighting for all columns of type *TEXT*. 
 
-Note that implementations of the *SQLiteIndexable* class can support creating a geo-index. If two columns of the table contain longitudinal and latitude 
+Implementations of the *SQLiteIndexable* class can support creating a geo-index. If two columns of the table contain longitudinal and latitude 
 data, override both *getLatitudeColumnName()* and *getLongitudeColumnName()* returning the column names as they appear in the 
 create table string used to create the table. These columns should by of type *REAL*. 
 
-To initialize the *DatabaseIndexable* in the *SRCH2Engine*:
+As for an *Indexable*, *SQLiteIndexable* implementations must be registered by calling *SRCH2Engine.setSQLiteIndexables()*
+before calling *SRCH2Engine.onResume()*. To initialize the *DatabaseIndexable* in the *SRCH2Engine*:
 
 ```
 public class SearchActivity extends Activity {
@@ -688,12 +689,8 @@ public class SearchActivity extends Activity {
 }
 ```
 
-Note that in the *DatabaseHelper* *onCreate(SQLiteDatabase db)* method the table is created. It
-is necessary that the table be created before *SRCH2Engine.onResume()* is called, or the table will
-not be able to be found and *IllegalStateException* will be thrown. 
-
 This is all it takes to the connect the database's 'library' table to the SRCH2 search server. Now the
-SRCH2 search server will automatically have an index representing this table and automatically update the
+SRCH2 search server will generate an index representing this table and automatically update the
 index to reflect any changes in that table's data content.
 
 **There are three important notes** that must be taken into consideration when incorporating a SQLite database
@@ -703,10 +700,10 @@ table into the SRCH2 Android SDK:
 *PRIMARY KEY* that is of type *INTEGER* in the create table string**: it does not have to be auto incrementing, but
 if it is not present the *SRCH2Engine* will not be able to generate a schema for the index in the SRCH2 search 
 server. 
-2. Any columns that are of type *TEXT* **will be resolved as** searchable fields in the schema: that is, the text
-data the column contains will be searchable against search input. Any columns that are of type *REAL* or *INTEGER*
-**will be resolved** as refining fields: they can be used in the advanced search methods of the *Query* class to
-filter, order and do other advanced search parametrizations. Thus, it is impossible to have any column that will
+2. **Any columns that are of type *TEXT* will be resolved as searchable fields** in the schema: that is, the text
+data the column contains will be searchable against search input. **Any columns that are of type *REAL* or *INTEGER*
+will be resolved as refining fields**: they can be used in the advanced search methods of the *Query* class to
+filter, order and do other advanced search parametrizations. Thus it is impossible to have any column that will
 be resolved as a field that is both searchable and refining; if a column containing numerical data is to be searchable,
 it must be duplicated as another column that is of type *TEXT*. Columns of type *BLOB* will be ignored. 
 3. Because the SRCH2 search server directly connects to the database and uses triggers to observe changes in the data
@@ -735,7 +732,6 @@ public class DatabaseHelper extends SQLiteOpenHelper {
 		cv.put(DatabaseHelper.COLUMN_TITLE, b.mTitle);
 		cv.put(DatabaseHelper.COLUMN_GENRE, b.mGenre);
 		cv.put(DatabaseHelper.COLUMN_YEAR, b.mYear);
-		cv.put(DatabaseHelper.COLUMN_DESCRIPTION, b.mDescription);
 		cv.put(DatabaseHelper.COLUMN_SCORE, b.mUserRating);
 		cv.put(DatabaseHelper.COLUMN_THUMBNAIL,
 				b.mThumbnail.getBytes(Charset.forName("UTF-8")));

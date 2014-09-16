@@ -102,7 +102,7 @@ the project. To do so, on the left panel, click 'app', then click
 *dependencies* node:
 
 ```
- compile group: 'com.srch2', name: 'srch2-android-sdk', version: '0.2.1', ext:'aar'
+ compile group: 'com.srch2', name: 'srch2-android-sdk', version: '0.2.2', ext:'aar'
 ```
 
 The following is a screenshot:
@@ -374,11 +374,14 @@ The SRCH2 server passes search result information back to the *SRCH2Engine*
 class through the asynchronous callback method *onNewSearchResults(...)* for 
 the implementation of the interface *SearchResultsListener*.
 
-This method will be executed by background threads. So in order
+This method will be executed by background threads and by default the callback 
+*onNewSearchResults(...)* will also be executed from a background thread. In order
 to update the user interface of your application, the search results
-must be passed to the UI thread. This can be done by implementing your own Handler
-on the UI thread and pushing the search results to the UI thread; or more simply be
-registering the SearchResultsListener to call back to the UI thread by calling:
+must be passed to the UI thread. This can be done by implementing your own handler
+on the UI thread and posting messages, or calling *runOnUiThread* from an *Activity* from
+within the *onNewSearchResults* callback method. However, this default behaviour can be 
+overridden by registering the *SearchResultsListener* to callback to the UI thread by 
+calling:
 ```
 SRCH2Engine.onResume(mContext, mSearchResultsListener, true);
 ```
@@ -389,53 +392,53 @@ works to populate an
 [*android.widget.ListView*](http://developer.android.com/reference/android/widget/ListView.html). 
 
 In the source code of this tutorial, there is a class called *SearchResultsAdapter* that
-extends *BaseAdapter*. Here we connect this adapter to
-a handler implementing *SearchResultsListener*. In the class
-*SearchResultsAdapter*, there is a nested subclass of the *Handler* class:
+extends *BaseAdapter*. Since we'll register the *SearchResultsListener* to callback to the 
+UI thread we'll have the *SearchResultsAdapter* implement *SearchResultsListener*:
 
 ```
 public class SearchResultsAdapter extends BaseAdapter implements SearchResultsListener {
 
-	...
+  ...
 
   @Override
-    public void onNewSearchResults(int HTTPresponseCode,
+  public void onNewSearchResults(int HTTPresponseCode,
                                      String JSONresponse,
                                        HashMap<String, ArrayList<JSONObject>> resultMap) {
-      if (HTTPresponseCode == HttpURLConnection.HTTP_OK) {
-        ArrayList<MovieSearchResult> newResults = new ArrayList<MovieSearchResult>();
+    if (HTTPresponseCode == HttpURLConnection.HTTP_OK) {
+      ArrayList<MovieSearchResult> newResults = new ArrayList<MovieSearchResult>();
 
-          ArrayList<JSONObject> movieResults = resultMap
+      ArrayList<JSONObject> movieResults = resultMap
             .get(MovieIndex.INDEX_NAME);
-          if (movieResults != null && movieResults.size() > 0) {
-            for (JSONObject jsonObject : movieResults) {
-              MovieSearchResult searchResult = null;
-                try {
-				  JSONObject originalRecord = 
-								jsonObject.getJSONObject(Indexable.SEARCH_RESULT_JSON_KEY_RECORD);
-                  searchResult = new MovieSearchResult(
+      if (movieResults != null && movieResults.size() > 0) {
+        for (JSONObject jsonObject : movieResults) {
+          MovieSearchResult searchResult = null;
+          try {
+		    JSONObject originalRecord = 
+							jsonObject.getJSONObject(Indexable.SEARCH_RESULT_JSON_KEY_RECORD);
+            searchResult = new MovieSearchResult(
                                     originalRecord 
                                             .getString(MovieIndex.INDEX_FIELD_TITLE),
                                     originalRecord
                                             .getString(MovieIndex.INDEX_FIELD_GENRE),
                                     originalRecord
                                             .getInt(MovieIndex.INDEX_FIELD_YEAR));
-                } catch (JSONException oops) {
-                  continue;
-                }
-
-                if (searchResult != null) {
-                  newResults.add(searchResult);
-                }
-            }
+          } catch (JSONException oops) {
+            continue;
           }
-		    if (newResults.size() > 0) {
-			  updateDisplayedSearchResults(newResults);
-			} else {
-			  clearDisplayedSearchResults();
-			}
+          if (searchResult != null) {
+            newResults.add(searchResult);
+          }
+        }
       }
-
+    
+	  if (newResults.size() > 0) {
+		updateDisplayedSearchResults(newResults);
+	  } else {
+        clearDisplayedSearchResults();
+      }
+    }
+  }
+  
 }
 ```
 
@@ -444,19 +447,18 @@ Any time one of the search methods of the API is called (such as
 triggered when the search results are returned from the SRCH2 server.
 Its parameters are:
 
-1. *HTTPResponseCode*: it indicates how the RESTful action was handled;
-2. *JSONResponse*: it is the raw JSON literal as
-returned by the search server containing the search result;
-3. *resultMap*: it is a
-mapping of index names to their corresponding results parsed from the
-*JSONResponse* literal. 
+1. *HTTPResponseCode*: indicates how the RESTful action was handled
+2. *JSONResponse*: the raw JSON literal as returned by the SRCH2 search 
+server containing the set of search results
+3. *resultMap*: a mapping of index names to their corresponding results parsed from the
+*JSONResponse* literal
 
 The *resultMap* will never be null: if there were no results for any of
 the indexes you've defined, the corresponding values for
 *ArrayList<JSONObject>* will be of size zero. 
 
 Each *ArrayList<JSONObject>* will contain a set of records that were
-returned as search results. This JSONObject contains the original record in the index, 
+returned as the search results. This JSONObject contains the original record in the index, 
 which can be obtained by 
 
 ```
@@ -475,7 +477,7 @@ there were no search results.
 
 The two *SRCH2Engine* lifecycle methods are *SRCH2Engine.onResume()* and 
 *SRCH2Engine.onPause()*. For every call to *SRCH2Engine.onResume()* it is *imperative* 
-that the complementary call to *stop()* is made in order to let the SRCH2 server stop, 
+that the complementary call to *SRCH2Engine.onPause()* is made in order to let the SRCH2 server stop, 
 so that it does not take up the device's resources or leak references.
 
 The call to *SRCH2Engine.onResume()* must be preceded by the calls to register any
@@ -488,7 +490,7 @@ there is a method overload of the *onResume()* function that takes an instance o
 to call back to the UI thread.
 
 The calls to *SRCH2Engine.onResume()* and *SRCH2Engine.onPause()* should typically be placed
-in the *Activity* life-cycle callbacks of the same name. The following code shows how to setup 
+in the *Activity* lifecycle callbacks of the same name. The following code shows how to setup 
 the *SRCH2Engine* in the corresponding methods of the lifecycle of the Android application:
 
 ```
@@ -532,6 +534,7 @@ public class SearchActivity extends Activity implements
 
   @Override
   public void onNewSearchInputIsBlank() {
+    SRCH2Engine.searchAllIndexes("");
     mSearchResultsAdapter.clearDisplayedSearchResults();
   }
 }
@@ -542,7 +545,8 @@ The *SearchActivity* implements the nested interface
 character-by-character input. Feel free to reuse this
 [code](https://github.com/SRCH2/hello-srch2-android-sdk/tree/master/Hello-SRCH2-Android-SDK/app/src/main/java/com/srch2/android/demo/helloworld)
 in your own projects. It's two methods *onNewSearchInput* and *onNewSearchInputIsBlank* are used to pass search input from the user to
-the *SRCH2Engine* or clear the list if the user has cleared the search input text.
+the *SRCH2Engine* or clear the list if the user has cleared the search input text; we pass a blank string when the search input is blank
+to notify the *SRCH2Engine* to clear the cached last query.
 
 Whenever the SRCH2 server does a search, the results come back instantly. It
 is recommended that, while developing with the SDK, you employ
