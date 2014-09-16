@@ -10,7 +10,6 @@
 
 cmake_minimum_required(VERSION 2.8)
 
-SET(STATIC_LINK_BOOST OFF CACHE BOOL "")
 #Find the platform information.
 SET(MAC_OS OFF CACHE BOOL "")
 SET(LINUX_OS OFF CACHE BOOL "")
@@ -37,14 +36,12 @@ IF(NOT ANDROID)
             ${CMAKE_SOURCE_DIR}/../thirdparty/mongo-cxx-driver/mongo-cxx-driver/build/osx-version-min_10.7/use-system-boost/srch2/include/
             ${CMAKE_SOURCE_DIR}/../src/adapter/
             ${CMAKE_SOURCE_DIR}/util/
-            ${CMAKE_SOURCE_DIR}/../src/core/util
         )
     ELSE()
         INCLUDE_DIRECTORIES(
             ${CMAKE_SOURCE_DIR}/../thirdparty/mongo-cxx-driver/mongo-cxx-driver/build/use-system-boost/srch2/include/
             ${CMAKE_SOURCE_DIR}/../src/adapter/
             ${CMAKE_SOURCE_DIR}/util/
-            ${CMAKE_SOURCE_DIR}/../src/core/util
         )
     ENDIF()
 
@@ -71,7 +68,7 @@ IF(NOT ANDROID)
     ENDIF()
     SET(Boost_USE_MULTITHREAD ON)
     FIND_PACKAGE( Boost COMPONENTS program_options system filesystem thread REQUIRED )
-
+    
     TARGET_LINK_LIBRARIES(mongodbConnector ${Boost_LIBRARIES}  ${MONGO_CLIENT_LIBRARY} -pthread )
 ENDIF()
 
@@ -95,7 +92,6 @@ FILE(GLOB_RECURSE SQLITE_CONNECTOR_SRC RELATIVE ${CMAKE_CURRENT_SOURCE_DIR} "sql
 INCLUDE_DIRECTORIES(
     ${CMAKE_SOURCE_DIR}/sqlite/
     ${CMAKE_SOURCE_DIR}/../src/adapter/
-    ${CMAKE_SOURCE_DIR}/../src/core/util
     ${CMAKE_SOURCE_DIR}/../thirdparty/json/jsoncpp-src/include
     ${CMAKE_SOURCE_DIR}/util/
 )
