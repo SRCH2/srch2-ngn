@@ -33,16 +33,16 @@ S||core1 test 1008||903 905
 C||core1||aclDeleteRolesForRecord||{"resourceId": "903", "roleId":["1008"]}
 C||core1||aclDeleteRolesForRecord||{"resourceId": "905", "roleId":["1008"]}
 S||core1 test 1008||
-C||core1||AclAddRecordsForRoles||{"roleId": "1008", "resourceId":["903", "905", "909"]}
+C||core1||aclAddRecordsForRole||{"roleId": "1008", "resourceId":["903", "905", "909"]}
 S||core1 test 1008||903 905 909
-C||core1||AclAppendRecordsForRoles||{"roleId": "1008", "resourceId":["904", "906"]}
+C||core1||aclAppendRecordsForRole||{"roleId": "1008", "resourceId":["904", "906"]}
 S||core1 test 1008||903 904 905 906 909
-C||core1||AclDeleteRecordsForRoles||{"roleId": "1008", "resourceId":["903", "909"]}
+C||core1||aclDeleteRecordsForRole||{"roleId": "1008", "resourceId":["903", "909"]}
 S||core1 test 1008||904 905 906
 S||core1 test 1010||905 906 908
-C||core1||AclDeleteRecordsForRoles||{"roleId": "1010", "resourceId":["906"]}
+C||core1||aclDeleteRecordsForRole||{"roleId": "1010", "resourceId":["906"]}
 S||core1 test 1010||905 908
-C||core1||AclAddRecordsForRoles||{"roleId": "1010", "resourceId":["906"]}
+C||core1||aclAddRecordsForRole||{"roleId": "1010", "resourceId":["906"]}
 S||core1 test 1010||906
-C||core1||AclAppendRecordsForRoles||{"roleId": "1010", "resourceId":["905", "908"]}
+C||core1||aclAppendRecordsForRole||{"roleId": "1010", "resourceId":["905", "908"]}
 S||core1 test 1010||905 906 908
