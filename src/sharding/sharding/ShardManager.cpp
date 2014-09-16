@@ -184,12 +184,13 @@ void ShardManager::start(){
 		NewNodeJoinOperation * joinOperation = new NewNodeJoinOperation();
 		stateMachine->registerOperation(joinOperation);
 	}
-	pthread_t localLockThread;
-    if (pthread_create(&localLockThread, NULL, ShardManager::periodicWork , NULL) != 0){
+	pthread_t loadBalancingThread;
+    if (pthread_create(&loadBalancingThread, NULL, ShardManager::periodicWork , NULL) != 0){
         //        Logger::console("Cannot create thread for handling local message");
         perror("Cannot create thread for handling local message");
         return;
     }
+    pthread_detach(loadBalancingThread);
 }
 
 /*
@@ -225,11 +226,12 @@ void ShardManager::save(evhttp_request *req){
  */
 void ShardManager::shutdown(evhttp_request *req){
 	boost::unique_lock<boost::mutex> shardManagerGlobalLock(shardManagerGlobalMutex);
-	srch2::util::Logger::console("Shutting down the cluster ...");
     switch (req->type) {
     case EVHTTP_REQ_PUT: {
     	ClusterShutdownOperation * shutdownOperation = new ClusterShutdownOperation();
     	this->stateMachine->registerOperation(shutdownOperation);
+		bmhelper_evhttp_send_reply2(req, HTTP_OK, "OK",
+				"{\"message\":\"Shutting down the cluster...\"}\n");
         break;
     }
     default: {
@@ -243,7 +245,9 @@ void ShardManager::shutdown(evhttp_request *req){
 }
 
 void ShardManager::_shutdown(){
-	exit(0);
+	Logger::console("Shutting down the instance ...");
+	raise(SIGTERM);
+//	exit(0);
 	//TODO
 }
 
@@ -748,6 +752,23 @@ bool ShardManager::resolveMessage(Message * msg, NodeId senderNode){
 
 			this->stateMachine->handle(mergeNotification);
 			delete mergeNotification;
+			break;
+		}
+		case ShardingShutdownMessageType:
+		{
+			ShutdownNotification * shutdownNotification =
+					ShardingNotification::deserializeAndConstruct<ShutdownNotification>(Message::getBodyPointerFromMessagePointer(msg));
+			if(shutdownNotification->isBounced()){
+				saveBouncedNotification(shutdownNotification);
+				Logger::debug("==> Bounced.");
+				break;
+			}
+			if(! isJoined()){
+				bounceNotification(shutdownNotification);
+				Logger::debug("==> Not joined yet. Bounced.");
+				break;
+			}
+			this->_shutdown();
 			break;
 		}
 		default:
