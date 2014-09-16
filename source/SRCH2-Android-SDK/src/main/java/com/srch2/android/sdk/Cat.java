@@ -16,7 +16,7 @@ import android.util.Log;
  * <b>When compiling for release be sure to set {@code isLogging} to false</b>.
  */
 class Cat {
-    private static boolean isLogging = true;
+    private static boolean isLogging = false;
     private static final String TAG_PREFIX = "s2sdk:: ";
 
     static void d(String tag, String message) {
