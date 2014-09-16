@@ -150,26 +150,26 @@ Each index needs to implement two abstract methods called
 ```
 public class MovieIndex extends Indexable {
     
-    public static final String INDEX_NAME = "movies";
+  public static final String INDEX_NAME = "movies";
 
-    public static final String INDEX_FIELD_PRIMARY_KEY = "id";
-    public static final String INDEX_FIELD_TITLE = "title";
-    public static final String INDEX_FIELD_YEAR = "year";
-    public static final String INDEX_FIELD_GENRE = "genre";
+  public static final String INDEX_FIELD_PRIMARY_KEY = "id";
+  public static final String INDEX_FIELD_TITLE = "title";
+  public static final String INDEX_FIELD_YEAR = "year";
+  public static final String INDEX_FIELD_GENRE = "genre";
 
-    @Override
-    public String getIndexName() {
-        return INDEX_NAME;
-    }
+  @Override
+  public String getIndexName() {
+    return INDEX_NAME;
+  }
 
-    @Override
-    public Schema getSchema() {
-        PrimaryKeyField primaryKey = Field.createDefaultPrimaryKeyField(INDEX_FIELD_PRIMARY_KEY);
-        Field title = Field.createSearchableField(INDEX_FIELD_TITLE, 3);
-        Field year = Field.createRefiningField(INDEX_FIELD_YEAR, Field.Type.INTEGER);
-        Field genre = Field.createSearchableField(INDEX_FIELD_GENRE);
-        return Schema.createSchema(primaryKey, title, year, genre)
-    }
+  @Override
+  public Schema getSchema() {
+    PrimaryKeyField primaryKey = Field.createDefaultPrimaryKeyField(INDEX_FIELD_PRIMARY_KEY);
+    Field title = Field.createSearchableField(INDEX_FIELD_TITLE, 3);
+    Field year = Field.createRefiningField(INDEX_FIELD_YEAR, Field.Type.INTEGER);
+    Field genre = Field.createSearchableField(INDEX_FIELD_GENRE);
+    return Schema.createSchema(primaryKey, title, year, genre)
+  }
 }
 ```
 
@@ -212,41 +212,39 @@ consistent with the schema:
 ```
 public class MovieIndex extends Indexable {
 
-    ...
+  ...
 	
-    public static JSONArray getAFewRecordsToInsert() {
-        JSONArray jsonRecordsToInsert = new JSONArray();
-        try {
-            JSONObject record = new JSONObject();
-            record.put(INDEX_FIELD_PRIMARY_KEY, "1");
-            record.put(INDEX_FIELD_TITLE, "The Good, the Bad And the Ugly");
-            record.put(INDEX_FIELD_YEAR, 1966);
-            record.put(INDEX_FIELD_GENRE, "Western Adventure");
-            jsonRecordsToInsert.put(record);
+  public static JSONArray getAFewRecordsToInsert() {
+    JSONArray jsonRecordsToInsert = new JSONArray();
+    try {
+      JSONObject record = new JSONObject();
+      record.put(INDEX_FIELD_PRIMARY_KEY, "1");
+      record.put(INDEX_FIELD_TITLE, "The Good, the Bad And the Ugly");
+      record.put(INDEX_FIELD_YEAR, 1966);
+      record.put(INDEX_FIELD_GENRE, "Western Adventure");
+      jsonRecordsToInsert.put(record);
 
-            record = new JSONObject();
-            record.put(INDEX_FIELD_PRIMARY_KEY, "2");
-            record.put(INDEX_FIELD_TITLE, "Citizen Kane");
-            record.put(INDEX_FIELD_YEAR, 1941);
-            record.put(INDEX_FIELD_GENRE, "Mystery Drama");
-            jsonRecordsToInsert.put(record);
+      record = new JSONObject();
+      record.put(INDEX_FIELD_PRIMARY_KEY, "2");
+      record.put(INDEX_FIELD_TITLE, "Citizen Kane");
+      record.put(INDEX_FIELD_YEAR, 1941);
+      record.put(INDEX_FIELD_GENRE, "Mystery Drama");
+      jsonRecordsToInsert.put(record);
 
-            record = new JSONObject();
-            record.put(INDEX_FIELD_PRIMARY_KEY, "3");
-            record.put(INDEX_FIELD_TITLE, "大红灯笼高高挂 (Raise the Red Lantern)");
-            record.put(INDEX_FIELD_YEAR, 1991);
-            record.put(INDEX_FIELD_GENRE, "Drama");
-            jsonRecordsToInsert.put(record);
+      record = new JSONObject();
+      record.put(INDEX_FIELD_PRIMARY_KEY, "3");
+      record.put(INDEX_FIELD_TITLE, "大红灯笼高高挂 (Raise the Red Lantern)");
+      record.put(INDEX_FIELD_YEAR, 1991);
+      record.put(INDEX_FIELD_GENRE, "Drama");
+      jsonRecordsToInsert.put(record);
 			
-			...
+	    ...
 			
-        } catch (JSONException oops) {
-            // We know there are no errors.
-        }
-        return jsonRecordsToInsert;
+    } catch (JSONException oops) {
+      // We know there are no errors.
     }
-	
-
+    return jsonRecordsToInsert;
+  }
 }
 ```
 
@@ -260,7 +258,7 @@ For example, we can call the following method to insert those records
 to the index:
 
 ```
-    insert(getAFewRecordsToInsert());
+  insert(getAFewRecordsToInsert());
 ```
 
 ##Checking Index Status
@@ -273,40 +271,40 @@ Overriding these methods looks like:
 ```
 public class MovieIndex extends Indexable {
 
-    ...
-	
-	@Override
-    public void onInsertComplete(int success, int failed, String JSONResponse) {
-        super.onInsertComplete(success, failed, JSONResponse);
+  ...
+	 
+  @Override
+  public void onInsertComplete(int success, int failed, String JSONResponse) {
+    super.onInsertComplete(success, failed, JSONResponse);
+  }
+
+  @Override
+  public void onUpdateComplete(int success, int upserts, int failed, String JSONResponse) {
+    super.onUpdateComplete(success, upserts, failed, JSONResponse);
+  }
+
+  @Override
+  public void onDeleteComplete(int success, int failed, String JSONResponse) {
+    super.onDeleteComplete(success, failed, JSONResponse);
+  }
+
+  @Override
+  public void onGetRecordComplete(boolean success, JSONObject record, String JSONResponse) {
+    super.onGetRecordComplete(success, record, JSONResponse);
+  }
+
+  @Override
+  public void onIndexReady() {
+    super.onIndexReady();
+
+    if (getRecordCount() == 0) {
+      insert(getAFewRecordsToInsert());
+    } else {
+      // Do any necessary updates...
     }
-
-    @Override
-    public void onUpdateComplete(int success, int upserts, int failed, String JSONResponse) {
-        super.onUpdateComplete(success, upserts, failed, JSONResponse);
-    }
-
-    @Override
-    public void onDeleteComplete(int success, int failed, String JSONResponse) {
-        super.onDeleteComplete(success, failed, JSONResponse);
-    }
-
-    @Override
-    public void onGetRecordComplete(boolean success, JSONObject record, String JSONResponse) {
-        super.onGetRecordComplete(success, record, JSONResponse);
-    }
-
-    @Override
-    public void onIndexReady() {
-        super.onIndexReady();
-
-        if (getRecordCount() == 0) {
-            insert(getAFewRecordsToInsert());
-        } else {
-            // Do any necessary updates...
-        }
-    }
-
-	...
+  }
+  
+  ...
 	
 }
 ```
@@ -336,11 +334,11 @@ user can use this callback to check the status of the current loaded index,
 such as the record number inside the index. For example:
 
 ```
-    if (getRecordCount() == 0) {
-        insert(getAFewRecordsToInsert());
-    } else {
-        // Do any necessary updates...
-    }
+  if (getRecordCount() == 0) {
+    insert(getAFewRecordsToInsert());
+  } else {
+    // Do any necessary updates...
+  }
 ```
 We simply check whether there are any existing records. The very first time
 this callback method is called there will be zero records in the index, then
@@ -353,7 +351,7 @@ specific index. For example, the following function call searches for
 movie records that match the keywords "beaty ame":
 
 ```
-    movieIndex.search("beaty ame");
+  movieIndex.search("beaty ame");
 ```
 
 The SDK also provides a function *SRCH2Engine.searchAllIndexes()*
@@ -497,46 +495,45 @@ the *SRCH2Engine* in the corresponding methods of the lifecycle of the Android a
 public class SearchActivity extends Activity implements
         InstantSearchEditText.SearchInputEnteredObserver {
 
-    private MovieIndex mMovieIndex;
+  private MovieIndex mMovieIndex;
 
-    private ListView mSearchResultsListView;
-    private SearchResultsAdapter mSearchResultsAdapter;
+  private ListView mSearchResultsListView; 
+  private SearchResultsAdapter mSearchResultsAdapter;
 
-    @Override
-    protected void onCreate(Bundle savedInstanceState) {
-        super.onCreate(savedInstanceState);
+  @Override
+  protected void onCreate(Bundle savedInstanceState) {
+    super.onCreate(savedInstanceState);
 
-        setContentView(R.layout.activity_search);
-        mSearchResultsListView = (ListView) findViewById(R.id.lv_search_results);
-        mSearchResultsAdapter = new SearchResultsAdapter(this);
-        mSearchResultsListView.setAdapter(mSearchResultsAdapter);
+    setContentView(R.layout.activity_search);
+    mSearchResultsListView = (ListView) findViewById(R.id.lv_search_results);
+    mSearchResultsAdapter = new SearchResultsAdapter(this);
+    mSearchResultsListView.setAdapter(mSearchResultsAdapter);
 
-		mMovieIndex = new MovieIndex();
-    }
+    mMovieIndex = new MovieIndex();
+  }
 	
-    @Override
-    protected void onResume() {
-        super.onResume();
-		SRCH2Engine.setIndexables(mMovieIndex);
-        SRCH2Engine.onResume(this, mSearchResultsAdapter, true);
-    }
+  @Override
+  protected void onResume() {
+    super.onResume();
+    SRCH2Engine.setIndexables(mMovieIndex);
+    SRCH2Engine.onResume(this, mSearchResultsAdapter, true);
+  }
 
-    @Override
-    protected void onPause() {
-        super.onPause();
-        SRCH2Engine.onPause(this);
-    }
+  @Override
+  protected void onPause() {
+    super.onPause();
+    SRCH2Engine.onPause(this);
+  }
 	
-	@Override
-    public void onNewSearchInput(String newSearchText) {
-        SRCH2Engine.searchAllIndexes(newSearchText);
-    }
+  @Override
+  public void onNewSearchInput(String newSearchText) {
+    SRCH2Engine.searchAllIndexes(newSearchText);
+  }
 
-    @Override
-    public void onNewSearchInputIsBlank() {
-        mSearchResultsAdapter.clearDisplayedSearchResults();
-    }
-	
+  @Override
+  public void onNewSearchInputIsBlank() {
+    mSearchResultsAdapter.clearDisplayedSearchResults();
+  }
 }
 ```
 

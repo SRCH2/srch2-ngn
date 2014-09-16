@@ -532,7 +532,6 @@ public class DatabaseHelper extends SQLiteOpenHelper {
   public static final String COLUMN_TITLE = "title";
   public static final String COLUMN_GENRE = "genre";
   public static final String COLUMN_YEAR = "year";
-  public static final String COLUMN_DESCRIPTION = "description";
   public static final String COLUMN_SCORE = "score";
   public static final String COLUMN_THUMBNAIL = "thumbnail";
 
@@ -544,7 +543,6 @@ public class DatabaseHelper extends SQLiteOpenHelper {
                 COLUMN_TITLE + " TEXT, " +
 				COLUMN_GENRE + " TEXT, " +
 				COLUMN_YEAR + " INTEGER, " +
-				COLUMN_DESCRIPTION + " TEXT, " +
                 COLUMN_SCORE + " REAL, " +
                 COLUMN_THUMBNAIL + " BLOB " +
 			" )";
@@ -611,8 +609,6 @@ public class SQLiteBookIndex extends SQLiteIndexable {
       fieldBoostValue = 25;
     } else if (textTypeColumnName.equals(DatabaseHelper.COLUMN_TITLE)) {
       fieldBoostValue = 50;
-    } else if (textTypeColumnName.equals(DatabaseHelper.COLUMN_DESCRIPTION)) {
-      fieldBoostValue = 10;
     } else if (textTypeColumnName.equals(DatabaseHelper.COLUMN_GENRE)) {
        fieldBoostValue = 10;
     }
