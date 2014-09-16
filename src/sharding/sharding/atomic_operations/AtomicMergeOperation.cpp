@@ -48,6 +48,7 @@ OperationState * AtomicMergeOperation::entry(){
 		        perror("Cannot create thread for handling local message");
 		        return NULL;
 		    }
+		    pthread_detach(localMergeThread);
 		}else{
 			this->send(notif, NodeOperationId(nodesStatusItr->first));
 		}

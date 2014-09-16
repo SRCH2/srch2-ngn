@@ -44,6 +44,7 @@ OperationState * AtomicSaveOperation::entry(){
 		        perror("Cannot create thread for handling local message");
 		        return NULL;
 		    }
+		    pthread_detach(localSaveThread);
 		}else{
 			this->send(notif, NodeOperationId(nodesStatusItr->first));
 		}
@@ -93,6 +94,7 @@ OperationState * AtomicSaveOperation::saveMetadata(){
 		        perror("Cannot create thread for handling local message");
 		        return NULL;
 		    }
+		    pthread_detach(localSaveThread);
 		}else{
 			this->send(notif, NodeOperationId(nodesStatusItr->first));
 		}

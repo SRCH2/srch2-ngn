@@ -199,6 +199,7 @@ OperationState * AtomicLockOperation::askNextNode(const NodeId & targetNodeId){
 	        perror("Cannot create thread for handling local message");
 	        return NULL;
 	    }
+	    pthread_detach(localLockThread);
 	}else{
 		// send the notification
 		LockingNotification * lockingRequestNotif = new LockingNotification(lockRequests);
