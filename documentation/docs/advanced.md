@@ -411,10 +411,10 @@ public class MovieIndex extends Indexable {
 
   @Override
   public Schema getSchema() {
-      PrimaryKeyField primaryKey = Field.createDefaultPrimaryKeyField(INDEX_FIELD_PRIMARY_KEY);
-      RecordBoostField recordBoost = Field.createRecordBoostField(INDEX_FIELD_RECORD_BOOST);
-      Field title = Field.createSearchableField(INDEX_FIELD_TITLE);
-      return Schema.createSchema(primaryKey, recordBoost, title);
+    PrimaryKeyField primaryKey = Field.createDefaultPrimaryKeyField(INDEX_FIELD_PRIMARY_KEY);
+    RecordBoostField recordBoost = Field.createRecordBoostField(INDEX_FIELD_RECORD_BOOST);
+    Field title = Field.createSearchableField(INDEX_FIELD_TITLE);
+    return Schema.createSchema(primaryKey, recordBoost, title);
   }
 }
 ```
