@@ -68,7 +68,6 @@ QueryEvaluatorInternal::QueryEvaluatorInternal(IndexReaderWriter *indexer , Quer
     this->indexer = indexer;
     setPhysicalOperatorFactory(new PhysicalOperatorFactory());
     this->physicalPlanRecordItemPool = new PhysicalPlanRecordItemPool();
-    setForwardIndex_ReadView();
 }
 
 /*
@@ -110,14 +109,19 @@ int QueryEvaluatorInternal::suggest(const string & keyword, float fuzzyMatchPena
     int suggestionCount = 0;
     for(std::vector<SuggestionInfo >::iterator suggestion = suggestionPairs.begin() ;
     		suggestion != suggestionPairs.end() && suggestionCount < numberOfSuggestionsToReturn ; ++suggestion , ++suggestionCount){
-    	string suggestionString ;
-		boost::shared_ptr<TrieRootNodeAndFreeList > trieRootNode_ReadView;
-		this->getTrie()->getTrieRootNode_ReadView(trieRootNode_ReadView);
-        this->getTrie()->getPrefixString(trieRootNode_ReadView->root,
-                                               suggestion->suggestedCompleteTermNode, suggestionString);
-    	suggestions.push_back(suggestionString);
+      string suggestionString ;
+      boost::shared_ptr<TrieRootNodeAndFreeList > trieRootNode_ReadView;
+
+      // We need to get the read view from this->indexReadToken
+      // instead of calling this->getTrie()->getTrieRootNode_ReadView()
+      // since the latter may give a read view that is different from
+      // the one we got when the search started.
+      trieRootNode_ReadView = this->indexReadToken.trieRootNodeSharedPtr;
+      this->getTrie()->getPrefixString(trieRootNode_ReadView->root,
+				       suggestion->suggestedCompleteTermNode, suggestionString);
+      suggestions.push_back(suggestionString);
     }
-	return 0;
+    return 0;
 }
 
 bool suggestionComparator(const SuggestionInfo & left ,
@@ -258,7 +262,12 @@ int QueryEvaluatorInternal::search(LogicalPlan * logicalPlan , QueryResults *que
 
 
 	boost::shared_ptr<TrieRootNodeAndFreeList > trieRootNode_ReadView;
-	this->getTrie()->getTrieRootNode_ReadView(trieRootNode_ReadView);
+
+	// We need to get the read view from this->indexReadToken
+	// instead of calling this->getTrie()->getTrieRootNode_ReadView()
+	// since the latter may give a read view that is different from
+	// the one we got when the search started.
+	trieRootNode_ReadView = this->indexReadToken.trieRootNodeSharedPtr;
 	while(true){
 
 		PhysicalPlanRecordItem * newRecord = topOperator->getNext(dummy);
@@ -289,8 +298,12 @@ int QueryEvaluatorInternal::search(LogicalPlan * logicalPlan , QueryResults *que
 		}
 		newRecord->getRecordMatchAttributeBitmaps(queryResult->attributeIdsList);
 
-		this->getForwardIndex()->getExternalRecordIdFromInternalRecordId(this->forwardIndexDirectoryReadView,
-				queryResult->internalRecordId,queryResult->externalRecordId );
+		// We need to get the read view from this->indexReadToken
+		// instead of calling this->getTrie()->getTrieRootNode_ReadView()
+		// since the latter may give a read view that is different from
+		// the one we got when the search started.
+		this->getForwardIndex()->getExternalRecordIdFromInternalRecordId(this->indexReadToken.forwardIndexReadViewSharedPtr,
+										 queryResult->internalRecordId,queryResult->externalRecordId );
 	}
 
 	if(facetOperatorPtr != NULL){
@@ -333,8 +346,13 @@ void QueryEvaluatorInternal::search(const std::string & primaryKey, QueryResults
 	// The query result to be returned.
 	// First check to see if the record is valid.
 	bool validForwardList;
-    shared_ptr<vectorview<ForwardListPtr> > readView;
-    this->indexData->forwardIndex->getForwardListDirectory_ReadView(readView);
+	shared_ptr<vectorview<ForwardListPtr> > readView;
+
+	// We need to get the read view from this->indexReadToken
+	// instead of calling this->getTrie()->getTrieRootNode_ReadView()
+	// since the latter may give a read view that is different from
+	// the one we got when the search started.
+	readView = this->indexReadToken.forwardIndexReadViewSharedPtr;
 	this->indexData->forwardIndex->getForwardList(readView, internalRecordId, validForwardList);
 	if (validForwardList == false) {
 		return;
