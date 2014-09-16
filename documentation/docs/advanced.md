@@ -460,27 +460,6 @@ each record) we can assign the value of the recordBoost field for a record like 
 ```	
 Any movie of the genre "Science Fiction" will be boosted 50 times higher in the search results. 
 
-##Testing and Proguard
-
-The SRCH2 Android SDK must be tested on a real Android device, not an emulator.
-When we initialize the *SRCH2Engine* class,
-you can call `setDebugAndTestMode(true)` to enable the *SRCH2Engine* to quickly
-start and stop the SRCH2 server. 
-
-To configure the SRCH2-Android-SDK for
-[Proguard](http://developer.android.com/tools/help/proguard.html) to
-shrink, optimize, and obfuscate the code, just add the following 
-to the proguard configuration file:
-
-```
--keep class com.srch2.** { *; } 
--keep interface com.srch2.** { *; } 
--keep enum com.srch2.** { *; } 
--dontwarn class com.srch2.** { *; } 
--dontwarn interface com.srch2.** { *; } 
--dontwarn enum com.srch2.** { *; } 
-```
-
 ##Connecting to SQLite
 
 The SRCH2 Android SDK supports automatic generation of indexes from SQLite database tables. Additionally, the
@@ -747,6 +726,28 @@ public class DatabaseHelper extends SQLiteOpenHelper {
 }
 ```
 Now if the call to *insertRecords(ArrayList<Book> insertSet)* returns false, the operation can be reapplied. 
+
+##Testing and Proguard
+
+The SRCH2 Android SDK must be tested on a real Android device, not an emulator.
+When we initialize the *SRCH2Engine* class,
+you can call `setDebugAndTestMode(true)` to enable the *SRCH2Engine* to quickly
+start and stop the SRCH2 server. 
+
+To configure the SRCH2-Android-SDK for
+[Proguard](http://developer.android.com/tools/help/proguard.html) to
+shrink, optimize, and obfuscate the code, just add the following 
+to the proguard configuration file:
+
+```
+-keep class com.srch2.** { *; } 
+-keep interface com.srch2.** { *; } 
+-keep enum com.srch2.** { *; } 
+-dontwarn class com.srch2.** { *; } 
+-dontwarn interface com.srch2.** { *; } 
+-dontwarn enum com.srch2.** { *; } 
+```
+
 
 [//]: (##Using the Eclipse IDE	)
 [//]: (##Using the IntelliJ IDE	)

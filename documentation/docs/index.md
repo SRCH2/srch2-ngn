@@ -109,7 +109,7 @@ The following is a screenshot:
 
 <center>![Including the SRCH2-Android-SDK.aar file as a dependency in the app module's build.gradle file][tutorial-013]</center>
 
-Notice that this tutorial assumes the SDK version is 0.2.1, which
+Notice that this tutorial assumes the SDK version is 0.2.2, which
 could be different from the latest version. Please make sure to get
 the latest SDK version from the [release page](releases.md) and update
 the version number accordingly.
