@@ -203,6 +203,7 @@ final public class SRCH2Engine {
      */
     public static void setSearchResultsListener(
             SearchResultsListener searchResultsListener) {
+        Cat.d(TAG, "%%%%%%%%%%%%%%%%%%%%adding search result listener!!!");
         searchResultsPublishedToUiThread = false;
         searchResultsObserver = searchResultsListener;
     }

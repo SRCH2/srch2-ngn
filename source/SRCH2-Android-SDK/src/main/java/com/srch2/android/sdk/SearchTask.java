@@ -37,6 +37,7 @@ class SearchTask extends HttpTask.SearchHttpTask {
         HashMap<String, ArrayList<JSONObject>> resultMap = new HashMap<String, ArrayList<JSONObject>>();
 
         if (isMultiCoreSearch) {
+            Cat.d(TAG, "multicore search parsing the response!");
             try {
                 JSONObject root = new JSONObject(json);
                 JSONArray coreNodes = root.names();
@@ -109,6 +110,7 @@ class SearchTask extends HttpTask.SearchHttpTask {
                 Cat.ex(TAG, "while parsing records JSONException", ignore);
             }
         } else {
+            Cat.d(TAG, "singlecore search parsing the response!");
             ArrayList<JSONObject> recordResults = new ArrayList<JSONObject>();
             try {
                 JSONObject root = new JSONObject(json);
@@ -161,11 +163,12 @@ class SearchTask extends HttpTask.SearchHttpTask {
                             recordResults.add(newRecord);
 
                         } catch (Exception e) {
-                            Cat.ex(TAG, "while parsing records", e);
+                            Cat.ex(TAG, "while parsing records FOR SINGLE CORE", e);
                         }
                     }
                 }
             } catch (JSONException ignore) {
+                Cat.ex(TAG, "while parsing records for SINGLE CORE (outer)", ignore);
             }
             resultMap.put(targetCoreName, recordResults);
         }

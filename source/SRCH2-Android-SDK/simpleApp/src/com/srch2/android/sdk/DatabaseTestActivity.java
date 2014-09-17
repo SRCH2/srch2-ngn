@@ -8,6 +8,7 @@ import android.database.sqlite.SQLiteOpenHelper;
 import android.os.Bundle;
 import android.os.SystemClock;
 import android.util.Log;
+import org.json.JSONException;
 import org.json.JSONObject;
 
 import java.util.ArrayList;
@@ -23,6 +24,8 @@ public class DatabaseTestActivity extends TestableActivity {
     DbHelper dbHelper;
     SearchResultsCallback searchResultsCallback;
 
+    /** Used in the SQLiteConnector Crud Tests */
+    SearchResultsTestBuffer searchResultsBuffer;
     @Override
     public List<String> getTestMethodNameListWithOrder() {
         return Arrays.asList(new String[]{
@@ -42,14 +45,16 @@ public class DatabaseTestActivity extends TestableActivity {
 
     @Override
     public void beforeEach() {
-        Log.d("SRCH2", "before each!");
+        Log.d("s2sdk:: DatabaseTest", "before each!");
         long t = SystemClock.uptimeMillis();
-        onStopAndWaitForNotIsReady(getApplicationContext(), 12000);
+        onStopAndWaitForNotIsReady(getApplicationContext(), 20000);
         long e = SystemClock.uptimeMillis() - t;
 
         SRCH2Service.clearServerLogEntriesForTest(getApplicationContext());
         deleteSrch2Files();
         getApplicationContext().deleteDatabase(SQLiteSchema.DATABASE_NAME);
+        getApplicationContext().deleteDatabase(SQLiteConnectorCRUDTestDatabaseTableSchema.DATABASE_NAME);
+        Log.d("s2sdk:: DatabaseTest", "setting search result listener in BEFORE EACH");
         SRCH2Engine.setSearchResultsListener(searchResultsCallback);
         SRCH2Engine.setAutomatedTestingMode(true);
     }
@@ -142,11 +147,21 @@ public class DatabaseTestActivity extends TestableActivity {
 
         // Integration tests
         beforeEach();
+        sleep(20000);
         Log.d("s2sdk:: databasetest", "%%%%%%%%%% test VALID GEO sqlite database connectored index");
         testValidGeo();
+
+
         beforeEach();
+        sleep(20000);
         Log.d("s2sdk:: databasetest", "%%%%%%%%%% test VALID sqlite database connectored index");
         testValid();
+
+
+        beforeEach();
+        sleep(20000);
+        Log.d("s2sdk:: databasetest", "%%%%%%%%%% test SQLITECONNECTOR working properly - crud reflection tests");
+        testSQLiteConnectorIsWorking();
     }
 
 
@@ -396,8 +411,176 @@ public class DatabaseTestActivity extends TestableActivity {
         onStartAndWaitForIsReady(this, 60000);
         assertTrue(SRCH2Engine.isReady());
         sleep(5000);
-        assertEquals(dbIndex.getRecordCount(), SQLiteSchema.NUMBER_OF_RECORDS_TO_INSERT);
+
     }
+
+    public void testSQLiteConnectorIsWorking() {
+
+        // Init the SqliteOpenHelper && SQLiteIndexable && register the search results callback
+        SQLiteConnectorCRUDTestDatabaseHelper dbHelper = new SQLiteConnectorCRUDTestDatabaseHelper(getApplicationContext());
+        SQLiteConnectorCRUDTestIndexable idx = new SQLiteConnectorCRUDTestIndexable(dbHelper);
+        SRCH2Engine.setSQLiteIndexables(idx);
+        searchResultsBuffer = new SearchResultsTestBuffer();
+        Log.d("s2sdk:: DatabaseTest", "setting search result listener for SQLITECONNECTOR TEST");
+        SRCH2Engine.setSearchResultsListener(searchResultsBuffer);
+
+        // Starts the SRCH2Engine, blocking until started or takes longer than the second parameter
+        onStartAndWaitForIsReady(this, 60000);
+        assertTrue(SRCH2Engine.isReady());
+        sleep(10000);
+
+        // Verify there are no records
+        assertEquals(idx.getRecordCount(), 0);
+
+        // Insert records and wait a moment for SQLiteConnector to index
+        for (SQLiteConnectorCRUDTestDatabaseRecord r : sqLiteConnectorCRUDTestDatabaseRecords) {
+            dbHelper.insert(r);
+        }
+        sleep(10000);
+
+        // Verify there are records added
+        assertEquals(idx.getRecordCount(), sqLiteConnectorCRUDTestDatabaseRecords.length);
+
+        // Verify these records were inserted into SRCH2 index as is from SQLite table
+        // the first record
+        idx.search(sqLiteConnectorCRUDTestDatabaseRecords[0].searchableColumn);
+        sleep(2000);
+        HashMap<String, ArrayList<JSONObject>> results = searchResultsBuffer.recordSet;
+        ArrayList<JSONObject> resultSet = results.get(idx.getIndexName());
+        JSONObject o = resultSet.get(0);
+        JSONObject originalRecord = null;
+        String searchColumn = "null";
+        double refiningColumn = -1;
+        try {
+            originalRecord = o.getJSONObject(SQLiteIndexable.SEARCH_RESULT_JSON_KEY_RECORD);
+            searchColumn = originalRecord.getString(SQLiteConnectorCRUDTestDatabaseTableSchema.COLUMN_SEARCHABLE);
+            refiningColumn = originalRecord.getDouble(SQLiteConnectorCRUDTestDatabaseTableSchema.COLUMN_REFINING);
+        } catch (JSONException ignore) {}
+        assertTrue(searchColumn.equals(sqLiteConnectorCRUDTestDatabaseRecords[0].searchableColumn));
+        assertEquals(sqLiteConnectorCRUDTestDatabaseRecords[0].refiningColumn, refiningColumn);
+        searchResultsBuffer.recordSet = null;
+
+        // the second record
+        idx.search(sqLiteConnectorCRUDTestDatabaseRecords[1].searchableColumn);
+        sleep(2000);
+        results = searchResultsBuffer.recordSet;
+        resultSet = results.get(idx.getIndexName());
+        o = resultSet.get(0);
+        try {
+            originalRecord = o.getJSONObject(SQLiteIndexable.SEARCH_RESULT_JSON_KEY_RECORD);
+            searchColumn = originalRecord.getString(SQLiteConnectorCRUDTestDatabaseTableSchema.COLUMN_SEARCHABLE);
+            refiningColumn = originalRecord.getDouble(SQLiteConnectorCRUDTestDatabaseTableSchema.COLUMN_REFINING);
+        } catch (JSONException ignore) {}
+        assertTrue(searchColumn.equals(sqLiteConnectorCRUDTestDatabaseRecords[1].searchableColumn));
+        assertEquals(sqLiteConnectorCRUDTestDatabaseRecords[1].refiningColumn, refiningColumn);
+        searchResultsBuffer.recordSet = null;
+
+        // the third record
+        idx.search(sqLiteConnectorCRUDTestDatabaseRecords[2].searchableColumn);
+        sleep(2000);
+        results = searchResultsBuffer.recordSet;
+        resultSet = results.get(idx.getIndexName());
+        o = resultSet.get(0);
+        try {
+            originalRecord = o.getJSONObject(SQLiteIndexable.SEARCH_RESULT_JSON_KEY_RECORD);
+            searchColumn = originalRecord.getString(SQLiteConnectorCRUDTestDatabaseTableSchema.COLUMN_SEARCHABLE);
+            refiningColumn = originalRecord.getDouble(SQLiteConnectorCRUDTestDatabaseTableSchema.COLUMN_REFINING);
+        } catch (JSONException ignore) {}
+        assertTrue(searchColumn.equals(sqLiteConnectorCRUDTestDatabaseRecords[2].searchableColumn));
+        assertEquals(sqLiteConnectorCRUDTestDatabaseRecords[2].refiningColumn, refiningColumn);
+        searchResultsBuffer.recordSet = null;
+
+        // Delete the records in reverse order and verify it's being updated
+        dbHelper.delete(sqLiteConnectorCRUDTestDatabaseRecords[2]);
+        sleep(5000);
+        assertEquals(idx.getRecordCount(), sqLiteConnectorCRUDTestDatabaseRecords.length - 1);
+        idx.search(sqLiteConnectorCRUDTestDatabaseRecords[2].searchableColumn);
+        sleep(2000);
+        results = searchResultsBuffer.recordSet;
+        resultSet = results.get(idx.getIndexName());
+        assertEquals(resultSet.size(), 0);
+        searchResultsBuffer.recordSet = null;
+
+        dbHelper.delete(sqLiteConnectorCRUDTestDatabaseRecords[1]);
+        sleep(5000);
+        assertEquals(idx.getRecordCount(), sqLiteConnectorCRUDTestDatabaseRecords.length - 2);
+        idx.search(sqLiteConnectorCRUDTestDatabaseRecords[1].searchableColumn);
+        sleep(2000);
+        results = searchResultsBuffer.recordSet;
+        resultSet = results.get(idx.getIndexName());
+        assertEquals(resultSet.size(), 0);
+        searchResultsBuffer.recordSet = null;
+
+        dbHelper.delete(sqLiteConnectorCRUDTestDatabaseRecords[0]);
+        sleep(5000);
+        assertEquals(idx.getRecordCount(), sqLiteConnectorCRUDTestDatabaseRecords.length - 3);
+        idx.search(sqLiteConnectorCRUDTestDatabaseRecords[0].searchableColumn);
+        sleep(2000);
+        results = searchResultsBuffer.recordSet;
+        resultSet = results.get(idx.getIndexName());
+        assertEquals(resultSet.size(), 0);
+        searchResultsBuffer.recordSet = null;
+
+        // Test updating
+        // First reinsert a record as is and verify it matches the search
+        long insertId = dbHelper.insert(sqLiteConnectorCRUDTestDatabaseRecords[0]);
+        sleep(5000);
+        assertEquals(idx.getRecordCount(), 1);
+        idx.search(sqLiteConnectorCRUDTestDatabaseRecords[0].searchableColumn);
+        sleep(2000);
+        results = searchResultsBuffer.recordSet;
+        resultSet = results.get(idx.getIndexName());
+        o = resultSet.get(0);
+        try {
+            originalRecord = o.getJSONObject(SQLiteIndexable.SEARCH_RESULT_JSON_KEY_RECORD);
+            searchColumn = originalRecord.getString(SQLiteConnectorCRUDTestDatabaseTableSchema.COLUMN_SEARCHABLE);
+            refiningColumn = originalRecord.getDouble(SQLiteConnectorCRUDTestDatabaseTableSchema.COLUMN_REFINING);
+        } catch (JSONException ignore) {}
+        assertTrue(searchColumn.equals(sqLiteConnectorCRUDTestDatabaseRecords[0].searchableColumn));
+        assertEquals(sqLiteConnectorCRUDTestDatabaseRecords[0].refiningColumn, refiningColumn);
+        searchResultsBuffer.recordSet = null;
+
+        // Second update that record and then verify previous search input returns no results and
+        // new search input returns the result
+        String newSearchableValue = "Riemman Pie";
+        double newRefiningValue = 3.14413;
+
+        ContentValues cvs = new ContentValues();
+        cvs.put(SQLiteConnectorCRUDTestDatabaseTableSchema.COLUMN_SEARCHABLE, newSearchableValue);
+        cvs.put(SQLiteConnectorCRUDTestDatabaseTableSchema.COLUMN_REFINING, newRefiningValue);
+        dbHelper.update((int) insertId, cvs);
+        sleep(5000);
+
+        // Verify the update wasn't an upsert
+        assertEquals(idx.getRecordCount(), 1);
+
+        // Verify the updated record matches the values updated in the table
+        idx.search(sqLiteConnectorCRUDTestDatabaseRecords[0].searchableColumn);
+        sleep(2000);
+        results = searchResultsBuffer.recordSet;
+        resultSet = results.get(idx.getIndexName());
+        assertEquals(resultSet.size(), 0);
+
+        idx.search(newSearchableValue);
+        sleep(2000);
+        results = searchResultsBuffer.recordSet;
+        resultSet = results.get(idx.getIndexName());
+        o = resultSet.get(0);
+        try {
+            originalRecord = o.getJSONObject(SQLiteIndexable.SEARCH_RESULT_JSON_KEY_RECORD);
+            searchColumn = originalRecord.getString(SQLiteConnectorCRUDTestDatabaseTableSchema.COLUMN_SEARCHABLE);
+            refiningColumn = originalRecord.getDouble(SQLiteConnectorCRUDTestDatabaseTableSchema.COLUMN_REFINING);
+        } catch (JSONException ignore) {}
+        assertTrue(!searchColumn.equals(sqLiteConnectorCRUDTestDatabaseRecords[0].searchableColumn));
+        assertTrue(refiningColumn != sqLiteConnectorCRUDTestDatabaseRecords[0].refiningColumn);
+
+        assertTrue(searchColumn.equals(newSearchableValue));
+        assertTrue(refiningColumn == newRefiningValue);
+
+        searchResultsBuffer.recordSet = null;
+    }
+
+
 
     public void testNullSQLiteOpenHelper() {
         dbHelper = new DbHelper(getApplicationContext(), DbIndex.GeoFailureMode.NotGeo);
@@ -1001,6 +1184,7 @@ public class DatabaseTestActivity extends TestableActivity {
             sb.append(COLUMN_THREE + " TEXT, ");
             sb.append(COLUMN_FOUR + " TEXT ");
             sb.append(")");
+            Log.d("s2sdk:: DatabaseTest", "createtable string for column boost: \n " + sb.toString());
             return sb.toString();
         }
 
@@ -1015,4 +1199,151 @@ public class DatabaseTestActivity extends TestableActivity {
             onCreate(db);
         }
     }
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+    static class SQLiteConnectorCRUDTestDatabaseTableSchema {
+        public static final int DATABASE_VERSION = 1;
+        public static final String DATABASE_NAME = "adb";
+        public static final String TABLE_NAME = "tble";
+        public static final String COLUMN_NAME_PRIMARY_KEY = "id";
+        public static final String COLUMN_SEARCHABLE = "searchable";
+        public static final String COLUMN_REFINING = "refining";
+    }
+
+    static class SQLiteConnectorCRUDTestDatabaseRecord {
+        final int primaryKey;
+        final String searchableColumn;
+        final double refiningColumn;
+
+        public SQLiteConnectorCRUDTestDatabaseRecord(int pk, String searchColumn, double refineColumn) {
+            primaryKey = pk;
+            searchableColumn = searchColumn;
+            refiningColumn = refineColumn;
+        }
+    }
+
+    static SQLiteConnectorCRUDTestDatabaseRecord[] sqLiteConnectorCRUDTestDatabaseRecords;
+
+    static {
+        sqLiteConnectorCRUDTestDatabaseRecords = new SQLiteConnectorCRUDTestDatabaseRecord[3];
+        sqLiteConnectorCRUDTestDatabaseRecords[0] = new SQLiteConnectorCRUDTestDatabaseRecord(1, "aa", 1.234);
+        sqLiteConnectorCRUDTestDatabaseRecords[1] = new SQLiteConnectorCRUDTestDatabaseRecord(2, "mm", 2.345);
+        sqLiteConnectorCRUDTestDatabaseRecords[2] = new SQLiteConnectorCRUDTestDatabaseRecord(3, "zz", 10.123);
+    }
+
+    static class SQLiteConnectorCRUDTestIndexable extends SQLiteIndexable {
+
+        SQLiteOpenHelper h;
+        public SQLiteConnectorCRUDTestIndexable(SQLiteOpenHelper helper) {
+            h = helper;
+        }
+
+        @Override
+        public String getTableName() {
+            return SQLiteConnectorCRUDTestDatabaseTableSchema.TABLE_NAME;
+        }
+
+        @Override
+        public String getDatabaseName() {
+            return SQLiteConnectorCRUDTestDatabaseTableSchema.DATABASE_NAME;
+        }
+
+        @Override
+        public String getIndexName() {
+            return SQLiteConnectorCRUDTestDatabaseTableSchema.TABLE_NAME;
+        }
+
+        @Override
+        public SQLiteOpenHelper getSQLiteOpenHelper() {
+            return h;
+        }
+    }
+
+    public static class SQLiteConnectorCRUDTestDatabaseHelper extends SQLiteOpenHelper {
+
+        public SQLiteConnectorCRUDTestDatabaseHelper(Context context ) {
+            super(context, SQLiteConnectorCRUDTestDatabaseTableSchema.DATABASE_NAME, null, SQLiteConnectorCRUDTestDatabaseTableSchema.DATABASE_VERSION);
+        }
+
+        public static final String getCreateTableString() {
+            StringBuilder sb = new StringBuilder();
+            sb.append("CREATE TABLE " + SQLiteConnectorCRUDTestDatabaseTableSchema.TABLE_NAME + "(");
+            sb.append(SQLiteConnectorCRUDTestDatabaseTableSchema.COLUMN_NAME_PRIMARY_KEY + " INTEGER PRIMARY KEY NOT NULL, ");
+            sb.append(SQLiteConnectorCRUDTestDatabaseTableSchema.COLUMN_SEARCHABLE + " TEXT, ");
+            sb.append(SQLiteConnectorCRUDTestDatabaseTableSchema.COLUMN_REFINING + " REAL");
+            sb.append(")");
+            Log.d("s2sdk:: DatabaseTest", "createtable string for sqlite connector operations: \n " + sb.toString());
+            return sb.toString();
+        }
+
+        @Override
+        public void onCreate(SQLiteDatabase db) {
+            Log.d("s2sdk:: DatabaseTest", "sqlite db helper onCreate");
+            db.execSQL("DROP TABLE IF EXISTS " + SQLiteConnectorCRUDTestDatabaseTableSchema.TABLE_NAME);
+            db.execSQL(getCreateTableString());
+        }
+
+        public long insert(SQLiteConnectorCRUDTestDatabaseRecord insertRecord) {
+            SQLiteDatabase db = getWritableDatabase();
+            ContentValues cv = new ContentValues();
+            cv.put(SQLiteConnectorCRUDTestDatabaseTableSchema.COLUMN_SEARCHABLE, insertRecord.searchableColumn);
+            cv.put(SQLiteConnectorCRUDTestDatabaseTableSchema.COLUMN_REFINING, insertRecord.refiningColumn);
+            long insertId = db.insert(SQLiteConnectorCRUDTestDatabaseTableSchema.TABLE_NAME, null, cv);
+            db.close();
+            return insertId;
+        }
+
+        public void delete(SQLiteConnectorCRUDTestDatabaseRecord deleteRecord) {
+            SQLiteDatabase db = getWritableDatabase();
+            db.delete(SQLiteConnectorCRUDTestDatabaseTableSchema.TABLE_NAME,
+                    SQLiteConnectorCRUDTestDatabaseTableSchema.COLUMN_NAME_PRIMARY_KEY + "=" + deleteRecord.primaryKey, null);
+            db.close();
+        }
+
+        public void update(int pk, ContentValues cvs) {
+            SQLiteDatabase db = getWritableDatabase();
+            db.update(SQLiteConnectorCRUDTestDatabaseTableSchema.TABLE_NAME, cvs,
+                    SQLiteConnectorCRUDTestDatabaseTableSchema.COLUMN_NAME_PRIMARY_KEY + "=" + pk, null);
+            db.close();
+        }
+
+        @Override
+        public void onUpgrade(SQLiteDatabase db, int oldVersion, int newVersion) {
+            onCreate(db);
+        }
+    }
+
+    private static class SearchResultsTestBuffer implements SearchResultsListener {
+        HashMap<String, ArrayList<JSONObject>> recordSet;
+
+        @Override
+        public void onNewSearchResults(int HTTPResponseCode, String JSONResponse, HashMap<String, ArrayList<JSONObject>> resultMap) {
+
+            int count = 0;
+            for (String s : resultMap.keySet()) {
+                for (JSONObject o : resultMap.get(s)) {
+                    ++count;
+                }
+            }
+            Log.d("s2sdk:: DatabaseTest", "got the new results total record count is " + count);
+            Log.d("s2sdk:: DatabaseTest", "literal search result is " + JSONResponse);
+            Log.d("s2sdk:: DatabaseTest", "\n. \n. \n.");
+
+            recordSet = resultMap;
+        }
+    }
+
 }
