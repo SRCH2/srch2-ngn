@@ -37,11 +37,11 @@ cd $OLDPWD
 
 version=${version%'-SNAPSHOT'}
 
-echo -e "Detected releaes version is ${red} $version ${NC}, is this correct? [y|N]"
+echo -e "Detected releaes version is $red $version $NC, is this correct? [y|N]"
 read yes
 [ "$yes" == "y" ] || { echo "Stopped."; exit -1; }
 
-release_file="./docs/release_notes/release_${version}.txt"
+release_file="./docs/release_notes/release_$version.txt"
 [ -f "$release_file" ] || { echo "ERROR:$release_file doesn't exist! Stopped."; exit -1; }
 
 \rm -rf site
@@ -49,6 +49,10 @@ mkdocs build
 [ $? -ne 0 ] && { echo $'\nERROR: Mkdocs build to "site" folder failed, Stop the release'; exit -1;}
 
 cd $sdk_source
+    
+    # check if the LogCat is disabled 
+    grep "private static boolean isLogging = false;" src/main/java/com/srch2/android/sdk/Cat.java
+    [ $? -ne 0 ] && { echo $'\nERROR: LogCat is open, please set the LogCat.isLogging = false.'; exit -1;}
 
     mvn clean deploy
     [ $? -ne 0 ] && { echo $'\nERROR: Error happens while deploying, Stop the release'; exit -1;}
