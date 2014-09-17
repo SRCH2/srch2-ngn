@@ -4,10 +4,13 @@ sys.path.insert(0, 'srch2lib')
 import test_lib
 
 
-srch2ngnGitRepoDir = "/home/prateek/gitrepo/srch2-ngn/"
-integrationTestDir = srch2ngnGitRepoDir + "/test/sharding/integration/"
-testBinaryDir = srch2ngnGitRepoDir + "/build/src/server/"
-testBinaryFileName = "srch2-search-server-debug"
+nodesInfoRelFilePath = "./nodeIntensive-noValidation/nodeAddress.txt"
+
+srch2ngnGitRepoDir = ""
+integrationTestDir = ""
+testBinaryDir = ""
+testBinaryFileName = ""
+nodesInfoFilePath = ""
 
 nodes = dict()
 serverHandles = []
@@ -127,7 +130,7 @@ def startEngine(nodeId):
         out = open(integrationTestDir + 'dashboard-node-'+nodes[nodeId].Id+'.txt','w')
         temp = subprocess.Popen([binary_path,'--config='+nodes[nodeId].conf],stdout=out)      
         nodes[nodeId].pid = temp.pid
-        print str(nodes[nodeId].pid) + "---------------------------"
+#        print str(nodes[nodeId].pid) + "---------------------------"
         pingServer(nodes[nodeId].ipAddress, nodes[nodeId].portNo)
         return
     stdin, stdout, stderr = sshClient[nodes[nodeId].Id].exec_command('cd ' + integrationTestDir + '; echo $$;exec '+binary_path+' --config='+ nodes[nodeId].conf + ' > ' + integrationTestDir + 'dashboard-node-'+nodes[nodeId].Id+'.txt &')
@@ -362,8 +365,21 @@ def test(transactionFile):
              sendQuery(inputFile, nodes[nodeId[0]].ipAddress, nodes[nodeId[0]].portNo)  
             
 if __name__ == '__main__':
-    nodesPath = sys.argv[1];
-    parseNodes(nodesPath)
+
+    confFilePath = sys.argv[1]
+    confContent = ""
+    confFile = open(confFilePath, 'r')
+    for line in confFile:
+       confContent = confContent + line
+    confJson = json.loads(confContent)
+    print confJson
+    srch2ngnGitRepoDir = str(confJson['srch2ngnGitRepoDir'])
+    integrationTestDir = srch2ngnGitRepoDir + str(confJson['integrationTestDir'])
+    testBinaryDir = srch2ngnGitRepoDir + str(confJson['testBinaryDir'])
+    testBinaryFileName = str(confJson['testBinaryFileName'])
+    nodesInfoFilePath = integrationTestDir + nodesInfoRelFilePath   
+
+    parseNodes(nodesInfoFilePath)
     setupSSH()
     transactionFile = sys.argv[2]
     try:
