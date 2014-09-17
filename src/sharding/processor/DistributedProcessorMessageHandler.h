@@ -53,7 +53,9 @@ public:
             time_t timeoutValue,
             NodeTargetShardInfo target,
             boost::shared_ptr<const ClusterResourceMetadata_Readview> clusterReadview){
-    	broadcast(requestObj, waitForAll, withCallback, aggregator, timeoutValue, vector<NodeTargetShardInfo>({target}),
+    	vector<NodeTargetShardInfo> nodeTargetShardInfoVector;
+    	nodeTargetShardInfoVector.push_back(target);
+    	broadcast(requestObj, waitForAll, withCallback, aggregator, timeoutValue, nodeTargetShardInfoVector,
     			clusterReadview);
     }
 
