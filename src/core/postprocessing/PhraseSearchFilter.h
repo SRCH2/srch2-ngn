@@ -24,6 +24,16 @@ class PhraseQueryFilter : public ResultsPostProcessorFilter {
 public:
     virtual void doFilter(QueryEvaluator *queryEvaluator, const Query * query,
                  QueryResults * input , QueryResults * output);
+
+
+    PhraseQueryFilter(const PhraseQueryFilter & filter){
+    	this->phraseInfoVector = filter.phraseInfoVector;
+    }
+
+	virtual ResultsPostProcessorFilter * getNewCopy() const{
+		PhraseQueryFilter * newCopy = new PhraseQueryFilter(*this);
+		return newCopy;
+	}
 private:
 
     bool matchPhrase(const ForwardList * forwardListPtr, const PhraseInfo& phraseInfo);

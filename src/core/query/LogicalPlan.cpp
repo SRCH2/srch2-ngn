@@ -43,6 +43,35 @@ LogicalPlanNode::LogicalPlanNode(){
 	forcedPhysicalNode = PhysicalPlanNode_NOT_SPECIFIED;
 }
 
+LogicalPlanNode::LogicalPlanNode(const LogicalPlanNode & node){
+	this->nodeType = node.nodeType;
+	this->forcedPhysicalNode = node.forcedPhysicalNode;
+	if(node.exactTerm != NULL){
+		this->exactTerm = new Term(*(node.exactTerm));
+	}else{
+		this->exactTerm = NULL;
+	}
+	if(node.fuzzyTerm != NULL){
+		this->fuzzyTerm = new Term(*(node.fuzzyTerm));
+	}else{
+		this->fuzzyTerm = NULL;
+	}
+	for(unsigned childIdx = 0 ; childIdx < node.children.size(); ++childIdx){
+		if(node.children.at(childIdx)->nodeType == LogicalPlanNodeTypePhrase){
+			this->children.push_back(
+					new LogicalPlanPhraseNode(*((LogicalPlanPhraseNode *)(node.children.at(childIdx)))));
+		}else{
+			this->children.push_back(
+					new LogicalPlanNode(*(node.children.at(childIdx))));
+		}
+	}
+	//if(node.stats == NULL){
+		this->stats == NULL; // stats will always be created new
+	//}else{
+	//	this->stats = new LogicalPlanNodeAnnotation(*(node.stats)); // TODO
+	//}
+}
+
 LogicalPlanNode::~LogicalPlanNode(){
 	if(this->exactTerm != NULL){
 		delete exactTerm;
@@ -224,13 +253,53 @@ LogicalPlan::LogicalPlan(){
 	postProcessingPlan = NULL;
 }
 
+LogicalPlan::LogicalPlan(const LogicalPlan & logicalPlan){
+    this->tree = new LogicalPlanNode(*(logicalPlan.tree));
+	this->offset = logicalPlan.offset;
+	this->numberOfResultsToRetrieve = logicalPlan.numberOfResultsToRetrieve;
+	this->shouldRunFuzzyQuery = logicalPlan.shouldRunFuzzyQuery;
+	this->queryType = logicalPlan.queryType;
+	this->docIdForRetrieveByIdSearchType = logicalPlan.docIdForRetrieveByIdSearchType;
+	if(logicalPlan.exactQuery != NULL){
+		this->exactQuery = new Query(*(logicalPlan.exactQuery));
+	}else{
+		this->exactQuery = NULL;
+	}
+
+	if(logicalPlan.fuzzyQuery != NULL){
+		this->fuzzyQuery = new Query(*(logicalPlan.fuzzyQuery));
+	}else{
+		this->fuzzyQuery = NULL;
+	}
+
+	if(logicalPlan.postProcessingInfo != NULL){
+		this->postProcessingInfo = new ResultsPostProcessingInfo(*(logicalPlan.postProcessingInfo));
+	}else{
+		this->postProcessingInfo = NULL;
+	}
+
+	if(logicalPlan.postProcessingPlan != NULL){
+		this->postProcessingPlan = new ResultsPostProcessorPlan(*(logicalPlan.postProcessingPlan));
+	}else{
+		this->postProcessingPlan = NULL;
+	}
+}
+
 LogicalPlan::~LogicalPlan(){
 	if(tree != NULL) delete tree;
 	if(postProcessingInfo != NULL){
 		delete postProcessingInfo;
 	}
-	delete postProcessingPlan;
-	delete fuzzyQuery; delete exactQuery;
+	if(postProcessingPlan != NULL){
+		delete postProcessingPlan;
+	}
+	if(exactQuery != NULL){
+		delete exactQuery;
+	}
+
+	if(fuzzyQuery != NULL){
+		delete fuzzyQuery;
+	}
 }
 
 LogicalPlanNode * LogicalPlan::createTermLogicalPlanNode(const std::string &queryKeyword, TermType type,const float boost, const float fuzzyMatchPenalty, const uint8_t threshold , unsigned fieldFilter){
@@ -376,7 +445,7 @@ unsigned LogicalPlan::getNumberOfBytesForSerializationForNetwork(){
 	numberOfBytes += sizeof(this->numberOfResultsToRetrieve);
 	numberOfBytes += sizeof(this->shouldRunFuzzyQuery);
 	numberOfBytes += sizeof(this->queryType);
-	numberOfBytes += sizeof(this->docIdForRetrieveByIdSearchType);
+	numberOfBytes += sizeof(unsigned) + this->docIdForRetrieveByIdSearchType.size();
 
 	numberOfBytes += sizeof(bool)*4; // isNULL
 	// exact query

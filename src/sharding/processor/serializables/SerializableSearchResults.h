@@ -33,139 +33,172 @@ public:
 class SearchCommandResults {
 public:
 
+	struct ShardResults{
+	public:
+		ShardResults(const string & shardIdentifier):shardIdentifier(shardIdentifier){
+		}
+		const string shardIdentifier;
+	    map<string, std::pair<string, RecordSnippet> > inMemoryRecordStrings;
+	    QueryResults queryResults;
+	    QueryResultFactory resultsFactory;
+	    // extra information to be added later
+	    unsigned searcherTime;
+
+
+	    //serializes the object to a byte array and places array into the region
+	    //allocated by given allocator
+	    void* serialize(void * buffer){
+	    	buffer = srch2::util::serializeString(shardIdentifier, buffer);
+	    	buffer = serializeInMemoryRecordStrings(inMemoryRecordStrings, buffer);
+	    	buffer = queryResults.serializeForNetwork(buffer);
+	    	buffer = srch2::util::serializeFixedTypes(searcherTime, buffer);
+	        return buffer;
+	    }
+
+	    unsigned getNumberOfBytes() const{
+	        unsigned numberOfBytes = 0;
+	        numberOfBytes += sizeof(unsigned) + shardIdentifier.size();
+	        numberOfBytes += getNumberOfBytesOfInMemoryRecordStrings(inMemoryRecordStrings);
+	        numberOfBytes += queryResults.getNumberOfBytesForSerializationForNetwork();
+	        numberOfBytes += sizeof(unsigned);
+	        return numberOfBytes;
+	    }
+
+	    //given a byte stream recreate the original object
+	    static ShardResults * deserialize(void* buffer){
+
+	    	string shardIdentifier ;
+	    	buffer = srch2::util::deserializeString(buffer, shardIdentifier);
+	    	ShardResults * newShardResults = new ShardResults(shardIdentifier);
+	    	buffer = newShardResults->deserializeInMemoryRecordStrings(buffer, newShardResults->inMemoryRecordStrings);
+	    	buffer = QueryResults::deserializeForNetwork(newShardResults->queryResults, buffer, &(newShardResults->resultsFactory));
+	    	buffer = srch2::util::deserializeFixedTypes(buffer, newShardResults->searcherTime);
+	        return newShardResults;
+	    }
+
+
+	private:
+	    /*
+	     * | size of map | id1 | string1 | id2 | string2 | ...
+	     */
+	    void * serializeInMemoryRecordStrings(map<string, std::pair<string, RecordSnippet> > & inMemoryStrings
+	    		,void * buffer){
+	        // serialize size of map
+	        buffer = srch2::util::serializeFixedTypes(((unsigned)inMemoryStrings.size()), buffer);
+	        // serialize map
+	        for(map<string, std::pair<string, RecordSnippet> >::iterator recordDataItr = inMemoryStrings.begin();
+	                recordDataItr != inMemoryStrings.end() ; ++recordDataItr){
+	            // serialize key
+	            buffer = srch2::util::serializeString(recordDataItr->first, buffer);
+	            // serialize value
+	            buffer = srch2::util::serializeString(recordDataItr->second.first, buffer);
+	            buffer = recordDataItr->second.second.serializeForNetwork(buffer);
+	        }
+	        return buffer;
+	    }
+
+	    /*
+	     * | size of map | id1 | string1 | id2 | string2 | ...
+	     */
+	    void * deserializeInMemoryRecordStrings(void * buffer,
+	    		map<string, std::pair<string, RecordSnippet> > & inMemoryStrings){
+	        // serialize size of map
+	        unsigned sizeOfMap = 0;
+	        buffer = srch2::util::deserializeFixedTypes(buffer, sizeOfMap);
+	        // serialize map
+	        for(unsigned recordDataIndex = 0; recordDataIndex < sizeOfMap ; ++recordDataIndex){
+	            // deserialize key
+	            string key ;
+	            buffer = srch2::util::deserializeString(buffer, key);
+	            // deserialize value
+	            string value;
+	            RecordSnippet recSnippet;
+	            buffer = srch2::util::deserializeString(buffer, value);
+	            buffer =  RecordSnippet::deserializeForNetwork(buffer, recSnippet);
+	            inMemoryStrings[key] = std::make_pair(value, recSnippet);
+
+	        }
+	        return buffer;
+	    }
+
+	    /*
+	     * | size of map | id1 | string1 | id2 | string2 | ...
+	     */
+	    unsigned getNumberOfBytesOfInMemoryRecordStrings(
+	    		const map<string, std::pair<string, RecordSnippet> > & inMemoryStrings) const{
+	        unsigned numberOfBytes = 0;
+	        // size of map
+	        numberOfBytes += sizeof(unsigned);
+	        // map
+	        for(map<string, std::pair<string, RecordSnippet> >::const_iterator recordDataItr = inMemoryStrings.begin();
+	                recordDataItr != inMemoryStrings.end() ; ++recordDataItr){
+	            // key
+	            numberOfBytes += sizeof(unsigned) + recordDataItr->first.size();
+	            // value
+	            numberOfBytes += sizeof(unsigned) + recordDataItr->second.first.size();
+	            numberOfBytes += recordDataItr->second.second.getNumberOfBytesOfSnippets();
+	        }
+	        return numberOfBytes;
+	    }
+	};
+
     SearchCommandResults(){
-        this->queryResults = new QueryResults();
-        this->resultsFactory = new QueryResultFactory();
-        searcherTime = 0;
     }
 
     ~SearchCommandResults(){
-        delete this->queryResults;
-        delete this->resultsFactory;
+        for(unsigned shardIdx = 0; shardIdx < shardResults.size(); ++shardIdx){
+        	delete shardResults.at(shardIdx);
+        }
+
     }
 
-    QueryResults * getQueryResults() const{
-        return queryResults;
-    }
-    const map<string, std::pair<string, RecordSnippet> > & getInMemoryRecordStrings() const {
-        return inMemoryRecordStrings;
-    }
-    map<string,std::pair<string, RecordSnippet> > & getInMemoryRecordStringsWrite() {
-        return inMemoryRecordStrings;
-    }
-    QueryResultFactory * getQueryResultsFactory() const{
-        return &(*resultsFactory);
-    }
-    void setSearcherTime(unsigned searcherTime){
-        this->searcherTime = searcherTime;
-    }
-    void setQueryResults(QueryResults * qr){
-        this->queryResults = qr ;
+    void addShardResults(SearchCommandResults::ShardResults * shardResults){
+    	if(shardResults == NULL){
+    		return;
+    	}
+    	this->shardResults.push_back(shardResults);
     }
 
-    unsigned getSearcherTime() const{
-        return searcherTime;
+    vector<ShardResults *> getShardResults() const{
+    	return shardResults;
     }
 
     //serializes the object to a byte array and places array into the region
     //allocated by given allocator
     void* serialize(MessageAllocator * aloc){
-        if(queryResults == NULL){
-            void * buffer = aloc->allocateMessageReturnBody(sizeof(bool));
-            void * bufferWritePointer = buffer;
-            bufferWritePointer = srch2::util::serializeFixedTypes(false, bufferWritePointer);
-            return buffer;
-        }
         // first calculate the number of bytes needed
-        unsigned numberOfBytes = 0;
-        numberOfBytes += sizeof(bool);
-        numberOfBytes += queryResults->getNumberOfBytesForSerializationForNetwork();
-        numberOfBytes += getNumberOfBytesOfInMemoryRecordStrings();
+        unsigned numberOfBytes = getNumberOfBytes();
         // allocate space
         void * buffer = aloc->allocateMessageReturnBody(numberOfBytes);
         // serialize
         void * bufferWritePointer = buffer;
-        bufferWritePointer = srch2::util::serializeFixedTypes(true, bufferWritePointer);
-        bufferWritePointer = queryResults->serializeForNetwork(bufferWritePointer);
-        bufferWritePointer = serializeInMemoryRecordStrings(bufferWritePointer);
-
+        bufferWritePointer = srch2::util::serializeFixedTypes((unsigned)shardResults.size(), bufferWritePointer);
+        for(unsigned qrIdx = 0; qrIdx < shardResults.size(); ++qrIdx){
+        	bufferWritePointer = shardResults.at(qrIdx)->serialize(bufferWritePointer);
+        }
         return buffer;
+    }
+
+    unsigned getNumberOfBytes() const{
+        unsigned numberOfBytes = 0;
+        numberOfBytes += sizeof(unsigned);// number of shardresults
+        for(unsigned qrIdx = 0; qrIdx < shardResults.size(); ++qrIdx){
+        	numberOfBytes += shardResults.at(qrIdx)->getNumberOfBytes();
+        }
+        return numberOfBytes;
     }
 
     //given a byte stream recreate the original object
     static SearchCommandResults * deserialize(void* buffer){
-
-        bool isNotNull = false;
-        buffer = srch2::util::deserializeFixedTypes(buffer, isNotNull);
-        if(isNotNull){
-            SearchCommandResults * searchResults = new SearchCommandResults();
-            buffer = QueryResults::deserializeForNetwork(*(searchResults->queryResults),buffer, searchResults->resultsFactory);
-            buffer = deserializeInMemoryRecordStrings(buffer,searchResults);
-            return searchResults;
-        }else{
-            SearchCommandResults * searchResults = new SearchCommandResults();
-            return searchResults;
-        }
-    }
-
-    /*
-     * | size of map | id1 | string1 | id2 | string2 | ...
-     */
-    void * serializeInMemoryRecordStrings(void * buffer){
-        // serialize size of map
-        buffer = srch2::util::serializeFixedTypes(((unsigned)inMemoryRecordStrings.size()), buffer);
-        // serialize map
-        for(map<string, std::pair<string, RecordSnippet> >::iterator recordDataItr = inMemoryRecordStrings.begin();
-                recordDataItr != inMemoryRecordStrings.end() ; ++recordDataItr){
-            // serialize key
-            buffer = srch2::util::serializeString(recordDataItr->first, buffer);
-            // serialize value
-            buffer = srch2::util::serializeString(recordDataItr->second.first, buffer);
-            buffer = recordDataItr->second.second.serializeForNetwork(buffer);
-        }
-        return buffer;
-    }
-
-    /*
-     * | size of map | id1 | string1 | id2 | string2 | ...
-     */
-    static void * deserializeInMemoryRecordStrings(void * buffer,SearchCommandResults * searchResults){
-        // serialize size of map
-        unsigned sizeOfMap = 0;
-        buffer = srch2::util::deserializeFixedTypes(buffer, sizeOfMap);
-        // serialize map
-        for(unsigned recordDataIndex = 0; recordDataIndex < sizeOfMap ; ++recordDataIndex){
-            // deserialize key
-            string key ;
-            buffer = srch2::util::deserializeString(buffer, key);
-            // deserialize value
-            string value;
-            RecordSnippet recSnippet;
-            buffer = srch2::util::deserializeString(buffer, value);
-            buffer =  RecordSnippet::deserializeForNetwork(buffer, recSnippet);
-            searchResults->inMemoryRecordStrings[key] = std::make_pair(value, recSnippet);
-
-        }
-        return buffer;
-    }
-
-    /*
-     * | size of map | id1 | string1 | id2 | string2 | ...
-     */
-    unsigned getNumberOfBytesOfInMemoryRecordStrings(){
-        unsigned numberOfBytes = 0;
-        // size of map
-        numberOfBytes += sizeof(unsigned);
-        // map
-        for(map<string, std::pair<string, RecordSnippet> >::iterator recordDataItr = inMemoryRecordStrings.begin();
-                recordDataItr != inMemoryRecordStrings.end() ; ++recordDataItr){
-            // key
-            numberOfBytes += sizeof(unsigned) + recordDataItr->first.size();
-            // value
-            numberOfBytes += sizeof(unsigned) + recordDataItr->second.first.size();
-            numberOfBytes += recordDataItr->second.second.getNumberOfBytesOfSnippets();
-        }
-        return numberOfBytes;
+		SearchCommandResults * searchResults = new SearchCommandResults();
+		unsigned sizeValue = 0;
+		buffer = srch2::util::deserializeFixedTypes(buffer, sizeValue);
+		for(unsigned qrIdx = 0 ;  qrIdx < sizeValue; ++qrIdx){
+			ShardResults * newShardResults = ShardResults::deserialize(buffer);
+			buffer = (void*)((char*)buffer + newShardResults->getNumberOfBytes());
+			searchResults->shardResults.push_back(newShardResults);
+		}
+		return searchResults;
     }
 
     //Returns the type of message which uses this kind of object as transport
@@ -173,14 +206,9 @@ public:
         return SearchResultsMessageType;
     }
 
-    std::vector<QueryResultPtr> getSortedFinalResults();
 
 private:
-    QueryResults * queryResults;
-    map<string, std::pair<string, RecordSnippet> > inMemoryRecordStrings;
-    QueryResultFactory * resultsFactory;
-    // extra information to be added later
-    unsigned searcherTime;
+    vector<ShardResults *> shardResults;
 };
 
 

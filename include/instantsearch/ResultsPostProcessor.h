@@ -46,6 +46,8 @@ public:
 	virtual void doFilter(QueryEvaluator * queryEvaluator, const Query * query,
 			 QueryResults * input , QueryResults * output) = 0;
 
+	virtual ResultsPostProcessorFilter * getNewCopy() const = 0;
+
 	virtual ~ResultsPostProcessorFilter() {};
 
 };
@@ -59,6 +61,7 @@ class ResultsPostProcessorPlan
 public:
 
 	ResultsPostProcessorPlan();
+	ResultsPostProcessorPlan(const ResultsPostProcessorPlan & plan);
 	~ResultsPostProcessorPlan();
 	void addFilterToPlan(ResultsPostProcessorFilter * filter);
 	void clearPlan();
@@ -80,6 +83,18 @@ public:
     std::vector<std::string> rangeStarts;
     std::vector<std::string> rangeEnds;
     std::vector<std::string> rangeGaps;
+
+    FacetQueryContainer(const FacetQueryContainer & contianer){
+    	this->types = contianer.types;
+    	this->numberOfTopGroupsToReturn = contianer.numberOfTopGroupsToReturn;
+    	this->fields = contianer.fields;
+    	this->rangeStarts = contianer.rangeStarts;
+    	this->rangeEnds = contianer.rangeEnds;
+    	this->rangeGaps = contianer.rangeGaps;
+    }
+
+    FacetQueryContainer(){};
+
 
     string toString();
 
@@ -114,6 +129,7 @@ public:
 	virtual void * serializeForNetwork(void * buffer) const = 0;
 	virtual unsigned getNumberOfBytesForSerializationForNetwork() const= 0;
 	virtual ~SortEvaluator(){};
+	virtual SortEvaluator * getNewCopy() const = 0;
 	SortOrder order;
 };
 
@@ -125,33 +141,44 @@ public:
 	virtual string toString() = 0;
 	virtual void * serializeForNetwork(void * buffer) const = 0;
 	virtual unsigned getNumberOfBytesForSerializationForNetwork() const= 0;
+	virtual RefiningAttributeExpressionEvaluator * getNewCopy() const = 0;
 };
 
 class PhraseInfo{
     public:
-        unsigned proximitySlop;
-        unsigned attributeBitMap;
-        vector<unsigned> keywordIds;
-        vector<unsigned> phraseKeywordPositionIndex;
-        vector<string> phraseKeyWords;
+	PhraseInfo(const PhraseInfo & info){
+		this->proximitySlop = info.proximitySlop;
+		this->attributeBitMap = info.attributeBitMap;
+		this->keywordIds = info.keywordIds;
+		this->phraseKeywordPositionIndex = info.phraseKeywordPositionIndex;
+		this->phraseKeyWords = info.phraseKeyWords;
+	}
+	PhraseInfo(){
 
-        string toString();
+	}
+	unsigned proximitySlop;
+	unsigned attributeBitMap;
+	vector<unsigned> keywordIds;
+	vector<unsigned> phraseKeywordPositionIndex;
+	vector<string> phraseKeyWords;
 
-        /*
-         * Serialization scheme :
-         * | proximitySlop | attributeBitMap | keywordIds  | phraseKeywordPositionIndex | phraseKeyWords |
-         */
-    	void * serializeForNetwork(void * buffer) const ;
-        /*
-         * Serialization scheme :
-         * | proximitySlop | attributeBitMap | keywordIds  | phraseKeywordPositionIndex | phraseKeyWords |
-         */
-    	void * deserializeForNetwork(void * buffer) ;
-        /*
-         * Serialization scheme :
-         * | proximitySlop | attributeBitMap | keywordIds  | phraseKeywordPositionIndex | phraseKeyWords |
-         */
-    	unsigned getNumberOfBytesForSerializationForNetwork() const;
+	string toString();
+
+	/*
+	 * Serialization scheme :
+	 * | proximitySlop | attributeBitMap | keywordIds  | phraseKeywordPositionIndex | phraseKeyWords |
+	 */
+	void * serializeForNetwork(void * buffer) const ;
+	/*
+	 * Serialization scheme :
+	 * | proximitySlop | attributeBitMap | keywordIds  | phraseKeywordPositionIndex | phraseKeyWords |
+	 */
+	void * deserializeForNetwork(void * buffer) ;
+	/*
+	 * Serialization scheme :
+	 * | proximitySlop | attributeBitMap | keywordIds  | phraseKeywordPositionIndex | phraseKeyWords |
+	 */
+	unsigned getNumberOfBytesForSerializationForNetwork() const;
 };
 
 
@@ -161,6 +188,11 @@ public:
 			const vector<unsigned>& phraseKeywordsPositionIndex,
 			unsigned proximitySlop,
 			unsigned attributeBitMap);
+	PhraseSearchInfoContainer(){};
+	PhraseSearchInfoContainer(const PhraseSearchInfoContainer & container){
+		this->phraseInfoVector = container.phraseInfoVector;
+	};
+
 	vector<PhraseInfo> phraseInfoVector;
 
     string toString();
@@ -187,6 +219,28 @@ public:
 class ResultsPostProcessingInfo{
 public:
 	ResultsPostProcessingInfo();
+	ResultsPostProcessingInfo(const ResultsPostProcessingInfo & info){
+		if(info.facetInfo == NULL){
+			this->facetInfo = NULL;
+		}else{
+			this->facetInfo = new FacetQueryContainer(*(info.facetInfo));
+		}
+		if(info.sortEvaluator == NULL){
+			this->sortEvaluator = NULL;
+		}else{
+			this->sortEvaluator = info.sortEvaluator->getNewCopy();
+		}
+		if(info.filterQueryEvaluator == NULL){
+			this->filterQueryEvaluator = NULL;
+		}else{
+			this->filterQueryEvaluator = info.filterQueryEvaluator->getNewCopy();
+		}
+		if(info.phraseSearchInfoContainer == NULL){
+			this->phraseSearchInfoContainer = NULL;
+		}else{
+			this->phraseSearchInfoContainer = new PhraseSearchInfoContainer(*(info.phraseSearchInfoContainer));
+		}
+	}
 	~ResultsPostProcessingInfo();
 	FacetQueryContainer * getfacetInfo();
 	void setFacetInfo(FacetQueryContainer * facetInfo);

@@ -1,6 +1,8 @@
 #include "transport/TransportManager.h"
 #include "transport/CallbackHandler.h"
 #include "synchronization/SynchronizerManager.h"
+#include "sharding/sharding/ShardManager.h"
+#include "sharding/sharding/metadata_manager/Cluster_Writeview.h"
 
 namespace srch2 {
 namespace httpwrapper {
@@ -14,10 +16,13 @@ public:
 			//unsigned size = msg->getBodySize();
 			Node node;
 			node.deserialize(msg->getMessageBody());
-			syncManger.config.getClusterWriteView()->addNewNode(node);
-			syncManger.config.commitClusterMetadata();
-			Logger::console("[%d, %d, %d]", syncManger.config.getClusterWriteView()->getTotalNumberOfNodes()
+			// TODO : we should add the new node in the local data structure of discovery manager
+			ShardManager::getShardManager()->resolveSMNodeArrival(node);
+			syncManger.localNodesCopyMutex.lock();
+			syncManger.localNodesCopy.push_back(node);
+			Logger::console("[%d, %d, %d]", syncManger.localNodesCopy.size()
 					,syncManger.masterNodeId, syncManger.currentNodeId);
+			syncManger.localNodesCopyMutex.unlock();
 			break;
 
 		}
@@ -26,7 +31,7 @@ public:
 			char * messageBody = msg->getMessageBody();
 			unsigned replyNodeId = *(unsigned *) messageBody;
 
-			string serializedCluster = syncManger.config.getClusterWriteView()->serializeClusterNodes();
+			string serializedCluster = syncManger.serializeClusterNodes();
 			Message * replyMessage = MessageAllocator().allocateMessage(serializedCluster.size());
 			replyMessage->setType(ClusterInfoReplyMessageType);
 			replyMessage->setDiscoveryMask();
@@ -48,7 +53,23 @@ public:
 				unsigned nodeSerializedSize = *(unsigned *)body;
 				body += sizeof(unsigned);
 				node.deserialize(body);
-				syncManger.config.getClusterWriteView()->addNewNode(node);
+				node.thisIsMe = false;
+				ShardManager::getWriteview()->addNode(node);
+				ShardManager::getWriteview()->setNodeState(node.getId(), ShardingNodeStateArrived);
+
+				syncManger.localNodesCopyMutex.lock();
+                bool isPresent = false;
+                for(unsigned i = 0 ; i < syncManger.localNodesCopy.size(); ++i){
+                    if(syncManger.localNodesCopy.at(i).getId() == node.getId()){
+                        isPresent = true;
+                        break;
+                    }
+                }
+                if(! isPresent){
+                    syncManger.localNodesCopy.push_back(node);
+                }
+				syncManger.localNodesCopyMutex.unlock();
+
 				body += nodeSerializedSize;
 			}
 			__sync_val_compare_and_swap(&syncManger.configUpdatesDone, false, true);

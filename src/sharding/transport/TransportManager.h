@@ -64,38 +64,35 @@ public:
 	MessageID_t sendMessage(NodeId, Message *, unsigned timeout = 0);
 	//route message through a particular socket
 	MessageID_t _sendMessage(int fd, Message *);
+	// get the value of maximum message Id for this node.
+	MessageID_t& getCurrentMessageId();
+	// generate a unique ID for current message
+	MessageID_t getUniqueMessageIdValue();
+
 	// this API enables SM to register its callback with TM
 	void registerCallbackHandlerForSynchronizeManager(CallBackHandler*);
 	// this API enables SM to register discovery callback with TM
 	void registerCallbackHandlerForDiscovery(CallBackHandler*);
 	// this API enables MM to register discovery callback with TM
 	void registerCallbackHandlerForMM(CallBackHandler*);
-	// get the value of maximum message Id for this node.
-	MessageID_t& getCurrentMessageId();
-	// generate a unique ID for current message
-	MessageID_t getUniqueMessageIdValue();
-	// this API enables RM to register message Broker with TM
-	void registerCallbackForInternalMessageHandler(CallBackHandler*);
 
-	void registerCallbackForReplyMessageHandler(CallBackHandler*);
+	void registerCallbackForDPMessageHandler(CallBackHandler* cbh);
+	void registerCallbackForShardingMessageHandler(CallBackHandler * cbh);
 	// getter function for current listening thread. Temp for V0
 	pthread_t getListeningThread() const;
 	// getter function for message Allocator object.
 	MessageAllocator * getMessageAllocator();
-	// get RM object
-	RoutingManager * getRoutingManager();
-	// this API enables RM to register its pointer with TM
-	void setRoutingManager(RoutingManager * rm);
 	// get SM callback handler
 	CallBackHandler* getSmHandler();
 	// get MM callback handler
 	CallBackHandler* getMMHandler();
 	// get Discovery callback handler
 	CallBackHandler* getDiscoveryHandler();
-	// get RM callback handler
-	CallBackHandler* getInternalMessageHandler();
 
-	CallBackHandler* getReplyMessageHandler();
+	CallBackHandler* getDPMessageHandler();
+
+	CallBackHandler* getShardManagerHandler();
+
 	~TransportManager();
 	// API for the libevent callback to call into TM
 	bool receiveMessage(int fd, TransportCallback *cb);
@@ -204,15 +201,14 @@ private:
 	 */
 	CallBackHandler *discoveryHandler;
 
-	/*
-	 * Handles internal messages for DP and ShM callbacks
-	 */
-	CallBackHandler *internalMessageHandler;
 
 	/*
-	 * Handles reply messages through the Pending Request Framework for DP and ShM
+	 * Handles DP callbacks
 	 */
-	CallBackHandler * replyMessageHandler;
+	CallBackHandler * dpMessageHandler;
+
+	CallBackHandler * shardManagerHandler;
+
 
 	/*
 	 *  Stores the default socket read buffer size
@@ -223,10 +219,6 @@ private:
 	 */
 	//unsigned socketSendBuffer;
 
-	/*
-	 * Routing Manager
-	 */
-	RoutingManager * routingManager;
 	/*
 	 *  Notify that transport manager is shutting down. To be set to true in call
 	 */

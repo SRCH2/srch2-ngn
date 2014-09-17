@@ -496,7 +496,7 @@ INDEXWRITE_RETVAL IndexData::finishBulkLoad()
 }
 
 INDEXWRITE_RETVAL IndexData::_merge(bool updateHistogram){
-    Logger::debug("Merge begins--------------------------------"); 
+//    Logger::debug("Merge begins--------------------------------");
 
     if (!this->mergeRequired)
         return OP_FAIL;

@@ -30,22 +30,32 @@ public:
 
         if(logicalPlan == NULL){
         	ASSERT(false);
-            void * buffer = aloc->allocateMessageReturnBody(sizeof(bool));
+            void * buffer = aloc->allocateByteArray(sizeof(bool));
             void * bufferWritePointer = buffer;
             bufferWritePointer = srch2::util::serializeFixedTypes(false, bufferWritePointer); // NULL
             return buffer;
         }
         //first calculate the number of bytes needed for serializing logical plan
-        unsigned numberOfBytes = 0;
-        numberOfBytes += sizeof(bool); // Not NULL
-        numberOfBytes += logicalPlan->getNumberOfBytesForSerializationForNetwork();
+        unsigned numberOfBytes = getNumberOfBytes();
         // allocate the space
-        void * buffer = aloc->allocateMessageReturnBody(numberOfBytes);
+        void * buffer = aloc->allocateByteArray(numberOfBytes);
         // serialize logical plan into buffer
         void * bufferWritePointer = buffer;
         bufferWritePointer = srch2::util::serializeFixedTypes(true, bufferWritePointer); // not NULL
         bufferWritePointer = logicalPlan->serializeForNetwork(bufferWritePointer);
         return buffer;
+    }
+
+
+    unsigned getNumberOfBytes() const{
+    	if(logicalPlan == NULL){
+    		ASSERT(false);
+    		return 0;
+    	}
+        unsigned numberOfBytes = 0;
+        numberOfBytes += sizeof(bool); // Not NULL
+        numberOfBytes += logicalPlan->getNumberOfBytesForSerializationForNetwork();
+        return numberOfBytes;
     }
 
     //given a byte stream recreate the original object
@@ -61,6 +71,10 @@ public:
         }else{
             return searchInput;
         }
+    }
+
+    SearchCommand * clone(){
+    	return new SearchCommand(new LogicalPlan(*(this->logicalPlan)));
     }
 
     //Returns the type of message which uses this kind of object as transport

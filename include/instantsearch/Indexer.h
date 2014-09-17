@@ -175,6 +175,7 @@ public:
 
     /*For testing purpose only. Do not use in wrapper code*/
     virtual void merge_ForTesting() = 0;
+    virtual INDEXWRITE_RETVAL merge() = 0;
     /*
     * Deletes all the records.*/
     /*virtual int deleteAll() = 0;*/

@@ -230,6 +230,19 @@ public:
         this->merge(false);
     }
 
+    INDEXWRITE_RETVAL merge(){
+        pthread_mutex_lock(&lockForWriters);
+        bool updateHistogramFlag = shouldUpdateHistogram();
+        if(updateHistogramFlag == true){
+        	this->resetMergeCounterForHistogram();
+        }
+        INDEXWRITE_RETVAL result = this->merge(updateHistogramFlag);
+        pthread_mutex_unlock(&lockForWriters);
+        return result;
+    }
+
+
+
     inline QuadTree *getQuadTree() const { return this->index->quadTree; }
     inline ForwardIndex * getForwardIndex() const { return this->index->forwardIndex; }
 

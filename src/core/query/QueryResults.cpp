@@ -66,7 +66,7 @@ void * QueryResults::serializeForNetwork(void * buffer){
 void * QueryResults::deserializeForNetwork(QueryResults &queryResults, void * buffer,QueryResultFactory * resultsFactory){
 	return queryResults.impl->deserializeForNetwork(buffer,resultsFactory);
 }
-unsigned QueryResults::getNumberOfBytesForSerializationForNetwork(){
+unsigned QueryResults::getNumberOfBytesForSerializationForNetwork() const{
 	return impl->getNumberOfBytesForSerializationForNetwork();
 }
 

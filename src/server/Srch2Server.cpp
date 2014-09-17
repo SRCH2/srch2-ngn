@@ -188,21 +188,24 @@ void Srch2Server::createAndBootStrapIndexer(const string & directoryPath)
 	    {
 	    case srch2http::DATA_SOURCE_JSON_FILE:
 	        {
-		    // Create from JSON and save to index-dir
-		    Logger::console("Creating indexes from JSON file...");
-		    RecordSerializerUtil::populateStoredSchema(storedAttrSchema, getIndexer()->getSchema());
-		    unsigned indexedCounter = DaemonDataSource::createNewIndexFromFile(getIndexer(),
-		    		storedAttrSchema, this->getCoreInfo(),getDataFilePath()); // TODO : must see what we want to use for data file path
-		    /*
-		     *  commit the indexes once bulk load is done and then save it to the disk only
-		     *  if number of indexed record is > 0.
-		     */
-		    getIndexer()->commit();
-		    if (indexedCounter > 0) {
-		    	getIndexer()->save();
-			Logger::console("Indexes saved.");
-		    }
-		    break;
+	        	unsigned indexedCounter = 0;
+	        	if(getDataFilePath().compare("") != 0){
+					// Create from JSON and save to index-dir
+					Logger::console("Creating indexes from JSON file...");
+					RecordSerializerUtil::populateStoredSchema(storedAttrSchema, getIndexer()->getSchema());
+					indexedCounter = DaemonDataSource::createNewIndexFromFile(getIndexer(),
+							storedAttrSchema, this->getCoreInfo(),getDataFilePath());
+	        	}
+				/*
+				 *  commit the indexes once bulk load is done and then save it to the disk only
+				 *  if number of indexed record is > 0.
+				 */
+				getIndexer()->commit();
+				if (indexedCounter > 0) {
+					getIndexer()->save();
+				Logger::console("Indexes saved.");
+				}
+				break;
 		}
 #ifndef ANDROID
 	    case srch2http::DATA_SOURCE_MONGO_DB:
@@ -338,13 +341,6 @@ Indexer * Srch2Server::getIndexer(){
 }
 const CoreInfo_t * Srch2Server::getCoreInfo(){
 	return indexDataConfig;
-}
-ShardId Srch2Server::getShardId(){
-	return correspondingShardId;
-}
-
-unsigned Srch2Server::getServerId(){
-	return serverId;
 }
 
 }

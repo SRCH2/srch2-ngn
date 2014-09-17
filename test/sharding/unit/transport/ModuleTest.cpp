@@ -70,9 +70,9 @@ static pthread_t tmp[NUM_THREADS];
 
 struct TestHandler : public CallBackHandler {
   int messageRecieved;
-  void resolveMessage(Message *msg, unsigned nodeID) {
+  bool resolveMessage(Message *msg, unsigned nodeID) {
    // assert(!strcmp(msg->buffer, MESSAGE_CONTENTS[messageRecieved]));
-    printf("%d: \t %s\n", msg->getDestinationShardId().coreId, msg->getMessageBody());
+    printf("%d: \t %s\n", 0, msg->getMessageBody());
     fflush(stdout);
     if(++messageRecieved == 52) {
       sleep(2);
@@ -80,7 +80,7 @@ struct TestHandler : public CallBackHandler {
         pthread_cancel(tmp[t]);
       }
     }
-
+    return true;
   }
   TestHandler() : messageRecieved(0) {}
 };
@@ -91,70 +91,70 @@ void* dispatch(void *arg) {
 }
 
 int main() {
-  std::vector<Node>* nodes = new std::vector<Node>();
-  nodes->push_back(
-      Node(std::string("apple"), std::string("127.0.0.1"), 9552, false));
-  nodes->push_back(
-      Node(std::string("apple"), std::string("127.0.0.1"), 9551, false));
-
-  int i=0;
-  for(std::vector<Node>::iterator node = nodes->begin(); 
-      node != nodes->end(); ++node) {
-    node->setId(i++);
-  }
-
-  std::vector<Node>::iterator n = nodes->begin(); 
-
-  int cid; i = 0;
-  while(true) {
-    if((cid = fork()) == 0) {
-      //in child
-      ++n, ++i;
-      if(n == nodes->end()) std::exit(0);
-      continue;
-    } else {
-      //in parent
-      n->thisIsMe = true;
-      break;
-   }
-  }
-
-  EventBases eventbases;
-  for(int t=0; t<NUM_THREADS; ++t) 
-    eventbases.push_back(event_base_new());
-
-  TransportManager *tm =  new TransportManager(eventbases, *nodes);
-  tm->registerCallbackForInternalMessageHandler(new TestHandler());
-
-  for(int t=0;  t < NUM_THREADS; ++t) {
-    pthread_create(tmp + t, NULL, dispatch, eventbases[t]);
-  }
-
-  for(std::vector<Node>::iterator node = nodes->begin(); 
-      node != nodes->end(); ++node) {
-    if(node == n) continue;
-    for(int m=0; m < 52; ++m) {
-
-      int messageLength = strlen(MESSAGE_CONTENTS[m]);
-      Message* msg = tm->getMessageAllocator()->allocateMessage(messageLength+1);
-      msg->setType(StatusMessageType);
-      msg->setDPInternal();
-      msg->setBodySize(messageLength+1);
-      ShardId shardId;
-      shardId.coreId = n->getId();
-      msg->setDestinationShardId(shardId);
-      msg->setMessageId(tm->getUniqueMessageIdValue());
-      memcpy(msg->getMessageBody(), MESSAGE_CONTENTS[m], messageLength);
-
-      tm->sendMessage(node->getId(), msg);
-      tm->getMessageAllocator()->deallocateByMessagePointer(msg);
-    }
-  }
-
-  for(int t=0; t<NUM_THREADS; ++t) {
-    void *rtn;
-    pthread_join(tmp[t], &rtn);
-  }
-  int status;
-  waitpid(cid, &status, 0);
+//  std::vector<Node>* nodes = new std::vector<Node>();
+//  nodes->push_back(
+//      Node(std::string("apple"), std::string("127.0.0.1"), 9552, false));
+//  nodes->push_back(
+//      Node(std::string("apple"), std::string("127.0.0.1"), 9551, false));
+//
+//  int i=0;
+//  for(std::vector<Node>::iterator node = nodes->begin();
+//      node != nodes->end(); ++node) {
+//    node->setId(i++);
+//  }
+//
+//  std::vector<Node>::iterator n = nodes->begin();
+//
+//  int cid; i = 0;
+//  while(true) {
+//    if((cid = fork()) == 0) {
+//      //in child
+//      ++n, ++i;
+//      if(n == nodes->end()) std::exit(0);
+//      continue;
+//    } else {
+//      //in parent
+//      n->thisIsMe = true;
+//      break;
+//   }
+//  }
+//
+//  EventBases eventbases;
+//  for(int t=0; t<NUM_THREADS; ++t)
+//    eventbases.push_back(event_base_new());
+//
+//  TransportManager *tm =  new TransportManager(eventbases, *nodes);
+//  tm->registerCallbackForInternalMessageHandler(new TestHandler());
+//
+//  for(int t=0;  t < NUM_THREADS; ++t) {
+//    pthread_create(tmp + t, NULL, dispatch, eventbases[t]);
+//  }
+//
+//  for(std::vector<Node>::iterator node = nodes->begin();
+//      node != nodes->end(); ++node) {
+//    if(node == n) continue;
+//    for(int m=0; m < 52; ++m) {
+//
+//      int messageLength = strlen(MESSAGE_CONTENTS[m]);
+//      Message* msg = tm->getMessageAllocator()->allocateMessage(messageLength+1);
+//      msg->setType(StatusMessageType);
+//      msg->setDPInternal();
+//      msg->setBodySize(messageLength+1);
+//      ClusterShardId shardId;
+//      shardId.coreId = n->getId();
+//      msg->setDestinationShardId(shardId);
+//      msg->setMessageId(tm->getUniqueMessageIdValue());
+//      memcpy(msg->getMessageBody(), MESSAGE_CONTENTS[m], messageLength);
+//
+//      tm->sendMessage(node->getId(), msg);
+//      tm->getMessageAllocator()->deallocateByMessagePointer(msg);
+//    }
+//  }
+//
+//  for(int t=0; t<NUM_THREADS; ++t) {
+//    void *rtn;
+//    pthread_join(tmp[t], &rtn);
+//  }
+//  int status;
+//  waitpid(cid, &status, 0);
 }

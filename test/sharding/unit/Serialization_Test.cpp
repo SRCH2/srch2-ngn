@@ -152,20 +152,29 @@ QueryResults * prepareQueryResults(){
 
 
 void testSerializableCommandStatus(){
-	CommandStatus commandInput1(CommandStatus::DP_INSERT, true, "INSERT True");
+	CommandStatus commandInput1(CommandStatus::DP_INSERT);
+	CommandStatus::ShardResults* shardResult = new CommandStatus::ShardResults("identifier");
+	shardResult->statusValue =  true;
+	shardResult->message = "INSERT True";
+	commandInput1.addShardResult(shardResult);
+
 	MessageAllocator * aloc = new MessageAllocator();
 	void * buffer = commandInput1.serialize(aloc);
 	const CommandStatus & deserializedCommandInput1 = *(CommandStatus::deserialize(buffer));
 	ASSERT(commandInput1.getCommandCode() == deserializedCommandInput1.getCommandCode());
-	ASSERT(commandInput1.getStatus() == deserializedCommandInput1.getStatus());
-	ASSERT(commandInput1.getMessage().compare(deserializedCommandInput1.getMessage()) == 0);
+	ASSERT(commandInput1.getShardResults().at(0)->statusValue == deserializedCommandInput1.getShardResults().at(0)->statusValue);
+	ASSERT(commandInput1.getShardResults().at(0)->message.compare(deserializedCommandInput1.getShardResults().at(0)->message) == 0);
 
-	CommandStatus commandInput2(CommandStatus::DP_DELETE, false, "Delete false");
+	CommandStatus commandInput2(CommandStatus::DP_DELETE);
+	CommandStatus::ShardResults* shardResult2 = new CommandStatus::ShardResults("identifier2");
+	shardResult2->statusValue =  true;
+	shardResult2->message = "INSERT True";
+	commandInput2.addShardResult(shardResult2);
 	buffer = commandInput2.serialize(aloc);
 	const CommandStatus & deserializedCommandInput2 = *(CommandStatus::deserialize(buffer));
 	ASSERT(commandInput2.getCommandCode() == deserializedCommandInput2.getCommandCode());
-	ASSERT(commandInput2.getStatus() == deserializedCommandInput2.getStatus());
-	ASSERT(commandInput2.getMessage().compare(deserializedCommandInput2.getMessage()) == 0);
+	ASSERT(commandInput2.getShardResults().at(0)->statusValue == deserializedCommandInput2.getShardResults().at(0)->statusValue);
+	ASSERT(commandInput2.getShardResults().at(0)->message.compare(deserializedCommandInput2.getShardResults().at(0)->message) == 0);
 }
 
 void testSerializableCommitCommandInput(){
@@ -193,27 +202,31 @@ void testSerializableGetInfoCommandInput(){
 }
 
 void testSerializableGetInfoResults(){
-	GetInfoCommandResults commandInput1(10, 20, 30, "yesterday", 40, "version 3.4.1");
+	GetInfoCommandResults commandInput1;
+	GetInfoCommandResults::ShardResults * shardResults = new GetInfoCommandResults::ShardResults("identifier",10, 20, 30, "yesterday", 40, "version 3.4.1" );
+	commandInput1.addShardResults(shardResults);
 	MessageAllocator * aloc = new MessageAllocator();
 	void * buffer = commandInput1.serialize(aloc);
 	const GetInfoCommandResults & deserializedCommandInput1 = *(GetInfoCommandResults::deserialize(buffer));
-	ASSERT(commandInput1.getReadCount() == deserializedCommandInput1.getReadCount());
-	ASSERT(commandInput1.getWriteCount() == deserializedCommandInput1.getWriteCount());
-	ASSERT(commandInput1.getDocCount() == deserializedCommandInput1.getDocCount());
-	ASSERT(commandInput1.getLastMergeTimeString() == deserializedCommandInput1.getLastMergeTimeString());
-	ASSERT(commandInput1.getNumberOfDocumentsInIndex() == deserializedCommandInput1.getNumberOfDocumentsInIndex());
-	ASSERT(commandInput1.getVersionInfo() == deserializedCommandInput1.getVersionInfo());
+	ASSERT(commandInput1.getShardResults().at(0)->readCount == deserializedCommandInput1.getShardResults().at(0)->readCount);
+	ASSERT(commandInput1.getShardResults().at(0)->writeCount == deserializedCommandInput1.getShardResults().at(0)->writeCount);
+	ASSERT(commandInput1.getShardResults().at(0)->docCount == deserializedCommandInput1.getShardResults().at(0)->docCount);
+	ASSERT(commandInput1.getShardResults().at(0)->lastMergeTimeString == deserializedCommandInput1.getShardResults().at(0)->lastMergeTimeString);
+	ASSERT(commandInput1.getShardResults().at(0)->numberOfDocumentsInIndex == deserializedCommandInput1.getShardResults().at(0)->numberOfDocumentsInIndex);
+	ASSERT(commandInput1.getShardResults().at(0)->versionInfo == deserializedCommandInput1.getShardResults().at(0)->versionInfo);
 
 
-	GetInfoCommandResults commandInput2(11, 2, 300, "tomorrow", 4, "version 3.4.2");
+	GetInfoCommandResults commandInput2;
+	GetInfoCommandResults::ShardResults * shardResults2 = new GetInfoCommandResults::ShardResults("identifier2",11, 2, 300, "tomorrow", 4, "version 3.4.2");
+	commandInput2.addShardResults(shardResults2);
 	buffer = commandInput2.serialize(aloc);
 	const GetInfoCommandResults & deserializedCommandInput2 = *(GetInfoCommandResults::deserialize(buffer));
-	ASSERT(commandInput2.getReadCount() == deserializedCommandInput2.getReadCount());
-	ASSERT(commandInput2.getWriteCount() == deserializedCommandInput2.getWriteCount());
-	ASSERT(commandInput2.getDocCount() == deserializedCommandInput2.getDocCount());
-	ASSERT(commandInput2.getLastMergeTimeString() == deserializedCommandInput2.getLastMergeTimeString());
-	ASSERT(commandInput2.getNumberOfDocumentsInIndex() == deserializedCommandInput2.getNumberOfDocumentsInIndex());
-	ASSERT(commandInput2.getVersionInfo() == deserializedCommandInput2.getVersionInfo());
+	ASSERT(commandInput2.getShardResults().at(0)->readCount == deserializedCommandInput2.getShardResults().at(0)->readCount);
+	ASSERT(commandInput2.getShardResults().at(0)->writeCount == deserializedCommandInput2.getShardResults().at(0)->writeCount);
+	ASSERT(commandInput2.getShardResults().at(0)->docCount == deserializedCommandInput2.getShardResults().at(0)->docCount);
+	ASSERT(commandInput2.getShardResults().at(0)->lastMergeTimeString == deserializedCommandInput2.getShardResults().at(0)->lastMergeTimeString);
+	ASSERT(commandInput2.getShardResults().at(0)->numberOfDocumentsInIndex == deserializedCommandInput2.getShardResults().at(0)->numberOfDocumentsInIndex);
+	ASSERT(commandInput2.getShardResults().at(0)->versionInfo == deserializedCommandInput2.getShardResults().at(0)->versionInfo);
 }
 
 void testSerializableInsertUpdateCommandInput(){
@@ -314,19 +327,27 @@ void testSerializableSearchResults(){
 
 	QueryResults * queryResults1 = prepareQueryResults();
 	SearchCommandResults commandInput1;
-	commandInput1.setQueryResults(queryResults1);
-	commandInput1.setSearcherTime(120);
+	SearchCommandResults::ShardResults * shardResults = new SearchCommandResults::ShardResults("identifier");
+	shardResults->searcherTime = 120;
+	shardResults->queryResults = *queryResults1;
+	delete queryResults1;
 	MessageAllocator * aloc = new MessageAllocator();
 	void * buffer = commandInput1.serialize(aloc);
 	const SearchCommandResults & deserializedCommandInput1 = *(SearchCommandResults::deserialize(buffer));
-	ASSERT(commandInput1.getQueryResults()->impl->sortedFinalResults.size() == deserializedCommandInput1.getQueryResults()->impl->sortedFinalResults.size());
-	for(unsigned resultIndex = 0 ; resultIndex < commandInput1.getQueryResults()->impl->sortedFinalResults.size() ; ++resultIndex){
-		checkQueryResultContent(commandInput1.getQueryResults()->impl->sortedFinalResults.at(resultIndex),
-				deserializedCommandInput1.getQueryResults()->impl->sortedFinalResults.at(resultIndex));
+
+	vector<SearchCommandResults::ShardResults *> allShardResults = deserializedCommandInput1.getShardResults();
+
+	ASSERT(allShardResults.size() == commandInput1.getShardResults().size());
+	for(unsigned resultIndex = 0 ; resultIndex < commandInput1.getShardResults().size() ; ++resultIndex){
+		checkQueryResultContent(commandInput1.getShardResults().at(resultIndex)->queryResults.impl->sortedFinalResults.at(resultIndex),
+				deserializedCommandInput1.getShardResults().at(resultIndex)->queryResults.impl->sortedFinalResults.at(resultIndex));
 	}
-	checkFacetResults(commandInput1.getQueryResults() , deserializedCommandInput1.getQueryResults());
-	ASSERT(commandInput1.getQueryResults()->impl->estimatedNumberOfResults == deserializedCommandInput1.getQueryResults()->impl->estimatedNumberOfResults);
-	ASSERT(commandInput1.getQueryResults()->impl->resultsApproximated == deserializedCommandInput1.getQueryResults()->impl->resultsApproximated);
+	checkFacetResults(&(commandInput1.getShardResults().at(0)->queryResults) ,
+			&(deserializedCommandInput1.getShardResults().at(0)->queryResults));
+	ASSERT(commandInput1.getShardResults().at(0)->queryResults.impl->estimatedNumberOfResults ==
+			deserializedCommandInput1.getShardResults().at(0)->queryResults.impl->estimatedNumberOfResults);
+	ASSERT(commandInput1.getShardResults().at(0)->queryResults.impl->resultsApproximated ==
+			deserializedCommandInput1.getShardResults().at(0)->queryResults.impl->resultsApproximated);
 
 }
 

@@ -92,6 +92,10 @@ ResultsPostProcessorPlan::ResultsPostProcessorPlan(){
 	impl = new ResultsPostProcessorPlanInternal();
 }
 
+ResultsPostProcessorPlan::ResultsPostProcessorPlan(const ResultsPostProcessorPlan & plan){
+	impl = new ResultsPostProcessorPlanInternal(*(plan.impl));
+}
+
 ResultsPostProcessorPlan::~ResultsPostProcessorPlan(){
 	delete impl;
 }

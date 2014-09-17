@@ -52,28 +52,18 @@ public:
 //    long long stat_fork_time;       /* Time needed to perform latets fork() */
 //    long long stat_rejected_conn;   /* Clients rejected because of maxclients */
 
-    Srch2Server(const CoreInfo_t * indexDataConfig,  const ShardId correspondingShardId, unsigned serverId):
-		correspondingShardId(correspondingShardId)
+    Srch2Server(const CoreInfo_t * indexDataConfig, const string & directoryPath, const string & jsonFilePath):
+    	directoryPath(directoryPath),jsonFilePath(jsonFilePath)
     {
         this->indexer = NULL;
         this->indexDataConfig = indexDataConfig;
-        this->serverId = serverId;
-    }
-
-    Srch2Server(const CoreInfo_t * indexDataConfig,  const ShardId correspondingShardId, string& directoryName):
-    	correspondingShardId(correspondingShardId)
-    {
-    	this->indexer = NULL;
-    	this->indexDataConfig = indexDataConfig;
-    	this->serverId = 0;
-    	this->persistentStoragePath = directoryName;
     }
 
     void save() {
-    	indexer->save(this->persistentStoragePath);
+    	indexer->save(this->directoryPath);
     }
 
-    void init(const string & directoryPath)
+    void init()
     {
         createAndBootStrapIndexer(directoryPath);
     }
@@ -104,20 +94,19 @@ public:
 
     Indexer * getIndexer();
     const CoreInfo_t * getCoreInfo();
-    ShardId getShardId();
-    unsigned getServerId();
 
     string getDataFilePath(){
-        return getCoreInfo()->getDataFilePath();
+        return jsonFilePath;
     }
     virtual ~Srch2Server(){}
 
  private:
     Indexer *indexer;
     const CoreInfo_t * indexDataConfig;
-    const ShardId correspondingShardId;
     unsigned serverId;
-    string persistentStoragePath;
+
+    const string directoryPath;
+    const string jsonFilePath;
 };
 
 class HTTPServerEndpoints
