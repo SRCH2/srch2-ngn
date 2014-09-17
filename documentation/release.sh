@@ -37,11 +37,11 @@ cd $OLDPWD
 
 version=${version%'-SNAPSHOT'}
 
-echo -e "Detected releaes version is ${red} $version ${NC}, is this correct? [y|N]"
+echo -e "Detected releaes version is $red $version $NC, is this correct? [y|N]"
 read yes
 [ "$yes" == "y" ] || { echo "Stopped."; exit -1; }
 
-release_file="./docs/release_notes/release_${version}.txt"
+release_file="./docs/release_notes/release_$version.txt"
 [ -f "$release_file" ] || { echo "ERROR:$release_file doesn't exist! Stopped."; exit -1; }
 
 \rm -rf site
