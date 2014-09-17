@@ -130,7 +130,7 @@ def startEngine(nodeId):
         print str(nodes[nodeId].pid) + "---------------------------"
         pingServer(nodes[nodeId].ipAddress, nodes[nodeId].portNo)
         return
-    stdin, stdout, stderr = sshClient[nodes[nodeId].Id].exec_command('echo $$;exec '+binary_path+' --config='+ nodes[nodeId].conf + ' > ' + integrationTestDir + 'dashboard-node-'+nodes[nodeId].Id+'.txt &')
+    stdin, stdout, stderr = sshClient[nodes[nodeId].Id].exec_command('cd ' + integrationTestDir + '; echo $$;exec '+binary_path+' --config='+ nodes[nodeId].conf + ' > ' + integrationTestDir + 'dashboard-node-'+nodes[nodeId].Id+'.txt &')
     #stdin, stdout, stderr = sshClient[nodes[nodeId].Id].exec_command('cd gitrepo/srch2-ngn/test/sharding/integration;mkdir temporaryCheck');
     nodes[nodeId].pid = stdout.readline()
     print str(stdout.readline())
@@ -311,7 +311,7 @@ def test(transactionFile):
              status, output = commands.getstatusoutput(commandDelete)
              flag = str(output).find(expectedValue[0]);
              print output
-             #assert flag > -1, 'Error file could not be deleted'
+             assert flag > -1, 'Error file could not be deleted'
         if(operation[0] == 'update'):
              inputValue=value[2]
              expectedValue=value[3]
