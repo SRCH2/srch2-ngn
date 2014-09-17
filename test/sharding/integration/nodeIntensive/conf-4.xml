@@ -33,13 +33,13 @@
     </ping> 
 
     <transport>
-        <port>4009</port>
+        <port>4004</port>
         <ipaddress>128.195.185.134</ipaddress>
     </transport>
     
     <WellKnownHosts>128.195.185.134:4001</WellKnownHosts>
     <listeningHostname>128.195.185.134</listeningHostname>
-    <listeningPort>7009</listeningPort>
+    <listeningPort>7004</listeningPort>
     
     <!--
         License Key File
@@ -319,8 +319,8 @@
             The number of write operations after which newly inserted/deleted records are merged into the indexes.
         -->
         <mergePolicy>
-          <mergeEveryNSeconds>1</mergeEveryNSeconds>
-          <mergeEveryMWrites>1</mergeEveryMWrites>
+          <mergeEveryNSeconds>10</mergeEveryNSeconds>
+          <mergeEveryMWrites>100</mergeEveryMWrites>
         </mergePolicy>
          
          
@@ -344,7 +344,7 @@
                  
                 Path to Access Log File
             -->
-            <accessLogFile>./logs/log.txt</accessLogFile>
+            <accessLogFile>./logs-4/log.txt</accessLogFile>
         </updateLog>
      
     </updatehandler>

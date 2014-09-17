@@ -1,0 +1,16 @@
+#This tests concurrent insert and queries, disable killServers() from main program
+A||start
+B||start
+C||start
+D||start
+E||start
+F||start
+G||start
+A||sleep||10
+A||bulkInsertFromBeginning||./nodeIntensive/stackoverflow-10k-1.json||200||50
+A||kill
+B||kill
+C||kill
+D||kill
+F||kill
+G||kill

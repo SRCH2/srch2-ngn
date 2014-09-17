@@ -1,0 +1,6 @@
+D||dilbert.calit2.uci.edu||8089||./dataIntensive/confD.xml
+E||dilbert.calit2.uci.edu||8090||./dataIntensive/confE.xml
+F||dilbert.calit2.uci.edu||8091||./dataIntensive/confF.xml
+A||128.195.185.134||8089||./dataIntensive/confA.xml
+B||128.195.185.134||8090||./dataIntensive/confB.xml
+C||128.195.185.134||8091||./dataIntensive/confC.xml

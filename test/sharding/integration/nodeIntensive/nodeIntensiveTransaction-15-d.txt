@@ -1,0 +1,7 @@
+#This runs in parallel to NIT-16, and inserts in parallel
+L||start
+M||start
+L||bulkInsertFromBeginning||./nodeIntensive/stackoverflow-10k-12.json||200||50
+M||bulkInsertFromBeginning||./nodeIntensive/stackoverflow-10k-13.json||200||50
+L||kill
+M||kill

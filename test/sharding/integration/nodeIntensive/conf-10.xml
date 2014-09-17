@@ -3,8 +3,6 @@
     Configuration file for SRCH2 search server. Please email
     contact@srch2.com if you have questions.
     In this documment, "attribute" and "field" are used interchangeably.
-    Calvin's ip address is 128.195.185.134
-    Dilbert's ip address is 128.195.185.107
 -->
  
 <config>
@@ -36,11 +34,11 @@
 
     <transport>
         <port>4010</port>
-        <ipaddress>128.195.185.107</ipaddress>
+        <ipaddress>128.195.185.134</ipaddress>
     </transport>
     
     <WellKnownHosts>128.195.185.134:4001</WellKnownHosts>
-    <listeningHostname>128.195.185.107</listeningHostname>
+    <listeningHostname>128.195.185.134</listeningHostname>
     <listeningPort>7010</listeningPort>
     
     <!--
@@ -321,8 +319,8 @@
             The number of write operations after which newly inserted/deleted records are merged into the indexes.
         -->
         <mergePolicy>
-          <mergeEveryNSeconds>1</mergeEveryNSeconds>
-          <mergeEveryMWrites>1</mergeEveryMWrites>
+          <mergeEveryNSeconds>10</mergeEveryNSeconds>
+          <mergeEveryMWrites>100</mergeEveryMWrites>
         </mergePolicy>
          
          
@@ -346,7 +344,7 @@
                  
                 Path to Access Log File
             -->
-            <accessLogFile>./logs/log.txt</accessLogFile>
+            <accessLogFile>./logs-10/log.txt</accessLogFile>
         </updateLog>
      
     </updatehandler>

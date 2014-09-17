@@ -1,0 +1,9 @@
+#This run in parallel to NIT-16, it does bulk insertion in parallel
+H||start
+I||start
+H||bulkInsertFromBeginning||./nodeIntensive/stackoverflow-10k-8.json||2||50
+I||bulkInsertFromBeginning||./nodeIntensive/stackoverflow-10k-9.json||2||50
+H||stressQuery||./nodeIntensive/1-term-prefix.csv
+H||kill
+I||kill
+

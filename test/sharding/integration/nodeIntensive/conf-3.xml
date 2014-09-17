@@ -3,8 +3,6 @@
     Configuration file for SRCH2 search server. Please email
     contact@srch2.com if you have questions.
     In this documment, "attribute" and "field" are used interchangeably.
-    Calvin's ip address is 128.195.185.134
-    Dilbert's ip address is 128.195.185.107
 -->
  
 <config>
@@ -24,25 +22,25 @@
             "/usr/share/srch2/data/sample-data.json"
             In this config file it should be as "data/sample-data.json"
     -->
-    <!-- <srch2Home>./</srch2Home>-->
+    <!-- <srch2Home>./</srch2Home> -->
     <cluster-name>SRCH2_Cluster</cluster-name>
     <srch2Home>./</srch2Home>
-
+ 
     <ping>
         <ping-interval>2</ping-interval>
         <ping-timeout>8</ping-timeout>
         <retry-count>3</retry-count>
-    </ping> 
+    </ping>    
 
     <transport>
-        <port>4006</port>
-        <ipaddress>128.195.185.107</ipaddress>
+        <port>4003</port>
+        <ipaddress>128.195.185.134</ipaddress>
     </transport>
     
     <WellKnownHosts>128.195.185.134:4001</WellKnownHosts>
-    <listeningHostname>128.195.185.107</listeningHostname>
-    <listeningPort>7006</listeningPort>
-    
+    <listeningHostname>128.195.185.134</listeningHostname>                                
+    <listeningPort>7003</listeningPort> 
+
     <!--
         License Key File
         Required
@@ -50,22 +48,22 @@
         Email contact@srch2.com to get a key file.  
         Make sure to set the variable to the SRCH2 license key file.
     -->
-    <licenseFile>../../wrapper/conf/srch2_license_key.txt</licenseFile> 
-   
-   
+    <licenseFile>../../wrapper/conf/srch2_license_key.txt</licenseFile>
+
+ 
     <!--
         Hostname and Port Number
         Required
          
         Hostname and port number of the server. Make sure the port is open.
     -->
-
+    	
         <cores defaultCoreName="core1">
         <core name="core1">
         <multiple-data-file>json1.json,json2.json</multiple-data-file>
         <coreId>1</coreId>
-        <core-number_of_shards>4</core-number_of_shards>
-        <core-number_of_replicas>2</core-number_of_replicas>
+        <core-number_of_shards>4</core-number_of_shards> 
+	<core-number_of_replicas>2</core-number_of_replicas>
 
     <!--
         Index Directoy Path
@@ -321,8 +319,8 @@
             The number of write operations after which newly inserted/deleted records are merged into the indexes.
         -->
         <mergePolicy>
-          <mergeEveryNSeconds>1</mergeEveryNSeconds>
-          <mergeEveryMWrites>1</mergeEveryMWrites>
+          <mergeEveryNSeconds>10</mergeEveryNSeconds>
+          <mergeEveryMWrites>100</mergeEveryMWrites>
         </mergePolicy>
          
          
@@ -346,7 +344,7 @@
                  
                 Path to Access Log File
             -->
-            <accessLogFile>./logs/log.txt</accessLogFile>
+            <accessLogFile>./logs-3/log.txt</accessLogFile>
         </updateLog>
      
     </updatehandler>
@@ -472,7 +470,7 @@
 	 </types>
 	</schema>
       </core>
-    </cores>
+   </cores>
 </config>
  
 

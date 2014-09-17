@@ -22,24 +22,25 @@
             "/usr/share/srch2/data/sample-data.json"
             In this config file it should be as "data/sample-data.json"
     -->
-    <srch2Home>./</srch2Home>
+    <!-- <srch2Home>./</srch2Home>-->
     <cluster-name>SRCH2_Cluster</cluster-name>
-
+    <srch2Home>./</srch2Home>
 
     <ping>
         <ping-interval>2</ping-interval>
         <ping-timeout>8</ping-timeout>
         <retry-count>3</retry-count>
-    </ping>
+    </ping> 
+
     <transport>
-        <port>4002</port>
+        <port>4005</port>
         <ipaddress>128.195.185.134</ipaddress>
     </transport>
-
+    
     <WellKnownHosts>128.195.185.134:4001</WellKnownHosts>
     <listeningHostname>128.195.185.134</listeningHostname>
-    <listeningPort>7002</listeningPort>
-
+    <listeningPort>7005</listeningPort>
+    
     <!--
         License Key File
         Required
@@ -48,7 +49,8 @@
         Make sure to set the variable to the SRCH2 license key file.
     -->
     <licenseFile>../../wrapper/conf/srch2_license_key.txt</licenseFile> 
-    
+   
+   
     <!--
         Hostname and Port Number
         Required
@@ -144,7 +146,7 @@
         <defaultQueryTermBoost>1</defaultQueryTermBoost>
         <enablePositionIndex>1</enablePositionIndex>
         <enableCharOffsetIndex>1</enableCharOffsetIndex>
-         
+
     </indexConfig>
   
   
@@ -317,8 +319,8 @@
             The number of write operations after which newly inserted/deleted records are merged into the indexes.
         -->
         <mergePolicy>
-          <mergeEveryNSeconds>1</mergeEveryNSeconds>
-          <mergeEveryMWrites>1</mergeEveryMWrites>
+          <mergeEveryNSeconds>10</mergeEveryNSeconds>
+          <mergeEveryMWrites>100</mergeEveryMWrites>
         </mergePolicy>
          
          
@@ -342,7 +344,7 @@
                  
                 Path to Access Log File
             -->
-            <accessLogFile>./logs/log.txt</accessLogFile>
+            <accessLogFile>./logs-5/log.txt</accessLogFile>
         </updateLog>
      
     </updatehandler>
@@ -383,8 +385,8 @@
 	   -->
            <field name="category" type="text" indexed="true" highlight="true" />
            <field name="name" type="text" indexed="true" highlight="true" />
- 
-        </fields>
+	 
+       </fields>
 	 
 	 <!--
 		Primary Key
