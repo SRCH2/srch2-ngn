@@ -4,7 +4,7 @@ sys.path.insert(0, 'srch2lib')
 import test_lib
 
 
-srch2ngnGitRepoDir = "/home/jamshid/workspace/srch2-ngn/"
+srch2ngnGitRepoDir = "/home/prateek/gitrepo/srch2-ngn/"
 integrationTestDir = srch2ngnGitRepoDir + "/test/sharding/integration/"
 testBinaryDir = srch2ngnGitRepoDir + "/build/src/server/"
 testBinaryFileName = "srch2-search-server-debug"
@@ -115,9 +115,10 @@ def parseNodes(nodesPath):
         print ipAddr
         portNum=value[2].split()
         print portNum
-        conf= integrationTestPath + value[3].split()
+        tempConf = value[3].split()
+        conf= integrationTestDir + tempConf[0]
         print conf
-        nodes[nodeId[0]] = node(nodeId[0], portNum[0], conf[0], ipAddr[0])
+        nodes[nodeId[0]] = node(nodeId[0], portNum[0], conf, ipAddr[0])
 
 #Starts the engine on the corresponding machine. Note that before this function is called, SSH connection has already been set up.
 def startEngine(nodeId):
