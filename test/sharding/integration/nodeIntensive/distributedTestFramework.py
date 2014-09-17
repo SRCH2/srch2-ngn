@@ -3,6 +3,12 @@ import sys, urllib2, json, time, subprocess, os, commands, signal, paramiko, soc
 sys.path.insert(0, 'srch2lib')
 import test_lib
 
+
+srch2ngnGitRepoDir = "/home/prateek/gitrepo/srch2-ngn/"
+integrationTestDir = srch2ngnGitRepoDir + "/test/sharding/integration/"
+testBinaryDir = srch2ngnGitRepoDir + "/build/src/server/"
+testBinaryFileName = "srch2-search-server-debug"
+
 nodes = dict()
 serverHandles = []
 sshClient = dict()
@@ -109,20 +115,22 @@ def parseNodes(nodesPath):
         print ipAddr
         portNum=value[2].split()
         print portNum
-        conf=value[3].split()
+        tempConf = value[3].split()
+        conf= integrationTestDir + tempConf[0]
         print conf
-        nodes[nodeId[0]] = node(nodeId[0], portNum[0], conf[0], ipAddr[0])
+        nodes[nodeId[0]] = node(nodeId[0], portNum[0], conf, ipAddr[0])
 
 #Starts the engine on the corresponding machine. Note that before this function is called, SSH connection has already been set up.
 def startEngine(nodeId):
-    binary_path = "../../../build/src/server/srch2-search-server-debug" 
+    binary_path = testBinaryDir + testBinaryFileName
     if(nodes[nodeId].ipAddress == myIpAddress):
-        out = open('dashboard-node-'+nodes[nodeId].Id+'.txt','w')
+        out = open(integrationTestDir + 'dashboard-node-'+nodes[nodeId].Id+'.txt','w')
         temp = subprocess.Popen([binary_path,'--config='+nodes[nodeId].conf],stdout=out)      
         nodes[nodeId].pid = temp.pid
+        print str(nodes[nodeId].pid) + "---------------------------"
         pingServer(nodes[nodeId].ipAddress, nodes[nodeId].portNo)
         return
-    stdin, stdout, stderr = sshClient[nodes[nodeId].Id].exec_command('cd gitrepo/srch2-ngn/test/sharding/integration;echo $$;exec '+binary_path+' --config='+ nodes[nodeId].conf + ' > dashboard-node-'+nodes[nodeId].Id+'.txt &')
+    stdin, stdout, stderr = sshClient[nodes[nodeId].Id].exec_command('echo $$;exec '+binary_path+' --config='+ nodes[nodeId].conf + ' > ' + integrationTestDir + 'dashboard-node-'+nodes[nodeId].Id+'.txt &')
     #stdin, stdout, stderr = sshClient[nodes[nodeId].Id].exec_command('cd gitrepo/srch2-ngn/test/sharding/integration;mkdir temporaryCheck');
     nodes[nodeId].pid = stdout.readline()
     print str(stdout.readline())
@@ -158,7 +166,7 @@ def bulkInsert(inputFile, k, num, ipAddress, portNo, operation):
                 data.append(jsonrec[:-1])
             else:
                 data.append(val[0])
-            if (i%num == 0 ):
+            if (i%50 == 0 ):
                 break;
 
         dd =  "["+','.join(data) +"]"
