@@ -312,6 +312,7 @@ def test(transactionFile):
              flag = str(output).find(expectedValue[0]);
              print output
              assert flag > -1, 'Error file could not be deleted'
+
         if(operation[0] == 'update'):
              inputValue=value[2]
              expectedValue=value[3]
