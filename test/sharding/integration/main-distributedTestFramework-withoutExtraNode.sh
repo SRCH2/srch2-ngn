@@ -156,8 +156,8 @@ python $pythonCode $nodeAddress $transaction1_query &
 python $pythonCode $nodeAddress $transaction1_delete &
 wait
 python killPythonProcess.py 
-python killNodes.py $modeOfEngine
-python killNodesOnDilbert.py $modeOfEngine
+python killNodes.py 
+python killNodesOnDilbert.py 
 
 echo"end Transaction-1"
 
@@ -169,8 +169,8 @@ python $pythonCode $nodeAddress $transaction2_query &
 python $pythonCode $nodeAddress $transaction2_delete &
 wait
 python killPythonProcess.py
-python killNodes.py $modeOfEngine
-python killNodesOnDilbert.py $modeOfEngine
+python killNodes.py 
+python killNodesOnDilbert.py 
 
 
 printTestBanner "Transaction-3"
@@ -180,8 +180,8 @@ python $pythonCode $nodeAddress $transaction3_query &
 python $pythonCode $nodeAddress $transaction3_delete &
 wait
 python killPythonProcess.py
-python killNodes.py $modeOfEngine
-python killNodesOnDilbert.py $modeOfEngine
+python killNodes.py 
+python killNodesOnDilbert.py 
 
 
 printTestBanner "Transaction-4"
@@ -190,8 +190,8 @@ python $pythonCode $nodeAddress $transaction4_insert_delete &
 python $pythonCode $nodeAddress $transaction4_query &
 wait
 python killPythonProcess.py
-python killNodes.py $modeOfEngine
-python killNodesOnDilbert.py $modeOfEngine
+python killNodes.py 
+python killNodesOnDilbert.py 
 
 
 printTestBanner "Transaction-5"
@@ -200,8 +200,8 @@ python $pythonCode $nodeAddress $transaction_insert &
 python $pythonCode $nodeAddress $transaction_query &
 wait
 python killPythonProcess.py
-python killNodes.py $modeOfEngine
-python killNodesOnDilbert.py $modeOfEngine
+python killNodes.py 
+python killNodesOnDilbert.py 
 
 
 printTestBanner "Transaction-6"
@@ -210,8 +210,8 @@ python $pythonCode $nodeAddress $transaction_insert &
 python $pythonCode $nodeAddress $transaction_query &
 wait
 python killPythonProcess.py
-python killNodes.py $modeOfEngine
-python killNodesOnDilbert.py $modeOfEngine
+python killNodes.py 
+python killNodesOnDilbert.py 
 
 
 printTestBanner "Transaction-7"
@@ -220,8 +220,8 @@ python $pythonCode $nodeAddress $transaction_insert &
 python $pythonCode $nodeAddress $transaction_query &
 wait
 python killPythonProcess.py
-python killNodes.py $modeOfEngine
-python killNodesOnDilbert.py $modeOfEngine
+python killNodes.py 
+python killNodesOnDilbert.py 
 
 
 printTestBanner "Transaction-8"
@@ -230,8 +230,8 @@ python $pythonCode $nodeAddress $transaction_insert &
 python $pythonCode $nodeAddress $transaction_query &
 wait
 python killPythonProcess.py
-python killNodes.py $modeOfEngine
-python killNodesOnDilbert.py $modeOfEngine
+python killNodes.py 
+python killNodesOnDilbert.py 
 
 
 printTestBanner "Transaction-9"
@@ -240,8 +240,8 @@ python $pythonCode $nodeAddress $transaction_insert &
 python $pythonCode $nodeAddress $transaction_query &
 wait
 python killPythonProcess.py
-python killNodes.py $modeOfEngine
-python killNodesOnDilbert.py $modeOfEngine
+python killNodes.py 
+python killNodesOnDilbert.py 
 
 
 printTestBanner "Transaction-10"
@@ -250,8 +250,8 @@ python $pythonCode $nodeAddress $transaction_insert &
 python $pythonCode $nodeAddress $transaction_query &
 wait
 python killPythonProcess.py
-python killNodes.py $modeOfEngine
-python killNodesOnDilbert.py $modeOfEngine
+python killNodes.py 
+python killNodesOnDilbert.py 
 
 
 printTestBanner "sleepyTransaction-1"
@@ -261,8 +261,8 @@ python $pythonCode $nodeAddress $transaction1_query &
 python $pythonCode $nodeAddress $transaction1_delete &
 wait
 python killPythonProcess.py
-python killNodes.py $modeOfEngine
-python killNodesOnDilbert.py $modeOfEngine
+python killNodes.py 
+python killNodesOnDilbert.py 
 
 
 printTestBanner "sleepyTransaction-2"
@@ -272,8 +272,8 @@ python $pythonCode $nodeAddress $transaction2_query &
 python $pythonCode $nodeAddress $transaction2_delete &
 wait
 python killPythonProcess.py
-python killNodes.py $modeOfEngine
-python killNodesOnDilbert.py $modeOfEngine
+python killNodes.py 
+python killNodesOnDilbert.py 
 
 
 printTestBanner "sleepyTransaction-3"
@@ -283,8 +283,8 @@ python $pythonCode $nodeAddress $transaction3_query &
 python $pythonCode $nodeAddress $transaction3_delete &
 wait
 python killPythonProcess.py
-python killNodes.py $modeOfEngine
-python killNodesOnDilbert.py $modeOfEngine
+python killNodes.py 
+python killNodesOnDilbert.py 
 
 
 printTestBanner "sleepyTransaction-4"
@@ -293,8 +293,8 @@ python $pythonCode $nodeAddress $transaction4_insert_delete &
 python $pythonCode $nodeAddress $transaction4_query &
 wait
 python killPythonProcess.py
-python killNodes.py $modeOfEngine
-python killNodesOnDilbert.py $modeOfEngine
+python killNodes.py 
+python killNodesOnDilbert.py 
 
 
 printTestBanner "sleepyTransaction-5"
@@ -303,8 +303,8 @@ python $pythonCode $nodeAddress $transaction_insert &
 python $pythonCode $nodeAddress $transaction_query &
 wait
 python killPythonProcess.py
-python killNodes.py $modeOfEngine
-python killNodesOnDilbert.py $modeOfEngine
+python killNodes.py 
+python killNodesOnDilbert.py 
 
 
 printTestBanner "sleepyTransaction-6"
@@ -313,8 +313,8 @@ python $pythonCode $nodeAddress $transaction_insert &
 python $pythonCode $nodeAddress $transaction_query &
 wait
 python killPythonProcess.py
-python killNodes.py $modeOfEngine
-python killNodesOnDilbert.py $modeOfEngine
+python killNodes.py 
+python killNodesOnDilbert.py 
 
 
 printTestBanner "sleepyTransaction-7"
@@ -323,8 +323,8 @@ python $pythonCode $nodeAddress $transaction_insert &
 python $pythonCode $nodeAddress $transaction_query &
 wait
 python killPythonProcess.py
-python killNodes.py $modeOfEngine
-python killNodesOnDilbert.py $modeOfEngine
+python killNodes.py 
+python killNodesOnDilbert.py 
 
 
 printTestBanner "sleepyTransaction-8"
@@ -333,8 +333,8 @@ python $pythonCode $nodeAddress $transaction_insert &
 python $pythonCode $nodeAddress $transaction_query &
 wait
 python killPythonProcess.py
-python killNodes.py $modeOfEngine
-python killNodesOnDilbert.py $modeOfEngine
+python killNodes.py 
+python killNodesOnDilbert.py 
 
 
 printTestBanner "sleepyTransaction-9"
@@ -343,8 +343,8 @@ python $pythonCode $nodeAddress $transaction_insert &
 python $pythonCode $nodeAddress $transaction_query &
 wait
 python killPythonProcess.py
-python killNodes.py $modeOfEngine
-python killNodesOnDilbert.py $modeOfEngine
+python killNodes.py 
+python killNodesOnDilbert.py 
 
 
 printTestBanner "sleepyTransaction-10"
@@ -353,6 +353,6 @@ python $pythonCode $nodeAddress $transaction_insert &
 python $pythonCode $nodeAddress $transaction_query &
 wait
 python killPythonProcess.py
-python killNodes.py $modeOfEngine
-python killNodesOnDilbert.py $modeOfEngine
+python killNodes.py 
+python killNodesOnDilbert.py 
 
