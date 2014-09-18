@@ -34,6 +34,8 @@ struct ShardMigrationStatus{
     unsigned dstOperationId;
 	NodeId sourceNodeId;
 	NodeId destinationNodeId;
+	// NodeOperationId srcAddress // TODO
+	// NodeOperationId destAddress // TODO
 	boost::shared_ptr<Srch2Server> shard;
 	MIGRATION_STATUS status;
 	ShardMigrationStatus() {}
