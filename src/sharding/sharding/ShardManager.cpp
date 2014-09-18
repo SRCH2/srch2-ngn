@@ -77,10 +77,6 @@ ShardManager::ShardManager(ConfigManager * configManager,ResourceMetadataManager
 	this->joinedFlag = false;
 	this->cancelledFlag = false;
 
-	/// migration manager should be initialized on its own or SHM should initialize
-	/// it. ?
-	this->migrationManager = new MigrationManager(0,transportManager, configManager);
-
 }
 
 void ShardManager::attachToTransportManager(TransportManager * tm){
@@ -111,6 +107,10 @@ ResourceLockManager * ShardManager::getLockManager() const{
 
 ClusterOperationStateMachine * ShardManager::getStateMachine() const{
 	return this->stateMachine;
+}
+
+void ShardManager::initMigrationManager(){
+	this->migrationManager = new MigrationManager(0,transportManager, configManager);
 }
 
 void ShardManager::setJoined(){
