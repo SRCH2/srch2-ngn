@@ -130,6 +130,10 @@ public:
 	 */
 	void migrateShard(unsigned uri, boost::shared_ptr<Srch2Server> shard, NodeId destinationNodeId,
 			unsigned srcOperationId , unsigned dstOperationId);
+	// Transfer a copy of 'shardPtr' (which is the data handle of 'shardId') to 'requesterAddress.nodeId'
+	// and give a notification to ShardManager about this transfer on that node.
+	void migrateShard_(const ClusterShardId shardId , boost::shared_ptr<Srch2Server> shardPtr,
+			const NodeOperationId & currentAddress, const NodeOperationId & requesterAddress);
 
 	/*  NOT IMPLEMENTED
 	 * 1. Non Blocking API. Notifies ShardManager when distribution is done.
