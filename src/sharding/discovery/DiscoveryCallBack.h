@@ -78,6 +78,7 @@ public:
 		default:
 			ASSERT(false);
 		}
+		return true;
 	}
 
 	DiscoveryCallBack(SyncManager& sm) : syncManger(sm) {}

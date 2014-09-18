@@ -73,6 +73,12 @@ void * TransportManager::notifyUpstreamHandlers(Message *msg, int fd, NodeId  no
 			getDiscoveryHandler()->resolveMessage(msg, nodeId);
 		}
 		getMessageAllocator()->deallocateByMessagePointer(msg);
+	} else if(msg->isMigration()) {
+
+		if (getMMHandler() != NULL) {
+			getMMHandler()->resolveMessage(msg, nodeId);
+		}
+		getMessageAllocator()->deallocateByMessagePointer(msg);
 	} else if(msg->isSharding()){
 //		Logger::debug("Sharding message is received. Msg type is %d", msg->getType());
 		if(getShardManagerHandler() != NULL){
@@ -80,6 +86,7 @@ void * TransportManager::notifyUpstreamHandlers(Message *msg, int fd, NodeId  no
 		}
 		getMessageAllocator()->deallocateByMessagePointer(msg);
 	}else{
+
 		// Check whether this node has registered SMHandler into TM yet. If not skip the message.
 		if (getSmHandler() != NULL){
 			getSmHandler()->resolveMessage(msg, nodeId);
@@ -304,6 +311,7 @@ TransportManager::TransportManager(vector<struct event_base *>& bases, Transport
 	dpMessageHandler = NULL;
 	shutDown = false;
 	discoveryHandler = NULL;
+	migrationManagerHandler = NULL;
 	validateTransportConfig(config);
 	transportConfig = config;
 	transportConfig.print();
@@ -459,10 +467,6 @@ MessageID_t TransportManager::_sendMessage(int fd, Message *message) {
 		}
 
 		if (writeSize ==  totalbufferSize) {
-			// write completed.
-//			if(! message->isSMRelated()){
-//				Logger::console("Success");
-//			}
 			break;
 		}
 
@@ -558,6 +562,10 @@ CallBackHandler* TransportManager::getSmHandler() {
 	return synchManagerHandler;
 }
 
+CallBackHandler* TransportManager::getMMHandler() {
+	return migrationManagerHandler;
+}
+
 CallBackHandler* TransportManager::getDiscoveryHandler() {
 	return discoveryHandler;
 }
@@ -569,6 +577,11 @@ CallBackHandler* TransportManager::getShardManagerHandler() {
 void TransportManager::registerCallbackHandlerForSynchronizeManager(CallBackHandler
 		*callBackHandler) {
 	synchManagerHandler = callBackHandler;
+}
+
+void TransportManager::registerCallbackHandlerForMM(CallBackHandler
+		*callBackHandler) {
+	migrationManagerHandler = callBackHandler;
 }
 
 void TransportManager::registerCallbackHandlerForDiscovery(CallBackHandler

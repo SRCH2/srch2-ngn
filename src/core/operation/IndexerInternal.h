@@ -99,9 +99,11 @@ public:
     //TODO put it as private
     pthread_mutex_t lockForWriters;
 
-    IndexReaderWriter(IndexMetaData* indexMetaData, Analyzer *analyzer, const Schema *schema);
+    IndexReaderWriter(IndexMetaData* indexMetaData, const Schema *schema);
 
     IndexReaderWriter(IndexMetaData* indexMetaData);
+
+    IndexReaderWriter(std::istream& inputByteStream, IndexMetaData* indexMetaData);
 
     void initIndexReaderWriter(IndexMetaData* indexMetaData);
     virtual ~IndexReaderWriter()
@@ -169,6 +171,16 @@ public:
     void save();
 
     void save(const std::string& directoryName);
+
+    void serialize(std::ostream& outputStream);
+
+    void bootStrapFromDisk();
+
+    void bootStrapComponentFromByteSteam(std::istream& inputStream, const string& componentName);
+
+    string getStoredIndexDirectory() {
+    	return index->getStoredIndexDirectory();
+    }
 
     inline GlobalCache *getCache()
     {

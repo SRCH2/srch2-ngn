@@ -54,6 +54,15 @@ struct RankerExpression
         }
     }
     
+    void setRankingExpression(const std::string &expr_string) {
+    	this->expr_string = expr_string;
+    	exprtk::parser<double> parser;
+    	if (!parser.compile(expr_string, expression))
+    	{
+    		parser.compile("1", expression); // Default ranking function in the case of bad ranking function.
+    	}
+    }
+
     float applyExpression(const float &doc_length,
               const float &doc_boost,
               const float &idf_score)

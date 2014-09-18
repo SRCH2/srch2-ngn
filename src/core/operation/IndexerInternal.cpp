@@ -176,6 +176,26 @@ void IndexReaderWriter::save()
     pthread_mutex_unlock(&lockForWriters);
 }
 
+void IndexReaderWriter::bootStrapFromDisk() {
+	pthread_mutex_lock(&lockForWriters);
+	this->index->_bootStrapFromDisk();
+	pthread_mutex_unlock(&lockForWriters);
+}
+
+void IndexReaderWriter::bootStrapComponentFromByteSteam(std::istream& inputStream,const string& componentName) {
+	pthread_mutex_lock(&lockForWriters);
+	this->index->_bootStrapComponentFromByteSteam(inputStream, componentName);
+	pthread_mutex_unlock(&lockForWriters);
+}
+void IndexReaderWriter::serialize(std::ostream& outputStream){
+	pthread_mutex_lock(&lockForWriters);
+	// we don't have to update histogram information when we want to export.
+	this->merge(false);
+	writesCounterForMerge = 0;
+	this->index->_serialize(outputStream);
+	pthread_mutex_unlock(&lockForWriters);
+}
+
 void IndexReaderWriter::save(const std::string& directoryName)
 {
     pthread_mutex_lock(&lockForWriters);
@@ -220,14 +240,10 @@ void * dispatchMergeThread(void *indexer) {
 	pthread_exit(0);
 }
 
-IndexReaderWriter::IndexReaderWriter(IndexMetaData* indexMetaData, Analyzer *analyzer, const Schema *schema)
+IndexReaderWriter::IndexReaderWriter(IndexMetaData* indexMetaData, const Schema *schema)
 {
      // CREATE NEW Index
-     this->index =  IndexData::create(indexMetaData->directoryName,
-     		                          analyzer,
-                                      schema,
-                                      srch2::instantsearch::DISABLE_STEMMER_NORMALIZER
-                                      );
+     this->index =  IndexData::create(indexMetaData->directoryName, schema);
      this->initIndexReaderWriter(indexMetaData);
      // start merge threads after commit
  }
@@ -235,10 +251,11 @@ IndexReaderWriter::IndexReaderWriter(IndexMetaData* indexMetaData, Analyzer *ana
 IndexReaderWriter::IndexReaderWriter(IndexMetaData* indexMetaData)
 {
     // LOAD Index
-    this->index = IndexData::load(indexMetaData->directoryName);
+    this->index = IndexData::create(indexMetaData->directoryName, NULL);
     this->initIndexReaderWriter(indexMetaData);
     //this->startMergerThreads();
 }
+
 
 void IndexReaderWriter::initIndexReaderWriter(IndexMetaData* indexMetaData)
  {

@@ -73,6 +73,9 @@ public:
 	void registerCallbackHandlerForSynchronizeManager(CallBackHandler*);
 	// this API enables SM to register discovery callback with TM
 	void registerCallbackHandlerForDiscovery(CallBackHandler*);
+	// this API enables MM to register discovery callback with TM
+	void registerCallbackHandlerForMM(CallBackHandler*);
+
 	void registerCallbackForDPMessageHandler(CallBackHandler* cbh);
 	void registerCallbackForShardingMessageHandler(CallBackHandler * cbh);
 	// getter function for current listening thread. Temp for V0
@@ -81,6 +84,8 @@ public:
 	MessageAllocator * getMessageAllocator();
 	// get SM callback handler
 	CallBackHandler* getSmHandler();
+	// get MM callback handler
+	CallBackHandler* getMMHandler();
 	// get Discovery callback handler
 	CallBackHandler* getDiscoveryHandler();
 
@@ -189,6 +194,10 @@ private:
 	CallBackHandler *synchManagerHandler;
 	/*
 	 * Handles SynchManager callbacks
+	 */
+	CallBackHandler *migrationManagerHandler;
+	/*
+	 * Handles discovery callbacks
 	 */
 	CallBackHandler *discoveryHandler;
 

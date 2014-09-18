@@ -29,6 +29,8 @@
 
 #include <string>
 #include <stdint.h>
+#include <ostream>
+#include <istream>
 
 namespace srch2
 {
@@ -99,8 +101,8 @@ public:
 class Indexer
 {
 public:
-    static Indexer* create(IndexMetaData* index, Analyzer *analyzer, const Schema *schema);
-    static Indexer* load(IndexMetaData* index);
+    static Indexer* create(IndexMetaData* index, const Schema *schema);
+    static Indexer* create(IndexMetaData* index);
 
     virtual ~Indexer() {};
 
@@ -160,6 +162,14 @@ public:
 
     virtual void save(const std::string& directoryName) = 0;
     virtual void save() = 0;
+
+    virtual string getStoredIndexDirectory() = 0;
+
+    virtual void serialize(std::ostream& outputStream) = 0;
+
+    virtual void bootStrapFromDisk() = 0;
+
+    virtual void bootStrapComponentFromByteSteam(std::istream& inputStream, const string& componentName) = 0;
 
     virtual void exportData(const string &exportedDataFileName) = 0;
 
