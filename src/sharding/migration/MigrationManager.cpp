@@ -460,6 +460,13 @@ void MigrationManager::notifySHMAndCleanup(string sessionKey, MIGRATION_STATUS m
 	//shardManager->resolveMMNotification(status);
 	migrationSession.erase(sessionKey);
 }
+
+void MigrationManager::migrateShard_(const ClusterShardId shardId , boost::shared_ptr<Srch2Server> shardPtr,
+		const NodeOperationId & currentAddress, const NodeOperationId & requesterAddress){
+	//TODO
+	Logger::console("Migration manager is called to transfer shard %s", shardId.toString().c_str());
+}
+
 void MigrationManager::migrateShard(unsigned uri, boost::shared_ptr<Srch2Server> shard, NodeId destinationNodeId,
 			unsigned srcOperationId , unsigned dstOperationId) {
 	// TODO: get the correct API for shardManager
