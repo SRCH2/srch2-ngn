@@ -261,10 +261,10 @@ bool MMCallBackForTM::resolveMessage(Message * incomingMessage, NodeId remoteNod
 	return true;
 }
 
-MigrationManager::MigrationManager(ShardManager *shardManager, TransportManager *transport,
+MigrationManager::MigrationManager(TransportManager *transport,
 		ConfigManager *config) {
 	this->_sessionLock = MigrationManager::UNLOCKED;
-	this->shardManager = shardManager;
+	this->shardManager = ShardManager::getShardManager();
 	this->transport = transport;
 	this->sendSocket = openSendChannel();
 	this->configManager = config;
@@ -457,44 +457,38 @@ void MigrationManager::notifySHMAndCleanup(string sessionKey, MIGRATION_STATUS m
 			migrationSession[sessionKey].dstOperationId, migrationSession[sessionKey].remoteNode,
 			migrationSession[sessionKey].shard,
 			migrationResult);
-	//shardManager->resolveMMNotification(status);
+	shardManager->resolveMMNotification(migrationStatus);
 	migrationSession.erase(sessionKey);
 }
 
-void MigrationManager::migrateShard_(const ClusterShardId shardId , boost::shared_ptr<Srch2Server> shardPtr,
-		const NodeOperationId & currentAddress, const NodeOperationId & requesterAddress){
-	//TODO
-	Logger::console("Migration manager is called to transfer shard %s", shardId.toString().c_str());
-}
+void MigrationManager::migrateShard(const ClusterShardId& shardId , boost::shared_ptr<Srch2Server> shardPtr,
+			const NodeOperationId & currentAddress, const NodeOperationId & requesterAddress) {
 
-void MigrationManager::migrateShard(unsigned uri, boost::shared_ptr<Srch2Server> shard, NodeId destinationNodeId,
-			unsigned srcOperationId , unsigned dstOperationId) {
-	// TODO: get the correct API for shardManager
-	ClusterShardId shardId; // = shard->getShardId();
-	Logger::console("Migrating shard %s to node %d", shardId.toString().c_str(), destinationNodeId);
+	Logger::console("Migrating shard %s to node %d", shardId.toString().c_str(), requesterAddress.nodeId);
 
 	/*
 	 *  Initialize the migration session info
 	 */
 
-	if (hasActiveSession(shardId, destinationNodeId)) {
+	if (hasActiveSession(shardId, requesterAddress.nodeId)) {
 		ShardMigrationStatus status;
-		populateStatus(status, srcOperationId, dstOperationId, destinationNodeId, shard,
+		populateStatus(status, currentAddress.operationId,
+				requesterAddress.operationId, requesterAddress.nodeId, shardPtr,
 				MM_STATUS_BUSY);
-		//shardManager->resolveMMNotification(status);
+		shardManager->resolveMMNotification(status);
 		return;
 	}
 
-	string sessionKey = this->initMigrationSession(shardId, srcOperationId,
-			dstOperationId, destinationNodeId, 0);
+	string sessionKey = this->initMigrationSession(shardId, currentAddress.operationId,
+			requesterAddress.operationId, requesterAddress.nodeId, 0);
 
 	migrationSession[sessionKey].status = MM_STATE_INIT_RCVD;
-	migrationSession[sessionKey].shard = shard;
+	migrationSession[sessionKey].shard = shardPtr;
 	pthread_t senderThread;
 	MigrationThreadArguments * arg = new MigrationThreadArguments();
 	arg->mm = this;
 	arg->shardId = shardId;
-	arg->remotedNode = destinationNodeId;
+	arg->remotedNode = requesterAddress.nodeId;
 	pthread_create(&senderThread, NULL, senderThreadEntryPoint, arg);
 	pthread_detach(senderThread);
 

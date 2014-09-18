@@ -127,51 +127,14 @@ class MigrationManager {
 	friend class MigrationService;
 public:
 	/*
-	 * 1. Nonblocking API for migrating shard. Notifies ShardManager when migration is done.
-	 * 2. ShardManager must expose method "void Notify(ShardMigrationStatus &)"
+	 *  Nonblocking API for migrating shard. The API transfers a copy of 'shardPtr'
+	 *  (which is the data handle of 'shardId') to 'requesterAddress.nodeId'
+	 *  and give a notification to ShardManager about this transfer on that node.
 	 */
-	void migrateShard(unsigned uri, boost::shared_ptr<Srch2Server> shard, NodeId destinationNodeId,
-			unsigned srcOperationId , unsigned dstOperationId);
-	// Transfer a copy of 'shardPtr' (which is the data handle of 'shardId') to 'requesterAddress.nodeId'
-	// and give a notification to ShardManager about this transfer on that node.
-	void migrateShard_(const ClusterShardId shardId , boost::shared_ptr<Srch2Server> shardPtr,
+	void migrateShard(const ClusterShardId& shardId , boost::shared_ptr<Srch2Server> shardPtr,
 			const NodeOperationId & currentAddress, const NodeOperationId & requesterAddress);
 
-	/*  NOT IMPLEMENTED
-	 * 1. Non Blocking API. Notifies ShardManager when distribution is done.
-	 * 2. ShardManager must expose method "void Notify(ShardDistributionStatus &)"
-	 * 3. partitioner is used for deciding shardId/NodeId
-	 */
-	void reDistributeShard(ClusterShardId shardId, boost::shared_ptr<Srch2Server> shard, Partitioner *partitioner, unsigned destination);
-
-	/*  NOT IMPLEMENTED
-	 *  1. ShardManager on remote node provides Shard object to which migrated record should be assigned.
-	 *  2. non-blocking API.
-	 */
-	void registerShardForMigratedRecords(ClusterShardId shardId, boost::shared_ptr<Srch2Server> shard);
-
-	/*  NOT IMPLEMENTED
-	 *  1. ShardManager should call this to stop accepting new records into the given shard.
-	 *  2. MM releases shared pointer to the requested shard.
-	 */
-	void unRegisterShardForMigratedRecords(ClusterShardId shardId);
-
-	/*  NOT IMPLEMENTED
-	 * ShardManager should call this API to request aborting the migration of the given shardId.
-	 * This is a non blocking API. When migration stops, MM notifies SHM via callback with migration
-	 * status as ABORTED
-	 */
-	void stopMigration(ClusterShardId shardId);
-
-	/*  NOT IMPLEMENTED
-	 * ShardManager should call this API to request aborting the migration of the given shardId to
-	 * the given destinatonNodeId only.
-	 * This is a non blocking API. When migration stops, MM notifies SHM via callback with migration
-	 * status as ABORTED
-	 */
-	void stopMigration(ClusterShardId shardId, unsigned destinatonNodeId);
-
-	MigrationManager(ShardManager *shardManager, TransportManager *transport, ConfigManager *config);
+	MigrationManager(TransportManager *transport, ConfigManager *config);
 
 	~MigrationManager();
 
