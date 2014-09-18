@@ -166,19 +166,25 @@ public:
 
 	string createSRCH2Home();
 	string createClusterDir(const string& clusterName);
-	string createNodeDir(const string& clusterName, const string& nodeName);
-	string createCoreDir(const string& clusterName, const string& nodeName, const string& coreName);
-	string createShardDir(const string& clusterName, const string& nodeName, const string& coreName, const ShardId * shardId);
+	string createNodeDir(const string& clusterName);
+	string createCoreDir(const string& clusterName, const string& coreName);
+	string createShardDir(const string& clusterName, const string& coreName, const ShardId * shardId);
 
 	string getSRCH2HomeDir();
 	string getClusterDir(const string& clusterName);
-	string getNodeDir(const string& clusterName, const string& nodeName);
-	string getCoreDir(const string& clusterName, const string& nodeName, const string& coreName);
-	string getShardDir(const string& clusterName, const string& nodeName, const string& coreName, const ShardId * shardId);
+	string getNodeDir(const string& clusterName);
+	string getCoreDir(const string& clusterName, const string& coreName);
+	string getShardDir(const string& clusterName, const string& coreName, const ShardId * shardId);
+
+	bool tryLockNodeName();
+	void unlockNodeName();
+
 	void renameDir(const string & src, const string & target);
 
 	//It returns the number of files/directory deleted, if the returned value is 0, that means nothing got deleted.
 	uint removeDir(const string& path);
+
+	string getCurrentNodeName() const;
 
 	Ping& getPing(){
 		return this->ping;
@@ -194,10 +200,6 @@ public:
 
 	typedef std::map<const string, CoreInfo_t *> CoreInfoMap_t;
 
-	const NodeConfig* getCurrentNodeConfig() {
-		return &this->nodeConfig;
-	}
-
     CoreInfo_t * getCoreByName(const string &coreName) const{
     	for(unsigned coreIdx = 0 ; coreIdx < clusterCores.size(); ++coreIdx){
     		if(clusterCores.at(coreIdx)->getName().compare(coreName) == 0){
@@ -209,6 +211,7 @@ public:
 private:
     // help in parsing and making the first Cluster readview
     string clusterNameStr ;
+    string nodeNameStr;
     vector<CoreInfo_t *> clusterCores;
 
 
@@ -217,11 +220,11 @@ private:
 	Ping ping;
 	MulticastDiscovery mDiscovery;
 	Transport transport;
-	NodeConfig nodeConfig;
 	// <config>
 	string licenseKeyFile;
 	string httpServerListeningHostname;
-	string httpServerListeningPort;
+	string httpServerListeningPortStr;
+	map<enum srch2http::PortType_t, unsigned short int> httpServerListeningPorts;
 	string srch2Home;
 	unsigned int numberOfThreads;
 
@@ -373,7 +376,8 @@ public:
 	const std::string& getHTTPServerAccessLogFile() const;
 	const Logger::LogLevel& getHTTPServerLogLevel() const;
 	const std::string& getHTTPServerListeningHostname() const;
-	const std::string& getHTTPServerListeningPort() const;
+	const std::string& getHTTPServerDefaultListeningPort() const;
+	const map<enum srch2http::PortType_t, unsigned short int>& getHTTPServerListeningPorts() const ;
 
 	bool isRecordBoostAttributeSet(const string &coreName) const;
 

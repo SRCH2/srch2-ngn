@@ -539,10 +539,10 @@ bool ShardManager::resolveMessage(Message * msg, NodeId senderNode){
 			ClusterShardId * destShardId = new ClusterShardId(mmNotif->getDestShardId());
 			// prepare indexDirectory
 	        string indexDirectory = configManager->getShardDir(writeview->clusterName,
-	                writeview->nodes[ShardManager::getCurrentNodeId()].second->getName(), writeview->cores[destShardId->coreId]->getName(), destShardId);
+	                writeview->cores[destShardId->coreId]->getName(), destShardId);
 	        if(indexDirectory.compare("") == 0){
 	            indexDirectory = configManager->createShardDir(writeview->clusterName,
-	                    writeview->nodes[ShardManager::getCurrentNodeId()].second->getName(), writeview->cores[destShardId->coreId]->getName(), destShardId);
+	                    writeview->cores[destShardId->coreId]->getName(), destShardId);
 	        }
 			EmptyShardBuilder emptyShard(destShardId, indexDirectory);
 			emptyShard.prepare();

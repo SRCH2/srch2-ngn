@@ -99,10 +99,10 @@ OperationState * ShardCopyOperation::handle(MMNotification * mmStatus){
 		Cluster_Writeview * writeview = ShardManager::getWriteview();
 
 		string indexDirectory = ShardManager::getShardManager()->getConfigManager()->getShardDir(writeview->clusterName,
-				writeview->nodes[ShardManager::getCurrentNodeId()].second->getName(), writeview->cores[shardId.coreId]->getName(), &shardId);
+				writeview->cores[shardId.coreId]->getName(), &shardId);
 		if(indexDirectory.compare("") == 0){
 			indexDirectory = ShardManager::getShardManager()->getConfigManager()->createShardDir(writeview->clusterName,
-					writeview->nodes[ShardManager::getCurrentNodeId()].second->getName(), writeview->cores[shardId.coreId]->getName(), &shardId);
+					writeview->cores[shardId.coreId]->getName(), &shardId);
 		}
 
 		physicalShard = LocalPhysicalShard(mmStatus->getStatus().shard, indexDirectory, "");

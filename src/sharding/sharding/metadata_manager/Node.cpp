@@ -63,40 +63,6 @@ unsigned int Node::getPortNumber() const{
 	return this->portNumber;
 }
 
-unsigned short NodeConfig::getPort(PortType_t portType) const
-{
-      if (static_cast<unsigned int> (portType) >= ports.size()) {
-          return 0;
-      }
-
-      unsigned short portNumber = ports[portType];
-      return portNumber;
-}
-
-void NodeConfig::setPort(PortType_t portType, unsigned short portNumber)
-{
-      if (static_cast<unsigned int> (portType) >= ports.size()) {
-          ports.resize(static_cast<unsigned int> (EndOfPortType), 0);
-      }
-
-      switch (portType) {
-      case SearchPort:
-      case SuggestPort:
-      case InfoPort:
-      case DocsPort:
-      case UpdatePort:
-      case SavePort:
-      case ExportPort:
-      case ResetLoggerPort:
-          ports[portType] = portNumber;
-          break;
-
-      default:
-          Logger::error("Unrecognized HTTP listening port type: %d", static_cast<int> (portType));
-          break;
-      }
-}
-
 //serializes the object to a byte array and places array into the region
 //allocated by given allocator
 void* Node::serializeForNetwork(void * buffer){

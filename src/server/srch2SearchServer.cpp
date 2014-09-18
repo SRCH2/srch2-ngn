@@ -654,16 +654,18 @@ static int getHttpServerMetadata(ConfigManager *config, PortSocketMap_t *globalP
 	globalHostName = config->getHTTPServerListeningHostname().c_str();
 
 	// add the default port
-	globalDefaultPort = atoi(config->getHTTPServerListeningPort().c_str());
+	globalDefaultPort = atoi(config->getHTTPServerDefaultListeningPort().c_str());
 	if (globalDefaultPort > 0) {
 		ports.insert(globalDefaultPort);
 	}
 
 	// loop over operations and extract all port numbers of current node to use
 	unsigned short port;
+	const map<srch2http::PortType_t, unsigned short int> & allPorts = config->getHTTPServerListeningPorts();
 	for (srch2http::PortType_t portType = (srch2http::PortType_t) 0;
 			portType < srch2http::EndOfPortType; portType = srch2http::incrementPortType(portType)) {
-		port = config->getCurrentNodeConfig()->getPort(portType);
+
+		port = allPorts.at(portType);
 		if(port > 0){
 			ports.insert(port);
 		}
@@ -769,6 +771,7 @@ int setCallBacksonHTTPServer(ConfigManager *const config,
 		// iterate on all operations and map the path (w/o core info)
 		// to a callback function.
 		// we pass DPExternalCoreHandle as the argument of callbacks
+		const map<srch2http::PortType_t, unsigned short int> & allPorts = config->getHTTPServerListeningPorts();
 		for (int j = 0; userRequestAttributesList[j].path != NULL; j++) {
 
 
@@ -776,7 +779,8 @@ int setCallBacksonHTTPServer(ConfigManager *const config,
 					userRequestAttributesList[j].callback, defaultArgs);
 
 			// just for print
-			unsigned short port = config->getCurrentNodeConfig()->getPort(userRequestAttributesList[j].portType);
+
+			unsigned short port = allPorts.at(userRequestAttributesList[j].portType);
 			if (port < 1) port = globalDefaultPort;
 			Logger::debug("Routing port %d route %s to default core %s",
 					port, userRequestAttributesList[j].path, config->getDefaultCoreName().c_str());
@@ -806,7 +810,8 @@ int setCallBacksonHTTPServer(ConfigManager *const config,
 					userRequestAttributesList[j].callback, args);
 
 			// just for print
-			unsigned short port = config->getCurrentNodeConfig()->getPort(userRequestAttributesList[j].portType);
+			const map<srch2http::PortType_t, unsigned short int> & allPorts = config->getHTTPServerListeningPorts();
+			unsigned short port = allPorts.at(userRequestAttributesList[j].portType);
 			if(port < 1){
 				port = globalDefaultPort;
 			}

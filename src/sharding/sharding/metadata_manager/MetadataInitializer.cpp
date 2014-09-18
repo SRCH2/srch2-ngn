@@ -80,10 +80,10 @@ void MetadataInitializer::initializeCluster(){
 		const ClusterShardId & shardId = *pidItr;
 
 		string indexDirectory = configManager->getShardDir(writeview->clusterName,
-				writeview->nodes[ShardManager::getCurrentNodeId()].second->getName(), writeview->cores[pidItr->coreId]->getName(), &shardId);
+				writeview->cores[pidItr->coreId]->getName(), &shardId);
 		if(indexDirectory.compare("") == 0){
 			indexDirectory = configManager->createShardDir(writeview->clusterName,
-					writeview->nodes[ShardManager::getCurrentNodeId()].second->getName(), writeview->cores[pidItr->coreId]->getName(), &shardId);
+				writeview->cores[pidItr->coreId]->getName(), &shardId);
 		}
 		EmptyShardBuilder emptyShard(new ClusterShardId(shardId), indexDirectory);
 		emptyShard.prepare();
@@ -153,11 +153,10 @@ void MetadataInitializer::addNewJsonFileShards(Cluster_Writeview * newWriteview)
 		for(unsigned jsonFileIdx = 0; jsonFileIdx < coreItr->second.size(); jsonFileIdx++){
 			NodeShardId shardId(coreItr->first, newWriteview->currentNodeId, nodeShardPartitionIdOffset[coreItr->first]+jsonFileIdx);
 			string indexDirectory = configManager->getShardDir(newWriteview->clusterName,
-					"node_shards", newWriteview->cores[coreItr->first]->getName(), &shardId);
+					newWriteview->cores[coreItr->first]->getName(), &shardId);
 			if(indexDirectory.compare("") == 0){
 				indexDirectory = configManager->createShardDir(newWriteview->clusterName,
-											"node_shards",
-											newWriteview->cores[coreItr->first]->getName(), &shardId);
+										newWriteview->cores[coreItr->first]->getName(), &shardId);
 			}
 			InitialShardBuilder shardBuilder(new NodeShardId(shardId), indexDirectory, coreItr->second.at(jsonFileIdx));
 			shardBuilder.prepare();
