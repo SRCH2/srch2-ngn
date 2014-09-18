@@ -79,7 +79,7 @@ ShardManager::ShardManager(ConfigManager * configManager,ResourceMetadataManager
 
 	/// migration manager should be initialized on its own or SHM should initialize
 	/// it. ?
-	this->migrationManager = new MigrationManager(0,transportManager, configManager);
+	this->migrationManager = new MigrationManager(transportManager, configManager);
 
 }
 
