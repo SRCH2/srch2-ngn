@@ -11,7 +11,7 @@ integrationTestDir = ""
 testBinaryDir = ""
 testBinaryFileName = ""
 nodesInfoFilePath = ""
-
+transactionFile = ""
 nodes = dict()
 serverHandles = []
 sshClient = dict()
@@ -124,16 +124,16 @@ def parseNodes(nodesPath):
         nodes[nodeId[0]] = node(nodeId[0], portNum[0], conf, ipAddr[0])
 
 #Starts the engine on the corresponding machine. Note that before this function is called, SSH connection has already been set up.
-def startEngine(nodeId):
+def startEngine(nodeId, transactionFile):
     binary_path = testBinaryDir + testBinaryFileName
     if(nodes[nodeId].ipAddress == myIpAddress):
-        out = open(integrationTestDir + 'dashboard-node-'+nodes[nodeId].Id+'.txt','w')
+        out = open(integrationTestDir + '/dashboardFiles/' + transactionFile[0:-4] + '-dashboard-'+nodes[nodeId].Id+ '.txt','w')
         temp = subprocess.Popen([binary_path,'--config='+nodes[nodeId].conf],stdout=out)      
         nodes[nodeId].pid = temp.pid
 #        print str(nodes[nodeId].pid) + "---------------------------"
         pingServer(nodes[nodeId].ipAddress, nodes[nodeId].portNo)
         return
-    stdin, stdout, stderr = sshClient[nodes[nodeId].Id].exec_command('cd ' + integrationTestDir + '; echo $$;exec '+binary_path+' --config='+ nodes[nodeId].conf + ' > ' + integrationTestDir + 'dashboard-node-'+nodes[nodeId].Id+'.txt &')
+    stdin, stdout, stderr = sshClient[nodes[nodeId].Id].exec_command('cd ' + integrationTestDir + '; echo $$;exec '+binary_path+' --config='+ nodes[nodeId].conf + ' > ' + integrationTestDir + '/dashboardFiles/'+transactionFile[0:-4] + '-dashboard-' + nodes[nodeId].Id + '.txt &')
     #stdin, stdout, stderr = sshClient[nodes[nodeId].Id].exec_command('cd gitrepo/srch2-ngn/test/sharding/integration;mkdir temporaryCheck');
     nodes[nodeId].pid = stdout.readline()
     print str(stdout.readline())
@@ -232,7 +232,7 @@ def test(transactionFile):
         nodeId=value[0].split()
         operation=value[1].split()
         if(operation[0] == 'start'):
-             startEngine(nodeId[0])
+             startEngine(nodeId[0], transactionFile)
         if(operation[0] == 'kill'):
              killEngine(nodeId[0]) 
 
@@ -315,7 +315,6 @@ def test(transactionFile):
              flag = str(output).find(expectedValue[0]);
              print output
              assert flag > -1, 'Error file could not be deleted'
-
         if(operation[0] == 'update'):
              inputValue=value[2]
              expectedValue=value[3]
