@@ -88,8 +88,12 @@ private:
 	TransportManager * transportManager;
 	ConfigManager * configManager;
 
+	MigrationManager *migrationManager;
+
 	ResourceLockManager * lockManager;
     ResourceMetadataManager * metadataManager;
+
+
 
 	ClusterOperationStateMachine * stateMachine;
 

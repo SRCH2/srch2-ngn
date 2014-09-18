@@ -988,11 +988,6 @@ int main(int argc, char** argv) {
 	srch2http::DPInternalRequestHandler * dpInternal =
 			new srch2http::DPInternalRequestHandler(serverConf);
 
-	/// migration manager should be initialized on its own or SHM should initialize
-	/// it. ?
-	srch2http::MigrationManager *migrationManager = new srch2http::MigrationManager(0,
-			transportManager, serverConf);
-
 	// TEST CODE FOR MIGRATION MANAGER
 //	serverConf->getClusterReadView(clusterReadview);
 //	if (clusterReadview->getCurrentNode()->isMaster()) {

@@ -23,6 +23,22 @@ namespace httpwrapper {
 class Srch2Server;
 
 
+struct NodeOperationId{
+	NodeId nodeId;
+	unsigned operationId;
+	NodeOperationId();
+	NodeOperationId(const NodeOperationId & id);
+	NodeOperationId & operator=(const NodeOperationId & rhs);
+	NodeOperationId(NodeId nodeId, unsigned operationId = 0);
+	void * serialize(void * buffer) const;
+	unsigned getNumberOfBytes() const;
+	void * deserialize(void * buffer);
+	bool operator==(const NodeOperationId & right) const;
+	bool operator>(const NodeOperationId & right) const;
+	bool operator<(const NodeOperationId & right) const;
+	string toString() const;
+};
+
 class ShardId{
 public:
 	ShardId(unsigned coreId);

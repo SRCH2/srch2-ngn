@@ -19,6 +19,7 @@
 #include "node_initialization/NewNodeJoinOperation.h"
 #include "load_balancer/LoadBalancingStartOperation.h"
 #include "load_balancer/ShardMoveOperation.h"
+#include "sharding/migration/MigrationManager.h"
 
 #include "core/util/Assert.h"
 #include <pthread.h>
@@ -75,6 +76,10 @@ ShardManager::ShardManager(ConfigManager * configManager,ResourceMetadataManager
 	this->stateMachine = new ClusterOperationStateMachine();
 	this->joinedFlag = false;
 	this->cancelledFlag = false;
+
+	/// migration manager should be initialized on its own or SHM should initialize
+	/// it. ?
+	this->migrationManager = new MigrationManager(0,transportManager, configManager);
 
 }
 
