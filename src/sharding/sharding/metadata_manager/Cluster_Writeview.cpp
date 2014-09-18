@@ -487,7 +487,13 @@ void Cluster_Writeview::printLocalShards(){
 		localClusterShardsTable.printColumnHeaders();
 		localClusterShardsTable.startFilling();
 		for(map<ClusterShardId, LocalPhysicalShard >::const_iterator shardItr = localClusterDataShards.begin(); shardItr != localClusterDataShards.end(); ++shardItr){
-			localClusterShardsTable.printNextCell(shardItr->second.indexDirectory);
+			stringstream ss;
+			ss << "Index size : " ;
+			if(shardItr->second.server){
+
+				ss << shardItr->second.server->getIndexer()->getNumberOfDocumentsInIndex();
+			}
+			localClusterShardsTable.printNextCell(shardItr->second.indexDirectory + "%" + ss.str());
 		}
 	}
 

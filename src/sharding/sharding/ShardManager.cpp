@@ -110,7 +110,7 @@ ClusterOperationStateMachine * ShardManager::getStateMachine() const{
 }
 
 void ShardManager::initMigrationManager(){
-	this->migrationManager = new MigrationManager(0,transportManager, configManager);
+	this->migrationManager = new MigrationManager(transportManager, configManager);
 }
 
 void ShardManager::setJoined(){
@@ -299,7 +299,7 @@ bool ShardManager::resolveMessage(Message * msg, NodeId senderNode){
 				break;
 			}
 			// call migration manager to transfer this shard
-			this->migrationManager->migrateShard_(moveNotif->getShardId(),
+			this->migrationManager->migrateShard(moveNotif->getShardId(),
 					writeview->localClusterDataShards.at(moveNotif->getShardId()).server,
 					moveNotif->getDest(), moveNotif->getSrc());
 
@@ -523,7 +523,7 @@ bool ShardManager::resolveMessage(Message * msg, NodeId senderNode){
 				break;
 			}
 
-			this->migrationManager->migrateShard_(srcShardId, writeview->localClusterDataShards.at(srcShardId).server,
+			this->migrationManager->migrateShard(srcShardId, writeview->localClusterDataShards.at(srcShardId).server,
 					copyNotif->getDest(), copyNotif->getSrc());
 
 			delete copyNotif;
