@@ -37,7 +37,9 @@ python $pythonCode $nodeAddress $transaction1_query &
 python $pythonCode $nodeAddress $transaction1_delete &
 sleep 120
 python killPythonProcess.py 
+sleep 5
 python killNodes.py 
+sleep 5
 python killNodesOnDilbert.py 
 
 echo"end Transaction-1"
@@ -50,7 +52,9 @@ python $pythonCode $nodeAddress $transaction2_query &
 python $pythonCode $nodeAddress $transaction2_delete &
 sleep 120
 python killPythonProcess.py
+sleep 5
 python killNodes.py 
+sleep 5
 python killNodesOnDilbert.py 
 
 
@@ -61,7 +65,9 @@ python $pythonCode $nodeAddress $transaction3_query &
 python $pythonCode $nodeAddress $transaction3_delete &
 sleep 120
 python killPythonProcess.py
+sleep 5
 python killNodes.py 
+sleep 5
 python killNodesOnDilbert.py 
 
 
@@ -71,7 +77,9 @@ python $pythonCode $nodeAddress $transaction4_insert_delete &
 python $pythonCode $nodeAddress $transaction4_query &
 sleep 120
 python killPythonProcess.py
+sleep 5
 python killNodes.py 
+sleep 5
 python killNodesOnDilbert.py 
 
 
@@ -81,7 +89,9 @@ python $pythonCode $nodeAddress $transaction_insert &
 python $pythonCode $nodeAddress $transaction_query &
 sleep 120
 python killPythonProcess.py
+sleep 5
 python killNodes.py 
+sleep 5
 python killNodesOnDilbert.py 
 
 
@@ -91,7 +101,9 @@ python $pythonCode $nodeAddress $transaction_insert &
 python $pythonCode $nodeAddress $transaction_query &
 sleep 120
 python killPythonProcess.py
+sleep 5
 python killNodes.py 
+sleep 5
 python killNodesOnDilbert.py 
 
 
@@ -101,7 +113,9 @@ python $pythonCode $nodeAddress $transaction_insert &
 python $pythonCode $nodeAddress $transaction_query &
 sleep 120
 python killPythonProcess.py
+sleep 5
 python killNodes.py 
+sleep 5
 python killNodesOnDilbert.py 
 
 
@@ -111,7 +125,9 @@ python $pythonCode $nodeAddress $transaction_insert &
 python $pythonCode $nodeAddress $transaction_query &
 sleep 120
 python killPythonProcess.py
+sleep 5
 python killNodes.py 
+sleep 5
 python killNodesOnDilbert.py 
 
 
@@ -121,7 +137,9 @@ python $pythonCode $nodeAddress $transaction_insert &
 python $pythonCode $nodeAddress $transaction_query &
 sleep 120
 python killPythonProcess.py
+sleep 5
 python killNodes.py 
+sleep 5
 python killNodesOnDilbert.py 
 
 
@@ -131,7 +149,9 @@ python $pythonCode $nodeAddress $transaction_insert &
 python $pythonCode $nodeAddress $transaction_query &
 sleep 120
 python killPythonProcess.py
+sleep 5
 python killNodes.py 
+sleep 5
 python killNodesOnDilbert.py 
 
 
@@ -140,9 +160,11 @@ python $pythonCode $nodeAddress ./nodeIntensive-noValidation/sleepyTransaction-1
 python $pythonCode $nodeAddress $transaction1_insert &
 python $pythonCode $nodeAddress $transaction1_query &
 python $pythonCode $nodeAddress $transaction1_delete &
-sleep 400
+sleep 1500
 python killPythonProcess.py
+sleep 5
 python killNodes.py 
+sleep 5
 python killNodesOnDilbert.py 
 
 
@@ -151,9 +173,11 @@ python $pythonCode $nodeAddress ./nodeIntensive-noValidation/sleepyTransaction-2
 python $pythonCode $nodeAddress $transaction2_insert &
 python $pythonCode $nodeAddress $transaction2_query &
 python $pythonCode $nodeAddress $transaction2_delete &
-sleep 400
+sleep 1500
 python killPythonProcess.py
+sleep 5
 python killNodes.py 
+sleep 5
 python killNodesOnDilbert.py 
 
 
@@ -162,9 +186,11 @@ python $pythonCode $nodeAddress ./nodeIntensive-noValidation/sleepyTransaction-3
 python $pythonCode $nodeAddress $transaction3_insert &
 python $pythonCode $nodeAddress $transaction3_query &
 python $pythonCode $nodeAddress $transaction3_delete &
-sleep 400
+sleep 1500
 python killPythonProcess.py
+sleep 5
 python killNodes.py 
+sleep 5
 python killNodesOnDilbert.py 
 
 
@@ -172,9 +198,11 @@ printTestBanner "sleepyTransaction-4"
 python $pythonCode $nodeAddress ./nodeIntensive-noValidation/sleepyTransaction-4.txt &
 python $pythonCode $nodeAddress $transaction4_insert_delete &
 python $pythonCode $nodeAddress $transaction4_query &
-sleep 400
+sleep 1500
 python killPythonProcess.py
+sleep 5
 python killNodes.py 
+sleep 5
 python killNodesOnDilbert.py 
 
 
@@ -182,9 +210,11 @@ printTestBanner "sleepyTransaction-5"
 python $pythonCode $nodeAddress ./nodeIntensive-noValidation/sleepyTransaction-5.txt &
 python $pythonCode $nodeAddress $transaction_insert &
 python $pythonCode $nodeAddress $transaction_query &
-sleep 400
+sleep 1500
 python killPythonProcess.py
+sleep 5
 python killNodes.py 
+sleep 5
 python killNodesOnDilbert.py 
 
 
@@ -192,9 +222,11 @@ printTestBanner "sleepyTransaction-6"
 python $pythonCode $nodeAddress ./nodeIntensive-noValidation/sleepyTransaction-6.txt &
 python $pythonCode $nodeAddress $transaction_insert &
 python $pythonCode $nodeAddress $transaction_query &
-sleep 400
+sleep 1500
 python killPythonProcess.py
+sleep 5
 python killNodes.py 
+sleep 5
 python killNodesOnDilbert.py 
 
 
@@ -202,9 +234,11 @@ printTestBanner "sleepyTransaction-7"
 python $pythonCode $nodeAddress ./nodeIntensive-noValidation/sleepyTransaction-7.txt &
 python $pythonCode $nodeAddress $transaction_insert &
 python $pythonCode $nodeAddress $transaction_query &
-sleep 400
+sleep 1500
 python killPythonProcess.py
+sleep 5
 python killNodes.py 
+sleep 5
 python killNodesOnDilbert.py 
 
 
@@ -212,9 +246,11 @@ printTestBanner "sleepyTransaction-8"
 python $pythonCode $nodeAddress ./nodeIntensive-noValidation/sleepyTransaction-8.txt &
 python $pythonCode $nodeAddress $transaction_insert &
 python $pythonCode $nodeAddress $transaction_query &
-sleep 400
+sleep 1500
 python killPythonProcess.py
+sleep 5
 python killNodes.py 
+sleep 5
 python killNodesOnDilbert.py 
 
 
@@ -222,9 +258,11 @@ printTestBanner "sleepyTransaction-9"
 python $pythonCode $nodeAddress ./nodeIntensive-noValidation/sleepyTransaction-9.txt &
 python $pythonCode $nodeAddress $transaction_insert &
 python $pythonCode $nodeAddress $transaction_query &
-sleep 400
+sleep 1500
 python killPythonProcess.py
+sleep 5
 python killNodes.py 
+sleep 5
 python killNodesOnDilbert.py 
 
 
@@ -232,8 +270,10 @@ printTestBanner "sleepyTransaction-10"
 python $pythonCode $nodeAddress ./nodeIntensive-noValidation/sleepyTransaction-10.txt &
 python $pythonCode $nodeAddress $transaction_insert &
 python $pythonCode $nodeAddress $transaction_query &
-sleep 400
+sleep 1500
 python killPythonProcess.py
+sleep 5
 python killNodes.py 
+sleep 5
 python killNodesOnDilbert.py 
 
