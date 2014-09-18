@@ -8,6 +8,8 @@ if __name__ == '__main__':
   inputFile = sys.argv[1]
   f_in = open(inputFile,'a')
   for i in start:
+    if(sys.argv[2] == 'sleep'):
+        f_in.write('-||sleep||10' + '\n')
     f_in.write(i + '\n')
 
   startKill = Set(['K||start','L||start','M||start','N||start','O||start','P||start','Q||start','R||start','S||start','T||start','A||kill','B||kill','C||kill','D||kill','E||kill','F||kill','G||kill','H||kill','I||kill','J||kill'])
@@ -23,6 +25,6 @@ if __name__ == '__main__':
         startKill.remove(pick[0])
     f_in.write(pick[0] + '\n')
     if(sys.argv[2] == 'sleep'):
-        f_in.write('-||sleep||5' + '\n')
+        f_in.write('-||sleep||10' + '\n')
     else:
         continue 
