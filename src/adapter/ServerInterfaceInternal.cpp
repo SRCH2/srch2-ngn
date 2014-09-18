@@ -45,22 +45,24 @@ int ServerInterfaceInternal::insertRecord(const std::string& jsonString) {
     } else {
         srch2is::Record *record = new srch2is::Record(
                 this->server->indexer->getSchema());
-        Json::Value response = srch2::httpwrapper::IndexWriteUtil::_insertCommand(
-                this->server->indexer, this->server->indexDataConfig, root,
-                record);
+        Json::Value response =
+                srch2::httpwrapper::IndexWriteUtil::_insertCommand(
+                        this->server->indexer, this->server->indexDataConfig,
+                        root, record);
         debugMsg << writer.write(response);
         record->clear();
         delete record;
-    }
 
-    Logger::debug(debugMsg.str().c_str());
-    return 0;
+        Logger::debug(debugMsg.str().c_str());
+        return response["insert"].asString().compare("success");
+    }
 }
 
 //Called by the connector, accepts record pkey and delete from the index
 int ServerInterfaceInternal::deleteRecord(const std::string& primaryKey) {
     stringstream debugMsg;
     debugMsg << "DELETE : ";
+    bool op_success = false;
 
     Json::FastWriter writer;
     if (primaryKey.size()) {
@@ -75,6 +77,7 @@ int ServerInterfaceInternal::deleteRecord(const std::string& primaryKey) {
         default: // OP_SUCCESS.
         {
             debugMsg << "success\"}";
+            op_success = true;
         }
         };
     } else {
@@ -83,7 +86,7 @@ int ServerInterfaceInternal::deleteRecord(const std::string& primaryKey) {
     }
 
     Logger::debug(debugMsg.str().c_str());
-    return 0;
+    return op_success;
 }
 
 /*
@@ -95,6 +98,7 @@ int ServerInterfaceInternal::updateRecord(const std::string& pk,
         const std::string& jsonString) {
     stringstream debugMsg;
     debugMsg << "UPDATE : ";
+    bool op_success = false;
 
     //Parse JSON Object;
     Json::Value root;
@@ -114,30 +118,59 @@ int ServerInterfaceInternal::updateRecord(const std::string& pk,
         if (ret == srch2is::OP_FAIL) {
             debugMsg << "failed\",\"reason\":\"no record "
                     "with given primary key\"}";
-        } else
+        } else {
             Logger::debug("DATABASE_LISTENER:UPDATE: deleted record ");
+            op_success = true;
+        }
+
+        if (!op_success) {
+            Logger::debug(debugMsg.str().c_str());
+            return false;
+        }
+        op_success = false;
 
         if (server->indexer->getNumberOfDocumentsInIndex()
                 < this->server->indexDataConfig->getDocumentLimit()) {
 
             srch2is::Record *record = new srch2is::Record(
                     server->indexer->getSchema());
-            Json::Value response = srch2::httpwrapper::IndexWriteUtil::_insertCommand(server->indexer,
-                    this->server->indexDataConfig, root, record);
+            Json::Value response =
+                    srch2::httpwrapper::IndexWriteUtil::_insertCommand(
+                            server->indexer, this->server->indexDataConfig,
+                            root, record);
             record->clear();
             delete record;
-            Logger::debug("DATABASE_LISTENER:UPDATE: inserted record ");
+
+            if (response["insert"].asString().compare("success")) {
+                op_success = true;
+                Logger::debug("DATABASE_LISTENER:UPDATE: inserted record ");
+            } else {
+                srch2::instantsearch::INDEXWRITE_RETVAL ret =
+                        server->indexer->recoverRecord(pk,
+                                deletedInternalRecordId);
+                if (ret == srch2is::OP_FAIL) {
+                    Logger::error("DATABASE_LISTENER:UPDATE: insert record "
+                            "failed and resume the deleted old "
+                            "record failed too.");
+                }
+            }
+
         } else {
             debugMsg << "failed\",\"reason\":\"insert: Document limit reached."
                     << endl;
-            /// reaching here means the insert failed,
+            // reaching here means the insert failed,
             //  need to resume the deleted old record
             srch2::instantsearch::INDEXWRITE_RETVAL ret =
                     server->indexer->recoverRecord(pk, deletedInternalRecordId);
+            if (ret == srch2is::OP_FAIL) {
+                Logger::error("DATABASE_LISTENER:UPDATE: insert record "
+                        "failed and resume the deleted old "
+                        "record failed too.");
+            }
         }
     }
     Logger::debug(debugMsg.str().c_str());
-    return 0;
+    return op_success;
 }
 
 //Call save index to the disk manually.

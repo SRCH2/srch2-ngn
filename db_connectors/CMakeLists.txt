@@ -62,10 +62,8 @@ IF(NOT ANDROID)
     ELSE()
         set(MONGO_CLIENT_LIBRARY ${CMAKE_SOURCE_DIR}/../thirdparty/mongo-cxx-driver/mongo-cxx-driver/build/use-system-boost/libmongoclient.a)
     ENDIF()
-    
-    IF (STATIC_LINK_BOOST)
-        SET(Boost_USE_STATIC_LIBS ON)
-    ENDIF()
+        
+    SET(Boost_USE_STATIC_LIBS ON)
     SET(Boost_USE_MULTITHREAD ON)
     FIND_PACKAGE( Boost COMPONENTS program_options system filesystem thread REQUIRED )
     
@@ -132,3 +130,44 @@ ELSE()
     TARGET_LINK_LIBRARIES(sqliteConnector ${jsoncpp_LIBRARY} ${CMAKE_REQUIRED_LIBRARIES} sqlite3)
 ENDIF()
 
+
+#
+#  3.  MySQL connector 
+#
+
+IF(NOT ANDROID)
+	FILE(GLOB_RECURSE MYSQL_CONNECTOR_SRC RELATIVE ${CMAKE_CURRENT_SOURCE_DIR} "mysql/*.cpp" "util/*.cpp" "../src/core/util/Logger.cpp")
+
+	IF(MAC_OS)
+    	SET (CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -stdlib=libstdc++")	
+    ENDIF() 
+
+	INCLUDE_DIRECTORIES(
+    	${CMAKE_SOURCE_DIR}/mysql/
+    	${CMAKE_SOURCE_DIR}/../src/adapter/
+    	${CMAKE_SOURCE_DIR}/../thirdparty/json/jsoncpp-src/include
+    	${CMAKE_SOURCE_DIR}/util/
+    	${CMAKE_SOURCE_DIR}/../thirdparty/mysql-replication-listener/include
+    	${CMAKE_SOURCE_DIR}/../thirdparty/mysql-connector/include
+    	/usr/include/mysql/
+	)
+
+	SET( jsoncpp_LIBRARY ${CMAKE_SOURCE_DIR}/../thirdparty/json/jsoncpp-src/build/libjsoncpp.a)
+	SET(MYSQL_LISTENER_LIBRARY ${CMAKE_SOURCE_DIR}/../thirdparty/mysql-replication-listener/build/lib/libreplication.so)
+	SET(MYSQL_CONNECTOR_LIBRARY ${CMAKE_SOURCE_DIR}/../thirdparty/mysql-connector/lib/libmysqlcppconn-static.a)
+
+	ADD_LIBRARY(mysqlConnector SHARED ${MYSQL_CONNECTOR_SRC} )
+	
+	set(MYSQL_VERSION_MAJOR 1)
+    set(MYSQL_VERSION_MINOR 0)
+    set(MYSQL_VERSION_PATCH 0)
+    set(MYSQL_VERSION_STRING ${MYSQL_VERSION_MAJOR}.${MYSQL_VERSION_MINOR}.${MYSQL_VERSION_PATCH})
+
+    set_target_properties(mysqlConnector PROPERTIES VERSION ${MYSQL_VERSION_STRING}
+                                          SOVERSION ${MYSQL_VERSION_MAJOR})
+
+    SET_TARGET_PROPERTIES(mysqlConnector PROPERTIES COMPILE_FLAGS -fPIC)
+	
+	TARGET_LINK_LIBRARIES(mysqlConnector ${CMAKE_REQUIRED_LIBRARIES} ${MYSQL_CONNECTOR_LIBRARY} ${jsoncpp_LIBRARY} mysqlclient boost_system -pthread ${MYSQL_LISTENER_LIBRARY} )
+	
+ENDIF()

@@ -83,7 +83,7 @@ private:
     //Create the log table
     bool createLogTableIfNotExistence();
 
-    //Save the lastAccessedLogRecordTime from the disk
+    //Save the lastAccessedLogRecordTime to the disk
     void saveLastAccessedLogRecordTime(
             const std::string & lastAccessedLogRecordTime);
     //Load the lastAccessedLogRecordTime from the disk
