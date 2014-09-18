@@ -114,7 +114,9 @@ OperationState * ShardMoveOperation::handle(LockingNotification::ACK * ack){
 OperationState * ShardMoveOperation::transfer(){
 	// start transfering the data
 	// call MM to transfer the shard.
-	start();
+	MoveToMeNotification *  startNotif = new MoveToMeNotification(shardId);
+	this->send(startNotif, srcAddress);
+	delete startNotif;
 	return this;
 }
 OperationState * ShardMoveOperation::handle(MMNotification * mmStatus){
@@ -271,13 +273,6 @@ OperationState * ShardMoveOperation::release(){
 		return finish();
 	}
 	return this;
-}
-
-void ShardMoveOperation::start(){
-	MoveToMeNotification *  startNotif = new MoveToMeNotification(shardId);
-	this->send(startNotif, srcAddress);
-	delete startNotif;
-	return;
 }
 
 OperationState * ShardMoveOperation::abort(){

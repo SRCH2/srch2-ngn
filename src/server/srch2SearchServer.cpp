@@ -952,6 +952,7 @@ int main(int argc, char** argv) {
 
 	transportManager = new srch2http::TransportManager(evBasesForInternalRequests, transportConfig);
 	shardManager->attachToTransportManager(transportManager);
+	shardManager->initMigrationManager();
 	// since internal threads are not dispatched yet, it's safe to set the callback handler of shard manager.
 
 	// start threads for internal messages.

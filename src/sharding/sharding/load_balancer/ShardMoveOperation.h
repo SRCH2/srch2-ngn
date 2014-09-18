@@ -54,7 +54,6 @@ private:
 	OperationState * commit();
 	OperationState * release();
 
-	void start();
 	OperationState * abort();
 	OperationState * finish();
 };

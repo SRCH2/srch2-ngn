@@ -113,13 +113,11 @@ private:
 class MMNotification : public ShardingNotification{
 public:
 
-    // TODO : second argument must be removed when migration manager is merged with shard manager codes ...
-	MMNotification(const ShardMigrationStatus & status, const ClusterShardId & destShardId);
+	MMNotification(const ShardMigrationStatus & status);
 	MMNotification();
 	ShardMigrationStatus getStatus() const;
 	void setStatus(const ShardMigrationStatus & status);
     ShardingMessageType messageType() const ;
-    ClusterShardId getDestShardId() const;
 
     void * serialize(void * buffer) const;
     unsigned getNumberOfBytes() const;
@@ -127,7 +125,6 @@ public:
 
 private:
 	ShardMigrationStatus status;
-	ClusterShardId destShardId;
 
 };
 
