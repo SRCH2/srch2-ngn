@@ -27,6 +27,7 @@ MulticastDiscoveryService::MulticastDiscoveryService(MulticastDiscoveryConfig co
 	listenSocket = -1;
 	sendSocket = -1;
 	_discoveryDone = false;
+	skipInitialDiscovery = false;
 
 	if (this->multiCastInterfaceNumericAddr == 0) {
 		Logger::console("setting up MC interface as Published Interface.");
@@ -258,6 +259,8 @@ void * multicastListener(void * arg) {
 	char * buffer = (char *)&message;
 	unsigned bufferLen = sizeof(message);
 
+	if (!discovery->skipInitialDiscovery) {
+
 	bool shouldElectItselfAsMaster = true;
 	bool masterDetected = false;
 
@@ -339,6 +342,8 @@ void * multicastListener(void * arg) {
 		discovery->syncManager->setCurrentNodeId(message.nodeId);
 		discovery->syncManager->setMasterNodeId(message.masterNodeId);
 		discovery->_discoveryDone = true;
+		close(discovery->listenSocket);
+		close(discovery->sendSocket);
 		return NULL;
 	}
 
@@ -354,7 +359,7 @@ void * multicastListener(void * arg) {
 	if (!shouldElectItselfAsMaster){
 		Logger::console("Cluster may have other masters!.");
 	}
-
+    }
 	// Make the listening socket blocking now.
 	int val = fcntl(listenSocket, F_GETFL);
 	val &= ~O_NONBLOCK;;
@@ -427,6 +432,8 @@ void * multicastListener(void * arg) {
 			ASSERT(false);
 		}
 	}
+	close(discovery->listenSocket);
+	close(discovery->sendSocket);
 	return NULL;
 }
 
@@ -435,16 +442,21 @@ void MulticastDiscoveryService::init() {
 	listenSocket = openListeningChannel();
 	sendSocket = openSendingChannel();
 
-	pthread_t multicastListenerThread;
 	// start a thread to listen for incoming data packet.
-	pthread_create(&multicastListenerThread, NULL, multicastListener, this);
-	pthread_detach(multicastListenerThread);
+	startDiscoveryThread();
+
 	// send request to
 	sendJoinRequest();
 
 	while(!_discoveryDone) {
 		sleep(1);
 	}
+}
+
+void MulticastDiscoveryService::reInit() {
+	listenSocket = openListeningChannel();
+	sendSocket = openSendingChannel();
+	startDiscoveryThread(true);
 }
 
 void MulticastDiscoveryService::sendJoinRequest() {

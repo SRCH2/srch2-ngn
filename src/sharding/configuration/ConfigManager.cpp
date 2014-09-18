@@ -1781,13 +1781,16 @@ void ConfigManager::parse(const pugi::xml_document& configDoc,
     	string delimiterComma = ",";
     	this->splitString(tempUse,delimiterComma,ipAddressOfKnownHost);
 
-
-    	vector<std::pair<string, unsigned > > ipAddress = this->getWellKnownHosts();
     	for (int i = 0; i < ipAddressOfKnownHost.size(); i++){
     	    vector<string> temp;
     		trimSpacesFromValue(ipAddressOfKnownHost[i], "WellKnownHosts", parseWarnings);
     		this->splitString(ipAddressOfKnownHost[i], ":", temp);
-    		this->setWellKnownHost(pair<string, unsigned>(temp[0],(uint)atol(temp[1].c_str())));
+    		if (temp.size() > 1) {
+    			this->setWellKnownHost(pair<string, unsigned>(temp[0],(uint)atol(temp[1].c_str())));
+    		}
+    		else if (temp.size() == 1) {
+    			this->setWellKnownHost(pair<string, unsigned>(temp[0], -1));
+    		}
     	}
     }
 

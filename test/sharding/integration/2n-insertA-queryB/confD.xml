@@ -24,16 +24,16 @@
     -->
     <!-- <srch2Home>./</srch2Home>-->
     <cluster-name>SRCH2_Cluster</cluster-name>
-    <srch2Home>/home/jamshid/workspace-srch2-3/srch2-ngn/test/sharding/integration/</srch2Home>
+    <srch2Home>./</srch2Home>
 
-    <discovery>
+    <ping>
         <ping-interval>2</ping-interval>
         <ping-timeout>8</ping-timeout>
         <retry-count>3</retry-count>
-    </discovery> 
+    </ping> 
 
     <transport>
-        <port>3098</port>
+        <port>4098</port>
         <ipaddress>127.0.0.1</ipaddress>
     </transport>
     

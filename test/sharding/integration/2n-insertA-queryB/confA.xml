@@ -24,7 +24,7 @@
     -->
     <cluster-name>SRCH2_Cluster</cluster-name>
 
-    <srch2Home>/home/jamshid/workspace-srch2-v4/srch2-ngn/test/sharding/integration</srch2Home>
+    <srch2Home>./</srch2Home>
  
     <ping>
         <ping-interval>2</ping-interval>
@@ -33,11 +33,11 @@
         <retry-count>3</retry-count>
     </ping>    
     <transport>
-        <port>3095</port>
+        <port>4095</port>
         <ipaddress>127.0.0.1</ipaddress>
     </transport>    
     
-    <WellKnownHosts>127.0.0.1:3096</WellKnownHosts>
+    <WellKnownHosts>127.0.0.1:3095</WellKnownHosts>
     <listeningHostname>127.0.0.1</listeningHostname>
     <listeningPort>7049</listeningPort>
 

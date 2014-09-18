@@ -70,6 +70,10 @@ public:
 	// methods to be implemented by concrete service provider.
 	virtual void init() = 0;
 
+	virtual void reInit() = 0;
+
+	virtual void startDiscoveryThread(bool skipInitialDiscovery = false) = 0;
+
 	// APIs provided by base class.
 	bool isLoopbackMessage(DiscoveryMessage &msg);
 	void isCurrentNodeMaster(bool flag) { syncManager->setNodeIsMaster(flag); }
@@ -119,6 +123,14 @@ public:
 
 	void init();
 
+	void reInit();
+
+	void startDiscoveryThread(bool skipInitialDiscovery = false) {
+		this->skipInitialDiscovery = skipInitialDiscovery;
+		pthread_create(&multicastListenerThread, NULL, multicastListener, this);
+		pthread_detach(multicastListenerThread);
+
+	}
 private:
 
 	std::string getMultiCastAddressStr() {
@@ -147,6 +159,9 @@ private:
 	int sendSocket;
 	bool _discoveryDone;
 	struct sockaddr_in multicastGroupAddress;
+
+	pthread_t multicastListenerThread;
+	bool skipInitialDiscovery;
 };
 
 ///
@@ -173,6 +188,7 @@ struct UnicastDiscoveryConfig {
 };
 
 void * unicastListener(void * arg);
+const unsigned unicastDiscoveryDefaultPort = 4000;
 class UnicastDiscoveryService : public DiscoveryService{
 
 	friend void * unicastListener(void * arg);
@@ -181,6 +197,13 @@ public:
 
 	void init();
 
+	void reInit();
+
+	void startDiscoveryThread(bool skipInitialDiscovery = false) {
+		this->skipInitialDiscovery = skipInitialDiscovery;
+		pthread_create(&unicastListenerThread, NULL, unicastListener, this);
+		pthread_detach(unicastListenerThread);
+	}
 private:
 	int openListeningChannel();
 
@@ -194,11 +217,15 @@ private:
 
 	std::string matchedKnownHostIp;
 	unsigned matchedKnownHostPort;
+	unsigned discoveryPort;
 	bool isWellKnownHost;
 
 	int listenSocket;
 	int sendSocket;
 	bool _discoveryDone;
+
+	pthread_t unicastListenerThread;
+	bool skipInitialDiscovery;
 };
 
 
