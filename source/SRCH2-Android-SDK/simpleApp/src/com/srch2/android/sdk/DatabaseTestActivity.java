@@ -447,12 +447,12 @@ public class DatabaseTestActivity extends TestableActivity {
         sleep(2000);
         HashMap<String, ArrayList<JSONObject>> results = searchResultsBuffer.recordSet;
         ArrayList<JSONObject> resultSet = results.get(idx.getIndexName());
-        JSONObject o = resultSet.get(0);
+        JSONObject firstSearchResultRecord = resultSet.get(0);
         JSONObject originalRecord = null;
         String searchColumn = "null";
         double refiningColumn = -1;
         try {
-            originalRecord = o.getJSONObject(SQLiteIndexable.SEARCH_RESULT_JSON_KEY_RECORD);
+            originalRecord = firstSearchResultRecord.getJSONObject(SQLiteIndexable.SEARCH_RESULT_JSON_KEY_RECORD);
             searchColumn = originalRecord.getString(SQLiteConnectorCRUDTestDatabaseTableSchema.COLUMN_SEARCHABLE);
             refiningColumn = originalRecord.getDouble(SQLiteConnectorCRUDTestDatabaseTableSchema.COLUMN_REFINING);
         } catch (JSONException ignore) {}
@@ -465,9 +465,9 @@ public class DatabaseTestActivity extends TestableActivity {
         sleep(2000);
         results = searchResultsBuffer.recordSet;
         resultSet = results.get(idx.getIndexName());
-        o = resultSet.get(0);
+        firstSearchResultRecord = resultSet.get(0);
         try {
-            originalRecord = o.getJSONObject(SQLiteIndexable.SEARCH_RESULT_JSON_KEY_RECORD);
+            originalRecord = firstSearchResultRecord.getJSONObject(SQLiteIndexable.SEARCH_RESULT_JSON_KEY_RECORD);
             searchColumn = originalRecord.getString(SQLiteConnectorCRUDTestDatabaseTableSchema.COLUMN_SEARCHABLE);
             refiningColumn = originalRecord.getDouble(SQLiteConnectorCRUDTestDatabaseTableSchema.COLUMN_REFINING);
         } catch (JSONException ignore) {}
@@ -480,9 +480,9 @@ public class DatabaseTestActivity extends TestableActivity {
         sleep(2000);
         results = searchResultsBuffer.recordSet;
         resultSet = results.get(idx.getIndexName());
-        o = resultSet.get(0);
+        firstSearchResultRecord = resultSet.get(0);
         try {
-            originalRecord = o.getJSONObject(SQLiteIndexable.SEARCH_RESULT_JSON_KEY_RECORD);
+            originalRecord = firstSearchResultRecord.getJSONObject(SQLiteIndexable.SEARCH_RESULT_JSON_KEY_RECORD);
             searchColumn = originalRecord.getString(SQLiteConnectorCRUDTestDatabaseTableSchema.COLUMN_SEARCHABLE);
             refiningColumn = originalRecord.getDouble(SQLiteConnectorCRUDTestDatabaseTableSchema.COLUMN_REFINING);
         } catch (JSONException ignore) {}
@@ -530,9 +530,9 @@ public class DatabaseTestActivity extends TestableActivity {
         sleep(2000);
         results = searchResultsBuffer.recordSet;
         resultSet = results.get(idx.getIndexName());
-        o = resultSet.get(0);
+        firstSearchResultRecord = resultSet.get(0);
         try {
-            originalRecord = o.getJSONObject(SQLiteIndexable.SEARCH_RESULT_JSON_KEY_RECORD);
+            originalRecord = firstSearchResultRecord.getJSONObject(SQLiteIndexable.SEARCH_RESULT_JSON_KEY_RECORD);
             searchColumn = originalRecord.getString(SQLiteConnectorCRUDTestDatabaseTableSchema.COLUMN_SEARCHABLE);
             refiningColumn = originalRecord.getDouble(SQLiteConnectorCRUDTestDatabaseTableSchema.COLUMN_REFINING);
         } catch (JSONException ignore) {}
@@ -565,9 +565,9 @@ public class DatabaseTestActivity extends TestableActivity {
         sleep(2000);
         results = searchResultsBuffer.recordSet;
         resultSet = results.get(idx.getIndexName());
-        o = resultSet.get(0);
+        firstSearchResultRecord = resultSet.get(0);
         try {
-            originalRecord = o.getJSONObject(SQLiteIndexable.SEARCH_RESULT_JSON_KEY_RECORD);
+            originalRecord = firstSearchResultRecord.getJSONObject(SQLiteIndexable.SEARCH_RESULT_JSON_KEY_RECORD);
             searchColumn = originalRecord.getString(SQLiteConnectorCRUDTestDatabaseTableSchema.COLUMN_SEARCHABLE);
             refiningColumn = originalRecord.getDouble(SQLiteConnectorCRUDTestDatabaseTableSchema.COLUMN_REFINING);
         } catch (JSONException ignore) {}
@@ -1200,19 +1200,7 @@ public class DatabaseTestActivity extends TestableActivity {
         }
     }
 
-
-
-
-
-
-
-
-
-
-
-
-
-
+    /** Beginning of SQLiteOpenHelper / SQLiteIndexables classes used in the tests above. */
 
     static class SQLiteConnectorCRUDTestDatabaseTableSchema {
         public static final int DATABASE_VERSION = 1;
