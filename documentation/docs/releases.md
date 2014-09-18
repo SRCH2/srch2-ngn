@@ -13,7 +13,7 @@
 
     <tbody>
         <tr>
-            <td>Sep 17 2014</td>
+            <td>Sept. 17 2014</td>
             <td>0.2.2</td>
             <td>
             Add the New Geo engine;<br>
@@ -22,7 +22,7 @@
             <td><a href="../../0.2.2/javadoc" target="_blank">Reference</a></td>
         </tr>
         <tr>
-            <td>Aug 25 2014</td>
+            <td>Aug. 25 2014</td>
             <td>0.2.1</td>
             <td>Beta Release</td>
             <td><a href="../../0.2.1/javadoc" target="_blank">Reference</a></td>
