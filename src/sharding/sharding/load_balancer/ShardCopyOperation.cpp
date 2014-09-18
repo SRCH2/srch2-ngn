@@ -8,7 +8,7 @@
 #include "../ShardManager.h"
 #include "LoadBalancingStartOperation.h"
 #include "server/Srch2Server.h"
-
+#include "migration/MigrationManager.h"
 namespace srch2is = srch2::instantsearch;
 using namespace srch2is;
 using namespace std;
@@ -92,9 +92,9 @@ OperationState * ShardCopyOperation::transfer(){
 	return this;
 }
 OperationState * ShardCopyOperation::handle(MMNotification * mmStatus){
-	if(mmStatus->getStatus().status == MIGRATION_STATUS_FAIL){
+	if(mmStatus->getStatus().status == MM_STATUS_FAILURE){
 		return release();
-	}else if(mmStatus->getStatus().status == MIGRATION_STATUS_FINISH){
+	}else if(mmStatus->getStatus().status == MM_STATUS_SUCCESS){
 
 		Cluster_Writeview * writeview = ShardManager::getWriteview();
 

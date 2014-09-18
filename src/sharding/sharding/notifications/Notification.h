@@ -6,6 +6,7 @@
 #include "sharding/configuration/ShardingConstants.h"
 #include "sharding/transport/Message.h"
 #include "sharding/transport/MessageAllocator.h"
+#include "migration/MigrationManager.h"
 
 namespace srch2is = srch2::instantsearch;
 using namespace srch2is;
@@ -37,27 +38,27 @@ public:
 };
 
 
-// TEMP
-enum MIGRATION_STATUS{
-	MIGRATION_STATUS_FAIL,
-	MIGRATION_STATUS_FINISH
-};
-struct ShardMigrationStatus{
-	ShardMigrationStatus(){};
-	ShardMigrationStatus(const ShardMigrationStatus & status);
-	ShardMigrationStatus & operator=(const ShardMigrationStatus & status);
-
-    void * serialize(void * buffer) const;
-    unsigned getNumberOfBytes() const;
-    void * deserialize(void * buffer) ;
-
-	unsigned srcOperationId;    // #1
-    unsigned dstOperationId;   // #7
-	NodeId sourceNodeId;   // NodeA
-	NodeId destinationNodeId;   // Current Node
-	boost::shared_ptr<Srch2Server> shard;
-	MIGRATION_STATUS status;
-};
+//// TEMP
+//enum MIGRATION_STATUS{
+//	MIGRATION_STATUS_FAIL,
+//	MIGRATION_STATUS_FINISH
+//};
+//struct ShardMigrationStatus{
+//	ShardMigrationStatus(){};
+//	ShardMigrationStatus(const ShardMigrationStatus & status);
+//	ShardMigrationStatus & operator=(const ShardMigrationStatus & status);
+//
+//    void * serialize(void * buffer) const;
+//    unsigned getNumberOfBytes() const;
+//    void * deserialize(void * buffer) ;
+//
+//	unsigned srcOperationId;    // #1
+//    unsigned dstOperationId;   // #7
+//	NodeId sourceNodeId;   // NodeA
+//	NodeId destinationNodeId;   // Current Node
+//	boost::shared_ptr<Srch2Server> shard;
+//	MIGRATION_STATUS status;
+//};
 
 class ShardingNotification : public Notification{
 public:

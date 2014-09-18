@@ -989,30 +989,30 @@ int main(int argc, char** argv) {
 			transportManager, serverConf);
 
 	// TEST CODE FOR MIGRATION MANAGER
-	serverConf->getClusterReadView(clusterReadview);
-	if (clusterReadview->getCurrentNode()->isMaster()) {
-		cout << "waiting for new node " << endl;
-		while(1) {
-			//boost::shared_ptr<const srch2::httpwrapper::Cluster> clusterReadview;
-			serverConf->getClusterReadView(clusterReadview);
-			if (clusterReadview->getTotalNumberOfNodes() == 2) {
-				cout << "new Node found ..start migration ..." << endl;
-				std::vector<const srch2http::Node *> nodes;
-				clusterReadview->getAllNodes(nodes);
-
-				unsigned currNodeId = clusterReadview->getCurrentNode()->getId();
-				std::vector< const srch2http::CoreShardContainer * >  coreShardContainers;
-				clusterReadview->getNodeShardInformation(currNodeId, coreShardContainers);
-
-				if (coreShardContainers.size() > 0) {
-					vector<srch2http::Shard *> * shardPtr = ((srch2http::CoreShardContainer *)coreShardContainers[0])->getPrimaryShards();
-					if (shardPtr != NULL) {
-						if (shardPtr->size() > 0) {
-							unsigned destinationNodeId =  nodes[1]->getId();
-							if (currNodeId == destinationNodeId) {
-								destinationNodeId =  nodes[0]->getId();
-							}
-
+//	serverConf->getClusterReadView(clusterReadview);
+//	if (clusterReadview->getCurrentNode()->isMaster()) {
+//		cout << "waiting for new node " << endl;
+//		while(1) {
+//			//boost::shared_ptr<const srch2::httpwrapper::Cluster> clusterReadview;
+//			serverConf->getClusterReadView(clusterReadview);
+//			if (clusterReadview->getTotalNumberOfNodes() == 2) {
+//				cout << "new Node found ..start migration ..." << endl;
+//				std::vector<const srch2http::Node *> nodes;
+//				clusterReadview->getAllNodes(nodes);
+//
+//				unsigned currNodeId = clusterReadview->getCurrentNode()->getId();
+//				std::vector< const srch2http::CoreShardContainer * >  coreShardContainers;
+//				clusterReadview->getNodeShardInformation(currNodeId, coreShardContainers);
+//
+//				if (coreShardContainers.size() > 0) {
+//					vector<srch2http::Shard *> * shardPtr = ((srch2http::CoreShardContainer *)coreShardContainers[0])->getPrimaryShards();
+//					if (shardPtr != NULL) {
+//						if (shardPtr->size() > 0) {
+//							unsigned destinationNodeId =  nodes[1]->getId();
+//							if (currNodeId == destinationNodeId) {
+//								destinationNodeId =  nodes[0]->getId();
+//							}
+//
 							//std::ostringstream outputBuffer(std::ios::out|std::ios::binary);
 //							namespace boostio = boost::iostreams;
 //							typedef std::vector<char> buffer_type;
@@ -1051,22 +1051,22 @@ int main(int argc, char** argv) {
 //							tempSS->bootStrapIndexerFromByteStream(input_stream, directoryPath);
 //							cout << "DONE!! " << endl;
 
-							boost::shared_ptr<srch2http::Srch2Server> shard = shardPtr->at(0)->getSrch2Server();
-							migrationManager->migrateShard(shardPtr->at(0)->getShardId(), shard
-									, destinationNodeId);
-
-						}
-					} else {
-						exit(-1);
-					}
-				} else {
-					exit(-1);
-				}
-				break;
-			}
-			sleep(2);
-		}
-	}
+//							boost::shared_ptr<srch2http::Srch2Server> shard = shardPtr->at(0)->getSrch2Server();
+//							migrationManager->migrateShard(shardPtr->at(0)->getShardId(), shard
+//									, destinationNodeId);
+//
+//						}
+//					} else {
+//						exit(-1);
+//					}
+//				} else {
+//					exit(-1);
+//				}
+//				break;
+//			}
+//			sleep(2);
+//		}
+//	}
 	/// TEMP CODE END
 
 	// create DP external

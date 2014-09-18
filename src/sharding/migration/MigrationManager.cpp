@@ -24,6 +24,7 @@
 #include <sys/sendfile.h>
 #endif
 #include <sys/mman.h>
+#include "sharding/metadata_manager/Cluster.h"
 
 namespace srch2 {
 namespace httpwrapper {
@@ -32,41 +33,41 @@ const unsigned BLOCK_SIZE =  1400;  // MTU size
 
 // various migration message's body types
 struct MigrationInitMsgBody{
-	ShardId shardId;
+	ClusterShardId shardId;
 	unsigned srcOperationId;
 	unsigned dstOperationId;
 	unsigned shardComponentCount;
 };
 
 struct MigrationInitAckMsgBody{
-	ShardId shardId;
+	ClusterShardId shardId;
 	unsigned ipAddress;
 	short portnumber;
 };
 
 struct ShardComponentInfoMsgBody {
-	ShardId shardId;
+	ClusterShardId shardId;
 	unsigned componentSize;
 	unsigned componentNameSize;
 	char name[0];
 };
 
 struct ShardComponentInfoAckMsgBody{
-	ShardId shardId;
+	ClusterShardId shardId;
 };
 
 struct MigrationData {
-	ShardId shardId;
+	ClusterShardId shardId;
 	unsigned sequenceNumber;
 	char data[BLOCK_SIZE];
 };
 
 struct MigrationDoneMsgBody{
-	ShardId shardId;
+	ClusterShardId shardId;
 };
 
 struct MigrationDoneAckMsgBody{
-	ShardId shardId;
+	ClusterShardId shardId;
 	char flag;  // 0 = incomplete or 1 = complete
 	unsigned missingPacketCount;
 	unsigned arr[0];
@@ -148,7 +149,7 @@ int readDataFromSocketWithRetry(int fd, char *buffer, int byteToRead, int retryC
 
 struct MigrationThreadArguments {
 	MigrationManager *mm;
-	ShardId shardId;
+	ClusterShardId shardId;
 	unsigned remotedNode;
 };
 
@@ -281,7 +282,7 @@ void MigrationManager::sendMessage(unsigned destinationNodeId, Message *message)
 
 }
 
-void MigrationService::receiveShard(ShardId shardId, unsigned remoteNode) {
+void MigrationService::receiveShard(ClusterShardId shardId, unsigned remoteNode) {
 	int receiveSocket;
 	short receivePort;
 	string sessionKey = migrationMgr->getSessionKey(shardId, remoteNode);
@@ -317,10 +318,11 @@ void MigrationService::receiveShard(ShardId shardId, unsigned remoteNode) {
 
 	// Create a path to store this Shard on storage device.
 	ConfigManager *configManager = migrationMgr->configManager;
-	string directoryPath = configManager->createShardDir(configManager->getClusterWriteView()->getClusterName(),
-			configManager->getClusterWriteView()->getCurrentNode()->getName(),
-			migrationMgr->getIndexConfig(shardId)->getName(), shardId);
-	Srch2Server *migratedShard = new Srch2Server(migrationMgr->getIndexConfig(shardId), shardId, directoryPath);
+	string directoryPath = "";
+//	string directoryPath = configManager->createShardDir(configManager->getClusterWriteView()->getClusterName(),
+//			configManager->getClusterWriteView()->getCurrentNode()->getName(),
+//			migrationMgr->getIndexConfig(shardId)->getName(), shardId);
+	Srch2Server *migratedShard = new Srch2Server(migrationMgr->getIndexConfig(shardId), directoryPath, "");
 
 	unsigned mmapBufferSize = 0;
 	void * mmapBuffer = NULL;
@@ -460,8 +462,9 @@ void MigrationManager::notifySHMAndCleanup(string sessionKey, MIGRATION_STATUS m
 }
 void MigrationManager::migrateShard(unsigned uri, boost::shared_ptr<Srch2Server> shard, NodeId destinationNodeId,
 			unsigned srcOperationId , unsigned dstOperationId) {
-	ShardId shardId = shard->getShardId();
-	Logger::console("Migrating shard %s to node %d", shard->getShardId().toString().c_str(), destinationNodeId);
+	// TODO: get the correct API for shardManager
+	ClusterShardId shardId; // = shard->getShardId();
+	Logger::console("Migrating shard %s to node %d", shardId.toString().c_str(), destinationNodeId);
 
 	/*
 	 *  Initialize the migration session info
@@ -489,7 +492,7 @@ void MigrationManager::migrateShard(unsigned uri, boost::shared_ptr<Srch2Server>
 	pthread_detach(senderThread);
 
 }
-void MigrationService::sendShard(ShardId shardId, unsigned destinationNodeId) {
+void MigrationService::sendShard(ClusterShardId shardId, unsigned destinationNodeId) {
 
 
 	string sessionKey = migrationMgr->getSessionKey(shardId, destinationNodeId);
@@ -852,17 +855,17 @@ int MigrationManager::openSendChannel() {
 
 }
 
-const CoreInfo_t * MigrationManager::getIndexConfig(ShardId shardId) {
-	boost::shared_ptr<const srch2::httpwrapper::Cluster> clusterReadview;
-	this->configManager->getClusterReadView(clusterReadview);
-	return clusterReadview->getCoreById(shardId.coreId);
+const CoreInfo_t * MigrationManager::getIndexConfig(ClusterShardId shardId) {
+	boost::shared_ptr<const srch2::httpwrapper::ClusterResourceMetadata_Readview> clusterReadview;
+	srch2::httpwrapper::ShardManager::getReadview(clusterReadview);
+	return clusterReadview->getCore(shardId.coreId);
 }
 
-bool MigrationManager::hasActiveSession(const ShardId& shardId, unsigned remoteNode) {
+bool MigrationManager::hasActiveSession(const ClusterShardId& shardId, unsigned remoteNode) {
 	string sessionKey;
 	return hasActiveSession(shardId, remoteNode, sessionKey);
 }
-bool MigrationManager::hasActiveSession(const ShardId& shardId, unsigned remoteNode, string& sessionKey) {
+bool MigrationManager::hasActiveSession(const ClusterShardId& shardId, unsigned remoteNode, string& sessionKey) {
 	sessionKey = getSessionKey(shardId, remoteNode);
 	if (migrationSession.find(sessionKey) == migrationSession.end()) {
 		return false;
@@ -871,7 +874,7 @@ bool MigrationManager::hasActiveSession(const ShardId& shardId, unsigned remoteN
 	}
 }
 
-string MigrationManager::initMigrationSession(ShardId shardId, unsigned srcOperationId,
+string MigrationManager::initMigrationSession(ClusterShardId shardId, unsigned srcOperationId,
 		unsigned dstOperationId, unsigned remoteNode, unsigned shardCompCount) {
 
 	string key = getSessionKey(shardId, remoteNode);

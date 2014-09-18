@@ -118,9 +118,9 @@ OperationState * ShardMoveOperation::transfer(){
 	return this;
 }
 OperationState * ShardMoveOperation::handle(MMNotification * mmStatus){
-	if(mmStatus->getStatus().status == MIGRATION_STATUS_FAIL){
+	if(mmStatus->getStatus().status == MM_STATUS_FAILURE){
 		return release();
-	}else if(mmStatus->getStatus().status == MIGRATION_STATUS_FINISH){
+	}else if(mmStatus->getStatus().status == MM_STATUS_SUCCESS){
 
 		Cluster_Writeview * writeview = ShardManager::getWriteview();
 
@@ -319,9 +319,9 @@ OperationState * ShardMoveSrcOperation::handle(MoveToMeNotification::FINISH * ac
 }
 
 OperationState * ShardMoveSrcOperation::handle(MMNotification * mmStatus){
-	if(mmStatus->getStatus().status == MIGRATION_STATUS_FAIL){ // dest could not have committed the change
+	if(mmStatus->getStatus().status == MM_STATUS_FAILURE){ // dest could not have committed the change
 		return release();
-	}else if(mmStatus->getStatus().status == MIGRATION_STATUS_FINISH){
+	}else if(mmStatus->getStatus().status == MM_STATUS_SUCCESS){
 		return this; // we should wait for FINISH notification
 	}
 	ASSERT(false);

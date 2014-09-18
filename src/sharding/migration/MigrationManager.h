@@ -12,9 +12,9 @@
 #include <string>
 #include <iostream>
 
-#include "configuration/Shard.h"
+#include "sharding/metadata_manager/Shard.h"
 #include "transport/TransportManager.h"
-#include "ShardManager.h"
+//#include "sharding/ShardManager.h"
 
 namespace srch2 {
 namespace httpwrapper {
@@ -36,6 +36,12 @@ struct ShardMigrationStatus{
 	NodeId destinationNodeId;
 	boost::shared_ptr<Srch2Server> shard;
 	MIGRATION_STATUS status;
+	ShardMigrationStatus() {}
+	void * serialize(void * buffer) const;
+	unsigned getNumberOfBytes() const;
+	void * deserialize(void * buffer);
+	ShardMigrationStatus & operator=(const ShardMigrationStatus & status);
+	ShardMigrationStatus(const ShardMigrationStatus & status);
 };
 
 // redistribution data structure
@@ -77,7 +83,7 @@ const short MM_MIGRATION_PORT_START = 53000;
 // MM internal structure to
 class MigrationSessionInfo {
 public:
-	ShardId shardId;
+	ClusterShardId shardId;
 	boost::shared_ptr<Srch2Server> shard;
 	unsigned srcOperationId;
 	unsigned dstOperationId;
@@ -108,8 +114,8 @@ private:
 class MigrationService {
 public:
 	MigrationService(MigrationManager *migrationMgr) { this->migrationMgr = migrationMgr; }
-	void sendShard(ShardId shardId, unsigned destinationNodeId);
-	void receiveShard(ShardId shardId, unsigned remoteNode);
+	void sendShard(ClusterShardId shardId, unsigned destinationNodeId);
+	void receiveShard(ClusterShardId shardId, unsigned remoteNode);
 private:
 	MigrationManager *migrationMgr;
 };
@@ -130,26 +136,26 @@ public:
 	 * 2. ShardManager must expose method "void Notify(ShardDistributionStatus &)"
 	 * 3. partitioner is used for deciding shardId/NodeId
 	 */
-	void reDistributeShard(ShardId shardId, boost::shared_ptr<Srch2Server> shard, Partitioner *partitioner, unsigned destination);
+	void reDistributeShard(ClusterShardId shardId, boost::shared_ptr<Srch2Server> shard, Partitioner *partitioner, unsigned destination);
 
 	/*  NOT IMPLEMENTED
 	 *  1. ShardManager on remote node provides Shard object to which migrated record should be assigned.
 	 *  2. non-blocking API.
 	 */
-	void registerShardForMigratedRecords(ShardId shardId, boost::shared_ptr<Srch2Server> shard);
+	void registerShardForMigratedRecords(ClusterShardId shardId, boost::shared_ptr<Srch2Server> shard);
 
 	/*  NOT IMPLEMENTED
 	 *  1. ShardManager should call this to stop accepting new records into the given shard.
 	 *  2. MM releases shared pointer to the requested shard.
 	 */
-	void unRegisterShardForMigratedRecords(ShardId shardId);
+	void unRegisterShardForMigratedRecords(ClusterShardId shardId);
 
 	/*  NOT IMPLEMENTED
 	 * ShardManager should call this API to request aborting the migration of the given shardId.
 	 * This is a non blocking API. When migration stops, MM notifies SHM via callback with migration
 	 * status as ABORTED
 	 */
-	void stopMigration(ShardId shardId);
+	void stopMigration(ClusterShardId shardId);
 
 	/*  NOT IMPLEMENTED
 	 * ShardManager should call this API to request aborting the migration of the given shardId to
@@ -157,7 +163,7 @@ public:
 	 * This is a non blocking API. When migration stops, MM notifies SHM via callback with migration
 	 * status as ABORTED
 	 */
-	void stopMigration(ShardId shardId, unsigned destinatonNodeId);
+	void stopMigration(ClusterShardId shardId, unsigned destinatonNodeId);
 
 	MigrationManager(ShardManager *shardManager, TransportManager *transport, ConfigManager *config);
 
@@ -175,18 +181,18 @@ private:
 	void sendInfoAckMessage(const string& sessionKey);
 	int acceptTCPConnection(int tcpSocket , short receivePort);
 	void doInitialHandShake(const string& sessionKey);
-	string initMigrationSession(ShardId shardId,unsigned srcOperationId,
+	string initMigrationSession(ClusterShardId shardId,unsigned srcOperationId,
 			unsigned dstOperationId, unsigned remoteNode, unsigned shardCompCount);
-	bool hasActiveSession(const ShardId& shardId, unsigned node);
-	bool hasActiveSession(const ShardId& shardId, unsigned node, string& sessionKey);
+	bool hasActiveSession(const ClusterShardId& shardId, unsigned node);
+	bool hasActiveSession(const ClusterShardId& shardId, unsigned node, string& sessionKey);
 	void sendMessage(unsigned destinationNodeId, Message *message);
-	const CoreInfo_t *getIndexConfig(ShardId shardId);
+	const CoreInfo_t *getIndexConfig(ClusterShardId shardId);
 	void populateStatus(ShardMigrationStatus& status, unsigned srcOperationId,
 			unsigned dstOperationId, unsigned destinationNodeId, boost::shared_ptr<Srch2Server> shard,
 			MIGRATION_STATUS migrationResult);
 	void notifySHMAndCleanup(string sessionKey, MIGRATION_STATUS migrationResult);
 	// Hash function for key of type ShardId to be used by boost::unordered_map
-	string getSessionKey( const ShardId& shardId, unsigned node) const
+	string getSessionKey( const ClusterShardId& shardId, unsigned node) const
 	{
 		stringstream ss;
 		ss << shardId.coreId << shardId.partitionId << shardId.replicaId << node;

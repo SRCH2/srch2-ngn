@@ -292,7 +292,7 @@ bool ShardManager::resolveMessage(Message * msg, NodeId senderNode){
 			mmStatus.srcOperationId = 0;
 			mmStatus.destinationNodeId = moveNotif->getSrc().nodeId;
 			mmStatus.dstOperationId = moveNotif->getSrc().operationId;
-			mmStatus.status = MIGRATION_STATUS_FINISH;
+			mmStatus.status = MM_STATUS_SUCCESS;
 			MMNotification * mmNotif = new MMNotification(mmStatus, moveNotif->getShardId());
 			send(mmNotif);
 			delete mmNotif;
@@ -511,7 +511,7 @@ bool ShardManager::resolveMessage(Message * msg, NodeId senderNode){
 			mmStatus.srcOperationId = 0;
 			mmStatus.destinationNodeId = copyNotif->getSrc().nodeId;
 			mmStatus.dstOperationId = copyNotif->getSrc().operationId;
-			mmStatus.status = MIGRATION_STATUS_FINISH;
+			mmStatus.status = MM_STATUS_SUCCESS;
 			MMNotification * mmNotif = new MMNotification(mmStatus, copyNotif->getDestShardId());
 			send(mmNotif);
 			delete mmNotif;
@@ -525,7 +525,7 @@ bool ShardManager::resolveMessage(Message * msg, NodeId senderNode){
 					ShardingNotification::deserializeAndConstruct<MMNotification>(Message::getBodyPointerFromMessagePointer(msg));
 			Logger::debug("%s | Status : %s ,Dest Shard Id : " ,
 					mmNotif->getDescription().c_str(),
-					mmNotif->getStatus().status == MIGRATION_STATUS_FINISH ? "Done." : "Failed.",
+					mmNotif->getStatus().status == MM_STATUS_SUCCESS ? "Done." : "Failed.",
 					mmNotif->getDestShardId().toString().c_str());
 			if(mmNotif->isBounced()){
 				Logger::debug("==> Bounced.");
@@ -627,14 +627,14 @@ void ShardManager::resolveReadviewRelease(unsigned metadataVersion){
 
 void ShardManager::resolveMMNotification(const ShardMigrationStatus & migrationStatus){
 	Logger::debug("MM | (%d => %d) was %s", migrationStatus.sourceNodeId, migrationStatus.destinationNodeId,
-			(migrationStatus.status == MIGRATION_STATUS_FINISH)? "Done."  : "Failed.");
+			(migrationStatus.status == MM_STATUS_SUCCESS)? "Done."  : "Failed.");
 	boost::unique_lock<boost::mutex> shardManagerGlobalLock(shardManagerGlobalMutex);
 	// TODO : second argument must be deleted when migration manager is merged with this code.
 	// TODO :  Migration manager must return the ClusterShardId value
 	MMNotification * mmNotif = new MMNotification(migrationStatus, ClusterShardId());
 	this->stateMachine->handle(mmNotif);
 	Logger::debug("MM | (%d => %d) was %s Processed.", migrationStatus.sourceNodeId, migrationStatus.destinationNodeId,
-			(migrationStatus.status == MIGRATION_STATUS_FINISH)? "Done."  : "Failed.");
+			(migrationStatus.status == MM_STATUS_SUCCESS)? "Done."  : "Failed.");
 
 //    cout << "Shard Manager status after receiving migration manager notification:" << endl;
 //    ShardManager::getShardManager()->print();
