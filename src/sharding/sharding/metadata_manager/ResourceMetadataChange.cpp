@@ -151,7 +151,7 @@ string NodeAddChange::toString() const{
 		if(i != 0){
 			ss << " - ";
 		}
-		ss << localNodeShardIds.at(i).toString();
+		ss << localNodeShardIds.at(i)._toString();
 	}
 	return ss.str();
 }

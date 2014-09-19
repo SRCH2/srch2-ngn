@@ -102,6 +102,7 @@ public:
 	unsigned partitionId;
 
 	std::string toString() const;
+	std::string _toString() const;
 	bool isClusterShard() const ;
 	bool operator==(const NodeShardId& rhs) const ;
 	bool operator!=(const NodeShardId& rhs) const ;

@@ -449,7 +449,7 @@ void Cluster_Writeview::printNodeShards(){
 		unsigned counter = 0;
 		while(counter++ < nodeShards.size()){
 			stringstream ss;
-			ss << "ID : " << nodeShards.at(counter-1)->id.toString();
+			ss << "ID : " << nodeShards.at(counter-1)->id._toString();
 			nodeShardHeaders.push_back(ss.str());
 		}
 
