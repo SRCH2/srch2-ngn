@@ -13,11 +13,11 @@
 
     <tbody>
         <tr>
-            <td>Sept. 16, 2014</td>
+            <td>Sept. 17, 2014</td>
             <td>0.2.2</td>
             <td>
-            Support complex geo search;<br>
-            Support SQLite connector;<br>
+            Support geo search;<br>
+            Support SQLite connector.<br>
             </td>
             <td><a href="../../0.2.2/javadoc" target="_blank">Reference</a></td>
         </tr>

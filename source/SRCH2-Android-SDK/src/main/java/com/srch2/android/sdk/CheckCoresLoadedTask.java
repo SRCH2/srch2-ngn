@@ -94,7 +94,7 @@ final class CheckCoresLoadedTask extends HttpTask {
             ++superCount;
         }
 
-        Log.d(TAG, "CHECK CORE LOADED TASK pingCountSuccess is " + pingCountSuccess + " and coreCount is " + coreCount);
+        Cat.d(TAG, "CHECK CORE LOADED TASK pingCountSuccess is " + pingCountSuccess + " and coreCount is " + coreCount);
 
         if (pingCountSuccess == coreCount) {
             SRCH2Engine.isReady.set(true);
