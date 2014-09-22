@@ -145,11 +145,18 @@ def startEngine(nodeId, transactionFile):
 
 #Kills the engine by sending kill signal
 def killEngine(nodeId):
+    fin = open("crashReports.txt","a")
     if(nodes[nodeId].ipAddress == myIpAddress):
         print "process to be deleted " + str(nodes[nodeId].pid)
-        os.system('kill -9 ' + str(nodes[nodeId].pid))
+        err = os.system('kill -9 ' + str(nodes[nodeId].pid))
+        if (err != 0):
+            errorMessage = "Error in killing node " + str(nodes[nodeId].Id) + " in transaction file " + sys.argv[2] + "\n"
+            fin.write(errorMessage)  
         return
     stdin, stdout, stderr = sshClient[nodes[nodeId].Id].exec_command('kill -9 ' + nodes[nodeId].pid)
+    if(stderr != []):
+        errorMessage = "Error in killing node " + str(nodes[nodeId].Id) + " in transaction file " + sys.argv[2] + "\n"
+        fin.write(errorMessage)
 
 #Opens the file containing record, forms json arrays and does bulk insert.
 def bulkInsert(inputFile, k, num, ipAddress, portNo, operation):
