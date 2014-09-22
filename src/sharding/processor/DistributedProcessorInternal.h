@@ -128,6 +128,11 @@ private:
     		this->server = server;
     		this->shardResults = new SearchCommandResults::ShardResults(shardIdentifier);
     	}
+    	~ShardSearchArgs(){
+    		if(logicalPlan != NULL){
+    			delete logicalPlan;
+    		}
+    	}
     	LogicalPlan * logicalPlan;
     	Srch2Server * server;
     	SearchCommandResults::ShardResults * shardResults;
@@ -137,11 +142,16 @@ private:
 
 
     struct ShardInsertUpdateArgs{
-    	ShardInsertUpdateArgs(const Record * record, Srch2Server * server, string shardIdentifier):record(record){
+    	ShardInsertUpdateArgs(Record * record, Srch2Server * server, string shardIdentifier):record(record){
     		this->server = server;
     		this->shardResults = new CommandStatus::ShardResults(shardIdentifier);
     	}
-    	const Record * record;
+    	~ShardInsertUpdateArgs(){
+    		if(record != NULL){
+    			delete record;
+    		}
+    	}
+    	Record * record;
     	Srch2Server * server;
     	CommandStatus::ShardResults * shardResults;
     };

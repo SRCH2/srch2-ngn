@@ -36,6 +36,17 @@ struct StoredRecordBuffer {
   boost::shared_ptr<const char> start;
   size_t length;
   StoredRecordBuffer() { start.reset(); length = 0; }
+  StoredRecordBuffer(const StoredRecordBuffer & copy){
+	  start = copy.start;
+	  length = copy.length;
+  }
+  StoredRecordBuffer & operator=(const StoredRecordBuffer & rhs){
+	  if(this != &rhs){
+		  start = rhs.start;
+		  length = rhs.length;
+	  }
+	  return *this;
+  }
   StoredRecordBuffer(const char* s, size_t l) {
 	  start.reset(s); length = l;
   }

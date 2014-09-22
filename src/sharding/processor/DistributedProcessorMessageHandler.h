@@ -191,6 +191,7 @@ private:
 						reqHandlerArgs->node, reqHandlerArgs->requestMessageId,
 						reqHandlerArgs->target, reqHandlerArgs->type,
 						reqHandlerArgs->clusterReadview);
+				delete (SearchCommand*)reqHandlerArgs->requestObj;
 				delete reqHandlerArgs;
 				return NULL;
 			case InsertUpdateCommandMessageType:
@@ -198,6 +199,7 @@ private:
 						reqHandlerArgs->node, reqHandlerArgs->requestMessageId,
 						reqHandlerArgs->target, reqHandlerArgs->type,
 						reqHandlerArgs->clusterReadview);
+				delete (InsertUpdateCommand*)reqHandlerArgs->requestObj;
 				delete reqHandlerArgs;
 				return NULL;
 			case DeleteCommandMessageType:
@@ -205,6 +207,7 @@ private:
 						reqHandlerArgs->node, reqHandlerArgs->requestMessageId,
 						reqHandlerArgs->target, reqHandlerArgs->type,
 						reqHandlerArgs->clusterReadview);
+				delete (DeleteCommand*)reqHandlerArgs->requestObj;
 				delete reqHandlerArgs;
 				return NULL;
 			case SerializeCommandMessageType:
@@ -212,6 +215,7 @@ private:
 						reqHandlerArgs->node, reqHandlerArgs->requestMessageId,
 						reqHandlerArgs->target, reqHandlerArgs->type,
 						reqHandlerArgs->clusterReadview);
+				delete (SerializeCommand*)reqHandlerArgs->requestObj;
 				delete reqHandlerArgs;
 				return NULL;
 			case GetInfoCommandMessageType:
@@ -219,6 +223,7 @@ private:
 						reqHandlerArgs->node, reqHandlerArgs->requestMessageId,
 						reqHandlerArgs->target, reqHandlerArgs->type,
 						reqHandlerArgs->clusterReadview);
+				delete (GetInfoCommand*)reqHandlerArgs->requestObj;
 				delete reqHandlerArgs;
 				return NULL;
 			case CommitCommandMessageType:
@@ -226,6 +231,7 @@ private:
 						reqHandlerArgs->node, reqHandlerArgs->requestMessageId,
 						reqHandlerArgs->target, reqHandlerArgs->type,
 						reqHandlerArgs->clusterReadview);
+				delete (CommitCommand*)reqHandlerArgs->requestObj;
 				delete reqHandlerArgs;
 				return NULL;
 			case ResetLogCommandMessageType:
@@ -233,6 +239,7 @@ private:
 						reqHandlerArgs->node, reqHandlerArgs->requestMessageId,
 						reqHandlerArgs->target, reqHandlerArgs->type,
 						reqHandlerArgs->clusterReadview);
+				delete (ResetLogCommand*)reqHandlerArgs->requestObj;
 				delete reqHandlerArgs;
 				return NULL;
 			default:
