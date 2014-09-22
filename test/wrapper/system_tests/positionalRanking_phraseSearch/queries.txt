@@ -1,3 +1,3 @@
-%22sue%20alligator%22~100||3 2 1
+"sue alligator"~100||3 2 1
 "foo bar"~1000||6 5 4
 "quick fox"~1000||10 9 8 7

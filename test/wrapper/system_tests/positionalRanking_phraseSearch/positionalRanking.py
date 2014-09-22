@@ -17,7 +17,7 @@ def checkResult(query, responseJson,resultValue):
     if  len(responseJson) == len(resultValue):
         for i in range(0, len(resultValue)):
             #print response_json['results'][i]['record']['id']
-            if (resultValue.count(responseJson[i]['record']['id']) != 1):
+            if (resultValue[i] != responseJson[i]['record']['id']):
                 isPass=0
                 print query+' test failed'
                 print 'query results||given results'
