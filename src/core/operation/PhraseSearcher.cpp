@@ -18,9 +18,9 @@ namespace instantsearch {
 
 template <class T>
 void printVector(const vector<T>& v);
-
+//10000 is the max slop value
 PhraseSearcher::PhraseSearcher() {
-    slopThreshold = 100;
+    slopThreshold = 10000;
 }
 /*
  *  The function determines whether it is an exact match for the given phrase. The function
@@ -40,7 +40,7 @@ PhraseSearcher::PhraseSearcher() {
  */
 bool PhraseSearcher::exactMatch(const vector<vector<unsigned> > &positionListVector,
                                 const vector<unsigned>& keyWordPositionsInPhrase,
-                                vector<vector<unsigned> >& matchedPositions, bool stopAtFirstMatch = true) {
+                                vector<vector<unsigned> >& matchedPositions,vector<unsigned>& listOfSlops, bool stopAtFirstMatch = true) {
     bool searchDone = false;
     bool matchFound = false;
     unsigned prevKeyWordPosition = 0;
@@ -124,6 +124,9 @@ bool PhraseSearcher::exactMatch(const vector<vector<unsigned> > &positionListVec
             	//matchedPosition.push_back(cursorPosition[i]);
             }
             matchedPositions.push_back(matchedPosition);
+            //slop for exact phrase match is always 0
+            int slop = 0;
+            listOfSlops.push_back(slop);
             if (stopAtFirstMatch)
             	return true;  // match found
             atleastOneMatchFound = true;
@@ -149,7 +152,7 @@ bool PhraseSearcher::exactMatch(const vector<vector<unsigned> > &positionListVec
  */
 bool PhraseSearcher::proximityMatch(const vector<vector<unsigned> >& positionListVector,
                     const vector<unsigned>& offsetsInPhrase, unsigned inputSlop,
-                    vector<vector<unsigned> >& matchedPositions, bool stopAtFirstMatch = true)
+                    vector<vector<unsigned> >& matchedPositions, vector<unsigned>& listOfSlops, bool stopAtFirstMatch = true)
 {
     // pre-conditions
 
@@ -210,6 +213,7 @@ bool PhraseSearcher::proximityMatch(const vector<vector<unsigned> >& positionLis
         	matchedPosition.push_back(pos);
         }
         if ((signed)inputSlop >= getPhraseSlop(offsetsInPhrase, matchedPosition)) {
+            listOfSlops.push_back(getPhraseSlop(offsetsInPhrase, matchedPosition));
         	matchedPositions.push_back(matchedPosition);
         	if (stopAtFirstMatch)
         		return true;
@@ -227,7 +231,6 @@ bool PhraseSearcher::proximityMatch(const vector<vector<unsigned> >& positionLis
         minHeap.pop();
         minHeap.push(make_pair( next, currentListIndex));
     }
-
     return atleasFoundOneMatch;
 }
 

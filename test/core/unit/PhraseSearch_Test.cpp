@@ -66,6 +66,7 @@ int main(int argc, char **argv)
 
 void exactMatchTest1()
 {
+    vector<unsigned> listOfSlops;
     vector<vector<unsigned> > plv;
     vector<unsigned> l1;
     l1.push_back(2);l1.push_back(5);l1.push_back(7);l1.push_back(11);l1.push_back(77);
@@ -86,7 +87,7 @@ void exactMatchTest1()
     {
     	kpp.push_back(i);
     }
-    bool result = ps->exactMatch(plv, kpp, mvp, true);
+    bool result = ps->exactMatch(plv, kpp, mvp, listOfSlops, true);
     ASSERT(result);
 
 }
@@ -96,6 +97,7 @@ void exactMatchTest1()
  */
 void exactMatchTest2()
 {
+    vector<unsigned> listOfSlops;
     vector<vector<unsigned> > plv;
     vector<unsigned> l1;
     l1.push_back(2);l1.push_back(5);l1.push_back(7);l1.push_back(11);l1.push_back(15);l1.push_back(77);
@@ -119,7 +121,7 @@ void exactMatchTest2()
     {
     	kpp.push_back(i);
     }
-    bool result = ps->exactMatch(plv, kpp, mvp, true);
+    bool result = ps->exactMatch(plv, kpp, mvp, listOfSlops, true);
     ASSERT(result);
 
 }
@@ -197,7 +199,8 @@ bool callExactMatch(vector<string>& inpKeywords, map<std::string, std::vector<un
 			kpp.push_back(j);
 		}
 	    vector<vector<unsigned> > matchedPositions;
-		bool match = ps->exactMatch(positionListVector, kpp, matchedPositions, true);
+	    vector<unsigned> listOfSlops;
+		bool match = ps->exactMatch(positionListVector, kpp, matchedPositions, listOfSlops, true);
 		if (match)
 		{
 			for (unsigned i=0; i < matchedPositions.size(); ++i)
@@ -273,7 +276,8 @@ bool callProximityMatch(const vector<string>& query,unsigned slop, const vector<
 	{
 		kpp.push_back(j);
 	}
-	bool match = ps->proximityMatch(positionListVector, kpp, slop, matchedPositions, true);
+	vector<unsigned> listOfSlops;
+	bool match = ps->proximityMatch(positionListVector, kpp, slop, matchedPositions, listOfSlops, true);
 	if (match)
 	{
 		cout << "match found at position - " << endl;
