@@ -268,7 +268,7 @@ bool PhraseSearchOperator::matchPhrase(const ForwardList* forwardListPtr, const 
 
     return result;
 }
-//Positional score: static score * phrase frequency (phrase frequency is a function of slop factor)
+//Positional score: record's static score * phrase frequency (phrase frequency is a function of slop factor)
 float PhraseSearchOperator::computePositionalScore(float staticScore, vector<unsigned>& listOfSlops){
 
     float sum = 0;

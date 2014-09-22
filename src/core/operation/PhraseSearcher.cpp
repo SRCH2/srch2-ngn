@@ -37,10 +37,13 @@ PhraseSearcher::PhraseSearcher() {
  *  q1 = "psychological horror"  is an exact match
  *  q2 = "psychological film" is not an exact match
  *  q3 = "Shining 1980" is not an exact match even if analyzer drops stop words (is, a)
+ *
+ *  Also, listOfSlops vector present in the argument gets initialized with slop values
+ *  of all the phrase found in the record if stopAtFirstMatch is set to false.
  */
 bool PhraseSearcher::exactMatch(const vector<vector<unsigned> > &positionListVector,
                                 const vector<unsigned>& keyWordPositionsInPhrase,
-                                vector<vector<unsigned> >& matchedPositions,vector<unsigned>& listOfSlops, bool stopAtFirstMatch = true) {
+                                vector<vector<unsigned> >& matchedPositions, vector<unsigned>& listOfSlops, bool stopAtFirstMatch = true) {
     bool searchDone = false;
     bool matchFound = false;
     unsigned prevKeyWordPosition = 0;
@@ -147,6 +150,9 @@ bool PhraseSearcher::exactMatch(const vector<vector<unsigned> > &positionListVec
  *  and edit distance (slop) in a positionlistVector. MatchedPosition return
  *  first occurrence of proximity match.
  *
+ *  Also, listOfSlops vector present in the argument gets initialized with slop values
+ *  of all the phrase found in the record if stopAtFirstMatch is set to false.
+ *
  *  See getPhraseSlop function below for more detail.
  *
  */
@@ -209,15 +215,15 @@ bool PhraseSearcher::proximityMatch(const vector<vector<unsigned> >& positionLis
     	// clear the matchedPosition vector in case we loop back
         matchedPosition.clear();
         for (unsigned i =0; i < positionListVector.size(); ++i){
-        	unsigned pos = positionListVector[i][cursors[i]];
-        	matchedPosition.push_back(pos);
+            unsigned pos = positionListVector[i][cursors[i]];
+            matchedPosition.push_back(pos);
         }
         if ((signed)inputSlop >= getPhraseSlop(offsetsInPhrase, matchedPosition)) {
             listOfSlops.push_back(getPhraseSlop(offsetsInPhrase, matchedPosition));
-        	matchedPositions.push_back(matchedPosition);
-        	if (stopAtFirstMatch)
-        		return true;
-        	atleasFoundOneMatch = true;
+            matchedPositions.push_back(matchedPosition);
+            if (stopAtFirstMatch)
+                return true;
+            atleasFoundOneMatch = true;
         }
 
         unsigned currentListIndex = minHeap.top().second;

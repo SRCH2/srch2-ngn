@@ -183,37 +183,37 @@ bool buildPositionIndexes(const char * testFIle, map<std::string, std::vector<un
 
 bool callExactMatch(vector<string>& inpKeywords, map<std::string, std::vector<unsigned> >& piMap)
 {
-		vector<vector<unsigned> > positionListVector;
-		vector<unsigned> kpp;
-		typedef map<std::string, std::vector<unsigned> >::iterator piMapIter;
-		for (unsigned j =0; j < inpKeywords.size(); ++j)
-		{
-			string& tkn =  inpKeywords[j];
-			piMapIter iter =  piMap.find((tkn));
-			if (iter == piMap.end())
-			{
-				cout << "not found" << endl;
-				return false;
-			}
-			positionListVector.push_back(iter->second);
-			kpp.push_back(j);
-		}
-	    vector<vector<unsigned> > matchedPositions;
-	    vector<unsigned> listOfSlops;
-		bool match = ps->exactMatch(positionListVector, kpp, matchedPositions, listOfSlops, true);
-		if (match)
-		{
-			for (unsigned i=0; i < matchedPositions.size(); ++i)
-				cout << matchedPositions[0][i] << " ";
+    vector<vector<unsigned> > positionListVector;
+    vector<unsigned> kpp;
+    typedef map<std::string, std::vector<unsigned> >::iterator piMapIter;
+    for (unsigned j =0; j < inpKeywords.size(); ++j)
+    {
+        string& tkn =  inpKeywords[j];
+        piMapIter iter =  piMap.find((tkn));
+        if (iter == piMap.end())
+        {
+            cout << "not found" << endl;
+            return false;
+        }
+        positionListVector.push_back(iter->second);
+        kpp.push_back(j);
+    }
+    vector<vector<unsigned> > matchedPositions;
+    vector<unsigned> listOfSlops;
+    bool match = ps->exactMatch(positionListVector, kpp, matchedPositions, listOfSlops, true);
+    if (match)
+    {
+        for (unsigned i=0; i < matchedPositions.size(); ++i)
+            cout << matchedPositions[0][i] << " ";
 
-			cout << endl;
-			return true;
-		}
-		else
-		{
-			cout << "not found" << endl;
-			return false;
-		}
+        cout << endl;
+        return true;
+    }
+    else
+    {
+        cout << "not found" << endl;
+        return false;
+    }
 }
 
 void proximityTest(map<std::string, std::vector<unsigned> >& piMap) {

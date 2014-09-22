@@ -21,11 +21,11 @@ class PhraseSearcher {
 public:
     PhraseSearcher();
     bool exactMatch (const vector<vector<unsigned> > &positionListVector,
-    				 const vector<unsigned>& keyWordPositionsInPhrase,
-                      vector<vector<unsigned> >& matchedPositions,vector<unsigned>& listOfSlops, bool stopAtFirstMatch);
+            const vector<unsigned>& keyWordPositionsInPhrase,
+            vector<vector<unsigned> >& matchedPositions,vector<unsigned>& listOfSlops, bool stopAtFirstMatch);
     bool proximityMatch(const vector<vector<unsigned> >& positionListVector,
-                        const vector<unsigned>& offsetsInPhrase, unsigned inputSlop,
-                        vector< vector<unsigned> >& matchedPosition,vector<unsigned>& listOfSlops, bool stopAtFirstMatch);
+            const vector<unsigned>& offsetsInPhrase, unsigned inputSlop,
+            vector< vector<unsigned> >& matchedPosition,vector<unsigned>& listOfSlops, bool stopAtFirstMatch);
     signed  getPhraseSlop(const vector<unsigned>& query,
     		const vector<unsigned>& record);
     // CODE NOT IN USE
