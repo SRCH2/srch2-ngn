@@ -1,0 +1,384 @@
+<?xml version="1.0" encoding="UTF-8" standalone="yes"?>
+<!--
+    Configuration file for SRCH2 search server. Please email
+    contact@srch2.com if you have questions.
+    In this documment, "attribute" and "field" are used interchangeably.
+-->
+ 
+<config>
+    <!--
+        SRCH2 Home directory 
+        Required
+         
+        This directory is going to be your srch2 home's directory.
+        All other paths HAVE to be reletive to this path.
+        For Example:
+            To have "/usr/share/srch2/" as srch2 home directory, you should have the following line
+            <srch2Home>/usr/share/srch2/</srch2Home>
+             
+        All other paths in this conif file have to be relative to this path.
+        For Example:
+            If your data file is inside srch2 home directory, having the following absolute path
+            "/usr/share/srch2/data/sample-data.json"
+            In this config file it should be as "data/sample-data.json"
+    -->
+    <cluster-name>SRCH2-Cluster-sb</cluster-name>
+
+    <srch2Home>./</srch2Home>
+ 
+    <ping>
+        <ping-interval>2</ping-interval>
+        <ping-timeout>8</ping-timeout>
+        <retry-count>10</retry-count>
+    </ping>
+
+    <transport> 
+        <port>6008</port>
+        <ipaddress>0.0.0.0</ipaddress>
+    </transport>
+   
+      <!--
+        License Key File
+        Required
+         
+        Email contact@srch2.com to get a key file.  
+        Make sure to set the variable to the SRCH2 license key file.
+    -->
+    <licenseFile>../../wrapper/conf/srch2_license_key.txt</licenseFile>
+ 
+    <!--
+        Hostname and Port Number
+        Required
+         
+        Hostname and port number of the server. Make sure the port is open.
+    -->
+    <listeningHostname>0.0.0.0</listeningHostname>
+    <listeningPort>6009</listeningPort>
+    	
+    <maxSearchThreads>1</maxSearchThreads>
+        <cores defaultCoreName="core1">
+        <core name="core1">
+        <coreId>1</coreId>
+        <core-number_of_shards>8</core-number_of_shards> 
+	<core-number_of_replicas>1</core-number_of_replicas>
+
+    <!--
+        Index Directoy Path
+        Required
+     
+        The file path to the folder where we store serialized index files.
+        REQUIRED, when "index-load-or-create" is set to 1.
+    -->
+    <dataDir>./index/</dataDir>
+     
+    <!--
+        Data File
+        Required if "indexLoadCreate" is set to 0
+         
+        Path for a data file to be loaded. The file must be in the json format.
+        REQUIRED, when "index-load-or-create" is set to 0.
+    -->
+    <dataFile>./movie-data-2.json</dataFile>
+     
+    <!--
+	Maximum Number of Threads
+	Optional
+	
+	Number of threads that serve the requests.
+	Defaults to 1
+    -->
+     
+         
+    <indexConfig>
+         <enablePositionIndex>1</enablePositionIndex>
+                <enableCharOffsetIndex>1</enableCharOffsetIndex>
+         
+        <!--
+            Index Type
+            Required
+             
+                0: Text Index
+                1: Geo+Text Index
+        -->
+        <indexType>0</indexType>
+        
+		<!--
+            0: don't support swap operation in edit distance
+            1: support swap operation in edit distance
+            default value is true
+        -->
+        <supportSwapInEditDistance>false</supportSwapInEditDistance> 
+         
+        <!--
+            Boost Values
+            Optional
+         
+            Boost values for searchable attributes. A boost value is in the range [1,100].
+            If the value is outside the range, it will be set to 100. 
+            Specify the boost values as comma separated entries. 
+            For Example, the boosts for three searchable attributes can be specified as
+                <fieldBoost>relevance^10 name^7 title</fieldBoost>
+                - fields are sparated by one space
+                - if you do not provide any value for a field, it will be considered as 1
+        -->
+        <fieldBoost>title^2 director^1</fieldBoost>
+         
+         
+        <!-- 
+            Record Boost Field
+            Optional
+             
+            Attribute used as the boost value of a record.
+            Need to be float type in the json objects in the data file.
+        <recordBoostField>relevance</recordBoostField>
+        -->
+         
+         
+        <!--
+            Default Query Term Boost
+            Optional
+             
+            Default query term boost
+            Defaults to 1
+        -->
+        <defaultQueryTermBoost>1</defaultQueryTermBoost>
+         
+    </indexConfig>
+  
+  
+  
+  
+    <query>
+        <!-- 
+            Ranking Algorithm
+         
+         
+            The following comments and parameters are related to ranking.  
+            Please see http://www.srch2.com/download.html for ranking-related information
+            #record-score-expression=doc_boost+(1/(doc_length+1))
+            record-score-expression=idf_score*doc_boost
+        -->
+        <rankingAlgorithm>
+            <recordScoreExpression>idf_score*doc_boost</recordScoreExpression>
+        </rankingAlgorithm>
+ 
+        <!--
+            Query Term Fuzzy Penalty
+            Optional
+             
+            Defaults to 1
+        -->
+        <fuzzyMatchPenalty>0.5</fuzzyMatchPenalty>
+         
+        <!--
+            Query Term Length Boost
+            Optional
+             
+            Defaults to 0.5
+        -->
+        <queryTermLengthBoost>0.5</queryTermLengthBoost>
+         
+         
+        <!--
+            Prefix Match Penalty
+            Optional
+             
+            Penalty for a prefix match.  This value is used to multiply the score of record for a term.
+            The value should be in the range of 0 to 1
+            Defaults to 0.95
+        -->
+        <prefixMatchPenalty>0.95</prefixMatchPenalty>
+ 
+        <!--
+            Cache Size
+            Optional
+             
+            Number of bytes in the cache. It should be in the range [50MB, 500MB].
+            Its default value is 50MB.
+        -->
+        <cacheSize>65536000</cacheSize>
+        <!--
+            Rows
+            Optional
+             
+            Number of results to retrieve
+            Defaults to 10.
+        -->
+        <rows>10</rows>
+        <!--
+            Field Based Search
+            Optional
+             
+            Flag to indicate whether the attribute-based search is supported.
+                0 - Disable
+                1 - Enable
+            Note that to support field-based search, the number of searchable attributes cannot be bigger than 31.
+        -->
+        <fieldBasedSearch>0</fieldBasedSearch>
+         
+         
+        <!-- 
+            Searcher Type
+            Optional
+         
+            in the query result
+                0 if topk,
+                1 if advanced
+             
+            Defaults to 0
+        -->
+        <searcherType>0</searcherType>
+         
+        <!--
+            Query Term Match Type
+            Optional
+             
+            0: exact match
+            1: fuzzy match
+            Defaults to 0
+        -->
+        <queryTermFuzzyType>0</queryTermFuzzyType>
+         
+                     
+             
+        <!--
+            Query Term Type
+            Optional
+             
+                     
+            0: a term is treated as a prefix;
+            1: a term is treated as a complete term;
+            Defaults to 0
+        -->
+        <queryTermPrefixType>0</queryTermPrefixType>
+ 
+         
+        <queryResponseWriter>
+            <!--
+                Response Format
+                Optional
+                 
+                0: JSON
+                1: JSONP           
+                Defaults to 0
+            -->
+            <responseFormat>0</responseFormat>
+             
+             
+            <!--
+                Response Content
+                Optionl
+                 
+                 
+                Format of each json search response.
+                You should set the type by one of the following options:
+                    0: format "rid,edit_dist,matching_prefix,in_memory_record";
+                    1: format "rid,edit_dist,matching_prefix".
+                    2: format "rid,edit_dist,matching_prefix,feilds_to_return".
+                Defaults to 0
+                It is REQUIRED to set fields_to_return if search-response-format=2
+                These are attributes returned to the user.
+                For Example:
+                    <responseContent type="2">lat,lng</responseContent>
+            -->
+            <responseContent type="0"></responseContent>
+             
+        </queryResponseWriter>
+    </query>
+  
+    <updatehandler>
+        <!--
+            Maximum Number of Documents
+            Required
+             
+            Maximum number of records that can be inserted into the engine.
+            The number depends on the size of each record and the available memory
+         -->
+        <maxDocs>15000000</maxDocs>
+ 
+        <!--
+            Maximum Number of Documents
+            Required
+             
+            Maximum size of memory that can be used.
+        -->
+        <maxMemory>100000</maxMemory>
+             
+        <!--
+            Merge Policies
+            Required
+             
+            mergeEveryNSeconds:
+            The number of seconds after which newly inserted/deleted records are merged into the indexes.
+            Its minimum value is 10 (seconds).
+            mergeEveryMWrites:
+            The number of write operations after which newly inserted/deleted records are merged into the indexes.
+        -->
+        <mergePolicy>
+          <mergeEveryNSeconds>1</mergeEveryNSeconds>
+          <mergeEveryMWrites>1</mergeEveryMWrites>
+        </mergePolicy>
+         
+         
+        <updateLog>
+            <!-- 
+                Log Level
+                Optional
+                 
+                Log level
+                    0 SILENT
+                    1 ERROR
+                    2 WARN
+                    3 INFO
+                Defaults to 3 INFO
+            -->
+            <logLevel>4</logLevel>
+                         
+            <!--
+                Access Log File
+                Required
+                 
+                Path to Access Log File
+            -->
+            <accessLogFile>./logs/log.txt</accessLogFile>
+        </updateLog>
+     
+    </updatehandler>
+    <schema name="SRCH2" version="3">
+       <fields>
+          <field name="title" type="text" indexed="true" highlight="true" />
+          <field name="director" type="text" indexed="true"/>
+          <field name="genre" type="text" indexed="true"
+                 default="HORROR" required="false"/>
+          <field name="year" type="integer" indexed="false" refining="true"
+                 default="2000" required="false"/>
+          <field name="id" type="text" refining="true" indexed="false"/>
+       </fields>
+
+       <uniqueKey>id</uniqueKey>
+
+       <facetEnabled>true</facetEnabled>
+
+        <facetfields>
+         <facetField name="genre" facetType="categorical"/>
+          <facetField name="year"  facetType="range" facetStart="1990" facetEnd="2050" facetGap="10"/>
+        </facetfields>
+
+        <types>
+          <fieldType name="text_en">
+              <analyzer>
+
+                  <filter name="PorterStemFilter" dictionary="" />
+
+                  <filter name="StopFilter" words="" />
+
+              </analyzer>
+          </fieldType>
+       </types>
+    </schema>
+
+      </core>
+   </cores>
+</config>
+ 
+
