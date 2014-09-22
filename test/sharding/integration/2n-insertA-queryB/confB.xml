@@ -22,7 +22,7 @@
             "/usr/share/srch2/data/sample-data.json"
             In this config file it should be as "data/sample-data.json"
     -->
-    <srch2Home>/home/jamshid/workspace-srch2/srch2-ngn/test/sharding/integration</srch2Home>
+    <srch2Home>./</srch2Home>
     <cluster-name>SRCH2_Cluster</cluster-name>
 
 
@@ -32,7 +32,7 @@
         <retry-count>3</retry-count>
     </ping>
     <transport>
-        <port>3096</port>
+        <port>4096</port>
         <ipaddress>127.0.0.1</ipaddress>
     </transport>
 

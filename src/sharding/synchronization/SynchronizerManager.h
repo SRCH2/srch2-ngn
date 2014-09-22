@@ -37,6 +37,12 @@ class MessageHandler;
 class DiscoveryCallBack;
 class DiscoveryService;
 
+class NodeComparator {
+public:
+	bool operator() (const Node& lhs, const Node& rhs) { return (lhs.getId() < rhs.getId());}
+};
+
+
 /*
  *   Entry point for the synchronizer thread. void * => Synchronizer *
  */
@@ -102,6 +108,15 @@ private:
 	///  Private member functions start here.
 	///
 	/*
+	 *  Join existing cluster once the master is determined and current node id is received.
+	 *
+	 *  Called from :1.  Discovery Phase  2. Master relection phase.
+	 */
+	void joinExistingCluster(Node& node, bool isDiscoveryPhase = false);
+
+	NodeId getNextMasterEligbleNode();
+
+	/*
 	 *   fetch timeout interval for SM messages.
 	 */
 	unsigned getTimeout() { return pingTimeout; }
@@ -118,11 +133,6 @@ private:
 	 */
 	void route(NodeId node, Message *msg);
 
-	/*
-	 *   Check whether master node belongs to majority portion of the
-	 *   cluster.
-	 */
-	bool hasMajority();
 
 	///
 	///  Private member variables start here.
@@ -147,6 +157,8 @@ private:
 
 	boost::mutex localNodesCopyMutex;
 	vector<Node> localNodesCopy;
+	vector<Node> unreachableNodes;
+	bool hasMajority;
 	string serializeClusterNodes(){
 		localNodesCopyMutex.lock();
 		stringstream ss;
@@ -192,6 +204,8 @@ public:
 	 *  Get heartbeat message's timestamp.
 	 */
 	std::time_t getHeartBeatMessageTime();
+
+	void setHeartBeatMessageTime(std::time_t time);
 
 	/*
 	 *   Get queued message from a given node's queue
@@ -247,8 +261,11 @@ protected:
 };
 
 enum ClientNodeState {
-	MASTER_AVAILABLE,
-	MASTER_UNAVAILABLE
+	SM_MASTER_AVAILABLE,
+	SM_MASTER_UNAVAILABLE,
+	SM_PROPOSED_NEW_MASTER,
+	SM_WAITING_FOR_VOTES,
+	SM_ELECTED_AS_MASTER
 };
 
 /*
@@ -272,26 +289,23 @@ public:
 	virtual void handleMessage(Message *message) ;
 
 private:
-	void startMasterElection();
+
+	void handleNodeFailure(NodeId nodeId);
+
+	void startMasterElection(NodeId oldMasterNodeId);
 
 	void processHeartBeat(Message *message);
 
-	void handleElectionRequest(Message *message);
-
-	void handleMasterProposalReject(Message *message) {
-		// Proposed master rejected the message. Possible reasons.
-		// 1. May be it was not eligible for master
-		// 2. It already has a master
-		// 3. Could not find enough vote in a given time to be elected as master.
-		// For V0 do nothing  TODO: v1
-		ASSERT(false);
-	}
-	void updateClusterState(Message *message);
+	void handleElectionRequest();
 
 	ClientNodeState nodeState;
 	MessageAllocator cMessageAllocator;
 	bool itselfInitiatedMasterElection;
-	std::set<unsigned> voters;
+	std::set<unsigned> masterElectionProposers;
+
+	NodeId expectedMasterNodeId;
+	std::string masterUnavailbleReason;
+	unsigned proposalInitationTime;
 };
 
 class MasterMessageHandler : public MessageHandler{

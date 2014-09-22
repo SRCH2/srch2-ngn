@@ -22,13 +22,14 @@ namespace srch2 {
 namespace httpwrapper {
 
 UnicastDiscoveryService::UnicastDiscoveryService(UnicastDiscoveryConfig& config,
-		SyncManager *syncManager): DiscoveryService(syncManager), discoveryConfig(config) {
+		SyncManager *syncManager): DiscoveryService(syncManager, config.clusterName), discoveryConfig(config) {
 	listenSocket = -1;
 	sendSocket = -1;
 	_discoveryDone = false;
 	matchedKnownHostIp = "";
 	// throws exception if validation failed.
 	validateConfigSettings(discoveryConfig);
+	skipInitialDiscovery = false;
 }
 
 void UnicastDiscoveryService::validateConfigSettings(UnicastDiscoveryConfig& config) {
@@ -41,7 +42,7 @@ void UnicastDiscoveryService::validateConfigSettings(UnicastDiscoveryConfig& con
 		memset(&networkIpAddress, 0, sizeof(networkIpAddress));
 		if (inet_aton(this->discoveryConfig.knownHosts[i].ipAddress.c_str(), &networkIpAddress) == 0) {
 			std::stringstream ss;
-			ss << " Invalid Known Host Address = " << this->discoveryConfig.knownHosts[0].ipAddress;
+			ss << " Invalid Known Host Address = " << this->discoveryConfig.knownHosts[i].ipAddress;
 			Logger::console(ss.str().c_str());
 			throw std::runtime_error(ss.str());
 		}
@@ -50,14 +51,27 @@ void UnicastDiscoveryService::validateConfigSettings(UnicastDiscoveryConfig& con
 			continue;
 		}
 
+		if (this->discoveryConfig.knownHosts[i].port == -1) {
+			this->discoveryConfig.knownHosts[i].port = unicastDiscoveryDefaultPort;
+		}
+
 		knownHostsValidatedAddresses.push_back(this->discoveryConfig.knownHosts[i]);
-		const string& ipAddress = this->discoveryConfig.knownHosts[i].ipAddress;
-		if (matchedKnownHostIp == "" &&
-		    (std::find(allIpAddresses.begin(), allIpAddresses.end(), ipAddress) != allIpAddresses.end())) {
-			//Logger::console("current host is one of the known host");
+
+		if (networkIpAddress.s_addr == htonl(INADDR_LOOPBACK) && matchedKnownHostIp == "") {
+			// if well-known host is set to 127.0.0.1, then the current node is well known host
+			// this setting should be used only for
 			isWellKnownHost = true;
 			matchedKnownHostIp = this->discoveryConfig.knownHosts[i].ipAddress;
 			matchedKnownHostPort = this->discoveryConfig.knownHosts[i].port;
+		} else {
+			const string& ipAddress = this->discoveryConfig.knownHosts[i].ipAddress;
+			if (matchedKnownHostIp == "" &&
+					(std::find(allIpAddresses.begin(), allIpAddresses.end(), ipAddress) != allIpAddresses.end())) {
+				//Logger::console("current host is one of the known host");
+				isWellKnownHost = true;
+				matchedKnownHostIp = this->discoveryConfig.knownHosts[i].ipAddress;
+				matchedKnownHostPort = this->discoveryConfig.knownHosts[i].port;
+			}
 		}
 	}
 }
@@ -68,6 +82,9 @@ void UnicastDiscoveryService::sendJoinRequest(const string& knownHost, unsigned 
 	message.flag = DISCOVERY_JOIN_CLUSTER_REQ;
 	message.interfaceNumericAddress = getTransport()->getPublishedInterfaceNumericAddr();
 	message.internalCommunicationPort = getTransport()->getCommunicationPort();
+
+	unsigned byteToCopy = this->clusterIdentifier.size() > 99 ? 99 : this->clusterIdentifier.size();
+	strncpy(message.clusterIdent, this->clusterIdentifier.c_str(), byteToCopy);
 
 	struct sockaddr_in destinationAddress;
 	memset(&destinationAddress, 0, sizeof(destinationAddress));
@@ -127,7 +144,7 @@ tryNextPort:
 			exit(-1);
 		}
 	}
-	this->matchedKnownHostPort = portToBind;
+	this->discoveryPort = portToBind;
 
 	Logger::console("Discovery UDP listen socket binding done on %d", portToBind);
 
@@ -138,21 +155,27 @@ void UnicastDiscoveryService::init() {
 
 	if (this->matchedKnownHostIp == "") {
 		matchedKnownHostIp = getTransport()->getPublisedInterfaceAddress();
-		matchedKnownHostPort = getTransport()->getCommunicationPort();
-		Logger::console("setting discovery ip:port = %s:%d", getTransport()->getPublisedInterfaceAddress().c_str(),
-				getTransport()->getCommunicationPort());
+		matchedKnownHostPort = unicastDiscoveryDefaultPort;
 	}
+	Logger::console("Discovery ip:port = %s:%d", matchedKnownHostIp.c_str(), matchedKnownHostPort);
 	listenSocket = openListeningChannel();
 	sendSocket = listenSocket;  // we use same socket for sending/receiving.
 
-	pthread_t unicastListenerThread;
+	_discoveryDone = false;
+
 	// start a thread to listen for incoming data packet.
-	pthread_create(&unicastListenerThread, NULL, unicastListener, this);
-	pthread_detach(unicastListenerThread);
+	startDiscoveryThread();
 
 	while(!_discoveryDone) {
 		sleep(1);
 	}
+}
+
+void UnicastDiscoveryService::reInit() {
+
+	listenSocket = openListeningChannel();
+	sendSocket = listenSocket;  // we use same socket for sending/receiving.
+	startDiscoveryThread(true); // start a thread to listen for incoming data packet.
 }
 
 void * unicastListener(void * arg) {
@@ -168,6 +191,8 @@ void * unicastListener(void * arg) {
 	char * buffer = (char *)&message;
 	unsigned bufferLen = sizeof(message);
 
+	if (!discovery->skipInitialDiscovery) {
+
 	bool shouldElectItselfAsMaster = true;//discovery->isWellKnownHost;
 	bool masterDetected = false;
 
@@ -175,7 +200,7 @@ void * unicastListener(void * arg) {
 InitialDiscovery:
 	for (unsigned i = 0 ; i < knownHosts.size(); ++i) {
 		if (knownHosts[i].ipAddress.compare(discovery->matchedKnownHostIp) == 0 &&
-			knownHosts[i].port == discovery->matchedKnownHostPort)
+			knownHosts[i].port == discovery->discoveryPort)
 			continue;
 		Logger::console("sending joing request");
 		discovery->sendJoinRequest(knownHosts[i].ipAddress, knownHosts[i].port);
@@ -194,6 +219,9 @@ InitialDiscovery:
 				ASSERT(false);
 				//checkSocketIsReady(listenSocket, true);
 				//Logger::console("loopback message ...continuing");
+				continue;
+			} if (!discovery->isCurrentClusterMessage(message)) {
+				Logger::console("message from different network using same multicast setting...continuing");
 				continue;
 			} else {
 				switch(message.flag)
@@ -230,7 +258,7 @@ InitialDiscovery:
 
 							for (unsigned i = 0 ; i < knownHosts.size(); ++i) {
 								if (knownHosts[i].ipAddress.compare(discovery->matchedKnownHostIp) == 0 &&
-										knownHosts[i].port == discovery->matchedKnownHostPort)
+										knownHosts[i].port == discovery->discoveryPort)
 									continue;
 								discovery->sendJoinRequest(knownHosts[i].ipAddress, knownHosts[i].port);
 							}
@@ -244,6 +272,10 @@ InitialDiscovery:
 							yeildMessage.internalCommunicationPort = discovery->getTransport()->getCommunicationPort();
 							yeildMessage.masterNodeId = -1;
 							yeildMessage.nodeId = -1;
+
+							unsigned byteToCopy = discovery->clusterIdentifier.size() > 99 ? 99 : discovery->clusterIdentifier.size();
+							strncpy(message.clusterIdent, discovery->clusterIdentifier.c_str(), byteToCopy);
+
 							tryYieldMsgAgain:
 							int sendStatus = sendUDPPacketToDestination(discovery->sendSocket, (char *)&yeildMessage,
 									sizeof(yeildMessage), senderAddress);
@@ -266,7 +298,7 @@ InitialDiscovery:
 					sleep(DISCOVERY_YIELD_WAIT_SECONDS);
 					for (unsigned i = 0 ; i < knownHosts.size(); ++i) {
 						if (knownHosts[i].ipAddress.compare(discovery->matchedKnownHostIp) == 0 &&
-								knownHosts[i].port == discovery->matchedKnownHostPort)
+								knownHosts[i].port == discovery->discoveryPort)
 							continue;
 						discovery->sendJoinRequest(knownHosts[i].ipAddress, knownHosts[i].port);
 					}
@@ -299,6 +331,8 @@ InitialDiscovery:
 		discovery->getSyncManager()->setCurrentNodeId(message.nodeId);
 		discovery->getSyncManager()->setMasterNodeId(message.masterNodeId);
 		discovery->_discoveryDone = true;
+
+		close(listenSocket);
 		return NULL;
 	}
 	//master was not detected and we had timeout in the discovery loop
@@ -312,6 +346,7 @@ InitialDiscovery:
 	unsigned masterNodeID = discovery->getSyncManager()->getNextNodeId();
 	discovery->getSyncManager()->setCurrentNodeId(masterNodeID);
 	discovery->getSyncManager()->setMasterNodeId(masterNodeID);
+    }
 	discovery->_discoveryDone = true;
 
 	// Make the listening socket blocking now.
@@ -320,6 +355,7 @@ InitialDiscovery:
 	fcntl(listenSocket, F_SETFL, val);
 
 	while(!discovery->shutdown) {
+		Logger::console("discovering new nodes");
 		memset(&senderAddress, 0, sizeof(senderAddress));
 		memset(&message, 0, sizeof(message));
 
@@ -333,6 +369,9 @@ InitialDiscovery:
 			if (discovery->isLoopbackMessage(message)) {
 				ASSERT(false);
 				//Logger::console("loopback message ...continuing");
+				continue;
+			} if (!discovery->isCurrentClusterMessage(message)) {
+				Logger::console("message from different network using same multicast setting...continuing");
 				continue;
 			} else {
 				switch(message.flag)
@@ -357,6 +396,10 @@ InitialDiscovery:
 					ackMessage.masterNodeId = discovery->getSyncManager()->getCurrentNodeId();
 					ackMessage.nodeId = discovery->getSyncManager()->getNextNodeId();
 					ackMessage.ackMessageIdentifier = message.internalCommunicationPort;
+
+					unsigned byteToCopy = discovery->clusterIdentifier.size() > 99 ? 99 : discovery->clusterIdentifier.size();
+					strncpy(message.clusterIdent, discovery->clusterIdentifier.c_str(), byteToCopy);
+
 					tryAckAgain:
 					// send multicast acknowledgment
 					struct sockaddr_in destinationAddress;
@@ -390,6 +433,7 @@ InitialDiscovery:
 			ASSERT(false);
 		}
 	}
+	close(listenSocket);
 	return NULL;
 }
 

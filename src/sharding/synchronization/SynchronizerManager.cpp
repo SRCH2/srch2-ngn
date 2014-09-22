@@ -53,7 +53,9 @@ SyncManager::SyncManager(ConfigManager& cm, TransportManager& tm) :
 	for (unsigned i = 0; i < wellknownHosts.size(); ++i) {
 		unicastdiscoverConf.knownHosts.push_back(HostAndPort(wellknownHosts[i].first,wellknownHosts[i].second));
 	}
+	unicastdiscoverConf.clusterName = config.getClusterName();
 
+	multicastdiscoverConf.clusterName = config.getClusterName();
 	multicastdiscoverConf.multicastPort = config.getMulticastDiscovery().getPort();
 	multicastdiscoverConf.multiCastAddress = config.getMulticastDiscovery().getGroupAddress();
 	multicastdiscoverConf.multicastInterface = config.getMulticastDiscovery().getIpAddress();
@@ -82,10 +84,6 @@ void * dispatchMasterMessageHandler(void *arg);
 void SyncManager::startDiscovery() {
 
 	Cluster_Writeview * clusterWriteView = ShardManager::getWriteview();
-	// note: this is temporary. CM should not populate <node> tags from config file
-
-	//////////////////////////////// Changed by Jamshid
-//	clusterWriteView->clear();
 
 	ASSERT(clusterWriteView->getTotalNumberOfNodes() == 0);
 
@@ -131,67 +129,92 @@ void SyncManager::startDiscovery() {
 	localNodesCopy.push_back(node);
 	localNodesCopyMutex.unlock();
 
-	if (isCurrentNodeMaster) {
-		messageHandler = new MasterMessageHandler(this);
+	if (!isCurrentNodeMaster) {
+		joinExistingCluster(node, true /*true = discovery phase*/);
 	}
-	else{
-		/*
-		 * if this node is not master then
-		 * 1. Connect to master and fetch all cluster information.
-		 * 2. Connect with other nodes in the cluster.
-		 */
-		sockaddr_in destinationAddress;
-		bool status = getDestinatioAddressByNodeId(masterNodeId, destinationAddress);
-		if (status == false) {
-			Logger::console("Master node %d destination address is not found", masterNodeId);
-			exit(-1);
-		}
-		if (sendConnectionRequest(&transport, masterNodeId, node, destinationAddress)) {
-			char nodename[1024];
-			sprintf(nodename, "%d", this->masterNodeId);
-			std::string masterIp(inet_ntoa(destinationAddress.sin_addr));
-			Node masterNode(nodename, masterIp, ntohs(destinationAddress.sin_port), false);
-			masterNode.setId(this->masterNodeId);
-			masterNode.setMaster(true);
 
+	localNodesCopyMutex.lock();
+	std::sort(localNodesCopy.begin(), localNodesCopy.end(), NodeComparator());
+	localNodesCopyMutex.unlock();
+
+}
+
+void SyncManager::joinExistingCluster(Node& node, bool isDiscoveryPhase) {
+	/*
+	 * if this node is not master then
+	 * 1. Connect to master and fetch all cluster information.
+	 * 2. Connect with other nodes in the cluster.
+	 */
+	sockaddr_in destinationAddress;
+	bool status = getDestinatioAddressByNodeId(masterNodeId, destinationAddress);
+	if (status == false) {
+		Logger::console("Master node %d destination address is not found", masterNodeId);
+		exit(-1);
+	}
+	if (sendConnectionRequest(&transport, masterNodeId, node, destinationAddress)) {
+		char nodename[1024];
+		sprintf(nodename, "%d", this->masterNodeId);
+		std::string masterIp(inet_ntoa(destinationAddress.sin_addr));
+		Node masterNode(nodename, masterIp, ntohs(destinationAddress.sin_port), false);
+		masterNode.setId(this->masterNodeId);
+		masterNode.setMaster(true);
+
+		if (isDiscoveryPhase){
+			// if discovery phase then write to CM directly. There is no shard manager yet.
+			Cluster_Writeview * clusterWriteView = ShardManager::getWriteview();
 			clusterWriteView->addNode(masterNode);
+			// Todo : move this inside addNode call above.
 			clusterWriteView->setNodeState(masterNode.getId(), ShardingNodeStateArrived);
-
-			localNodesCopyMutex.lock();
-			localNodesCopy.push_back(masterNode);
-			localNodesCopyMutex.unlock();
+		} else {
+			Logger::console("shard Manager Notified of new master");
+			// else notify shard manager
 		}
-		// use transport to fetch cluster state
-		Message *msg = MessageAllocator().allocateMessage(sizeof(NodeId));
-		msg->setType(ClusterInfoRequestMessageType);
-		msg->setDiscoveryMask();
-		char * body = msg->getMessageBody();
-		*(unsigned *)body = currentNodeId;
-		transport.sendMessage(masterNodeId, msg);
-		MessageAllocator().deallocateByMessagePointer(msg);
-
-		while(!__sync_val_compare_and_swap(&configUpdatesDone, true, true));
-
 
 		localNodesCopyMutex.lock();
-		vector<Node> localCopy = localNodesCopy;
+		localNodesCopy.push_back(masterNode);
 		localNodesCopyMutex.unlock();
-		for (unsigned i = 0 ; i < localCopy.size(); ++i) {
-			unsigned destinationNodeId = localCopy[i].getId();
-			if ( destinationNodeId >= currentNodeId || destinationNodeId == masterNodeId) {
-				continue;
-			}
-			//Logger::console("Connecting to node %d, %s, %d", destinationNodeId, localCopy[i].getIpAddress().c_str(),
-			//		localCopy[i].getPortNumber());
-			inet_aton(localCopy[i].getIpAddress().c_str(), &destinationAddress.sin_addr);
-			//destinationAddress.sin_addr.s_addr = localCopy[i].getIpAddress();
-			destinationAddress.sin_port = htons(localCopy[i].getPortNumber());
-			if (!sendConnectionRequest(&transport, destinationNodeId, node, destinationAddress)) {
-				Logger::console( "Could not connect to the node %d", destinationNodeId);
-			}
-		}
+	}
+	// use transport manager to fetch cluster state
+	configUpdatesDone = false;
+	Message *msg = MessageAllocator().allocateMessage(sizeof(NodeId));
+	msg->setType(ClusterInfoRequestMessageType);
+	if (isDiscoveryPhase) {
+		msg->setDiscoveryMask();
+	} else {
+		msg->setMask(0);
+	}
+	char * body = msg->getMessageBody();
+	*(unsigned *)body = currentNodeId;
+	transport.sendMessage(masterNodeId, msg);
+	MessageAllocator().deallocateByMessagePointer(msg);
 
-		messageHandler = new ClientMessageHandler(this);
+	// Wait till we get reply from master.
+	int retryCount = 10;
+	while(!__sync_val_compare_and_swap(&configUpdatesDone, true, true) && retryCount) {
+		sleep(1);
+		--retryCount;
+	}
+	if (configUpdatesDone == false) {
+		// master did not respond. Retun false. Let the caller handle the situation.
+		Logger::error("Cluster Information not received from master!!");
+		return;
+	}
+	// At this stage the cluster info is available to this node.
+
+	localNodesCopyMutex.lock();
+	vector<Node> localCopy = localNodesCopy;
+	localNodesCopyMutex.unlock();
+	for (unsigned i = 0 ; i < localCopy.size(); ++i) {
+		unsigned destinationNodeId = localCopy[i].getId();
+		if ( destinationNodeId >= currentNodeId || destinationNodeId == masterNodeId) {
+			continue;
+		}
+		inet_aton(localCopy[i].getIpAddress().c_str(), &destinationAddress.sin_addr);
+		destinationAddress.sin_port = htons(localCopy[i].getPortNumber());
+		if (!sendConnectionRequest(&transport, destinationNodeId, node, destinationAddress)) {
+			Logger::console( "Could not connect to the node %d", destinationNodeId);
+			//TODO:
+		}
 	}
 }
 
@@ -219,6 +242,8 @@ void SyncManager::run(){
 	 */
 	while(1) {
 		if (isCurrentNodeMaster) {
+			messageHandler = new MasterMessageHandler(this);
+			hasMajority = true;
 			/*
 			 *   2.1 Master :
 			 *   a) Create a new thread to handle incoming messages from client.
@@ -228,10 +253,11 @@ void SyncManager::run(){
 			pthread_create(&masterCbHandlerThread,  NULL, dispatchMasterMessageHandler, messageHandler);
 			while(1) {
 				sendHeartBeatToAllNodesInCluster();
-				// TODO check whether still master.
-				if (!hasMajority()) {
+				if (!hasMajority) {
 					//stepDown
 					isCurrentNodeMaster = false;
+					// stop the discovery thread
+					discoveryMgr->stopDiscovery();
 					break;
 				}
 				sleep(pingInterval);
@@ -240,7 +266,10 @@ void SyncManager::run(){
 			pthread_cancel(masterCbHandlerThread);
 #endif
 			pthread_join(masterCbHandlerThread, NULL);
+			Logger::console("SM-M%d master stepping down ...", currentNodeId);
+			delete messageHandler;
 		} else {
+			messageHandler = new ClientMessageHandler(this);
 			/*
 			 *   2.1 Client :
 			 *   a) Handle incoming messages at each ping interval.
@@ -248,15 +277,34 @@ void SyncManager::run(){
 			while(1) {
 				messageHandler->lookForCallbackMessages(callBackHandler);
 				sleep(pingInterval);
-				if (isCurrentNodeMaster)  // if this node get elected as leader.
+				if (isCurrentNodeMaster) { // if this node get elected as leader.
+					localNodesCopyMutex.lock();
+					this->uniqueNodeId = localNodesCopy.back().getId() + 1;
+					localNodesCopyMutex.unlock();
 					break;
+				}
 			}
+			delete messageHandler;
 		}
 	}
 }
 
-bool SyncManager::hasMajority() {
-	return true; // TODO V1
+NodeId SyncManager::getNextMasterEligbleNode() {
+
+	localNodesCopyMutex.lock();
+	vector<Node> localCopy = localNodesCopy;
+	localNodesCopyMutex.unlock();
+
+	for (unsigned i = 0; i < localCopy.size(); ++i) {
+		if (localCopy[i].getId() == masterNodeId) {
+			continue;
+		}
+		if (localCopy[i].isMasterEligible()) {
+			// stop at first non-master but master-eligible node.
+			return localCopy[i].getId();
+		}
+	}
+	return -1;
 }
 
 unsigned SyncManager::getNextNodeId() {
@@ -289,7 +337,6 @@ void SyncManager::sendHeartBeatToAllNodesInCluster() {
 	heartBeatMessage->setType(HeartBeatMessageType);
 	heartBeatMessage->setBodyAndBodySize(&currentNodeId, sizeof(NodeId));
 
-	////////////////////////////// Changed by Jamshid
 	localNodesCopyMutex.lock();
 	for(vector<Node>::iterator nodeItr = localNodesCopy.begin(); nodeItr != localNodesCopy.end(); ++nodeItr){
 		if (nodeItr->thisIsMe)
@@ -299,7 +346,6 @@ void SyncManager::sendHeartBeatToAllNodesInCluster() {
 		route( nodeItr->getId(), heartBeatMessage);
 	}
 	localNodesCopyMutex.unlock();
-	////////////////////////////// Changed by Jamshid
 	msgAllocator.deallocateByMessagePointer(heartBeatMessage);
 }
 
@@ -376,6 +422,7 @@ bool SMCallBackHandler::resolveMessage(Message *message, NodeId node){
 		}
 		break;
 	}
+	return true;
 }
 
 /*
@@ -394,6 +441,11 @@ std::time_t  SMCallBackHandler::getHeartBeatMessageTime(){
 	boost::mutex::scoped_lock lock(hbLock);
 	std::time_t copy = heartbeatMessageTimeEntry;
 	return copy;
+}
+
+void SMCallBackHandler::setHeartBeatMessageTime(std::time_t time){
+	boost::mutex::scoped_lock lock(hbLock);
+	heartbeatMessageTimeEntry = time;
 }
 
 void SMCallBackHandler::getQueuedMessages(Message**inputMessage, unsigned masterNodeId){
@@ -433,7 +485,7 @@ void SMCallBackHandler::removeMessageFromQueue(unsigned nodeId)
 ///
 
 ClientMessageHandler::ClientMessageHandler(SyncManager* sm): MessageHandler(sm) {
-	nodeState = MASTER_AVAILABLE;
+	nodeState = SM_MASTER_AVAILABLE;
 	itselfInitiatedMasterElection = false;
 	cMessageAllocator = MessageAllocator();
 }
@@ -442,25 +494,27 @@ void ClientMessageHandler::lookForCallbackMessages(SMCallBackHandler* callBackHa
 
 	switch(this->nodeState) {
 	// Listening for heartbeat requests from master
-	case MASTER_AVAILABLE:
+	case SM_MASTER_AVAILABLE:
 	{
 		std::time_t timeNow = time(NULL);
 		/*
 		 *  Check the time elapsed since last heart beat request was received
 		 */
-		signed timeElapsed = timeNow - callBackHandler->getHeartBeatMessageTime();
+		unsigned lastHeartBeatFromMaster = callBackHandler->getHeartBeatMessageTime();
+		signed timeElapsed = timeNow - lastHeartBeatFromMaster;
 
 		if (timeElapsed > _syncMgrObj->getTimeout()) {
 			/*
 			 *  If the time elapsed is more than TimeOut then handle time out
 			 */
-			nodeState = MASTER_UNAVAILABLE;
-			Logger::console("SM-C%d: Timeout!!. No heart beat received from master",
-					_syncMgrObj->currentNodeId);
-			Message * message;
-			callBackHandler->getHeartBeatMessages(&message);
-			handleTimeOut(message);
-			cMessageAllocator.deallocateByMessagePointer(message);
+			Logger::console("SM-C%d: Timeout!!. No heart beat received from master for %d secs",
+					_syncMgrObj->currentNodeId, timeElapsed);
+
+			// On master timeout, the current node is without master. It should initiate master
+			// election.
+			startMasterElection(_syncMgrObj->masterNodeId);
+			ShardManager::getShardManager()->resolveSMNodeFailure(_syncMgrObj->masterNodeId);
+
 		} else {
 			/*
 			 *  Handle heartbeat request by acknowledging back to master.
@@ -480,27 +534,8 @@ void ClientMessageHandler::lookForCallbackMessages(SMCallBackHandler* callBackHa
 				messageBody += sizeof(char);
 				if (operation == OPS_DELETE_NODE) {
 					unsigned nodeId = *(unsigned *)messageBody;
-
-					_syncMgrObj->localNodesCopyMutex.lock();
-
-					Logger::console("SM-M%d-cluster node %d failed", _syncMgrObj->currentNodeId, nodeId);
-					// update configuration manager ..so that we do not ping this node again.
-					// If this node comes back then it is discovery manager's job to handle it.
-
-
-					for(vector<Node>::iterator nodeItr = _syncMgrObj->localNodesCopy.begin(); nodeItr != _syncMgrObj->localNodesCopy.end(); ++nodeItr){
-						if(nodeItr->getId() == nodeId){
-							nodeItr = _syncMgrObj->localNodesCopy.erase(nodeItr);
-							break;
-						}
-					}
-					Logger::console("[%d, %d, %d]", _syncMgrObj->localNodesCopy.size(),
-								_syncMgrObj->masterNodeId, _syncMgrObj->currentNodeId);
-					_syncMgrObj->localNodesCopyMutex.unlock();
-
+					handleNodeFailure(nodeId);
 					ShardManager::getShardManager()->resolveSMNodeFailure(nodeId);
-
-
 				} else {
 					ASSERT(false);  // other operations not supported yet.
 				}
@@ -509,108 +544,265 @@ void ClientMessageHandler::lookForCallbackMessages(SMCallBackHandler* callBackHa
 		}
 		break;
 	}
-	// On master timeout, the current node is without master. It should initiate master
-	// election.
-	case MASTER_UNAVAILABLE:
+	case SM_MASTER_UNAVAILABLE:
 	{
-		//Logger::console("waiting for master ...");
-		//TODO: V1 handle master election
-		//handleMessage(callBackHandler->heartbeatMessage);
+		Logger::console("No master for this node ... searching for cluster!");
+//		_syncMgrObj->localNodesCopyMutex.lock();
+//		unsigned totalNodes = _syncMgrObj->localNodesCopy.size();
+//		Logger::console("Total Nodes: %d", totalNodes);
+//		ASSERT(totalNodes == 1);
+//		Node node =  _syncMgrObj->localNodesCopy[0];
+//		ASSERT(node.getId() == _syncMgrObj->currentNodeId);
+//		_syncMgrObj->localNodesCopyMutex.unlock();
+//
+//		_syncMgrObj->discoveryMgr->init();
+//		_syncMgrObj->isCurrentNodeMaster = (_syncMgrObj->masterNodeId == _syncMgrObj->currentNodeId);
+//		//ASSERT(_syncMgrObj->isCurrentNodeMaster);
+//		node.setId(_syncMgrObj->currentNodeId);
+//		node.setMaster(_syncMgrObj->isCurrentNodeMaster);
+//		if (!_syncMgrObj->isCurrentNodeMaster) {
+//			_syncMgrObj->joinExistingCluster(node, false /*true = discovery phase*/);
+//		}
+//
+//		_syncMgrObj->localNodesCopyMutex.lock();
+//		std::sort(_syncMgrObj->localNodesCopy.begin(), _syncMgrObj->localNodesCopy.end(), NodeComparator());
+//		_syncMgrObj->localNodesCopyMutex.unlock();
+
+		break;
+	}
+	case SM_ELECTED_AS_MASTER:
+	{
+		Logger::console("node %d is selected as master", _syncMgrObj->currentNodeId);
+		_syncMgrObj->masterNodeId = _syncMgrObj->currentNodeId;
+		_syncMgrObj->isCurrentNodeMaster = true;
+		_syncMgrObj->localNodesCopyMutex.lock();
+		Logger::console("[%d, %d, %d]", _syncMgrObj->localNodesCopy.size(),
+				_syncMgrObj->masterNodeId, _syncMgrObj->currentNodeId);
+		_syncMgrObj->localNodesCopyMutex.unlock();
+		_syncMgrObj->discoveryMgr->reInit();
+		break;
+	}
+	case SM_PROPOSED_NEW_MASTER:
+	{
+		signed timeElapsed = time(NULL) - proposalInitationTime;
+		/*
+		 *  wait for n times the original timeout to compensate for the load due to master failure
+		 */
+		_syncMgrObj->localNodesCopyMutex.lock();
+		unsigned totalNodes = _syncMgrObj->localNodesCopy.size();
+		_syncMgrObj->localNodesCopyMutex.unlock();
+
+		if (timeElapsed > _syncMgrObj->getTimeout() * totalNodes) {
+			// Timeout occurred while waiting for the new master.  find next eligible master
+			// and start master election again.
+			NodeId oldMasterNodeId = expectedMasterNodeId;
+			startMasterElection(oldMasterNodeId);
+			ShardManager::getShardManager()->resolveSMNodeFailure(oldMasterNodeId);
+		} else {
+			// check for proposal acknowledgment from expect master.
+			Logger::console("SM-C%d, got proposal acceptance message from node = %d",
+					_syncMgrObj->currentNodeId, expectedMasterNodeId);
+			Message * message;
+			callBackHandler->getQueuedMessages(&message, expectedMasterNodeId);
+			if (message != NULL) {
+				// We get response from expected master.
+				_syncMgrObj->masterNodeId = expectedMasterNodeId;
+
+				this->nodeState = SM_MASTER_AVAILABLE;
+				cMessageAllocator.deallocateByMessagePointer(message);
+				_syncMgrObj->localNodesCopyMutex.lock();
+				Logger::console("[%d, %d, %d]", _syncMgrObj->localNodesCopy.size(),
+							_syncMgrObj->masterNodeId, _syncMgrObj->currentNodeId);
+				_syncMgrObj->localNodesCopyMutex.unlock();
+				callBackHandler->setHeartBeatMessageTime(time(NULL));
+			}
+		}
+		break;
+	}
+	case SM_WAITING_FOR_VOTES:
+	{
+		signed timeElapsed = time(NULL) - proposalInitationTime;
+		_syncMgrObj->localNodesCopyMutex.lock();
+		unsigned totalNodes = _syncMgrObj->localNodesCopy.size();
+		_syncMgrObj->localNodesCopyMutex.unlock();
+		if (timeElapsed > _syncMgrObj->getTimeout() * totalNodes ) {
+			this->nodeState = SM_MASTER_UNAVAILABLE;
+		} else {
+			handleElectionRequest();
+		}
 		break;
 	}
 	}
 }
 // Callback API for SM
 
-void ClientMessageHandler::handleElectionRequest(Message *message) {
-//	if (message->getType() != LeaderElectionProposalMessageType) {
-//		Logger::warn("Bad Request: expecting %d but got %d",
-//				LeaderElectionProposalMessageType, message->getType());
-//		return;
-//	}
-//
-//	if (!itselfInitiatedMasterElection) {
-//		if (message->getBodySize() > 4) {
-//			MessageAllocator msgAllocator = MessageAllocator();
-//			Message * rejectMessage = msgAllocator.allocateMessage(4);
-//			rejectMessage->setBodyAndBodySize(&_syncMgrObj->currentNodeId, 4);
-//			rejectMessage->setType(LeaderElectionDenyMessageType);
-//			_syncMgrObj->route(FETCH_UNSIGNED(message->getMessageBody()), rejectMessage);
-//			msgAllocator.deallocateByMessagePointer(rejectMessage);
-//		}
-//		return;
-//	}
-//
-//	bool masterEligible = true;  // TODO - fetch from CM  ..as of now every one is eligible
-//	bool isMaster = false;       // TODO -- fetch from CM
-//	unsigned majority = (_syncMgrObj->cluster->getTotalNumberOfNodes() / 2) + 1;
-//
-//	if (masterEligible) {
-//		if (message->getBodySize() > 4) {
-//			char * buffer = message->getMessageBody();
-//			unsigned nodeId = *((unsigned *)buffer);
-//			voters.insert(nodeId);
-//			// if got response from more than N/2 clients
-//			// send thanks to all clients
-//			// else wait for more votes.
-//			if (voters.size() >= majority) {
-//				// x-auto-lock
-//				if (voters.size() == 0)
-//					return;
-//				MessageAllocator msgAllocator = MessageAllocator();
-//				Message * thanksMessage = msgAllocator.allocateMessage(0);
-//				thanksMessage->setBodySize(0);
-//				thanksMessage->setType(LeaderElectionAckMessageType);
-//				std::set<unsigned>::iterator iter = voters.begin();
-//				while(iter != voters.end()) {
-//					if (*iter == _syncMgrObj->currentNodeId)
-//						continue;
-//					_syncMgrObj->route(*iter, thanksMessage);
-//					++iter;
-//				}
-//				msgAllocator.deallocateByMessagePointer(thanksMessage);
-//				voters.clear();
-//				// mark yourself master.
-//				isMaster = true;         // todo: set in CM
-//				masterEligible = false;  // todo: set in CM
-//			}
-//		}
-//	} else if (isMaster){
-//		if (message->getBodySize() > 4) {
-//			// it appears that some node didn't get the master election notice..send them again
-//			MessageAllocator msgAllocator = MessageAllocator();
-//			Message * thanksMessage = msgAllocator.allocateMessage(0);
-//			thanksMessage->setBodySize(0);
-//			thanksMessage->setType(LeaderElectionAckMessageType);
-//			_syncMgrObj->route(FETCH_UNSIGNED(message->getMessageBody()), thanksMessage);
-//			msgAllocator.deallocateByMessagePointer(thanksMessage);
-//		}
-//	} else {
-//			//not eligible for master ..should not get this request ..log it and do nothing
-//	}
+void ClientMessageHandler::handleNodeFailure(NodeId nodeId) {
+	_syncMgrObj->localNodesCopyMutex.lock();
+
+	Logger::console("SM-C%d-cluster node %d failed", _syncMgrObj->currentNodeId, nodeId);
+
+	for(vector<Node>::iterator nodeItr = _syncMgrObj->localNodesCopy.begin();
+			nodeItr != _syncMgrObj->localNodesCopy.end(); ++nodeItr){
+		if(nodeItr->getId() == nodeId){
+			_syncMgrObj->unreachableNodes.push_back(*nodeItr);
+			nodeItr = _syncMgrObj->localNodesCopy.erase(nodeItr);
+			break;
+		}
+	}
+	Logger::console("[%d, %d, %d]", _syncMgrObj->localNodesCopy.size(),
+				_syncMgrObj->masterNodeId, _syncMgrObj->currentNodeId);
+	_syncMgrObj->localNodesCopyMutex.unlock();
 }
 
-void ClientMessageHandler::startMasterElection() {
-	Logger::debug("SM-C%d :starting master election", _syncMgrObj->currentNodeId);
-//	MessageAllocator msgAllocator = MessageAllocator();
-//	Message * leaderElectionMessage = msgAllocator.allocateMessage(4);
-//	leaderElectionMessage->bodySize = 4;
-//	leaderElectionMessage->type = LeaderElectionProposalMessageType;
-//	FETCH_UNSIGNED(leaderElectionMessage->buffer) = _syncMgrObj->currentNodeId;
-//	const std::vector<Node> &nodesInCluster = *(_syncMgrObj->cluster->getNodes());
-//	unsigned eligibleMasterIndex = _syncMgrObj->findNextEligibleMaster();
-//	if (nodesInCluster[eligibleMasterIndex].thisIsMe) {
-//		itselfInitiatedMasterElection = true;
-//	} else {
-//		unsigned newMasterId = nodesInCluster[eligibleMasterIndex].getId();
-//		_syncMgrObj->route(newMasterId, leaderElectionMessage);
+void ClientMessageHandler::handleElectionRequest() {
+
+	Logger::console("handling proposals");
+	_syncMgrObj->localNodesCopyMutex.lock();
+	const vector<Node>& smLocalNodes = _syncMgrObj->localNodesCopy;
+
+//	if (smLocalNodes.size() == 1) {
+//		this->nodeState = SM_MASTER_UNAVAILABLE;
+//		_syncMgrObj->localNodesCopyMutex.unlock();
+//		return;
 //	}
-//	msgAllocator.deallocate(leaderElectionMessage);
+
+	// Try to fetch the messages from all the nodes in the cluster.
+	for (unsigned i = 0 ; i < smLocalNodes.size(); ++i) {
+
+		if (smLocalNodes[i].getId() == _syncMgrObj->currentNodeId)
+			continue;
+
+		Message * message;
+		_syncMgrObj->callBackHandler->getQueuedMessages(&message, smLocalNodes[i].getId());
+		if (message != NULL) {
+			if (message->getBodySize() >= 4 &&
+					message->getType() == LeaderElectionProposalMessageType) {
+				Logger::console("SM-C%d got master election proposal from node = %d", _syncMgrObj->currentNodeId
+						, smLocalNodes[i].getId());
+				char * buffer = message->getMessageBody();
+				unsigned nodeId = *((unsigned *)buffer);
+				if (nodeId == smLocalNodes[i].getId()) {
+					masterElectionProposers.insert(nodeId);
+				}else {
+					Logger::console("Mismatch");
+					ASSERT(false);
+				}
+				cMessageAllocator.deallocateByMessagePointer(message);
+			} else {
+				Logger::console("SM-C%d bad message type while waiting for more votes",
+						_syncMgrObj->currentNodeId);
+			}
+		}
+	}
+	// if got response from more than N/2 clients. Start sending confirmation
+	// message back to all the client.
+	if (masterElectionProposers.size() >= smLocalNodes.size() / 2) {
+		MessageAllocator msgAllocator = MessageAllocator();
+		Message * proposalAckMessage = msgAllocator.allocateMessage(sizeof(NodeId));
+		proposalAckMessage->setBodySize(4);
+		char *messageBody = proposalAckMessage->getMessageBody();
+		*(unsigned *)messageBody = _syncMgrObj->currentNodeId;
+		proposalAckMessage->setType(LeaderElectionAckMessageType);
+
+		if (smLocalNodes.size() != masterElectionProposers.size()) {
+			Logger::console("Electing master with a majority but not complete support!");
+		}
+
+		std::set<unsigned>::iterator iter = masterElectionProposers.begin();
+		while(iter != masterElectionProposers.end()) {
+			if (*iter == _syncMgrObj->currentNodeId) {
+				++iter;
+				continue;
+			}
+			_syncMgrObj->route(*iter, proposalAckMessage);
+			++iter;
+		}
+		msgAllocator.deallocateByMessagePointer(proposalAckMessage);
+		this->nodeState = SM_ELECTED_AS_MASTER;
+	}
+
+	vector<Node> newClusterNodes;
+	vector<Node> missingNodes;
+ 	for (unsigned i = 0; i < smLocalNodes.size(); ++i) {
+		if (masterElectionProposers.end() !=
+				masterElectionProposers.find(smLocalNodes[i].getId())) {
+			newClusterNodes.push_back(smLocalNodes[i]);
+		} else {
+			missingNodes.push_back(smLocalNodes[i]);
+		}
+	}
+
+ 	_syncMgrObj->localNodesCopy.swap(newClusterNodes);
+ 	_syncMgrObj->unreachableNodes.insert(_syncMgrObj->unreachableNodes.end(),
+ 			missingNodes.begin(), missingNodes.end());
+	_syncMgrObj->localNodesCopyMutex.unlock();
+}
+
+void ClientMessageHandler::startMasterElection(NodeId oldMasterNodeId) {
+
+	/*
+	 *    Each node which is not a master starts master election on heartbeat timeout. The current node
+	 *    proposes a node as new master having lowest node-id from the list of remaining master-eligible
+	 *    nodes.
+	 *
+	 *    e.g Original Cluster:  [ N1 (M) , N2, N3 (ME), N4, N5 (ME), N6]
+	 *    where N1-6 are node ids, M = master, and ME = Master Eligible
+	 *
+	 *    1. If node N1 is dead, then nodes N2-6 propose N3 as a new master.
+	 *    2. The node N3 receives master proposal from N2-6 and determine whether it has majority
+	 *       proposals (i.e proposal count is more than half of original cluster size).
+	 *    3. If node N3 gets majority proposal then it sends master election confirmation to all the
+	 *       proposing nodes.
+	 *
+	 */
+	Logger::console("SM-C%d :starting master election", _syncMgrObj->currentNodeId);
+	this->nodeState = SM_PROPOSED_NEW_MASTER;
+
+	_syncMgrObj->localNodesCopyMutex.lock();
+
+	// remove previous master from the list.
+	for(vector<Node>::iterator nodeItr = _syncMgrObj->localNodesCopy.begin(); nodeItr != _syncMgrObj->localNodesCopy.end(); ++nodeItr){
+		if(nodeItr->getId() == oldMasterNodeId){
+			_syncMgrObj->unreachableNodes.push_back(*nodeItr);
+			nodeItr = _syncMgrObj->localNodesCopy.erase(nodeItr);
+			break;
+		}
+	}
+
+	const vector<Node>& smLocalNodes = _syncMgrObj->localNodesCopy;
+
+//	if (smLocalNodes.size() == 1) {
+//		this->nodeState = SM_MASTER_UNAVAILABLE;
+//		sleep(_syncMgrObj->pingInterval);
+//		_syncMgrObj->localNodesCopyMutex.unlock();
+//		return;
+//	}
+	_syncMgrObj->localNodesCopyMutex.unlock();
+
+	expectedMasterNodeId = _syncMgrObj->getNextMasterEligbleNode();
+	if (expectedMasterNodeId == -1) {
+		Logger::console("No master eligible node found !!");
+		this->nodeState = SM_MASTER_UNAVAILABLE;
+		return;
+	}
+	proposalInitationTime = time(NULL);
+	if (expectedMasterNodeId == _syncMgrObj->currentNodeId) {
+		Logger::console("Proposing itself as master");
+		masterElectionProposers.clear();
+		this->nodeState = SM_WAITING_FOR_VOTES;
+		masterElectionProposers.insert(_syncMgrObj->currentNodeId);
+		itselfInitiatedMasterElection = true;
+	} else {
+		MessageAllocator msgAllocator = MessageAllocator();
+		Message * leaderElectionMessage = msgAllocator.allocateMessage(4);
+		leaderElectionMessage->setType(LeaderElectionProposalMessageType);
+		FETCH_UNSIGNED(leaderElectionMessage->getMessageBody()) = _syncMgrObj->currentNodeId;
+		_syncMgrObj->route(expectedMasterNodeId, leaderElectionMessage);
+		msgAllocator.deallocateByMessagePointer(leaderElectionMessage);
+	}
 }
 
 void ClientMessageHandler::processHeartBeat(Message *message) {
-	// TODO: Send node status as response for heartbeat message.
-	// TODO: send only when node status changes.
 	if (message->getBodySize() < sizeof(NodeId)) {
 		Logger::debug("SM-C%d: heart beat request does not have master id", _syncMgrObj->currentNodeId);
 		return;
@@ -630,52 +822,14 @@ void ClientMessageHandler::processHeartBeat(Message *message) {
 	msgAllocator.deallocateByMessagePointer(heartBeatResponse);
 }
 
-void ClientMessageHandler::updateClusterState(Message *message){
-	if (message->getBodySize() == 0)
-	{
-		Logger::debug("cluster state is same since last heartbeat!");
-		return;
-	}
-	/* TODO V1
-	 * 1. deserialize cluster
-	 * 2. update and store it back in cluster.
-	 */
-	Logger::debug("cluster state updated");
-}
-
 void ClientMessageHandler::handleTimeOut(Message *message) {
-	if (message->getBodySize() < sizeof(NodeId) ) {
-		Logger::error("Timeout with no node information!!");
-		return;
-	}
-	unsigned nodeId = FETCH_UNSIGNED( message->getMessageBody());
-	switch(message->getType()) {
-	case LeaderElectionProposalMessageType:
-		// check whether current master is up if not then send the request again.
-		startMasterElection();  // resend election request
-		break;
-	case HeartBeatMessageType:
-		startMasterElection();
-		break;
-	default:
-		break;
-	}
+
 }
 
 void ClientMessageHandler::handleMessage(Message *message) {
 	switch(message->getType()) {
 	case HeartBeatMessageType:
 		processHeartBeat(message);
-		break;
-	case LeaderElectionProposalMessageType:
-		handleElectionRequest(message);
-		break;
-	case LeaderElectionDenyMessageType:
-		handleMasterProposalReject(message);
-		break;
-	case LeaderElectionAckMessageType:
-		updateClusterState(message);
-		nodeState = MASTER_AVAILABLE;
 		break;
 	default:
 		break;
@@ -709,12 +863,11 @@ void MasterMessageHandler::handleNodeFailure(NodeId nodeId) {
 	_syncMgrObj->localNodesCopyMutex.lock();
 
 	Logger::console("SM-M%d-cluster node %d failed", _syncMgrObj->currentNodeId, nodeId);
-	// update configuration manager ..so that we do not ping this node again.
-	// If this node comes back then it is discovery manager's job to handle it.
 
-
-	for(vector<Node>::iterator nodeItr = _syncMgrObj->localNodesCopy.begin(); nodeItr != _syncMgrObj->localNodesCopy.end(); ++nodeItr){
+	for(vector<Node>::iterator nodeItr = _syncMgrObj->localNodesCopy.begin();
+			nodeItr != _syncMgrObj->localNodesCopy.end(); ++nodeItr){
 		if(nodeItr->getId() == nodeId){
+			_syncMgrObj->unreachableNodes.push_back(*nodeItr);
 			nodeItr = _syncMgrObj->localNodesCopy.erase(nodeItr);
 			break;
 		}
@@ -774,11 +927,12 @@ void MasterMessageHandler::lookForCallbackMessages(SMCallBackHandler* /*not used
 		_syncMgrObj->localNodesCopyMutex.lock();
 		vector<Node> nodes = _syncMgrObj->localNodesCopy;
 		_syncMgrObj->localNodesCopyMutex.unlock();
+		unsigned failedNodesCount = 0;
 		/*
 		 *   Loop over all the nodes in a cluster and check their message queues.
 		 */
 		for (unsigned i = 0 ;  i < nodes.size(); ++i) {
-			if (nodes[i].thisIsMe)
+			if (nodes[i].getId() == _syncMgrObj->currentNodeId)
 				continue;
 
 			unsigned nodeId = nodes[i].getId();
@@ -841,10 +995,17 @@ void MasterMessageHandler::lookForCallbackMessages(SMCallBackHandler* /*not used
 
 				if (timeElapsed > _syncMgrObj->getTimeout()) {
 					// mark node as inactive.
+					++failedNodesCount;
 					handleNodeFailure(nodeId);
 				}
 			}
 		}
+
+//		_syncMgrObj->localNodesCopyMutex.lock();
+//		if (_syncMgrObj->unreachableNodes.size() > nodes.size()) {
+//			_syncMgrObj->hasMajority = false;
+//		}
+//		_syncMgrObj->localNodesCopyMutex.unlock();
 
 		sleep(_syncMgrObj->pingInterval);
 	}
