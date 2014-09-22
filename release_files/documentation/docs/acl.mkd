@@ -147,10 +147,10 @@ no role can access this new record.
 
 ###1.4 Replace an ACL
 
-We can modify the ACL of a product record by using a command called "aclRecordRoleAdd":
+We can modify the ACL of a product record by using a command called "aclAddRolesForRecord":
 
 ```json
-curl "http://localhost:8081/product/aclRecordRoleAdd" -i -X PUT -d '{"resourceId":"p501", "roleId":["u27", "u28"]}'
+curl "http://localhost:8081/product/aclAddRolesForRecord" -i -X PUT -d '{"resourceId":"p501", "roleId":["u27", "u28"]}'
 ```
 
 This command will replace the existing ACL (if any) of the product
@@ -158,16 +158,16 @@ This command will replace the existing ACL (if any) of the product
 array of pairs of a product id and a list of role ids, e.g.:
 
 ```json
-curl "http://localhost:8081/product/aclRecordRoleAdd" -i -X PUT -d '[{"resourceId": "p501", "roleId":["u27", "u28"]} , {"resourceId": "p502", "roleId":["u25"]}]'
+curl "http://localhost:8081/product/aclAddRolesForRecord" -i -X PUT -d '[{"resourceId": "p501", "roleId":["u27", "u28"]} , {"resourceId": "p502", "roleId":["u25"]}]'
 ```
 
 ###1.5 Append Roles to ACL
 
 We can add more roles to the ACL of a product record by using a command called
-"aclRecordRoleAppend":
+"aclAppendRolesForRecord":
 
 ```json
-curl "http://localhost:8081/product/aclRecordRoleAppend" -i -X PUT -d
+curl "http://localhost:8081/product/aclAppendRolesForRecord" -i -X PUT -d
 '{"resourceId":"p501", "roleId":["u25", "u28"]}'
 ```
 
@@ -176,23 +176,23 @@ This command will add "u25" and "u28" to the existing ACL of the product
 We can also pass an array of pairs of a product id and a list of role ids, e.g.:
 
 ```json
-curl "http://localhost:8081/product/aclRecordRoleAppend" -i -X PUT -d '[{"resourceId": "p501", "roleId":["u25", "u28"]} , {"resourceId": "p502", "roleId":["u27"]}]'
+curl "http://localhost:8081/product/aclAppendRolesForRecord" -i -X PUT -d '[{"resourceId": "p501", "roleId":["u25", "u28"]} , {"resourceId": "p502", "roleId":["u27"]}]'
 ```
 
 ###1.6 Remove Roles from ACL
 
 We can remove some roles from the ACL of a product record by using a command called
-"aclRecordRoleDelete":
+"aclDeleteRolesForRecord":
 
 ```json
-curl "http://localhost:8081/product/aclRecordRoleDelete" -i -X PUT -d '{"resourceId":"p501", "roleId":["u25", "u27"]}'
+curl "http://localhost:8081/product/aclDeleteRolesForRecord" -i -X PUT -d '{"resourceId":"p501", "roleId":["u25", "u27"]}'
 ```
 
 This command will remove "u25" and "u27" from the ACL of the product
 "p501". We can also pass an array of pairs of a product id and a list of role ids, e.g.:
 
 ```python
-curl "http://localhost:8081/product/aclRecordRoleDelete" -i -X PUT -d '[{"resourceId": "p501", "roleId":["u25", "u27"]} , {"resourceId": "p502", "roleId":["u25"]}]'
+curl "http://localhost:8081/product/aclDeleteRolesForRecord" -i -X PUT -d '[{"resourceId": "p501", "roleId":["u25", "u27"]} , {"resourceId": "p502", "roleId":["u25"]}]'
 ```
 
 ## 2. Attribute-Based

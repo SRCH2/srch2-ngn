@@ -192,7 +192,7 @@ INDEXWRITE_RETVAL IndexData::_aclModifyRecordAccessList(const std::string& resou
 	RecordAcl* accessList = this->forwardIndex->getRecordAccessList(forwardListDirectoryReadView, resourcePrimaryKeyID);
 
 	switch (commandType){
-	case AddRoles:
+	case Acl_Record_Add:
 		if(accessList != NULL){
 			this->permissionMap->deleteResourceFromRoles(resourcePrimaryKeyID, accessList->getRoles());
 			this->permissionMap->appendResourceToRoles(resourcePrimaryKeyID, roleIds);
@@ -201,7 +201,7 @@ INDEXWRITE_RETVAL IndexData::_aclModifyRecordAccessList(const std::string& resou
 			return OP_SUCCESS;
 		}
 		break;
-	case AppendRoles:
+	case Acl_Record_Append:
 		// 1- append these role ids to the access list of the record
 		// 2- add the id of this record to vector of resource ids for this role id in the permission map
 		if(this->forwardIndex->appendRoleToResource(forwardListDirectoryReadView, resourcePrimaryKeyID, roleIds)){
@@ -209,7 +209,7 @@ INDEXWRITE_RETVAL IndexData::_aclModifyRecordAccessList(const std::string& resou
 			return OP_SUCCESS;
 		}
 		break;
-	case DeleteRoles:
+	case Acl_Record_Delete:
 		// 1- Delete these role ids from the access list of the record
 		// 2- delete the id of this record from the vector of resource ids for this role id in the permission map
 		if(this->forwardIndex->deleteRoleFromResource(forwardListDirectoryReadView, resourcePrimaryKeyID, roleIds)){

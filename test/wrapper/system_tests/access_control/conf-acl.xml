@@ -423,38 +423,8 @@
                 <types>
                     <fieldType name="text_standard">
                         <analyzer>
-                            <!--
-                                Stemmer
-                                Optional
-
-                                Enable/Disabling the stemmer By providing "dictionary" file.
-                                For Example:
-                                    Disable Stemmer: <filter name="PorterStemFilter" dictionary="" />
-                            -->
                             <filter name="PorterStemFilter" dictionary="" />
-
-                            <!--
-                                Stop Word Filter
-                                Optional
-
-                                Enable/Disabling the Stop Word Filter By providing "words" file.
-                                For Example:
-                                    Disable Stop Word Filter: <filter name="StopFilter" words="" />
-                            -->
                             <filter name="StopFilter" words="" />
-
-                            <!--
-                                Synonym Filter
-                                Optional
-
-                                Enable/Disabling the Synonym Filter By providing "synonym" file.
-                                For Example:
-                                    Disable Synonym Filter: <filter name="SynonymFilter" synonyms=""
-                                                                    expand="true"/>
-                                To keep the original word in this filter, set the "expand" attribute as "True"
-                                Otherwise set it as "False"
-                            -->
-                            <filter name="SynonymFilter" synonyms=""  expand="true"/>      
                         </analyzer>
                     </fieldType>
                 </types>

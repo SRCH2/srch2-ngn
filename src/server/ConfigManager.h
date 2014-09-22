@@ -138,9 +138,12 @@ enum PortType_t {
     AttributeAclAdd,
     AttributeAclAppend,
     AttributeAclDelete,
-    RecordAclAdd,
-    RecordAclAppend,
-    RecordAclDelete,
+    AclAddRolesForRecord,
+    AclAppendRolesForRecord,
+    AclDeleteRolesForRecord,
+    AclAddRecordsForRole,
+    AclAppendRecordsForRole,
+    AclDeleteRecordsForRole,
     EndOfPortType // stop value - not valid (also used to indicate all/default ports)
 };
 
