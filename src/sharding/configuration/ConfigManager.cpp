@@ -1894,7 +1894,12 @@ void ConfigManager::parse(const pugi::xml_document& configDoc,
     if (clusterName && clusterName.text()) {
     	tempUse = string(clusterName.text().get());
     	trimSpacesFromValue(tempUse, clusterNameTag, parseWarnings);
-    	this->clusterNameStr = tempUse;
+    	if (tempUse != "") {
+    		this->clusterNameStr = tempUse;
+    	} else {
+    		this->clusterNameStr = string(DefaultClusterName);
+    		parseWarnings << "Cluster name is not specified. Engine will use the default value " << this->clusterNameStr << "\n";
+    	}
     }else{
     	this->clusterNameStr = string(DefaultClusterName);
     	parseWarnings << "Cluster name is not specified. Engine will use the default value " << this->clusterNameStr << "\n";
@@ -2879,6 +2884,10 @@ string ConfigManager::createShardDir(const string& clusterName, const string& no
 	createCoreDir(clusterName, nodeName, coreName);
 	boost::filesystem::create_directory(path);
 	return path;
+}
+
+string ConfigManager::getClusterName() {
+	return clusterNameStr;
 }
 
 string ConfigManager::getSRCH2HomeDir()

@@ -171,6 +171,7 @@ public:
 	string createShardDir(const string& clusterName, const string& nodeName, const string& coreName, const ShardId * shardId);
 
 	string getSRCH2HomeDir();
+	string getClusterName();
 	string getClusterDir(const string& clusterName);
 	string getNodeDir(const string& clusterName, const string& nodeName);
 	string getCoreDir(const string& clusterName, const string& nodeName, const string& coreName);

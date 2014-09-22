@@ -22,7 +22,7 @@ namespace srch2 {
 namespace httpwrapper {
 
 UnicastDiscoveryService::UnicastDiscoveryService(UnicastDiscoveryConfig& config,
-		SyncManager *syncManager): DiscoveryService(syncManager), discoveryConfig(config) {
+		SyncManager *syncManager): DiscoveryService(syncManager, config.clusterName), discoveryConfig(config) {
 	listenSocket = -1;
 	sendSocket = -1;
 	_discoveryDone = false;
@@ -82,6 +82,9 @@ void UnicastDiscoveryService::sendJoinRequest(const string& knownHost, unsigned 
 	message.flag = DISCOVERY_JOIN_CLUSTER_REQ;
 	message.interfaceNumericAddress = getTransport()->getPublishedInterfaceNumericAddr();
 	message.internalCommunicationPort = getTransport()->getCommunicationPort();
+
+	unsigned byteToCopy = this->clusterIdentifier.size() > 99 ? 99 : this->clusterIdentifier.size();
+	strncpy(message.clusterIdent, this->clusterIdentifier.c_str(), byteToCopy);
 
 	struct sockaddr_in destinationAddress;
 	memset(&destinationAddress, 0, sizeof(destinationAddress));
@@ -158,6 +161,8 @@ void UnicastDiscoveryService::init() {
 	listenSocket = openListeningChannel();
 	sendSocket = listenSocket;  // we use same socket for sending/receiving.
 
+	_discoveryDone = false;
+
 	// start a thread to listen for incoming data packet.
 	startDiscoveryThread();
 
@@ -215,6 +220,9 @@ InitialDiscovery:
 				//checkSocketIsReady(listenSocket, true);
 				//Logger::console("loopback message ...continuing");
 				continue;
+			} if (!discovery->isCurrentClusterMessage(message)) {
+				Logger::console("message from different network using same multicast setting...continuing");
+				continue;
 			} else {
 				switch(message.flag)
 				{
@@ -264,6 +272,10 @@ InitialDiscovery:
 							yeildMessage.internalCommunicationPort = discovery->getTransport()->getCommunicationPort();
 							yeildMessage.masterNodeId = -1;
 							yeildMessage.nodeId = -1;
+
+							unsigned byteToCopy = discovery->clusterIdentifier.size() > 99 ? 99 : discovery->clusterIdentifier.size();
+							strncpy(message.clusterIdent, discovery->clusterIdentifier.c_str(), byteToCopy);
+
 							tryYieldMsgAgain:
 							int sendStatus = sendUDPPacketToDestination(discovery->sendSocket, (char *)&yeildMessage,
 									sizeof(yeildMessage), senderAddress);
@@ -358,6 +370,9 @@ InitialDiscovery:
 				ASSERT(false);
 				//Logger::console("loopback message ...continuing");
 				continue;
+			} if (!discovery->isCurrentClusterMessage(message)) {
+				Logger::console("message from different network using same multicast setting...continuing");
+				continue;
 			} else {
 				switch(message.flag)
 				{
@@ -381,6 +396,10 @@ InitialDiscovery:
 					ackMessage.masterNodeId = discovery->getSyncManager()->getCurrentNodeId();
 					ackMessage.nodeId = discovery->getSyncManager()->getNextNodeId();
 					ackMessage.ackMessageIdentifier = message.internalCommunicationPort;
+
+					unsigned byteToCopy = discovery->clusterIdentifier.size() > 99 ? 99 : discovery->clusterIdentifier.size();
+					strncpy(message.clusterIdent, discovery->clusterIdentifier.c_str(), byteToCopy);
+
 					tryAckAgain:
 					// send multicast acknowledgment
 					struct sockaddr_in destinationAddress;

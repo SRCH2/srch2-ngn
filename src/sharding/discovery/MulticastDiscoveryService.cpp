@@ -21,7 +21,7 @@ namespace srch2 {
 namespace httpwrapper {
 
 MulticastDiscoveryService::MulticastDiscoveryService(MulticastDiscoveryConfig config,
-		SyncManager *syncManager): DiscoveryService(syncManager), discoveryConfig(config) {
+		SyncManager *syncManager): DiscoveryService(syncManager, config.clusterName), discoveryConfig(config) {
 	// throws exception if validation failed.
 	validateConfigSettings(discoveryConfig);
 	listenSocket = -1;
@@ -278,6 +278,9 @@ void * multicastListener(void * arg) {
 			if (discovery->isLoopbackMessage(message)) {
 				Logger::console("loopback message ...continuing");
 				continue;
+			} if (!discovery->isCurrentClusterMessage(message)) {
+				Logger::console("message from different network using same multicast setting...continuing");
+				continue;
 			} else {
 				switch(message.flag)
 				{
@@ -310,8 +313,8 @@ void * multicastListener(void * arg) {
 								message.internalCommunicationPort)){
 								Logger::console("Yielding to other node");
 								shouldElectItselfAsMaster = false;
-								retryCount = DISCOVERY_RETRY_COUNT * 2;
-								sleep(1);
+								sleep((DISCOVERY_RETRY_COUNT + 2) * 2);
+								retryCount = DISCOVERY_RETRY_COUNT;
 								discovery->sendJoinRequest();
 								continue;
 						}
@@ -380,6 +383,9 @@ void * multicastListener(void * arg) {
 			if (discovery->isLoopbackMessage(message)) {
 				Logger::console("loopback message ...continuing");
 				continue;
+			} if (!discovery->isCurrentClusterMessage(message)) {
+				Logger::console("message from different network using same multicast setting...continuing");
+				continue;
 			} else {
 				switch(message.flag)
 				{
@@ -404,6 +410,10 @@ void * multicastListener(void * arg) {
 					ackMessage.masterNodeId = discovery->syncManager->getCurrentNodeId();
 					ackMessage.nodeId = discovery->syncManager->getNextNodeId();
 					ackMessage.ackMessageIdentifier = message.internalCommunicationPort;
+
+					unsigned byteToCopy = discovery->clusterIdentifier.size() > 99 ? 99 : discovery->clusterIdentifier.size();
+					strncpy(ackMessage.clusterIdent, discovery->clusterIdentifier.c_str(), byteToCopy);
+
 					tryAckAgain:
 					// send multicast acknowledgment
 					int sendStatus = sendUDPPacketToDestination(discovery->sendSocket, (char *)&ackMessage,
@@ -439,6 +449,8 @@ void * multicastListener(void * arg) {
 
 void MulticastDiscoveryService::init() {
 
+	_discoveryDone = false;
+
 	listenSocket = openListeningChannel();
 	sendSocket = openSendingChannel();
 
@@ -465,6 +477,9 @@ void MulticastDiscoveryService::sendJoinRequest() {
 	message.flag = DISCOVERY_JOIN_CLUSTER_REQ;
 	message.interfaceNumericAddress =  getTransport()->getPublishedInterfaceNumericAddr();
 	message.internalCommunicationPort = getTransport()->getCommunicationPort();
+
+	unsigned byteToCopy = this->clusterIdentifier.size() > 99 ? 99 : this->clusterIdentifier.size();
+	strncpy(message.clusterIdent, this->clusterIdentifier.c_str(), byteToCopy);
 
 	int retry = 3;
 	//Logger::console("sending MC UDP to %s , %d",discoveryConfig.multiCastAddress.c_str(),  getMulticastPort());

@@ -123,6 +123,9 @@ bool DiscoveryService::isLoopbackMessage(DiscoveryMessage &msg){
 			msg.internalCommunicationPort == getTransport()->getCommunicationPort());
 }
 
+bool DiscoveryService::isCurrentClusterMessage(DiscoveryMessage &msg) {
+	return string(msg.clusterIdent) == this->clusterIdentifier;
+}
 
 } /* namespace sharding */
 } /* namespace srch2 */

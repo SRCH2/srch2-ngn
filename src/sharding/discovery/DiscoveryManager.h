@@ -56,6 +56,7 @@ struct DiscoveryMessage {
 	unsigned nodeId;
 	unsigned masterNodeId;
 	unsigned ackMessageIdentifier;  // to be used for ACK messsages only
+	char clusterIdent[100];         // cluster name.
 };
 
 /*
@@ -63,9 +64,10 @@ struct DiscoveryMessage {
  */
 class DiscoveryService{
 public:
-	DiscoveryService(SyncManager *syncManager) {
+	DiscoveryService(SyncManager *syncManager, const string& clusterIdent) {
 		this->syncManager = syncManager;
 		this->shutdown = false;
+		this->clusterIdentifier = clusterIdent;
 	}
 	// methods to be implemented by concrete service provider.
 	virtual void init() = 0;
@@ -76,6 +78,7 @@ public:
 
 	// APIs provided by base class.
 	bool isLoopbackMessage(DiscoveryMessage &msg);
+	bool isCurrentClusterMessage(DiscoveryMessage &msg);
 	void isCurrentNodeMaster(bool flag) { syncManager->setNodeIsMaster(flag); }
 	void stopDiscovery() { shutdown = true; }
 	SyncManager *getSyncManager() { return  syncManager; }
@@ -83,6 +86,7 @@ public:
 	virtual ~DiscoveryService() {}
 protected:
 	bool shutdown;
+	string clusterIdentifier;
 	SyncManager *syncManager;
 };
 
@@ -107,9 +111,12 @@ struct MulticastDiscoveryConfig{
 	// enabled loopback. 0 = enabled or 1 = false
 	u_char enableLoop;
 
+	// name of the cluster to distinguish nodes in same network but different cluster.
+	std::string clusterName;
+
 	// only for debug
 	void print() {
-		std::cout << "discovery: [" << multiCastAddress << " : " << multicastPort
+		std::cout << "discovery: [" << clusterName <<  " : " << multiCastAddress << " : " << multicastPort
 				 << " : " << ttl << " : " << (enableLoop == 1 ? "loop enabled" : "loop disabled") << "]" << std::endl;
 	}
 };
@@ -177,9 +184,10 @@ struct HostAndPort {
 };
 struct UnicastDiscoveryConfig {
 	std::vector<HostAndPort> knownHosts;
+	std::string clusterName;
 	// only for debug
 	void print() {
-		std::cout << "discovery: [" << std::endl;
+		std::cout << "discovery: [ " << clusterName << " : "  << std::endl;
 		for (unsigned i = 0; i < knownHosts.size(); ++i) {
 			 std::cout << knownHosts[i].ipAddress.c_str() << " : " << knownHosts[i].port << std::endl;
 		}

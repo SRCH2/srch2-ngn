@@ -157,6 +157,7 @@ private:
 
 	boost::mutex localNodesCopyMutex;
 	vector<Node> localNodesCopy;
+	vector<Node> unreachableNodes;
 	bool hasMajority;
 	string serializeClusterNodes(){
 		localNodesCopyMutex.lock();
@@ -296,16 +297,6 @@ private:
 	void processHeartBeat(Message *message);
 
 	void handleElectionRequest();
-
-	void handleMasterProposalReject(Message *message) {
-		// Proposed master rejected the message. Possible reasons.
-		// 1. May be it was not eligible for master
-		// 2. It already has a master
-		// 3. Could not find enough vote in a given time to be elected as master.
-		// For V0 do nothing  TODO: v1
-		ASSERT(false);
-	}
-	void updateClusterState(Message *message);
 
 	ClientNodeState nodeState;
 	MessageAllocator cMessageAllocator;
