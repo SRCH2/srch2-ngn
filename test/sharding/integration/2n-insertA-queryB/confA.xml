@@ -36,7 +36,8 @@
         <ipaddress>127.0.0.1</ipaddress>
     </transport>    
     
-    <WellKnownHosts>127.0.0.1:4096,127.0.0.1:4097,127.0.0.1:4098</WellKnownHosts>
+    <!--<WellKnownHosts>127.0.0.1:4096,127.0.0.1:4097,127.0.0.1:4098</WellKnownHosts>-->
+    <WellKnownHosts>127.0.0.1:54000</WellKnownHosts>
     <listeningHostname>127.0.0.1</listeningHostname>
     <listeningPort>7049</listeningPort>
 
