@@ -147,17 +147,16 @@ IF(NOT ANDROID)
     	${CMAKE_SOURCE_DIR}/../src/adapter/
     	${CMAKE_SOURCE_DIR}/../thirdparty/json/jsoncpp-src/include
     	${CMAKE_SOURCE_DIR}/util/
-    	${CMAKE_SOURCE_DIR}/../thirdparty/mysql-replication-listener/include
-    	${CMAKE_SOURCE_DIR}/../thirdparty/mysql-connector/include
+    	${CMAKE_SOURCE_DIR}/../thirdparty/mysql-connector-c++/mysql-replication-listener/include
+    	${CMAKE_SOURCE_DIR}/../thirdparty/mysql-connector-c++/mysql-connector-c++/build/include
     	/usr/include/mysql/
 	)
 
 	SET( jsoncpp_LIBRARY ${CMAKE_SOURCE_DIR}/../thirdparty/json/jsoncpp-src/build/libjsoncpp.a)
 	
 	#MYSQL_CONNECTOR_LIBRARY and MYSQL_LISTENER_LIBRARY have to be both .a or .so
-	SET(MYSQL_LISTENER_LIBRARY ${CMAKE_SOURCE_DIR}/../thirdparty/mysql-replication-listener/build/lib/libreplication.so)
-	#SET(MYSQL_CONNECTOR_LIBRARY ${CMAKE_SOURCE_DIR}/../thirdparty/mysql-connector/lib/libmysqlcppconn-static.a)
-	SET(MYSQL_CONNECTOR_LIBRARY ${CMAKE_SOURCE_DIR}/../thirdparty/mysql-connector/lib/libmysqlcppconn.so)
+	SET(MYSQL_LISTENER_LIBRARY ${CMAKE_SOURCE_DIR}/../thirdparty/mysql-connector-c++/mysql-replication-listener/build/lib/libreplication.so)
+	SET(MYSQL_CONNECTOR_LIBRARY ${CMAKE_SOURCE_DIR}/../thirdparty/mysql-connector-c++/mysql-connector-c++/build/lib/libmysqlcppconn.so)
 
 	ADD_LIBRARY(mysqlConnector SHARED ${MYSQL_CONNECTOR_SRC} )
 	

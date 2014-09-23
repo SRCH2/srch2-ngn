@@ -80,3 +80,15 @@ mv mysql-connector-c++-1.1.4 mysql-connector-c++
 cd mysql-connector-c++
 cmake -DCMAKE_INSTALL_PREFIX=./build
 make install
+
+cd ../../mysql-connector-c++
+echo "BUILDING MySQL replication listener... in $CURRENTDIR"
+rm -rf mysql-replication-listener
+tar -xvf mysql-replication-listener.tar.gz
+cd mysql-replication-listener
+mkdir build
+cd build
+cmake ..
+make
+
+
