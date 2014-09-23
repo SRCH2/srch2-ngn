@@ -12,6 +12,7 @@ void freeStatsOfLogicalPlanTree(LogicalPlanNode * node) {
         return;
     }
     delete node->stats;
+    node->stats = NULL;
     for(vector<LogicalPlanNode * >::iterator child = node->children.begin(); child != node->children.end() ; ++child){
         freeStatsOfLogicalPlanTree(*child);
     }
