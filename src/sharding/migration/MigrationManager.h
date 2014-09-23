@@ -85,10 +85,13 @@ const short MM_MIGRATION_PORT_START = 53000;
 // MM internal structure to
 class MigrationSessionInfo {
 public:
-	ClusterShardId shardId;
+	ClusterShardId currentShardId;
+	ClusterShardId destShardId;  // should be different form currenShardId in case of copy.
 	boost::shared_ptr<Srch2Server> shard;
 	unsigned srcOperationId;
 	unsigned dstOperationId;
+	unsigned srcNodeId;
+	unsigned destNodeId;
 	unsigned shardCompCount;
 	unsigned shardCompSize;
 	string shardCompName;
@@ -103,7 +106,7 @@ public:
 	short listeningPort;
 
 	void print() const {
-	    Logger::debug("Migrating shard %s : (??,%d) => (%d,%d)", shardId.toString().c_str(),
+	    Logger::debug("Migrating shard %s : (??,%d) => (%d,%d)", currentShardId.toString().c_str(),
 	            srcOperationId, remoteNode, dstOperationId);
 	}
 
@@ -137,8 +140,10 @@ public:
 	 *  (which is the data handle of 'shardId') to 'requesterAddress.nodeId'
 	 *  and give a notification to ShardManager about this transfer on that node.
 	 */
-	void migrateShard(const ClusterShardId& shardId , boost::shared_ptr<Srch2Server> shardPtr,
-			const NodeOperationId & currentAddress, const NodeOperationId & requesterAddress);
+	void migrateShard(const ClusterShardId& currentShardId ,
+			const boost::shared_ptr<Srch2Server>& shardPtr,
+			const ClusterShardId& destShardId, const NodeOperationId & currentAddress,
+			const NodeOperationId & requesterAddress);
 
 	MigrationManager(TransportManager *transport, ConfigManager *config);
 
@@ -156,14 +161,16 @@ private:
 	void sendInfoAckMessage(MigrationSessionInfo& currentSessionInfo);
 	int acceptTCPConnection(int tcpSocket , short receivePort);
 	void doInitialHandShake(MigrationSessionInfo& currentSessionInfo);
-	string initMigrationSession(ClusterShardId shardId,unsigned srcOperationId,
-			unsigned dstOperationId, unsigned remoteNode, unsigned shardCompCount);
+	string initMigrationSession(const ClusterShardId& currentShardId,
+			const ClusterShardId& destShardId, unsigned srcOperationId, unsigned dstOperationId,
+			unsigned srcNodeId, unsigned dstNodeId,unsigned remoteNode, unsigned shardCompCount);
 	bool hasActiveSession(const ClusterShardId& shardId, unsigned node);
 	bool hasActiveSession(const ClusterShardId& shardId, unsigned node, string& sessionKey);
 	void sendMessage(unsigned destinationNodeId, Message *message);
 	const CoreInfo_t *getIndexConfig(ClusterShardId shardId);
 	void populateStatus(ShardMigrationStatus& status, unsigned srcOperationId,
-			unsigned dstOperationId, unsigned destinationNodeId, boost::shared_ptr<Srch2Server> shard,
+			unsigned dstOperationId,unsigned sourceNodeId, unsigned destinationNodeId,
+			boost::shared_ptr<Srch2Server> shard,
 			MIGRATION_STATUS migrationResult);
 	void notifySHMAndCleanup(string sessionKey, MIGRATION_STATUS migrationResult);
 	void busyWaitWithTimeOut(const MigrationSessionInfo& currentSessionInfo, MIGRATION_STATE expectedState);

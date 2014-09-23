@@ -33,9 +33,12 @@ const unsigned BLOCK_SIZE =  1400;  // MTU size
 
 // various migration message's body types
 struct MigrationInitMsgBody{
-	ClusterShardId shardId;
+	ClusterShardId migratingShardId;
+	ClusterShardId destinationShardId;
 	unsigned srcOperationId;
 	unsigned dstOperationId;
+	unsigned srcNodeId;
+	unsigned dstNodeId;
 	unsigned shardComponentCount;
 };
 
@@ -183,10 +186,13 @@ bool MMCallBackForTM::resolveMessage(Message * incomingMessage, NodeId remoteNod
 		MigrationInitMsgBody *initMsgBody = (MigrationInitMsgBody *)incomingMessage->getMessageBody();
 
 		migrationMgr->sessionLock.lock();
-		if (!migrationMgr->hasActiveSession(initMsgBody->shardId, remoteNode)) {
+		if (!migrationMgr->hasActiveSession(initMsgBody->migratingShardId, remoteNode)) {
 
-			string sessionkey = migrationMgr->initMigrationSession(initMsgBody->shardId,
-					initMsgBody->srcOperationId, initMsgBody->dstOperationId, remoteNode,
+			string sessionkey = migrationMgr->initMigrationSession(initMsgBody->migratingShardId,
+					initMsgBody->destinationShardId,
+					initMsgBody->srcOperationId, initMsgBody->dstOperationId,
+					initMsgBody->srcNodeId, initMsgBody->dstNodeId,
+					remoteNode,
 					initMsgBody->shardComponentCount);
 
 			migrationMgr->migrationSession[sessionkey].status = MM_STATE_INIT_RCVD;
@@ -194,7 +200,7 @@ bool MMCallBackForTM::resolveMessage(Message * incomingMessage, NodeId remoteNod
 			pthread_t receiverThread;
 			MigrationThreadArguments * arg = new MigrationThreadArguments();
 			arg->mm = migrationMgr;
-			arg->shardId = initMsgBody->shardId;
+			arg->shardId = initMsgBody->migratingShardId;
 			arg->remotedNode = remoteNode;
 			pthread_create(&receiverThread, NULL, receiverThreadEntryPoint, arg);
 			pthread_detach(receiverThread);
@@ -339,7 +345,8 @@ void MigrationService::receiveShard(ClusterShardId shardId, unsigned remoteNode)
 		boost::shared_ptr<const ClusterResourceMetadata_Readview> readview;
 		ShardManager::getReadview(readview);
 		directoryPath = configManager->createShardDir(readview->getClusterName(),
-				readview->getCore(shardId.coreId)->getName(), &shardId);
+				readview->getCore(currentSessionInfo.destShardId.coreId)->getName(),
+				&currentSessionInfo.destShardId);
 	}
 	Srch2Server *migratedShard = new Srch2Server(migrationMgr->getIndexConfig(shardId), directoryPath, "");
 
@@ -484,11 +491,13 @@ void MigrationService::receiveShard(ClusterShardId shardId, unsigned remoteNode)
 }
 
 void MigrationManager::populateStatus(ShardMigrationStatus& status, unsigned srcOperationId,
-		unsigned dstOperationId, unsigned destinationNodeId, boost::shared_ptr<Srch2Server> shard,
+		unsigned dstOperationId, unsigned sourceNodeId, unsigned destinationNodeId,
+		boost::shared_ptr<Srch2Server> shard,
 		MIGRATION_STATUS migrationResult){
 
 	status.srcOperationId = srcOperationId;
 	status.dstOperationId = dstOperationId;
+	status.sourceNodeId =  sourceNodeId;
 	status.destinationNodeId = destinationNodeId;
 	status.shard = shard;
 	status.status = migrationResult;
@@ -498,34 +507,37 @@ void MigrationManager::notifySHMAndCleanup(string sessionKey, MIGRATION_STATUS m
 	ShardMigrationStatus migrationStatus;
 	sessionLock.lock();
 	populateStatus(migrationStatus, migrationSession[sessionKey].srcOperationId,
-			migrationSession[sessionKey].dstOperationId, migrationSession[sessionKey].remoteNode,
-			migrationSession[sessionKey].shard,
+			migrationSession[sessionKey].dstOperationId, migrationSession[sessionKey].srcNodeId,
+			migrationSession[sessionKey].destNodeId, migrationSession[sessionKey].shard,
 			migrationResult);
 	migrationSession.erase(sessionKey);
 	sessionLock.unlock();
 	shardManager->resolveMMNotification(migrationStatus);
 }
 
-void MigrationManager::migrateShard(const ClusterShardId& shardId , boost::shared_ptr<Srch2Server> shardPtr,
-			const NodeOperationId & currentAddress, const NodeOperationId & requesterAddress) {
+void MigrationManager::migrateShard(const ClusterShardId& currentShardId ,
+		const boost::shared_ptr<Srch2Server>& shardPtr,
+		const ClusterShardId& destShardId, const NodeOperationId & currentAddress,
+		const NodeOperationId & requesterAddress) {
 
-	Logger::console("Migrating shard %s to node %d", shardId.toString().c_str(), requesterAddress.nodeId);
+	Logger::console("Migrating shard %s to node %d", currentShardId.toString().c_str(), requesterAddress.nodeId);
 
 	/*
 	 *  Initialize the migration session info
 	 */
 	sessionLock.lock();
-	if (hasActiveSession(shardId, requesterAddress.nodeId)) {
+	if (hasActiveSession(currentShardId, requesterAddress.nodeId)) {
 		sessionLock.unlock();
 		ShardMigrationStatus status;
-		populateStatus(status, currentAddress.operationId,
-				requesterAddress.operationId, requesterAddress.nodeId, shardPtr,
+		populateStatus(status, currentAddress.operationId, requesterAddress.operationId,
+				currentAddress.nodeId, requesterAddress.nodeId, shardPtr,
 				MM_STATUS_BUSY);
 		shardManager->resolveMMNotification(status);
 		return;
 	}
-	string sessionKey = this->initMigrationSession(shardId, currentAddress.operationId,
-			requesterAddress.operationId, requesterAddress.nodeId, 0);
+	string sessionKey = this->initMigrationSession(currentShardId, destShardId,
+			currentAddress.operationId, requesterAddress.operationId,
+			currentAddress.nodeId, requesterAddress.nodeId, requesterAddress.nodeId, 0);
 	migrationSession[sessionKey].status = MM_STATE_INIT_RCVD;
 	migrationSession[sessionKey].shard = shardPtr;
 	sessionLock.unlock();
@@ -533,7 +545,7 @@ void MigrationManager::migrateShard(const ClusterShardId& shardId , boost::share
 	pthread_t senderThread;
 	MigrationThreadArguments * arg = new MigrationThreadArguments();
 	arg->mm = this;
-	arg->shardId = shardId;
+	arg->shardId = currentShardId;
 	arg->remotedNode = requesterAddress.nodeId;
 	pthread_create(&senderThread, NULL, senderThreadEntryPoint, arg);
 	pthread_detach(senderThread);
@@ -681,10 +693,16 @@ void MigrationManager::doInitialHandShake(MigrationSessionInfo& currentSessionIn
 	Message *initMessage = MessageAllocator().allocateMessage(sizeof(MigrationInitMsgBody));
 	initMessage->setType(MigrationInitMessage);
 	MigrationInitMsgBody *initMessageBody = (MigrationInitMsgBody *)initMessage->getMessageBody();
-	initMessageBody->shardId = currentSessionInfo.shardId;
+	initMessageBody->migratingShardId = currentSessionInfo.currentShardId;
+	initMessageBody->destinationShardId = currentSessionInfo.destShardId;
+
 	initMessageBody->shardComponentCount = currentSessionInfo.shardCompCount;
+
 	initMessageBody->dstOperationId = currentSessionInfo.dstOperationId;
 	initMessageBody->srcOperationId = currentSessionInfo.srcOperationId;
+	initMessageBody->srcNodeId = currentSessionInfo.srcNodeId;
+	initMessageBody->dstNodeId = currentSessionInfo.destNodeId;
+
 	unsigned destinationNodeId = currentSessionInfo.remoteNode;
 	currentSessionInfo.status = MM_STATE_INIT_ACK_WAIT;
 	int tryCount = 5;
@@ -701,7 +719,7 @@ void MigrationManager::sendInitMessageAck(MigrationSessionInfo& currentSessionIn
 	Message * initAckMesssage = MessageAllocator().allocateMessage(sizeof(MigrationInitAckMsgBody));
 	initAckMesssage->setType(MigrationInitAckMessage);
 	MigrationInitAckMsgBody *body = (MigrationInitAckMsgBody *)initAckMesssage->getMessageBody();
-	body->shardId = currentSessionInfo.shardId;
+	body->shardId = currentSessionInfo.currentShardId;
 	body->portnumber = currentSessionInfo.listeningPort;
 	body->ipAddress = transport->getPublishedInterfaceNumericAddr();
 	currentSessionInfo.status = MM_STATE_INFO_WAIT;
@@ -714,7 +732,7 @@ void MigrationManager::sendInfoAckMessage(MigrationSessionInfo& currentSessionIn
 	Message * infoAckMesssage = MessageAllocator().allocateMessage(sizeof(ShardComponentInfoAckMsgBody));
 	infoAckMesssage->setType(MigrationComponentBeginAckMessage);
 	ShardComponentInfoAckMsgBody *body = (ShardComponentInfoAckMsgBody *)infoAckMesssage->getMessageBody();
-	body->shardId = currentSessionInfo.shardId;
+	body->shardId = currentSessionInfo.currentShardId;
 	currentSessionInfo.status = MM_STATE_COMPONENT_RECEIVING;
 	Logger::console("sending component begin ack to %d ", currentSessionInfo.remoteNode);
 	sendMessage(currentSessionInfo.remoteNode, infoAckMesssage);
@@ -729,7 +747,7 @@ void MigrationManager::sendComponentInfoAndWaitForAck(MigrationSessionInfo& curr
 	Message *compInfoMessage = allocateMessage(compInfoMessageSize);
 	compInfoMessage->setType(MigrationComponentBeginMessage);
 	ShardComponentInfoMsgBody *bodyPtr = (ShardComponentInfoMsgBody *)compInfoMessage->getMessageBody();
-	bodyPtr->shardId = currentSessionInfo.shardId;
+	bodyPtr->shardId = currentSessionInfo.currentShardId;
 	bodyPtr->componentSize = currentSessionInfo.shardCompSize;
 	bodyPtr->componentNameSize = componentName.size();
 	memcpy(bodyPtr->name, componentName.c_str(), componentName.size());
@@ -753,7 +771,7 @@ void MigrationManager::sendComponentDoneMsg(MigrationSessionInfo& currentSession
 	}
 
 	MigrationDoneMsgBody *bodyPtr = (MigrationDoneMsgBody *)compDoneMessage->getMessageBody();
-	bodyPtr->shardId = currentSessionInfo.shardId;
+	bodyPtr->shardId = currentSessionInfo.currentShardId;
 
 	if (!shardDone) {
 		currentSessionInfo.status = MM_STATE_INFO_WAIT;  // waiting for next component
@@ -942,14 +960,17 @@ bool MigrationManager::hasActiveSession(const ClusterShardId& shardId, unsigned 
 	}
 }
 
-string MigrationManager::initMigrationSession(ClusterShardId shardId, unsigned srcOperationId,
-		unsigned dstOperationId, unsigned remoteNode, unsigned shardCompCount) {
+string MigrationManager::initMigrationSession(const ClusterShardId& currentShardId,
+		const ClusterShardId& destShardId, unsigned srcOperationId, unsigned dstOperationId,
+		unsigned srcNodeId, unsigned dstNodeId,unsigned remoteNode, unsigned shardCompCount) {
 
-	string key = getSessionKey(shardId, remoteNode);
+	string key = getSessionKey(currentShardId, remoteNode);
 	MigrationSessionInfo info;
-	info.shardId = shardId;
+	info.currentShardId = currentShardId;
 	info.srcOperationId = srcOperationId;
 	info.dstOperationId = dstOperationId;
+	info.srcNodeId = srcNodeId;
+	info.destNodeId = dstNodeId;
 	info.beginTimeStamp = 0;
 	info.endTimeStamp = 0;
 	info.listeningPort = -1;
