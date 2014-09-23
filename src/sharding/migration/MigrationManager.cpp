@@ -300,6 +300,9 @@ void MigrationService::receiveShard(ClusterShardId shardId, unsigned remoteNode)
 
 	currentSessionInfo.beginTimeStamp = time(NULL);
 
+
+//	currentSessionInfo.print();
+
 	migrationMgr->openTCPReceiveChannel(receiveSocket, receivePort);
 
 	if (receiveSocket == -1) {
@@ -325,6 +328,7 @@ void MigrationService::receiveShard(ClusterShardId shardId, unsigned remoteNode)
 	}
 
 	Logger::console("Done");
+//    currentSessionInfo.print();
 
 	unsigned componentCount = currentSessionInfo.shardCompCount;
 
@@ -359,6 +363,9 @@ void MigrationService::receiveShard(ClusterShardId shardId, unsigned remoteNode)
 		unsigned componentSize = currentSessionInfo.shardCompSize;
 
 		Logger::console("shard path = %s", filePath.c_str());
+
+//		currentSessionInfo.print();
+
 		int writeFd = -1;
 		if (componentSize > 0) {
 			writeFd = open(filePath.c_str(), O_RDWR|O_CREAT|O_TRUNC, 0000644);
@@ -385,6 +392,7 @@ void MigrationService::receiveShard(ClusterShardId shardId, unsigned remoteNode)
 			continue;
 		}
 
+//	    currentSessionInfo.print();
 		int ftruncStatus = ftruncate(writeFd, componentSize);
 		if (ftruncStatus == -1) {
 			//close socket
@@ -440,6 +448,8 @@ void MigrationService::receiveShard(ClusterShardId shardId, unsigned remoteNode)
 		}
 		Logger::console("%u/%u Received", offset, componentSize);
 
+//	    currentSessionInfo.print();
+
 		std::istringstream inputStream(ios::binary);
 		inputStream.rdbuf()->pubsetbuf((char *)mmapBuffer , componentSize);
 		inputStream.seekg(0, ios::beg);
@@ -463,6 +473,8 @@ void MigrationService::receiveShard(ClusterShardId shardId, unsigned remoteNode)
 	Logger::console("Received shard %s in %d secs", shardId.toString().c_str(),
 			currentSessionInfo.endTimeStamp - currentSessionInfo.beginTimeStamp);
 
+
+//    currentSessionInfo.print();
 	migrationMgr->notifySHMAndCleanup(sessionKey, MM_STATUS_SUCCESS);
 
 	close(receiveSocket);

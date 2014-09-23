@@ -101,6 +101,12 @@ public:
 	unsigned remoteNode;
 	unsigned remoteAddr;
 	short listeningPort;
+
+	void print() const {
+	    Logger::debug("Migrating shard %s : (??,%d) => (%d,%d)", shardId.toString().c_str(),
+	            srcOperationId, remoteNode, dstOperationId);
+	}
+
 };
 
 // callback handler from TM
