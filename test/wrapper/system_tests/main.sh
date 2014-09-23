@@ -399,11 +399,34 @@ test_case "validate json response" "python ./json_response/json_response_format_
 
 test_case "test Chinese" "python ./chinese/chinese_analyzer.py $SRCH2_ENGINE"
 
+
+rm -rf data/sqlite_data
+rm -rf ./adapter_sqlite/srch2Test.db
+
+sleep 3
+
+test_case "adapter_sqlite" "python ./adapter_sqlite/adapter_sqlite.py $SRCH2_ENGINE \
+    ./adapter_sqlite/testCreateIndexes_sql.txt ./adapter_sqlite/testCreateIndexes.txt \
+    ./adapter_sqlite/testRunListener_sql.txt ./adapter_sqlite/testRunListener.txt \
+    ./adapter_sqlite/testOfflineLog_sql.txt ./adapter_sqlite/testOfflineLog.txt" \
+    255 "-- SKIPPED: Cannot connect to the Sqlite. Check if sqlite3 is installed."
+rm -rf data/sqlite_data
+rm -rf ./adapter_sqlite/srch2Test.db
+
+# The following cases may not run on Mac, so we put them to the end
+
 if [ $os != "$macName" ];then
     test_case "high_insert" "./high_insert_test/autotest.sh $SRCH2_ENGINE" 
 else
     echo "-- IGNORING high_insert test on $macName" >> ${output}
 fi
+
+sleep 3
+
+test_case "adapter_mongo" "python ./adapter_mongo/MongoTest.py $SRCH2_ENGINE \
+    ./adapter_mongo/queries.txt" 10 "-- SKIPPED: Cannot connect to the MongoDB. \
+    Check instructions in the file db_connectors/mongo/readme.txt. "
+rm -rf data/mongodb_data
 
 # server is a little slow to exit for reset_logger, causing the server in statemedia's first test (write_correctness)
 # to fail to bind the port, hanging the test script, so wait just a sec here
@@ -428,26 +451,6 @@ fi
 #echo "-- IGNORING FAILURE: $test_id" >> ${output}
 rm -rf data/ *.idx
 
-
-rm -rf data/sqlite_data
-rm -rf ./adapter_sqlite/srch2Test.db
-
-sleep 3
-
-test_case "adapter_sqlite" "python ./adapter_sqlite/adapter_sqlite.py $SRCH2_ENGINE \
-    ./adapter_sqlite/testCreateIndexes_sql.txt ./adapter_sqlite/testCreateIndexes.txt \
-    ./adapter_sqlite/testRunListener_sql.txt ./adapter_sqlite/testRunListener.txt \
-    ./adapter_sqlite/testOfflineLog_sql.txt ./adapter_sqlite/testOfflineLog.txt" \
-    255 "-- SKIPPED: Cannot connect to the Sqlite. Check if sqlite3 is installed."
-rm -rf data/sqlite_data
-rm -rf ./adapter_sqlite/srch2Test.db
-
-sleep 3
-
-test_case "adapter_mongo" "python ./adapter_mongo/MongoTest.py $SRCH2_ENGINE \
-    ./adapter_mongo/queries.txt" 10 "-- SKIPPED: Cannot connect to the MongoDB. \
-    Check instructions in the file db_connectors/mongo/readme.txt. "
-rm -rf data/mongodb_data
 
 
 # clear the output directory. First make sure that we are in correct directory
