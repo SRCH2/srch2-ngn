@@ -38,7 +38,7 @@ public:
 	string getOperationStatus() const ;
 
 private:
-	const ClusterShardId shardId;
+	const ClusterShardId unassignedShardId;
 	const ClusterShardId replicaShardId;
 	const NodeId srcNodeId;
 

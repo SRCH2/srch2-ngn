@@ -13,49 +13,49 @@ namespace httpwrapper {
 class CopyToMeNotification : public ShardingNotification {
 public:
 	CopyToMeNotification(const ClusterShardId & srcShardId, const ClusterShardId & destShardId){
-		this->srcShardId = srcShardId;
-		this->destShardId = destShardId;
+		this->replicaShardId = srcShardId;
+		this->unassignedShardId = destShardId;
 	}
     CopyToMeNotification(const ClusterShardId & srcShardId){
-        this->srcShardId = srcShardId;
+        this->replicaShardId = srcShardId;
     }
 	CopyToMeNotification(){};
 
 
 	void * serialize(void * buffer) const{
 		buffer = ShardingNotification::serialize(buffer);
-		buffer = srcShardId.serialize(buffer);
-        buffer = destShardId.serialize(buffer);
+		buffer = replicaShardId.serialize(buffer);
+        buffer = unassignedShardId.serialize(buffer);
 		return buffer;
 	}
 	unsigned getNumberOfBytes() const{
 		unsigned numberOfBytes = 0;
 		numberOfBytes += ShardingNotification::getNumberOfBytes();
-		numberOfBytes += srcShardId.getNumberOfBytes();
-        numberOfBytes += destShardId.getNumberOfBytes();
+		numberOfBytes += replicaShardId.getNumberOfBytes();
+        numberOfBytes += unassignedShardId.getNumberOfBytes();
 		return numberOfBytes;
 	}
 	void * deserialize(void * buffer) {
 		buffer = ShardingNotification::deserialize(buffer);
-		buffer = srcShardId.deserialize(buffer);
-        buffer = destShardId.deserialize(buffer);
+		buffer = replicaShardId.deserialize(buffer);
+        buffer = unassignedShardId.deserialize(buffer);
 		return buffer;
 	}
 	ShardingMessageType messageType() const{
 		return ShardingCopyToMeMessageType;
 	}
-    ClusterShardId getSrcShardId() const{
-    	return srcShardId;
+    ClusterShardId getReplicaShardId() const{
+    	return replicaShardId;
     }
-    ClusterShardId getDestShardId() const{
-        return destShardId;
+    ClusterShardId getUnassignedShardId() const{
+        return unassignedShardId;
     }
 	bool operator==(const CopyToMeNotification & right){
-		return srcShardId == right.srcShardId && destShardId == right.destShardId;
+		return replicaShardId == right.replicaShardId && unassignedShardId == right.unassignedShardId;
 	}
 private:
-	ClusterShardId srcShardId;
-	ClusterShardId destShardId;
+	ClusterShardId replicaShardId;
+	ClusterShardId unassignedShardId;
 };
 
 

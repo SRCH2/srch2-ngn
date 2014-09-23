@@ -503,8 +503,8 @@ bool ShardManager::resolveMessage(Message * msg, NodeId senderNode){
 			CopyToMeNotification * copyNotif =
 					ShardingNotification::deserializeAndConstruct<CopyToMeNotification>(Message::getBodyPointerFromMessagePointer(msg));
 			Logger::debug("%s | cp %s %s", copyNotif->getDescription().c_str(),
-					copyNotif->getSrcShardId().toString().c_str(),
-					copyNotif->getDestShardId().toString().c_str());
+					copyNotif->getReplicaShardId().toString().c_str(),
+					copyNotif->getUnassignedShardId().toString().c_str());
 			if(copyNotif->isBounced()){
 				saveBouncedNotification(copyNotif);
 				Logger::debug("==> Bounced.");
@@ -517,16 +517,16 @@ bool ShardManager::resolveMessage(Message * msg, NodeId senderNode){
 			}
 
 			// call migration manager to start transfering this shard.
-			ClusterShardId srcShardId = copyNotif->getSrcShardId();
-			ClusterShardId destShardId = copyNotif->getDestShardId();
+			ClusterShardId replicaShardId = copyNotif->getReplicaShardId();
+			ClusterShardId unassignedShardId = copyNotif->getUnassignedShardId();
 			Cluster_Writeview * writeview = this->getWriteview();
-			if(writeview->localClusterDataShards.find(srcShardId) == writeview->localClusterDataShards.end()){
+			if(writeview->localClusterDataShards.find(replicaShardId) == writeview->localClusterDataShards.end()){
 				// NOTE: requested shard does not exist on this node.
 				ASSERT(false);
 				break;
 			}
 
-			this->migrationManager->migrateShard(srcShardId, writeview->localClusterDataShards.at(srcShardId).server,
+			this->migrationManager->migrateShard(replicaShardId, writeview->localClusterDataShards.at(replicaShardId).server,
 					copyNotif->getDest(), copyNotif->getSrc());
 
 			delete copyNotif;

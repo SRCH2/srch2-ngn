@@ -18,7 +18,7 @@ namespace httpwrapper {
 ShardCopyOperation::ShardCopyOperation(const unsigned operationId,
 		const ClusterShardId & unassignedShard,
 		NodeId srcNodeId, const ClusterShardId & shardToReplicate):
-		OperationState(operationId),shardId(unassignedShard),replicaShardId(shardToReplicate),srcNodeId(srcNodeId){
+		OperationState(operationId),unassignedShardId(unassignedShard),replicaShardId(shardToReplicate),srcNodeId(srcNodeId){
 	this->lockOperation = NULL;
 	this->lockOperationResult = new SerialLockResultStatus();
 	this->commitOperation = NULL;
@@ -38,7 +38,7 @@ OperationState * ShardCopyOperation::entry(){
 
 OperationState * ShardCopyOperation::acquireLocks(){
 	vector<SingleResourceLockRequest *> lockBatch;
-	SingleResourceLockRequest * xRequest = new SingleResourceLockRequest(shardId,
+	SingleResourceLockRequest * xRequest = new SingleResourceLockRequest(unassignedShardId,
 			NodeOperationId(ShardManager::getCurrentNodeId(),this->getOperationId()),
 			ResourceLockType_X);
 	SingleResourceLockRequest * sRequest = new SingleResourceLockRequest(replicaShardId,
@@ -89,7 +89,7 @@ OperationState * ShardCopyOperation::transfer(){
 	// start transfering the data
 	// call MM to transfer the shard.
 //	accessMigrationManager(shardId, replicaShardId, srcNodeId);
-	CopyToMeNotification * copyToMeNotif = new CopyToMeNotification(replicaShardId, shardId);
+	CopyToMeNotification * copyToMeNotif = new CopyToMeNotification(replicaShardId, unassignedShardId);
 	this->send(copyToMeNotif, NodeOperationId(srcNodeId));
 	delete copyToMeNotif;
 	return this;
@@ -102,10 +102,10 @@ OperationState * ShardCopyOperation::handle(MMNotification * mmStatus){
 		Cluster_Writeview * writeview = ShardManager::getWriteview();
 
 		string indexDirectory = ShardManager::getShardManager()->getConfigManager()->getShardDir(writeview->clusterName,
-				writeview->cores[shardId.coreId]->getName(), &shardId);
+				writeview->cores[unassignedShardId.coreId]->getName(), &unassignedShardId);
 		if(indexDirectory.compare("") == 0){
 			indexDirectory = ShardManager::getShardManager()->getConfigManager()->createShardDir(writeview->clusterName,
-					writeview->cores[shardId.coreId]->getName(), &shardId);
+					writeview->cores[unassignedShardId.coreId]->getName(), &unassignedShardId);
 		}
 
 		physicalShard = LocalPhysicalShard(mmStatus->getStatus().shard, indexDirectory, "");
@@ -117,7 +117,7 @@ OperationState * ShardCopyOperation::handle(MMNotification * mmStatus){
 
 OperationState * ShardCopyOperation::commit(){
 	// prepare the shard change
-	ShardAssignChange * shardAssignChange = new ShardAssignChange(shardId, ShardManager::getCurrentNodeId(), 0);
+	ShardAssignChange * shardAssignChange = new ShardAssignChange(unassignedShardId, ShardManager::getCurrentNodeId(), 0);
 	shardAssignChange->setPhysicalShard(physicalShard);
 
 	commitOperation = new CommitOperation(this->getOperationId(), vector<NodeId>(), shardAssignChange);
@@ -199,7 +199,7 @@ string ShardCopyOperation::getOperationName() const {
 }
 string ShardCopyOperation::getOperationStatus() const {
 	stringstream ss;
-	ss << "Making copy of " << replicaShardId.toString() << " to prepare " << shardId.toString() << "%";
+	ss << "Making copy of " << replicaShardId.toString() << " to prepare " << unassignedShardId.toString() << "%";
 	ss << "Src node : " << srcNodeId << "%";
 	if (lockOperation != NULL) {
 		ss << lockOperation->getOperationName() << "%";
@@ -228,7 +228,7 @@ string ShardCopyOperation::getOperationStatus() const {
 
 OperationState * ShardCopyOperation::release(){
 	vector<SingleResourceLockRequest *> releaseBatch;
-	SingleResourceLockRequest * releaseRequest1 = new SingleResourceLockRequest(shardId,
+	SingleResourceLockRequest * releaseRequest1 = new SingleResourceLockRequest(unassignedShardId,
 			NodeOperationId(ShardManager::getCurrentNodeId(),this->getOperationId()));
 	SingleResourceLockRequest * releaseRequest2 = new SingleResourceLockRequest(replicaShardId,
 			NodeOperationId(ShardManager::getCurrentNodeId(),this->getOperationId()));
