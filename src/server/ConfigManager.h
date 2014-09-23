@@ -749,6 +749,14 @@ public:
     	return attrAclFilePath;
     }
 
+    const std::string* getRecordAclFile() const{
+    	return &recordAclFilePath;
+    }
+
+    bool getHasRecordAcl() const{
+    	return hasRecordAcl;
+    }
+
 protected:
     string name; // of core
 
@@ -869,6 +877,9 @@ protected:
 
     // keep the access control info for this core
     AccessControlInfo* accessControlInfo;
+    bool hasRecordAcl;
+    string recordAclFilePath;
+
 
 };
 

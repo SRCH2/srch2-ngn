@@ -814,15 +814,14 @@ unsigned DaemonDataSource::createNewIndexFromFile(srch2is::Indexer* indexer, Sch
 // Each line of the file is like this:
 //  {"resourceId": "1234", "roleId": ["33", "45"]}
 void DaemonDataSource::addRecordAclFile(srch2is::Indexer *indexer,
-                const CoreInfo_t *indexDataContainerConf, srch2is::Indexer *roleCoreIndexer){
-	AccessControlInfo* accessControl = indexDataContainerConf->getAccessControlInfo();
-	if(accessControl == NULL)
+                const CoreInfo_t *indexDataContainerConf){
+	if(!(indexDataContainerConf->getHasRecordAcl()))
 		return;
 
-	string filePath = accessControl->aclDataFileName;
-	ifstream in(filePath.c_str());
+	const string* filePath = indexDataContainerConf->getRecordAclFile();
+	ifstream in(filePath->c_str());
 	if (in.fail()){
-		Logger::error("Record-based ACL file not found at: %s", filePath.c_str());
+		Logger::error("Record-based ACL file not found at: %s", filePath->c_str());
 		return;
 	}
 
@@ -865,19 +864,8 @@ void DaemonDataSource::addRecordAclFile(srch2is::Indexer *indexer,
 
 			if(parseSuccess){
 				// Add the role ids to the record
-				// first check that all role ids exist
-				bool roleIdsExist = true;
-				for(unsigned i = 0 ; i < roleIds.size() ; i++){
-					INDEXLOOKUP_RETVAL returnValue = roleCoreIndexer->lookupRecord(roleIds[i]);
-					if(returnValue == LU_ABSENT_OR_TO_BE_DELETED){
-						roleIdsExist = false;
-						break;
-					}
-				}
-				if(roleIdsExist){
-					indexer->aclRecordModifyRoles(resourcePrimaryKeyID, roleIds, srch2::instantsearch::Acl_Record_Add);
-					indexedRecordsCount++;
-				}
+				indexer->aclRecordModifyRoles(resourcePrimaryKeyID, roleIds, srch2::instantsearch::Acl_Record_Add);
+				indexedRecordsCount++;
 			}
 			else{
 				Logger::error("at line: %d" , lineCounter);

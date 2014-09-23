@@ -102,8 +102,6 @@ class HTTPRequestHandler
 		static void genSnippetJSONString(unsigned recIdx, unsigned start,
 				const vector<RecordSnippet>& recordSnippets, string& sbuffer,
 				const QueryResults *queryResults);
-		// this function first, checks that all the role ids exist then it add them to record object
-		static void addRoleIdsToRecord(vector<string> &roleIds, Srch2Server* server, evhttp_request *req, Record* record, std::stringstream &log_str);
 		static void aclModifyRecordsForRole(evhttp_request *req, Srch2Server *server, srch2::instantsearch::RecordAclCommandType commandType);
 		static void aclModifyRolesForRecord(evhttp_request *req, Srch2Server *server, srch2::instantsearch::RecordAclCommandType commandType);
 

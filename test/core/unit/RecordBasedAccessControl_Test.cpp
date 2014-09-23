@@ -39,8 +39,7 @@ void addRecord(Indexer *indexer, Schema *schema, Analyzer* analyzer, unsigned pr
 	record->setPrimaryKey(primaryKey); // give a value for the primary key
 	record->setSearchableAttributeValue(0, firstAttribute);
 	record->setSearchableAttributeValue(1, secondAttribute);
-	for(unsigned i = 0 ; i < roleIds.size() ; ++i)
-		record->addRoleId(roleIds[i]);
+	record->setRoleIds(roleIds);
 
 	indexer->addRecord(record, analyzer);
 

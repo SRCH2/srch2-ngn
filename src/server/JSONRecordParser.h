@@ -74,7 +74,7 @@ public:
             const CoreInfo_t *indexDataContainerConf);
 
     static void addRecordAclFile(srch2is::Indexer *indexer,
-                const CoreInfo_t *indexDataContainerConf, srch2is::Indexer *roleCoreIndexer);
+                const CoreInfo_t *indexDataContainerConf);
 };
 
 }

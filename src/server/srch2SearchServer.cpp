@@ -756,22 +756,6 @@ static int startServers(ConfigManager *config, vector<struct event_base *> *evBa
         (*coreNameServerMap)[iterator->second->getName()] = core;
     }
 
-    // link resource and role cores to each other by setting their pointers
-    for (ConfigManager::CoreInfoMap_t::const_iterator iterator = config->coreInfoIterateBegin();
-         iterator != config->coreInfoIterateEnd(); iterator++) {
-    	if(iterator->second->getAccessControlInfo() != NULL){
-    		CoreNameServerMap_t::iterator resourceCoreIt = coreNameServerMap->find(iterator->second->getName());
-    		CoreNameServerMap_t::iterator roleCoreIt = coreNameServerMap->find(iterator->second->getAccessControlInfo()->roleCoreName);
-    		/*
-    		 * Now each core can have one role core. But each core can be a role core for multiple resource cores.
-    		 * if we want to change this design to many-to-many, instead of storing a access list in forward
-    		 * list we need to store a map of the core names to access lists. Then we can have multiple role cores for a resource core
-    		 */
-    		resourceCoreIt->second->roleCore = roleCoreIt->second;
-    		roleCoreIt->second->resourceCores.push_back(resourceCoreIt->second);
-    	}
-    }
-
     // make sure we have identified the default core
     srch2http::Srch2Server *defaultCore = NULL;
     if (coreNameServerMap->find(config->getDefaultCoreName()) != coreNameServerMap->end()) {
@@ -787,11 +771,6 @@ static int startServers(ConfigManager *config, vector<struct event_base *> *evBa
     try{
         for (CoreNameServerMap_t::iterator iterator = coreNameServerMap->begin(); iterator != coreNameServerMap->end(); iterator++) {
             iterator->second->init(config);
-        }
-        for (CoreNameServerMap_t::iterator iterator = coreNameServerMap->begin(); iterator != coreNameServerMap->end(); iterator++) {
-        	if(iterator->second->roleCore != NULL){
-                    iterator->second->initAccessControls();
-        	}
         }
     }catch(exception& ex) {
     	/*
