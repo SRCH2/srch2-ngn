@@ -381,19 +381,3 @@ Json::Value IndexWriteUtil::_aclModifyRecordsOfRole(Indexer *indexer, string &ro
 	return response;
 }
 
-void IndexWriteUtil::_deleteRoleRecord(Indexer *resourceIndexer, std::string rolePrimaryKeyName, const evkeyvalq &headers){
-
- 	const char *pKeyParamName = evhttp_find_header(&headers, rolePrimaryKeyName.c_str());
-
- 	if (pKeyParamName)
- 	{
- 		size_t sz;
- 		char *pKeyParamName_cstar = evhttp_uridecode(pKeyParamName, 0, &sz);
-
- 		const std::string rolePrimaryKeyStringValue = string(pKeyParamName_cstar);
- 		free(pKeyParamName_cstar);
-
- 		resourceIndexer->deleteRoleRecord(rolePrimaryKeyStringValue);
- 	}
-
- }

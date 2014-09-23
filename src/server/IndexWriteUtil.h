@@ -38,7 +38,6 @@ struct IndexWriteUtil
 
     static Json::Value _aclModifyRecordsOfRole(Indexer *indexer, string &roleId, vector<string> &resourceIds, srch2::instantsearch::RecordAclCommandType commandType);
 
-    static void _deleteRoleRecord(Indexer *resourceIndexer, std::string rolePrimaryKeyName, const evkeyvalq &headers);
 };
 
 }}

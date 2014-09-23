@@ -194,8 +194,10 @@ INDEXWRITE_RETVAL IndexData::_aclModifyRecordAccessList(const std::string& resou
 	switch (commandType){
 	case Acl_Record_Add:
 		if(accessList != NULL){
+			#if 0
 			this->permissionMap->deleteResourceFromRoles(resourcePrimaryKeyID, accessList->getRoles());
 			this->permissionMap->appendResourceToRoles(resourcePrimaryKeyID, roleIds);
+			#endif
 			accessList->clearRoles();
 			this->forwardIndex->appendRoleToResource(forwardListDirectoryReadView, resourcePrimaryKeyID, roleIds);
 			return OP_SUCCESS;
@@ -205,7 +207,9 @@ INDEXWRITE_RETVAL IndexData::_aclModifyRecordAccessList(const std::string& resou
 		// 1- append these role ids to the access list of the record
 		// 2- add the id of this record to vector of resource ids for this role id in the permission map
 		if(this->forwardIndex->appendRoleToResource(forwardListDirectoryReadView, resourcePrimaryKeyID, roleIds)){
+			#if 0
 			this->permissionMap->appendResourceToRoles(resourcePrimaryKeyID, roleIds);
+			#endif
 			return OP_SUCCESS;
 		}
 		break;
@@ -213,7 +217,9 @@ INDEXWRITE_RETVAL IndexData::_aclModifyRecordAccessList(const std::string& resou
 		// 1- Delete these role ids from the access list of the record
 		// 2- delete the id of this record from the vector of resource ids for this role id in the permission map
 		if(this->forwardIndex->deleteRoleFromResource(forwardListDirectoryReadView, resourcePrimaryKeyID, roleIds)){
+			#if 0
 			this->permissionMap->deleteResourceFromRoles(resourcePrimaryKeyID, roleIds);
+			#endif
 			return OP_SUCCESS;
 		}
 		break;
@@ -346,9 +352,11 @@ INDEXWRITE_RETVAL IndexData::_addRecordWithoutLock(const Record *record,
 				record, totalNumberofDocuments, keywordIdList);
 	}
 
+	#if 0
 	if(record->hasRoleIds()){
 		this->permissionMap->appendResourceToRoles(record->getPrimaryKey(), *(record->getRoleIds()));
 	}
+	#endif
 
 	// Geo Index: need to add this record to the quadtree.
 	if (this->schemaInternal->getIndexType()

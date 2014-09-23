@@ -340,9 +340,11 @@ static bool checkOperationPermission(evhttp_request *req, Srch2Server *srch2Serv
         { srch2http::AclAddRolesForRecord, "aclAddRolesForRecord"},
         { srch2http::AclAppendRolesForRecord, "aclAppendRolesForRecord"},
         { srch2http::AclDeleteRolesForRecord, "aclDeleteRolesForRecord"},
+		#if 0
         { srch2http::AclAddRecordsForRole, "aclAddRecordsForRole"},
         { srch2http::AclAppendRecordsForRole, "clAppendRecordsForRole"},
         { srch2http::AclDeleteRecordsForRole, "aclDeleteRecordsForRole"},
+		#endif
         { srch2http::EndOfPortType, NULL },
     };
 
@@ -443,6 +445,7 @@ static void cb_single_core_operator_route(evhttp_request *req, void *arg){
             case srch2http::AclDeleteRolesForRecord:
             	HTTPRequestHandler::aclDeleteRolesForRecord(req, srch2Server);
             	break;
+			#if 0
             case srch2http::AclAddRecordsForRole:
             	HTTPRequestHandler::aclAddRecordsForRole(req, srch2Server);
             	break;
@@ -452,6 +455,7 @@ static void cb_single_core_operator_route(evhttp_request *req, void *arg){
             case srch2http::AclDeleteRecordsForRole:
             	HTTPRequestHandler::aclDeleteRecordsForRole(req, srch2Server);
             	break;
+			#endif
             default:
                 cb_notfound(req, srch2Server);
                 break;
@@ -852,9 +856,11 @@ static int startServers(ConfigManager *config, vector<struct event_base *> *evBa
             { "/aclAddRolesForRecord", srch2http::AclAddRolesForRecord, cb_single_core_operator_route},
             { "/aclAppendRolesForRecord", srch2http::AclAppendRolesForRecord, cb_single_core_operator_route},
             { "/aclDeleteRolesForRecord", srch2http::AclDeleteRolesForRecord, cb_single_core_operator_route},
+			#if 0
             { "/aclAddRecordsForRole", srch2http::AclAddRecordsForRole, cb_single_core_operator_route},
             { "/aclAppendRecordsForRole", srch2http::AclAppendRecordsForRole, cb_single_core_operator_route},
             { "/aclDeleteRecordsForRole", srch2http::AclDeleteRecordsForRole, cb_single_core_operator_route},
+			#endif
             { NULL, srch2http::EndOfPortType, NULL }
         };
 
