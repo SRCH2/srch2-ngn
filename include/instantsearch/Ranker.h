@@ -80,6 +80,11 @@ namespace srch2 {
 
         virtual float computeScoreForNot(float score);
 
+        //computes sloppy frequency of a phrase based on slop distances
+        float computeSloppyFrequency(vector<unsigned>& listOfSlopDistances) const;
+        //computes run time score run time score for phrase operator
+        float computePositionalScore(float runtimeScore, float sloppyFrequency) const;
+
         virtual ~Ranker() {};
     };
     

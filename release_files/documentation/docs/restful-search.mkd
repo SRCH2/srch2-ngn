@@ -221,7 +221,7 @@ To do a proximity search, we use the tilde symbol ("~") at the end of a phrase. 
  (q=%22saving%20ryan%22~1)
 ```
 Notice that a proximity search does not support edit-distance-based fuzzy match, i.e., we do not allow typos in the keywords in the quotes.
-Also note that the maximum value of the input slop can only be 10000.
+Also note that the maximum value of the input slop can only be 100000.
 
 ### 3.4. Boolean Operators 
 

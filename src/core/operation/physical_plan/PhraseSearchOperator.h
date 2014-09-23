@@ -42,9 +42,6 @@ public:
 	~PhraseSearchOperator();
 	PhraseSearchOperator(const PhraseInfo& phraseSearchInfo) ;
 
-	//computes record's runtime score based on positional information for phrase search queries
-	float computePositionalScore(float staticScore, vector<unsigned>& listOfSlops);
-
 private:
 	bool phraseErr;
 	PhraseInfo phraseSearchInfo;

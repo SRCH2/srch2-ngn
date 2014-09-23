@@ -1,6 +1,14 @@
-# This test is used for testing positional rankingin phrase search queries
+# This test is used for testing positional ranking in phrase search queries
 # Data set used : positionalRanking-test.json
 # Query file used : queries.txt
+# The three phrases used for querying the engine are: 
+# sue alligator, foo bar, quick fox
+# They occur multiple times in the file positionalRanking-test.json with different number of words in between them.
+# The engine ranks the record higher which has larger sloppy frequency.
+# The system test case validates if the ordering of the records are correct.
+# It can be run from the directory: srch2-ngn/test/wrapper/system_tests using the following command
+# python positionalRanking_phraseSearch/positionalRanking.py ../../../build/src/server/srch2-search-server positionalRanking_phraseSearch/queries.txt
+
 
 import sys, urllib2, urllib, json, time, subprocess, os, commands, signal
 

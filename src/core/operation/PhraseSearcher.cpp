@@ -18,9 +18,9 @@ namespace instantsearch {
 
 template <class T>
 void printVector(const vector<T>& v);
-//10000 is the max slop value
+//100000 is the max slop value
 PhraseSearcher::PhraseSearcher() {
-    slopThreshold = 10000;
+    slopThreshold = 100000;
 }
 /*
  *  The function determines whether it is an exact match for the given phrase. The function
@@ -38,12 +38,12 @@ PhraseSearcher::PhraseSearcher() {
  *  q2 = "psychological film" is not an exact match
  *  q3 = "Shining 1980" is not an exact match even if analyzer drops stop words (is, a)
  *
- *  Also, listOfSlops vector present in the argument gets initialized with slop values
+ *  Also, listOfSlopDistances vector present in the argument gets initialized with slop values
  *  of all the phrase found in the record if stopAtFirstMatch is set to false.
  */
 bool PhraseSearcher::exactMatch(const vector<vector<unsigned> > &positionListVector,
                                 const vector<unsigned>& keyWordPositionsInPhrase,
-                                vector<vector<unsigned> >& matchedPositions, vector<unsigned>& listOfSlops, bool stopAtFirstMatch = true) {
+                                vector<vector<unsigned> >& matchedPositions, vector<unsigned>& listOfSlopDistances, bool stopAtFirstMatch = true) {
     bool searchDone = false;
     bool matchFound = false;
     unsigned prevKeyWordPosition = 0;
@@ -129,7 +129,7 @@ bool PhraseSearcher::exactMatch(const vector<vector<unsigned> > &positionListVec
             matchedPositions.push_back(matchedPosition);
             //slop for exact phrase match is always 0
             int slop = 0;
-            listOfSlops.push_back(slop);
+            listOfSlopDistances.push_back(slop);
             if (stopAtFirstMatch)
             	return true;  // match found
             atleastOneMatchFound = true;
@@ -150,15 +150,15 @@ bool PhraseSearcher::exactMatch(const vector<vector<unsigned> > &positionListVec
  *  and edit distance (slop) in a positionlistVector. MatchedPosition return
  *  first occurrence of proximity match.
  *
- *  Also, listOfSlops vector present in the argument gets initialized with slop values
+ *  Also, listOfSlopDistances vector present in the argument gets initialized with slop values
  *  of all the phrase found in the record if stopAtFirstMatch is set to false.
  *
- *  See getPhraseSlop function below for more detail.
+ *  See getPhraseSlopDistance function below for more detail.
  *
  */
 bool PhraseSearcher::proximityMatch(const vector<vector<unsigned> >& positionListVector,
                     const vector<unsigned>& offsetsInPhrase, unsigned inputSlop,
-                    vector<vector<unsigned> >& matchedPositions, vector<unsigned>& listOfSlops, bool stopAtFirstMatch = true)
+                    vector<vector<unsigned> >& matchedPositions, vector<unsigned>& listOfSlopDistances, bool stopAtFirstMatch = true)
 {
     // pre-conditions
 
@@ -218,8 +218,8 @@ bool PhraseSearcher::proximityMatch(const vector<vector<unsigned> >& positionLis
             unsigned pos = positionListVector[i][cursors[i]];
             matchedPosition.push_back(pos);
         }
-        if ((signed)inputSlop >= getPhraseSlop(offsetsInPhrase, matchedPosition)) {
-            listOfSlops.push_back(getPhraseSlop(offsetsInPhrase, matchedPosition));
+        if ((signed)inputSlop >= getPhraseSlopDistance(offsetsInPhrase, matchedPosition)) {
+            listOfSlopDistances.push_back(getPhraseSlopDistance(offsetsInPhrase, matchedPosition));
             matchedPositions.push_back(matchedPosition);
             if (stopAtFirstMatch)
                 return true;
@@ -257,7 +257,7 @@ bool PhraseSearcher::proximityMatch(const vector<vector<unsigned> >& positionLis
  * max(diff) - min(diff) = 1 - (-1) =  2. Hence slop >= 2 should match this record.
  *
  */
-signed PhraseSearcher::getPhraseSlop(const vector<unsigned>& query,
+signed PhraseSearcher::getPhraseSlopDistance(const vector<unsigned>& query,
 		const vector<unsigned>& record){
 
 	signed maxDiff = INT_MIN;

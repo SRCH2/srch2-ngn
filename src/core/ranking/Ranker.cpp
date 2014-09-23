@@ -265,4 +265,22 @@ uint8_t computeEditDistanceThreshold(unsigned keywordLength , float similarityTh
 	return fresult; // casting to unsigned int will do the floor operation automatically.
 }
 
+// Solr's ranking function: https://lucene.apache.org/core/2_9_4/api/all/org/apache/lucene/search/Similarity.html (This explains the essence of sloppy frequency and how it is used in ranking function)
+// http://lucene.apache.org/core/4_0_0/core/org/apache/lucene/search/similarities/DefaultSimilarity.html (This explains how the function to calculate sloppy frequency is implemented)
+
+float DefaultTopKRanker::computeSloppyFrequency(vector<unsigned>& listOfSlopDistances) const{
+
+    float sum = 0;
+    for(int i = 0; i < listOfSlopDistances.size(); i++){
+        sum = sum + 1.0/(1.0+listOfSlopDistances[i]);
+    }
+    return sqrt(sum);
+}
+
+// It computes the run time score of phrase operator by multiplying runtime score obtained from AND operator and sloppyFreqency of the phrase.
+float DefaultTopKRanker::computePositionalScore(float runtimeScore, float sloppyFrequency) const{
+
+    return runtimeScore * sloppyFrequency;
+}
+
 }}

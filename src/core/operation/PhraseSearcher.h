@@ -26,7 +26,7 @@ public:
     bool proximityMatch(const vector<vector<unsigned> >& positionListVector,
             const vector<unsigned>& offsetsInPhrase, unsigned inputSlop,
             vector< vector<unsigned> >& matchedPosition,vector<unsigned>& listOfSlops, bool stopAtFirstMatch);
-    signed  getPhraseSlop(const vector<unsigned>& query,
+    signed  getPhraseSlopDistance(const vector<unsigned>& query,
     		const vector<unsigned>& record);
     // CODE NOT IN USE
     unsigned geteditDistance_L(const vector<string>& keywords, const vector<string>& recordToMatch);
