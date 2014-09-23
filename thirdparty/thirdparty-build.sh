@@ -71,3 +71,12 @@ tar -xvf pymongo.tar.gz
 cd pymongo
 CURRENTDIR=$(pwd)
 echo "Building python mongodb driver in $CURRENTDIR"
+
+cd ../../mysql-connector-c++
+echo "BUILDING MYSQL CONNECTOR C++... in $CURRENTDIR"
+tar -xvf mysql-connector-c++-1.1.4.tar.gz
+rm -rf mysql-connector-c++
+mv mysql-connector-c++-1.1.4 mysql-connector-c++
+cd mysql-connector-c++
+cmake -DCMAKE_INSTALL_PREFIX=./build
+make install
