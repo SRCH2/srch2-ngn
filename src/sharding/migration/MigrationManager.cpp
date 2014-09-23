@@ -385,6 +385,8 @@ void MigrationService::receiveShard(ClusterShardId shardId, unsigned remoteNode)
 		unsigned sequenceNumber = 0;
 
 		if (componentSize == 0) {
+			std::istringstream inputStream(ios::binary);
+			migratedShard->bootStrapShardComponentFromByteStream(inputStream, currentSessionInfo.shardCompName);
 			sleep(1);
 			Logger::console("%u/%u Received", 0, componentSize);
 			//Send ACK

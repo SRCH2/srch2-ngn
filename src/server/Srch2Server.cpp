@@ -266,7 +266,9 @@ void Srch2Server::bootStrapShardComponentFromByteStream(std::istream& input, con
 		IndexMetaData *indexMetaData = createIndexMetaData(this->directoryPath);
 		indexer = Indexer::create(indexMetaData);
 	}
-	indexer->bootStrapComponentFromByteSteam(input, component);
+	if (input.peek() != std::ifstream::traits_type::eof()) {
+		indexer->bootStrapComponentFromByteSteam(input, component);
+	}
 }
 
 int Srch2Server::getSerializedShardSize(vector<std::pair<string, long> > &indexFiles) {
