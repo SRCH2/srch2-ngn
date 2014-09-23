@@ -17,8 +17,10 @@ ResourceMetadataManager::ResourceMetadataManager(){
 void ResourceMetadataManager::commitClusterMetadata(ClusterResourceMetadata_Readview * newReadview){
     pthread_spin_lock(&m_spinlock);
     // set readview pointer to the new copy of writeview
+    boost::shared_ptr< const ClusterResourceMetadata_Readview > metadata_readViewOld = metadata_readView;
     metadata_readView.reset(newReadview);
     pthread_spin_unlock(&m_spinlock);
+    metadata_readViewOld.reset();
 }
 
 void ResourceMetadataManager::commitClusterMetadata(){
