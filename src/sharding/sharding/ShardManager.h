@@ -47,22 +47,56 @@ public:
 
 	// sends this sharding notification to destination using TM
 	bool send(ShardingNotification * notification);
+
+
+	/*
+	 * IMPORTANT NOTE:
+	 * *** This is an entry point to the shard manager. The following items must be ensured on
+	 *     the non-internal entry points :
+	 *     1. shardManagerGlobalMutex must be locked and not unlocked untill the end (single thread control)
+	 */
 	// callback provided to TransportManager, it deserializes the messages and passes them to
 	// notification resolve methods
 	bool resolveMessage(Message * msg, NodeId node);
 
-	void resolve(LockingNotification::ACK * lockAckNotif);
+
+	/*
+	 * IMPORTANT NOTE:
+	 * *** This is not a normal entry point. This entry point to lock manager of
+	 *     shard manager is only used from the lock manager for local notification handling.
+	 *     Should NOT lock the global mutex.
+	 */
 	// called from destructor of readview to notify shard manager that the readview is released and
 	// no more readers are using it
-	void resolveReadviewRelease(unsigned metadataVersion);
+	static void * resolveReadviewRelease_ThreadChange(void * metadataVersion);
+
+	/*
+	 * IMPORTANT NOTE:
+	 * *** This is an entry point to the shard manager. The following items must be ensured on
+	 *     the non-internal entry points :
+	 *     1. shardManagerGlobalMutex must be locked and not unlocked untill the end (single thread control)
+	 */
 	// called from migration manager to inform us about the status of a migration
 	void resolveMMNotification(const ShardMigrationStatus & migrationStatus);
+
+	/*
+	 * IMPORTANT NOTE:
+	 * *** This is not a normal entry point. This entry point to lock manager of
+	 *     shard manager is only used from the lock manager for local notification handling.
+	 *     Should NOT lock the global mutex.
+	 */
 	// called from SM to inform us about the arrival or failure of a node
 	void resolveSMNodeArrival(const Node & newNode);
 
+	/*
+	 * IMPORTANT NOTE:
+	 * *** This is not a normal entry point. This entry point to lock manager of
+	 *     shard manager is only used from the lock manager for local notification handling.
+	 *     Should NOT lock the global mutex.
+	 */
 	void resolveSMNodeFailure(const NodeId failedNodeId);
 
-	// getter functions
+	// getter and utility functions
 	TransportManager * getTransportManager() const;
 	ConfigManager * getConfigManager() const;
 	ResourceMetadataManager * getMetadataManager() const;
@@ -74,7 +108,16 @@ public:
 	void setJoined();
 	bool isJoined() const;
 	void setCancelled();
+
+	/*
+	 * IMPORTANT NOTE:
+	 * *** This is not a normal entry point. This entry point to lock manager of
+	 *     shard manager is only used from the lock manager for local notification handling.
+	 *     Should NOT lock the global mutex.
+	 */
 	bool isCancelled() ;
+
+
 	void setLoadBalancing();
 	void resetLoadBalancing();
 	bool isLoadBalancing() const;
@@ -99,6 +142,12 @@ private:
 	bool cancelledFlag;
 	bool loadBalancingFlag;
 
+	/*
+	 * IMPORTANT NOTE:
+	 * *** This is not a normal entry point. This entry point to lock manager of
+	 *     shard manager is only used from the lock manager for local notification handling.
+	 *     Should NOT lock the global mutex.
+	 */
 	static void * periodicWork(void *args) ;
 
 	void saveBouncedNotification(ShardingNotification * notif);

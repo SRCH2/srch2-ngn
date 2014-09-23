@@ -186,7 +186,7 @@ void ShardManager::start(){
 	pthread_t localLockThread;
     if (pthread_create(&localLockThread, NULL, ShardManager::periodicWork , NULL) != 0){
         //        Logger::console("Cannot create thread for handling local message");
-        perror("Cannot create thread for handling local message");
+        perror("Cannot create thread for load balancing.");
         return;
     }
 }
@@ -224,7 +224,10 @@ bool ShardManager::resolveMessage(Message * msg, NodeId senderNode){
 		return false;
 	}
 
+	// Global mutex lock which will last as long as we are in this scope.
 	boost::unique_lock<boost::mutex> shardManagerGlobalLock(shardManagerGlobalMutex);
+
+
 	Cluster_Writeview * writeview = ShardManager::getWriteview();
 
 	// if a node fails, we don't accept any more messages from it.
@@ -601,28 +604,20 @@ bool ShardManager::resolveMessage(Message * msg, NodeId senderNode){
 	return true;
 }
 
-void ShardManager::resolve(LockingNotification::ACK * lockAckNotif){
-	if(lockAckNotif == NULL){
-		Logger::debug("Lock::ACK is NULL");
-		ASSERT(false);
-		return;
-	}
-	Logger::debug("%s | Internal Lock::ACK:%d", lockAckNotif->getDescription().c_str(), lockAckNotif->isGranted());
-	stateMachine->handle(lockAckNotif);
-	Logger::debug("%s | Internal Lock::ACK:%d processed.", lockAckNotif->getDescription().c_str(), lockAckNotif->isGranted());
-
-}
-
-void ShardManager::resolveReadviewRelease(unsigned metadataVersion){
+void * ShardManager::resolveReadviewRelease_ThreadChange(void * vidPtr){
+	unsigned metadataVersion = *(unsigned *)vidPtr;
+	delete vidPtr;
 	Logger::debug("DP | Metadata release VID=%d", metadataVersion);
 	LockingNotification::RV_RELEASED * rvReleased = new LockingNotification::RV_RELEASED(metadataVersion);
-	this->getLockManager()->resolve(rvReleased);
+	ShardManager::getShardManager()->getLockManager()->resolve(rvReleased);
 	delete rvReleased;
 	Logger::debug("DP | Metadata release VID=%d processed.", metadataVersion);
 
 //    cout << "Shard Manager status after receiving RV release, vid = " << metadataVersion << endl;
 //    ShardManager::getShardManager()->print();
 //    cout << "======================================================================" << endl;
+
+	return NULL;
 }
 
 void ShardManager::resolveMMNotification(const ShardMigrationStatus & migrationStatus){

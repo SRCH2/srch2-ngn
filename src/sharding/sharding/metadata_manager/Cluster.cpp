@@ -43,7 +43,17 @@ ClusterResourceMetadata_Readview::ClusterResourceMetadata_Readview(const Cluster
 }
 
 ClusterResourceMetadata_Readview::~ClusterResourceMetadata_Readview(){
-	ShardManager::getShardManager()->resolveReadviewRelease(this->versionId);
+
+	pthread_t rvReleaseThread;
+	unsigned * vid = new unsigned;
+	*vid = this->versionId;
+    if (pthread_create(&rvReleaseThread, NULL, ShardManager::resolveReadviewRelease_ThreadChange , vid) != 0){
+        // Logger::console("Cannot create thread for handling local message");
+        perror("Cannot create thread for handling local message");
+        return;
+    }
+    pthread_detach(rvReleaseThread);
+
 }
 
 const CorePartitionContianer * ClusterResourceMetadata_Readview::getPartitioner(unsigned coreId) const{

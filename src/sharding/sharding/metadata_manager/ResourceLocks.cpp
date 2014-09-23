@@ -7,6 +7,7 @@
 #include "Cluster_Writeview.h"
 #include "ResourceMetadataManager.h"
 #include "sharding/util/FramedPrinter.h"
+#include "../ClusterOperationContainer.h"
 #include <boost/thread/mutex.hpp>
 #include <boost/thread/locks.hpp>
 
@@ -685,7 +686,7 @@ void ResourceLockManager::resolve(LockingNotification::RV_RELEASED * inputNotifi
 		ASSERT(false);
 		return;
 	}
-	boost::unique_lock<boost::mutex> bouncedNotificationsLock(readviewReleaseMutex);
+	boost::unique_lock<boost::mutex> rvReleasePendingNotificationsLock(readviewReleaseMutex);
 	NodeId currentNodeId = ShardManager::getCurrentNodeId(); // TODO : if current node id changes, then this line is NOT thread safe
 	vector<PendingLockRequest > newPendingNotifications;
 	for(vector<PendingLockRequest >::iterator pendingNotifItr = pendingRVReleaseRequests.begin();
@@ -946,7 +947,9 @@ void ResourceLockManager::sendAck(const PendingLockRequest & pendingRequest, con
 			lockingAck->setSrc(NodeOperationId(ShardManager::getCurrentNodeId()));
 			lockingAck->setDest(pendingRequest.requesterAddress);
 			if(lockingAck->getDest().nodeId == ShardManager::getCurrentNodeId()){
-				ShardManager::getShardManager()->resolve(lockingAck);
+				Logger::debug("%s | Internal Lock::ACK:%d", lockingAck->getDescription().c_str(), lockingAck->isGranted());
+				ShardManager::getShardManager()->getStateMachine()->handle(lockingAck);
+				Logger::debug("%s | Internal Lock::ACK:%d processed.", lockingAck->getDescription().c_str(), lockingAck->isGranted());
 			}else{
 				ShardManager::getShardManager()->send(lockingAck);
 			}
