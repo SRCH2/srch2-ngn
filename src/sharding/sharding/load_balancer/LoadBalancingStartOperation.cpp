@@ -450,13 +450,18 @@ bool LoadBalancingStartOperation::isLightLoadedNode(NodeId nodeId){
 
 // The first shard of a partition
 OperationState * LoadBalancingStartOperation::assignShard(const ClusterShardId & unassignedShard){
+    Logger::debug("Load balancing | Going to assign shard %s to node %d.", unassignedShard.toString().c_str() , ShardManager::getCurrentNodeId());
 	return new ShardAssignOperation(this->getOperationId(), unassignedShard);
 }
 OperationState * LoadBalancingStartOperation::replicateShard(const ClusterShardId & unassignedShard, NodeId srcNodeId, const ClusterShardId & shardToReplicate){
-	return new ShardCopyOperation(this->getOperationId(), unassignedShard, srcNodeId, shardToReplicate);
+    Logger::debug("Load balancing | Going to copy shard %s from node %d to use for unassigned shard %s which will reside on node %d",
+            shardToReplicate.toString().c_str(), srcNodeId, unassignedShard.toString().c_str() , ShardManager::getCurrentNodeId());
+    return new ShardCopyOperation(this->getOperationId(), unassignedShard, srcNodeId, shardToReplicate);
 }
 
 OperationState * LoadBalancingStartOperation::moveShard(const NodeId & srcNodeId, const ClusterShardId & moveShardId){
+    Logger::debug("Load balancing | Going to move shard %s from node %d to node %d",
+            moveShardId.toString().c_str(), srcNodeId, ShardManager::getCurrentNodeId());
 	return new ShardMoveOperation(this->getOperationId(), srcNodeId, moveShardId);
 }
 

@@ -15,7 +15,7 @@ using namespace std;
 namespace srch2 {
 namespace httpwrapper {
 
-ShardAssignOperation::ShardAssignOperation(const unsigned operationId, const ClusterShardId & unassignedShard):OperationState(operationId),shardId(shardId){
+ShardAssignOperation::ShardAssignOperation(const unsigned operationId, const ClusterShardId & unassignedShard):OperationState(operationId),shardId(unassignedShard){
 	this->lockOperation = NULL;
 	this->lockOperationResult = new SerialLockResultStatus();
 	this->commitOperation = NULL;
