@@ -449,6 +449,13 @@ test_case "adapter_mongo" "python ./adapter_mongo/MongoTest.py $SRCH2_ENGINE \
     Check instructions in the file db_connectors/mongo/readme.txt. "
 rm -rf data/mongodb_data
 
+test_case "adapter_mysql" "python ./adapter_mysql/adapter_mysql.py $SRCH2_ENGINE \
+    ./adapter_sqlite/testCreateIndexes_sql.txt ./adapter_sqlite/testCreateIndexes.txt \
+    ./adapter_sqlite/testRunListener_sql.txt ./adapter_sqlite/testRunListener.txt \
+    ./adapter_sqlite/testOfflineLog_sql.txt ./adapter_sqlite/testOfflineLog.txt" \
+    255 "-- SKIPPED: Cannot connect to the MySQL. Check if MySQL is installed."
+
+sleep 3
 
 # clear the output directory. First make sure that we are in correct directory
 if [ "$(pwd)" = "$SYSTEM_TEST_DIR" ]; then
