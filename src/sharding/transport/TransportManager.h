@@ -114,6 +114,7 @@ public:
 
 
 	bool isEventAdded() const{ return eventAddedFlag; }
+	bool setEventAdded() { eventAddedFlag = true; }
 
 private:
 	/*

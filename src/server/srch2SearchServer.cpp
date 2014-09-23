@@ -77,6 +77,9 @@ pthread_t *threadsToHandleInternalRequests = NULL;
 unsigned int MAX_THREADS = 0;
 unsigned int MAX_INTERNAL_THREADS = 0;
 srch2http::TransportManager *transportManager;
+vector<struct event_base *> evBasesForInternalRequests;
+vector<struct event_base *> evBasesForExternalRequests;
+
 // These are global variables that store host and port information for srch2 engine
 unsigned short globalDefaultPort;
 const char *globalHostName;
@@ -635,21 +638,21 @@ void makeHttpRequest(){
 static void killServer(int signal) {
     Logger::console("Stopping server.");
     for (int i = 0; i < MAX_THREADS; i++) {
-#ifndef ANDROID
-    	// Android thread implementation does not have pthread_cancel()
-    	// use pthread_kill instead.
-    	pthread_cancel(threadsToHandleExternalRequests[i]);
-#endif
+    	event_base_loopbreak(evBasesForExternalRequests[i]);
     }
+
+    // The one line below breaks the pseudo dispatch loop in "dispatchInternalEvent"
+    transportManager->setEventAdded();
+
     for (int i = 0; i < MAX_INTERNAL_THREADS; i++) {
-#ifndef ANDROID
-    	pthread_cancel(threadsToHandleInternalRequests[i]);
-#endif
+    	event_base_loopbreak(evBasesForInternalRequests[i]);
     }
+
     for(srch2http::ConnectionMap::iterator conn =
         transportManager->getConnectionMap().begin();
         conn != transportManager->getConnectionMap().end(); ++conn) {
-      close(conn->second.fd);
+    	//TODO: let the read/write on socket complete.
+    	close(conn->second.fd);
     }
 #ifndef ANDROID
     pthread_cancel(transportManager->getListeningThread());
@@ -659,15 +662,6 @@ static void killServer(int signal) {
     exit(0);
 #endif
 
-#ifdef __MACH__
-	/*
-	 *  In MacOS, pthread_cancel could not cancel a thread when the thread is executing kevent syscall
-	 *  which is a blocking call. In other words, our engine threads are not cancelled while they
-	 *  are waiting for http requests. So we send a dummy http request to our own engine from within
-	 *  the engine. This request allows the threads to come out of blocking syscall and get killed.
-	 */
-	makeHttpRequest();
-#endif
 }
 
 static int getHttpServerMetadata(ConfigManager *config, PortSocketMap_t *globalPortSocketMap) {
@@ -936,8 +930,6 @@ int main(int argc, char** argv) {
 
 
 	// all libevent base objects (one per thread)
-	vector<struct event_base *> evBasesForExternalRequests;
-	vector<struct event_base *> evBasesForInternalRequests;
 	vector<struct evhttp *> evServersForExternalRequests;
 	// map of all ports across all cores to shared socket file descriptors
 	PortSocketMap_t globalPortSocketMap;
