@@ -111,6 +111,9 @@ if __name__ == '__main__':
     binary_path = sys.argv[1]
     queriesAndResultsPath = sys.argv[2]
     exitCode = testFieldList(queriesAndResultsPath, binary_path, "./test_fieldList_inQuery/conf.xml")
+    time.sleep(1)
     exitCode = testFieldList(queriesAndResultsPath, binary_path, "./test_fieldList_inQuery/conf1.xml")
+    time.sleep(1)
     exitCode = testFieldList(queriesAndResultsPath, binary_path, "./test_fieldList_inQuery/conf2.xml")
+    time.sleep(1)
     os._exit(exitCode)
