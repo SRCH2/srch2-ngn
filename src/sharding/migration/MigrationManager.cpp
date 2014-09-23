@@ -967,6 +967,7 @@ string MigrationManager::initMigrationSession(const ClusterShardId& currentShard
 	string key = getSessionKey(currentShardId, remoteNode);
 	MigrationSessionInfo info;
 	info.currentShardId = currentShardId;
+	info.destShardId = destShardId;
 	info.srcOperationId = srcOperationId;
 	info.dstOperationId = dstOperationId;
 	info.srcNodeId = srcNodeId;
