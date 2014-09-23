@@ -114,18 +114,15 @@ OperationState * LoadBalancingStartOperation::finalizeLoadBalancing(){
 }
 
 OperationState * LoadBalancingStartOperation::balance(){
-	if(nodeReportArrived.size() < 2){
-		// only us ?
-		return LoadBalancingStartOperation::finalizeLoadBalancing();
-	}
 	// do we have all load reports ?
 	if(haveAllReportsArrived()){
-		Cluster_Writeview * writeview = ShardManager::getWriteview();
-		if(! isLightLoadedNode(ShardManager::getCurrentNodeId())){
+		if(nodeReportArrived.size() == 1 ||
+				! isLightLoadedNode(ShardManager::getCurrentNodeId())){ // only us or not light
 			OperationState * assignCopy = tryShardAssginmentAndShardCopy(true);// assignment only
 			if(assignCopy != NULL){
 				return assignCopy;
 			}
+			// only us and no unassigned shard can be assigned to us
 			return LoadBalancingStartOperation::finalizeLoadBalancing();
 		}
 
@@ -139,11 +136,10 @@ OperationState * LoadBalancingStartOperation::balance(){
 		// and move that shard to us.
 
 		OperationState * shardMove = tryShardMove();
-		if(shardMove == NULL){
-			return LoadBalancingStartOperation::finalizeLoadBalancing();
-		}else{
+		if(shardMove != NULL){
 			return shardMove;
 		}
+		return LoadBalancingStartOperation::finalizeLoadBalancing();
 	}
 	return this;
 }
