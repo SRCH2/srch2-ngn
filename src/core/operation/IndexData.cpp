@@ -75,16 +75,17 @@ IndexData::IndexData(const string &directoryName,
     this->forwardIndex = new ForwardIndex(this->schemaInternal);
     if (this->hasSchema) {
     	if (this->schemaInternal->getIndexType() == srch2::instantsearch::DefaultIndex) {
-    		this->invertedIndex =new InvertedIndex(this->forwardIndex);
+    		this->invertedIndex = new InvertedIndex(this->forwardIndex);
     		this->quadTree = NULL;
     	} else {
     		this->quadTree = new QuadTree(this->forwardIndex, this->trie);
     		this->invertedIndex = NULL;
     	}
     } else {
-    	// cannot determine whether we load inverted index or quad tree without schema.
-    	this->invertedIndex = NULL;
-    	this->quadTree = NULL;
+    	//without schema we cannot determine whether to load inverted index or quad tree. So
+    	// initialize pointer for both.
+    	this->invertedIndex = new InvertedIndex(this->forwardIndex);
+    	this->quadTree = new QuadTree(this->forwardIndex, this->trie);
     }
 
     this->readCounter = new ReadCounter();
@@ -755,6 +756,7 @@ void IndexData::_deSerializeInvertedIndex(std::istream& inputStream) {
 	}
 
 	if (this->schemaInternal->getIndexType() == srch2::instantsearch::DefaultIndex){
+		delete this->invertedIndex;
 		this->invertedIndex = new InvertedIndex(this->forwardIndex);
 		ia >> *(this->invertedIndex);
 		this->invertedIndex->setForwardIndex(this->forwardIndex);
@@ -775,6 +777,7 @@ void IndexData::_deSerializeLocationIndex(std::istream& inputStream) {
 		throw exception();
 	}
 	if (this->schemaInternal->getIndexType() == srch2::instantsearch::LocationIndex){
+		delete this->quadTree;
 		this->quadTree = new QuadTree();
 		ia >> *(this->quadTree);
 		this->quadTree->setForwardIndex(this->forwardIndex);

@@ -171,6 +171,8 @@ public:
 
     virtual void bootStrapComponentFromByteSteam(std::istream& inputStream, const string& componentName) = 0;
 
+    virtual void setSchema(const Schema* schema) = 0;
+
     virtual void exportData(const string &exportedDataFileName) = 0;
 
     /*For testing purpose only. Do not use in wrapper code*/

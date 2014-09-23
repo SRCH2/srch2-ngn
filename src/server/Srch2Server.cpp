@@ -180,10 +180,7 @@ void Srch2Server::createAndBootStrapIndexer(const string & directoryPath)
 	{
 	    AnalyzerHelper::initializeAnalyzerResource(this->getCoreInfo());
 	    const srch2is::Schema *schema = this->getCoreInfo()->getSchema();
-
-	    Analyzer *analyzer = AnalyzerFactory::createAnalyzer(this->getCoreInfo());
 	    indexer = Indexer::create(indexMetaData, schema);
-	    delete analyzer;
 	    switch(getCoreInfo()->getDataSourceType())
 	    {
 	    case srch2http::DATA_SOURCE_JSON_FILE:
@@ -268,6 +265,8 @@ void Srch2Server::bootStrapShardComponentFromByteStream(std::istream& input, con
 	}
 	if (input.peek() != std::ifstream::traits_type::eof()) {
 		indexer->bootStrapComponentFromByteSteam(input, component);
+	} else if (component == "SCHEMA.IDX"){
+		indexer->setSchema(indexDataConfig->getSchema());
 	}
 }
 

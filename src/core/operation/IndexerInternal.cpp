@@ -187,6 +187,17 @@ void IndexReaderWriter::bootStrapComponentFromByteSteam(std::istream& inputStrea
 	this->index->_bootStrapComponentFromByteSteam(inputStream, componentName);
 	pthread_mutex_unlock(&lockForWriters);
 }
+
+void IndexReaderWriter::setSchema(const Schema* schema) {
+	pthread_mutex_lock(&lockForWriters);
+	if (!this->index->containsSchema()) {
+		delete this->index->schemaInternal;
+		this->index->schemaInternal = new SchemaInternal( *(dynamic_cast<const SchemaInternal *>(schema)) );
+		this->index->rankerExpression = new RankerExpression(this->index->schemaInternal->getScoringExpression());
+	}
+	pthread_mutex_unlock(&lockForWriters);
+}
+
 void IndexReaderWriter::serialize(std::ostream& outputStream){
 	pthread_mutex_lock(&lockForWriters);
 	// we don't have to update histogram information when we want to export.

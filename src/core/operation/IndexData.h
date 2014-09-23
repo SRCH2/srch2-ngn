@@ -316,6 +316,8 @@ public:
 
     Schema* getSchema();
 
+    bool containsSchema() { return hasSchema; }
+
     const std::string& getLicenseFileNameWithPath() const { return this->licenseFileNameWithPath; }
 
     StoredRecordBuffer getInMemoryData(unsigned internalRecordId) const

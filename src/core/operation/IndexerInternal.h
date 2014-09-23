@@ -178,6 +178,8 @@ public:
 
     void bootStrapComponentFromByteSteam(std::istream& inputStream, const string& componentName);
 
+    void setSchema(const Schema* schema);
+
     string getStoredIndexDirectory() {
     	return index->getStoredIndexDirectory();
     }
