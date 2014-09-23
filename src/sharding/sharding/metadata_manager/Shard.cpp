@@ -149,9 +149,16 @@ NodeShardId::NodeShardId(unsigned coreId, NodeId nodeId, unsigned partitionId):S
 
 std::string NodeShardId::toString() const{
 	std::stringstream sstm;
+	sstm << "N" << coreId << "_" << partitionId ;
+	return sstm.str();
+}
+
+std::string NodeShardId::_toString() const{
+	std::stringstream sstm;
 	sstm << "N" << coreId << "_" << nodeId << "_" << partitionId ;
 	return sstm.str();
 }
+
 
 bool NodeShardId::isClusterShard() const {
 	return false;
@@ -312,7 +319,7 @@ const NodeShardId NodeShard::getShardId() const{
 	return shardId;
 }
 string NodeShard::getShardIdentifier() const {
-	return shardId.toString();
+	return shardId._toString();
 }
 bool NodeShard::operator==(const NodeShard & right) const{
 	return (this->shardId == right.shardId);
@@ -321,7 +328,7 @@ bool NodeShard::operator==(const NodeShard & right) const{
 string NodeShard::toString() const{
 	stringstream ss;
 
-	ss << "ShardId : " << shardId.toString() << "%";
+	ss << "ShardId : " << shardId._toString() << "%";
 	ss << "Index size : " << this->getSrch2Server()->getIndexer()->getNumberOfDocumentsInIndex();
 	return ss.str();
 }
@@ -440,7 +447,7 @@ string NodeTargetShardInfo::toString() const{
 		if(i != 0){
 			ss << "|";
 		}
-		ss << targetNodeShards.at(i).toString();
+		ss << targetNodeShards.at(i)._toString();
 	}
 	ss << "%";
 	return ss.str();

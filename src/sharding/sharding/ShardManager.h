@@ -25,6 +25,7 @@ class Cluster_Writeview;
 class ClusterOperationStateMachine;
 class ResourceLockManager ;
 class ResourceMetadataManager;
+class MigrationManager;
 struct ShardMigrationStatus;
 
 /*
@@ -102,6 +103,7 @@ public:
 	ResourceMetadataManager * getMetadataManager() const;
 	ResourceLockManager * getLockManager() const;
 	ClusterOperationStateMachine * getStateMachine() const;
+	void initMigrationManager();
 	void attachToTransportManager(TransportManager * tm);
     boost::mutex shardManagerGlobalMutex;
 
@@ -131,8 +133,12 @@ private:
 	TransportManager * transportManager;
 	ConfigManager * configManager;
 
+	MigrationManager *migrationManager;
+
 	ResourceLockManager * lockManager;
     ResourceMetadataManager * metadataManager;
+
+
 
 	ClusterOperationStateMachine * stateMachine;
 

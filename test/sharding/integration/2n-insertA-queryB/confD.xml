@@ -24,6 +24,7 @@
     -->
     <!-- <srch2Home>./</srch2Home>-->
     <cluster-name>SRCH2_Cluster</cluster-name>
+    <node-name>node-D</node-name>
     <srch2Home>/home/jamshid/workspace-srch2-3/srch2-ngn/test/sharding/integration</srch2Home>
 
     <ping>

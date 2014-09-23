@@ -45,6 +45,9 @@ public:
 		this->endianness = 0;
 		this->bitness = 0;
 	}
+	bool operator != (const IndexVersion& in){
+		return !(*this == in);
+	}
 	bool operator == (const IndexVersion& in){
 		return (this->sequentialId == in.sequentialId &&
 			this->boostVersion == in.boostVersion &&

@@ -15,6 +15,7 @@ const char MSG_DP_REQUEST_MASK = 0x4;   // 00000100
 const char MSG_DP_REPLY_MASK = 0x8;     // 00001000
 const char MSG_SHARDING_MASK = 0x10;     // 00010000
 
+const char MSG_MIGRATION_MASK = 0x40;  //01000000
 class Message {
 
 public:
@@ -37,6 +38,11 @@ public:
    bool isDiscovery() {
      return mask & MSG_DISCOVERY_MASK;
    }
+
+   bool isMigration() {
+	   return mask & MSG_MIGRATION_MASK;
+   }
+
    bool isSharding() {
      return mask & MSG_SHARDING_MASK;
    }
@@ -56,6 +62,12 @@ public:
 	   mask |= MSG_DISCOVERY_MASK;
 	   return this;
    }
+
+   Message * setMigrationMask(){
+	   mask |= MSG_MIGRATION_MASK;
+	   return this;
+   }
+
    Message * setShardingMask(){
 	   mask |= MSG_SHARDING_MASK;
 	   return this;

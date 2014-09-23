@@ -53,6 +53,12 @@
 #include "sharding/sharding/metadata_manager/MetadataInitializer.h"
 #include "sharding/sharding/metadata_manager/ResourceMetadataManager.h"
 #include "discovery/DiscoveryManager.h"
+#include "migration/MigrationManager.h"
+#include "Srch2Server.h"
+
+#include <boost/iostreams/stream_buffer.hpp>
+#include <boost/iostreams/stream.hpp>
+#include <boost/iostreams/device/back_inserter.hpp>
 
 
 namespace po = boost::program_options;
@@ -654,16 +660,18 @@ static int getHttpServerMetadata(ConfigManager *config, PortSocketMap_t *globalP
 	globalHostName = config->getHTTPServerListeningHostname().c_str();
 
 	// add the default port
-	globalDefaultPort = atoi(config->getHTTPServerListeningPort().c_str());
+	globalDefaultPort = atoi(config->getHTTPServerDefaultListeningPort().c_str());
 	if (globalDefaultPort > 0) {
 		ports.insert(globalDefaultPort);
 	}
 
 	// loop over operations and extract all port numbers of current node to use
 	unsigned short port;
+	const map<srch2http::PortType_t, unsigned short int> & allPorts = config->getHTTPServerListeningPorts();
 	for (srch2http::PortType_t portType = (srch2http::PortType_t) 0;
 			portType < srch2http::EndOfPortType; portType = srch2http::incrementPortType(portType)) {
-		port = config->getCurrentNodeConfig()->getPort(portType);
+
+		port = allPorts.at(portType);
 		if(port > 0){
 			ports.insert(port);
 		}
@@ -769,6 +777,7 @@ int setCallBacksonHTTPServer(ConfigManager *const config,
 		// iterate on all operations and map the path (w/o core info)
 		// to a callback function.
 		// we pass DPExternalCoreHandle as the argument of callbacks
+		const map<srch2http::PortType_t, unsigned short int> & allPorts = config->getHTTPServerListeningPorts();
 		for (int j = 0; userRequestAttributesList[j].path != NULL; j++) {
 
 
@@ -776,7 +785,8 @@ int setCallBacksonHTTPServer(ConfigManager *const config,
 					userRequestAttributesList[j].callback, defaultArgs);
 
 			// just for print
-			unsigned short port = config->getCurrentNodeConfig()->getPort(userRequestAttributesList[j].portType);
+
+			unsigned short port = allPorts.at(userRequestAttributesList[j].portType);
 			if (port < 1) port = globalDefaultPort;
 			Logger::debug("Routing port %d route %s to default core %s",
 					port, userRequestAttributesList[j].path, config->getDefaultCoreName().c_str());
@@ -806,7 +816,8 @@ int setCallBacksonHTTPServer(ConfigManager *const config,
 					userRequestAttributesList[j].callback, args);
 
 			// just for print
-			unsigned short port = config->getCurrentNodeConfig()->getPort(userRequestAttributesList[j].portType);
+			const map<srch2http::PortType_t, unsigned short int> & allPorts = config->getHTTPServerListeningPorts();
+			unsigned short port = allPorts.at(userRequestAttributesList[j].portType);
 			if(port < 1){
 				port = globalDefaultPort;
 			}
@@ -941,6 +952,7 @@ int main(int argc, char** argv) {
 
 	transportManager = new srch2http::TransportManager(evBasesForInternalRequests, transportConfig);
 	shardManager->attachToTransportManager(transportManager);
+	shardManager->initMigrationManager();
 	// since internal threads are not dispatched yet, it's safe to set the callback handler of shard manager.
 
 	// start threads for internal messages.
@@ -976,6 +988,87 @@ int main(int argc, char** argv) {
 	// create DP Internal
 	srch2http::DPInternalRequestHandler * dpInternal =
 			new srch2http::DPInternalRequestHandler(serverConf);
+
+	// TEST CODE FOR MIGRATION MANAGER
+//	serverConf->getClusterReadView(clusterReadview);
+//	if (clusterReadview->getCurrentNode()->isMaster()) {
+//		cout << "waiting for new node " << endl;
+//		while(1) {
+//			//boost::shared_ptr<const srch2::httpwrapper::Cluster> clusterReadview;
+//			serverConf->getClusterReadView(clusterReadview);
+//			if (clusterReadview->getTotalNumberOfNodes() == 2) {
+//				cout << "new Node found ..start migration ..." << endl;
+//				std::vector<const srch2http::Node *> nodes;
+//				clusterReadview->getAllNodes(nodes);
+//
+//				unsigned currNodeId = clusterReadview->getCurrentNode()->getId();
+//				std::vector< const srch2http::CoreShardContainer * >  coreShardContainers;
+//				clusterReadview->getNodeShardInformation(currNodeId, coreShardContainers);
+//
+//				if (coreShardContainers.size() > 0) {
+//					vector<srch2http::Shard *> * shardPtr = ((srch2http::CoreShardContainer *)coreShardContainers[0])->getPrimaryShards();
+//					if (shardPtr != NULL) {
+//						if (shardPtr->size() > 0) {
+//							unsigned destinationNodeId =  nodes[1]->getId();
+//							if (currNodeId == destinationNodeId) {
+//								destinationNodeId =  nodes[0]->getId();
+//							}
+//
+							//std::ostringstream outputBuffer(std::ios::out|std::ios::binary);
+//							namespace boostio = boost::iostreams;
+//							typedef std::vector<char> buffer_type;
+//							buffer_type buffer;
+//							boostio::stream<boostio::back_insert_device<buffer_type> > output_stream(buffer);
+//
+//							cout << "trying to serialize the shard ...." << endl;
+//
+//
+//
+//							shardPtr->at(0)->getSrch2Server()->serialize(output_stream);
+//
+//							//outputBuffer.flush();
+//							output_stream.seekp(0, ios::end);
+//							unsigned shardSize = output_stream.tellp();
+//							cout << "ostream size = " << shardSize << endl;
+//							output_stream.seekp(0, ios::beg);
+//
+//							//std::istringstream inputStream(std::ios::in | std::ios::binary);
+//							//inputStream.rdbuf()->pubsetbuf((char *)outputBuffer.str().c_str() , shardSize);
+//							//inputStream.str(outputBuffer.str());
+//
+//							srch2http::Srch2Server * tempSS = new srch2http::Srch2Server(
+//									shardPtr->at(0)->getSrch2Server()->getCoreInfo() , shardPtr->at(0)->getShardId(), 1);
+//
+//							string directoryPath = serverConf->createShardDir(serverConf->getClusterWriteView()->getClusterName(),
+//									serverConf->getClusterWriteView()->getCurrentNode()->getName(),
+//									shardPtr->at(0)->getSrch2Server()->getCoreInfo()->getName() + "_1", shardPtr->at(0)->getShardId());
+//
+//							cout << "Saving shard to : "  << directoryPath << endl;
+//
+//							cout << "buffer size " << buffer.size() << endl;
+//							boostio::basic_array_source<char> source(&buffer[0],buffer.size());
+//							boostio::stream<boostio::basic_array_source <char> > input_stream(source);
+//
+//							tempSS->bootStrapIndexerFromByteStream(input_stream, directoryPath);
+//							cout << "DONE!! " << endl;
+
+//							boost::shared_ptr<srch2http::Srch2Server> shard = shardPtr->at(0)->getSrch2Server();
+//							migrationManager->migrateShard(shardPtr->at(0)->getShardId(), shard
+//									, destinationNodeId);
+//
+//						}
+//					} else {
+//						exit(-1);
+//					}
+//				} else {
+//					exit(-1);
+//				}
+//				break;
+//			}
+//			sleep(2);
+//		}
+//	}
+	/// TEMP CODE END
 
 	// create DP external
 	srch2http::DPExternalRequestHandler *dpExternal =

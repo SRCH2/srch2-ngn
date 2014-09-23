@@ -141,7 +141,7 @@ CommandStatus * DPInternalRequestHandler::internalInsertUpdateCommand(const Node
     pthread_t * shardInsertUpdateThreads = new pthread_t[shards.size()];
 	for(unsigned shardIdx = 0; shardIdx < shards.size(); ++shardIdx){
 		const Shard * shard = shards.at(shardIdx);
-		ShardInsertUpdateArgs * shardInsertUpdateArgs = new ShardInsertUpdateArgs(insertUpdateData->getRecord(),
+		ShardInsertUpdateArgs * shardInsertUpdateArgs = new ShardInsertUpdateArgs(new Record(*(insertUpdateData->getRecord())),
 				shard->getSrch2Server().get(), shard->getShardIdentifier());
 		allShardsInsertArguments.push_back(shardInsertUpdateArgs);
 		if(insertUpdateData->getInsertOrUpdate() == InsertUpdateCommand::DP_INSERT){ // insert case

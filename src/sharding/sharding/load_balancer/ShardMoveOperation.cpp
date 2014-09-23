@@ -114,21 +114,23 @@ OperationState * ShardMoveOperation::handle(LockingNotification::ACK * ack){
 OperationState * ShardMoveOperation::transfer(){
 	// start transfering the data
 	// call MM to transfer the shard.
-	start();
+	MoveToMeNotification *  startNotif = new MoveToMeNotification(shardId);
+	this->send(startNotif, srcAddress);
+	delete startNotif;
 	return this;
 }
 OperationState * ShardMoveOperation::handle(MMNotification * mmStatus){
-	if(mmStatus->getStatus().status == MIGRATION_STATUS_FAIL){
+	if(mmStatus->getStatus().status == MM_STATUS_FAILURE){
 		return release();
-	}else if(mmStatus->getStatus().status == MIGRATION_STATUS_FINISH){
+	}else if(mmStatus->getStatus().status == MM_STATUS_SUCCESS){
 
 		Cluster_Writeview * writeview = ShardManager::getWriteview();
 
 		string indexDirectory = ShardManager::getShardManager()->getConfigManager()->getShardDir(writeview->clusterName,
-				writeview->nodes[ShardManager::getCurrentNodeId()].second->getName(), writeview->cores[shardId.coreId]->getName(), &shardId);
+				writeview->cores[shardId.coreId]->getName(), &shardId);
 		if(indexDirectory.compare("") == 0){
 			indexDirectory = ShardManager::getShardManager()->getConfigManager()->createShardDir(writeview->clusterName,
-					writeview->nodes[ShardManager::getCurrentNodeId()].second->getName(), writeview->cores[shardId.coreId]->getName(), &shardId);
+					writeview->cores[shardId.coreId]->getName(), &shardId);
 		}
 
 		physicalShard = LocalPhysicalShard(mmStatus->getStatus().shard, indexDirectory, "");
@@ -273,13 +275,6 @@ OperationState * ShardMoveOperation::release(){
 	return this;
 }
 
-void ShardMoveOperation::start(){
-	MoveToMeNotification *  startNotif = new MoveToMeNotification(shardId);
-	this->send(startNotif, srcAddress);
-	delete startNotif;
-	return;
-}
-
 OperationState * ShardMoveOperation::abort(){
 	MoveToMeNotification::ABORT * abortNotif = new MoveToMeNotification::ABORT();
 	this->send(abortNotif, srcAddress);
@@ -319,9 +314,9 @@ OperationState * ShardMoveSrcOperation::handle(MoveToMeNotification::FINISH * ac
 }
 
 OperationState * ShardMoveSrcOperation::handle(MMNotification * mmStatus){
-	if(mmStatus->getStatus().status == MIGRATION_STATUS_FAIL){ // dest could not have committed the change
+	if(mmStatus->getStatus().status == MM_STATUS_FAILURE){ // dest could not have committed the change
 		return release();
-	}else if(mmStatus->getStatus().status == MIGRATION_STATUS_FINISH){
+	}else if(mmStatus->getStatus().status == MM_STATUS_SUCCESS){
 		return this; // we should wait for FINISH notification
 	}
 	ASSERT(false);

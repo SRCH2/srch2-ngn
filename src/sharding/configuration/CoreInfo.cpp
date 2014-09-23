@@ -71,7 +71,7 @@ const string& CoreInfo_t::getHTTPServerListeningHostname() const{
 	return configManager->getHTTPServerListeningHostname();
 }
 const string& CoreInfo_t::getHTTPServerListeningPort() const {
-	return configManager->getHTTPServerListeningPort();
+	return configManager->getHTTPServerDefaultListeningPort();
 }
 const string& CoreInfo_t::getHTTPServerAccessLogFile() const {
 	return configManager->getHTTPServerAccessLogFile();

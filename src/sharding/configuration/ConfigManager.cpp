@@ -249,6 +249,17 @@ void ConfigManager::loadConfigFile(srch2http::ResourceMetadataManager * metadata
     Logger::debug("WARNINGS while reading the configuration file:");
     Logger::debug("%s\n", parseWarnings.str().c_str());
 
+    // Check if node-name is usable : we must see if there is any other instance using this name
+    if(this->getCurrentNodeName().compare("") == 0){
+        Logger::error("error: Node name is not usable.");
+        exit(-1);
+    }
+    if(! tryLockNodeName()){
+        Logger::error("error: Node name is not usable. Another instance is running with the same node name.");
+        exit(-1);
+    }
+
+
     if(metadataManager != NULL){
 		metadataManager->setWriteview(new Cluster_Writeview(0, clusterNameStr, clusterCores));
     }
@@ -1911,34 +1922,20 @@ void ConfigManager::parse(const pugi::xml_document& configDoc,
 
     tempUse = "";
 
-    std::string nodeName = "";
+    std::string nodeName = "srch2-node";
     //  node-name -- optional
     xml_node xmlnodeNameTag = configNode.child(nodeNameTag);
-    if (xmlnodeNameTag && xmlnodeNameTag.text()) { // checks if the config/srch2Home has any text in it or not
+    if (xmlnodeNameTag && xmlnodeNameTag.text()) { // checks if the config/node-name has any text in it or not
         tempUse = string(xmlnodeNameTag.text().get());
         trimSpacesFromValue(tempUse, nodeNameTag, parseWarnings);
         nodeName = tempUse;
+    } else {
+    	parseWarnings << "Node name is not defined in the config file. Using a default value = " << nodeName << endl;
     }
-    nodeConfig.setName(nodeName);
+    this->nodeNameStr = nodeName;
 
-    bool nodeMasterEligible = true;
-    //  node-master -- optional -- default = true
-    xml_node xmlnodeMasterTag = configNode.child(nodeMasterTag);
-    if (xmlnodeMasterTag && xmlnodeMasterTag.text()) { // checks if the config/srch2Home has any text in it or not
-        tempUse = string(xmlnodeMasterTag.text().get());
-        trimSpacesFromValue(tempUse, nodeMasterTag, parseWarnings);
-        if(tempUse.compare("true") == 0){
-        	nodeMasterEligible = true;
-        }
-        else if(tempUse.compare("false") == 0){
-        	nodeMasterEligible = false;
-        }
-        else{
-        	nodeMasterEligible = true;
-        	parseWarnings << "Invalid value for " << nodeMasterTag << "; Using the default value true \n";
-        }
-    }
-    nodeConfig.setMasterEligible(nodeMasterEligible);
+
+
 
     //  ports -- operation specific ports -- optional --- default listening port.
 
@@ -2010,12 +2007,18 @@ void ConfigManager::parse(const pugi::xml_document& configDoc,
     // listeningPort is a required field
     childNode = configNode.child(listeningPortString);
     if (childNode && childNode.text()) { // checks if the config/listeningPort has any text in it or not
-        this->httpServerListeningPort = string(childNode.text().get());
-        int value = atoi(httpServerListeningPort.c_str());
+        this->httpServerListeningPortStr = string(childNode.text().get());
+        int value = atoi(httpServerListeningPortStr.c_str());
         if (value <= 0 || value > USHRT_MAX) {
             parseError << listeningPortString << " must be between 1 and " << USHRT_MAX;
             configSuccess = false;
             return;
+        }
+
+        // TODO : we must change the parsing code to parse all ports ...
+        for(srch2http::PortType_t portType = (srch2http::PortType_t) 0;
+    			portType < srch2http::EndOfPortType; portType = srch2http::incrementPortType(portType)){
+        	httpServerListeningPorts[portType] = value;
         }
     } else {
         parseError << "listeningPort is not set.\n";
@@ -2104,6 +2107,8 @@ ConfigManager::~ConfigManager()
     		delete clusterCores.at(coreIdx);
     	}
     }
+
+    unlockNodeName();
 }
 
 unsigned ConfigManager::getKeywordPopularityThreshold() const {
@@ -2418,8 +2423,12 @@ const string& ConfigManager::getHTTPServerListeningHostname() const {
     return httpServerListeningHostname;
 }
 
-const string& ConfigManager::getHTTPServerListeningPort() const {
-    return httpServerListeningPort;
+const string& ConfigManager::getHTTPServerDefaultListeningPort() const {
+    return httpServerListeningPortStr;
+}
+
+const map<enum srch2http::PortType_t, unsigned short int>& ConfigManager::getHTTPServerListeningPorts() const {
+	return httpServerListeningPorts;
 }
 
 int ConfigManager::getOrdering() const {
@@ -2862,26 +2871,26 @@ string ConfigManager::createClusterDir(const string& clusterName)
 	return path;
 }
 
-string ConfigManager::createNodeDir(const string& clusterName, const string& nodeName)
+string ConfigManager::createNodeDir(const string& clusterName)
 {
-	string path = this->getSrch2Home() + clusterName + "/" + nodeName;
+	string path = this->getSrch2Home() + clusterName + "/" + this->getCurrentNodeName();
 	createClusterDir(clusterName);
 	boost::filesystem::create_directory(path);
 	return path;
 }
 
-string ConfigManager::createCoreDir(const string& clusterName, const string& nodeName, const string& coreName)
+string ConfigManager::createCoreDir(const string& clusterName, const string& coreName)
 {
-	string path = this->getSrch2Home() + clusterName + "/" + nodeName + "/" + coreName;
-	createNodeDir(clusterName, nodeName);
+	string path = this->getSrch2Home() + clusterName + "/" + this->getCurrentNodeName() + "/" + coreName;
+	createNodeDir(clusterName);
 	boost::filesystem::create_directory(path);
 	return path;
 }
 
-string ConfigManager::createShardDir(const string& clusterName, const string& nodeName, const string& coreName, const ShardId * shardId)
+string ConfigManager::createShardDir(const string& clusterName, const string& coreName, const ShardId * shardId)
 {
-	string path = this->getSrch2Home() + clusterName + "/" + nodeName + "/" + coreName + "/" + shardId->toString();
-	createCoreDir(clusterName, nodeName, coreName);
+	string path = this->getSrch2Home() + clusterName + "/" + this->getCurrentNodeName() + "/" + coreName + "/" + shardId->toString();
+	createCoreDir(clusterName, coreName);
 	boost::filesystem::create_directory(path);
 	return path;
 }
@@ -2909,9 +2918,9 @@ string ConfigManager::getClusterDir(const string& clusterName)
 
 }
 
-string ConfigManager::getNodeDir(const string& clusterName,const string& nodeName)
+string ConfigManager::getNodeDir(const string& clusterName)
 {
-	string path = getClusterDir(clusterName) + "/" + nodeName;
+	string path = getClusterDir(clusterName) + "/" + this->getCurrentNodeName();
 	if(boost::filesystem::is_directory(path))
 		return path;
 	else
@@ -2919,22 +2928,51 @@ string ConfigManager::getNodeDir(const string& clusterName,const string& nodeNam
 
 }
 
-string ConfigManager::getCoreDir(const string& clusterName, const string& nodeName, const string& coreName)
+string ConfigManager::getCoreDir(const string& clusterName, const string& coreName)
 {
-	string path = getNodeDir(clusterName, nodeName) + "/" + coreName;
+	string path = getNodeDir(clusterName) + "/" + coreName;
 	if(boost::filesystem::is_directory(path))
 		return path;
 	else
 		return "";
 }
 
-string ConfigManager::getShardDir(const string& clusterName, const string& nodeName, const string& coreName, const ShardId * shardId)
+string ConfigManager::getShardDir(const string& clusterName, const string& coreName, const ShardId * shardId)
 {
-	string path = getCoreDir(clusterName, nodeName, coreName) + "/" + shardId->toString();
+	string path = getCoreDir(clusterName, coreName) + "/" + shardId->toString();
 	if(boost::filesystem::is_directory(path))
 		return path;
 	else
 		return "";
+}
+
+
+bool ConfigManager::tryLockNodeName(){
+	string nodeDirPath = this->getNodeDir(this->clusterNameStr);
+	if(nodeDirPath.compare("") == 0){
+		nodeDirPath = this->createNodeDir(this->clusterNameStr);
+	}
+	string lockFilePath = nodeDirPath + "/." + this->getCurrentNodeName() + ".lock";
+	ifstream lockFile(lockFilePath.c_str());
+	if(lockFile.good()){
+		lockFile.close();
+		return false;
+	}else{
+		ofstream newLockFile(lockFilePath.c_str());
+		newLockFile.write("locked", 6);
+		newLockFile.close();
+		return true;
+	}
+	return false;
+}
+void ConfigManager::unlockNodeName(){
+	string nodeDirPath = this->getNodeDir(this->clusterNameStr);
+	if(nodeDirPath.compare("") == 0){
+		return;
+	}
+	string lockFilePath = nodeDirPath + "/." + this->getCurrentNodeName() + ".lock";
+	std::remove(lockFilePath.c_str());
+	return;
 }
 
 void ConfigManager::renameDir(const string & src, const string & target){
@@ -2947,6 +2985,10 @@ uint ConfigManager::removeDir(const string& path)
 {
 	uint numberOfFilesDeleted = boost::filesystem::remove_all(path);
 	return numberOfFilesDeleted;
+}
+
+string ConfigManager::getCurrentNodeName() const{
+	return this->nodeNameStr;
 }
 
 string Transport::getIpAddress(){

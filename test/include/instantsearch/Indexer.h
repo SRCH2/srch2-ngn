@@ -100,7 +100,6 @@ class Indexer
 {
 public:
     static Indexer* create(IndexMetaData* index, Analyzer *analyzer, Schema *schema);
-    static Indexer* load(IndexMetaData* index);
 
     virtual ~Indexer() {};
 

@@ -162,10 +162,9 @@ void * ShardingNotification::deserialize(void * buffer) {
 	return buffer;
 }
 
-MMNotification::MMNotification(const ShardMigrationStatus & status, const ClusterShardId & destShardId):status(status){
+MMNotification::MMNotification(const ShardMigrationStatus & status):status(status){
     this->setSrc(NodeOperationId(this->status.sourceNodeId, this->status.srcOperationId));
     this->setDest(NodeOperationId(this->status.destinationNodeId, this->status.dstOperationId));
-    this->destShardId = destShardId;
 }
 MMNotification::MMNotification(){};
 ShardMigrationStatus MMNotification::getStatus() const{
@@ -177,27 +176,21 @@ void MMNotification::setStatus(const ShardMigrationStatus & status){
 ShardingMessageType MMNotification::messageType() const {
     return ShardingMMNotificationMessageType;
 }
-ClusterShardId MMNotification::getDestShardId() const{
-    return this->destShardId;
-}
 
 void * MMNotification::serialize(void * buffer) const{
     buffer = ShardingNotification::serialize(buffer);
     buffer = status.serialize(buffer);
-    buffer = destShardId.serialize(buffer);
     return buffer;
 }
 unsigned MMNotification::getNumberOfBytes() const{
     unsigned numberOfBytes = 0;
     numberOfBytes += ShardingNotification::getNumberOfBytes();
     numberOfBytes += status.getNumberOfBytes();
-    numberOfBytes += destShardId.getNumberOfBytes();
     return numberOfBytes;
 }
 void * MMNotification::deserialize(void * buffer) {
     buffer = ShardingNotification::deserialize(buffer);
     buffer = status.deserialize(buffer);
-    buffer = destShardId.deserialize(buffer);
     return buffer;
 }
 

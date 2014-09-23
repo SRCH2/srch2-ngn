@@ -8,7 +8,7 @@
 #include "../ShardManager.h"
 #include "LoadBalancingStartOperation.h"
 #include "server/Srch2Server.h"
-
+#include "migration/MigrationManager.h"
 namespace srch2is = srch2::instantsearch;
 using namespace srch2is;
 using namespace std;
@@ -88,21 +88,24 @@ OperationState * ShardCopyOperation::handle(LockingNotification::ACK * ack){
 OperationState * ShardCopyOperation::transfer(){
 	// start transfering the data
 	// call MM to transfer the shard.
-	accessMigrationManager(shardId, replicaShardId, srcNodeId);
+//	accessMigrationManager(shardId, replicaShardId, srcNodeId);
+	CopyToMeNotification * copyToMeNotif = new CopyToMeNotification(replicaShardId, shardId);
+	this->send(copyToMeNotif, NodeOperationId(srcNodeId));
+	delete copyToMeNotif;
 	return this;
 }
 OperationState * ShardCopyOperation::handle(MMNotification * mmStatus){
-	if(mmStatus->getStatus().status == MIGRATION_STATUS_FAIL){
+	if(mmStatus->getStatus().status == MM_STATUS_FAILURE){
 		return release();
-	}else if(mmStatus->getStatus().status == MIGRATION_STATUS_FINISH){
+	}else if(mmStatus->getStatus().status == MM_STATUS_SUCCESS){
 
 		Cluster_Writeview * writeview = ShardManager::getWriteview();
 
 		string indexDirectory = ShardManager::getShardManager()->getConfigManager()->getShardDir(writeview->clusterName,
-				writeview->nodes[ShardManager::getCurrentNodeId()].second->getName(), writeview->cores[shardId.coreId]->getName(), &shardId);
+				writeview->cores[shardId.coreId]->getName(), &shardId);
 		if(indexDirectory.compare("") == 0){
 			indexDirectory = ShardManager::getShardManager()->getConfigManager()->createShardDir(writeview->clusterName,
-					writeview->nodes[ShardManager::getCurrentNodeId()].second->getName(), writeview->cores[shardId.coreId]->getName(), &shardId);
+					writeview->cores[shardId.coreId]->getName(), &shardId);
 		}
 
 		physicalShard = LocalPhysicalShard(mmStatus->getStatus().shard, indexDirectory, "");
@@ -242,11 +245,6 @@ OperationState * ShardCopyOperation::release(){
 	return this;
 }
 
-void ShardCopyOperation::accessMigrationManager(const ClusterShardId & shardId, const ClusterShardId & srcShardId, const NodeId srcNodeId){
-	CopyToMeNotification * copyToMeNotif = new CopyToMeNotification(replicaShardId, shardId);
-	this->send(copyToMeNotif, NodeOperationId(srcNodeId));
-	delete copyToMeNotif;
-}
 
 }
 }

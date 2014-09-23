@@ -47,6 +47,13 @@ enum ShardingMessageType{
     ClusterInfoReplyMessageType,
     ClusterUpdateMessageType,
 
+    // for MM
+    MigrationInitMessage,
+    MigrationInitAckMessage,
+    MigrationComponentBeginMessage,
+    MigrationComponentBeginAckMessage,
+    MigrationComponentEndAckMessage,
+    MigrationCompleteAckMessage,
 
     // For SHM
     ShardingNewNodeLockMessageType,

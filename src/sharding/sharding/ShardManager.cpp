@@ -19,6 +19,7 @@
 #include "node_initialization/NewNodeJoinOperation.h"
 #include "load_balancer/LoadBalancingStartOperation.h"
 #include "load_balancer/ShardMoveOperation.h"
+#include "sharding/migration/MigrationManager.h"
 
 #include "core/util/Assert.h"
 #include <pthread.h>
@@ -106,6 +107,10 @@ ResourceLockManager * ShardManager::getLockManager() const{
 
 ClusterOperationStateMachine * ShardManager::getStateMachine() const{
 	return this->stateMachine;
+}
+
+void ShardManager::initMigrationManager(){
+	this->migrationManager = new MigrationManager(transportManager, configManager);
 }
 
 void ShardManager::setJoined(){
@@ -289,16 +294,18 @@ bool ShardManager::resolveMessage(Message * msg, NodeId senderNode){
 				break;
 			}
 
-			/////////////////////////// TODO : this code is temporarily faking Migration Manager
-			ShardMigrationStatus mmStatus;
-			mmStatus.sourceNodeId = ShardManager::getCurrentNodeId();
-			mmStatus.srcOperationId = 0;
-			mmStatus.destinationNodeId = moveNotif->getSrc().nodeId;
-			mmStatus.dstOperationId = moveNotif->getSrc().operationId;
-			mmStatus.status = MIGRATION_STATUS_FINISH;
-			MMNotification * mmNotif = new MMNotification(mmStatus, moveNotif->getShardId());
-			send(mmNotif);
-			delete mmNotif;
+			Cluster_Writeview * writeview = this->getWriteview();
+
+			if(writeview->localClusterDataShards.find(moveNotif->getShardId()) == writeview->localClusterDataShards.end()){
+				// NOTE : requested shard does not exist on this node
+				ASSERT(false);
+				break;
+			}
+			// call migration manager to transfer this shard
+			this->migrationManager->migrateShard(moveNotif->getShardId(),
+					writeview->localClusterDataShards.at(moveNotif->getShardId()).server,
+					moveNotif->getDest(), moveNotif->getSrc());
+
 			delete moveNotif;
 			break;
 		}
@@ -509,50 +516,20 @@ bool ShardManager::resolveMessage(Message * msg, NodeId senderNode){
 				break;
 			}
 
-			ShardMigrationStatus mmStatus;
-			mmStatus.sourceNodeId = ShardManager::getCurrentNodeId();
-			mmStatus.srcOperationId = 0;
-			mmStatus.destinationNodeId = copyNotif->getSrc().nodeId;
-			mmStatus.dstOperationId = copyNotif->getSrc().operationId;
-			mmStatus.status = MIGRATION_STATUS_FINISH;
-			MMNotification * mmNotif = new MMNotification(mmStatus, copyNotif->getDestShardId());
-			send(mmNotif);
-			delete mmNotif;
-			delete copyNotif;
-			break;
-		}
-		case ShardingMMNotificationMessageType:
-		{
-			// TODO : Only happens in test because CopyToMeNotification and its ack work instead of migration manager
-			MMNotification * mmNotif =
-					ShardingNotification::deserializeAndConstruct<MMNotification>(Message::getBodyPointerFromMessagePointer(msg));
-			Logger::debug("%s | Status : %s ,Dest Shard Id : " ,
-					mmNotif->getDescription().c_str(),
-					mmNotif->getStatus().status == MIGRATION_STATUS_FINISH ? "Done." : "Failed.",
-					mmNotif->getDestShardId().toString().c_str());
-			if(mmNotif->isBounced()){
-				Logger::debug("==> Bounced.");
+			// call migration manager to start transfering this shard.
+			ClusterShardId srcShardId = copyNotif->getSrcShardId();
+			ClusterShardId destShardId = copyNotif->getDestShardId();
+			Cluster_Writeview * writeview = this->getWriteview();
+			if(writeview->localClusterDataShards.find(srcShardId) == writeview->localClusterDataShards.end()){
+				// NOTE: requested shard does not exist on this node.
 				ASSERT(false);
-				delete mmNotif;
 				break;
 			}
 
-			ShardMigrationStatus mmStatus = mmNotif->getStatus();
-			// add empty shard to it...
-			ClusterShardId * destShardId = new ClusterShardId(mmNotif->getDestShardId());
-			// prepare indexDirectory
-	        string indexDirectory = configManager->getShardDir(writeview->clusterName,
-	                writeview->nodes[ShardManager::getCurrentNodeId()].second->getName(), writeview->cores[destShardId->coreId]->getName(), destShardId);
-	        if(indexDirectory.compare("") == 0){
-	            indexDirectory = configManager->createShardDir(writeview->clusterName,
-	                    writeview->nodes[ShardManager::getCurrentNodeId()].second->getName(), writeview->cores[destShardId->coreId]->getName(), destShardId);
-	        }
-			EmptyShardBuilder emptyShard(destShardId, indexDirectory);
-			emptyShard.prepare();
-			mmStatus.shard = emptyShard.getShardServer();
-			mmNotif->setStatus(mmStatus);
-			this->stateMachine->handle(mmNotif);
-			delete mmNotif;
+			this->migrationManager->migrateShard(srcShardId, writeview->localClusterDataShards.at(srcShardId).server,
+					copyNotif->getDest(), copyNotif->getSrc());
+
+			delete copyNotif;
 			break;
 		}
 		case ShardingCommitMessageType:
@@ -622,14 +599,15 @@ void * ShardManager::resolveReadviewRelease_ThreadChange(void * vidPtr){
 
 void ShardManager::resolveMMNotification(const ShardMigrationStatus & migrationStatus){
 	Logger::debug("MM | (%d => %d) was %s", migrationStatus.sourceNodeId, migrationStatus.destinationNodeId,
-			(migrationStatus.status == MIGRATION_STATUS_FINISH)? "Done."  : "Failed.");
+			(migrationStatus.status == MM_STATUS_SUCCESS)? "Done."  : "Failed.");
 	boost::unique_lock<boost::mutex> shardManagerGlobalLock(shardManagerGlobalMutex);
 	// TODO : second argument must be deleted when migration manager is merged with this code.
 	// TODO :  Migration manager must return the ClusterShardId value
-	MMNotification * mmNotif = new MMNotification(migrationStatus, ClusterShardId());
+	MMNotification * mmNotif = new MMNotification(migrationStatus);
 	this->stateMachine->handle(mmNotif);
 	Logger::debug("MM | (%d => %d) was %s Processed.", migrationStatus.sourceNodeId, migrationStatus.destinationNodeId,
-			(migrationStatus.status == MIGRATION_STATUS_FINISH)? "Done."  : "Failed.");
+			(migrationStatus.status == MM_STATUS_SUCCESS)? "Done."  : "Failed.");
+	delete mmNotif;
 
 //    cout << "Shard Manager status after receiving migration manager notification:" << endl;
 //    ShardManager::getShardManager()->print();
