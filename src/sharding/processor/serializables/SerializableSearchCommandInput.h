@@ -74,6 +74,9 @@ public:
     }
 
     SearchCommand * clone(){
+    	if(this->logicalPlan == NULL){
+    		return new SearchCommand(NULL);
+    	}
     	return new SearchCommand(new LogicalPlan(*(this->logicalPlan)));
     }
 

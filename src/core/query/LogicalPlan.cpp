@@ -19,17 +19,17 @@ LogicalPlanNode::LogicalPlanNode(Term * exactTerm, Term * fuzzyTerm){
 	this->nodeType = LogicalPlanNodeTypeTerm;
 	this->exactTerm= exactTerm;
 	this->fuzzyTerm = fuzzyTerm;
-	stats = NULL;
-	forcedPhysicalNode = PhysicalPlanNode_NOT_SPECIFIED;
+	this->stats = NULL;
+	this->forcedPhysicalNode = PhysicalPlanNode_NOT_SPECIFIED;
 }
 
 LogicalPlanNode::LogicalPlanNode(LogicalPlanNodeType nodeType){
-	ASSERT(nodeType != LogicalPlanNodeTypeTerm);
+	ASSERT(this->nodeType != LogicalPlanNodeTypeTerm);
 	this->nodeType = nodeType;
 	this->exactTerm= NULL;
 	this->fuzzyTerm = NULL;
-	stats = NULL;
-	forcedPhysicalNode = PhysicalPlanNode_NOT_SPECIFIED;
+	this->stats = NULL;
+	this->forcedPhysicalNode = PhysicalPlanNode_NOT_SPECIFIED;
 }
 
 /*
@@ -39,8 +39,8 @@ LogicalPlanNode::LogicalPlanNode(){
 	this->nodeType = LogicalPlanNodeTypeAnd;
 	this->exactTerm= NULL;
 	this->fuzzyTerm = NULL;
-	stats = NULL;
-	forcedPhysicalNode = PhysicalPlanNode_NOT_SPECIFIED;
+	this->stats = NULL;
+	this->forcedPhysicalNode = PhysicalPlanNode_NOT_SPECIFIED;
 }
 
 LogicalPlanNode::LogicalPlanNode(const LogicalPlanNode & node){
@@ -66,7 +66,7 @@ LogicalPlanNode::LogicalPlanNode(const LogicalPlanNode & node){
 		}
 	}
 	//if(node.stats == NULL){
-		this->stats == NULL; // stats will always be created new
+	this->stats == NULL; // stats will always be created new
 	//}else{
 	//	this->stats = new LogicalPlanNodeAnnotation(*(node.stats)); // TODO
 	//}
@@ -79,12 +79,12 @@ LogicalPlanNode::~LogicalPlanNode(){
 	if(this->fuzzyTerm != NULL){
 		delete fuzzyTerm;
 	}
-	for(vector<LogicalPlanNode *>::iterator child = children.begin() ; child != children.end() ; ++child){
+	for(vector<LogicalPlanNode *>::iterator child = this->children.begin() ; child != this->children.end() ; ++child){
 		if(*child != NULL){
 			delete *child;
 		}
 	}
-	if(stats != NULL) delete stats;
+	if(this->stats != NULL) delete this->stats;
 }
 
 void LogicalPlanNode::setFuzzyTerm(Term * fuzzyTerm){
@@ -121,8 +121,8 @@ string LogicalPlanNode::getSubtreeUniqueString(){
  */
 void * LogicalPlanNode::serializeForNetwork(void * buffer){
 
-	buffer = srch2::util::serializeFixedTypes(nodeType, buffer);
-	buffer = srch2::util::serializeFixedTypes(forcedPhysicalNode, buffer);
+	buffer = srch2::util::serializeFixedTypes(this->nodeType, buffer);
+	buffer = srch2::util::serializeFixedTypes(this->forcedPhysicalNode, buffer);
 
 	buffer = srch2::util::serializeFixedTypes(bool(this->exactTerm != NULL), buffer);
 	buffer = srch2::util::serializeFixedTypes(bool(this->fuzzyTerm != NULL), buffer);
@@ -216,8 +216,8 @@ void * LogicalPlanNode::deserializeForNetwork(LogicalPlanNode * &node, void * bu
 unsigned LogicalPlanNode::getNumberOfBytesForSerializationForNetwork(){
 	//calculate number of bytes
 	unsigned numberOfBytes = 0;
-	numberOfBytes += sizeof(nodeType);
-	numberOfBytes += sizeof(forcedPhysicalNode);
+	numberOfBytes += sizeof(this->nodeType);
+	numberOfBytes += sizeof(this->forcedPhysicalNode);
 
 	numberOfBytes += sizeof(bool);
 	if(this->exactTerm != NULL){
@@ -229,7 +229,7 @@ unsigned LogicalPlanNode::getNumberOfBytesForSerializationForNetwork(){
 		numberOfBytes += this->fuzzyTerm->getNumberOfBytesForSerializationForNetwork();
 	}
 
-	if(nodeType == LogicalPlanNodeTypePhrase){
+	if(this->nodeType == LogicalPlanNodeTypePhrase){
 		numberOfBytes +=  ((LogicalPlanPhraseNode *)this)->getPhraseInfo()->getNumberOfBytesForSerializationForNetwork();
 	}
 
@@ -247,14 +247,19 @@ unsigned LogicalPlanNode::getNumberOfBytesForSerializationForNetwork(){
 //////////////////////////////////////////////// Logical Plan ///////////////////////////////////////////////
 
 LogicalPlan::LogicalPlan(){
-	tree = NULL;
-	postProcessingInfo = NULL;
-	fuzzyQuery = exactQuery = NULL;
-	postProcessingPlan = NULL;
+	this->tree = NULL;
+	this->postProcessingInfo = NULL;
+	this->fuzzyQuery = this->exactQuery = NULL;
+	this->postProcessingPlan = NULL;
 }
 
 LogicalPlan::LogicalPlan(const LogicalPlan & logicalPlan){
-    this->tree = new LogicalPlanNode(*(logicalPlan.tree));
+	if(logicalPlan.tree != NULL){
+		this->tree = new LogicalPlanNode(*(logicalPlan.tree));
+	}else{
+		this->tree = NULL;
+	}
+
 	this->offset = logicalPlan.offset;
 	this->numberOfResultsToRetrieve = logicalPlan.numberOfResultsToRetrieve;
 	this->shouldRunFuzzyQuery = logicalPlan.shouldRunFuzzyQuery;
@@ -286,19 +291,19 @@ LogicalPlan::LogicalPlan(const LogicalPlan & logicalPlan){
 }
 
 LogicalPlan::~LogicalPlan(){
-	if(tree != NULL) delete tree;
-	if(postProcessingInfo != NULL){
-		delete postProcessingInfo;
+	if(this->tree != NULL) delete this->tree;
+	if(this->postProcessingInfo != NULL){
+		delete this->postProcessingInfo;
 	}
-	if(postProcessingPlan != NULL){
-		delete postProcessingPlan;
+	if(this->postProcessingPlan != NULL){
+		delete this->postProcessingPlan;
 	}
-	if(exactQuery != NULL){
-		delete exactQuery;
+	if(this->exactQuery != NULL){
+		delete this->exactQuery;
 	}
 
-	if(fuzzyQuery != NULL){
-		delete fuzzyQuery;
+	if(this->fuzzyQuery != NULL){
+		delete this->fuzzyQuery;
 	}
 }
 
@@ -334,22 +339,22 @@ LogicalPlanNode * LogicalPlan::createPhraseLogicalPlanNode(const vector<string>&
  */
 string LogicalPlan::getUniqueStringForCaching(){
 	stringstream ss;
-	if(tree != NULL){
-		ss << tree->getSubtreeUniqueString().c_str();
+	if(this->tree != NULL){
+		ss << this->tree->getSubtreeUniqueString().c_str();
 	}
-	ss << docIdForRetrieveByIdSearchType;
-	if(postProcessingInfo != NULL){
-		ss << postProcessingInfo->toString().c_str();
+	ss << this->docIdForRetrieveByIdSearchType;
+	if(this->postProcessingInfo != NULL){
+		ss << this->postProcessingInfo->toString().c_str();
 	}
-	ss << queryType;
-	ss << offset;
-	ss << numberOfResultsToRetrieve;
-	ss << shouldRunFuzzyQuery;
-	if(exactQuery != NULL){
-		ss << exactQuery->toString().c_str();
+	ss << this->queryType;
+	ss << this->offset;
+	ss << this->numberOfResultsToRetrieve;
+	ss << this->shouldRunFuzzyQuery;
+	if(this->exactQuery != NULL){
+		ss << this->exactQuery->toString().c_str();
 	}
-	if(fuzzyQuery != NULL){
-		ss << fuzzyQuery->toString().c_str();
+	if(this->fuzzyQuery != NULL){
+		ss << this->fuzzyQuery->toString().c_str();
 	}
 	return ss.str();
 }
@@ -368,11 +373,11 @@ void * LogicalPlan::serializeForNetwork(void * buffer){
 	buffer = srch2::util::serializeFixedTypes(this->queryType, buffer);
 	buffer = srch2::util::serializeString(this->docIdForRetrieveByIdSearchType, buffer);
 
-	buffer = srch2::util::serializeFixedTypes(bool(exactQuery != NULL), buffer); // isNULL
-	buffer = srch2::util::serializeFixedTypes(bool(fuzzyQuery != NULL), buffer); // isNULL
-	buffer = srch2::util::serializeFixedTypes(bool(postProcessingInfo != NULL),buffer); // isNULL
+	buffer = srch2::util::serializeFixedTypes(bool(this->exactQuery != NULL), buffer); // isNULL
+	buffer = srch2::util::serializeFixedTypes(bool(this->fuzzyQuery != NULL), buffer); // isNULL
+	buffer = srch2::util::serializeFixedTypes(bool(this->postProcessingInfo != NULL),buffer); // isNULL
 	//NOTE: postProcessingPlan must be removed completely. It's not used anymore
-	buffer = srch2::util::serializeFixedTypes(bool(tree != NULL), buffer); // isNULL
+	buffer = srch2::util::serializeFixedTypes(bool(this->tree != NULL), buffer); // isNULL
 
 	if(exactQuery != NULL){
 		buffer = exactQuery->serializeForNetwork(buffer);
@@ -449,21 +454,21 @@ unsigned LogicalPlan::getNumberOfBytesForSerializationForNetwork(){
 
 	numberOfBytes += sizeof(bool)*4; // isNULL
 	// exact query
-	if(exactQuery != NULL){
-		numberOfBytes += exactQuery->getNumberOfBytesForSerializationForNetwork();
+	if(this->exactQuery != NULL){
+		numberOfBytes += this->exactQuery->getNumberOfBytesForSerializationForNetwork();
 	}
 	// fuzzy query
-	if(fuzzyQuery != NULL){
-		numberOfBytes += fuzzyQuery->getNumberOfBytesForSerializationForNetwork();
+	if(this->fuzzyQuery != NULL){
+		numberOfBytes += this->fuzzyQuery->getNumberOfBytesForSerializationForNetwork();
 	}
 	//NOTE: postProcessingPlan is not counted because it's not used and it must be deleted
 	// postProcessingInfo
-	if(postProcessingInfo != NULL){
-		numberOfBytes += postProcessingInfo->getNumberOfBytesForSerializationForNetwork();
+	if(this->postProcessingInfo != NULL){
+		numberOfBytes += this->postProcessingInfo->getNumberOfBytesForSerializationForNetwork();
 	}
 	//tree
-	if(tree != NULL){
-		numberOfBytes += tree->getNumberOfBytesForSerializationForNetwork();
+	if(this->tree != NULL){
+		numberOfBytes += this->tree->getNumberOfBytesForSerializationForNetwork();
 	}
 
 	return numberOfBytes;

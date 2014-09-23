@@ -420,6 +420,14 @@ OperationState * ShardMoveSrcOperation::handle(Notification * notification){
 	}
 }
 
+
+string ShardMoveSrcOperation::getOperationName() const {
+	//TODO
+}
+string ShardMoveSrcOperation::getOperationStatus() const {
+	//TODO
+}
+
 OperationState * ShardMoveSrcOperation::connect(){
 	MoveToMeNotification::ACK * ack = new MoveToMeNotification::ACK();
 	this->send(ack, destination);

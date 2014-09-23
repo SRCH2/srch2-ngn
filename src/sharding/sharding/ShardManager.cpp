@@ -303,8 +303,7 @@ bool ShardManager::resolveMessage(Message * msg, NodeId senderNode){
 			}
 			// call migration manager to transfer this shard
 			this->migrationManager->migrateShard(moveNotif->getShardId(),
-					writeview->localClusterDataShards.at(moveNotif->getShardId()).server,
-					moveNotif->getDest(), moveNotif->getSrc());
+					writeview->localClusterDataShards.at(moveNotif->getShardId()).server, moveNotif->getShardId(),moveNotif->getDest(), moveNotif->getSrc());
 
 			delete moveNotif;
 			break;
@@ -526,7 +525,7 @@ bool ShardManager::resolveMessage(Message * msg, NodeId senderNode){
 				break;
 			}
 
-			this->migrationManager->migrateShard(replicaShardId, writeview->localClusterDataShards.at(replicaShardId).server,
+			this->migrationManager->migrateShard(replicaShardId, writeview->localClusterDataShards.at(replicaShardId).server, unassignedShardId,
 					copyNotif->getDest(), copyNotif->getSrc());
 
 			delete copyNotif;
@@ -583,7 +582,7 @@ bool ShardManager::resolveMessage(Message * msg, NodeId senderNode){
 
 void * ShardManager::resolveReadviewRelease_ThreadChange(void * vidPtr){
 	unsigned metadataVersion = *(unsigned *)vidPtr;
-	delete vidPtr;
+	delete (unsigned *)vidPtr;
 	Logger::debug("DP | Metadata release VID=%d", metadataVersion);
 	LockingNotification::RV_RELEASED * rvReleased = new LockingNotification::RV_RELEASED(metadataVersion);
 	ShardManager::getShardManager()->getLockManager()->resolve(rvReleased);
@@ -604,7 +603,19 @@ void ShardManager::resolveMMNotification(const ShardMigrationStatus & migrationS
 	boost::unique_lock<boost::mutex> shardManagerGlobalLock(shardManagerGlobalMutex);
 	// TODO : second argument must be deleted when migration manager is merged with this code.
 	// TODO :  Migration manager must return the ClusterShardId value
+
 	MMNotification * mmNotif = new MMNotification(migrationStatus);
+	if(mmNotif->getSrc().nodeId == ShardManager::getCurrentNodeId()){
+		ASSERT(mmNotif->getDest().nodeId != ShardManager::getCurrentNodeId());
+		// We are the sender of this shard migration, we need to swap src/dest before
+		// passing it to stateMachine because the routing of state machine is based on the destination
+		// operation id.
+		NodeOperationId tmp = mmNotif->getSrc();
+		mmNotif->setSrc(mmNotif->getDest());
+		mmNotif->setDest(tmp);
+	}//else{
+	// we are the received of the shard, no need to make any changes to the notification
+	//}
 	this->stateMachine->handle(mmNotif);
 	Logger::debug("MM | (%d => %d) was %s Processed.", migrationStatus.sourceNodeId, migrationStatus.destinationNodeId,
 			(migrationStatus.status == MM_STATUS_SUCCESS)? "Done."  : "Failed.");
@@ -624,7 +635,7 @@ void ShardManager::resolveSMNodeArrival(const Node & newNode){
 //    cout << "Shard Manager status after arrival of node " << newNode.getId() << ":" << endl;
 //    ShardManager::getShardManager()->print();
 //    cout << "======================================================================" << endl;
-};
+}
 
 void ShardManager::resolveSMNodeFailure(const NodeId failedNodeId){
 	Logger::debug("Node %d failure.", failedNodeId);

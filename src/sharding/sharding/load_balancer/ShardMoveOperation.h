@@ -77,6 +77,9 @@ public:
 
 	OperationState * handle(Notification * notification);
 
+	string getOperationName() const ;
+	string getOperationStatus() const ;
+
 private:
 	const ClusterShardId shardId;
 	const NodeOperationId destination;
