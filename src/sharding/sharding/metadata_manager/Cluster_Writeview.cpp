@@ -23,6 +23,7 @@ namespace httpwrapper {
 LocalPhysicalShard::LocalPhysicalShard(){
 	indexDirectory = "";
 	jsonFileCompletePath = "";
+	this->server.reset();
 }
 LocalPhysicalShard::LocalPhysicalShard(boost::shared_ptr<Srch2Server> server, const string & indexDirectory, const string & jsonFileCompletePath){
 	this->server = server;

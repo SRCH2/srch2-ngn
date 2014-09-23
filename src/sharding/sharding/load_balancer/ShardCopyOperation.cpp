@@ -209,7 +209,11 @@ string ShardCopyOperation::getOperationStatus() const {
 		if(commitOperation == NULL && releaseOperation == NULL){ // we are in transfer session
 			ss << "Transferring data ...%" ;
 		}else{
-			ss << "Transferred " << physicalShard.server->getIndexer()->getNumberOfDocumentsInIndex() << " records.%";
+			if(! physicalShard.server){
+				ss << "Transferred " << physicalShard.server->getIndexer()->getNumberOfDocumentsInIndex() << " records.%";
+			}else{
+				ss << "Transferring " << replicaShardId.toString() << " to prepare " << unassignedShardId.toString() << " failed." << "%";
+			}
 		}
 
 		if(commitOperation != NULL){
