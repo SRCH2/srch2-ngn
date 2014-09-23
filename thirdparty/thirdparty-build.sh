@@ -70,7 +70,7 @@ cd ../../pymongo
 tar -xvf pymongo.tar.gz
 cd pymongo
 CURRENTDIR=$(pwd)
-echo "Building python mongodb driver in $CURRENTDIR"
+echo "Building python mongodb driver for mongodb system test in $CURRENTDIR"
 
 cd ../../mysql-connector-c++
 echo "BUILDING MYSQL CONNECTOR C++... in $CURRENTDIR"
@@ -91,4 +91,11 @@ cd build
 cmake ..
 make
 
+cd ../../mysql-connector-c++
+echo "BUILDING MySQL python driver for MySQL system test... in $CURRENTDIR"
+tar -xvf MySQL-python-1.2.5.tar.gz
+rm -rf MySQL-python
+mv MySQL-python-1.2.5 MySQL-python
+cd MySQL-python
+python setup.py build
 

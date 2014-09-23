@@ -11,7 +11,7 @@ import sys, urllib2, json, time, subprocess, os, commands, signal,shutil
 sys.path.insert(0,'srch2lib')
 import test_lib
 
-sys.path.append(os.getcwd()+'/../../../thirdparty/MySQL-python-1.2.5/build/lib.linux-x86_64-2.7')
+sys.path.append(os.getcwd()+'/../../../thirdparty/mysql-connector-c++/MySQL-python/build/lib.linux-x86_64-2.7')
 
 try:
     import MySQLdb
