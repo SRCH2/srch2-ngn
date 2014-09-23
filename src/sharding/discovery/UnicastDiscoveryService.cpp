@@ -274,7 +274,7 @@ InitialDiscovery:
 							yeildMessage.nodeId = -1;
 
 							unsigned byteToCopy = discovery->clusterIdentifier.size() > 99 ? 99 : discovery->clusterIdentifier.size();
-							strncpy(message.clusterIdent, discovery->clusterIdentifier.c_str(), byteToCopy);
+							strncpy(yeildMessage.clusterIdent, discovery->clusterIdentifier.c_str(), byteToCopy);
 
 							tryYieldMsgAgain:
 							int sendStatus = sendUDPPacketToDestination(discovery->sendSocket, (char *)&yeildMessage,
@@ -398,7 +398,7 @@ InitialDiscovery:
 					ackMessage.ackMessageIdentifier = message.internalCommunicationPort;
 
 					unsigned byteToCopy = discovery->clusterIdentifier.size() > 99 ? 99 : discovery->clusterIdentifier.size();
-					strncpy(message.clusterIdent, discovery->clusterIdentifier.c_str(), byteToCopy);
+					strncpy(ackMessage.clusterIdent, discovery->clusterIdentifier.c_str(), byteToCopy);
 
 					tryAckAgain:
 					// send multicast acknowledgment
