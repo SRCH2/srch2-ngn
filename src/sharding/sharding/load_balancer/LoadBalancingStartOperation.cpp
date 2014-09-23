@@ -57,10 +57,6 @@ OperationState * LoadBalancingStartOperation::entry(){
 	LoadBalancingReport::REQUEST * reportReq = new LoadBalancingReport::REQUEST();
 	vector<NodeId> allNodes;
 	writeview->getArrivedNodes(allNodes, true);
-	if(allNodes.size() == 1){
-		ASSERT(allNodes.at(0) == ShardManager::getCurrentNodeId());
-		return LoadBalancingStartOperation::finalizeLoadBalancing();
-	}
 	for(vector<NodeId>::iterator nodeItr = allNodes.begin(); nodeItr != allNodes.end(); ++nodeItr){
 		if(*nodeItr == ShardManager::getCurrentNodeId()){
 			// get the load value of this node and add it to the map.
@@ -73,7 +69,7 @@ OperationState * LoadBalancingStartOperation::entry(){
 		}
 	}
 	delete reportReq;
-	return this;
+	return balance();
 }
 
 OperationState * LoadBalancingStartOperation::handle(LoadBalancingReport * n){
