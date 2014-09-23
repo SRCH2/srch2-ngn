@@ -669,6 +669,8 @@ void MigrationManager::doInitialHandShake(MigrationSessionInfo& currentSessionIn
 	MigrationInitMsgBody *initMessageBody = (MigrationInitMsgBody *)initMessage->getMessageBody();
 	initMessageBody->shardId = currentSessionInfo.shardId;
 	initMessageBody->shardComponentCount = currentSessionInfo.shardCompCount;
+	initMessageBody->dstOperationId = currentSessionInfo.dstOperationId;
+	initMessageBody->srcOperationId = currentSessionInfo.srcOperationId;
 	unsigned destinationNodeId = currentSessionInfo.remoteNode;
 	currentSessionInfo.status = MM_STATE_INIT_ACK_WAIT;
 	int tryCount = 5;

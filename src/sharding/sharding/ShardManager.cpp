@@ -598,6 +598,7 @@ void * ShardManager::resolveReadviewRelease_ThreadChange(void * vidPtr){
 }
 
 void ShardManager::resolveMMNotification(const ShardMigrationStatus & migrationStatus){
+
 	Logger::debug("MM | (%d => %d) was %s", migrationStatus.sourceNodeId, migrationStatus.destinationNodeId,
 			(migrationStatus.status == MM_STATUS_SUCCESS)? "Done."  : "Failed.");
 	boost::unique_lock<boost::mutex> shardManagerGlobalLock(shardManagerGlobalMutex);
