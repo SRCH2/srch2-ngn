@@ -558,10 +558,10 @@ void* dispatch(void *arg) {
 }
 
 void* dispatchInternalEvent(void *arg) {
-	while(true) {
-		event_base_dispatch((struct event_base*) arg);
+	while(! transportManager->isEventAdded()) {
 		sleep(1);
 	}
+	event_base_dispatch((struct event_base*) arg);
 	return NULL;
 }
 
