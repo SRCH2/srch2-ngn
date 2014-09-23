@@ -418,7 +418,7 @@ if [ $HAVE_NODE -gt 0 ]; then
     if [ `uname -s` != 'Darwin' ]; then
         test_case "tests_used_for_statemedia" "NODECMD=${NODE_CMD:-node} ./tests_used_for_statemedia/autotest.sh $SRCH2_ENGINE" 
     else
-        echo "-- IGNORING $test_id on MacOS"
+        echo "-- IGNORING tests_used_for_statemedia on MacOS"
     fi
 else
     echo "-- node.js NOT INSTALLED - SKIPPING: ${test_id}" >> ${output}
