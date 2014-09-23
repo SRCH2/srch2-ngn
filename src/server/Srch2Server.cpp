@@ -271,6 +271,14 @@ void Srch2Server::bootStrapShardComponentFromByteStream(std::istream& input, con
 
 int Srch2Server::getSerializedShardSize(vector<std::pair<string, long> > &indexFiles) {
 	string directoryName = this->indexer->getStoredIndexDirectory();
+
+	// first check whether the directory exists.
+	struct stat dirInfo;
+	int returnStatus = ::stat(directoryName.c_str(), &dirInfo);
+	if (returnStatus == -1) {
+		return -1;
+	}
+
 	if (directoryName[directoryName.size() - 1] != '/') {
 		directoryName.append("/");
 	}
@@ -302,8 +310,14 @@ long Srch2Server::getSerializedIndexSizeInBytes(const string &indexFileFullPath)
 	struct stat fileInfo;
 	int returnStatus = ::stat(indexFileFullPath.c_str(), &fileInfo);
 	if (returnStatus == -1) {
-		perror("");
-		return -1;
+		if (errno == ENOENT) {
+			// index files may not be written to disk because there is no record in the index.
+			return 0;
+		} else {
+			// any other return status should be treated as an error
+			perror("");
+			return -1;
+		}
 	} else {
 		return fileInfo.st_size;
 	}

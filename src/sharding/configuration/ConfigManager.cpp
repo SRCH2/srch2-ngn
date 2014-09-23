@@ -1914,13 +1914,15 @@ void ConfigManager::parse(const pugi::xml_document& configDoc,
 
     tempUse = "";
 
-    std::string nodeName = "";
+    std::string nodeName = "srch2-node";
     //  node-name -- optional
     xml_node xmlnodeNameTag = configNode.child(nodeNameTag);
-    if (xmlnodeNameTag && xmlnodeNameTag.text()) { // checks if the config/srch2Home has any text in it or not
+    if (xmlnodeNameTag && xmlnodeNameTag.text()) { // checks if the config/node-name has any text in it or not
         tempUse = string(xmlnodeNameTag.text().get());
         trimSpacesFromValue(tempUse, nodeNameTag, parseWarnings);
         nodeName = tempUse;
+    } else {
+    	parseWarnings << "Node name is not defined in the config file. Using a default value = " << nodeName << endl;
     }
     this->nodeNameStr = nodeName;
 

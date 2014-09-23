@@ -144,12 +144,12 @@ private:
 	int openSendChannel();
 	void openTCPReceiveChannel(int& , short&);
 	void openReceiveChannel(int& , short&);
-	void sendComponentInfoAndWaitForAck(const string& sessionKey);
-	void sendComponentDoneMsg(const string& sessionKey);
-	void sendInitMessageAck(const string& sessionKey);
-	void sendInfoAckMessage(const string& sessionKey);
+	void sendComponentInfoAndWaitForAck(MigrationSessionInfo& currentSessionInfo);
+	void sendComponentDoneMsg(MigrationSessionInfo& currentSessionInfo);
+	void sendInitMessageAck(MigrationSessionInfo& currentSessionInfo);
+	void sendInfoAckMessage(MigrationSessionInfo& currentSessionInfo);
 	int acceptTCPConnection(int tcpSocket , short receivePort);
-	void doInitialHandShake(const string& sessionKey);
+	void doInitialHandShake(MigrationSessionInfo& currentSessionInfo);
 	string initMigrationSession(ClusterShardId shardId,unsigned srcOperationId,
 			unsigned dstOperationId, unsigned remoteNode, unsigned shardCompCount);
 	bool hasActiveSession(const ClusterShardId& shardId, unsigned node);
@@ -160,6 +160,7 @@ private:
 			unsigned dstOperationId, unsigned destinationNodeId, boost::shared_ptr<Srch2Server> shard,
 			MIGRATION_STATUS migrationResult);
 	void notifySHMAndCleanup(string sessionKey, MIGRATION_STATUS migrationResult);
+	void busyWaitWithTimeOut(const MigrationSessionInfo& currentSessionInfo, MIGRATION_STATE expectedState);
 	// Hash function for key of type ShardId to be used by boost::unordered_map
 	string getSessionKey( const ClusterShardId& shardId, unsigned node) const
 	{
@@ -185,11 +186,7 @@ private:
 	MMCallBackForTM *transportCallback;
 	ConfigManager *configManager;
 	boost::unordered_map<string, MigrationSessionInfo> migrationSession;
-	enum SessionLockState {
-		LOCKED,
-		UNLOCKED
-	};
-	SessionLockState _sessionLock;
+	boost::mutex sessionLock;
 };
 
 }
