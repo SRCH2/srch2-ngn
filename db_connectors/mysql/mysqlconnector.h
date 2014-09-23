@@ -12,8 +12,8 @@
 #include <string>
 #include <vector>
 
+//For MySQL C++ Connector
 #include "mysql_connection.h"
-
 #include <cppconn/driver.h>
 #include <cppconn/exception.h>
 #include <cppconn/resultset.h>
@@ -35,14 +35,16 @@ public:
 private:
     ServerInterface * serverHandle;
     int listenerWaitTime;
+
+    //Table's schema
     std::vector<std::string> fieldName;
 
-    //Parameters for MySQL
+    //connection handler for MySQL C++ Connector
     sql::Statement * stmt;
 
     //Connect to the MySQL database
     bool connectToDB();
-
+    //Check the config validity. e.g. if contains dbname, tables etc.
     bool checkConfigValidity();
 
     //Fetch the table schema and store into tableSchema

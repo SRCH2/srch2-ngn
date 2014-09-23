@@ -46,9 +46,10 @@ int MySQLConnector::init(ServerInterface *serverHandle) {
         return -1;
     }
 
+    //Get the schema information from the MySQL.
     string tableName;
     this->serverHandle->configLookUp("tableName", tableName);
-    if(!populateFieldName(tableName)){
+    if (!populateFieldName(tableName)) {
         Logger::error("MYSQLCONNECTOR: exiting...");
         return -1;
     }
@@ -69,25 +70,38 @@ bool MySQLConnector::connectToDB() {
     if (port.size()) {
         hostAndport.append(":").append(port);
     }
-    try {
-        sql::Driver * driver = get_driver_instance();
-        std::auto_ptr<sql::Connection> con(
-                driver->connect(hostAndport, user, password));
-        stmt = con->createStatement();
 
-        stmt->execute("USE " + dbName);
+    while (1) {
+        try {
+            //Create the connection to the MySQL by using MySQL C++ Connector.
+            sql::Driver * driver = get_driver_instance();
+            std::auto_ptr<sql::Connection> con(
+                    driver->connect(hostAndport, user, password));
+            stmt = con->createStatement();
 
-    } catch (sql::SQLException &e) {
-        Logger::error(
-                "MYSQLCONNECTOR: SQL error %d while connecting to the database : %s",
-                e.getErrorCode(), e.getSQLState().c_str());
-        return false;
-    } catch (std::runtime_error &e) {
-        Logger::error(
-                "MYSQLCONNECTOR: Unknown SQL error while connecting to the database: %s",
-                e.what());
-        return false;
+            //Select the target database.
+            stmt->execute("USE " + dbName);
+
+            return true;
+        } catch (sql::SQLException &e) {
+            Logger::error(
+                    "MYSQLCONNECTOR: SQL error %d while connecting to the database : %s",
+                    e.getErrorCode(), e.getSQLState().c_str());
+            if (stmt != NULL) {
+                stmt->close();
+            }
+            sleep(listenerWaitTime);
+        } catch (std::runtime_error &e) {
+            Logger::error(
+                    "MYSQLCONNECTOR: Unknown SQL error while connecting to the database: %s",
+                    e.what());
+            if (stmt != NULL) {
+                stmt->close();
+            }
+            sleep(listenerWaitTime);
+        }
     }
+
     return true;
 }
 
@@ -134,40 +148,48 @@ int MySQLConnector::createNewIndexes() {
     Json::Value record;
     Json::FastWriter writer;
 
-    try {
-        sql::ResultSet * res = stmt->executeQuery("SELECT * FROM " + tableName);
+    while (1) {
+        try {
+            sql::ResultSet * res = stmt->executeQuery(
+                    "SELECT * FROM " + tableName);
 
-        while (res->next()) {
-            for (vector<string>::iterator it = fieldName.begin();
-                    it != fieldName.end(); ++it) {
-                record[*it] = res->getString(*it).c_str();
+            //Iterate all the selected records.
+            while (res->next()) {
+                //Iterate the fields of one record.
+                for (vector<string>::iterator it = fieldName.begin();
+                        it != fieldName.end(); ++it) {
+                    record[*it] = res->getString(*it).c_str();
+                }
+
+                std::string jsonString = writer.write(record);
+
+                totalRecordsCount++;
+                if (serverHandle->insertRecord(jsonString) == 0) {
+                    indexedRecordsCount++;
+                }
+
+                if (indexedRecordsCount && (indexedRecordsCount % 1000) == 0)
+                    Logger::info(
+                            "MYSQLCONNECTOR: Indexed %d records so far ...",
+                            indexedRecordsCount);
+
             }
+            Logger::info("MYSQLCONNECTOR: Total indexed %d / %d records. ",
+                    indexedRecordsCount, totalRecordsCount);
+            //Save the time right after create new indexes.
+            saveLastSavingIndexTime(time(NULL));
+            this->serverHandle->saveChanges();
 
-            std::string jsonString = writer.write(record);
-
-            totalRecordsCount++;
-            if (serverHandle->insertRecord(jsonString) == 0) {
-                indexedRecordsCount++;
-            }
-
-            if (indexedRecordsCount && (indexedRecordsCount % 1000) == 0)
-                Logger::info("MYSQLCONNECTOR: Indexed %d records so far ...",
-                        indexedRecordsCount);
-
+            stmt->close();/* free the object inside  */
+            return 0;
+        } catch (sql::SQLException &e) {
+            Logger::error(
+                    "MYSQLCONNECTOR: SQL error %d while creating new indexes : %s",
+                    e.getErrorCode(), e.getSQLState().c_str());
+            sleep(listenerWaitTime);
         }
-        Logger::info("MYSQLCONNECTOR: Total indexed %d / %d records. ",
-                indexedRecordsCount, totalRecordsCount);
-        //Save the time right after create new indexes.
-        saveLastSavingIndexTime(time(NULL));
-        this->serverHandle->saveChanges();
-
-    } catch (sql::SQLException &e) {
-        Logger::error(
-                "MYSQLCONNECTOR: SQL error %d while creating new indexes : %s",
-                e.getErrorCode(), e.getSQLState().c_str());
-        stmt->close();/* free the object inside  */
-        return -1;
     }
+
     stmt->close();/* free the object inside  */
     return 0;
 }
@@ -175,30 +197,32 @@ int MySQLConnector::createNewIndexes() {
 //Get the table's schema and save them into a vector<schema_name>
 //Query: DESCRIBE table_name;
 bool MySQLConnector::populateFieldName(std::string & tableName) {
-    try {
-        std::auto_ptr<sql::ResultSet> res(
-                stmt->executeQuery("DESCRIBE " + tableName));
+    while (1) {
+        try {
+            std::auto_ptr<sql::ResultSet> res(
+                    stmt->executeQuery("DESCRIBE " + tableName));
 
-        while (res->next()) {
-            fieldName.push_back(res->getString("Field"));
+            while (res->next()) {
+                fieldName.push_back(res->getString("Field"));
+            }
+            return true;
+        } catch (sql::SQLException &e) {
+            Logger::error(
+                    "MYSQLCONNECTOR: SQL error %d while populating the table schema : %s",
+                    e.getErrorCode(), e.getSQLState().c_str());
+            sleep(listenerWaitTime);
         }
-    } catch (sql::SQLException &e) {
-        Logger::error(
-                "MYSQLCONNECTOR: SQL error %d while populating the table schema : %s",
-                e.getErrorCode(), e.getSQLState().c_str());
-        return false;
     }
     return true;
 }
 
-//Load the lastSavingIndexTime from disk
+//Load the lastSavingIndexTime from the disk
 bool MySQLConnector::loadLastSavingIndexTime(time_t & lastSavingIndexTime) {
     std::string dataDir, srch2Home;
 
     this->serverHandle->configLookUp("srch2Home", srch2Home);
     this->serverHandle->configLookUp("dataDir", dataDir);
-    std::string path = srch2Home + "/" + dataDir + "/mysql_data/"
-            + "data.bin";
+    std::string path = srch2Home + "/" + dataDir + "/mysql_data/" + "data.bin";
 
     if (checkFileExisted(path.c_str())) {
         ifstream a_file(path.c_str(), ios::in | ios::binary);
@@ -213,7 +237,7 @@ bool MySQLConnector::loadLastSavingIndexTime(time_t & lastSavingIndexTime) {
     }
 }
 
-//Save lastSavingIndexTime to disk
+//Save lastSavingIndexTime to the disk
 void MySQLConnector::saveLastSavingIndexTime(
         const time_t & lastSavingIndexTime) {
     std::string path, srch2Home;
@@ -253,44 +277,48 @@ int MySQLConnector::runListener() {
     //Connect to the MySQL binlog by using MySQL replication listener
     stringstream url;
     url << "mysql://" << user << ":" << password << "@" << host << ":" << port;
-    printf("In File: %s , Line: %d\n",__FILE__,__LINE__);
     mysql::Binary_log binlog(
             mysql::system::create_transport(url.str().c_str()));
-    printf("In File: %s , Line: %d\n",__FILE__,__LINE__);
+
     //Register the handlers to listen the binlog event
     Incident_handler incident_hdlr;
     Table_index table_event_hdlr;
     Applier replay_hdlr(&table_event_hdlr, serverHandle, &fieldName,
             lastSavingIndexTime, pk);
-    printf("In File: %s , Line: %d\n",__FILE__,__LINE__);
+
     binlog.content_handler_pipeline()->push_back(&table_event_hdlr);
     binlog.content_handler_pipeline()->push_back(&incident_hdlr);
     binlog.content_handler_pipeline()->push_back(&replay_hdlr);
-    printf("In File: %s , Line: %d\n",__FILE__,__LINE__);
-    if (binlog.connect()) {
-        printf("In File: %s , Line: %d\n",__FILE__,__LINE__);
+
+    while (binlog.connect()) {
         Logger::error(
                 "MYSQLCONNECTOR: Can't connect to the master MySQL server.");
-        return -1;
+        sleep(listenerWaitTime);
     }
-    printf("In File: %s , Line: %d\n",__FILE__,__LINE__);
-    if (binlog.set_position(logName + ".000001", 4)) {
+
+    //Initialize the binlog pointer.
+    while (binlog.set_position(logName + ".000001", 4)) {
         Logger::error("MYSQLCONNECTOR: Can't reposition the binary log reader");
-        return -1;
+        sleep(listenerWaitTime);
     }
-    printf("In File: %s , Line: %d\n",__FILE__,__LINE__);
+int count =0;
     bool quit = false;
     while (!quit) {
-        /*
-         Pull events from the master. This is the heart beat of the event listener.
-         */
+        //Pull events from the binlog.
         Binary_log_event *event;
         binlog.wait_for_next_event(&event);
-
+        printf("%d\n",count++);
         /*
-         Perform a special action based on event type
+         * Perform a special action based on event type.
+         * This action happens after the content_handler processing the event.
          */
         switch (event->header()->type_code) {
+        /*
+         * When a binary log file exceeds a size limit, a ROTATE_EVENT is
+         * written at the end of the file that points to the next file in
+         * the squence. This event is information for the slave to know the
+         * name of the next binary log it is going to receive.
+         */
         case mysql::ROTATE_EVENT: {
             mysql::Rotate_event *rot = static_cast<mysql::Rotate_event *>(event);
             Logger::info(
@@ -305,10 +333,9 @@ int MySQLConnector::runListener() {
         case mysql::DELETE_ROWS_EVENT:
         case mysql::DELETE_ROWS_EVENT_V1: {
             time_t rowEventTimestamp = event->header()->timestamp;
-            printf("Current ts %lu : Last ts %lu\n", rowEventTimestamp,
-                    lastSavingIndexTime);
             if (rowEventTimestamp - lastSavingIndexTime >= listenerWaitTime) {
                 lastSavingIndexTime = rowEventTimestamp;
+                saveLastSavingIndexTime(lastSavingIndexTime);
                 this->serverHandle->saveChanges();
             }
         }

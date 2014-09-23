@@ -153,8 +153,11 @@ IF(NOT ANDROID)
 	)
 
 	SET( jsoncpp_LIBRARY ${CMAKE_SOURCE_DIR}/../thirdparty/json/jsoncpp-src/build/libjsoncpp.a)
+	
+	#MYSQL_CONNECTOR_LIBRARY and MYSQL_LISTENER_LIBRARY have to be both .a or .so
 	SET(MYSQL_LISTENER_LIBRARY ${CMAKE_SOURCE_DIR}/../thirdparty/mysql-replication-listener/build/lib/libreplication.so)
-	SET(MYSQL_CONNECTOR_LIBRARY ${CMAKE_SOURCE_DIR}/../thirdparty/mysql-connector/lib/libmysqlcppconn-static.a)
+	#SET(MYSQL_CONNECTOR_LIBRARY ${CMAKE_SOURCE_DIR}/../thirdparty/mysql-connector/lib/libmysqlcppconn-static.a)
+	SET(MYSQL_CONNECTOR_LIBRARY ${CMAKE_SOURCE_DIR}/../thirdparty/mysql-connector/lib/libmysqlcppconn.so)
 
 	ADD_LIBRARY(mysqlConnector SHARED ${MYSQL_CONNECTOR_SRC} )
 	
@@ -168,6 +171,6 @@ IF(NOT ANDROID)
 
     SET_TARGET_PROPERTIES(mysqlConnector PROPERTIES COMPILE_FLAGS -fPIC)
 	
-	TARGET_LINK_LIBRARIES(mysqlConnector ${CMAKE_REQUIRED_LIBRARIES} ${MYSQL_CONNECTOR_LIBRARY} ${jsoncpp_LIBRARY} mysqlclient boost_system -pthread ${MYSQL_LISTENER_LIBRARY} )
+	TARGET_LINK_LIBRARIES(mysqlConnector  ${MYSQL_LISTENER_LIBRARY} mysqlclient  ${MYSQL_CONNECTOR_LIBRARY}  )
 	
 ENDIF()

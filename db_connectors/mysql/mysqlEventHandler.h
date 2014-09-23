@@ -19,6 +19,7 @@ using mysql::Binary_log;
 using mysql::system::create_transport;
 
 /****************************Table_index*******************************/
+//Table index populates the table id and table name.
 typedef std::map<uint64_t, mysql::Table_map_event *> Int2event_map;
 
 class Table_index: public mysql::Content_handler, public Int2event_map {
@@ -32,6 +33,7 @@ public:
 };
 
 /************************Incident_handler******************************/
+//This class handle all the incident events like LOST_EVENTS.
 class Incident_handler: public mysql::Content_handler {
 public:
     Incident_handler() :
