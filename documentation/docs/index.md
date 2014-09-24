@@ -26,7 +26,10 @@ The SDK supports the following search features:
 - Sorting (e.g., "price < 20");
 - Multiple languages;
 - Multiple data sources;
-- Token-based authorization.
+- Token-based authorization;
+- Complex geo-search;
+- Server-side highlighting;
+- SQLite connector.
 
 This tutorial will show you how to:
 
