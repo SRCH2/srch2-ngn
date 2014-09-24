@@ -1344,7 +1344,7 @@ void decodeAmpersand(const char *uri, unsigned len, string& decodeUri) {
  *   Wrapper layer API to handle ACL operations such as insert, delete, and append.
  *   example url :
  *   http://<ip>:<port>/aclAttributeRoleAppend -X PUT -d { "attributes": "f1,f2", "roleId": "r1"}
- *   http://<ip>:<port>/aclAttributeRoleAdd -X PUT -d { "attributes": "f1,f2", "roleId": "r2"}
+ *   http://<ip>:<port>/aclAttributeRoleReplace -X PUT -d { "attributes": "f1,f2", "roleId": "r2"}
  *   http://<ip>:<port>/aclAttributeRoleDelete -X PUT -d { "attributes": "f2", "roleId": "r2"}
  */
 void HTTPRequestHandler::attributeAclModify(evhttp_request *req, Srch2Server *server) {
@@ -1362,7 +1362,7 @@ void HTTPRequestHandler::attributeAclModify(evhttp_request *req, Srch2Server *se
 
 	        // Identify the type of access control request.
 	        // req->uri should be "/aclAttributeRoleDelete" or "/aclAttributeRoleAppend"
-	        // or "/aclAttributeRoleAdd" for default core
+	        // or "/aclAttributeRoleReplace" for default core
 	        // Otherwise it should be /corename/aclAttributeRoleDelete etc.
 	        string uriString = req->uri;
 	        string apiName;
@@ -1373,9 +1373,9 @@ void HTTPRequestHandler::attributeAclModify(evhttp_request *req, Srch2Server *se
 	        } else {
 	        	corename = "/" + corename;
 	        }
-	        if (uriString == corename + "/aclAttributeRoleAdd") {
+	        if (uriString == corename + "/aclAttributeRoleReplace") {
 	        	action = ACL_REPLACE;
-	        	apiName = "aclAttributeRoleAdd";
+	        	apiName = "aclAttributeRoleReplace";
 	        }
 	        else if (uriString == corename + "/aclAttributeRoleDelete") {
 	        	apiName = "aclAttributeRoleDelete";

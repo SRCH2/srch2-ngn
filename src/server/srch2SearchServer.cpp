@@ -334,7 +334,7 @@ static bool checkOperationPermission(evhttp_request *req, Srch2Server *srch2Serv
         { srch2http::SavePort, "save" },
         { srch2http::ExportPort, "export" },
         { srch2http::ResetLoggerPort, "resetlogger" },
-        { srch2http::AttributeAclAdd, "aclAttributeRoleAdd" },
+        { srch2http::AttributeAclReplace, "aclAttributeRoleReplace" },
         { srch2http::AttributeAclDelete, "aclAttributeRoleDelete" },
         { srch2http::AttributeAclAppend, "aclAttributeRoleAppend" },
         { srch2http::AclAddRolesForRecord, "aclAddRolesForRecord"},
@@ -431,7 +431,7 @@ static void cb_single_core_operator_route(evhttp_request *req, void *arg){
             case srch2http::ResetLoggerPort:
     	        HTTPRequestHandler::resetLoggerCommand(req, srch2Server);
                 break;
-            case srch2http::AttributeAclAdd:
+            case srch2http::AttributeAclReplace:
             case srch2http::AttributeAclDelete:
             case srch2http::AttributeAclAppend:
             	HTTPRequestHandler::attributeAclModify(req, srch2Server);
@@ -850,7 +850,7 @@ static int startServers(ConfigManager *config, vector<struct event_base *> *evBa
             { "/save", srch2http::SavePort, cb_single_core_operator_route},
             { "/export", srch2http::ExportPort, cb_single_core_operator_route},
             { "/resetLogger", srch2http::ResetLoggerPort, cb_single_core_operator_route},
-            { "/aclAttributeRoleAdd", srch2http::AttributeAclAdd, cb_single_core_operator_route },
+            { "/aclAttributeRoleReplace", srch2http::AttributeAclReplace, cb_single_core_operator_route },
             { "/aclAttributeRoleDelete", srch2http::AttributeAclDelete, cb_single_core_operator_route },
             { "/aclAttributeRoleAppend", srch2http::AttributeAclAppend, cb_single_core_operator_route },
             { "/aclAddRolesForRecord", srch2http::AclAddRolesForRecord, cb_single_core_operator_route},

@@ -62,7 +62,7 @@ S||attr7%2Battr8:attr9&fuzzy=false&roleId=101||2 1
 S||attr7%2Battr8:attr9&fuzzy=false&roleId=104||
 
 #replace roleId for attr7 and attr8 to have only role-id 104
-C||aclAttributeRoleAdd||{ "attributes": ["attr7", "attr8"], "roleId": ["104"] }
+C||aclAttributeRoleReplace||{ "attributes": ["attr7", "attr8"], "roleId": ["104"] }
 
 #case 12:
 S||attr7%2Battr8:attr9&fuzzy=false&roleId=104||2 1

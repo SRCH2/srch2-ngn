@@ -135,7 +135,7 @@ enum PortType_t {
     ResetLoggerPort,
     SearchAllPort,
     ShutDownAllPort,
-    AttributeAclAdd,
+    AttributeAclReplace,
     AttributeAclAppend,
     AttributeAclDelete,
     AclAddRolesForRecord,
