@@ -170,7 +170,7 @@ const char* const ConfigManager::accessControlString = "access-control";
 //const char* const ConfigManager::roleCore = "rolecore";
 const char* const ConfigManager::recordAclString = "record-acl";
 const char* const ConfigManager::aclRoleId = "roleId";
-//const char* const ConfigManager::aclResourceId = "resourceId";
+const char* const ConfigManager::aclResourceId = "resourceId";
 const char* const ConfigManager::attributeAclString = "attribute-acl";
 
 const char* const ConfigManager::defaultFuzzyPreTag = "<b>";

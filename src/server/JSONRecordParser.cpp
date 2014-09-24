@@ -508,11 +508,11 @@ bool JSONRecordParser::_extractResourceAndRoleIds(std::vector<string> &roleIds,
 	}
 	string aclRoleId = ConfigManager::getRoleId();
 
-	string primaryKeyName = indexDataContainerConf->getPrimaryKey();
+	string resourceId = ConfigManager::getResourceId();
 
 	std::vector<string> stringValues;
 
-	getJsonValueString(root, primaryKeyName, stringValues, "primary-key");
+	getJsonValueString(root, resourceId, stringValues, "resourceId");
 
 	if (!stringValues.empty() && stringValues.at(0).compare("") != 0) {
 		string primaryKeyStringValue = stringValues.at(0);
@@ -546,7 +546,7 @@ bool JSONRecordParser::_extractRoleAndResourceIds(std::vector<string> &resourceI
 	}
 	string aclRoleIdName = ConfigManager::getRoleId();
 
-	string roleprimaryKeyName = indexDataContainerConf->getPrimaryKey();
+	string roleprimaryKeyName = ConfigManager::getResourceId();
 
 	std::vector<string> stringValues;
 

@@ -425,10 +425,10 @@ public:
     static const char* getRoleId(){
     	return aclRoleId;
     }
-//
-//    static const char* getResourceId(){
-//    	return aclResourceId;
-//    }
+
+    static const char* getResourceId(){
+    	return aclResourceId;
+    }
 
 private:
 
@@ -553,6 +553,7 @@ private:
     static const char* const recordAclString;
     static const char* const attributeAclString;
     static const char* const aclRoleId;
+    static const char* const aclResourceId;
 
     static const char* const defaultFuzzyPreTag;
     static const char* const defaultFuzzyPostTag;
