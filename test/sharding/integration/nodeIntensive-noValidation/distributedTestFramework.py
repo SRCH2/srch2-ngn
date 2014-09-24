@@ -23,12 +23,13 @@ coreName = ""
 #The node class holds node specific information like port number, ip Address, path of config file and process id
 
 class node:
-    def __init__(self, nodeId, portNum, conf, ipAddr):
+    def __init__(self, nodeId, portNum, conf, ipAddr, proc):
         self.portNo = portNum
         self.Id = nodeId
         self.conf = conf
         self.ipAddress = ipAddr
         self.pid = ""
+        self.proc = ""
 
 def confirmPortAvailable(ipAddress,port) :
     query = 'http://'+ipAddress+':' + str(port) + '/info'
@@ -121,7 +122,7 @@ def parseNodes(nodesPath):
         tempConf = value[3].split()
         conf= integrationTestDir + tempConf[0]
         print conf
-        nodes[nodeId[0]] = node(nodeId[0], portNum[0], conf, ipAddr[0])
+        nodes[nodeId[0]] = node(nodeId[0], portNum[0], conf, ipAddr[0], "")
 
 #Starts the engine on the corresponding machine. Note that before this function is called, SSH connection has already been set up.
 def startEngine(nodeId, transactionFile):
@@ -129,6 +130,7 @@ def startEngine(nodeId, transactionFile):
     if(nodes[nodeId].ipAddress == myIpAddress):
         out = open(integrationTestDir + '/dashboardFiles/' + transactionFile[0:-4] + '-dashboard-'+nodes[nodeId].Id+ '.txt','w')
         temp = subprocess.Popen([binary_path, '--config='+nodes[nodeId].conf], stdout=out) 
+        nodes[nodeId].proc = temp
         #os.system(binary_path + " --config=" + nodes[nodeId].conf + ' > ' + integrationTestDir + '/dashboardFiles/' + transactionFile[0:-4] + '-dashboard-'+nodes[nodeId].Id+ '.txt')      
         nodes[nodeId].pid = temp.pid
         #print str(nodes[nodeId].pid) + "---------------------------"
@@ -150,7 +152,10 @@ def killEngine(nodeId):
     if(nodes[nodeId].ipAddress == myIpAddress):
         print "process to be deleted " + str(nodes[nodeId].pid) + " " + str(nodes[nodeId].Id)
         err = -1
+        #nodes[nodeId].proc.kill()
+        #nodes[nodeId].proc.wait()
         err = os.system('kill -9 ' + str(nodes[nodeId].pid))
+        nodes[nodeId].proc.wait()
         print "responseCode is " + str(err) 
         if (err != 0):
             errorMessage = "Error in killing node " + str(nodes[nodeId].Id) + " in transaction file " + sys.argv[2] + "\n"
