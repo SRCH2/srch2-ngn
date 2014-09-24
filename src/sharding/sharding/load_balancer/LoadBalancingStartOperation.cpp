@@ -111,7 +111,11 @@ OperationState * LoadBalancingStartOperation::finalizeLoadBalancing(){
 
 OperationState * LoadBalancingStartOperation::balance(){
 	// do we have all load reports ?
-	if(haveAllReportsArrived() && canAcceptMoreShards(ShardManager::getCurrentNodeId())){
+	if(haveAllReportsArrived()){
+		if(! canAcceptMoreShards(ShardManager::getCurrentNodeId())){
+			return LoadBalancingStartOperation::finalizeLoadBalancing();
+		}
+
 		if(nodeReportArrived.size() == 1){ // only us or not light
 			OperationState * assignCopy = tryShardAssginmentAndShardCopy(true);// assignment only
 			if(assignCopy != NULL){
