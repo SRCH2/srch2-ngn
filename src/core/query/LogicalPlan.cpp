@@ -420,18 +420,26 @@ void * LogicalPlan::deserializeForNetwork(LogicalPlan & logicalPlan , void * buf
 	if(isExactQueryNotNull){
 		logicalPlan.exactQuery = new Query(SearchTypeTopKQuery);
 		buffer = Query::deserializeForNetwork(*logicalPlan.exactQuery, buffer);
+	}else{
+		logicalPlan.exactQuery = NULL;
 	}
 	if(isFuzzyQueryNotNull){
 		logicalPlan.fuzzyQuery = new Query(SearchTypeTopKQuery);
 		buffer = Query::deserializeForNetwork(*logicalPlan.fuzzyQuery, buffer);
+	}else{
+		logicalPlan.fuzzyQuery = NULL;
 	}
 	// NOTE: postProcessingPlan is not serialized because it's not used anymore and it must be deleted
 	if(isPostProcessingInfoNotNull){
 		logicalPlan.postProcessingInfo = new ResultsPostProcessingInfo();
 		buffer = ResultsPostProcessingInfo::deserializeForNetwork(*logicalPlan.postProcessingInfo, buffer);
+	}else{
+		logicalPlan.postProcessingInfo = NULL;
 	}
 	if(isTreeNotNull){
 		buffer = LogicalPlanNode::deserializeForNetwork(logicalPlan.tree, buffer);
+	}else{
+		logicalPlan.tree = NULL;
 	}
 
 	return buffer;

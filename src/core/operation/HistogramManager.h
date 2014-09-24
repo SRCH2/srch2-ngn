@@ -56,11 +56,10 @@ public:
 		estimatedNumberOfLeafNodes = 0;
 		estimatedNumberOfResults = 0;
 		estimatedProbability = 0;
+		activeNodeSetExact.reset();
+		activeNodeSetFuzzy.reset();
 	}
-	~LogicalPlanNodeAnnotation(){
-		estimatedNumberOfResults = 0;
-		estimatedProbability = 0;
-	}
+	~LogicalPlanNodeAnnotation(){}
 	unsigned getEstimatedNumberOfResults() const{
 		return this->estimatedNumberOfResults;
 	}
