@@ -23,7 +23,7 @@
      
     <dataSourceType>1</dataSourceType>
     
-    <dataFile>./attributesAcl/randomdata.json</dataFile>
+    <dataFile>./attributesAcl/randomData.json</dataFile>
 
     <!-- 
         Mongo DB settings
