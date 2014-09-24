@@ -250,7 +250,9 @@ void Srch2Server::createAndBootStrapIndexer() {
             indexer->getAttributeAcl().bulkLoadAttributeAclJSON(indexDataConfig->getAttibutesAclFile());
 
             // Load record-based acl data
-            DaemonDataSource::addRecordAclFile(indexer, indexDataConfig);
+            if(indexDataConfig->getHasRecordAcl()){
+            	DaemonDataSource::addRecordAclFile(indexer, indexDataConfig);
+            }
 
             /*
              *  if the roleCore is null it means that this core doesn't have any access control

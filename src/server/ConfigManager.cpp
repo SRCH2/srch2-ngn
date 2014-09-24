@@ -168,7 +168,7 @@ const char* const ConfigManager::snippetSize = "snippetsize";
 const char* const ConfigManager::accessControlString = "access-control";
 //const char* const ConfigManager::resourceCore = "resourcecore";
 //const char* const ConfigManager::roleCore = "rolecore";
-const char* const ConfigManager::recordAclString = "recordaclfile";
+const char* const ConfigManager::recordAclString = "record-acl";
 const char* const ConfigManager::aclRoleId = "roleId";
 //const char* const ConfigManager::aclResourceId = "resourceId";
 const char* const ConfigManager::attributeAclString = "attribute-acl";
@@ -1150,8 +1150,8 @@ void ConfigManager::parseDataFieldSettings(const xml_node &parentNode,
 
     /*
      * <access-control>
-     *		<attribute-acl  datafile=сс />
-     *		<record-acl  datafile=сс />
+     *		<attribute-acl  datafile=О©╫О©╫ />
+     *		<record-acl  datafile=О©╫О©╫ />
 	 * </access-control>
      */
     coreInfo->hasRecordAcl = false;
