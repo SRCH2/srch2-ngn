@@ -393,35 +393,20 @@ bool  AttributeAccessControl::processAclRequest( vector<string>& fieldTokens,
 		return false;
 
 	// Loop over all the role-ids and perform required operations for the list of attributes
-	for (unsigned i = 0; i < roleValueTokens.size(); ++i) {
+
 		switch(action) {
-		case ACL_ADD:
+		case ACL_REPLACE:
 		{
-			if (i < roleValueTokens.size() - 1) {
-				std::vector<unsigned> tempSearchableAttrIdsList = searchableAttrIdsList;
-				std::vector<unsigned> tempRefiningAttrIdsList = refiningAttrIdsList;
-				// setAcl API swaps the internal pointer of the vector passed in. Because we
-				// need searchableAttrIdsList, refiningAttrIdsList for next iteration, copy them
-				// to a temporary vector.
-				boost::algorithm::trim(roleValueTokens[i]);
-				const_cast<AttributeAccessControl *>(this)->setAcl(roleValueTokens[i], tempSearchableAttrIdsList, tempRefiningAttrIdsList);
-			} else {
-				// This is a last iteration. We can let setAcl API to swap pointers of
-				// searchableAttrIdsList and refiningAttrIdsList because we will not need these
-				// vectors anymore.
-				boost::algorithm::trim(roleValueTokens[i]);
-				const_cast<AttributeAccessControl *>(this)->setAcl(roleValueTokens[i], searchableAttrIdsList, refiningAttrIdsList);
-			}
-//			stringstream ss;
-//			toString(ss);
-//			cout << ss.str() << endl;
+			const_cast<AttributeAccessControl *>(this)->replaceFromAcl(roleValueTokens, searchableAttrIdsList, refiningAttrIdsList);
 			break;
 		}
 		case ACL_DELETE:
 		{
-			// delete from ACL
-			boost::algorithm::trim(roleValueTokens[i]);
-			const_cast<AttributeAccessControl *>(this)->deleteFromAcl(roleValueTokens[i], searchableAttrIdsList, refiningAttrIdsList);
+			for (unsigned i = 0; i < roleValueTokens.size(); ++i) {
+				// delete from ACL
+				boost::algorithm::trim(roleValueTokens[i]);
+				const_cast<AttributeAccessControl *>(this)->deleteFromAcl(roleValueTokens[i], searchableAttrIdsList, refiningAttrIdsList);
+			}
 //			stringstream ss;
 //			toString(ss);
 //			cout << ss.str() << endl;
@@ -429,9 +414,11 @@ bool  AttributeAccessControl::processAclRequest( vector<string>& fieldTokens,
 		}
 		case ACL_APPEND:
 		{
-			// append to existing ACL. If acl-role is not found then add it.
-			boost::algorithm::trim(roleValueTokens[i]);
-			const_cast<AttributeAccessControl *>(this)->appendToAcl(roleValueTokens[i], searchableAttrIdsList, refiningAttrIdsList);
+			for (unsigned i = 0; i < roleValueTokens.size(); ++i) {
+				// append to existing ACL. If acl-role is not found then add it.
+				boost::algorithm::trim(roleValueTokens[i]);
+				const_cast<AttributeAccessControl *>(this)->appendToAcl(roleValueTokens[i], searchableAttrIdsList, refiningAttrIdsList);
+			}
 //			stringstream ss;
 //			toString(ss);
 //			cout << ss.str() << endl;
@@ -440,37 +427,48 @@ bool  AttributeAccessControl::processAclRequest( vector<string>& fieldTokens,
 		default:
 			ASSERT(false);
 		}
-	}
+
 	return true;
 }
 
 /*
- *   This API inserts given Acl role id and its attributes into the acl map. If the role-id exists
+ *   This API insert attributes to a given roleId into the acl map. If the role-id exists
  *   then it will be overwritten.
  */
-void AttributeAccessControl::setAcl(const string& aclRoleValue, vector<unsigned>& searchableAttrIdsList,
+void AttributeAccessControl::replaceFromAcl(vector<string>& roleValueTokens, vector<unsigned>& searchableAttrIdsList,
 		vector<unsigned>& refiningAttrIdsList) {
 	AclWriteLock lock(attrAclLock);  // X-lock
-	AclMapIter iter = attributeAclMap.find(aclRoleValue);
-	if (iter != attributeAclMap.end()) {
-		// If role Id is found, then overwrite it.The old vector will
-		// be free'd automatically by shared_ptr after the last reader.
-		iter->second.searchableAttrList.reset(new vector<unsigned>());
-		// note: this API swaps the internal pointers of vectors to avoid copy
-		iter->second.searchableAttrList->swap(searchableAttrIdsList);
-		iter->second.refiningAttrList.reset(new vector<unsigned>());
-		iter->second.refiningAttrList->swap(refiningAttrIdsList);
-		return;
-	} else {
-		// If role Id is not found, then insert it.
-		PairOfAttrsListSharedPtr newAttrListPair;
-		newAttrListPair.searchableAttrList.reset(new vector<unsigned>());
-		newAttrListPair.refiningAttrList.reset(new vector<unsigned>());
-		pair<AclMapIter , bool> ret =
-		attributeAclMap.insert(make_pair(aclRoleValue, newAttrListPair));
-		ret.first->second.searchableAttrList->swap(searchableAttrIdsList);
-		ret.first->second.refiningAttrList->swap(refiningAttrIdsList);
-		return;
+	// replace operation is part append and part delete.
+	// 1. delete attribute from all roldIds present in the map but are not in the input roleIds
+	// 2. append attributes for the input roleIds
+	AclMapIter iter = attributeAclMap.begin();
+	while(iter != attributeAclMap.end()) {
+		vector<unsigned> *attrListPtr = new vector<unsigned>();
+		attrListPtr->reserve(searchableAttrIdsList.size() + iter->second.searchableAttrList->size());
+		std::set_difference(iter->second.searchableAttrList->begin(), iter->second.searchableAttrList->end(),
+				searchableAttrIdsList.begin(), searchableAttrIdsList.end(),
+				back_inserter(*attrListPtr));
+
+		iter->second.searchableAttrList.reset(attrListPtr);
+
+		attrListPtr = new vector<unsigned>();
+		attrListPtr->reserve(refiningAttrIdsList.size() + iter->second.refiningAttrList->size());
+		std::set_difference(iter->second.refiningAttrList->begin(), iter->second.refiningAttrList->end(),
+				refiningAttrIdsList.begin(), refiningAttrIdsList.end(),
+				back_inserter(*attrListPtr));
+		iter->second.refiningAttrList.reset(attrListPtr);
+
+		// if all the attributes are deleted then remove the acl role from map as well.
+		if (iter->second.searchableAttrList->size() == 0 && iter->second.refiningAttrList->size() == 0)
+			attributeAclMap.erase(iter++);
+		else
+			++iter;
+	}
+	lock.unlock();
+	for (unsigned i = 0; i < roleValueTokens.size(); ++i) {
+		// append to existing ACL. If acl-role is not found then add it.
+		boost::algorithm::trim(roleValueTokens[i]);
+		const_cast<AttributeAccessControl *>(this)->appendToAcl(roleValueTokens[i], searchableAttrIdsList, refiningAttrIdsList);
 	}
 }
 

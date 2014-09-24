@@ -43,7 +43,7 @@ typedef map<string, PairOfAttrsListSharedPtr>::iterator AclMapIter;
 typedef map<string, PairOfAttrsListSharedPtr>::const_iterator AclMapConstIter;
 
 enum AclActionType {
-	ACL_ADD, // insert new acl
+	ACL_REPLACE, // insert new acl
 	ACL_DELETE, // delete existing acl
 	ACL_APPEND  // append to existing acl
 };
@@ -75,8 +75,8 @@ public:
 	bool processSingleJSONAttributeAcl(const Json::Value& doc, AclActionType action,
 			const string& apiName, Json::Value& aclAttributeResponse) const;
 
-	// add new acl for a role
-	void setAcl(const string& aclRoleValue, vector<unsigned>& searchableAttrIdsList,
+	// replace a new acl for a attribute
+	void replaceFromAcl(vector<string>& aclRoleValue, vector<unsigned>& searchableAttrIdsList,
 			vector<unsigned>& refiningAttrIdsList);
 
 	// append to existing acl for a role. If role is not found then it is created.

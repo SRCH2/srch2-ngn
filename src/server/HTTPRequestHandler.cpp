@@ -1374,7 +1374,7 @@ void HTTPRequestHandler::attributeAclModify(evhttp_request *req, Srch2Server *se
 	        	corename = "/" + corename;
 	        }
 	        if (uriString == corename + "/aclAttributeRoleAdd") {
-	        	action = ACL_ADD;
+	        	action = ACL_REPLACE;
 	        	apiName = "aclAttributeRoleAdd";
 	        }
 	        else if (uriString == corename + "/aclAttributeRoleDelete") {
