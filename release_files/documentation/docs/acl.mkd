@@ -257,7 +257,7 @@ can access attributes "name" and "state".
 
 ###2.2 Replace Accessible Attributes
 
-We can modify the attributes accessible by a role with a command called
+We can modify the ACL list of roles for attributes using a command called
 "aclAttributeRoleReplace".  For instance:
 
 ```python
