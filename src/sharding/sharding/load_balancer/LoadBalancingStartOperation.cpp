@@ -111,9 +111,8 @@ OperationState * LoadBalancingStartOperation::finalizeLoadBalancing(){
 
 OperationState * LoadBalancingStartOperation::balance(){
 	// do we have all load reports ?
-	if(haveAllReportsArrived()){
-		if(nodeReportArrived.size() == 1 ||
-				! isLightLoadedNode(ShardManager::getCurrentNodeId())){ // only us or not light
+	if(haveAllReportsArrived() && canAcceptMoreShards(ShardManager::getCurrentNodeId())){
+		if(nodeReportArrived.size() == 1){ // only us or not light
 			OperationState * assignCopy = tryShardAssginmentAndShardCopy(true);// assignment only
 			if(assignCopy != NULL){
 				return assignCopy;
@@ -426,7 +425,7 @@ void LoadBalancingStartOperation::prepareMoveCandidates(vector<std::pair<NodeId,
 	}
 }
 
-bool LoadBalancingStartOperation::isLightLoadedNode(NodeId nodeId){
+bool LoadBalancingStartOperation::canAcceptMoreShards(NodeId nodeId){
 	Cluster_Writeview * writeview = ShardManager::getWriteview();
 	double loadAvg = 0;
 	for(map<NodeId, double>::iterator nodeLoadItr = nodeLoads.begin(); nodeLoadItr != nodeLoads.end(); ++nodeLoadItr){
@@ -437,7 +436,7 @@ bool LoadBalancingStartOperation::isLightLoadedNode(NodeId nodeId){
 	if(nodeLoads.find(nodeId) == nodeLoads.end()){
 		return false;
 	}
-	return (nodeLoads[nodeId] < loadAvg) ;
+	return (nodeLoads[nodeId] <= loadAvg) ;
 }
 
 // The first shard of a partition

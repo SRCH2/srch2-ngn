@@ -79,7 +79,7 @@ private:
 	 */
 	void prepareMoveCandidates(vector<std::pair<NodeId, ClusterShardId> > & candidateSrcShards);
 
-	bool isLightLoadedNode(NodeId nodeId);
+	bool canAcceptMoreShards(NodeId nodeId);
 
 	// The first shard of a partition
 	OperationState * assignShard(const ClusterShardId & unassignedShard);
