@@ -72,7 +72,7 @@ mysql::Binary_log_event * Applier::process_event(mysql::Row_event * rev) {
     //Ignore the old event
     time_t ts = rev->header()->timestamp;
 
-    if (ts <= startTimestamp) {
+    if (ts < startTimestamp) {
         return rev;
     }
 
