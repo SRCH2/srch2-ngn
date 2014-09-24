@@ -54,9 +54,14 @@ Author: Chen Liu
    mysql> show master status;
    mysql> show binlog events;
 
-5. Run the system test case
+6. Set the MySQL password:
+   
+   shell> cd srch2-ngn/test/wrapper/system_tests
+   Set your MySQL password in adapter_mysql/my.cnf and adapter_mysql/conf.xml.
 
-    shell> cd srch2-ngn/test/wrapper/system_tests
-    shell> python ./adapter_mysql/adapter_mysql.py ../../../build/src/server/srch2-search-server     ./adapter_sqlite/testCreateIndexes_sql.txt ./adapter_sqlite/testCreateIndexes.txt     ./adapter_sqlite/testRunListener_sql.txt ./adapter_sqlite/testRunListener.txt     ./adapter_sqlite/testOfflineLog_sql.txt ./adapter_sqlite/testOfflineLog.txt
+7. Run the system test case:
 
-  If everything works, we will see a "Successful" message.
+   shell> cd srch2-ngn/test/wrapper/system_tests
+   shell> python ./adapter_mysql/adapter_mysql.py ../../../build/src/server/srch2-search-server     ./adapter_sqlite/testCreateIndexes_sql.txt ./adapter_sqlite/testCreateIndexes.txt     ./adapter_sqlite/testRunListener_sql.txt ./adapter_sqlite/testRunListener.txt     ./adapter_sqlite/testOfflineLog_sql.txt ./adapter_sqlite/testOfflineLog.txt
+
+   If everything works, we will see a "Successful" message.

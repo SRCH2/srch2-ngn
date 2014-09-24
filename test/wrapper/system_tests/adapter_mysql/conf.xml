@@ -102,7 +102,7 @@
 					<dbKeyValue key="host" value="127.0.0.1" />
 					<dbKeyValue key="port" value="3306" />
 					<dbKeyValue key="dbName" value="srch2Test" />
-					<dbKeyValue key="password" value="" />
+					<dbKeyValue key="password" value="rootpassword" />
 					<dbKeyValue key="user" value="root" />
 					<dbKeyValue key="tableName" value="COMPANY" />
 					<dbKeyValue key="logName" value="mysql-bin" />

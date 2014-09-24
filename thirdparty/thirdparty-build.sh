@@ -80,6 +80,7 @@ mv mysql-connector-c++-1.1.4 mysql-connector-c++
 cd mysql-connector-c++
 cmake -DCMAKE_INSTALL_PREFIX=./build
 make install
+mv ./build/lib/*/* ./build/lib/
 
 cd ../../mysql-connector-c++
 echo "BUILDING MySQL replication listener... in $CURRENTDIR"
@@ -91,7 +92,7 @@ cd build
 cmake ..
 make
 
-cd ../../mysql-connector-c++
+cd ../../../mysql-connector-c++
 echo "BUILDING MySQL python driver for MySQL system test... in $CURRENTDIR"
 tar -xvf MySQL-python-1.2.5.tar.gz
 rm -rf MySQL-python

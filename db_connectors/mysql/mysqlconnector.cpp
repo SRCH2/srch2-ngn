@@ -85,8 +85,8 @@ bool MySQLConnector::connectToDB() {
             return true;
         } catch (sql::SQLException &e) {
             Logger::error(
-                    "MYSQLCONNECTOR: SQL error %d while connecting to the database : %s",
-                    e.getErrorCode(), e.getSQLState().c_str());
+                    "MYSQLCONNECTOR: SQL error %d while connecting to the database : %s %s",
+                    e.getErrorCode(), e.getSQLState().c_str(), e.what());
             if (stmt != NULL) {
                 stmt->close();
             }
@@ -292,13 +292,13 @@ int MySQLConnector::runListener() {
 
     while (binlog.connect()) {
         Logger::error(
-                "MYSQLCONNECTOR: Can't connect to the master MySQL server.");
+                "MYSQLCONNECTOR: Can't connect to the master MySQL server. Please Check if the binlog mode is enabled.");
         sleep(listenerWaitTime);
     }
 
     //Initialize the binlog pointer.
     while (binlog.set_position(logName + ".000001", 4)) {
-        Logger::error("MYSQLCONNECTOR: Can't reposition the binary log reader");
+        Logger::error("MYSQLCONNECTOR: Can't reposition the binary log reader. Please check if the binlog mode is enabled");
         sleep(listenerWaitTime);
     }
 
