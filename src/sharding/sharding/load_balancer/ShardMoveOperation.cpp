@@ -242,7 +242,13 @@ string ShardMoveOperation::getOperationStatus() const {
 		if(commitOperation == NULL && releaseOperation == NULL){ // we are in transfer session
 			ss << "Transferring data ...%" ;
 		}else{
-			ss << "Transferred " << physicalShard.server->getIndexer()->getNumberOfDocumentsInIndex() << " records.%";
+
+			if(! physicalShard.server){
+				ss << "Transferred " << physicalShard.server->getIndexer()->getNumberOfDocumentsInIndex() << " records.%";
+			}else{
+				ss << "Transferring " << shardId.toString() << " failed." << "%";
+			}
+
 		}
 
 		if(commitOperation != NULL){
@@ -422,10 +428,20 @@ OperationState * ShardMoveSrcOperation::handle(Notification * notification){
 
 
 string ShardMoveSrcOperation::getOperationName() const {
-	//TODO
+	return "shard_move_src_side";
 }
 string ShardMoveSrcOperation::getOperationStatus() const {
-	//TODO
+	stringstream ss;
+	ss << "Cooperating with operation " << this->destination.toString() << " to move shard " << shardId.toString() << ".%";
+	if(compensateOperation != NULL){
+		ss << compensateOperation->getOperationName() << "%";
+		ss << compensateOperation->getOperationStatus() ;
+	}
+	if(releaseOperation != NULL){
+		ss << releaseOperation->getOperationName() << "%";
+		ss << releaseOperation->getOperationStatus() ;
+	}
+
 }
 
 OperationState * ShardMoveSrcOperation::connect(){
