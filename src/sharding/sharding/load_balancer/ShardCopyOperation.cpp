@@ -21,6 +21,7 @@ ShardCopyOperation::ShardCopyOperation(const unsigned operationId,
 		OperationState(operationId),unassignedShardId(unassignedShard),replicaShardId(shardToReplicate),srcNodeId(srcNodeId){
 	this->lockOperation = NULL;
 	this->lockOperationResult = new AtomicLockOperationResult();
+	this->abortedFlag = false;
 	this->commitOperation = NULL;
 	this->releaseOperation = NULL;
 }
@@ -89,6 +90,10 @@ OperationState * ShardCopyOperation::handle(LockingNotification::ACK * ack){
 }
 
 OperationState * ShardCopyOperation::transfer(){
+
+	if(abortedFlag){ // we should not proceed
+		return release();
+	}
 	// start transfering the data
 	// call MM to transfer the shard.
 //	accessMigrationManager(shardId, replicaShardId, srcNodeId);
@@ -151,9 +156,8 @@ OperationState * ShardCopyOperation::handle(NodeFailureNotification * nodeFailur
 	}
 	if(nodeFailure->getFailedNodeID() == srcNodeId){
 		if(lockOperation != NULL){
-			delete lockOperation;
-			lockOperation = NULL;
-			return release();
+			// we must leave the locking operation to finish and then jump to release
+			this->abortedFlag = true;
 		}
 		if(lockOperation == NULL && commitOperation == NULL && releaseOperation == NULL){
 			// we were still in transfer
@@ -167,6 +171,19 @@ OperationState * ShardCopyOperation::handle(NodeFailureNotification * nodeFailur
 		}
 	}
 	// now pass the notification to all operations
+	if(lockOperation != NULL){
+		OperationState::stateTransit(lockOperation, nodeFailure);
+		if(lockOperation == NULL){
+			if(this->lockOperationResult->grantedFlag == false){
+				return LoadBalancingStartOperation::finalizeLoadBalancing();
+			}else{
+				// move to next step
+				return transfer();
+			}
+		}
+		return this;
+	}
+
 	if(commitOperation != NULL){
 		OperationState::stateTransit(commitOperation, nodeFailure);
 		if(commitOperation == NULL){

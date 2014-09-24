@@ -43,6 +43,7 @@ private:
 
 	OperationState * lockOperation;
 	AtomicLockOperationResult * lockOperationResult;
+	bool abortedFlag;
 	OperationState * commitOperation;
 	OperationState * releaseOperation;
 	LocalPhysicalShard physicalShard;

@@ -22,6 +22,7 @@ ShardMoveOperation::ShardMoveOperation(const unsigned operationId, const NodeId 
 	this->srcAddress = NodeOperationId(srcNodeId);
 	this->lockOperation = NULL;
 	this->lockOperationResult = new AtomicLockOperationResult();
+	this->abortedFlag = false;
 	this->commitOperation = NULL;
 	this->releaseOperation = NULL;
 	this->connectedFlag = false;
@@ -115,6 +116,9 @@ OperationState * ShardMoveOperation::handle(LockingNotification::ACK * ack){
 }
 
 OperationState * ShardMoveOperation::transfer(){
+	if(abortedFlag){ // we should not proceed
+		return release();
+	}
 	// start transfering the data
 	// call MM to transfer the shard.
 	MoveToMeNotification *  startNotif = new MoveToMeNotification(shardId);
@@ -178,9 +182,8 @@ OperationState * ShardMoveOperation::handle(NodeFailureNotification * nodeFailur
 			return LoadBalancingStartOperation::finalizeLoadBalancing();
 		}
 		if(lockOperation != NULL){
-			delete lockOperation;
-			lockOperation = NULL;
-			return release();
+			// we must leave the locking operation to finish and then jump to release
+			this->abortedFlag = true;
 		}
 		if(lockOperation == NULL && commitOperation == NULL && releaseOperation == NULL){
 			// still transferring data when src node died.
@@ -196,6 +199,19 @@ OperationState * ShardMoveOperation::handle(NodeFailureNotification * nodeFailur
 	}
 
 	// now pass the notification to all operations
+
+	if(lockOperation != NULL){
+		OperationState::stateTransit(lockOperation, nodeFailure);
+		if(lockOperation == NULL){
+			if(this->lockOperationResult->grantedFlag == false){
+				return abort();
+			}else{
+				// move to next step
+				return transfer();
+			}
+		}
+	}
+
 	if(commitOperation != NULL){
 		OperationState::stateTransit(commitOperation, nodeFailure);
 		if(commitOperation == NULL){
@@ -409,6 +425,15 @@ OperationState * ShardMoveSrcOperation::handle(NodeFailureNotification * nodeFai
 			Logger::error("Data loss because of node failure.");
 		}
 	}
+
+	if(compensateOperation != NULL){
+		OperationState::stateTransit(compensateOperation, nodeFailure);
+		if(compensateOperation == NULL){
+			return release();
+		}
+		return this;
+	}
+
 	if(releaseOperation != NULL){
 		OperationState::stateTransit(releaseOperation, nodeFailure);
 		if(releaseOperation == NULL){
