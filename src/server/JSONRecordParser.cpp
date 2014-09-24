@@ -499,14 +499,16 @@ bool JSONRecordParser::_extractRoleIds(vector<string> &roleIds, const Json::Valu
 // and return false if there is not roleId or resourceId in the query
 // sample: {"resourceId”: "1234", "roleId”: ["33", "45"]}
 //
-bool JSONRecordParser::_extractResourceAndRoleIds(std::vector<string> &roleIds, string& resourcePrimaryKeyID, const Json::Value &root, const CoreInfo_t *indexDataContainerConf, std::stringstream &error){
+bool JSONRecordParser::_extractResourceAndRoleIds(std::vector<string> &roleIds,
+		string& resourcePrimaryKeyID, const Json::Value &root,
+		const CoreInfo_t *indexDataContainerConf, std::stringstream &error){
 	if (root.type() != Json::objectValue){
 		error << "\nFailed to parse JSON.";
 		return false;// Raise Error
 	}
 	string aclRoleId = ConfigManager::getRoleId();
 
-	string primaryKeyName = ConfigManager::getResourceId();
+	string primaryKeyName = indexDataContainerConf->getPrimaryKey();
 
 	std::vector<string> stringValues;
 
@@ -535,14 +537,16 @@ bool JSONRecordParser::_extractResourceAndRoleIds(std::vector<string> &roleIds, 
 // and returns false if there is not roleId or resourceId in the query
 // sample: {"roleId”: "1234", "resourceId”: ["33", "45"]}
 //
-bool JSONRecordParser::_extractRoleAndResourceIds(std::vector<string> &resourceIds, string& rolePrimaryKeyID, const Json::Value &root, const CoreInfo_t *indexDataContainerConf, std::stringstream &error){
+bool JSONRecordParser::_extractRoleAndResourceIds(std::vector<string> &resourceIds,
+		string& rolePrimaryKeyID, const Json::Value &root,
+		const CoreInfo_t *indexDataContainerConf, std::stringstream &error){
 	if (root.type() != Json::objectValue){
 		error << "\nFailed to parse JSON.";
 		return false;// Raise Error
 	}
 	string aclRoleIdName = ConfigManager::getRoleId();
 
-	string roleprimaryKeyName = ConfigManager::getResourceId();
+	string roleprimaryKeyName = indexDataContainerConf->getPrimaryKey();
 
 	std::vector<string> stringValues;
 

@@ -165,6 +165,8 @@ private:
     static const char* const highlightSwitch;
     // access control
     static const char* const roleIdParamName;
+    static const char* const attrAclFlag;
+
     static const string getFacetRangeKey(const string &facetField,
             const string &facetRangeProperty) {
         return "f."+facetField+".facet."+facetRangeProperty;
@@ -208,9 +210,14 @@ private:
     void isFuzzyParser();
 
     /*
-     *  check to see if role id exists in prameters.
+     *  check to see if role id exists in parameters.
      */
     void accessControlParser();
+
+    /*
+     *  check to see if a flag to turn off attribute acl exists in parameters.
+     */
+    void attributeAclFlagParser();
 
     /*
      * parses the lengthBoost parameter and fills up the container

@@ -138,8 +138,6 @@
        <field name="attr8"  type="text" highlight="true" refining="false" searchable="true" acl="true" />
        </fields>
 
-       <attributeAclFile>./attributesAcl/acl.txt</attributeAclFile>
-       
        <uniqueKey>id</uniqueKey>
            
        <facetEnabled>true</facetEnabled>
@@ -161,4 +159,7 @@
           </fieldType>
        </types>
     </schema>
+    <access-control>
+        <attribute-acl datafile="./attributesAcl/acl.txt"/>
+    </access-control>
 </config>

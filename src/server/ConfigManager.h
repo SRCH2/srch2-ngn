@@ -264,10 +264,6 @@ protected:
 
     void parseMultipleCores(const xml_node &coresNode, bool &configSuccess, std::stringstream &parseError, std::stringstream &parseWarnings);
 
-    void parseSingleAccessControl(const xml_node &parentNode, bool &configSuccess, std::stringstream &parseError, std::stringstream &parseWarnings);
-
-    void parseAccessControls(const xml_node &accessControlsNode, bool &configSuccess, std::stringstream &parseError, std::stringstream &parseWarnings);
-
     // parse all data source settings (can handle multiple cores or default/no core)
     void parseDataConfiguration(const xml_node &configNode, bool &configSuccess, std::stringstream &parseError, std::stringstream &parseWarnings);
 
@@ -429,10 +425,10 @@ public:
     static const char* getRoleId(){
     	return aclRoleId;
     }
-
-    static const char* getResourceId(){
-    	return aclResourceId;
-    }
+//
+//    static const char* getResourceId(){
+//    	return aclResourceId;
+//    }
 
 private:
 
@@ -459,7 +455,6 @@ private:
     static const char* const enableCharOffsetIndexString;
     static const char* const expandString;
     static const char* const facetEnabledString;
-    static const char* const attributeAclFileString;
     static const char* const facetEndString;
     static const char* const facetFieldString;
     static const char* const facetFieldsString;
@@ -554,12 +549,10 @@ private:
     static const char* const fuzzyTagPost;
     static const char* const snippetSize;
 
-    static const char* const multipleAccessControlString;
-    static const char* const resourceCore;
-    static const char* const roleCore;
-    static const char* const recordAclFile;
+    static const char* const accessControlString;
+    static const char* const recordAclString;
+    static const char* const attributeAclString;
     static const char* const aclRoleId;
-    static const char* const aclResourceId;
 
     static const char* const defaultFuzzyPreTag;
     static const char* const defaultFuzzyPostTag;
