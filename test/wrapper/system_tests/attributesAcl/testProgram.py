@@ -195,5 +195,8 @@ if __name__ == '__main__':
     time.sleep(2)
     queriesAndResultsPath = './attributesAcl/testCasesFilterSortFacetQuery.txt'
     exitCode |= test(queriesAndResultsPath, binary_path , './attributesAcl/conf2.xml')
+    time.sleep(2)
+    queriesAndResultsPath = './attributesAcl/testCasesFilterSortFacetQueryWithSwitch.txt'
+    exitCode |= test(queriesAndResultsPath, binary_path , './attributesAcl/conf3.xml')
     os._exit(exitCode)
 

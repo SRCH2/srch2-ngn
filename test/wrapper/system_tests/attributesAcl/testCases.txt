@@ -10,6 +10,9 @@
 #case 1. no acl-role-id provided, keyword should match non-acl attributes only.
 S||attr8&fuzzy=false||2
 
+#case 1.1. no acl-role-id provided but attriubte acl is turned off. keyword should match all attributes.
+S||attr8&fuzzy=false&attributeAcl=off||1 2
+
 #case 2. acl-role-id=102 is provided, keyword should match any non-acl attributes or attributes allowed for this role-id
 S||attr8&fuzzy=false&roleId=102||1 2
 
@@ -58,11 +61,14 @@ S||attr7%2Battr8:attr9&fuzzy=false&roleId=101||2 1
 #case 11:  acl-role-id = 104 is not present. 
 S||attr7%2Battr8:attr9&fuzzy=false&roleId=104||
 
-#insert 104 role Id
+#replace roleId for attr7 and attr8 to have only role-id 104
 C||aclAttributeRoleAdd||{ "attributes": ["attr7", "attr8"], "roleId": ["104"] }
 
 #case 12:
 S||attr7%2Battr8:attr9&fuzzy=false&roleId=104||2 1
+
+#case 12.1:  search with role-id 101 ( similar to case 10) . This time there should not be any results returned because 101 cannot access attr7 and attr8
+S||attr7%2Battr8:attr9&fuzzy=false&roleId=101||
 
 #-----------------------------------
 # Rest API for deleting ACL
