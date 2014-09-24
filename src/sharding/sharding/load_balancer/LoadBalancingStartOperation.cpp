@@ -2,8 +2,8 @@
 
 
 #include "core/util/SerializationHelper.h"
-#include "src/core/util/Assert.h"
-#include "sharding/configuration/ShardingConstants.h"
+#include "core/util/Assert.h"
+#include "../../configuration/ShardingConstants.h"
 #include "../metadata_manager/ResourceLocks.h"
 #include "../metadata_manager/Cluster_Writeview.h"
 #include "../ShardManager.h"

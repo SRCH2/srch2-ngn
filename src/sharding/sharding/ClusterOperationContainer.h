@@ -2,7 +2,7 @@
 #define __SHARDING_SHARDING_CLUSTER_OPERATION_CONTAINER_H__
 
 #include "State.h"
-#include "notifications/Notification.h"
+#include "./notifications/Notification.h"
 //
 //#include "boost/thread/pthread/mutex.hpp"
 //#include "boost/thread/locks.hpp"

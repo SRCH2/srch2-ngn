@@ -1,17 +1,17 @@
 
 #include "Cluster_Writeview.h"
+#include "ResourceLocks.h"
 
-#include "src/core/util/SerializationHelper.h"
-#include <sstream>
-#include <fstream>
 
 #include "../ShardManager.h"
-#include "ResourceLocks.h"
-#include "sharding/transport/MessageAllocator.h"
-#include "sharding/util/FramedPrinter.h"
-#include "sharding/sharding/metadata_manager/Node.h"
+#include "../../transport/MessageAllocator.h"
+#include "../../util/FramedPrinter.h"
+#include "../../sharding/metadata_manager/Node.h"
+#include "core/util/SerializationHelper.h"
 #include "server/Srch2Server.h"
 
+#include <sstream>
+#include <fstream>
 using namespace std;
 namespace srch2is = srch2::instantsearch;
 using namespace srch2::instantsearch;

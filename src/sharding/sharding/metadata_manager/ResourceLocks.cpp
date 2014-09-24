@@ -1,13 +1,13 @@
 
 #include "ResourceLocks.h"
-#include "core/util/Assert.h"
-#include "core/util/SerializationHelper.h"
-#include "../ShardManager.h"
-#include "../notifications/NewNodeLockNotification.h"
 #include "Cluster_Writeview.h"
 #include "ResourceMetadataManager.h"
 #include "sharding/util/FramedPrinter.h"
 #include "../ClusterOperationContainer.h"
+#include "../ShardManager.h"
+#include "../notifications/NewNodeLockNotification.h"
+#include "core/util/Assert.h"
+#include "core/util/SerializationHelper.h"
 #include <boost/thread/mutex.hpp>
 #include <boost/thread/locks.hpp>
 

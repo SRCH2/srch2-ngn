@@ -4,6 +4,7 @@
 #include <cstdio>
 #include <string>
 #include <iostream>
+#include <vector>
 
 using namespace std;
 namespace srch2 {

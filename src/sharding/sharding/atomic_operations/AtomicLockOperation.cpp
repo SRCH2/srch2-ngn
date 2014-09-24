@@ -1,11 +1,11 @@
-#include "SerialLockOperation.h"
+#include "AtomicLockOperation.h"
 
 #include "core/util/SerializationHelper.h"
-#include "src/core/util/Assert.h"
-#include "metadata_manager/Shard.h"
-#include "metadata_manager/Node.h"
-#include "./metadata_manager/Cluster_Writeview.h"
-#include "./ShardManager.h"
+#include "core/util/Assert.h"
+#include "../metadata_manager/Shard.h"
+#include "../metadata_manager/Node.h"
+#include "../metadata_manager/Cluster_Writeview.h"
+#include "../ShardManager.h"
 
 #include <sstream>
 
@@ -15,9 +15,9 @@ using namespace std;
 namespace srch2 {
 namespace httpwrapper {
 
-SerialLockOperation::SerialLockOperation(const unsigned & operationId,
+AtomicLockOperation::AtomicLockOperation(const unsigned & operationId,
 		ResourceLockRequest * lockRequests,
-		SerialLockResultStatus * resultStatus):OperationState(operationId){
+		AtomicLockOperationResult * resultStatus):OperationState(operationId){
 	ASSERT(lockRequests != NULL);
 	this->lockRequests = lockRequests;
 	this->resultStatus = resultStatus;
@@ -32,8 +32,8 @@ SerialLockOperation::SerialLockOperation(const unsigned & operationId,
 	this->nodeIndex = (unsigned)-1; // very big number
 }
 
-SerialLockOperation::SerialLockOperation(const unsigned & operationId, const vector<NodeId> & participants,
-		ResourceLockRequest * lockRequests, SerialLockResultStatus * resultStatus):OperationState(operationId){
+AtomicLockOperation::AtomicLockOperation(const unsigned & operationId, const vector<NodeId> & participants,
+		ResourceLockRequest * lockRequests, AtomicLockOperationResult * resultStatus):OperationState(operationId){
 	this->lockRequests = lockRequests;
 	this->resultStatus = resultStatus;
 	this->participantNodes = participants;
@@ -41,7 +41,7 @@ SerialLockOperation::SerialLockOperation(const unsigned & operationId, const vec
 	this->nodeIndex = -1;
 }
 
-OperationState * SerialLockOperation::entry(){
+OperationState * AtomicLockOperation::entry(){
 	// send the batch to the first node in the participants list.
 	if(participantNodes.size() == 0){
 		if(resultStatus != NULL){
@@ -55,7 +55,7 @@ OperationState * SerialLockOperation::entry(){
 	return askNextNode(participantNodes.at(nodeIndex));
 }
 
-OperationState * SerialLockOperation::handle(NodeFailureNotification * nodeFailure){
+OperationState * AtomicLockOperation::handle(NodeFailureNotification * nodeFailure){
 	// erase any failed nodes from the participants list.
 	if(nodeFailure == NULL){
 		ASSERT(false);
@@ -100,7 +100,7 @@ OperationState * SerialLockOperation::handle(NodeFailureNotification * nodeFailu
 	return this;
 }
 
-OperationState * SerialLockOperation::handle(LockingNotification::ACK * ack){
+OperationState * AtomicLockOperation::handle(LockingNotification::ACK * ack){
 	if(! doesExpect(ack)){
 		ASSERT(false);
 		return this;
@@ -132,7 +132,7 @@ OperationState * SerialLockOperation::handle(LockingNotification::ACK * ack){
 	}
 
 }
-bool SerialLockOperation::doesExpect(const LockingNotification::ACK * ack) const{
+bool AtomicLockOperation::doesExpect(const LockingNotification::ACK * ack) const{
 	if(ack == NULL){
 		ASSERT(false);
 		return false;
@@ -146,10 +146,10 @@ bool SerialLockOperation::doesExpect(const LockingNotification::ACK * ack) const
 	return true;
 }
 
-string SerialLockOperation::getOperationName() const {
+string AtomicLockOperation::getOperationName() const {
 	return "lock_operation";
 };
-string SerialLockOperation::getOperationStatus() const {
+string AtomicLockOperation::getOperationStatus() const {
 	stringstream ss;
 	ss << "Participants : ";
 	for(unsigned i  = 0 ; i < participantNodes.size(); ++i){
@@ -183,7 +183,7 @@ string SerialLockOperation::getOperationStatus() const {
 	return ss.str();
 };
 
-OperationState * SerialLockOperation::askNextNode(const NodeId & targetNodeId){
+OperationState * AtomicLockOperation::askNextNode(const NodeId & targetNodeId){
 	NodeId currentNodeID = ShardManager::getCurrentNodeId();
 	if(targetNodeId == currentNodeID){
 		// ask our own repository
@@ -199,6 +199,7 @@ OperationState * SerialLockOperation::askNextNode(const NodeId & targetNodeId){
 	        perror("Cannot create thread for handling local message");
 	        return NULL;
 	    }
+	    pthread_detach(localLockThread);
 	}else{
 		// send the notification
 		LockingNotification * lockingRequestNotif = new LockingNotification(lockRequests);
@@ -209,7 +210,7 @@ OperationState * SerialLockOperation::askNextNode(const NodeId & targetNodeId){
 	return this;
 }
 
-OperationState * SerialLockOperation::handleRejectNonBlocking(){
+OperationState * AtomicLockOperation::handleRejectNonBlocking(){
 	// I) If it was the first node that we tried, we have no compensation to do,
 	//    so we should just return REJECTED
 	if(nodeIndex == 0){
@@ -241,7 +242,7 @@ OperationState * SerialLockOperation::handleRejectNonBlocking(){
 	ResourceLockRequest * resourceLockRequest = new ResourceLockRequest();
 	resourceLockRequest->requestBatch = lockRequestsCompensation;
 	resourceLockRequest->isBlocking = true; // release is blocking although it doesn't matter because it's always granted
-	SerialLockOperation * compensationOp = new SerialLockOperation(this->getOperationId(), participantsInCompensation, resourceLockRequest);
+	AtomicLockOperation * compensationOp = new AtomicLockOperation(this->getOperationId(), participantsInCompensation, resourceLockRequest);
 	// set result of locking
 	if(resultStatus != NULL){
 		resultStatus->grantedFlag = false;
@@ -249,7 +250,7 @@ OperationState * SerialLockOperation::handleRejectNonBlocking(){
 	return compensationOp;
 }
 
-void * SerialLockOperation::localLockRequest(void *arg){
+void * AtomicLockOperation::localLockRequest(void *arg){
 	LockRequestArguments * args = (LockRequestArguments * )arg;
 	boost::unique_lock<boost::mutex> lock(ShardManager::getShardManager()->shardManagerGlobalMutex);
 	ShardManager::getShardManager()->getLockManager()->resolveBatch(args->requester,

@@ -1,8 +1,8 @@
 #ifndef __SHARDING_SHARDING_MOVE_TO_ME_NOTIFICATION_H__
 #define __SHARDING_SHARDING_MOVE_TO_ME_NOTIFICATION_H__
 
-#include "../metadata_manager/Shard.h"
 #include "Notification.h"
+#include "../metadata_manager/Shard.h"
 #include "core/util/SerializationHelper.h"
 
 namespace srch2is = srch2::instantsearch;

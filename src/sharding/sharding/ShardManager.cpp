@@ -2,23 +2,24 @@
 
 
 #include "ClusterOperationContainer.h"
-#include "metadata_manager/ResourceMetadataManager.h"
-#include "metadata_manager/ResourceLocks.h"
-#include "metadata_manager/Cluster_Writeview.h"
-#include "metadata_manager/Cluster.h"
-#include "./ClusterOperationContainer.h"
-#include "notifications/Notification.h"
-#include "notifications/NewNodeLockNotification.h"
-#include "notifications/CommitNotification.h"
-#include "notifications/LoadBalancingReport.h"
-#include "notifications/LockingNotification.h"
-#include "notifications/MetadataReport.h"
-#include "notifications/MoveToMeNotification.h"
-#include "notifications/CopyToMeNotification.h"
-#include "metadata_manager/MetadataInitializer.h"
-#include "node_initialization/NewNodeJoinOperation.h"
-#include "load_balancer/LoadBalancingStartOperation.h"
-#include "load_balancer/ShardMoveOperation.h"
+#include "./metadata_manager/ResourceMetadataManager.h"
+#include "./metadata_manager/ResourceLocks.h"
+#include "./metadata_manager/Cluster_Writeview.h"
+#include "./metadata_manager/Cluster.h"
+#include "./metadata_manager/MetadataInitializer.h"
+#include "./cluster_operations/ClusterSaveOperation.h"
+#include "./cluster_operations/ClusterShutdownOperation.h"
+#include "./notifications/Notification.h"
+#include "./notifications/NewNodeLockNotification.h"
+#include "./notifications/CommitNotification.h"
+#include "./notifications/LoadBalancingReport.h"
+#include "./notifications/LockingNotification.h"
+#include "./notifications/MetadataReport.h"
+#include "./notifications/MoveToMeNotification.h"
+#include "./notifications/CopyToMeNotification.h"
+#include "./node_initialization/NewNodeJoinOperation.h"
+#include "./load_balancer/LoadBalancingStartOperation.h"
+#include "./load_balancer/ShardMoveOperation.h"
 #include "sharding/migration/MigrationManager.h"
 
 #include "core/util/Assert.h"
@@ -188,12 +189,71 @@ void ShardManager::start(){
 		NewNodeJoinOperation * joinOperation = new NewNodeJoinOperation();
 		stateMachine->registerOperation(joinOperation);
 	}
-	pthread_t localLockThread;
-    if (pthread_create(&localLockThread, NULL, ShardManager::periodicWork , NULL) != 0){
+	pthread_t loadBalancingThread;
+    if (pthread_create(&loadBalancingThread, NULL, ShardManager::periodicWork , NULL) != 0){
         //        Logger::console("Cannot create thread for handling local message");
         perror("Cannot create thread for load balancing.");
         return;
     }
+    pthread_detach(loadBalancingThread);
+}
+
+/*
+ * Saves the cluster metadata and indices ...
+ */
+void ShardManager::save(evhttp_request *req){
+	if(this->metadataManager->getClusterWriteview() == NULL){
+		 bmhelper_evhttp_send_reply2(req, HTTP_BADREQUEST, "Save failed.",
+		                    "Cluster is not ready to save yet.");
+	}
+
+
+    /* Yes, we are expecting a post request */
+    switch (req->type) {
+    case EVHTTP_REQ_PUT: {
+    	ClusterSaveOperation * saveOperation = new ClusterSaveOperation(req);
+    	this->stateMachine->registerOperation(saveOperation);
+        break;
+    }
+    default: {
+        bmhelper_evhttp_send_reply2(req, HTTP_BADREQUEST, "INVALID REQUEST",
+                "{\"error\":\"The request has an invalid or missing argument. See Srch2 API documentation for details.\"}");
+        Logger::error(
+                "The request has an invalid or missing argument. See Srch2 API documentation for details");
+        break;
+    }
+    };
+}
+
+/*
+ * Shuts the cluster down.
+ * In this process, we first save all the indices and the cluster metadata and then shut the entire cluster down.
+ */
+void ShardManager::shutdown(evhttp_request *req){
+	boost::unique_lock<boost::mutex> shardManagerGlobalLock(shardManagerGlobalMutex);
+    switch (req->type) {
+    case EVHTTP_REQ_PUT: {
+    	ClusterShutdownOperation * shutdownOperation = new ClusterShutdownOperation();
+    	this->stateMachine->registerOperation(shutdownOperation);
+		bmhelper_evhttp_send_reply2(req, HTTP_OK, "OK",
+				"{\"message\":\"Shutting down the cluster...\"}\n");
+        break;
+    }
+    default: {
+        bmhelper_evhttp_send_reply2(req, HTTP_BADREQUEST, "INVALID REQUEST",
+                "{\"error\":\"The request has an invalid or missing argument. See Srch2 API documentation for details.\"}");
+        Logger::error(
+                "The request has an invalid or missing argument. See Srch2 API documentation for details");
+        break;
+    }
+    };
+}
+
+void ShardManager::_shutdown(){
+	Logger::console("Shutting down the instance ...");
+	raise(SIGTERM);
+//	exit(0);
+	//TODO
 }
 
 // sends this sharding notification to destination using TM
@@ -568,6 +628,128 @@ bool ShardManager::resolveMessage(Message * msg, NodeId senderNode){
 			delete commitAckNotif;
 			break;
 		}
+		case ShardingSaveDataMessageType:
+		{
+			SaveDataNotification * saveDataNotif =
+					ShardingNotification::deserializeAndConstruct<SaveDataNotification>(Message::getBodyPointerFromMessagePointer(msg));
+			Logger::debug("%s | .", saveDataNotif->getDescription().c_str());
+			if(saveDataNotif->isBounced()){
+				saveBouncedNotification(saveDataNotif);
+				Logger::debug("==> Bounced.");
+				break;
+			}
+			if(! isJoined()){
+				bounceNotification(saveDataNotif);
+				Logger::debug("==> Not joined yet. Bounced.");
+				break;
+			}
+
+			this->resolve(saveDataNotif);
+			delete saveDataNotif;
+			break;
+		}
+		case ShardingSaveDataACKMessageType:
+		{
+			SaveDataNotification::ACK * saveDataNotif =
+					ShardingNotification::deserializeAndConstruct<SaveDataNotification::ACK>(Message::getBodyPointerFromMessagePointer(msg));
+			Logger::debug("%s | .", saveDataNotif->getDescription().c_str());
+			if(saveDataNotif->isBounced()){
+				Logger::debug("==> Bounced.");
+				ASSERT(false);
+				delete saveDataNotif;
+				break;
+			}
+
+			this->stateMachine->handle(saveDataNotif);
+			delete saveDataNotif;
+			break;
+		}
+		case ShardingSaveMetadataMessageType:
+		{
+			SaveMetadataNotification * saveMetadataNotif =
+					ShardingNotification::deserializeAndConstruct<SaveMetadataNotification>(Message::getBodyPointerFromMessagePointer(msg));
+			Logger::debug("%s | .", saveMetadataNotif->getDescription().c_str());
+			if(saveMetadataNotif->isBounced()){
+				saveBouncedNotification(saveMetadataNotif);
+				Logger::debug("==> Bounced.");
+				break;
+			}
+			if(! isJoined()){
+				bounceNotification(saveMetadataNotif);
+				Logger::debug("==> Not joined yet. Bounced.");
+				break;
+			}
+
+			this->resolve(saveMetadataNotif);
+			delete saveMetadataNotif;
+			break;
+		}
+		case ShardingSaveMetadataACKMessageType:
+		{
+			SaveMetadataNotification::ACK * saveMetadataNotif =
+					ShardingNotification::deserializeAndConstruct<SaveMetadataNotification::ACK>(Message::getBodyPointerFromMessagePointer(msg));
+			Logger::debug("%s | .", saveMetadataNotif->getDescription().c_str());
+			if(saveMetadataNotif->isBounced()){
+				Logger::debug("==> Bounced.");
+				ASSERT(false);
+				delete saveMetadataNotif;
+				break;
+			}
+
+			this->stateMachine->handle(saveMetadataNotif);
+			delete saveMetadataNotif;
+			break;
+		}
+		case ShardingMergeMessageType:
+		{
+			MergeNotification * mergeNotification =
+					ShardingNotification::deserializeAndConstruct<MergeNotification>(Message::getBodyPointerFromMessagePointer(msg));
+			if(mergeNotification->isBounced()){
+				saveBouncedNotification(mergeNotification);
+				Logger::debug("==> Bounced.");
+				break;
+			}
+			if(! isJoined()){
+				bounceNotification(mergeNotification);
+				Logger::debug("==> Not joined yet. Bounced.");
+				break;
+			}
+			this->resolve(mergeNotification);
+			delete mergeNotification;
+			break;
+		}
+		case ShardingMergeACKMessageType:
+		{
+			MergeNotification::ACK * mergeNotification =
+					ShardingNotification::deserializeAndConstruct<MergeNotification::ACK>(Message::getBodyPointerFromMessagePointer(msg));
+			if(mergeNotification->isBounced()){
+				Logger::debug("==> Bounced.");
+				ASSERT(false);
+				delete mergeNotification;
+				break;
+			}
+
+			this->stateMachine->handle(mergeNotification);
+			delete mergeNotification;
+			break;
+		}
+		case ShardingShutdownMessageType:
+		{
+			ShutdownNotification * shutdownNotification =
+					ShardingNotification::deserializeAndConstruct<ShutdownNotification>(Message::getBodyPointerFromMessagePointer(msg));
+			if(shutdownNotification->isBounced()){
+				saveBouncedNotification(shutdownNotification);
+				Logger::debug("==> Bounced.");
+				break;
+			}
+			if(! isJoined()){
+				bounceNotification(shutdownNotification);
+				Logger::debug("==> Not joined yet. Bounced.");
+				break;
+			}
+			this->_shutdown();
+			break;
+		}
 		default:
 			break;
 	}
@@ -650,6 +832,75 @@ void ShardManager::resolveSMNodeFailure(const NodeId failedNodeId){
 	Logger::debug("Node %d failure. Processed.", failedNodeId);
 
 }
+
+void ShardManager::resolve(SaveDataNotification * saveDataNotif){
+	// Move on all local shards and save them on the disk.
+	Cluster_Writeview * writeview = this->getWriteview();
+	for(map<ClusterShardId, LocalPhysicalShard >::iterator localClusterShardItr = writeview->localClusterDataShards.begin();
+			localClusterShardItr != writeview->localClusterDataShards.end(); ++localClusterShardItr){
+		localClusterShardItr->second.server->getIndexer()->save();
+	}
+
+	for(map<unsigned,  LocalPhysicalShard >::iterator localNodeShardItr = writeview->localNodeDataShards.begin();
+			localNodeShardItr != writeview->localNodeDataShards.end(); ++localNodeShardItr){
+		localNodeShardItr->second.server->getIndexer()->save();
+	}
+
+	// reply ack
+	SaveDataNotification::ACK * ack = new SaveDataNotification::ACK();
+	ack->setSrc(NodeOperationId(ShardManager::getCurrentNodeId()));
+	ack->setDest(saveDataNotif->getSrc());
+	if(ack->getDest().nodeId == ShardManager::getCurrentNodeId()){
+		this->stateMachine->handle(ack);
+	}else{
+		send(ack);
+	}
+	delete ack;
+}
+
+void ShardManager::resolve(SaveMetadataNotification * saveDataNotif){
+
+	this->metadataManager->resolve(this->getConfigManager(), saveDataNotif);
+
+	// reply ack
+	SaveMetadataNotification::ACK * ack = new SaveMetadataNotification::ACK();
+	ack->setSrc(NodeOperationId(ShardManager::getCurrentNodeId()));
+	ack->setDest(saveDataNotif->getSrc());
+	if(ack->getDest().nodeId == ShardManager::getCurrentNodeId()){
+		this->stateMachine->handle(ack);
+	}else{
+		send(ack);
+	}
+	delete ack;
+}
+
+void ShardManager::resolve(MergeNotification * mergeNotification){
+	//TODO : merge can be unsuccessful. What should we do in that case ?
+	// Move on all local shards and merge them.
+	Cluster_Writeview * writeview = this->getWriteview();
+	for(map<ClusterShardId, LocalPhysicalShard >::iterator localClusterShardItr = writeview->localClusterDataShards.begin();
+			localClusterShardItr != writeview->localClusterDataShards.end(); ++localClusterShardItr){
+		localClusterShardItr->second.server->getIndexer()->merge();
+	}
+
+	for(map<unsigned,  LocalPhysicalShard >::iterator localNodeShardItr = writeview->localNodeDataShards.begin();
+			localNodeShardItr != writeview->localNodeDataShards.end(); ++localNodeShardItr){
+		localNodeShardItr->second.server->getIndexer()->merge();
+	}
+
+
+	// reply ack
+	MergeNotification::ACK * ack = new MergeNotification::ACK();
+	ack->setSrc(NodeOperationId(ShardManager::getCurrentNodeId()));
+	ack->setDest(mergeNotification->getSrc());
+	if(ack->getDest().nodeId == ShardManager::getCurrentNodeId()){
+		stateMachine->handle(ack);
+	}else{
+		send(ack);
+	}
+	delete ack;
+}
+
 
 
 void * ShardManager::periodicWork(void *args) {

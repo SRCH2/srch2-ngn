@@ -312,6 +312,7 @@ TransportManager::TransportManager(vector<struct event_base *>& bases, Transport
 	shutDown = false;
 	discoveryHandler = NULL;
 	migrationManagerHandler = NULL;
+	this->eventAddedFlag = false;
 	validateTransportConfig(config);
 	transportConfig = config;
 	transportConfig.print();
@@ -536,6 +537,7 @@ void TransportManager::registerEventListenerForSocket(int fd, Connection *conn) 
 		new (cb_ptr) TransportCallback(this, conn, ev, *base);
 		event_add(ev, NULL);
 	}
+	this->eventAddedFlag = true;
 }
 
 MessageID_t& TransportManager::getCurrentMessageId() {

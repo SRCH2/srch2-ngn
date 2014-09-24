@@ -1,9 +1,9 @@
 
 #include "NewNodeJoinOperation.h"
-#include "../metadata_manager/MetadataInitializer.h"
 #include "NewNodeLockOperation.h"
-#include "../CommitOperation.h"
-#include "../SerialLockOperation.h"
+#include "../metadata_manager/MetadataInitializer.h"
+#include "../atomic_operations/AtomicCommitOperation.h"
+#include "../atomic_operations/AtomicLockOperation.h"
 
 #include "core/util/Logger.h"
 
@@ -217,7 +217,7 @@ OperationState * NewNodeJoinOperation::commit(){
 			new NodeAddChange(ShardManager::getCurrentNodeId(),localClusterShards, nodeShardIds);
 	vector<NodeId> olderNodes;
 	getOlderNodesList(olderNodes);
-	CommitOperation * commitOperation = new CommitOperation(this->getOperationId(), nodeAddChange, olderNodes);
+	AtomicCommitOperation * commitOperation = new AtomicCommitOperation(this->getOperationId(), nodeAddChange, olderNodes);
 	this->commitOperation = OperationState::startOperation(commitOperation);
 	if(this->commitOperation == NULL){
 		return release();
@@ -265,7 +265,7 @@ OperationState * NewNodeJoinOperation::release(){
 	this->getOlderNodesList(oldNodes);
 	oldNodes.push_back(writeview->currentNodeId);
 
-	SerialLockOperation * releaseOperation = new SerialLockOperation(this->getOperationId(), oldNodes, resourceLockRequest);
+	AtomicLockOperation * releaseOperation = new AtomicLockOperation(this->getOperationId(), oldNodes, resourceLockRequest);
 	this->releaseOperation = OperationState::startOperation(releaseOperation);
 	if(releaseOperation == NULL){
 		return finalizeJoin();

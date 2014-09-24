@@ -1,12 +1,12 @@
 #ifndef __SHARDING_SHARDING_NOTIFICATION_H__
 #define __SHARDING_SHARDING_NOTIFICATION_H__
 
-#include "core/util/Assert.h"
 
 #include "sharding/configuration/ShardingConstants.h"
 #include "sharding/transport/Message.h"
 #include "sharding/transport/MessageAllocator.h"
 #include "migration/MigrationManager.h"
+#include "core/util/Assert.h"
 
 namespace srch2is = srch2::instantsearch;
 using namespace srch2is;
@@ -126,6 +126,66 @@ public:
 private:
 	ShardMigrationStatus status;
 
+};
+
+
+
+class SaveDataNotification : public ShardingNotification {
+public:
+	ShardingMessageType messageType() const{
+		return ShardingSaveDataMessageType;
+	}
+
+public:
+
+	class ACK : public ShardingNotification {
+	public:
+		ShardingMessageType messageType() const{
+			return ShardingSaveDataACKMessageType;
+		}
+	};
+
+};
+
+
+
+class SaveMetadataNotification : public ShardingNotification {
+public:
+	ShardingMessageType messageType() const{
+		return ShardingSaveMetadataMessageType;
+	}
+
+public:
+
+	class ACK : public ShardingNotification {
+	public:
+		ShardingMessageType messageType() const{
+			return ShardingSaveMetadataACKMessageType;
+		}
+	};
+
+};
+
+class MergeNotification : public ShardingNotification {
+public:
+	ShardingMessageType messageType() const{
+		return ShardingMergeMessageType;
+	}
+public:
+	class ACK : public ShardingNotification{
+	public:
+		ShardingMessageType messageType() const{
+			return ShardingMergeACKMessageType;
+		}
+	};
+};
+
+
+class ShutdownNotification : public ShardingNotification {
+public:
+	ShardingMessageType messageType() const {
+		return ShardingShutdownMessageType;
+	}
 };
 
 }

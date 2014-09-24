@@ -3,16 +3,19 @@
 
 #include "core/util/Assert.h"
 
+
+#include "./notifications/LockingNotification.h"
+#include "../transport/Message.h"
+#include "../transport/TransportManager.h"
+#include "../transport/CallbackHandler.h"
+#include "../configuration/ConfigManager.h"
+#include "../configuration/ShardingConstants.h"
+#include "../processor/ProcessorUtil.h"
+
 #include <boost/thread/mutex.hpp>
 #include <boost/thread/locks.hpp>
 #include "boost/shared_ptr.hpp"
 
-#include "sharding/transport/Message.h"
-#include "sharding/transport/TransportManager.h"
-#include "sharding/configuration/ConfigManager.h"
-#include "sharding/configuration/ShardingConstants.h"
-#include "sharding/transport/CallbackHandler.h"
-#include "notifications/LockingNotification.h"
 
 namespace srch2is = srch2::instantsearch;
 using namespace srch2is;
@@ -45,6 +48,10 @@ public:
 	ShardManager(ConfigManager * configManager, ResourceMetadataManager * metadataManager);
 	~ShardManager();
 	void start();
+	void save(evhttp_request *req);
+	void shutdown(evhttp_request *req);
+
+	void _shutdown();
 
 	// sends this sharding notification to destination using TM
 	bool send(ShardingNotification * notification);
@@ -97,7 +104,10 @@ public:
 	 */
 	void resolveSMNodeFailure(const NodeId failedNodeId);
 
-	// getter and utility functions
+	void resolve(SaveDataNotification * saveDataNotif);
+	void resolve(SaveMetadataNotification * saveDataNotif);
+	void resolve(MergeNotification * mergeNotification);
+
 	TransportManager * getTransportManager() const;
 	ConfigManager * getConfigManager() const;
 	ResourceMetadataManager * getMetadataManager() const;
@@ -158,6 +168,7 @@ private:
 
 	void saveBouncedNotification(ShardingNotification * notif);
 	void bounceNotification(ShardingNotification * notif);
+
 
 };
 

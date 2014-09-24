@@ -73,6 +73,13 @@ enum ShardingMessageType{
     ShardingCopyToMeMessageType,
     ShardingCommitMessageType,
     ShardingCommitACKMessageType,
+    ShardingSaveDataMessageType,
+    ShardingSaveDataACKMessageType,
+    ShardingSaveMetadataMessageType,
+    ShardingSaveMetadataACKMessageType,
+    ShardingMergeMessageType,
+    ShardingShutdownMessageType,
+    ShardingMergeACKMessageType,
     // just notifications
     ShardingMMNotificationMessageType,
     ShardingNodeFailureNotificationMessageType
@@ -116,6 +123,7 @@ enum PortType_t {
 	ResetLoggerPort,
 	CommitPort,
 	MergePort,
+	ShutdownPort,
 	EndOfPortType // stop value - not valid (also used to indicate all/default ports)
 };
 

@@ -1,10 +1,10 @@
 #ifndef __SHARDING_SHARDING_RESOURCE_METADATA_CHANGE_H__
 #define __SHARDING_SHARDING_RESOURCE_METADATA_CHANGE_H__
 
-#include "core/util/Assert.h"
-#include "sharding/configuration/ShardingConstants.h"
 #include "Shard.h"
 #include "Cluster_Writeview.h"
+#include "../../configuration/ShardingConstants.h"
+#include "core/util/Assert.h"
 
 namespace srch2is = srch2::instantsearch;
 using namespace srch2is;

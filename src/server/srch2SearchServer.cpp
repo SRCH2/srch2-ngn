@@ -83,6 +83,9 @@ pthread_t *threadsToHandleInternalRequests = NULL;
 unsigned int MAX_THREADS = 0;
 unsigned int MAX_INTERNAL_THREADS = 0;
 srch2http::TransportManager *transportManager;
+vector<struct event_base *> evBasesForInternalRequests;
+vector<struct event_base *> evBasesForExternalRequests;
+
 // These are global variables that store host and port information for srch2 engine
 unsigned short globalDefaultPort;
 const char *globalHostName;
@@ -195,6 +198,7 @@ static const struct portMap_t {
 		{ srch2http::ResetLoggerPort, "resetlogger" },
 		{ srch2http::CommitPort, "commit" },
 		{ srch2http::MergePort, "merge" },
+		{ srch2http::ShutdownPort, "shutdown" },
 		{ srch2http::EndOfPortType, NULL },
 };
 
@@ -366,7 +370,8 @@ static void cb_save(evhttp_request *req, void *arg) {
 		return;
 
 	try {
-		dpExternalAndCoreId->dpExternal->externalSerializeIndexCommand(req, dpExternalAndCoreId->coreId);
+//		dpExternalAndCoreId->dpExternal->externalSerializeIndexCommand(req, dpExternalAndCoreId->coreId);
+		srch2http::ShardManager::getShardManager()->save(req);
 	} catch (exception& e) {
 		// exception caught
 		Logger::error(e.what());
@@ -408,6 +413,29 @@ static void cb_resetLogger(evhttp_request *req, void *arg) {
 
 	try {
 		dpExternalAndCoreId->dpExternal->externalResetLogCommand(req, dpExternalAndCoreId->coreId);
+	} catch (exception& e) {
+		// exception caught
+		Logger::error(e.what());
+		srch2http::HTTPRequestHandler::handleException(req);
+	}
+}
+
+/**
+ *  'cluster shutdown' callback function
+ *  @param req evhttp request object
+ *  @param arg optional argument
+ */
+static void cb_shutdown(evhttp_request *req, void *arg) {
+
+	evhttp_add_header(req->output_headers, "Content-Type",
+			"application/json; charset=UTF-8");
+
+	if(!checkOperationPermission(req, 0, srch2http::ShutdownPort))
+		return;
+
+	try {
+//		dpExternalAndCoreId->dpExternal->externalResetLogCommand(req, dpExternalAndCoreId->coreId);
+		srch2http::ShardManager::getShardManager()->shutdown(req);
 	} catch (exception& e) {
 		// exception caught
 		Logger::error(e.what());
@@ -539,10 +567,10 @@ void* dispatch(void *arg) {
 }
 
 void* dispatchInternalEvent(void *arg) {
-	while(true) {
-		event_base_dispatch((struct event_base*) arg);
+	while(! transportManager->isEventAdded()) {
 		sleep(1);
 	}
+	event_base_dispatch((struct event_base*) arg);
 	return NULL;
 }
 
@@ -616,21 +644,21 @@ void makeHttpRequest(){
 static void killServer(int signal) {
     Logger::console("Stopping server.");
     for (int i = 0; i < MAX_THREADS; i++) {
-#ifndef ANDROID
-    	// Android thread implementation does not have pthread_cancel()
-    	// use pthread_kill instead.
-    	pthread_cancel(threadsToHandleExternalRequests[i]);
-#endif
+    	event_base_loopbreak(evBasesForExternalRequests[i]);
     }
+
+    // The one line below breaks the pseudo dispatch loop in "dispatchInternalEvent"
+    transportManager->setEventAdded();
+
     for (int i = 0; i < MAX_INTERNAL_THREADS; i++) {
-#ifndef ANDROID
-    	pthread_cancel(threadsToHandleInternalRequests[i]);
-#endif
+    	event_base_loopbreak(evBasesForInternalRequests[i]);
     }
+
     for(srch2http::ConnectionMap::iterator conn =
         transportManager->getConnectionMap().begin();
         conn != transportManager->getConnectionMap().end(); ++conn) {
-      close(conn->second.fd);
+    	//TODO: let the read/write on socket complete.
+    	close(conn->second.fd);
     }
 #ifndef ANDROID
     pthread_cancel(transportManager->getListeningThread());
@@ -640,15 +668,6 @@ static void killServer(int signal) {
     exit(0);
 #endif
 
-#ifdef __MACH__
-	/*
-	 *  In MacOS, pthread_cancel could not cancel a thread when the thread is executing kevent syscall
-	 *  which is a blocking call. In other words, our engine threads are not cancelled while they
-	 *  are waiting for http requests. So we send a dummy http request to our own engine from within
-	 *  the engine. This request allows the threads to come out of blocking syscall and get killed.
-	 */
-	makeHttpRequest();
-#endif
 }
 
 static int getHttpServerMetadata(ConfigManager *config, PortSocketMap_t *globalPortSocketMap) {
@@ -752,6 +771,7 @@ static const struct UserRequestAttributes_t {
 		{ "/save", srch2http::SavePort, cb_save },
 		{ "/export", srch2http::ExportPort, cb_export },
 		{ "/resetLogger", srch2http::ResetLoggerPort, cb_resetLogger },
+		{ "/shutdown", srch2http::ShutdownPort, cb_shutdown },
 		{ NULL, srch2http::EndOfPortType, NULL }
 };
 typedef unsigned CoreId;//TODO is it needed ? if not let's delete it.
@@ -921,8 +941,6 @@ int main(int argc, char** argv) {
 
 
 	// all libevent base objects (one per thread)
-	vector<struct event_base *> evBasesForExternalRequests;
-	vector<struct event_base *> evBasesForInternalRequests;
 	vector<struct evhttp *> evServersForExternalRequests;
 	// map of all ports across all cores to shared socket file descriptors
 	PortSocketMap_t globalPortSocketMap;

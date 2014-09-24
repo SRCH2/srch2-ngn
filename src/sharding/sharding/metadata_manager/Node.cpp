@@ -1,6 +1,6 @@
 
 #include "Node.h"
-#include "src/core/util/SerializationHelper.h"
+#include "core/util/SerializationHelper.h"
 #include <sstream>
 
 using namespace std;

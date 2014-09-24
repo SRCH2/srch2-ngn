@@ -3,7 +3,7 @@
 
 #include "core/util/Assert.h"
 #include "core/util/SerializationHelper.h"
-#include "sharding/sharding/ShardManager.h"
+#include "../ShardManager.h"
 
 using namespace std;
 namespace srch2is = srch2::instantsearch;

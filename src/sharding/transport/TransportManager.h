@@ -117,6 +117,10 @@ public:
 
 	const vector<string>& getAllInterfacesIpAddress() { return allInterfaceIpAddresses; };
 
+
+	bool isEventAdded() const{ return eventAddedFlag; }
+	void setEventAdded() { eventAddedFlag = true; }
+
 private:
 	/*
 	 *  The function dispatches messages to upstream handlers.
@@ -209,6 +213,8 @@ private:
 
 	CallBackHandler * shardManagerHandler;
 
+
+	bool eventAddedFlag;
 
 	/*
 	 *  Stores the default socket read buffer size
