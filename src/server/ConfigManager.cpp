@@ -1150,8 +1150,8 @@ void ConfigManager::parseDataFieldSettings(const xml_node &parentNode,
 
     /*
      * <access-control>
-     *		<attribute-acl  datafile=�� />
-     *		<record-acl  datafile=�� />
+     *		<attribute-acl  datafile="" />
+     *		<record-acl  datafile="" />
 	 * </access-control>
      */
     coreInfo->hasRecordAcl = false;

@@ -450,6 +450,9 @@ void QueryParser::accessControlParser(){
 
 /*
  *  check to see if a flag to turn off attribute acl exists in parameters.
+ *  sample query
+ *  1. search?q=attr1:keyword&attributeAcl=off  : attribute ACL is OFF only during the search.
+ *  2. search?q=attr1:keyword&attributeAcl=on   : (Default) attribute ACL is ON during the search.
  */
 void QueryParser::attributeAclFlagParser(){
 	/*

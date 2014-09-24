@@ -438,25 +438,41 @@ bool  AttributeAccessControl::processAclRequest( vector<string>& fieldTokens,
 void AttributeAccessControl::replaceFromAcl(vector<string>& roleValueTokens, vector<unsigned>& searchableAttrIdsList,
 		vector<unsigned>& refiningAttrIdsList) {
 	AclWriteLock lock(attrAclLock);  // X-lock
-	// replace operation is part append and part delete.
+	// replace operation consist of two steps.
 	// 1. delete attribute from all roldIds present in the map but are not in the input roleIds
 	// 2. append attributes for the input roleIds
 	AclMapIter iter = attributeAclMap.begin();
 	while(iter != attributeAclMap.end()) {
-		vector<unsigned> *attrListPtr = new vector<unsigned>();
-		attrListPtr->reserve(searchableAttrIdsList.size() + iter->second.searchableAttrList->size());
-		std::set_difference(iter->second.searchableAttrList->begin(), iter->second.searchableAttrList->end(),
-				searchableAttrIdsList.begin(), searchableAttrIdsList.end(),
-				back_inserter(*attrListPtr));
 
-		iter->second.searchableAttrList.reset(attrListPtr);
+		// first check whether any of the input searchable attributes are present in the allowed
+		// searchable attributes for this role-id. If present delete the matching attributes using
+		// set_difference. If not present then skip.
+		vector<unsigned>::iterator matchedIter = find_first_of (iter->second.searchableAttrList->begin(), iter->second.searchableAttrList->end(),
+				searchableAttrIdsList.begin(), searchableAttrIdsList.end());
 
-		attrListPtr = new vector<unsigned>();
-		attrListPtr->reserve(refiningAttrIdsList.size() + iter->second.refiningAttrList->size());
-		std::set_difference(iter->second.refiningAttrList->begin(), iter->second.refiningAttrList->end(),
-				refiningAttrIdsList.begin(), refiningAttrIdsList.end(),
-				back_inserter(*attrListPtr));
-		iter->second.refiningAttrList.reset(attrListPtr);
+		if (matchedIter != iter->second.searchableAttrList->end()) {
+			vector<unsigned> *attrListPtr = new vector<unsigned>();
+			attrListPtr->reserve(searchableAttrIdsList.size() + iter->second.searchableAttrList->size());
+			std::set_difference(iter->second.searchableAttrList->begin(), iter->second.searchableAttrList->end(),
+					searchableAttrIdsList.begin(), searchableAttrIdsList.end(),
+					back_inserter(*attrListPtr));
+
+			iter->second.searchableAttrList.reset(attrListPtr);
+		}
+
+		// first check whether any of the input refining attributes are present in the allowed
+		// refining attributes for this role-id. If present delete the matching attributes using
+		// set_difference. If not present then skip.
+		matchedIter = find_first_of(iter->second.refiningAttrList->begin(), iter->second.refiningAttrList->end(),
+				refiningAttrIdsList.begin(), refiningAttrIdsList.end());
+		if (matchedIter != iter->second.refiningAttrList->end()) {
+			vector<unsigned> *attrListPtr = new vector<unsigned>();
+			attrListPtr->reserve(refiningAttrIdsList.size() + iter->second.refiningAttrList->size());
+			std::set_difference(iter->second.refiningAttrList->begin(), iter->second.refiningAttrList->end(),
+					refiningAttrIdsList.begin(), refiningAttrIdsList.end(),
+					back_inserter(*attrListPtr));
+			iter->second.refiningAttrList.reset(attrListPtr);
+		}
 
 		// if all the attributes are deleted then remove the acl role from map as well.
 		if (iter->second.searchableAttrList->size() == 0 && iter->second.refiningAttrList->size() == 0)
@@ -464,7 +480,8 @@ void AttributeAccessControl::replaceFromAcl(vector<string>& roleValueTokens, vec
 		else
 			++iter;
 	}
-	lock.unlock();
+	lock.unlock();  // append ACL below acquires the X lock hence unlock here to avoid deadlock.
+
 	for (unsigned i = 0; i < roleValueTokens.size(); ++i) {
 		// append to existing ACL. If acl-role is not found then add it.
 		boost::algorithm::trim(roleValueTokens[i]);
