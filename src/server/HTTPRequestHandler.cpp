@@ -1031,7 +1031,7 @@ void HTTPRequestHandler::aclModifyRecordsForRole(evhttp_request *req, Srch2Serve
 // example : Suppose we have a resource core called "product" with a primary key attribute called "pid then the query is like:
 // curl "http://localhost:8081/product/aclRecordRoleAdd" -i -X PUT -d '{"pid": "1234", "roleId": ["33", "45"]}'
 //
-void HTTPRequestHandler::aclAddRolesForRecord(evhttp_request *req, Srch2Server *server){
+void HTTPRequestHandler::aclRecordRoleReplace(evhttp_request *req, Srch2Server *server){
 	aclModifyRolesForRecord(req, server, srch2::instantsearch::Acl_Record_Add);
 }
 
@@ -1039,7 +1039,7 @@ void HTTPRequestHandler::aclAddRolesForRecord(evhttp_request *req, Srch2Server *
 // example : Suppose we have a resource core called "product" with a primary key attribute called "pid then the query is like:
 // curl "http://localhost:8081/product/aclRecordRoleAppend" -i -X PUT -d '{"pid": "1234", "roleId": ["33", "45"]}'
 //
-void HTTPRequestHandler::aclAppendRolesForRecord(evhttp_request *req, Srch2Server *server){
+void HTTPRequestHandler::aclRecordRoleAppend(evhttp_request *req, Srch2Server *server){
 	aclModifyRolesForRecord(req, server, srch2::instantsearch::Acl_Record_Append);
 }
 
@@ -1047,7 +1047,7 @@ void HTTPRequestHandler::aclAppendRolesForRecord(evhttp_request *req, Srch2Serve
 // example : Suppose we have a resource core called "product" with a primary key attribute called "pid then the query is like:
 // curl "http://localhost:8081/product/aclRecordRoleDelete" -i -X PUT -d '{"pid": "1234", "roleId": ["33", "45"]}'
 //
-void HTTPRequestHandler::aclDeleteRolesForRecord(evhttp_request *req, Srch2Server *server){
+void HTTPRequestHandler::aclRecordRoleDelete(evhttp_request *req, Srch2Server *server){
 	aclModifyRolesForRecord(req, server, srch2::instantsearch::Acl_Record_Delete);
 }
 

@@ -48,9 +48,9 @@ class HTTPRequestHandler
         static void lookupCommand(evhttp_request *req, Srch2Server *server);
         static void handleException(evhttp_request *req);
         static void attributeAclModify(evhttp_request *req, Srch2Server *server);
-        static void aclAddRolesForRecord(evhttp_request *req, Srch2Server *server);
-        static void aclAppendRolesForRecord(evhttp_request *req, Srch2Server *server);
-        static void aclDeleteRolesForRecord(evhttp_request *req, Srch2Server *server);
+        static void aclRecordRoleReplace(evhttp_request *req, Srch2Server *server);
+        static void aclRecordRoleAppend(evhttp_request *req, Srch2Server *server);
+        static void aclRecordRoleDelete(evhttp_request *req, Srch2Server *server);
         static void aclAddRecordsForRole(evhttp_request *req, Srch2Server *server);
         static void aclAppendRecordsForRole(evhttp_request *req, Srch2Server *server);
         static void aclDeleteRecordsForRole(evhttp_request *req, Srch2Server *server);

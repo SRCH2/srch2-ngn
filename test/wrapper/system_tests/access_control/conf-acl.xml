@@ -345,23 +345,6 @@
         -->
         <responseFormat>0</responseFormat>
 
-
-        <!--
-            Response Content
-            Optionl
-
-
-            Format of each json search response.
-            You should set the type by one of the following options:
-                    0: format "rid,edit_dist,matching_prefix,in_memory_record";
-                    1: format "rid,edit_dist,matching_prefix".
-                    2: format "rid,edit_dist,matching_prefix,feilds_to_return".
-            Defaults to 0
-            It is REQUIRED to set fields_to_return if search-response-format=2
-            These are attributes returned to the user.
-            For Example:
-                    <responseContent type="2">lat,lng</responseContent>
-        -->
         <responseContent type="0"></responseContent>
 
     </queryResponseWriter>

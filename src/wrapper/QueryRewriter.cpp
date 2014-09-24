@@ -279,7 +279,7 @@ void QueryRewriter::prepareFieldFilters() {
                         break;
                     }
                     unsigned id = schema.getSearchableAttributeId(*field);
-                    // if a user has specified a filtering attribute, The first check whether the
+                    // if a user has specified a filtering attribute, then first check whether the
                     // attribute acl is OFF or ON. If attribute acl is OFF then add this field to
                     // attribute filter vector. If attribute acl is ON the check whether it is present
                     // in allowed attributes list for this role-id OR it is present in non-acl attributes

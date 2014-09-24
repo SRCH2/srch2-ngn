@@ -5,31 +5,31 @@ S||core1 man 1020||
 S||core3 men 1013||1
 S||core3 repair 1006||3 8 9 6
 S||core1 test 1001||902 906 907 908 910
-C||core1||aclDeleteRolesForRecord||{"resourceId": "902", "roleId":["1001"]}
+C||core1||aclRecordRoleDelete||{"resourceId": "902", "roleId":["1001"]}
 S||core1 spider 1001||906 907 908 910
 S||core1 test 1001||906 907 908 910
 S||core1 test 1002||901 906 907
 S||core1 test 1003||901 906 907
-C||core1||aclAddRolesForRecord||{"resourceId": "906", "roleId":["1010", "1011"]}
+C||core1||aclRecordRoleReplace||{"resourceId": "906", "roleId":["1010", "1011"]}
 S||core1 test 1001||907 908 910
 S||core1 test 1002||901 907
 S||core1 test 1003||901 907
 S||core1 test 1010||905 906 908
 S||core1 test 1011||905 906 909
-C||core1||aclAddRolesForRecord||{"resourceId": "909", "roleId":["1008"]}
+C||core1||aclRecordRoleReplace||{"resourceId": "909", "roleId":["1008"]}
 S||core1 test 1011||905 906
 S||core1 spider 1012||905 910
 S||core1 special 1003||
-C||core1||aclAppendRolesForRecord||{"resourceId": "904", "roleId":["1003"]}
+C||core1||aclRecordRoleAppend||{"resourceId": "904", "roleId":["1003"]}
 S||core1 special 1003||904
-C||core1||aclAppendRolesForRecord||{"resourceId": "906", "roleId":["1003"]}
-C||core1||aclAppendRolesForRecord||{"resourceId": "908", "roleId":["1003"]}
+C||core1||aclRecordRoleAppend||{"resourceId": "906", "roleId":["1003"]}
+C||core1||aclRecordRoleAppend||{"resourceId": "908", "roleId":["1003"]}
 S||core1 test 1003||901 904 906 907 908
-C||core1||aclDeleteRolesForRecord||{"resourceId": "906", "roleId":["1003"]}
+C||core1||aclRecordRoleDelete||{"resourceId": "906", "roleId":["1003"]}
 S||core1 test 1003||901 904 907 908
 S||core1 test 1008||903 905 909
-C||core1||aclDeleteRolesForRecord||{"resourceId": "909", "roleId":["1008"]}
+C||core1||aclRecordRoleDelete||{"resourceId": "909", "roleId":["1008"]}
 S||core1 test 1008||903 905
-C||core1||aclDeleteRolesForRecord||{"resourceId": "903", "roleId":["1008"]}
-C||core1||aclDeleteRolesForRecord||{"resourceId": "905", "roleId":["1008"]}
+C||core1||aclRecordRoleDelete||{"resourceId": "903", "roleId":["1008"]}
+C||core1||aclRecordRoleDelete||{"resourceId": "905", "roleId":["1008"]}
 S||core1 test 1008||

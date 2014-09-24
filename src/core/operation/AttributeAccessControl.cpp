@@ -438,7 +438,7 @@ bool  AttributeAccessControl::processAclRequest( vector<string>& fieldTokens,
 void AttributeAccessControl::replaceFromAcl(vector<string>& roleValueTokens, vector<unsigned>& searchableAttrIdsList,
 		vector<unsigned>& refiningAttrIdsList) {
 	AclWriteLock lock(attrAclLock);  // X-lock
-	// replace operation consist of two steps.
+	// replace operation consists of two steps.
 	// 1. delete attribute from all roldIds present in the map but are not in the input roleIds
 	// 2. append attributes for the input roleIds
 	AclMapIter iter = attributeAclMap.begin();

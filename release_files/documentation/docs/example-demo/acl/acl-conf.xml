@@ -80,7 +80,6 @@
                         </fieldType>
                     </types>
 
-                    <attributeAclFile>./attribute-acl-product-user.json</attributeAclFile>
                 </schema>
                 <updatehandler>
                     <maxDocs>15000000</maxDocs>
@@ -89,7 +88,12 @@
                         <mergeEveryNSeconds>10</mergeEveryNSeconds>
                         <mergeEveryMWrites>10</mergeEveryMWrites>
                     </mergePolicy>
-                </updatehandler>
+              </updatehandler>
+
+              <access-control>
+		<record-acl  datafile="record-acl-product.json" />
+		<attribute-acl  datafile="attribute-acl-product.json" />
+              </access-control>
             </core>
 
 	    <core name="user">
@@ -148,14 +152,6 @@
                 </updatehandler>
             </core>
     </cores>
-
-    <access-controls>
-        <access-control>
-            <resourceCore>product</resourceCore>
-     	    <roleCore>user</roleCore>
-            <recordAclFile>record-acl-product-user.json</recordAclFile>
-        </access-control>
-    </access-controls>
 
     <updateLog>
         <logLevel>3</logLevel>
