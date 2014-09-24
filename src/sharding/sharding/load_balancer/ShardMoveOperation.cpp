@@ -442,6 +442,7 @@ string ShardMoveSrcOperation::getOperationStatus() const {
 		ss << releaseOperation->getOperationStatus() ;
 	}
 
+	return ss.str();
 }
 
 OperationState * ShardMoveSrcOperation::connect(){
