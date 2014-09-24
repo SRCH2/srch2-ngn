@@ -301,13 +301,12 @@ int MySQLConnector::runListener() {
         Logger::error("MYSQLCONNECTOR: Can't reposition the binary log reader");
         sleep(listenerWaitTime);
     }
-int count =0;
+
     bool quit = false;
     while (!quit) {
         //Pull events from the binlog.
         Binary_log_event *event;
         binlog.wait_for_next_event(&event);
-        printf("%d\n",count++);
         /*
          * Perform a special action based on event type.
          * This action happens after the content_handler processing the event.
@@ -321,7 +320,7 @@ int count =0;
          */
         case mysql::ROTATE_EVENT: {
             mysql::Rotate_event *rot = static_cast<mysql::Rotate_event *>(event);
-            Logger::info(
+            Logger::debug(
                     "MYSQLCONNECTOR: Event type: Rotate, filename= %s pos= %d",
                     rot->binlog_file.c_str(), rot->binlog_pos);
         }
