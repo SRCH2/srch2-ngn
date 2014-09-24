@@ -64,6 +64,9 @@ OperationState * ShardMoveOperation::handle(MoveToMeNotification::ABORT * ack){
 }
 
 OperationState * ShardMoveOperation::acquireLocks(){
+	if(lockOperation != NULL){
+		return this;
+	}
 	vector<SingleResourceLockRequest *> lockBatch;
 	vector<NodeOperationId> lockHolders;
 	lockHolders.push_back(NodeOperationId(ShardManager::getCurrentNodeId(),this->getOperationId()));
@@ -140,7 +143,9 @@ OperationState * ShardMoveOperation::handle(MMNotification * mmStatus){
 }
 
 OperationState * ShardMoveOperation::commit(){
-
+	if(commitOperation != NULL){
+		return this;
+	}
 	// prepare the shard change
 	ShardMoveChange * shardMoveChange = new ShardMoveChange(shardId, srcAddress.nodeId, ShardManager::getCurrentNodeId());
 	shardMoveChange->setPhysicalShard(physicalShard);
@@ -244,9 +249,9 @@ string ShardMoveOperation::getOperationStatus() const {
 		}else{
 
 			if(! physicalShard.server){
-				ss << "Transferred " << physicalShard.server->getIndexer()->getNumberOfDocumentsInIndex() << " records.%";
-			}else{
 				ss << "Transferring " << shardId.toString() << " failed." << "%";
+			}else{
+				ss << "Transferred " << physicalShard.server->getIndexer()->getNumberOfDocumentsInIndex() << " records.%";
 			}
 
 		}
@@ -266,6 +271,9 @@ string ShardMoveOperation::getOperationStatus() const {
 }
 
 OperationState * ShardMoveOperation::release(){
+	if(releaseOperation != NULL){
+		return this;
+	}
 	vector<SingleResourceLockRequest *> releaseBatch;
 	SingleResourceLockRequest * releaseRequest = new SingleResourceLockRequest(shardId,
 			NodeOperationId(ShardManager::getCurrentNodeId(),this->getOperationId()));
@@ -330,6 +338,9 @@ OperationState * ShardMoveSrcOperation::handle(MMNotification * mmStatus){
 }
 
 OperationState * ShardMoveSrcOperation::compensate(){
+	if(compensateOperation != NULL){
+		return this;
+	}
 	// prepare a shard assign change and commit it.
 	// prepare the shard change
 	ShardAssignChange * shardAssignChange = new ShardAssignChange(shardId, ShardManager::getCurrentNodeId(), 0);
@@ -354,6 +365,9 @@ OperationState * ShardMoveSrcOperation::handle(CommitNotification::ACK * ack){
 }
 
 OperationState * ShardMoveSrcOperation::release(){
+	if(releaseOperation != NULL){
+		return this;
+	}
 	vector<SingleResourceLockRequest *> releaseBatch;
 	SingleResourceLockRequest * releaseRequest = new SingleResourceLockRequest(shardId,
 			NodeOperationId(ShardManager::getCurrentNodeId(),this->getOperationId()));

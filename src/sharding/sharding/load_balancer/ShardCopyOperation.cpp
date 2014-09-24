@@ -37,6 +37,9 @@ OperationState * ShardCopyOperation::entry(){
 
 
 OperationState * ShardCopyOperation::acquireLocks(){
+	if(lockOperation != NULL){
+		return this;
+	}
 	vector<SingleResourceLockRequest *> lockBatch;
 	SingleResourceLockRequest * xRequest = new SingleResourceLockRequest(unassignedShardId,
 			NodeOperationId(ShardManager::getCurrentNodeId(),this->getOperationId()),
@@ -116,6 +119,9 @@ OperationState * ShardCopyOperation::handle(MMNotification * mmStatus){
 
 
 OperationState * ShardCopyOperation::commit(){
+	if(commitOperation != NULL){
+		return this;
+	}
 	// prepare the shard change
 	ShardAssignChange * shardAssignChange = new ShardAssignChange(unassignedShardId, ShardManager::getCurrentNodeId(), 0);
 	shardAssignChange->setPhysicalShard(physicalShard);
@@ -210,9 +216,9 @@ string ShardCopyOperation::getOperationStatus() const {
 			ss << "Transferring data ...%" ;
 		}else{
 			if(! physicalShard.server){
-				ss << "Transferred " << physicalShard.server->getIndexer()->getNumberOfDocumentsInIndex() << " records.%";
-			}else{
 				ss << "Transferring " << replicaShardId.toString() << " to prepare " << unassignedShardId.toString() << " failed." << "%";
+			}else{
+				ss << "Transferred " << physicalShard.server->getIndexer()->getNumberOfDocumentsInIndex() << " records.%";
 			}
 		}
 
@@ -231,6 +237,9 @@ string ShardCopyOperation::getOperationStatus() const {
 }
 
 OperationState * ShardCopyOperation::release(){
+	if(releaseOperation != NULL){
+		return this;
+	}
 	vector<SingleResourceLockRequest *> releaseBatch;
 	SingleResourceLockRequest * releaseRequest1 = new SingleResourceLockRequest(unassignedShardId,
 			NodeOperationId(ShardManager::getCurrentNodeId(),this->getOperationId()));
