@@ -119,7 +119,7 @@ bool SQLiteConnector::connectToDB() {
 
         Logger::error("SQLITECONNECTOR: Can't open database file:%s, sqlite msg: %s",
                 path.c_str(), sqlite3_errmsg(db));
-        Logger::info("SQLITECONNECTOR: trying again ...");
+        Logger::debug("SQLITECONNECTOR: trying again ...");
         sleep(listenerWaitTime);
     } while (1);
 
@@ -173,7 +173,7 @@ bool SQLiteConnector::checkTableExistence() {
         Logger::error( "SQLITECONNECTOR: SQL error %d : %s", rc, zErrMsg);
         sqlite3_free(zErrMsg);
 
-        Logger::info("SQLITECONNECTOR: trying again ...");
+        Logger::debug("SQLITECONNECTOR: trying again ...");
         sleep(listenerWaitTime);
     } while (1);
 
@@ -209,7 +209,7 @@ int SQLiteConnector::createNewIndexes() {
         Logger::error("SQLITECONNECTOR: SQL error %d : %s", rc, zErrMsg);
         sqlite3_free(zErrMsg);
 
-        Logger::info("SQLITECONNECTOR: trying again ...");
+        Logger::debug("SQLITECONNECTOR: trying again ...");
         sleep(listenerWaitTime);
     } while (1);
 
@@ -258,7 +258,7 @@ int SQLiteConnector::runListener() {
     Json::Value record;
     Json::FastWriter writer;
 
-    Logger::info("SQLITECONNECTOR: waiting for updates ...");
+    Logger::debug("SQLITECONNECTOR: waiting for updates ...");
     bool fatal_error = false;
     do {
         /*
@@ -337,7 +337,7 @@ int SQLiteConnector::runListener() {
                      */
                     std::string jsonString = writer.write(record);
 
-                    Logger::info("SQLITECONNECTOR: Processing %s ", jsonString.c_str());
+                    Logger::debug("SQLITECONNECTOR: Processing %s ", jsonString.c_str());
 
                     if (strcmp(op, "i") == 0) {
                         serverHandle->insertRecord(jsonString);
@@ -387,7 +387,7 @@ int SQLiteConnector::runListener() {
                 this->serverHandle->saveChanges();
                 deleteProcessedLog(lastAccessedLogRecordTime);
                 saveLastAccessedLogRecordTime(lastAccessedLogRecordTime);
-                Logger::info("SQLITECONNECTOR: waiting for updates ...");
+                Logger::debug("SQLITECONNECTOR: waiting for updates ...");
             }
             sleep(listenerWaitTime);
         }
@@ -395,7 +395,7 @@ int SQLiteConnector::runListener() {
             break;
         }
 
-        Logger::info("SQLITECONNECTOR: trying again ...");
+        Logger::debug("SQLITECONNECTOR: trying again ...");
         sleep(listenerWaitTime);
     } while (1);
 
@@ -445,11 +445,11 @@ bool SQLiteConnector::createLogTableIfNotExistence() {
             return true;
         }
 
-        Logger::info("SQLITECONNECTOR: trying again ...");
+        Logger::debug("SQLITECONNECTOR: trying again ...");
         sleep(listenerWaitTime);
     } while (1);
 
-    Logger::info("SQLITECONNECTOR: Create log table %s failed.",
+    Logger::error("SQLITECONNECTOR: Create log table %s failed.",
             LOG_TABLE_NAME.c_str());
     return false;
 }
@@ -488,7 +488,7 @@ bool SQLiteConnector::populateTableSchema() {
 
         Logger::error("SQLITECONNECTOR: SQL error %d : %s", rc, zErrMsg);
         sqlite3_free(zErrMsg);
-        Logger::info("SQLITECONNECTOR: trying again ...");
+        Logger::debug("SQLITECONNECTOR: trying again ...");
         sleep(listenerWaitTime);
     } while (1);
 
@@ -552,7 +552,7 @@ bool SQLiteConnector::createPreparedStatement() {
         }
         Logger::error( "SQLITECONNECTOR: SQL error %d : %s", rc,
                 sqlite3_errmsg(db));
-        Logger::info("SQLITECONNECTOR: trying again ...");
+        Logger::debug("SQLITECONNECTOR: trying again ...");
         sleep(listenerWaitTime);
     } while (1);
 
@@ -569,7 +569,7 @@ bool SQLiteConnector::createPreparedStatement() {
         }
         Logger::error("SQLITECONNECTOR: SQL error %d : %s", rc,
                 sqlite3_errmsg(db));
-        Logger::info("SQLITECONNECTOR: trying again ...");
+        Logger::debug("SQLITECONNECTOR: trying again ...");
         sleep(listenerWaitTime);
     } while (1);
 
@@ -630,7 +630,7 @@ bool SQLiteConnector::createTriggerIfNotExistence() {
             break;
         }
 
-        Logger::info("SQLITECONNECTOR: trying again ...");
+        Logger::debug("SQLITECONNECTOR: trying again ...");
         sleep(listenerWaitTime);
     } while (1);
 
@@ -665,7 +665,7 @@ bool SQLiteConnector::createTriggerIfNotExistence() {
             break;
         }
 
-        Logger::info("SQLITECONNECTOR: trying again ...");
+        Logger::debug("SQLITECONNECTOR: trying again ...");
         sleep(listenerWaitTime);
     } while (1);
 
@@ -699,7 +699,7 @@ bool SQLiteConnector::createTriggerIfNotExistence() {
             break;
         }
 
-        Logger::info("SQLITECONNECTOR: trying again ...");
+        Logger::debug("SQLITECONNECTOR: trying again ...");
         sleep(listenerWaitTime);
     } while (1);
 

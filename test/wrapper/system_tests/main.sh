@@ -399,35 +399,13 @@ test_case "validate json response" "python ./json_response/json_response_format_
 
 test_case "test Chinese" "python ./chinese/chinese_analyzer.py $SRCH2_ENGINE"
 
-if [ $os != "$macName" ];then
-    test_case "high_insert" "./high_insert_test/autotest.sh $SRCH2_ENGINE" 
-else
-    echo "-- IGNORING high_insert test on $macName" >> ${output}
-fi
+sleep 3
 
-# server is a little slow to exit for reset_logger, causing the server in statemedia's first test (write_correctness)
-# to fail to bind the port, hanging the test script, so wait just a sec here
-sleep 2
-rm -rf data/tests_used_for_statemedia
-if [ $HAVE_NODE -gt 0 ]; then
-
-    if [ $HAVE_RUBY -eq 0 ]; then
-	echo "-- ruby NOT INSTALLED - SKIPPING large_insertion component of ${test_id}" >> ${output}
-    fi
-
-    if [ `uname -s` != 'Darwin' ]; then
-        test_case "tests_used_for_statemedia" "NODECMD=${NODE_CMD:-node} ./tests_used_for_statemedia/autotest.sh $SRCH2_ENGINE" 
-    else
-        echo "-- IGNORING $test_id on MacOS"
-    fi
-else
-    echo "-- node.js NOT INSTALLED - SKIPPING: ${test_id}" >> ${output}
-fi
-# TODO - hack until we figure out why tests_used_for_statemedia/large_insertion_test/large_insertion_test.rb
-# won't run and tests_used_for_statemedia/update_endpoint_test
-#echo "-- IGNORING FAILURE: $test_id" >> ${output}
-rm -rf data/ *.idx
-
+test_case "adapter_mysql" "python ./adapter_mysql/adapter_mysql.py $SRCH2_ENGINE \
+    ./adapter_sqlite/testCreateIndexes_sql.txt ./adapter_sqlite/testCreateIndexes.txt \
+    ./adapter_sqlite/testRunListener_sql.txt ./adapter_sqlite/testRunListener.txt \
+    ./adapter_sqlite/testOfflineLog_sql.txt ./adapter_sqlite/testOfflineLog.txt" \
+    255 "-- SKIPPED: Cannot connect to the MySQL. Check if MySQL is installed."
 
 rm -rf data/sqlite_data
 rm -rf ./adapter_sqlite/srch2Test.db
@@ -442,6 +420,14 @@ test_case "adapter_sqlite" "python ./adapter_sqlite/adapter_sqlite.py $SRCH2_ENG
 rm -rf data/sqlite_data
 rm -rf ./adapter_sqlite/srch2Test.db
 
+# The following cases may not run on Mac, so we put them to the end
+
+if [ $os != "$macName" ];then
+    test_case "high_insert" "./high_insert_test/autotest.sh $SRCH2_ENGINE" 
+else
+    echo "-- IGNORING high_insert test on $macName" >> ${output}
+fi
+
 sleep 3
 
 test_case "adapter_mongo" "python ./adapter_mongo/MongoTest.py $SRCH2_ENGINE \
@@ -449,13 +435,28 @@ test_case "adapter_mongo" "python ./adapter_mongo/MongoTest.py $SRCH2_ENGINE \
     Check instructions in the file db_connectors/mongo/readme.txt. "
 rm -rf data/mongodb_data
 
-test_case "adapter_mysql" "python ./adapter_mysql/adapter_mysql.py $SRCH2_ENGINE \
-    ./adapter_sqlite/testCreateIndexes_sql.txt ./adapter_sqlite/testCreateIndexes.txt \
-    ./adapter_sqlite/testRunListener_sql.txt ./adapter_sqlite/testRunListener.txt \
-    ./adapter_sqlite/testOfflineLog_sql.txt ./adapter_sqlite/testOfflineLog.txt" \
-    255 "-- SKIPPED: Cannot connect to the MySQL. Check if MySQL is installed."
+# server is a little slow to exit for reset_logger, causing the server in statemedia's first test (write_correctness)
+# to fail to bind the port, hanging the test script, so wait just a sec here
+sleep 2
+rm -rf data/tests_used_for_statemedia
+if [ $HAVE_NODE -gt 0 ]; then
 
-sleep 3
+    if [ $HAVE_RUBY -eq 0 ]; then
+	echo "-- ruby NOT INSTALLED - SKIPPING large_insertion component of ${test_id}" >> ${output}
+    fi
+
+    if [ `uname -s` != 'Darwin' ]; then
+        test_case "tests_used_for_statemedia" "NODECMD=${NODE_CMD:-node} ./tests_used_for_statemedia/autotest.sh $SRCH2_ENGINE" 
+    else
+        echo "-- IGNORING tests_used_for_statemedia on MacOS"
+    fi
+else
+    echo "-- node.js NOT INSTALLED - SKIPPING: ${test_id}" >> ${output}
+fi
+# TODO - hack until we figure out why tests_used_for_statemedia/large_insertion_test/large_insertion_test.rb
+# won't run and tests_used_for_statemedia/update_endpoint_test
+#echo "-- IGNORING FAILURE: $test_id" >> ${output}
+rm -rf data/ *.idx
 
 # clear the output directory. First make sure that we are in correct directory
 if [ "$(pwd)" = "$SYSTEM_TEST_DIR" ]; then

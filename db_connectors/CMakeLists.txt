@@ -62,7 +62,7 @@ IF(NOT ANDROID)
     ELSE()
         set(MONGO_CLIENT_LIBRARY ${CMAKE_SOURCE_DIR}/../thirdparty/mongo-cxx-driver/mongo-cxx-driver/build/use-system-boost/libmongoclient.a)
     ENDIF()
-        
+    
     SET(Boost_USE_STATIC_LIBS ON)
     SET(Boost_USE_MULTITHREAD ON)
     FIND_PACKAGE( Boost COMPONENTS program_options system filesystem thread REQUIRED )
@@ -136,31 +136,31 @@ ENDIF()
 #
 
 IF(NOT ANDROID)
-	FILE(GLOB_RECURSE MYSQL_CONNECTOR_SRC RELATIVE ${CMAKE_CURRENT_SOURCE_DIR} "mysql/*.cpp" "util/*.cpp" "../src/core/util/Logger.cpp")
+    FILE(GLOB_RECURSE MYSQL_CONNECTOR_SRC RELATIVE ${CMAKE_CURRENT_SOURCE_DIR} "mysql/*.cpp" "util/*.cpp" "../src/core/util/Logger.cpp")
 
-	IF(MAC_OS)
-    	SET (CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -stdlib=libstdc++")	
+    IF(MAC_OS)
+        SET (CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -stdlib=libstdc++")	
     ENDIF() 
 
-	INCLUDE_DIRECTORIES(
-    	${CMAKE_SOURCE_DIR}/mysql/
-    	${CMAKE_SOURCE_DIR}/../src/adapter/
-    	${CMAKE_SOURCE_DIR}/../thirdparty/json/jsoncpp-src/include
-    	${CMAKE_SOURCE_DIR}/util/
-    	${CMAKE_SOURCE_DIR}/../thirdparty/mysql-connector-c++/mysql-replication-listener/include
-    	${CMAKE_SOURCE_DIR}/../thirdparty/mysql-connector-c++/mysql-connector-c++/build/include
-    	/usr/include/mysql/
-	)
+    INCLUDE_DIRECTORIES(
+        ${CMAKE_SOURCE_DIR}/mysql/
+        ${CMAKE_SOURCE_DIR}/../src/adapter/
+        ${CMAKE_SOURCE_DIR}/../thirdparty/json/jsoncpp-src/include
+        ${CMAKE_SOURCE_DIR}/util/
+        ${CMAKE_SOURCE_DIR}/../thirdparty/mysql-connector-c++/mysql-replication-listener/include
+        ${CMAKE_SOURCE_DIR}/../thirdparty/mysql-connector-c++/mysql-connector-c++/build/include
+        /usr/include/mysql/
+    )
 
-	SET( jsoncpp_LIBRARY ${CMAKE_SOURCE_DIR}/../thirdparty/json/jsoncpp-src/build/libjsoncpp.a)
-	
-	#MYSQL_CONNECTOR_LIBRARY and MYSQL_LISTENER_LIBRARY have to be both .a or .so
-	SET(MYSQL_LISTENER_LIBRARY ${CMAKE_SOURCE_DIR}/../thirdparty/mysql-connector-c++/mysql-replication-listener/build/lib/libreplication.so)
-	SET(MYSQL_CONNECTOR_LIBRARY ${CMAKE_SOURCE_DIR}/../thirdparty/mysql-connector-c++/mysql-connector-c++/build/lib/libmysqlcppconn.so)
+    SET( jsoncpp_LIBRARY ${CMAKE_SOURCE_DIR}/../thirdparty/json/jsoncpp-src/build/libjsoncpp.a)
 
-	ADD_LIBRARY(mysqlConnector SHARED ${MYSQL_CONNECTOR_SRC} )
-	
-	set(MYSQL_VERSION_MAJOR 1)
+    #MYSQL_CONNECTOR_LIBRARY and MYSQL_LISTENER_LIBRARY have to be both .a or .so
+    SET(MYSQL_LISTENER_LIBRARY ${CMAKE_SOURCE_DIR}/../thirdparty/mysql-connector-c++/mysql-replication-listener/build/lib/libreplication.so)
+    SET(MYSQL_CONNECTOR_LIBRARY ${CMAKE_SOURCE_DIR}/../thirdparty/mysql-connector-c++/mysql-connector-c++/build/lib/libmysqlcppconn.so)
+
+    ADD_LIBRARY(mysqlConnector SHARED ${MYSQL_CONNECTOR_SRC} )
+
+    set(MYSQL_VERSION_MAJOR 1)
     set(MYSQL_VERSION_MINOR 0)
     set(MYSQL_VERSION_PATCH 0)
     set(MYSQL_VERSION_STRING ${MYSQL_VERSION_MAJOR}.${MYSQL_VERSION_MINOR}.${MYSQL_VERSION_PATCH})
@@ -169,7 +169,7 @@ IF(NOT ANDROID)
                                           SOVERSION ${MYSQL_VERSION_MAJOR})
 
     SET_TARGET_PROPERTIES(mysqlConnector PROPERTIES COMPILE_FLAGS -fPIC)
-	
-	TARGET_LINK_LIBRARIES(mysqlConnector  ${MYSQL_LISTENER_LIBRARY} mysqlclient  ${MYSQL_CONNECTOR_LIBRARY}  )
+
+    TARGET_LINK_LIBRARIES(mysqlConnector  ${MYSQL_LISTENER_LIBRARY} mysqlclient  ${MYSQL_CONNECTOR_LIBRARY}  )
 	
 ENDIF()
