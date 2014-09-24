@@ -128,15 +128,16 @@ def startEngine(nodeId, transactionFile):
     binary_path = testBinaryDir + testBinaryFileName
     if(nodes[nodeId].ipAddress == myIpAddress):
         out = open(integrationTestDir + '/dashboardFiles/' + transactionFile[0:-4] + '-dashboard-'+nodes[nodeId].Id+ '.txt','w')
-        temp = subprocess.Popen([binary_path,'--config='+nodes[nodeId].conf],stdout=out)      
+        temp = subprocess.Popen([binary_path, '--config='+nodes[nodeId].conf], stdout=out) 
+        #os.system(binary_path + " --config=" + nodes[nodeId].conf + ' > ' + integrationTestDir + '/dashboardFiles/' + transactionFile[0:-4] + '-dashboard-'+nodes[nodeId].Id+ '.txt')      
         nodes[nodeId].pid = temp.pid
-#        print str(nodes[nodeId].pid) + "---------------------------"
+        #print str(nodes[nodeId].pid) + "---------------------------"
         pingServer(nodes[nodeId].ipAddress, nodes[nodeId].portNo)
         return
-    stdin, stdout, stderr = sshClient[nodes[nodeId].Id].exec_command('cd ' + integrationTestDir + '; echo $$;exec '+binary_path+' --config='+ nodes[nodeId].conf + ' > ' + integrationTestDir + '/dashboardFiles/'+transactionFile[0:-4] + '-dashboard-' + nodes[nodeId].Id + '.txt &')
+    stdin, stdout, stderr = sshClient[nodes[nodeId].Id].exec_command('cd ' + integrationTestDir + '; echo $$;exec '+binary_path+' --config='+ nodes[nodeId].conf + ' > ' + integrationTestDir + '/dashboardFiles/'+transactionFile[0:-4] + '-dashboard-' + nodes[nodeId].Id + '.txt')
     #stdin, stdout, stderr = sshClient[nodes[nodeId].Id].exec_command('cd gitrepo/srch2-ngn/test/sharding/integration;mkdir temporaryCheck');
     nodes[nodeId].pid = stdout.readline()
-    print str(stdout.readline())
+    #print str(stdout.readline())
 #    if(confirmPortAvailable(nodes[nodeId].ipAddress, nodes[nodeId].portNo) == false):
 #        print "port not available, so exiting"
 #        os._exit()
@@ -147,14 +148,19 @@ def startEngine(nodeId, transactionFile):
 def killEngine(nodeId):
     fin = open("crashReports.txt","a")
     if(nodes[nodeId].ipAddress == myIpAddress):
-        print "process to be deleted " + str(nodes[nodeId].pid)
+        print "process to be deleted " + str(nodes[nodeId].pid) + " " + str(nodes[nodeId].Id)
+        err = -1
         err = os.system('kill -9 ' + str(nodes[nodeId].pid))
+        print "responseCode is " + str(err) 
         if (err != 0):
             errorMessage = "Error in killing node " + str(nodes[nodeId].Id) + " in transaction file " + sys.argv[2] + "\n"
             fin.write(errorMessage)  
         return
+    print "process to be deleted " + str(nodes[nodeId].pid) + " " + str(nodes[nodeId].Id)
     stdin, stdout, stderr = sshClient[nodes[nodeId].Id].exec_command('kill -9 ' + nodes[nodeId].pid)
-    if(stderr != []):
+    responseCode = stderr.readlines()
+    print "responseCode is " + str(responseCode)
+    if(responseCode != []):
         errorMessage = "Error in killing node " + str(nodes[nodeId].Id) + " in transaction file " + sys.argv[2] + "\n"
         fin.write(errorMessage)
 
