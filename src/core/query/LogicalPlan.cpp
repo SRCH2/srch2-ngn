@@ -66,7 +66,7 @@ LogicalPlanNode::LogicalPlanNode(const LogicalPlanNode & node){
 		}
 	}
 	//if(node.stats == NULL){
-	this->stats == NULL; // stats will always be created new
+	this->stats = NULL; // stats will always be created new
 	//}else{
 	//	this->stats = new LogicalPlanNodeAnnotation(*(node.stats)); // TODO
 	//}
