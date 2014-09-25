@@ -5,6 +5,20 @@ Author: Chen Liu
    For Ubuntu:
    shell> sudo apt-get install mysql-server
 
+   For MAC OS:
+   Follow the instructions on http://dev.mysql.com/doc/refman/5.5/en/macosx-installation-pkg.html
+   To Start/Stop MySQL service on MAC OS:
+   shell> /usr/local/mysql/support-files/mysql.server start
+   shell> /usr/local/mysql/support-files/mysql.server stop
+   
+   To Create my.cnf in /etc:
+   shell> cd /usr/local/mysql/support-files/
+   shell> sudo cp my-huge.cnf /etc/my.cnf
+
+   To Start mysql:
+   shell> /usr/local/mysql/bin/mysql -u root -p
+   
+
 2. Install thirdparty libraries:
    To compile the MySQL python driver for MySQL system test case, please install python-dev.
    shell> sudo apt-get install python-dev 
