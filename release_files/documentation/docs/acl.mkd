@@ -55,9 +55,22 @@ The file is provided under the [example-demo/acl](../example-demo/acl) folder.
 By doing access control, we can allow a user (specified as a string) to access certain
 records and certain attributes in the <tt>product</tt> table. 
 
-## 1. Record-Based
+### 1. Role-Based Search
 
-###1.1 Configuration File
+To submit a query as a specific user, we need to add a "roleId=XYZ"
+condition in the query, where "XYZ" is the id of the user.
+For instance, consider the following query:
+```json
+Q1: curl -i "http://127.0.0.1:8081/product/search?q=phone&roleId=u26"
+```
+
+This query is asking for products with the keyword "phone" as a user "u26". 
+The engine will find records that can accessed by this role with attributes 
+accessible by the role.
+
+## 2. Record-Based ACL
+
+###2.1 Configuration File
 
 In the configuration file, we want to tell the engine to use <tt>product</tt>
 as the resource core. For this purpose, we use an <i>access-control</i> tag as shown below:
@@ -92,24 +105,17 @@ be accessed by users named "u25" and "u26".  The second
 line says that the product with the id "p502" can be accessed by the user
 named "u26".
 
-###1.2 Role-Based Search
 
-To submit a query as a specific user, we need to add a "roleId=XYZ"
-condition in the query, where "XYZ" is the id of the user.
-For instance, consider the following query:
-```json
-curl -i "http://127.0.0.1:8081/product/search?q=phone&roleId=u26"
-```
+###2.2 Search
 
-This query is asking for products with the keyword "phone" as
-a user "u26". The engine returns product "p502"
+For query Q1 above, the engine returns product "p502"
 only.  It will not return product "p503", even though it has
 the keyword "phone", since it cannot be accessed by this user.
 In general, the engine ignores records that cannot
 be accessed by this role. Notice that the core name "product" 
 is case sensitive.
 
-###1.3 Insert Records with ACL
+###2.3 Insert Records with ACL
 
 When we insert a record to the resource core <tt>product</tt>, we can
 optionally also include ids of roles that can access this record.  For instance,
@@ -122,14 +128,14 @@ curl "http://127.0.0.1:8081/product/docs" -i -X PUT -d '{"pid" : "p531", "name" 
 The tag "roleId" is followed by an array of ids of roles that can
 access this new record.  If no "roleId" is provided, then by default
 no role can access this new record.  After the command above, the
-following query Q1 will not find record "p531", since this record
+following query Q2 will not find record "p531", since this record
 cannot be accessed by user "u27".
 
 ```json
-Q1: curl -i "http://127.0.0.1:8081/product/search?q=utah&roleId=u27"
+Q2: curl -i "http://127.0.0.1:8081/product/search?q=utah&roleId=u27"
 ```
 
-###1.4 Replace an ACL
+###2.4 Replace an ACL
 
 We can modify the ACL of a product record by using a command "aclRecordRoleReplace":
 
@@ -139,17 +145,16 @@ curl "http://127.0.0.1:8081/product/aclRecordRoleReplace" -i -X PUT -d '{"resour
 
 This command will replace the existing ACL (if any) of the product
 "p531" with two role ids, namely "u27" and "u28".  The old list of role ids for
-this product will be deleted.  After this command, query "Q1" should
+this product will be deleted.  After this command, query "Q2" should
 be able to find record "p531".
 
-We can also pass an
-array of pairs of a product id and a list of role ids, e.g.:
+We can also pass an array of pairs of a product id and a list of role ids, e.g.:
 
 ```json
 curl "http://127.0.0.1:8081/product/aclRecordRoleReplace" -i -X PUT -d '[{"resourceId": "p531", "roleId":["u26", "u28"]} , {"resourceId": "p502", "roleId":["u25"]}]'
 ```
 
-###1.5 Append Roles to ACL
+###2.5 Append Roles to ACL
 
 We can add more roles to the ACL of a product record by using a command called
 "aclRecordRoleAppend":
@@ -166,7 +171,7 @@ We can also pass an array of pairs of a product id and a list of role ids, e.g.:
 curl "http://127.0.0.1:8081/product/aclRecordRoleAppend" -i -X PUT -d '[{"resourceId": "p531", "roleId":["u25", "u28"]} , {"resourceId": "p502", "roleId":["u27"]}]'
 ```
 
-###1.6 Remove Roles from ACL
+###2.6 Remove Roles from ACL
 
 We can remove some roles from the ACL of a product record by using a command called
 "aclRecordRoleDelete":
@@ -176,15 +181,24 @@ curl "http://127.0.0.1:8081/product/aclRecordRoleDelete" -i -X PUT -d '{"resourc
 ```
 
 This command will remove "u25" and "u27" from the ACL of the product
-"p531". We can also pass an array of pairs of a product id and a list of role ids, e.g.:
+"p531".  After running this command, query Q2 will no longer find record "p531".
+
+We can also pass an array of pairs of a product id and a list of role ids, e.g.:
 
 ```python
 curl "http://127.0.0.1:8081/product/aclRecordRoleDelete" -i -X PUT -d '[{"resourceId": "p531", "roleId":["u25", "u27"]} , {"resourceId": "p502", "roleId":["u25"]}]'
 ```
 
-## 2. Attribute-Based
+In the rest of the documentation, we want to start with the status where user "u27" can access product "p531" 
+by running the following command:
 
-The SRCH2 engine also allows developers to specify what roles can
+```json
+curl "http://127.0.0.1:8081/product/aclRecordRoleAppend" -i -X PUT -d '{"resourceId":"p531", "roleId":["u27"]}'
+```
+
+## 3. Attribute-Based ACL
+
+The SRCH2 engine also allows developers to specify roles that can
 access an attribute.  Here is how it works.
 
 <ul>
@@ -198,7 +212,7 @@ access an attribute.  Here is how it works.
  accessed by all roles.
 
  <li> By using attribute-based ACL commands, we can explicitly allow
- or disallow a role to access some of the ACL-attributes.  
+ or disallow role to access ACL-attributes.
 
  <li> For a search query from a particular role, the conditions in the
  query can only be specified on those ACL-attributes accessible by
@@ -206,12 +220,12 @@ access an attribute.  Here is how it works.
  will be ignored.
 </ul>
 
-###2.1 Configuration File
+###3.1 Configuration File
 
 In the running example, suppose we want to do access control on the
 attributes <tt>name</tt>, <tt>description</tt>, and <tt>state</tt> of
 the <tt>product</tt> core.  In the configuration file, we need to add 
-the tag <tt>acl="true"</tt> to these attributes:
+the tag <tt>acl="true"</tt> to these three attributes:
 
 ```xml
 <cores>
@@ -243,9 +257,9 @@ they can be accessible by all roles, and we cannot do access control
 on them.
 
 We can also specify a file with initial attribute ACL information for
-the <tt>product</tt> records.  The data file
+the <tt>product</tt> attributes.  The data file
 <tt>attribute-acl-product.json</tt> under the "attribute-acl" tag has
-attribute ACL information for roles.  For instance:
+attribute ACL information for attributes.  For instance:
 
 ```json
 { "attributes": ["name", "description"], "roleId": ["u25"]}
@@ -256,9 +270,38 @@ The first line says that attributes "name" and "description" can be accessed by
 role "u25", while the second line says that attributes "name" and "state"
 can be accessed by roles "u25" and "u27".
 
-###2.2 Replace Roles of Attributes
+###3.2 Search
 
-We can replace the ACL list of attributes using a command called
+For a role-based search, the engine will apply the conditions to those attributes that are
+either public (i.e., non-ACL), or accessible by this role.  Consider
+query Q1 as an example (copied below):
+
+```json
+Q1: curl -i "http://127.0.0.1:8081/product/search?q=phone&roleId=u26"
+```
+
+Since role "u26" can access attributes "name" and
+"description", the query will find records that have keyword
+"phone" in attributes "pid" (public attribute), "name" (ACL attribute),
+"description" (ACL), "price" (public), "manufacturer" (public), but
+will ignore the attribute "state" since it cannot be accessible by
+this role.  The query will find record "p502", without showing the "description"
+attribute since it cannot be accessed by this role.
+
+As another example, consider the following query for keyword "laptop", with 
+a condition that the state of each matching record has to be "texas":
+
+```python
+Q3: curl -i "http://127.0.0.1:8081/product/search?q=laptop&fq=state:texas&roleId=u25"
+```
+
+Since this role "u25" does not have the access to the "state" attribute,
+this "fq=state:texas" condition will be ignored by the engine.  As a consequence, the engine
+returns one record "p501", without showing the "state" value of the record.
+
+###3.3 Replace Roles of Attributes
+
+We can replace the ACL list of attributes using a command 
 "aclAttributeRoleReplace".  For instance:
 
 ```python
@@ -266,80 +309,53 @@ curl "http://127.0.0.1:8081/product/aclAttributeRoleReplace" -i -X PUT -d '{"att
 ```
 
 This command will replace the existing ACLs of attributes 
-"descriptions" and "state" with roles "u26" and "u28".
+"descriptions" and "state" with roles "u26" and "u28". 
+After running this command, the query Q2 above will not find record
+"p531" any more since user "u27" can no longer access
+the attribute "state", which matches the keyword "utah".
 
-###2.3 Append Accessible Attributes
+###3.4 Append Accessible Attributes
 
 We can add more attributes accessible by a role with a command
-called "aclAttributeRoleAppend". For instance:
+"aclAttributeRoleAppend". For instance:
 
 ```python
-curl "http://127.0.0.1:8081/product/aclAttributeRoleAppend" -i -X PUT
--d '{"attributes": ["state"], "roleId": ["u27", "u28"]
-}'
+curl "http://127.0.0.1:8081/product/aclAttributeRoleAppend" -i -X PUT -d '{"attributes": ["description", "state"], "roleId": ["u26", "u27"]}'
 ```
 
-This command will add "state" to the list of accessible attributes
-of the roles "u27" and "u28".
+This command will allow the roles "u26" and "u27" to access the attributes "description" and "state".  After
+this command, query Q2 should be able to find record "p531" again.
 
-###2.4 Disallow Attributes
+###3.5 Disallow Attributes
 
 We can disallow a role from accessing attributes with a command
-called "aclAttributeRoleDelete". For instance:
+"aclAttributeRoleDelete". For instance:
 
 ```python
-curl "http://127.0.0.1:8081/product/aclAttributeRoleDelete" -i -X PUT
--d '{"attributes": ["description"], "roleId": ["u27", "u28"]
-}'
+curl "http://127.0.0.1:8081/product/aclAttributeRoleDelete" -i -X PUT -d '{"attributes": ["state"], "roleId": ["u26", "u27"]}'
 ```
 
-This command disallows the roles "u27" and "u28" from accessing the
-attribute "description".
+This command disallows the roles "u26" and "u27" from accessing the
+attribute "state".  After running this command, query Q2 can no longer find record "p531".
 
-###2.5 Search
-
-Similar to the case of record-based access control, to submit a query
-as a specific user, we need to add a "roleId=XYZ" condition in the
-query, where "XYZ" is the role id.  The following is an example query
-submitted as role "u26":
-```python
-curl -i "http://127.0.0.1:8081/product/search?q=phone&roleId=u26"
-```
-
-The engine will apply the conditions to those attributes that are
-either public (i.e., non-ACL), or accessible by this role.  For
-instance, suppose role "u26" has accessible attributes "name" and
-"description", then the query will find records that have keyword
-"phone" in attributes "pid" (public attribute), "name" (ACL attribute),
-"description" (ACL), "price" (public), "manufacturer" (public), but
-will ignore the attribute "state" since it cannot be accessible by
-this role.
-
-As another example, consider the following query that has a condition
-that the state of each matching record has to be Texas:
-
-```python
-curl -i "http://127.0.0.1:8081/product/search?q=phone&fq=state:texas&roleId=u26"
-```
-
-Since this role does not have the access to the "state" attribute,
-this condition will be ignored by the engine.
-
-<h4>Disabling Attribute ACL</h4>
+###3.6 Disabling Attribute ACL
 
 We can disable attribute-based ACL in a search by passing a flag 
 "attributeAcl=off".  This flag means that the engine ignores
-attribute-based ACL during the search process, but still does
+attribute-based ACL during the search process, but still uses
 attribute ACL when generating the JSON results.  That is, the engine
 accesses all attributes during the search, but
 does not output attributes that cannot be accessed by this role.  Here
 is an example:
 
 ```python
-curl -i "http://127.0.0.1:8081/product/search?q=phone&fq=state:texas&roleId=u26&attributeAcl=off"
+Q4: curl -i "http://127.0.0.1:8081/product/search?q=texas&roleId=u26&attributeAcl=off"
 ```
 
+Notice that role "u26" cannot access the "state" attribute.
 For this query, the engine will ignore the attribute ACL for role
 "u26" during the search, i.e., the engine will access all available
-attributes.  When generating results, the engine will not output
-attributes that cannot be accessed by this role "u26".
+attributes.  Thus it can find record "p501" with "texas" in the "state"
+attribute.  When generating query results, the engine will not output
+the "state" attribute, which cannot be accessed by this role "u26".
+If we drop the "attributeAcl=off" condition, the query will not find any record.
