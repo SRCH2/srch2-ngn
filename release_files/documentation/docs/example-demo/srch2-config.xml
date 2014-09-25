@@ -45,9 +45,9 @@
         <types>
           <fieldType name="text_standard">
               <analyzer>
-                  <filter name="PorterStemFilter" dictionary="srch2_protected_words.txt" />
+                 <filter name="PorterStemFilter" dictionary="srch2_stemmer_words.txt" />
                   <filter name="StopFilter" words="stop-words.txt" />
-                  <filter name="synonymFilter" synonyms="synonyms.txt" />
+                  <filter name="synonymFilter" synonyms="synonyms.txt" expand="true" />
               </analyzer>
           </fieldType>
        </types>
@@ -112,6 +112,6 @@
 
     <updateLog>
        <logLevel>3</logLevel>
-       <accessLogFile>./logs/srch2-log.txt</accessLogFile>
+        <accessLogFile>./logs/srch2-log.txt</accessLogFile>
     </updateLog>
 </config>

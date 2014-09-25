@@ -146,7 +146,7 @@ const char* const ConfigManager::multipleCoresString = "cores";
 const char* const ConfigManager::singleCoreString = "core";
 const char* const ConfigManager::defaultCoreNameString = "defaultcorename";
 const char * const ConfigManager::allowedRecordSpecialCharactersString =
-        "allowedrecordspecialcharacters";
+        "allowedRecordSpecialCharacters";
 
 const char* const ConfigManager::searchPortString = "searchport";
 const char* const ConfigManager::suggestPortString = "suggestport";
@@ -1669,7 +1669,7 @@ void ConfigManager::setUpEnglishAnalyzer(CoreInfo_t * coreInfo, const xml_node &
         } else if ( nameTag.compare(allowedRecordSpecialCharactersString) == 0){
             setUpRecordSpecialCharacters(coreInfo, field);
         } else {
-            Logger::error(" In core %s : Valid tag is not set, it can only be filter or allowedrecordspecialcharacters.", coreInfo->name.c_str());
+            Logger::error(" In core %s : Valid tag is not set under analyzer, it can only be filter.", coreInfo->name.c_str());
         }
     }
 }
@@ -1690,7 +1690,7 @@ void ConfigManager::setUpChineseAnalyzer(CoreInfo_t * coreInfo, string& dictiona
         } else if ( nameTag.compare(allowedRecordSpecialCharactersString) == 0){
             setUpRecordSpecialCharacters(coreInfo, field);
         } else {
-            Logger::error(" In core %s : Valid tag is not set, it can only be filter or allowedrecordspecialcharacters.", coreInfo->name.c_str());
+            Logger::error(" In core %s : Valid tag is not set under analyzer, it can only be filter.", coreInfo->name.c_str());
         }
     }
 }
