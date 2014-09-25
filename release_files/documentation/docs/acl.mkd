@@ -146,8 +146,7 @@ We can add more roles to the ACL of a product record by using a command called
 "aclRecordRoleAppend":
 
 ```json
-curl "http://localhost:8081/product/aclRecordRoleAppend" -i -X PUT -d
-'{"resourceId":"p501", "roleId":["u25", "u28"]}'
+curl "http://localhost:8081/product/aclRecordRoleAppend" -i -X PUT -d '{"resourceId":"p501", "roleId":["u25", "u28"]}'
 ```
 
 This command will add "u25" and "u28" to the existing ACL of the product
@@ -251,18 +250,17 @@ information for roles.  For instance:
 { "attributes": ["name", "state"], "roleId": ["u26", "u27"]}
 ```
 
-The first line says that role "u25" can access attributes "name" and
-"description", while the second line says that roles "u25" and "u27"
-can access attributes "name" and "state".
+The first line says that attributes "name" and "description" can be accessed by 
+role "u25", while the second line says that attributes "name" and "state"
+can be accessed by roles "u25" and "u27".
 
-###2.2 Replace Accessible Attributes
+###2.2 Replace Roles of Attributes
 
-We can modify the ACL list of roles for attributes using a command called
+We can modify the ACL list of attributes using a command called
 "aclAttributeRoleReplace".  For instance:
 
 ```python
-curl "http://localhost:8081/product/aclAttributeRoleReplace" -i -X PUT
--d '{"attributes": ["name", "description"], "roleId": ["u27", "u28"] }'
+curl "http://localhost:8081/product/aclAttributeRoleReplace" -i -X PUT -d '{"attributes": ["name", "description"], "roleId": ["u27", "u28"] }'
 ```
 
 This command will replace the existing ACLs of attributes "name" and
