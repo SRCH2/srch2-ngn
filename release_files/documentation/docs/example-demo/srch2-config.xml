@@ -45,9 +45,9 @@
         <types>
           <fieldType name="text_standard">
               <analyzer>
-                  <filter name="PorterStemFilter" dictionary="" />
-                  <filter name="StopFilter" words="" />
-                  <filter name="synonymFilter" synonyms="" />
+                  <filter name="PorterStemFilter" dictionary="srch2_protected_words.txt" />
+                  <filter name="StopFilter" words="stop-words.txt" />
+                  <filter name="synonymFilter" synonyms="synonyms.txt" />
               </analyzer>
           </fieldType>
        </types>
@@ -108,10 +108,10 @@
           <mergeEveryMWrites>10</mergeEveryMWrites>
         </mergePolicy>
          
-        <updateLog>
-            <logLevel>3</logLevel>
-            <accessLogFile>./logs/srch2-log.txt</accessLogFile>
-        </updateLog>
-     
     </updatehandler>
+
+    <updateLog>
+       <logLevel>3</logLevel>
+       <accessLogFile>./logs/srch2-log.txt</accessLogFile>
+    </updateLog>
 </config>
