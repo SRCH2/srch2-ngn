@@ -4,7 +4,7 @@ sys.path.insert(0, 'srch2lib')
 import test_lib
 
 
-nodesInfoRelFilePath = "./nodeIntensive-noValidation/nodeAddress.txt"
+nodesInfoRelFilePath = "./test_dynamicShards_noValidation/nodeAddress.txt"
 
 srch2ngnGitRepoDir = ""
 integrationTestDir = ""
