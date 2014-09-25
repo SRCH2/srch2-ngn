@@ -96,7 +96,7 @@ const char* const ConfigManager::mergeEveryMWritesString = "mergeeverymwrites";
 const char* const ConfigManager::mergeEveryNSecondsString = "mergeeverynseconds";
 const char* const ConfigManager::mergePolicyString = "mergepolicy";
 const char* const ConfigManager::nameString = "name";
-const char* const ConfigManager::porterStemFilterString = "PorterStemFilter";
+const char* const ConfigManager::porterStemFilterString = "porterstemfilter";
 const char* const ConfigManager::prefixMatchPenaltyString = "prefixmatchpenalty";
 const char* const ConfigManager::queryString = "query";
 const char* const ConfigManager::queryResponseWriterString =
@@ -121,12 +121,12 @@ const char* const ConfigManager::schemaString = "schema";
 const char* const ConfigManager::searchableString = "searchable";
 const char* const ConfigManager::searcherTypeString = "searchertype";
 const char* const ConfigManager::srch2HomeString = "srch2home";
-const char* const ConfigManager::stopFilterString = "StopFilter";
+const char* const ConfigManager::stopFilterString = "stopfilter";
 const char* const ConfigManager::protectedWordFilterString =
-        "protectedKeyWordsFilter";
+        "protectedkeywordsfilter";
 const char* const ConfigManager::supportSwapInEditDistanceString =
         "supportswapineditdistance";
-const char* const ConfigManager::synonymFilterString = "synonymFilter";
+const char* const ConfigManager::synonymFilterString = "synonymfilter";
 const char* const ConfigManager::synonymsString = "synonyms";
 const char* const ConfigManager::textEnString = "text_standard";
 const char* const ConfigManager::textZhString = "text_chinese";
@@ -146,7 +146,7 @@ const char* const ConfigManager::multipleCoresString = "cores";
 const char* const ConfigManager::singleCoreString = "core";
 const char* const ConfigManager::defaultCoreNameString = "defaultcorename";
 const char * const ConfigManager::allowedRecordSpecialCharactersString =
-        "allowedRecordSpecialCharacters";
+        "allowedrecordspecialcharacters";
 
 const char* const ConfigManager::searchPortString = "searchport";
 const char* const ConfigManager::suggestPortString = "suggestport";
@@ -1658,6 +1658,10 @@ void ConfigManager::setUpEnglishAnalyzer(CoreInfo_t * coreInfo, const xml_node &
     // Checking if the values are empty or not
     for (xml_node field = childNodeTemp.first_child(); field; field = field.next_sibling()) {
         std::string nameTag = field.attribute(nameString).value();
+
+        //made attribute values of "name" case insensitive
+        std::transform(nameTag.begin(), nameTag.end(), nameTag.begin(),
+                ::tolower);
         if ( nameTag.compare(porterStemFilterString) == 0){
             setUpStemmer(coreInfo, field, parseWarnings);
         } else if ( nameTag.compare(stopFilterString) == 0) { 
@@ -1669,7 +1673,7 @@ void ConfigManager::setUpEnglishAnalyzer(CoreInfo_t * coreInfo, const xml_node &
         } else if ( nameTag.compare(allowedRecordSpecialCharactersString) == 0){
             setUpRecordSpecialCharacters(coreInfo, field);
         } else {
-            Logger::error(" In core %s : Valid tag is not set under analyzer, it can only be filter.", coreInfo->name.c_str());
+            Logger::error("In core %s : Each child under the analyzer tag should be a filter, not something else.", coreInfo->name.c_str());
         }
     }
 }
@@ -1681,6 +1685,10 @@ void ConfigManager::setUpChineseAnalyzer(CoreInfo_t * coreInfo, string& dictiona
     coreInfo->stemmerFlag = false;
     for (xml_node field = childNodeTemp.first_child(); field; field = field.next_sibling()) {
         std::string nameTag = field.attribute(nameString).value();
+
+        //made attribute values of "name" case insensitive
+        std::transform(nameTag.begin(), nameTag.end(), nameTag.begin(),
+                      ::tolower);
         if ( nameTag.compare(stopFilterString) == 0) { 
             setUpStopword(coreInfo, field, parseWarnings);
         } else if ( nameTag.compare(protectedWordFilterString) == 0){
@@ -1690,7 +1698,7 @@ void ConfigManager::setUpChineseAnalyzer(CoreInfo_t * coreInfo, string& dictiona
         } else if ( nameTag.compare(allowedRecordSpecialCharactersString) == 0){
             setUpRecordSpecialCharacters(coreInfo, field);
         } else {
-            Logger::error(" In core %s : Valid tag is not set under analyzer, it can only be filter.", coreInfo->name.c_str());
+            Logger::error("In core %s : Each child under the analyzer tag should be a filter, not something else.", coreInfo->name.c_str());
         }
     }
 }
