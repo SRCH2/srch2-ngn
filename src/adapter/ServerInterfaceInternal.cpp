@@ -141,7 +141,7 @@ int ServerInterfaceInternal::updateRecord(const std::string& pk,
             record->clear();
             delete record;
 
-            if (response["insert"].asString().compare("success")) {
+            if (response["insert"].asString().compare("success") == 0) {
                 op_success = true;
                 Logger::debug("DATABASE_LISTENER:UPDATE: inserted record ");
             } else {
