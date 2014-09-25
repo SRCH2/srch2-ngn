@@ -31,7 +31,7 @@ IF(NOT ANDROID)
     MESSAGE(STATUS "This is SOURCE dir " ${CMAKE_SOURCE_DIR})
 
     IF(MAC_OS)
-	    SET (CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -stdlib=libstdc++")	    
+        SET (CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -stdlib=libstdc++")	    
         INCLUDE_DIRECTORIES(
             ${CMAKE_SOURCE_DIR}/../thirdparty/mongo-cxx-driver/mongo-cxx-driver/build/osx-version-min_10.7/use-system-boost/srch2/include/
             ${CMAKE_SOURCE_DIR}/../src/adapter/
@@ -139,16 +139,16 @@ IF(NOT ANDROID)
     FILE(GLOB_RECURSE MYSQL_CONNECTOR_SRC RELATIVE ${CMAKE_CURRENT_SOURCE_DIR} "mysql/*.cpp" "util/*.cpp" "../src/core/util/Logger.cpp")
 
     IF(MAC_OS)
-	    SET (CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -stdlib=libstdc++")	
-	INCLUDE_DIRECTORIES(
-	    ${CMAKE_SOURCE_DIR}/mysql/
-	    ${CMAKE_SOURCE_DIR}/../src/adapter/
-            ${CMAKE_SOURCE_DIR}/../thirdparty/json/jsoncpp-src/include
-	    ${CMAKE_SOURCE_DIR}/util/
-	    ${CMAKE_SOURCE_DIR}/../thirdparty/mysql-connector-c++/mysql-replication-listener/include
-	    ${CMAKE_SOURCE_DIR}/../thirdparty/mysql-connector-c++/mysql-connector-c++/build/include
-	    /usr/local/mysql/include/
-	)
+        SET (CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -stdlib=libstdc++")	
+    INCLUDE_DIRECTORIES(
+        ${CMAKE_SOURCE_DIR}/mysql/
+        ${CMAKE_SOURCE_DIR}/../src/adapter/
+        ${CMAKE_SOURCE_DIR}/../thirdparty/json/jsoncpp-src/include
+        ${CMAKE_SOURCE_DIR}/util/
+        ${CMAKE_SOURCE_DIR}/../thirdparty/mysql-connector-c++/mysql-replication-listener/include
+        ${CMAKE_SOURCE_DIR}/../thirdparty/mysql-connector-c++/mysql-connector-c++/build/include
+        /usr/local/mysql/include/
+    )
     ELSE() 
         INCLUDE_DIRECTORIES(
             ${CMAKE_SOURCE_DIR}/mysql/
@@ -180,9 +180,9 @@ IF(NOT ANDROID)
     SET_TARGET_PROPERTIES(mysqlConnector PROPERTIES COMPILE_FLAGS -fPIC)
 
     IF(MAC_OS)
-	    TARGET_LINK_LIBRARIES(mysqlConnector  ${MYSQL_LISTENER_LIBRARY} /usr/local/mysql/lib/libmysqlclient.a  ${MYSQL_CONNECTOR_LIBRARY} ${jsoncpp_LIBRARY} )
+        TARGET_LINK_LIBRARIES(mysqlConnector  ${MYSQL_LISTENER_LIBRARY} /usr/local/mysql/lib/libmysqlclient.a  ${MYSQL_CONNECTOR_LIBRARY} ${jsoncpp_LIBRARY} )
     ELSE()
-	    TARGET_LINK_LIBRARIES(mysqlConnector  ${MYSQL_LISTENER_LIBRARY} mysqlclient  ${MYSQL_CONNECTOR_LIBRARY} ${jsoncpp_LIBRARY} )
+        TARGET_LINK_LIBRARIES(mysqlConnector  ${MYSQL_LISTENER_LIBRARY} mysqlclient  ${MYSQL_CONNECTOR_LIBRARY} ${jsoncpp_LIBRARY} )
     ENDIF()
 
 ENDIF()

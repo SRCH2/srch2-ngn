@@ -86,7 +86,11 @@ int ServerInterfaceInternal::deleteRecord(const std::string& primaryKey) {
     }
 
     Logger::debug(debugMsg.str().c_str());
-    return op_success;
+    if (op_success) {
+        return 0;
+    } else {
+        return -1;
+    }
 }
 
 /*
@@ -105,8 +109,8 @@ int ServerInterfaceInternal::updateRecord(const std::string& pk,
     Json::Reader reader;
     bool parseSuccess = reader.parse(jsonString, root, false);
     if (parseSuccess == false) {
-        Logger::error("UPDATE : JSON object parse error %s",
-                jsonString.c_str());
+        Logger::error("DATABASE_LISTENER: JSON object parse error %s "
+                "while updating the record.", jsonString.c_str());
         return -1;
     }
 
@@ -119,7 +123,6 @@ int ServerInterfaceInternal::updateRecord(const std::string& pk,
             debugMsg << "failed\",\"reason\":\"no record "
                     "with given primary key\"}";
         } else {
-            Logger::debug("DATABASE_LISTENER:UPDATE: deleted record ");
             op_success = true;
         }
 
@@ -143,15 +146,14 @@ int ServerInterfaceInternal::updateRecord(const std::string& pk,
 
             if (response["insert"].asString().compare("success") == 0) {
                 op_success = true;
-                Logger::debug("DATABASE_LISTENER:UPDATE: inserted record ");
             } else {
                 srch2::instantsearch::INDEXWRITE_RETVAL ret =
                         server->indexer->recoverRecord(pk,
                                 deletedInternalRecordId);
                 if (ret == srch2is::OP_FAIL) {
-                    Logger::error("DATABASE_LISTENER:UPDATE: insert record "
-                            "failed and resume the deleted old "
-                            "record failed too.");
+                    Logger::error(
+                            "DATABASE_LISTENER: Update error while trying to "
+                                    "resume the deleted old record.");
                 }
             }
 
@@ -163,14 +165,17 @@ int ServerInterfaceInternal::updateRecord(const std::string& pk,
             srch2::instantsearch::INDEXWRITE_RETVAL ret =
                     server->indexer->recoverRecord(pk, deletedInternalRecordId);
             if (ret == srch2is::OP_FAIL) {
-                Logger::error("DATABASE_LISTENER:UPDATE: insert record "
-                        "failed and resume the deleted old "
-                        "record failed too.");
+                Logger::error("DATABASE_LISTENER: Update error while trying to "
+                        "resume the deleted old record.");
             }
         }
     }
     Logger::debug(debugMsg.str().c_str());
-    return op_success;
+    if (op_success) {
+        return 0;
+    } else {
+        return -1;
+    }
 }
 
 //Call save index to the disk manually.

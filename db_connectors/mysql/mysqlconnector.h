@@ -12,7 +12,7 @@
 #include <string>
 #include <vector>
 
-//For MySQL C++ Connector
+//For the MySQL C++ Connector
 #include "mysql_connection.h"
 #include <cppconn/driver.h>
 #include <cppconn/exception.h>
@@ -24,22 +24,24 @@ public:
     MySQLConnector();
     ~MySQLConnector();
 
-    //Initialize the connector. Establish a connection to the MySQL.
+    //Initialize the connector. Establish a connection to the MySQL database.
     virtual int init(ServerInterface *serverHandle);
     //Retrieve records from the table records and insert them into the SRCH2 engine.
     virtual int createNewIndexes();
-    //Periodically check updates in the MySQL log table,
-    //and send corresponding requests to the SRCH2 engine.
+    /*
+     * Wait for the updates from the MySQL replication listener, and send
+     * corresponding requests to the SRCH2 engine
+     */
     virtual int runListener();
 
 private:
     ServerInterface * serverHandle;
     int listenerWaitTime;
 
-    //Table's schema
+    //Storing the table schema information
     std::vector<std::string> fieldName;
 
-    //connection handler for MySQL C++ Connector
+    //Connection handler for the MySQL C++ Connector
     sql::Statement * stmt;
 
     //Connect to the MySQL database

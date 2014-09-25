@@ -290,7 +290,7 @@ This section describes how to use SRCH2 to do text search on [MySQL](http://www.
 a SRCH2 connector interacts with a MySQL table.  In the configuration file of SRCH2, a user specifies a MySQL data source with 
 information such as host name, port number, and table name.  The SRCH2 engine will load the MySQL connector (as a shared library called "libmysqlConnector"), which 
 will read the records from the table, and insert the records into the SRCH2 engine.  In addition, the connector is using [MySQL Replication Listener](https://launchpad.net/mysql-replication-listener) to retrieve information about the changes (insert, delete, and update) from the binlog.  It
-will send these changes to the SRCH2 engine to modify the indexes.  Since the [MySQL Replication Listener](https://launchpad.net/mysql-replication-listener) is push based, the SRCH2 engine can get the changes immediately.
+will send these changes to the SRCH2 engine to modify the indexes.
 
 <span ><center><img style="float: center" width="60%" src="../images/mysql-connector.png" /></center></span>
 
@@ -359,6 +359,8 @@ shell> mysqlimport -u root -p --fields-terminated-by=',' --local demo COMPANY.cs
 ```
 To check if the data has been loaded, run following command:
 ```
+shell> mysql -u root -p
+mysql> USE demo;
 mysql> SELECT * FROM COMPANY;
 1, 'Paul',32, 'California',20000.0
 2, 'Allen',25, 'Texas',15000.0
@@ -402,9 +404,7 @@ Go to the install folder of SRCH2 and run the following:
 shell> ./bin/srch2-engine --config-file=./example-demo/srch2-config-mysql.xml
 ```
 
-The engine will use a MongoDB connector to read the data from the MongoDB table, build indexes, and wait for queries. It also starts a thread that periodically pulls latest changes from MongoDB (as specified by the "listenerWaitTime" parameter) and add these changes to its indexes.  
-
-The engine should read the data from the MySQL instance, build indexes, and wait for queries. It also starts a thread that listening on the latest changes from MySQL and add these changes to its search indexes.
+The engine will use a MySQL connector to read the data from the MySQL database, build indexes, and wait for queries. It also starts a thread that listens the latest changes from MySQL by using MySQL Replication Listener and add these changes to its indexes.  
 
 ###4.5. Search
 
@@ -456,3 +456,5 @@ Again, wait for about 4 seconds for the SRCH2 server to save the change, then do
 shell> curl "http://localhost:8081/search?q=Kim"
 ```
 The SRCH2 engine should not return the record that we just deleted.
+
+Besides MongoDB, SQLite and MySQL, we are developing connectors for other database sources.

@@ -23,7 +23,7 @@ MySQLConnector::MySQLConnector() {
     stmt = NULL;
 }
 
-//Initialize the connector. Establish a connection to MySQL.
+//Initialize the connector. Establish a connection to the MySQL database.
 int MySQLConnector::init(ServerInterface *serverHandle) {
     this->serverHandle = serverHandle;
     //Get listenerWaitTime value from the config file.
@@ -73,7 +73,7 @@ bool MySQLConnector::connectToDB() {
 
     while (1) {
         try {
-            //Create the connection to the MySQL by using MySQL C++ Connector.
+            //Create the connection to the MySQL by using the MySQL C++ Connector.
             sql::Driver * driver = get_driver_instance();
             std::auto_ptr<sql::Connection> con(
                     driver->connect(hostAndport, user, password));
@@ -176,7 +176,7 @@ int MySQLConnector::createNewIndexes() {
             }
             Logger::info("MYSQLCONNECTOR: Total indexed %d / %d records. ",
                     indexedRecordsCount, totalRecordsCount);
-            //Save the time right after create new indexes.
+            //Save the time right after creating the new indexes.
             saveLastSavingIndexTime(time(NULL));
             this->serverHandle->saveChanges();
 
@@ -258,7 +258,7 @@ void MySQLConnector::saveLastSavingIndexTime(
 }
 
 /*
- * Periodically check updates in the MySQL log table, and send
+ * Wait for the updates from the MySQL replication listener, and send
  * corresponding requests to the SRCH2 engine
  */
 int MySQLConnector::runListener() {
@@ -304,7 +304,6 @@ int MySQLConnector::runListener() {
 
     bool quit = false;
     while (!quit) {
-        //Pull events from the binlog.
         Binary_log_event *event;
         binlog.wait_for_next_event(&event);
         /*
@@ -315,7 +314,7 @@ int MySQLConnector::runListener() {
         /*
          * When a binary log file exceeds a size limit, a ROTATE_EVENT is
          * written at the end of the file that points to the next file in
-         * the squence. This event is information for the slave to know the
+         * the sequence. This event is information for the slave to know the
          * name of the next binary log it is going to receive.
          */
         case mysql::ROTATE_EVENT: {

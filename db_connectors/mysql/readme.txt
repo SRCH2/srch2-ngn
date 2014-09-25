@@ -1,31 +1,30 @@
 Compiling and running MySQL connector
 Author: Chen Liu
 
-1. Install MySQL by following instructions on http://dev.mysql.com/doc/refman/5.7/en/installing.html
+1. Install MySQL by the following instructions on http://dev.mysql.com/doc/refman/5.7/en/installing.html
+   
    For Ubuntu:
    shell> sudo apt-get install mysql-server
 
    For MAC OS:
    Follow the instructions on http://dev.mysql.com/doc/refman/5.5/en/macosx-installation-pkg.html
 
-   To add env parameter:
+   To add env parameter on MAC OS:
    export PATH=$PATH:/usr/local/mysql/bin
 
-   To Start/Stop MySQL service on MAC OS:
+   To Start/Stop the MySQL service on MAC OS:
    shell> /usr/local/mysql/support-files/mysql.server start
    shell> /usr/local/mysql/support-files/mysql.server stop
-   
-   To Create my.cnf in /etc:
+ 
+   To Create my.cnf in /etc on MAC OS:
    shell> cd /usr/local/mysql/support-files/
    shell> sudo cp my-huge.cnf /etc/my.cnf
 
-   To Start mysql:
+   To Start mysql on MAC OS:
    shell> /usr/local/mysql/bin/mysql -u root -p
    
 
 2. Install thirdparty libraries:
-   To compile the MySQL python driver for MySQL system test case, please install python-dev.
-   shell> sudo apt-get install python-dev 
 
    shell> cd srch2-ngn/thirdparty/
    shell> ./thirdparty-build.sh
@@ -48,7 +47,7 @@ Author: Chen Liu
 
 5. Start MySQL with binlog enabled (needed only once):
    
-   Edit the my.cnf to enable binlog mode
+   Edit the my.cnf to enable binlog mode (For MAC OS, please see the section 1)
    shell> sudo vi /etc/mysql/my.cnf
 
    Find the following lines in the my.cnf
@@ -58,22 +57,22 @@ Author: Chen Liu
    Change them to 
         server-id               = 1
         log_bin                 = /var/log/mysql/mysql-bin.log
-        binlog-format		= ROW
+        binlog-format            = ROW
 
-   Restart the mysql service
+   Restart the mysql service (For MAC OS, please see the section 1)
    shell> sudo /etc/init.d/mysql stop
    shell> sudo /etc/init.d/mysql start
 
-   Reset the row based binlog. 
+   Reset the row based binlog. (For MAC OS, please see the section 1)
    shell> mysql -u root -p
    mysql> reset master;
 
-   To check binlog status
+   To check the binlog status
    mysql> show variables like 'binlog_format';
    mysql> show master status;
    mysql> show binlog events;
 
-6. Set the MySQL password:
+6. Set the MySQL password for the system test:
    
    shell> cd srch2-ngn/test/wrapper/system_tests
    Set your MySQL password in adapter_mysql/my.cnf and adapter_mysql/conf.xml.
