@@ -11,10 +11,10 @@ import sys, urllib2, json, time, subprocess, os, commands, signal,shutil
 sys.path.insert(0,'srch2lib')
 import test_lib
 
-sys.path.append(os.getcwd()+'/../../../thirdparty/mysql-connector-c++/MySQL-python/build/lib.linux-x86_64-2.7')
+sys.path.append(os.getcwd()+'/../../../thirdparty/mysql-connector-c++/mysql-connector-python/build')
 
 try:
-    import MySQLdb
+    import mysql.connector
 except ImportError:
     os._exit(-1)
 
@@ -185,7 +185,7 @@ if __name__ == '__main__':
         shutil.rmtree("data")
     conn = None
     try:
-        conn = MySQLdb.connect(host="127.0.0.1",read_default_file="./adapter_mysql/my.cnf")
+        conn = mysql.connector.connect(host="127.0.0.1",option_files="./adapter_mysql/my.cnf")
     except :
         print 'Access denied while connecting to the MySQL database. Set the MySQL user name and password in ./adapter_mysql/my.cnf'
         os._exit(-2)

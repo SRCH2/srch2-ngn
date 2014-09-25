@@ -92,11 +92,11 @@ cd build
 cmake ..
 make
 
-cd ../../../mysql-connector-c++
-echo "BUILDING MySQL python driver for MySQL system test... in $CURRENTDIR"
-tar -xvf MySQL-python-1.2.5.tar.gz
-rm -rf MySQL-python
-mv MySQL-python-1.2.5 MySQL-python
-cd MySQL-python
-python setup.py build
-
+cd ../../mysql-connector-c++
+echo "BUILDING MySQL Connector/Python for MySQL system test... in $CURRENTDIR"
+tar -xvf mysql-connector-python-2.0.1.tar.gz
+rm -rf mysql-connector-python
+mv mysql-connector-python-2.0.1 mysql-connector-python
+cd mysql-connector-python
+python setup.py install
+mv build/*/* build
