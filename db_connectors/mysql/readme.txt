@@ -7,6 +7,10 @@ Author: Chen Liu
 
    For MAC OS:
    Follow the instructions on http://dev.mysql.com/doc/refman/5.5/en/macosx-installation-pkg.html
+
+   To add env parameter:
+   export PATH=$PATH:/usr/local/mysql/bin
+
    To Start/Stop MySQL service on MAC OS:
    shell> /usr/local/mysql/support-files/mysql.server start
    shell> /usr/local/mysql/support-files/mysql.server stop

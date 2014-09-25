@@ -73,6 +73,7 @@ CURRENTDIR=$(pwd)
 echo "Building python mongodb driver for mongodb system test in $CURRENTDIR"
 
 cd ../../mysql-connector-c++
+CURRENTDIR=$(pwd)
 echo "BUILDING MYSQL CONNECTOR C++... in $CURRENTDIR"
 tar -xvf mysql-connector-c++-1.1.4.tar.gz
 rm -rf mysql-connector-c++
@@ -83,6 +84,7 @@ make install
 mv ./build/lib/*/* ./build/lib/
 
 cd ../../mysql-connector-c++
+CURRENTDIR=$(pwd)
 echo "BUILDING MySQL replication listener... in $CURRENTDIR"
 rm -rf mysql-replication-listener
 tar -xvf mysql-replication-listener.tar.gz
@@ -92,7 +94,8 @@ cd build
 cmake ..
 make
 
-cd ../../mysql-connector-c++
+cd ../../../mysql-connector-c++
+CURRENTDIR=$(pwd)
 echo "BUILDING MySQL Connector/Python for MySQL system test... in $CURRENTDIR"
 tar -xvf mysql-connector-python-2.0.1.tar.gz
 rm -rf mysql-connector-python
