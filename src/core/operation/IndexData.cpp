@@ -170,6 +170,7 @@ void IndexData::_bootStrapComponentFromByteSteam(std::istream& inputByteStream, 
     	cout << ex.what() << endl;
     	throw;
     }
+    this->flagBulkLoadDone = true;
 	this->mergeRequired = true;
 }
 
