@@ -13,7 +13,7 @@
 
 <config>
     <srch2Home>./</srch2Home>
-    <listeningHostname>0.0.0.0</listeningHostname>
+    <listeningHostname>127.0.0.1</listeningHostname>
     <listeningPort>8081</listeningPort>
 
     <maxSearchThreads>2</maxSearchThreads>
@@ -59,8 +59,7 @@
       			indexed="true" acl="true"/>
        			<field name="price" type="integer" indexed="false" required="true" refining="true"/>
       			<field name="manufacturer" type="text" indexed="true" refining="true"/>
-       			<field name="state" type="text"
-      			refining="true" indexed="false" acl="true"/>
+       			<field name="state" type="text"	refining="true" indexed="true" acl="true"/>
                     </fields>
 
                     <uniqueKey>pid</uniqueKey>
