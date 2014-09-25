@@ -68,7 +68,7 @@
                 <types>
                     <fieldType name="text_standard">
                         <analyzer>
-                            <filter name="PorterStemFilter" dictionary="protected_words.txt" />
+                            <filter name="PorterStemFilter" dictionary="srch2_protected_words.txt" />
                             <filter name="StopFilter" words="stop-words.txt" />
                         </analyzer>
                     </fieldType>
@@ -191,7 +191,7 @@
 			<!-- Specify certain words are complete, searchable terms, despite punctuation
 			     in them.  This allows searches on terms such as C++ or .NET .
 			 -->
-                        <filter name="protectedKeyWordsFilter" words="protected_words.txt" />
+                        <filter name="protectedKeyWordsFilter" words="srch2_protected_words.txt" />
 
 			<!-- Match Twitter hash tags and user names -->
                         <filter name="allowedRecordSpecialCharacters">#@</filter>
