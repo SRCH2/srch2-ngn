@@ -45,10 +45,10 @@ the [JSON](http://json.org/) format.
 
 ##What's new in SRCH2 4.4.2
 ####Features:
-- Added the Chinese language [support](./configuration/#116-analyzer).
+- Added support of Chinese language with a [Chinese tokenizer](./configuration/#116-analyzer).
 
 ####Improvements:
-- Removed  the requirement to specify "roleCore" for the record based acl in config file.
+- Removed  the requirement to specify "roleCore" for the record-based acl in the config file.
 - Changed API aclRecordRoleAdd to aclRecordRoleReplace.
 - Changed API aclAttributeRoleAdd to aclAttributeRoleReplace.
 - Improved documentation.
