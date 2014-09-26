@@ -52,6 +52,7 @@ final class IndexDescription {
     private static final String DEFAULT_VALUE_prefixMatchPenalty = "0.95";
     private static final String DEFAULT_VALUE_cacheSize = "65536000";
     private static final String DEFAULT_VALUE_rows = "10";
+    private static final int DEFAULT_VALUE_rows_count = 10;
     private static final String DEFAULT_VALUE_fieldBasedSearch = "1";
     private static final String DEFAULT_VALUE_searcherType = "0";
     private static final String DEFAULT_VALUE_queryTermFuzzyType = "0";
@@ -96,7 +97,12 @@ final class IndexDescription {
         highlighter = idx.getHighlighter();
         highlighter.configureHighlightingForIndexDescription();
 
-        queryProperties.setProperty("rows", String.valueOf(idx.getTopK()));
+        int topk = idx.getTopK();
+        if (topk < 1 || topk > 499) {
+            topk = DEFAULT_VALUE_rows_count;
+        }
+
+        queryProperties.setProperty("rows", String.valueOf(topk));
         queryProperties.setProperty("queryTermSimilarityThreshold",
                 String.valueOf(idx.getFuzzinessSimilarityThreshold()));
 
@@ -131,12 +137,9 @@ final class IndexDescription {
                 DEFAULT_VALUE_RecordScoreExpression);
         queryProperties.setProperty("fuzzyMatchPenalty",
                 DEFAULT_VALUE_fuzzyMatchPenalty);
-        queryProperties.setProperty("queryTermSimilarityThreshold",
-                DEFAULT_VALUE_queryTermSimilarityThreshold);
         queryProperties.setProperty("prefixMatchPenalty",
                 DEFAULT_VALUE_prefixMatchPenalty);
         queryProperties.setProperty("cacheSize", DEFAULT_VALUE_cacheSize);
-        queryProperties.setProperty("rows", DEFAULT_VALUE_rows);
         queryProperties.setProperty("fieldBasedSearch",
                 DEFAULT_VALUE_fieldBasedSearch);
         queryProperties.setProperty("searcherType", DEFAULT_VALUE_searcherType);
