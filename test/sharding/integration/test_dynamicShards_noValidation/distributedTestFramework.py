@@ -155,6 +155,7 @@ def killEngine(nodeId):
         #nodes[nodeId].proc.kill()
         #nodes[nodeId].proc.wait()
         err = os.system('kill -9 ' + str(nodes[nodeId].pid))
+        err2 = os.system('rm -rf SRCH2_Cluster/node-' + nodes[nodeId].Id)
         nodes[nodeId].proc.wait()
         print "responseCode is " + str(err) 
         if (err != 0):
@@ -162,8 +163,9 @@ def killEngine(nodeId):
             fin.write(errorMessage)  
         return
     print "process to be deleted " + str(nodes[nodeId].pid) + " " + str(nodes[nodeId].Id)
-    stdin, stdout, stderr = sshClient[nodes[nodeId].Id].exec_command('kill -9 ' + nodes[nodeId].pid)
+    stdin, stdout, stderr = sshClient[nodes[nodeId].Id].exec_command('kill -9 ' + nodes[nodeId].pid)    
     responseCode = stderr.readlines()
+    stdin, stdout, stderr = sshClient[nodes[nodeId].Id].exec_command('cd ' + integrationTestDir + ';rm -rf SRCH2_Cluster/node-' + nodes[nodeId].Id)
     print "responseCode is " + str(responseCode)
     if(responseCode != []):
         errorMessage = "Error in killing node " + str(nodes[nodeId].Id) + " in transaction file " + sys.argv[2] + "\n"
