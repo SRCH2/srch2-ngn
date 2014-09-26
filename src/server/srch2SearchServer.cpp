@@ -882,6 +882,7 @@ int main(int argc, char** argv) {
 		return 0;
 	}
 
+
 	std::string srch2_config_file = "";
 	if (vm_command_line_args.count("config-file")) {
 		srch2_config_file = vm_command_line_args["config-file"].as<string>();
@@ -906,7 +907,7 @@ int main(int argc, char** argv) {
 
 	serverConf->loadConfigFile(metadataManager);
 
-	LicenseVerifier::testFile(serverConf->getLicenseKeyFileName());
+//	LicenseVerifier::testFile(serverConf->getLicenseKeyFileName());
 	string logDir = getFilePath(serverConf->getHTTPServerAccessLogFile());
 	// If the path does't exist, try to create it.
 	if (!logDir.empty() && !checkDirExistence(logDir.c_str())) {

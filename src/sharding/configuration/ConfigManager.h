@@ -498,7 +498,7 @@ private:
 	static const char* const indexedString;
 	static const char* const multiValuedString;
 	static const char* const indexTypeString;
-	static const char* const licenseFileString;
+//	static const char* const licenseFileString;
 	static const char* const listenerWaitTimeString;
 	static const char* const listeningHostStringString;
 	static const char* const listeningPortString;
