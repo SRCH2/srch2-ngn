@@ -51,6 +51,7 @@ the [JSON](http://json.org/) format.
 - Removed  the requirement to specify "roleCore" for the record based acl in config file.
 - Changed API aclRecordRoleAdd to aclRecordRoleReplace.
 - Changed API aclAttributeRoleAdd to aclAttributeRoleReplace.
+- Improved documentation.
 
 ##Platforms
 
