@@ -891,6 +891,7 @@ void HTTPRequestHandler::aclModifyRolesForRecord(evhttp_request *req, Srch2Serve
 	}
 
 	response[JSON_LOG] = edit_responses;
+	Logger::info("%s", global_customized_writer.write(edit_responses).c_str());
     if (isSuccess){
         bmhelper_evhttp_send_reply(req, HTTP_OK, "OK", global_customized_writer.write(response));
     } else {
