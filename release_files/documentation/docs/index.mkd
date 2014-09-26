@@ -43,6 +43,15 @@ the [JSON](http://json.org/) format.
 - Access control (record based and attribute based)
 - Connectors to MongoDB and SQLite, with connectors for other data sources coming soon
 
+##What's new in SRCH2 4.4.2
+####Features:
+- Added the Chinese language [support](./configuration/#116-analyzer).
+
+####Improvements:
+- Removed  the requirement to specify "roleCore" for the record based acl in config file.
+- Changed API aclRecordRoleAdd to aclRecordRoleReplace.
+- Changed API aclAttributeRoleAdd to aclAttributeRoleReplace.
+
 ##Platforms
 
 The SRCH2 engine runs on 64-bit Linux (with a kernel version >= 2.6.32), Mac OS (10.5 and above, Intel x86), 
