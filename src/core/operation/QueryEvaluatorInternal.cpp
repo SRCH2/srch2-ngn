@@ -99,12 +99,11 @@ int QueryEvaluatorInternal::suggest(const string & keyword, float fuzzyMatchPena
 	Term * term = new Term(keyword , TERM_TYPE_COMPLETE , 0, fuzzyMatchPenalty , editDistanceThreshold);
 	// 2. compute active nodes.
 	boost::shared_ptr<PrefixActiveNodeSet> termActiveNodeSet = this->computeActiveNodeSet(term);
-	// 3. we don't need the term anymore
-	delete term;
-
-	// 4. now iterate on active nodes and find suggestions for each on of them
+	// 3. now iterate on active nodes and find suggestions for each on of them
     std::vector<SuggestionInfo > suggestionPairs;
     findKMostPopularSuggestionsSorted(term , termActiveNodeSet.get() , numberOfSuggestionsToReturn, suggestionPairs);
+	// 4. we don't need the term anymore
+	delete term;
 
     int suggestionCount = 0;
     for(std::vector<SuggestionInfo >::iterator suggestion = suggestionPairs.begin() ;
