@@ -246,13 +246,19 @@ void Srch2Server::createAndBootStrapIndexer() {
             indexer->commit();
 
             // Load ACL list from disk
-            indexer->getAttributeAcl().bulkLoadAclJSON(indexDataConfig->getAttibutesAclFile());
+            indexer->getAttributeAcl().bulkLoadAttributeAclJSON(indexDataConfig->getAttibutesAclFile());
+
+            // Load record-based acl data
+            if(indexDataConfig->getHasRecordAcl()){
+            	DaemonDataSource::addRecordAclFile(indexer, indexDataConfig);
+            }
+
             /*
              *  if the roleCore is null it means that this core doesn't have any access control
              *  so we can save it now.
              *  otherwise first we should read the data for acl and we will save this core after that.
              */
-            if (indexedCounter > 0 && this->roleCore == NULL) {
+            if (indexedCounter > 0) {
                 indexer->save();
                 Logger::console("Indexes saved.");
             }
@@ -261,7 +267,7 @@ void Srch2Server::createAndBootStrapIndexer() {
         default: {
             indexer->commit();
             // Load ACL list from disk
-            indexer->getAttributeAcl().bulkLoadAclJSON(indexDataConfig->getAttibutesAclFile());
+            indexer->getAttributeAcl().bulkLoadAttributeAclJSON(indexDataConfig->getAttibutesAclFile());
             Logger::console("Creating new empty index");
         }
         };
