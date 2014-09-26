@@ -42,6 +42,10 @@ using namespace srch2::instantsearch;
 namespace srch2 {
 namespace httpwrapper { 
 
+const char* const ConfigManager::OAuthParam = "OAuth";
+const char* const ConfigManager::authorizationKeyTag = "authorization-key";
+
+string ConfigManager::authorizationKey = "";
 // configuration file tag and attribute names for ConfigManager
 // *MUST* be lowercase
 
@@ -1776,6 +1780,17 @@ bool ConfigManager::isNumber(const std::string& s)
     return !s.empty() && it == s.end();
 }
 
+
+bool checkValidity(string &parameter){
+
+	for(int i = 0; i< parameter.length(); i++){
+		if(!std::isalnum(parameter[i])){
+			return false;
+		}
+	}
+	return true;
+}
+
 void ConfigManager::parse(const pugi::xml_document& configDoc,
                           bool &configSuccess,
                           std::stringstream &parseError,
@@ -1954,6 +1969,21 @@ void ConfigManager::parse(const pugi::xml_document& configDoc,
         configSuccess = false;
         return;
     }
+
+
+	string authKey = "";
+	//Check for authorization key
+	xml_node authorizationNode = configNode.child(authorizationKeyTag);
+	if(authorizationNode && authorizationNode.text()){
+		authKey = string(authorizationNode.text().get());
+		trimSpacesFromValue(authKey,authorizationKeyTag, parseWarnings);
+		if(checkValidity(authKey)){
+			ConfigManager::setAuthorizationKey(authKey);
+		}else{
+			parseWarnings << "Authorization Key is invalid string, so it will not be used by the engine! ";
+			Logger::console("Authorization Key is invalid string, so it will not be used by the engine! ");
+		}
+	}
 
     // maxSearchThreads is an optional field
     numberOfThreads = 1; // by default it is 1
@@ -2459,6 +2489,17 @@ const string& ConfigManager::getHTTPServerAccessLogFile() const {
 const Logger::LogLevel& ConfigManager::getHTTPServerLogLevel() const {
     return loglevel;
 }
+
+
+string ConfigManager::getAuthorizationKey(){
+	return ConfigManager::authorizationKey;
+}
+
+void ConfigManager::setAuthorizationKey(string &key){
+	ConfigManager::authorizationKey = key;
+}
+
+
 
 unsigned CoreInfo_t::getCacheSizeInBytes() const
 {

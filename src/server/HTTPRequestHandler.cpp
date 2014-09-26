@@ -556,6 +556,7 @@ void HTTPRequestHandler::printSuggestions(evhttp_request *req, const evkeyvalq &
 void HTTPRequestHandler::writeCommand(evhttp_request *req,
         Srch2Server *server) {
     /* Yes, we are expecting a post request */
+
     switch (req->type) {
     case EVHTTP_REQ_PUT: {
         size_t length = EVBUFFER_LENGTH(req->input_buffer);

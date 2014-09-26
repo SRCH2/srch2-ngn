@@ -156,6 +156,9 @@ public:
 class ConfigManager {
 public:
 
+
+	static const char* const OAuthParam;
+
 	vector<std::pair<string, unsigned > > getWellKnownHosts(){
 		return this->wellKnownHost;
 	}
@@ -210,6 +213,8 @@ public:
     	return NULL;
     }
 private:
+    static string authorizationKey;
+
     // help in parsing and making the first Cluster readview
     string clusterNameStr ;
     string nodeNameStr;
@@ -427,6 +432,9 @@ public:
 		return defaultCoreSetFlag;
 	}
 
+    static string getAuthorizationKey();
+	static void setAuthorizationKey(string &key);
+
 private:
 
 	// configuration file tag and attribute names for ConfigManager
@@ -464,6 +472,7 @@ private:
 	static const char* const retryCountTag;
 	static const char* const coreIdTag;
 	static const char* const accessLogFileString;
+	static const char* const authorizationKeyTag;
 	static const char* const analyzerString;
 	static const char* const cacheSizeString;
 	static const char* const collectionString;
