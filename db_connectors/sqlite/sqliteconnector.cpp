@@ -384,7 +384,7 @@ int SQLiteConnector::runListener() {
              * connector could save the changes and update the log table.
              */
             if (logRecordTimeChangedFlag) {
-                this->serverHandle->saveChanges();
+//                this->serverHandle->saveChanges();
                 deleteProcessedLog(lastAccessedLogRecordTime);
                 saveLastAccessedLogRecordTime(lastAccessedLogRecordTime);
                 Logger::debug("SQLITECONNECTOR: waiting for updates ...");

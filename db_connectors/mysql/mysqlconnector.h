@@ -39,7 +39,7 @@ private:
     int listenerWaitTime;
 
     //Storing the table schema information
-    std::vector<std::string> fieldName;
+    std::vector<std::string> fieldNames;
 
     //Connection handler for the MySQL C++ Connector
     sql::Statement * stmt;

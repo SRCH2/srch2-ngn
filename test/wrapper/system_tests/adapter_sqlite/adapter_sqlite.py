@@ -157,6 +157,7 @@ def testRunListener(conn,sqlQueriesPath,testQueriesPath):
 def testOfflineLog(conn,sqlQueriesPath,testQueriesPath):
 	#Shutdown the engine
 	shutdownSrch2Engine()
+	time.sleep(3)
 
 	#Modify the table while the srch2 engine is not running
 	f_sql = open(sqlQueriesPath,'r')
@@ -168,7 +169,7 @@ def testOfflineLog(conn,sqlQueriesPath,testQueriesPath):
 	#Start the engine and wait it fetch the changes,
 	#the engine will get the offline changes.
 	startSrch2Engine()
-	time.sleep(5)
+	time.sleep(10)
 
 	#Compare the results with the expecting results
 	compareResults(testQueriesPath)
@@ -191,7 +192,7 @@ if __name__ == '__main__':
 
 	#Do not need to drop the table, remove the db file after the exit.
 	print '=============================='
-	shutdownSrch2Engine()
+	time.sleep(3)
 	conn.close()
 
 	if(os.path.exists("data")):

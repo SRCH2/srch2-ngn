@@ -307,7 +307,7 @@ int MongoDBConnector::runListener() {
                          */
                         if (threadSpecificCutOffTime != opLogTime) {
                             setLastAccessedLogRecordTime(opLogTime);
-                            this->serverHandle->saveChanges();
+//                            this->serverHandle->saveChanges();
                         }
                         threadSpecificCutOffTime = opLogTime;
                         if (tailCursor->isDead())

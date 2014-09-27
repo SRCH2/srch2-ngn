@@ -140,14 +140,16 @@ IF(NOT ANDROID)
 
     IF(MAC_OS)
         SET (CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -stdlib=libstdc++")	
-    INCLUDE_DIRECTORIES(
-        ${CMAKE_SOURCE_DIR}/mysql/
-        ${CMAKE_SOURCE_DIR}/../src/adapter/
-        ${CMAKE_SOURCE_DIR}/../thirdparty/json/jsoncpp-src/include
-        ${CMAKE_SOURCE_DIR}/util/
-        ${CMAKE_SOURCE_DIR}/../thirdparty/mysql-connector-c++/mysql-replication-listener/include
-        ${CMAKE_SOURCE_DIR}/../thirdparty/mysql-connector-c++/mysql-connector-c++/build/include
-        /usr/local/mysql/include/
+        
+        #The MySQL default installation path on MAC is different from the path on Linux 
+        INCLUDE_DIRECTORIES(
+            ${CMAKE_SOURCE_DIR}/mysql/
+            ${CMAKE_SOURCE_DIR}/../src/adapter/
+            ${CMAKE_SOURCE_DIR}/../thirdparty/json/jsoncpp-src/include
+            ${CMAKE_SOURCE_DIR}/util/
+            ${CMAKE_SOURCE_DIR}/../thirdparty/mysql-connector-c++/mysql-replication-listener/include
+            ${CMAKE_SOURCE_DIR}/../thirdparty/mysql-connector-c++/mysql-connector-c++/build/include
+            /usr/local/mysql/include/
     )
     ELSE() 
         INCLUDE_DIRECTORIES(
@@ -163,7 +165,7 @@ IF(NOT ANDROID)
 
     SET( jsoncpp_LIBRARY ${CMAKE_SOURCE_DIR}/../thirdparty/json/jsoncpp-src/build/libjsoncpp.a)
 
-    #MYSQL_CONNECTOR_LIBRARY and MYSQL_LISTENER_LIBRARY have to be both .a or .so
+    #MYSQL_CONNECTOR_LIBRARY and MYSQL_LISTENER_LIBRARY have to be both .a (static libs) or .so (or dynamic libs). We choose to use .a
     SET(MYSQL_LISTENER_LIBRARY ${CMAKE_SOURCE_DIR}/../thirdparty/mysql-connector-c++/mysql-replication-listener/build/lib/libreplication.a)
     SET(MYSQL_CONNECTOR_LIBRARY ${CMAKE_SOURCE_DIR}/../thirdparty/mysql-connector-c++/mysql-connector-c++/build/lib/libmysqlcppconn-static.a)
 

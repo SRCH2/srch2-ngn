@@ -156,8 +156,8 @@ int MySQLConnector::createNewIndexes() {
             //Iterate all the selected records.
             while (res->next()) {
                 //Iterate the fields of one record.
-                for (vector<string>::iterator it = fieldName.begin();
-                        it != fieldName.end(); ++it) {
+                for (vector<string>::iterator it = fieldNames.begin();
+                        it != fieldNames.end(); ++it) {
                     record[*it] = res->getString(*it).c_str();
                 }
 
@@ -196,6 +196,8 @@ int MySQLConnector::createNewIndexes() {
 
 //Get the table's schema and save them into a vector<schema_name>
 //Query: DESCRIBE table_name;
+//For example: table emp(id, name, age, salary).
+//The schema vector will contain {id, name, age, salary}
 bool MySQLConnector::populateFieldName(std::string & tableName) {
     while (1) {
         try {
@@ -203,7 +205,7 @@ bool MySQLConnector::populateFieldName(std::string & tableName) {
                     stmt->executeQuery("DESCRIBE " + tableName));
 
             while (res->next()) {
-                fieldName.push_back(res->getString("Field"));
+                fieldNames.push_back(res->getString("Field"));
             }
             return true;
         } catch (sql::SQLException &e) {
@@ -281,14 +283,14 @@ int MySQLConnector::runListener() {
             mysql::system::create_transport(url.str().c_str()));
 
     //Register the handlers to listen the binlog event
-    Incident_handler incident_hdlr;
-    Table_index table_event_hdlr;
-    Applier replay_hdlr(&table_event_hdlr, serverHandle, &fieldName,
+    IncidentHandler incidentHandler;
+    TableIndex tableEventHandler;
+    Applier applier(&tableEventHandler, serverHandle, &fieldNames,
             lastSavingIndexTime, pk);
 
-    binlog.content_handler_pipeline()->push_back(&table_event_hdlr);
-    binlog.content_handler_pipeline()->push_back(&incident_hdlr);
-    binlog.content_handler_pipeline()->push_back(&replay_hdlr);
+    binlog.content_handler_pipeline()->push_back(&tableEventHandler);
+    binlog.content_handler_pipeline()->push_back(&tableEventHandler);
+    binlog.content_handler_pipeline()->push_back(&applier);
 
     while (binlog.connect()) {
         Logger::error(
@@ -330,11 +332,13 @@ int MySQLConnector::runListener() {
         case mysql::UPDATE_ROWS_EVENT_V1:
         case mysql::DELETE_ROWS_EVENT:
         case mysql::DELETE_ROWS_EVENT_V1: {
+            //Keep updating the executed log time stamp and periodically
+            //saving into the disk.
             time_t rowEventTimestamp = event->header()->timestamp;
             if (rowEventTimestamp - lastSavingIndexTime >= listenerWaitTime) {
                 lastSavingIndexTime = rowEventTimestamp;
                 saveLastSavingIndexTime(lastSavingIndexTime);
-                this->serverHandle->saveChanges();
+//                this->serverHandle->saveChanges();
             }
         }
             break;

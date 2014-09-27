@@ -11,40 +11,27 @@
 
 using srch2::util::Logger;
 
-/****************************Table_index*******************************/
+/****************************TableIndex*******************************/
 //Table index populates the table id and table name.
-mysql::Binary_log_event *Table_index::process_event(
+mysql::Binary_log_event *TableIndex::process_event(
         mysql::Table_map_event *tm) {
     if (find(tm->table_id) == end())
         insert(std::pair<uint64_t, mysql::Table_map_event *>(tm->table_id, tm));
 
-    /* Consume this event so it won't be deallocated beneith our feet */
+    /* Consume this event so it won't be captured by other handlers */
     return 0;
 }
 
-Table_index::~Table_index() {
+TableIndex::~TableIndex() {
     Int2event_map::iterator it = begin();
     do {
         delete it->second;
     } while (++it != end());
 }
 
-int Table_index::get_table_name(int table_id, std::string out) {
-    iterator it;
-    if ((it = find(table_id)) == end()) {
-        std::stringstream os;
-        os << "unknown_table_" << table_id;
-        out.append(os.str());
-        return 1;
-    }
-
-    out.append(it->second->table_name);
-    return 0;
-}
-
-/************************Incident_handler******************************/
+/************************IncidentHandler******************************/
 //This class handles all the incident events like LOST_EVENTS.
-mysql::Binary_log_event * Incident_handler::process_event(
+mysql::Binary_log_event * IncidentHandler::process_event(
         mysql::Incident_event * incident) {
     Logger::debug("MYSQLCONNECTOR: Incident event type: %s\n length: %d,"
             " next pos: %d\n type= %u, message= %s",
@@ -58,10 +45,10 @@ mysql::Binary_log_event * Incident_handler::process_event(
 
 /*****************************Applier**********************************/
 //This class handles insert, delete, update events.
-Applier::Applier(Table_index * index, ServerInterface * serverHandle,
+Applier::Applier(TableIndex * index, ServerInterface * serverHandle,
         std::vector<std::string> * schemaName, time_t & startTimestamp,
         std::string & pk) {
-    m_table_index = index;
+    tableIndex = index;
     this->serverHandle = serverHandle;
     this->schemaName = schemaName;
     this->startTimestamp = startTimestamp;
@@ -69,9 +56,9 @@ Applier::Applier(Table_index * index, ServerInterface * serverHandle,
 }
 
 mysql::Binary_log_event * Applier::process_event(mysql::Row_event * rev) {
-    //Ignore the old event
     time_t ts = rev->header()->timestamp;
 
+    //Ignore the event that earlier than the 'startTimestamp'.
     if (ts < startTimestamp) {
         return rev;
     }
@@ -80,8 +67,8 @@ mysql::Binary_log_event * Applier::process_event(mysql::Row_event * rev) {
 
     //Get the table id
     uint64_t table_id = rev->table_id;
-    Int2event_map::iterator ti_it = m_table_index->find(table_id);
-    if (ti_it == m_table_index->end()) {
+    Int2event_map::iterator ti_it = tableIndex->find(table_id);
+    if (ti_it == tableIndex->end()) {
         Logger::error("MYSQLCONNECTOR: Table id %d was not registered"
                 " by any preceding table map event.");
         return rev;
@@ -95,25 +82,25 @@ mysql::Binary_log_event * Applier::process_event(mysql::Row_event * rev) {
     //Create a fully qualified table name
     std::ostringstream os;
     os << ti_it->second->db_name << '.' << ti_it->second->table_name;
-
+    std::string  fullName = os.str();
     try {
         mysql::Row_event_set::iterator it = rows.begin();
         do {
             mysql::Row_of_fields fields = *it;
             if (rev->get_event_type() == mysql::WRITE_ROWS_EVENT
                     || rev->get_event_type() == mysql::WRITE_ROWS_EVENT_V1) {
-                table_insert(os.str(), fields);
+                tableInsert(fullName, fields);
             }
 
             if (rev->get_event_type() == mysql::UPDATE_ROWS_EVENT
                     || rev->get_event_type() == mysql::UPDATE_ROWS_EVENT_V1) {
                 ++it;
                 mysql::Row_of_fields fields2 = *it;
-                table_update(os.str(), fields, fields2);
+                tableUpdate(fullName, fields, fields2);
             }
             if (rev->get_event_type() == mysql::DELETE_ROWS_EVENT
                     || rev->get_event_type() == mysql::DELETE_ROWS_EVENT_V1) {
-                table_delete(os.str(), fields);
+                tableDelete(fullName, fields);
             }
 
         } while (++it != rows.end());
@@ -124,7 +111,7 @@ mysql::Binary_log_event * Applier::process_event(mysql::Row_event * rev) {
     return rev;
 }
 
-void Applier::table_insert(std::string table_name,
+void Applier::tableInsert(std::string & table_name,
         mysql::Row_of_fields &fields) {
     mysql::Row_of_fields::iterator field_it = fields.begin();
     std::vector<std::string>::iterator schema_it = schemaName->begin();
@@ -153,7 +140,7 @@ void Applier::table_insert(std::string table_name,
     serverHandle->insertRecord(jsonString);
 }
 
-void Applier::table_delete(std::string table_name,
+void Applier::tableDelete(std::string & table_name,
         mysql::Row_of_fields &fields) {
     mysql::Row_of_fields::iterator field_it = fields.begin();
     std::vector<std::string>::iterator schema_it = schemaName->begin();
@@ -181,17 +168,17 @@ void Applier::table_delete(std::string table_name,
     }
 }
 
-void Applier::table_update(std::string table_name,
+void Applier::tableUpdate(std::string & table_name,
         mysql::Row_of_fields &old_fields, mysql::Row_of_fields &new_fields) {
     /*
      Find previous entry and delete it.
      */
-    table_delete(table_name, old_fields);
+    tableDelete(table_name, old_fields);
 
     /*
      Insert new entry.
      */
-    table_insert(table_name, new_fields);
+    tableInsert(table_name, new_fields);
 
 }
 
