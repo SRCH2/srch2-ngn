@@ -176,6 +176,7 @@ def testMongoDB(binary_path,queriesAndResultPath):
 
 	print '=============================='
 	test_lib.killServer(serverHandle)
+	time.sleep(3)
 	return failCount
 
 

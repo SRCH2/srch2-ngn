@@ -128,7 +128,7 @@
     </dbParameters>
  
            <updateLog>
-            <logLevel>4</logLevel>
+            <logLevel>3</logLevel>
             <accessLogFile>./logs/srch2-log.txt</accessLogFile>
         </updateLog>
     
