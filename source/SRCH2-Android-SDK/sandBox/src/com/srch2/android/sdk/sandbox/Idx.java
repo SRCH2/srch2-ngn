@@ -90,9 +90,25 @@ public class Idx extends Indexable {
             o1.put(INDEX_FIELD_NAME_TITLE2, "five elephants");
             records.put(o1);
 
+
+            for (int i = 40; i < 500; ++i) {
+                JSONObject jo = new JSONObject();
+                jo.put(INDEX_FIELD_NAME_PRIMARY_KEY, String.valueOf(i));
+                jo.put(INDEX_FIELD_NAME_TITLE, String.valueOf(i));
+                jo.put(INDEX_FIELD_NAME_SCORE, (float) i);
+                jo.put(INDEX_FIELD_NAME_TITLE2, String.valueOf(i));
+                records.put(jo);
+
+            }
+
         } catch (JSONException ee) {
         }
         return records;
+    }
+
+    @Override
+    public int getTopK() {
+        return 200;
     }
 
     public ArrayList<SearchResultsAdapter.SearchResultItem> wrap(ArrayList<JSONObject> jsonResultsToWrap) {

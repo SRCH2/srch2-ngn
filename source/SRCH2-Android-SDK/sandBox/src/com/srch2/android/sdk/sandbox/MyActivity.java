@@ -39,10 +39,10 @@ public class MyActivity extends Activity implements InstantSearchEditText.Search
         searchResultsListView.setAdapter(resultsAdapter);
 
         index = new Idx();
-        indexTwo = new IdxTwo();
+       // indexTwo = new IdxTwo();
 
 
-        dbHelper = new DatabaseHelper(this);
+     //   dbHelper = new DatabaseHelper(this);
 
 
 
@@ -115,8 +115,7 @@ public class MyActivity extends Activity implements InstantSearchEditText.Search
         super.onResume();
         Log.d("s2sdk::Sandbox", "onResume------------------------------------------!!!");
 
-        SRCH2Engine.setIndexables(index, indexTwo);
-        SRCH2Engine.setSQLiteIndexables(dbHelper.idx);
+        SRCH2Engine.setIndexables(index);
         SRCH2Engine.onResume(this, sr, true);
         InstantSearchEditText.checkIfSearchInputShouldOpenSoftKeyboard(this, (InstantSearchEditText) findViewById(R.id.et_instant_search_input));
     }

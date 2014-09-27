@@ -102,9 +102,16 @@ final class IndexDescription {
             topk = DEFAULT_VALUE_rows_count;
         }
 
+        float fuzzinessSimilarThrehold = idx.getFuzzinessSimilarityThreshold();
+        if (fuzzinessSimilarThrehold <= 0 || fuzzinessSimilarThrehold > 1) {
+            fuzzinessSimilarThrehold = 0.65f;
+        }
+
+        Cat.d("IndexDescription", "setting rows to be " + topk);
+
         queryProperties.setProperty("rows", String.valueOf(topk));
         queryProperties.setProperty("queryTermSimilarityThreshold",
-                String.valueOf(idx.getFuzzinessSimilarityThreshold()));
+                String.valueOf(fuzzinessSimilarThrehold));
 
         setQueryProperties();
         setMiscProperties();
@@ -216,7 +223,7 @@ final class IndexDescription {
     }
 
     String indexStructureToXML() {
-
+        Cat.d("IndexDescription", "query properties .. rows is " + queryProperties.getProperty(ROWS));
 
         if (type == IndexableType.Sqlite) {
             sqliteDatabaseProperties.setProperty(DB_SHARED_LIBRARY_PATH, SRCH2Engine.conf.getAppBinDirectory());
