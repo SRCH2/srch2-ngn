@@ -388,13 +388,13 @@ public:
                 messages.begin(); m != messages.end(); ++m) {
             switch (m->first) {
             case MessageError:
-                result += "ERROR : " + m->second;
+                result += "\"ERROR \":\"" + m->second + "\"";
                 break;
             case MessageWarning:
-                result += "WARNING : " + m->second;
+                result += "\"WARNING \":\"" + m->second + "\"";
                 break;
             case MessageNotice:
-            	result += "NOTICE : " + m->second;
+            	result += "\"NOTICE \":\"" + m->second + "\"";
             	break;
             }
         }

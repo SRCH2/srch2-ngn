@@ -208,7 +208,9 @@ void SearchResultsAggregator::printResults(){
 	if (root ){
 		CustomizableJsonWriter writer (&global_internal_skip_tags);
 		bmhelper_evhttp_send_reply2(req, HTTP_OK, "OK", writer.write(*root), headers);
-	}
+    } else{
+        bmhelper_evhttp_send_reply2(req, HTTP_BADREQUEST, "Bad Request", "" , headers);
+    }
 	evhttp_clear_headers(&headers);
 }
 

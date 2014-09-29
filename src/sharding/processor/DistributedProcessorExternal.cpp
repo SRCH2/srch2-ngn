@@ -164,7 +164,7 @@ void DPExternalRequestHandler::externalSearchCommand(evhttp_request *req , unsig
     partitioner->getAllReadTargets(targets);
     if(targets.size() == 0){
         bmhelper_evhttp_send_reply2(req, HTTP_BADREQUEST, "Node Failure",
-                "All nodes are down.", headers);
+                "No data shard is available for search for this core", headers);
     }else{
     	// 2. use destinations and do the broadcast by using RM
 		time_t timeValue;
