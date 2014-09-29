@@ -50,7 +50,9 @@ class HTTPRequestHandler
 
 	private:
 
-        static boost::shared_ptr<Json::Value> doSearchOneCore(evhttp_request *req,Srch2Server *server, evkeyvalq* headers) ;
+        static boost::shared_ptr<Json::Value> doSearchOneCore(evhttp_request *req,Srch2Server *server, 
+                evkeyvalq* headers, std::stringstream &errorStream) ;
+
 		static boost::shared_ptr<Json::Value> printResults(evhttp_request *req, const evkeyvalq &headers,
 				const LogicalPlan &queryPlan,
 				const CoreInfo_t *indexDataConfig,
