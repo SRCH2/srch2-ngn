@@ -70,6 +70,7 @@ using srch2http::ConfigManager;
 using namespace srch2::util;
 
 using std::string;
+using srch2http::CoreNameServerMap_t;
 
 #define MAX_USER_LEN  20
 #define MAX_MESSAGE_LEN  100
@@ -93,6 +94,7 @@ const char *globalHostName;
 // map from port numbers (shared among cores) to socket file descriptors
 // IETF RFC 6335 specifies port number range is 0 - 65535: http://tools.ietf.org/html/rfc6335#page-11
 typedef std::map<unsigned short /*portNumber*/, int /*fd*/> PortSocketMap_t;
+
 
 /* Convert an amount of bytes into a human readable string in the form
  * of 100B, 2G, 100M, 4K, and so forth.
@@ -259,6 +261,31 @@ struct ExternalOperationArguments{
 	unsigned coreId;
 };
 
+
+static bool checkGlobalOperationPermission(evhttp_request *req, CoreNameServerMap_t *coreNameServerMap, const char* action) {
+    if (checkAuthorizationKey(req) == false) {
+        cb_wrongauthorizationkey(req, static_cast<void *> (coreNameServerMap));
+        return false;
+    }
+
+    unsigned short arrivalPort = getLibeventHttpRequestPort(req);
+
+    if (arrivalPort == 0) {
+        Logger::warn("Unable to ascertain arrival port from request headers.");
+        return false;
+    }
+    // compare arrival port to globalDefaultPort
+    if (globalDefaultPort!= arrivalPort) {
+        Logger::warn("/%s request for global operation arriving on port %d denied (port %d will permit)", action,  arrivalPort, globalDefaultPort);
+        cb_notfound(req, static_cast<void *> (coreNameServerMap));
+        return false;
+    }
+
+    return true;
+
+}
+
+
 static bool checkOperationPermission(evhttp_request *req, 
 		unsigned coreId, srch2http::PortType_t portType) {
 
@@ -315,8 +342,10 @@ static void cb_search(evhttp_request *req, void *arg) {
 	evhttp_add_header(req->output_headers, "Content-Type",
 			"application/json; charset=UTF-8");
 
-	if(!checkOperationPermission(req, dpExternalAndCoreId->coreId, srch2http::SearchPort))
-		return;
+	//TODO
+//	if(!checkOperationPermission(req, dpExternalAndCoreId->coreId, srch2http::SearchPort)){
+//		return;
+//	}
 
 	try {
 		dpExternalAndCoreId->dpExternal->externalSearchCommand(req, dpExternalAndCoreId->coreId);
@@ -325,6 +354,32 @@ static void cb_search(evhttp_request *req, void *arg) {
 		Logger::error(e.what());
 		srch2http::HTTPRequestHandler::handleException(req);
 	}
+}
+
+/*
+ * 'search_all' callback function. It will search each of the core and wrapup the result
+ * in a json format
+ */
+static void cb_search_all(evhttp_request *req, void * arg){
+	ExternalOperationArguments * dpExternalAndCoreId = (ExternalOperationArguments * )arg;
+    evhttp_add_header(req->output_headers, "Content-Type",
+            "application/json; charset=UTF-8");
+
+    //TODO
+//    // The call should only send from the default port
+//    if (checkGlobalOperationPermission(req, coreNameServerMap, "search_all") == false ) {
+//        return ;
+//    }
+
+    try {
+//        srch2http::HTTPRequestHandler::searchAllCommand(req, coreNameServerMap);
+        dpExternalAndCoreId->dpExternal->externalSearchAllCommand(req);
+    } catch (exception& e) {
+        // exception caught
+        Logger::error(e.what());
+        srch2http::HTTPRequestHandler::handleException(req);
+    }
+
 }
 
 /**
@@ -499,6 +554,30 @@ static void cb_shutdown(evhttp_request *req, void *arg) {
 		Logger::error(e.what());
 		srch2http::HTTPRequestHandler::handleException(req);
 	}
+}
+
+
+static void cb_nodeShutdown(evhttp_request *req, void *arg)
+{
+    CoreNameServerMap_t *coreNameServerMap = reinterpret_cast<CoreNameServerMap_t*>(arg);
+    evhttp_add_header(req->output_headers, "Content-Type",
+            "application/json; charset=UTF-8");
+
+    //TODO
+//    // The call should only send from the default port
+//    if (checkGlobalOperationPermission(req, coreNameServerMap, "shutdown") == false ) {
+//        return ;
+//    }
+
+    try {
+//        HTTPRequestHandler::shutdownCommand(req, coreNameServerMap);
+		srch2http::ShardManager::getShardManager()->_shutdown();
+    } catch (exception& e) {
+        // exception caught
+        Logger::error(e.what());
+       srch2http::HTTPRequestHandler::handleException(req);
+    }
+
 }
 
 /**
@@ -830,8 +909,16 @@ static const struct UserRequestAttributes_t {
 		{ "/export", srch2http::ExportPort, cb_export },
 		{ "/resetLogger", srch2http::ResetLoggerPort, cb_resetLogger },
 		{ "/shutdown", srch2http::ShutdownPort, cb_shutdown },
+		{ "/node_shutdown", srch2http::NodeShutdownPort, cb_nodeShutdown},
 		{ NULL, srch2http::EndOfPortType, NULL }
 };
+// set the global callbacks for all the indexes
+UserRequestAttributes_t global_PortList[] = {
+	{ "/_all/search", srch2http::EndOfPortType, cb_search_all },
+	{ "/_all/shutdown", srch2http::EndOfPortType, cb_shutdown },
+	{ NULL , srch2http::EndOfPortType, NULL }
+};
+
 typedef unsigned CoreId;//TODO is it needed ? if not let's delete it.
 
 /*
@@ -902,6 +989,15 @@ int setCallBacksonHTTPServer(ConfigManager *const config,
 			Logger::debug("Adding port %d route %s to core %s",
 					port, path.c_str(), coreName.c_str());
 		}
+	}
+
+	ExternalOperationArguments * global_args = new ExternalOperationArguments();
+	global_args->dpExternal = dpExternal;
+	global_args->coreId = -1;
+
+	for(int j = 0; global_PortList[j].path != NULL; j++){
+		string path = string(global_PortList[j].path);
+		evhttp_set_cb(http_server, path.c_str(), global_PortList[j].callback, global_args);
 	}
 
 	return 0;

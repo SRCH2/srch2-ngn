@@ -124,6 +124,7 @@ enum PortType_t {
 	CommitPort,
 	MergePort,
 	ShutdownPort,
+	NodeShutdownPort,
 	EndOfPortType // stop value - not valid (also used to indicate all/default ports)
 };
 

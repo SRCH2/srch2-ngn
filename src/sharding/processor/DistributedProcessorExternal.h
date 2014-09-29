@@ -57,6 +57,8 @@ public:
 	 */
 	void externalSearchCommand(evhttp_request *req, unsigned coreId);
 
+	void externalSearchAllCommand(evhttp_request * req);
+
 	/*
 	 * 1. Receives an insert request from a client (not from another shard)
 	 * 2. Uses Partitioner to know which shard should handle this request

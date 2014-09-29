@@ -252,6 +252,7 @@ void ShardManager::shutdown(evhttp_request *req){
 void ShardManager::_shutdown(){
 	Logger::console("Shutting down the instance ...");
 	raise(SIGTERM);
+//    kill(getpid(),SIGTERM);
 //	exit(0);
 	//TODO
 }

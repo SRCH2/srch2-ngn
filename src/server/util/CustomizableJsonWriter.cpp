@@ -10,7 +10,7 @@
 using namespace Json;
 using namespace std;
 
-CustomizableJsonWriter::CustomizableJsonWriter(vector<pair<string, string> > *tags)
+CustomizableJsonWriter::CustomizableJsonWriter(const vector<pair<string, string> > *tags)
 {
 	this->skipTags = tags;
 	yamlCompatiblityEnabled_ = false;

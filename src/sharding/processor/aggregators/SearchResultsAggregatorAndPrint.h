@@ -114,7 +114,7 @@ public:
      * Iterate over the recordIDs in queryResults and get the record.
      * Add the record information to the request.out string.
      */
-    void printResults(evhttp_request *req,
+    boost::shared_ptr<Json::Value> printResults(evhttp_request *req,
             const evkeyvalq &headers, const LogicalPlan &queryPlan,
             const CoreInfo_t *indexDataConfig,
             const vector<pair< QueryResult *, MapStringPtr> > allResults,
@@ -123,7 +123,7 @@ public:
             const unsigned retrievedResults, const string & message,
             const unsigned ts1, const vector<RecordSnippet>& recordSnippets, unsigned hlTime, bool onlyFacets) ;
 
-    void printOneResultRetrievedById(evhttp_request *req, const evkeyvalq &headers,
+    boost::shared_ptr<Json::Value> printOneResultRetrievedById(evhttp_request *req, const evkeyvalq &headers,
             const LogicalPlan &queryPlan,
             const CoreInfo_t *indexDataConfig,
             const vector<pair< QueryResult *, MapStringPtr> > allResults,
