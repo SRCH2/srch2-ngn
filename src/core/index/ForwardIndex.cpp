@@ -275,27 +275,7 @@ void ForwardIndex::addRecord(const Record *record, const unsigned recordId,
     ((Record *)record)->disownInMemoryData();
     forwardList->setNumberOfKeywords(uniqueKeywordIdList.size());
 
-    //Adding Non searchable Attribute list
-    vector<vector<string> > refiningAttributeValues;
-    for (unsigned iter = 0;
-            iter < this->schemaInternal->getNumberOfRefiningAttributes();
-            ++iter) {
 
-        const string * refiningAttributeValueStringTokens = record
-                ->getRefiningAttributeValue(iter);
-        vector<string> refiningAttributeValueStringTokensVector;
-        // If this attribute is multi-valued, we tokenize the value and prepate the vector
-        // otherwise, we just insert one value into the vector.
-        // Example: <"tag1","tag2","tag3"> vs. <"tag1">
-        if(this->schemaInternal->isRefiningAttributeMultiValued(iter) == true){
-			boost::split(refiningAttributeValueStringTokensVector , *refiningAttributeValueStringTokens ,
-					boost::is_any_of(srch2is::MULTI_VALUED_ATTRIBUTES_VALUE_DELIMITER) , boost::token_compress_on );
-        }else{
-        	refiningAttributeValueStringTokensVector.push_back(*refiningAttributeValueStringTokens);
-        }
-
-        refiningAttributeValues.push_back(refiningAttributeValueStringTokensVector);
-    }
     PositionIndexType positionIndexType = this->schemaInternal->getPositionIndexType();
     bool shouldAttributeBitMapBeAllocated = false;
     if (isEnabledAttributeBasedSearch(positionIndexType)) {
@@ -365,7 +345,8 @@ void ForwardIndex::addRecord(const Record *record, const unsigned recordId,
 
     // set all extra information into the forward list.
     forwardList->allocateSpaceAndSetNSAValuesAndPosIndex(this->schemaInternal ,
-    		refiningAttributeValues , shouldAttributeBitMapBeAllocated , tempPositionIndexBuffer, tempOffsetBuffer);
+    		 shouldAttributeBitMapBeAllocated , tempPositionIndexBuffer, tempOffsetBuffer);
+
 
     // Add KeywordId List
     for (unsigned iter = 0; iter < uniqueKeywordIdList.size(); ++iter) {

@@ -90,55 +90,6 @@ bool JSONRecordParser::_JSONValueObjectToRecord(srch2is::Record *record, const s
         return false;// Raise Error
     }
 
-    // storing searchable attributes code begin.
-    string compressedInputLine;
-    typedef map<string , unsigned>::const_iterator SearchableAttrIter;
-    const Schema& storageSchema = compactRecSerializer.getStorageSchema();
-    for (SearchableAttrIter iter = storageSchema.getSearchableAttribute().begin();
-    		iter != storageSchema.getSearchableAttribute().end(); ++iter)
-    {
-    	vector<string> attributeStringValues;
-    	getJsonValueString(root, iter->first, attributeStringValues, "attributes-search");
-    	string singleString = boost::algorithm::join(attributeStringValues, " $$ ");
-    	snappy::Compress(singleString.c_str(), singleString.length(), &compressedInputLine);
-    	compactRecSerializer.addSearchableAttribute(iter->first, compressedInputLine);
-    }
-    // Now we need to store the refining attributes
-    typedef map<string , unsigned>::const_iterator  RefineAttrIter;
-    for (RefineAttrIter iter = storageSchema.getRefiningAttributes()->begin();
-    		iter != storageSchema.getRefiningAttributes()->end(); ++iter) {
-    	vector<string> attributeStringValues;
-    	getJsonValueString(root, iter->first, attributeStringValues, "refining-attributes");
-    	srch2is::FilterType type = storageSchema.getTypeOfRefiningAttribute(iter->second);
-		switch (type) {
-		case srch2is::ATTRIBUTE_TYPE_UNSIGNED:
-		{
-			string& singleString = attributeStringValues[0];
-			unsigned val = atoi(singleString.c_str());
-			compactRecSerializer.addRefiningAttribute(iter->first, val);
-			break;
-		}
-		case srch2is::ATTRIBUTE_TYPE_FLOAT:
-		{
-			string& singleString = attributeStringValues[0];
-			float val = atof(singleString.c_str());
-			compactRecSerializer.addRefiningAttribute(iter->first, val);
-			break;
-		}
-		default:
-		{
-			// not possible
-			break;
-		}
-		}
-    }
-    RecordSerializerBuffer compactBuffer = compactRecSerializer.serialize();
-    record->setInMemoryData(compactBuffer.start, compactBuffer.length);
-    compactRecSerializer.nextRecord();
-    //delete[] (char *)compactBuffer.start;
-
-
-
     for (map<string , SearchableAttributeInfoContainer>::const_iterator attributeIter
     		= indexDataContainerConf->getSearchableAttributes()->begin();
     		attributeIter != indexDataContainerConf->getSearchableAttributes()->end();++attributeIter)
@@ -189,7 +140,7 @@ bool JSONRecordParser::_JSONValueObjectToRecord(srch2is::Record *record, const s
         // if type is date/time, check the syntax
         if( attributeIter->second.attributeType == srch2is::ATTRIBUTE_TYPE_TIME){
             vector<string> attributeStringValues;
-            getJsonValueDateAndTime(root, attributeKeyName, attributeStringValues,"refining-attributes" );
+            getJsonValueDateAndTime(root, attributeKeyName, attributeStringValues,"refining-attributes");
             if(attributeStringValues.empty()){
                 // ERROR
                 error << "\nDATE/TIME field has non recognizable format.";
@@ -198,16 +149,25 @@ bool JSONRecordParser::_JSONValueObjectToRecord(srch2is::Record *record, const s
                 if (std::find(attributeStringValues.begin() , attributeStringValues.end() , "NULL") != attributeStringValues.end() &&
                     attributeIter->second.required ){
                     // ERROR
-                    error << "\nRequired refining attribute is null.";
+                    error << "\nDATE/TIME field " << attributeKeyName << " is marked as required field but does not have any value in input JSON record";
                     return false;// Raise Error
                 }
                 if (std::find(attributeStringValues.begin() , attributeStringValues.end() , "NULL") != attributeStringValues.end()){
-                    std::replace(attributeStringValues.begin() , attributeStringValues.end() , (string)"NULL" , attributeIter->second.defaultValue);
+                	//first verify whether default value itself is valid or not
+                	const string& defaultValue = attributeIter->second.defaultValue;
+                	if(srch2is::DateAndTimeHandler::verifyDateTimeString(defaultValue , srch2is::DateTimeTypePointOfTime)
+                	  || srch2is::DateAndTimeHandler::verifyDateTimeString(defaultValue , srch2is::DateTimeTypeDurationOfTime)) {
+                		std::replace(attributeStringValues.begin() , attributeStringValues.end() , (string)"NULL" , defaultValue);
+                	} else {
+                		// ERROR
+                		error << "\nDATE/TIME field " << attributeKeyName << " has empty value and the default specified in the config file is not a valid value.";
+                		return false;// Raise Error
+                	}
                 }
                 string attributeStringValue = "";
                 for(vector<string>::iterator stringValueIter = attributeStringValues.begin() ; stringValueIter != attributeStringValues.end() ; ++stringValueIter){
                     if(stringValueIter != attributeStringValues.begin()){
-                        attributeStringValue += MULTI_VALUED_ATTRIBUTES_VALUE_DELIMITER;
+                        attributeStringValue += MULTI_VAL_ATTR_DELIMITER;
                     }
                     attributeStringValue += *stringValueIter;
                 }
@@ -226,7 +186,7 @@ bool JSONRecordParser::_JSONValueObjectToRecord(srch2is::Record *record, const s
                 string attributeStringValue = "";
                 for(vector<string>::iterator stringValueIter = attributeStringValues.begin() ; stringValueIter != attributeStringValues.end() ; ++stringValueIter){
                     if(stringValueIter != attributeStringValues.begin()){
-                        attributeStringValue += MULTI_VALUED_ATTRIBUTES_VALUE_DELIMITER;
+                        attributeStringValue += MULTI_VAL_ATTR_DELIMITER;
                     }
                     attributeStringValue += *stringValueIter;
                 }
@@ -248,7 +208,7 @@ bool JSONRecordParser::_JSONValueObjectToRecord(srch2is::Record *record, const s
                     string attributeStringValue = "";
                     for(vector<string>::iterator stringValueIter = attributeStringValues.begin() ; stringValueIter != attributeStringValues.end() ; ++stringValueIter){
                         if(stringValueIter != attributeStringValues.begin()){
-                            attributeStringValue += MULTI_VALUED_ATTRIBUTES_VALUE_DELIMITER;
+                            attributeStringValue += MULTI_VAL_ATTR_DELIMITER;
                         }
                         attributeStringValue += *stringValueIter;
                     }
@@ -260,6 +220,62 @@ bool JSONRecordParser::_JSONValueObjectToRecord(srch2is::Record *record, const s
         }
 
     }
+
+    // Creating in-memory compact representation below by using the Record object. Sanity check of input
+    // data is done before creating the record object.
+    // 1. storing variable length attributes
+    string compressedInputLine;
+    typedef map<string , unsigned>::const_iterator SearchableAttrIter;
+    // Note: storageSchema is a schema for in-memory data and it differs from actual schema populated
+    // from config file and kept in the index.
+    // In storage schema: Var Length Attributes (including MultiValAtr) => Searchable Attributes
+    //                    fixed Length Attrbutes (only float and int) => refining Attributes.
+    const Schema& storageSchema = compactRecSerializer.getStorageSchema();
+    for (SearchableAttrIter iter = storageSchema.getSearchableAttribute().begin();
+    		iter != storageSchema.getSearchableAttribute().end(); ++iter)
+    {
+    	vector<string> attributeStringValues;
+    	record->getSearchableAttributeValues(iter->first, attributeStringValues);
+    	string singleString;
+    	if (attributeStringValues.size() > 0) {
+    		singleString = boost::algorithm::join(attributeStringValues, " $$ ");
+    	} else {
+    		record->getRefiningAttributeValue(iter->first, singleString);
+    	}
+    	snappy::Compress(singleString.c_str(), singleString.length(), &compressedInputLine);
+    	compactRecSerializer.addSearchableAttribute(iter->first, compressedInputLine);
+    }
+    // 2. Now we need to store the Fixed attributes (int and float)
+    typedef map<string , unsigned>::const_iterator  RefineAttrIter;
+    for (RefineAttrIter iter = storageSchema.getRefiningAttributes()->begin();
+    		iter != storageSchema.getRefiningAttributes()->end(); ++iter) {
+    	string attributeStringValue;
+    	record->getRefiningAttributeValue(iter->first, attributeStringValue);
+    	srch2is::FilterType type = storageSchema.getTypeOfRefiningAttribute(iter->second);
+		switch (type) {
+		case srch2is::ATTRIBUTE_TYPE_UNSIGNED:
+		{
+			unsigned val = atoi(attributeStringValue.c_str());
+			compactRecSerializer.addRefiningAttribute(iter->first, val);
+			break;
+		}
+		case srch2is::ATTRIBUTE_TYPE_FLOAT:
+		{
+			float val = atof(attributeStringValue.c_str());
+			compactRecSerializer.addRefiningAttribute(iter->first, val);
+			break;
+		}
+		default:
+		{
+			// not possible
+			break;
+		}
+		}
+    }
+    RecordSerializerBuffer compactBuffer = compactRecSerializer.serialize();
+    record->setInMemoryData(compactBuffer.start, compactBuffer.length);
+    compactRecSerializer.nextRecord();
+
 
     // Add recordBoost, setSortableAttribute and setScoreAttribute
     record->setRecordBoost(1); // default record boost: 1
@@ -565,24 +581,20 @@ void JSONRecordParser::getJsonValueDateAndTime(const Json::Value &jsonValue,
     convertValueToString(value, temp);
 
     // now check to see if it has proper date/time format
-    // if the value of the array was ["12:34:45","12:34:24","12:02:45"], it's now changed to
-    // vector : <12:34:45,12:34:24,12:02:45>.
-    // Now we should
-    // 1. iterate on vector
-    // 2. convert it to unix time
-    // 3. prepare the string again to become something like "1234245,3654665,56456687"
 
     string stringValue = "";
     for(vector<string>::iterator valueToken = temp.begin() ; valueToken != temp.end() ; ++valueToken){
         boost::algorithm::trim(*valueToken);
         if(srch2is::DateAndTimeHandler::verifyDateTimeString(*valueToken , srch2is::DateTimeTypePointOfTime)
            || srch2is::DateAndTimeHandler::verifyDateTimeString(*valueToken , srch2is::DateTimeTypeDurationOfTime) ){
-            stringstream buffer;
-            buffer << srch2::instantsearch::DateAndTimeHandler::convertDateTimeStringToSecondsFromEpoch(*valueToken);
-            stringValues.push_back(buffer.str());
+            stringValues.push_back(*valueToken);
         }else{
-            stringValues.clear();
-            return;
+        	if (*valueToken == "") {
+        		stringValues.push_back("NULL");
+        	} else {
+        		stringValues.clear();
+        		return;
+        	}
         }
     }
     return;
