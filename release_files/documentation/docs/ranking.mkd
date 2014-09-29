@@ -49,3 +49,28 @@ The value "idf(<i>t_i</i>)" is the inverted document frequency, calculated as fo
 
 In the case where the record <i>r</i> has multiple keywords <i>w_i</i>'s that match term <i>t_i</i>, TermScore(<i>r</i>, <i>t_i</i>) is the largest value among them.
 
+<b>4) Proximity match score </b>: Based on the distance between matching query keywords in the record the engine calculates a score for each phrase match which is inversely proportional to the distance and adds these individual values and takes it's square root to compute the phrase frequency for each record. This value is then multiplied with the sum of all the term record static score to produce a proximity match score for each record.
+<center><i>phrase frequency</i> = <i>squareRoot(sumOf(1/(1+d)))</i></center>
+<center><i>score of each record</i> = <i>sumOf(termRecordStaticScore)</i> * <i>phrase frequency</i> </center>
+
+For example:
+
+- This is class test.
+- This is last and final class test, there will be no more class test.
+
+List of slop distances respectively are:
+
+- 0, phrase frequency = 1
+- 0, 7, 0, phrase frequency = sqrt(2.125) = 1.457
+
+The above phrase frequency is then multiplied with sum of term record static scores to give the overall score to each record.
+
+
+
+
+
+
+
+
+
+

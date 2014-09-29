@@ -223,6 +223,8 @@ To do a proximity search, we use the tilde symbol ("~") at the end of a phrase. 
 Notice that a proximity search does not support edit-distance-based fuzzy match, i.e., we do not allow typos in the keywords in the quotes.
 Also note that the maximum value of the input slop can only be 100000.
 
+To know about how the scores are computed based on proximity of keywords please look into [ranking](ranking.mkd)
+
 ### 3.4. Boolean Operators 
 
 The engine supports three boolean operators: AND, OR, and NOT. For example:
