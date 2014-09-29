@@ -1290,6 +1290,11 @@ void ConfigManager::parseSchema(const xml_node &schemaNode, CoreConfigParseState
                 // We assume the primary key is text, we don't get any type from user.
                 // And no default value is accepted from user.
                 if(string(field.attribute(nameString).value()).compare(coreInfo->primaryKey) == 0){
+                	if(isMultiValued){
+                		configSuccess = false;
+                		parseError << "Config File Error: Primary Key cannot be multivalued";
+                		return;
+                	}
                     if(isSearchable){
                         coreInfo->isPrimSearchable = 1;
                         coreParseState->searchableFieldsVector.push_back(string(field.attribute(nameString).value()));
@@ -1298,6 +1303,7 @@ void ConfigManager::parseSchema(const xml_node &schemaNode, CoreConfigParseState
                         // primary key is always required.
                         coreParseState->searchableAttributesRequiredFlagVector.push_back(true);
                         coreParseState->searchableAttributesHighlight.push_back(isHighlightEnabled);
+                        coreParseState->searchableAttributesIsMultiValued.push_back(isMultiValued);
                     }
 
                     if(isRefining){
@@ -1305,6 +1311,7 @@ void ConfigManager::parseSchema(const xml_node &schemaNode, CoreConfigParseState
                         RefiningFieldTypesVector.push_back(srch2::instantsearch::ATTRIBUTE_TYPE_TEXT);
                         RefiningAttributesDefaultVector.push_back("");
                         RefiningAttributesRequiredFlagVector.push_back(true);
+                        RefiningAttributesIsMultiValued.push_back(isMultiValued);
                     }
                     continue;
                 }
@@ -1437,6 +1444,7 @@ void ConfigManager::parseSchema(const xml_node &schemaNode, CoreConfigParseState
 
     if(RefiningFieldsVector.size() != 0){
         for (unsigned iter = 0; iter < RefiningFieldsVector.size(); iter++) {
+
             coreInfo->refiningAttributesInfo[RefiningFieldsVector[iter]] =
                 RefiningAttributeInfoContainer(RefiningFieldsVector[iter] ,
                                                RefiningFieldTypesVector[iter] ,
