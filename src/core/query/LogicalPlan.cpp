@@ -255,7 +255,11 @@ LogicalPlan::LogicalPlan(){
 
 LogicalPlan::LogicalPlan(const LogicalPlan & logicalPlan){
 	if(logicalPlan.tree != NULL){
-		this->tree = new LogicalPlanNode(*(logicalPlan.tree));
+	    if(logicalPlan.tree->nodeType == LogicalPlanNodeTypePhrase){
+	        this->tree = new LogicalPlanPhraseNode(*((LogicalPlanPhraseNode *)(logicalPlan.tree)));
+	    }else{
+            this->tree = new LogicalPlanNode(*(logicalPlan.tree));
+	    }
 	}else{
 		this->tree = NULL;
 	}
