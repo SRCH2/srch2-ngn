@@ -43,7 +43,7 @@ typedef map<string, PairOfAttrsListSharedPtr>::iterator AclMapIter;
 typedef map<string, PairOfAttrsListSharedPtr>::const_iterator AclMapConstIter;
 
 enum AclActionType {
-	ACL_ADD, // insert new acl
+	ACL_REPLACE, // insert new acl
 	ACL_DELETE, // delete existing acl
 	ACL_APPEND  // append to existing acl
 };
@@ -68,15 +68,15 @@ public:
 
 	// Bulk load ACL for first time.
 	// Thread unsafe. Should be called only from main thread during initial load.
-	void bulkLoadAclCSV(const string& aclLoadFileName) const;
+	void bulkLoadAttributeAclCSV(const string& aclLoadFileName) const;
 
-	void bulkLoadAclJSON(const std::string& aclLoadFileName) const;
+	void bulkLoadAttributeAclJSON(const std::string& aclLoadFileName) const;
 
 	bool processSingleJSONAttributeAcl(const Json::Value& doc, AclActionType action,
 			const string& apiName, Json::Value& aclAttributeResponse) const;
 
-	// add new acl for a role
-	void setAcl(const string& aclRoleValue, vector<unsigned>& searchableAttrIdsList,
+	// replace a new acl for a attribute
+	void replaceFromAcl(vector<string>& aclRoleValue, vector<unsigned>& searchableAttrIdsList,
 			vector<unsigned>& refiningAttrIdsList);
 
 	// append to existing acl for a role. If role is not found then it is created.
@@ -119,8 +119,11 @@ private:
 	// process acl request
 	bool processAclRequest(vector<string>& fields, vector<string>& roleValues, AclActionType action) const;
 
-	//Internal API which loads acl JSON file. This API is called from wrapper API bulkLoadAclJSON
-	void _bulkLoadAclJSON(const std::string& aclLoadFileName) const;
+	//Internal API which loads attribute acl JSON file. This API is called from wrapper API bulkLoadAttributeAclJSON
+	void _bulkLoadAttributeAclJSON(const std::string& aclLoadFileName) const;
+
+	//Internal API which loads attribute acl CSV file. This API is called from wrapper API bulkLoadAttributeAclCSV
+	void _bulkLoadAttributeAclCSV(const std::string& aclLoadFileName) const;
 
     friend class boost::serialization::access;
     template<class Archive>

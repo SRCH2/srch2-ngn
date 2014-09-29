@@ -135,12 +135,15 @@ enum PortType_t {
     ResetLoggerPort,
     SearchAllPort,
     ShutDownAllPort,
-    AttributeAclAdd,
+    AttributeAclReplace,
     AttributeAclAppend,
     AttributeAclDelete,
-    RecordAclAdd,
+    RecordAclReplace,
     RecordAclAppend,
     RecordAclDelete,
+    AclAddRecordsForRole,
+    AclAppendRecordsForRole,
+    AclDeleteRecordsForRole,
     EndOfPortType // stop value - not valid (also used to indicate all/default ports)
 };
 
@@ -260,10 +263,6 @@ protected:
     void parseSingleCore(const xml_node &parentNode, CoreInfo_t *coreInfo, bool &configSuccess, std::stringstream &parseError, std::stringstream &parseWarnings);
 
     void parseMultipleCores(const xml_node &coresNode, bool &configSuccess, std::stringstream &parseError, std::stringstream &parseWarnings);
-
-    void parseSingleAccessControl(const xml_node &parentNode, bool &configSuccess, std::stringstream &parseError, std::stringstream &parseWarnings);
-
-    void parseAccessControls(const xml_node &accessControlsNode, bool &configSuccess, std::stringstream &parseError, std::stringstream &parseWarnings);
 
     // parse all data source settings (can handle multiple cores or default/no core)
     void parseDataConfiguration(const xml_node &configNode, bool &configSuccess, std::stringstream &parseError, std::stringstream &parseWarnings);
@@ -456,7 +455,6 @@ private:
     static const char* const enableCharOffsetIndexString;
     static const char* const expandString;
     static const char* const facetEnabledString;
-    static const char* const attributeAclFileString;
     static const char* const facetEndString;
     static const char* const facetFieldString;
     static const char* const facetFieldsString;
@@ -551,10 +549,9 @@ private:
     static const char* const fuzzyTagPost;
     static const char* const snippetSize;
 
-    static const char* const multipleAccessControlString;
-    static const char* const resourceCore;
-    static const char* const roleCore;
-    static const char* const accessControlDataFile;
+    static const char* const accessControlString;
+    static const char* const recordAclString;
+    static const char* const attributeAclString;
     static const char* const aclRoleId;
     static const char* const aclResourceId;
 
@@ -746,6 +743,14 @@ public:
     	return attrAclFilePath;
     }
 
+    const std::string* getRecordAclFile() const{
+    	return &recordAclFilePath;
+    }
+
+    bool getHasRecordAcl() const{
+    	return hasRecordAcl;
+    }
+
 protected:
     string name; // of core
 
@@ -866,6 +871,9 @@ protected:
 
     // keep the access control info for this core
     AccessControlInfo* accessControlInfo;
+    bool hasRecordAcl;
+    string recordAclFilePath;
+
 
 };
 

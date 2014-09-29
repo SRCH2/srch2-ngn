@@ -644,7 +644,7 @@ characters that include those characters will be treated as a single term and wi
 separate words.  Here is an example for this setting to allow apostrophes, dashes, underscores, and at signs to occur within single words:
 
 ```
-<allowedRecordSpecialCharacters>`-_@</allowedRecordSpecialCharacters>
+<filter name="allowedRecordSpecialCharacters">#@</filter>
 ```
 
 This example will allow a search on "L'Absinthe" to match and return a record with the phrase "Edgar Degas' painting L'Absinthe hangs in the Musée d'Orsay in Paris" in an indexed attribute.

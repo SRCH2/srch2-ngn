@@ -19,11 +19,11 @@
  
     <maxSearchThreads>8</maxSearchThreads>
     
-    <dataDir>./data/acl/indexes</dataDir>
+    <dataDir>./data/acl/indexes-3</dataDir>
      
     <dataSourceType>1</dataSourceType>
     
-    <dataFile>./attributesAcl/data.json</dataFile>
+    <dataFile>./attributesAcl/randomData.json</dataFile>
 
     <!-- 
         Mongo DB settings
@@ -47,7 +47,7 @@
         <supportSwapInEditDistance>true</supportSwapInEditDistance>
 
        <!--  <fieldBoost>title^12 tags^16</fieldBoost> -->
-        <fieldBoost>attr1^30</fieldBoost>
+        <fieldBoost></fieldBoost>
 
         <recordBoostField></recordBoostField>
 
@@ -120,7 +120,7 @@
 
             <logLevel>3</logLevel>
                          
-            <accessLogFile>./data/acl/log.txt</accessLogFile>
+            <accessLogFile>./data/acl/log-3.txt</accessLogFile>
 
         </updateLog>
      
@@ -128,21 +128,21 @@
 
     <schema name="SRCH2" version="3">
        <fields>
-       <field name="attr1"  type="text" highlight="true" refining="true" searchable="true"  />
-       <field name="attr2"  type="text" highlight="true" refining="true" searchable="false" acl="true" />
-       <field name="attr3"  type="text" highlight="true" refining="false" searchable="true" acl="false" />
-       <field name="attr4"  type="text" highlight="true" refining="true" searchable="false" acl="true" />
-       <field name="attr5"  type="text" highlight="true" refining="false" searchable="true" acl="false" />
-       <field name="attr6"  type="text" highlight="true" refining="false" searchable="true" acl="true" />
-       <field name="attr7"  type="text" highlight="true" refining="false" searchable="true" acl="true" />
-       <field name="attr8"  type="text" highlight="true" refining="false" searchable="true" acl="true" />
+       <field name="name"  type="text" refining="false" searchable="true"  highlight="true" acl="true"/>
+       <field name="address"  type="text" refining="false" searchable="true" highlight="true" />
+       <field name="gender"  type="text" refining="true" searchable="false" />
+       <field name="balance"  type="text" refining="true" searchable="false" acl="true"  />
+       <field name="age"  type="long" refining="true" searchable="false" acl="true"  />
+       <field name="eyeColor"  type="text" refining="true" searchable="false" acl="true" />
        </fields>
 
-       <uniqueKey>id</uniqueKey>
+       <uniqueKey>_id</uniqueKey>
            
        <facetEnabled>true</facetEnabled>
         
         <facetFields>
+         <facetField name="eyeColor" facetType="categorical"/>
+          <facetField name="age"  facetType="range" facetStart="10" facetEnd="99" facetGap="1"/>
         </facetFields>
         
         <types>
@@ -160,6 +160,6 @@
        </types>
     </schema>
     <access-control>
-        <attribute-acl datafile="./attributesAcl/acl.txt"/>
+        <attribute-acl datafile="./attributesAcl/acl-3.txt"/>
     </access-control>
 </config>

@@ -39,8 +39,7 @@ void addRecord(Indexer *indexer, Schema *schema, Analyzer* analyzer, unsigned pr
 	record->setPrimaryKey(primaryKey); // give a value for the primary key
 	record->setSearchableAttributeValue(0, firstAttribute);
 	record->setSearchableAttributeValue(1, secondAttribute);
-	for(unsigned i = 0 ; i < roleIds.size() ; ++i)
-		record->addRoleId(roleIds[i]);
+	record->setRoleIds(roleIds);
 
 	indexer->addRecord(record, analyzer);
 
@@ -117,7 +116,7 @@ void testAddRole(){
 	vector<string> roleIds;
 	roleIds.push_back("400");
 	roleIds.push_back("500");
-	indexer->aclModifyRoles("1",roleIds, AppendRoles);
+	indexer->aclRecordModifyRoles("1",roleIds, Acl_Record_Append);
 
     recordIds.clear();
     recordIds.push_back(1);
@@ -126,7 +125,7 @@ void testAddRole(){
 
     roleIds.clear();
 	roleIds.push_back("400");
-	indexer->aclModifyRoles("2",roleIds, AppendRoles);
+	indexer->aclRecordModifyRoles("2",roleIds, Acl_Record_Append);
 
 	recordIds.clear();
 	recordIds.push_back(1);
@@ -148,7 +147,7 @@ void testDeleteRole(){
 	vector<string> roleIds;
 	roleIds.push_back("400");
 	roleIds.push_back("500");
-	indexer->aclModifyRoles("1",roleIds, DeleteRoles);
+	indexer->aclRecordModifyRoles("1",roleIds, Acl_Record_Delete);
 
 	recordIds.clear();
 	recordIds.push_back(2);
@@ -158,7 +157,7 @@ void testDeleteRole(){
 	roleIds.clear();
 	roleIds.push_back("400");
 	roleIds.push_back("500");
-	indexer->aclModifyRoles("2",roleIds, DeleteRoles);
+	indexer->aclRecordModifyRoles("2",roleIds, Acl_Record_Delete);
 
 	recordIds.clear();
 	ASSERT ( ping_WithACL(analyzer, queryEvaluator, "tom", 0 , recordIds,

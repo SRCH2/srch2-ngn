@@ -20,20 +20,39 @@ namespace instantsearch {
  *   This API loads acl csv file and should be called during engine's boot up.
  *   The format of ACL file is
  *   role_id , attribute1, attribute 2 , ....
- *
+ *   This API is exception safe.
  */
-void  AttributeAccessControl::bulkLoadAclCSV(const std::string& aclLoadFileName) const{
+void  AttributeAccessControl::bulkLoadAttributeAclCSV(const std::string& aclLoadFileName) const{
+	try {
+		_bulkLoadAttributeAclCSV(aclLoadFileName);
+	}catch(exception& exception) {
+		Logger::error(exception.what());
+		Logger::error("Attribute acl csv bulk load was not successful. Please check CSV file.");
+	}
+}
+/*
+ *   Internal API which loads acl CSV file. This API is called from wrapper API bulkLoadAttributeAclCSV
+ */
+void  AttributeAccessControl::_bulkLoadAttributeAclCSV(const std::string& aclLoadFileName) const{
 
-	if (aclLoadFileName == "")
+	if (aclLoadFileName == "") {
+		if (schema->getAclRefiningAttrIdsList().size() > 0 ||
+				schema->getAclSearchableAttrIdsList().size() > 0) {
+			// if there are fields in schema with acl enabled. Then print warning
+			// that bulk load file is not specified.
+			Logger::warn("Attribute acl CSV file for bulk load is not specified!. "
+					"Please use Attribute Acl REST APIs for adding permissions");
+		}
 		return;
+	}
 
 	std::ifstream input(aclLoadFileName.c_str());
 	if (!input.good()) {
-		Logger::warn("The attribute acl file = \"%s\" could not be opened.",
+		Logger::warn("The attribute acl CSV file = \"%s\" could not be opened.",
 				aclLoadFileName.c_str());
 		return;
 	}
-	Logger::info("Loading attributes acl file %s", aclLoadFileName.c_str());
+	Logger::console("Loading attributes CSV acl file %s", aclLoadFileName.c_str());
 	std::string line;
 	unsigned lineCount = 0;
 	while (getline(input, line)) {
@@ -86,28 +105,36 @@ void  AttributeAccessControl::bulkLoadAclCSV(const std::string& aclLoadFileName)
  *   { "roleId" : ["role_id1", "role_id2"] , attributes : ["attribute1", "attribute 2" , .... ] }
  *   This API is exception safe.
  */
-void  AttributeAccessControl::bulkLoadAclJSON(const std::string& aclLoadFileName) const{
+void  AttributeAccessControl::bulkLoadAttributeAclJSON(const std::string& aclLoadFileName) const{
 	try{
-		_bulkLoadAclJSON(aclLoadFileName);
+		_bulkLoadAttributeAclJSON(aclLoadFileName);
 	} catch (exception& ex) {
 		Logger::error(ex.what());
-		Logger::error("Attribute acl bulk load was not successful. Please check JSON file.");
+		Logger::error("Attribute acl JSON bulk load was not successful. Please check JSON file.");
 	}
 }
 /*
- *   Internal API which loads acl JSON file. This API is called from wrapper API bulkLoadAclJSON
+ *   Internal API which loads acl JSON file. This API is called from wrapper API bulkLoadAttributeAclJSON
  */
-void  AttributeAccessControl::_bulkLoadAclJSON(const std::string& aclLoadFileName) const{
-	if (aclLoadFileName == "")
+void  AttributeAccessControl::_bulkLoadAttributeAclJSON(const std::string& aclLoadFileName) const{
+	if (aclLoadFileName == "") {
+		if (schema->getAclRefiningAttrIdsList().size() > 0 ||
+				schema->getAclSearchableAttrIdsList().size() > 0) {
+			// if there are fields in schema with acl enabled. Then print warning
+			// that bulk load file is not specified.
+			Logger::warn("Attribute acl JSON file for bulk load is not specified!. "
+					"Please use Attribute Acl REST APIs for adding permissions");
+		}
 		return;
+	}
 
 	std::ifstream input(aclLoadFileName.c_str());
 	if (!input.good()) {
-		Logger::warn("The attribute acl file = \"%s\" could not be opened.",
+		Logger::warn("The attribute acl JSON file = \"%s\" could not be opened.",
 				aclLoadFileName.c_str());
 		return;
 	}
-	Logger::info("Loading attributes acl file %s", aclLoadFileName.c_str());
+	Logger::console("Loading attributes acl JSON file %s", aclLoadFileName.c_str());
 	std::string line;
 	unsigned lineCount = 0;
 	bool isArrayOfJsonRecords = false;
@@ -366,35 +393,20 @@ bool  AttributeAccessControl::processAclRequest( vector<string>& fieldTokens,
 		return false;
 
 	// Loop over all the role-ids and perform required operations for the list of attributes
-	for (unsigned i = 0; i < roleValueTokens.size(); ++i) {
+
 		switch(action) {
-		case ACL_ADD:
+		case ACL_REPLACE:
 		{
-			if (i < roleValueTokens.size() - 1) {
-				std::vector<unsigned> tempSearchableAttrIdsList = searchableAttrIdsList;
-				std::vector<unsigned> tempRefiningAttrIdsList = refiningAttrIdsList;
-				// setAcl API swaps the internal pointer of the vector passed in. Because we
-				// need searchableAttrIdsList, refiningAttrIdsList for next iteration, copy them
-				// to a temporary vector.
-				boost::algorithm::trim(roleValueTokens[i]);
-				const_cast<AttributeAccessControl *>(this)->setAcl(roleValueTokens[i], tempSearchableAttrIdsList, tempRefiningAttrIdsList);
-			} else {
-				// This is a last iteration. We can let setAcl API to swap pointers of
-				// searchableAttrIdsList and refiningAttrIdsList because we will not need these
-				// vectors anymore.
-				boost::algorithm::trim(roleValueTokens[i]);
-				const_cast<AttributeAccessControl *>(this)->setAcl(roleValueTokens[i], searchableAttrIdsList, refiningAttrIdsList);
-			}
-//			stringstream ss;
-//			toString(ss);
-//			cout << ss.str() << endl;
+			const_cast<AttributeAccessControl *>(this)->replaceFromAcl(roleValueTokens, searchableAttrIdsList, refiningAttrIdsList);
 			break;
 		}
 		case ACL_DELETE:
 		{
-			// delete from ACL
-			boost::algorithm::trim(roleValueTokens[i]);
-			const_cast<AttributeAccessControl *>(this)->deleteFromAcl(roleValueTokens[i], searchableAttrIdsList, refiningAttrIdsList);
+			for (unsigned i = 0; i < roleValueTokens.size(); ++i) {
+				// delete from ACL
+				boost::algorithm::trim(roleValueTokens[i]);
+				const_cast<AttributeAccessControl *>(this)->deleteFromAcl(roleValueTokens[i], searchableAttrIdsList, refiningAttrIdsList);
+			}
 //			stringstream ss;
 //			toString(ss);
 //			cout << ss.str() << endl;
@@ -402,9 +414,11 @@ bool  AttributeAccessControl::processAclRequest( vector<string>& fieldTokens,
 		}
 		case ACL_APPEND:
 		{
-			// append to existing ACL. If acl-role is not found then add it.
-			boost::algorithm::trim(roleValueTokens[i]);
-			const_cast<AttributeAccessControl *>(this)->appendToAcl(roleValueTokens[i], searchableAttrIdsList, refiningAttrIdsList);
+			for (unsigned i = 0; i < roleValueTokens.size(); ++i) {
+				// append to existing ACL. If acl-role is not found then add it.
+				boost::algorithm::trim(roleValueTokens[i]);
+				const_cast<AttributeAccessControl *>(this)->appendToAcl(roleValueTokens[i], searchableAttrIdsList, refiningAttrIdsList);
+			}
 //			stringstream ss;
 //			toString(ss);
 //			cout << ss.str() << endl;
@@ -413,37 +427,65 @@ bool  AttributeAccessControl::processAclRequest( vector<string>& fieldTokens,
 		default:
 			ASSERT(false);
 		}
-	}
+
 	return true;
 }
 
 /*
- *   This API inserts given Acl role id and its attributes into the acl map. If the role-id exists
+ *   This API insert attributes to a given roleId into the acl map. If the role-id exists
  *   then it will be overwritten.
  */
-void AttributeAccessControl::setAcl(const string& aclRoleValue, vector<unsigned>& searchableAttrIdsList,
+void AttributeAccessControl::replaceFromAcl(vector<string>& roleValueTokens, vector<unsigned>& searchableAttrIdsList,
 		vector<unsigned>& refiningAttrIdsList) {
 	AclWriteLock lock(attrAclLock);  // X-lock
-	AclMapIter iter = attributeAclMap.find(aclRoleValue);
-	if (iter != attributeAclMap.end()) {
-		// If role Id is found, then overwrite it.The old vector will
-		// be free'd automatically by shared_ptr after the last reader.
-		iter->second.searchableAttrList.reset(new vector<unsigned>());
-		// note: this API swaps the internal pointers of vectors to avoid copy
-		iter->second.searchableAttrList->swap(searchableAttrIdsList);
-		iter->second.refiningAttrList.reset(new vector<unsigned>());
-		iter->second.refiningAttrList->swap(refiningAttrIdsList);
-		return;
-	} else {
-		// If role Id is not found, then insert it.
-		PairOfAttrsListSharedPtr newAttrListPair;
-		newAttrListPair.searchableAttrList.reset(new vector<unsigned>());
-		newAttrListPair.refiningAttrList.reset(new vector<unsigned>());
-		pair<AclMapIter , bool> ret =
-		attributeAclMap.insert(make_pair(aclRoleValue, newAttrListPair));
-		ret.first->second.searchableAttrList->swap(searchableAttrIdsList);
-		ret.first->second.refiningAttrList->swap(refiningAttrIdsList);
-		return;
+	// replace operation consists of two steps.
+	// 1. delete attribute from all roldIds present in the map but are not in the input roleIds
+	// 2. append attributes for the input roleIds
+	AclMapIter iter = attributeAclMap.begin();
+	while(iter != attributeAclMap.end()) {
+
+		// first check whether any of the input searchable attributes are present in the allowed
+		// searchable attributes for this role-id. If present delete the matching attributes using
+		// set_difference. If not present then skip.
+		vector<unsigned>::iterator matchedIter = find_first_of (iter->second.searchableAttrList->begin(), iter->second.searchableAttrList->end(),
+				searchableAttrIdsList.begin(), searchableAttrIdsList.end());
+
+		if (matchedIter != iter->second.searchableAttrList->end()) {
+			vector<unsigned> *attrListPtr = new vector<unsigned>();
+			attrListPtr->reserve(searchableAttrIdsList.size() + iter->second.searchableAttrList->size());
+			std::set_difference(iter->second.searchableAttrList->begin(), iter->second.searchableAttrList->end(),
+					searchableAttrIdsList.begin(), searchableAttrIdsList.end(),
+					back_inserter(*attrListPtr));
+
+			iter->second.searchableAttrList.reset(attrListPtr);
+		}
+
+		// first check whether any of the input refining attributes are present in the allowed
+		// refining attributes for this role-id. If present delete the matching attributes using
+		// set_difference. If not present then skip.
+		matchedIter = find_first_of(iter->second.refiningAttrList->begin(), iter->second.refiningAttrList->end(),
+				refiningAttrIdsList.begin(), refiningAttrIdsList.end());
+		if (matchedIter != iter->second.refiningAttrList->end()) {
+			vector<unsigned> *attrListPtr = new vector<unsigned>();
+			attrListPtr->reserve(refiningAttrIdsList.size() + iter->second.refiningAttrList->size());
+			std::set_difference(iter->second.refiningAttrList->begin(), iter->second.refiningAttrList->end(),
+					refiningAttrIdsList.begin(), refiningAttrIdsList.end(),
+					back_inserter(*attrListPtr));
+			iter->second.refiningAttrList.reset(attrListPtr);
+		}
+
+		// if all the attributes are deleted then remove the acl role from map as well.
+		if (iter->second.searchableAttrList->size() == 0 && iter->second.refiningAttrList->size() == 0)
+			attributeAclMap.erase(iter++);
+		else
+			++iter;
+	}
+	lock.unlock();  // append ACL below acquires the X lock hence unlock here to avoid deadlock.
+
+	for (unsigned i = 0; i < roleValueTokens.size(); ++i) {
+		// append to existing ACL. If acl-role is not found then add it.
+		boost::algorithm::trim(roleValueTokens[i]);
+		const_cast<AttributeAccessControl *>(this)->appendToAcl(roleValueTokens[i], searchableAttrIdsList, refiningAttrIdsList);
 	}
 }
 
