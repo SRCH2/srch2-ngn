@@ -200,6 +200,7 @@ public:
 			vector<PhraseInfoForHighLight>& phrasesInfoList, const HighlightConfig& hconf);
 	void getSnippet(const QueryResults *qr,unsigned recIdx, unsigned attributeId, const string& dataIn, vector<string>& snippets,
 			bool isMultiValued, vector<keywordHighlightInfo>& keywordStrToHighlight);
+	~AnalyzerBasedAlgorithm();
 private:
 	Analyzer *analyzer;
 };
@@ -230,6 +231,8 @@ public:
 		}
 	}
 private:
+	signed getOriginalTermCharLen(vector<unsigned> charLens, vector<uint8_t> bitmap,
+			unsigned pos);
 	void findMatchingKeywordsFromPrefixNode(const TrieNode* prefixNode, unsigned indx,
 			vector<CandidateKeywordInfo>& completeKeywordsId,
 			const unsigned *keywordIdsPtr, unsigned keywordsInRec);
