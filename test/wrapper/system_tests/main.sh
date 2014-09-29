@@ -181,9 +181,6 @@ fi
 
 test_id="synonyms"
 printTestBanner "$test_id"
-rm ./synonyms/indexes/*
-rm ./synonyms/indexes-with-offset/*
-rm ./synonyms/indexes-with-offset-1/*
 python ./synonyms/synonyms.py $SRCH2_ENGINE | eval "${html_escape_command}" >> system_test.log 2>&1
 if [ ${PIPESTATUS[0]} -gt 0 ]; then
     echo "${html_fail_pre}FAILED: $test_id${html_fail_post}" >> ${output}
@@ -760,6 +757,20 @@ rm -rf data/ *.idx
 test_id="test loading different schema"
 printTestBanner "$test_id"
 python ./test_load_diff_schema/test_load_diff_schema.py $SRCH2_ENGINE  | eval "${html_escape_command}" >> system_test.log 2>&1
+
+if [ ${PIPESTATUS[0]} -gt 0 ]; then
+    echo "${html_fail_pre}FAILED: $test_id${html_fail_post}" >> ${output}
+    if [ $force -eq 0 ]; then
+        exit 255
+    fi
+else
+    echo "-- PASSED: $test_id" >> ${output}
+fi
+rm -rf data/ *.idx
+
+test_id="refining attribute type"
+printTestBanner "$test_id"
+python ./refining_attr_type/refining_attr_type.py $SRCH2_ENGINE  | eval "${html_escape_command}" >> system_test.log 2>&1
 
 if [ ${PIPESTATUS[0]} -gt 0 ]; then
     echo "${html_fail_pre}FAILED: $test_id${html_fail_post}" >> ${output}

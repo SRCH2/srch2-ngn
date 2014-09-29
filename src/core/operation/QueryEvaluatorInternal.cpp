@@ -274,7 +274,7 @@ int QueryEvaluatorInternal::search(LogicalPlan * logicalPlan , QueryResults *que
 		queryResult->internalRecordId = newRecord->getRecordId();
 		newRecord->getRecordMatchEditDistances(queryResult->editDistances);
 		//
-		queryResult->_score.setTypedValue(newRecord->getRecordRuntimeScore());
+		queryResult->_score.setTypedValue(newRecord->getRecordRuntimeScore(),ATTRIBUTE_TYPE_FLOAT);
 
 		newRecord->getRecordMatchingPrefixes(queryResult->matchingKeywordTrieNodes);
 
@@ -372,7 +372,7 @@ void QueryEvaluatorInternal::search(const std::string & primaryKey, QueryResults
 	QueryResult * queryResult = queryResults->impl->getReultsFactory()->impl->createQueryResult();
 	queryResult->externalRecordId = primaryKey;
 	queryResult->internalRecordId = internalRecordId;
-	queryResult->_score.setTypedValue((float)0.0);
+	queryResult->_score.setTypedValue((float)0.0,ATTRIBUTE_TYPE_FLOAT);
 	queryResults->impl->sortedFinalResults.push_back(queryResult);
 	return;
 }

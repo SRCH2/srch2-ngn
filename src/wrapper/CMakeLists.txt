@@ -15,7 +15,7 @@ INCLUDE_DIRECTORIES(
     ${CMAKE_SOURCE_DIR}
     ${CMAKE_SOURCE_DIR}/thirdparty/event/include
     ${CMAKE_SOURCE_DIR}/thirdparty/event/android/include
-    ${CMAKE_SOURCE_DIR}/thirdparty/json/jsoncpp-src-0.5.0/include
+    ${CMAKE_SOURCE_DIR}/thirdparty/json/jsoncpp-src/include
     ${CMAKE_SOURCE_DIR}/thirdparty/mongo-cxx-driver-v2.4/src
 )
 

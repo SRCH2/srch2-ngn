@@ -314,8 +314,8 @@ bool QueryValidator::validateExistenceOfAttributesInFacetFiler() {
         if (   !facetQueryContainer->types.empty()
             && facetQueryContainer->types.at(facetParallelVectorsIndex) == srch2is::FacetTypeRange
             && !(
-                    fieldType == srch2is::ATTRIBUTE_TYPE_UNSIGNED ||
-                    fieldType == srch2is::ATTRIBUTE_TYPE_FLOAT ||
+                    fieldType == srch2is::ATTRIBUTE_TYPE_INT ||fieldType == srch2is::ATTRIBUTE_TYPE_LONG ||
+                    fieldType == srch2is::ATTRIBUTE_TYPE_FLOAT ||fieldType == srch2is::ATTRIBUTE_TYPE_DOUBLE||
                     fieldType == srch2is::ATTRIBUTE_TYPE_TIME
              )) {
             paramContainer->messages.push_back(

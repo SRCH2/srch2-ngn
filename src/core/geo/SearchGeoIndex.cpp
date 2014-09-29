@@ -59,7 +59,7 @@ void QuadTree::rangeQueryWithoutKeywordInformation(QueryResultsInternal *queryRe
 			queryResult->internalRecordId = this->geoElementIndex[offset]->forwardListID;
 			//take the distance to the center point of shape as the floatScore ,get the negative value of distance for sorting
 			queryResult->_score.setTypedValue(
-					(0-shape.getMinDist2FromLatLong(this->geoElementIndex[offset]->point.x,this->geoElementIndex[offset]->point.y)));//TODO
+					((float)(0-shape.getMinDist2FromLatLong(this->geoElementIndex[offset]->point.x,this->geoElementIndex[offset]->point.y))),ATTRIBUTE_TYPE_FLOAT);//TODO
 			queryResultsInternal->insertResult(queryResult);
 			}
 		}
@@ -275,7 +275,7 @@ void QuadTree::rangeQueryInternal(QueryResultsInternal *queryResultsInternal, co
 
                     QueryResult * queryResult = queryResultsInternal->getReultsFactory()->impl->createQueryResult();
                     queryResult->internalRecordId = this->geoElementIndex[offset]->forwardListID;
-                    queryResult->_score.setTypedValue(combinedScore);//TODO
+                    queryResult->_score.setTypedValue(combinedScore, ATTRIBUTE_TYPE_FLOAT);//TODO
                     //queryResult.physicalDistance = Ranker::calculateHaversineDistanceBetweenTwoCoordinates();
 
                     // set up the matching keywords and editDistances for queryResults
@@ -349,7 +349,7 @@ void QuadTree::rangeQueryInternal(QueryResultsInternal *queryResultsInternal, co
 
                             QueryResult * queryResult = queryResultsInternal->getReultsFactory()->impl->createQueryResult();
                             queryResult->internalRecordId = geoElement->forwardListID;
-                            queryResult->_score.setTypedValue(combinedScore);//TODO
+                            queryResult->_score.setTypedValue(combinedScore,ATTRIBUTE_TYPE_FLOAT);//TODO
                             //queryResult.physicalDistance = Ranker::calculateHaversineDistanceBetweenTwoCoordinates();
 
                             // set up the matching keyword and editDistance of the picked term for queryResults
