@@ -1059,7 +1059,10 @@ int main(int argc, char** argv) {
 	srch2http::ResourceMetadataManager * metadataManager = new srch2http::ResourceMetadataManager();
 	srch2http::ShardManager * shardManager = srch2http::ShardManager::createShardManager(serverConf, metadataManager);
 
-	serverConf->loadConfigFile(metadataManager);
+	if(! serverConf->loadConfigFile(metadataManager)){
+		Logger::error("Error in loading the config file, therefore exiting.");
+		exit(-1);
+	}
 
 //	LicenseVerifier::testFile(serverConf->getLicenseKeyFileName());
 	string logDir = getFilePath(serverConf->getHTTPServerAccessLogFile());

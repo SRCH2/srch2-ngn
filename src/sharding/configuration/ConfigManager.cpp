@@ -228,7 +228,7 @@ ConfigManager::ConfigManager(const string& configFile)
     defaultCoreSetFlag = false;
 }
 
-void ConfigManager::loadConfigFile(srch2http::ResourceMetadataManager * metadataManager)
+bool ConfigManager::loadConfigFile(srch2http::ResourceMetadataManager * metadataManager)
 {
     Logger::debug("Reading config file: %s\n", this->configFile.c_str());
     xml_document configDoc;
@@ -271,9 +271,11 @@ void ConfigManager::loadConfigFile(srch2http::ResourceMetadataManager * metadata
     if (!configSuccess) {
         Logger::error("ERRORS while reading the configuration file");
         Logger::error("%s\n", parseError.str().c_str());
-        cout << endl << parseError.str() << endl;
-        exit(-1);
+        Logger::debug(parseError.str().c_str());
+        return false;
     }
+
+    return true;
 }
 
 class XmlLowerCaseWalker : public xml_tree_walker
@@ -766,8 +768,9 @@ void ConfigManager::parseQuery(const xml_node &queryNode,
  */
 void ConfigManager::parseSingleCore(const xml_node &parentNode, CoreInfo_t *coreInfo, bool &configSuccess, std::stringstream &parseError, std::stringstream &parseWarnings)
 {
-    // <core name="core0"
-	string tempUse = "";
+
+    string temporaryString = "";
+
     if (parentNode.attribute(nameString) && string(parentNode.attribute(nameString).value()).compare("") != 0) {
         coreInfo->name = parentNode.attribute(nameString).value();
     } else {
@@ -837,7 +840,7 @@ void ConfigManager::parseMultipleCores(const xml_node &coresNode, bool &configSu
  */
 void ConfigManager::parseCoreInformationTags(const xml_node &parentNode, CoreInfo_t *coreInfo, bool &configSuccess, std::stringstream &parseError, std::stringstream &parseWarnings)
 {
-    string tempUse = "";
+    string temporaryString = "";
     CoreConfigParseState_t coreParseState;
     // <config><dataDir>core0/data OR <core><dataDir>
 
@@ -929,9 +932,9 @@ void ConfigManager::parseCoreInformationTags(const xml_node &parentNode, CoreInf
         // dataFile is a required field only if JSON file is specified as data source.
         childNode = parentNode.child(dataFileString);
         if (childNode && childNode.text()) { // checks if the config/dataFile has any text in it or not
-            tempUse = string(childNode.text().get());
-            trimSpacesFromValue(tempUse, dataFileString, parseWarnings);
-            coreInfo->dataFilePath = srch2Home + string("") + coreInfo->getName() + string("/") + tempUse;
+            temporaryString = string(childNode.text().get());
+            trimSpacesFromValue(temporaryString, dataFileString, parseWarnings);
+            coreInfo->dataFilePath = srch2Home + string("") + coreInfo->getName() + string("/") + temporaryString;
         } else {
             parseError << (coreInfo->name.compare("") != 0 ? coreInfo->name : "default") <<
                 " core path to the data file is not set. "
@@ -1145,434 +1148,207 @@ void ConfigManager::parseAllCoreTags(const xml_node &configNode,
     }
 }
 
-/*
- * Parse a <schema> node, either directly under the root <config> or under <core>
- */
-void ConfigManager::parseSchema(const xml_node &schemaNode, CoreConfigParseState_t *coreParseState, CoreInfo_t *coreInfo, bool &configSuccess, std::stringstream &parseError, std::stringstream &parseWarnings)
-{
-    string tempUse = "";
+bool ConfigManager::setCoreParseStateVector(bool isSearchable, bool isRefining, bool isMultiValued, bool isHighlightEnabled, CoreConfigParseState_t *coreParseState, CoreInfo_t *coreInfo, std::stringstream &parseError, const xml_node &field){
+	string temporaryString = "";
+	if(isSearchable){ // it is a searchable field
+		coreParseState->searchableFieldsVector.push_back(string(field.attribute(nameString).value()));
+		coreParseState->searchableAttributesHighlight.push_back(isHighlightEnabled);
+		// Checking the validity of field type
+		temporaryString = string(field.attribute(typeString).value());
+		if (isValidFieldType(temporaryString , true)) {
+			coreParseState->searchableFieldTypesVector.push_back(temporaryString);
+		} else {
+			parseError << "Config File Error: " << temporaryString << " is not a valid field type for searchable fields.\n";
+			parseError << " Note: searchable fields only accept 'text' type. Setting 'searchable' or 'indexed' to true makes a field searchable.\n";
+			return false;
+		}
 
-    vector<string> RefiningFieldsVector;
-    vector<srch2::instantsearch::FilterType> RefiningFieldTypesVector;
-    vector<bool> RefiningAttributesRequiredFlagVector;
-    vector<string> RefiningAttributesDefaultVector;
-    vector<bool> RefiningAttributesIsMultiValued;
+		if (string(field.attribute(defaultString).value()).compare("") != 0){
+			coreParseState->searchableAttributesDefaultVector.push_back(string(field.attribute(defaultString).value()));
+		}else{
+			coreParseState->searchableAttributesDefaultVector.push_back("");
+		}
 
-    /*
-     * <field>  in config.xml file
-     */
-    coreInfo->isPrimSearchable = 0;
+		temporaryString = string(field.attribute(requiredString).value());
+		if (string(field.attribute(requiredString).value()).compare("") != 0 && isValidBool(temporaryString)){
+			coreParseState->searchableAttributesRequiredFlagVector.push_back(field.attribute(requiredString).as_bool());
+		}else{
+			coreParseState->searchableAttributesRequiredFlagVector.push_back(false);
+		}
+		coreParseState->searchableAttributesIsMultiValued.push_back(isMultiValued);
+	}
+	return true;
+}
 
-    xml_node fieldsNode = schemaNode.child(fieldsString);
-    if (fieldsNode) {
-        for (xml_node field = fieldsNode.first_child(); field; field = field.next_sibling()) {
-            if (string(field.name()).compare(fieldString) == 0) {
+bool ConfigManager::setRefiningStateVectors(const xml_node &field, bool isMultiValued, bool isRefining, vector<string> &RefiningFieldsVector, vector<srch2::instantsearch::FilterType> &RefiningFieldTypesVector, vector<bool> &RefiningAttributesRequiredFlagVector, vector<string> &RefiningAttributesDefaultVector, vector<bool> &RefiningAttributesIsMultiValued, std::stringstream &parseError){
 
-                /*
-                 * The following code decides whether this field is multi-valued or not.
-                 * If multivalued="true" in field tag, this field is multi-valued.
-                 */
-                bool isMultiValued = false;
-                if(string(field.attribute(multiValuedString).value()).compare("") != 0){
-                    tempUse = string(field.attribute(multiValuedString).value());
-                    if(isValidBool(tempUse)){
-                        isMultiValued = field.attribute(multiValuedString).as_bool();
-                    }else{
-                        parseError << "Config File Error: Unknown value for property '"<< multiValuedString <<"'.\n";
-                        configSuccess = false;
-                        return;
-                    }
-                }// We do not need the "else" part since multivalued property is not
-                 // there so this field is not a multivalued field (false by default)
-                /*
-                 * The following code decides whether this field is searchable/refining or not.
-                 * It uses this logic:
-                 * if ( indexed == true ) {
-                 *        => attribute is both searchable and used for post processing
-                 * } else {
-                 *       if(searchable == true) => attribute is searchable
-                 *       else => attribute is not searchable
-                 *
-                 *       if(refining == true) => attribute is used for post-processing
-                 *       else => attribute is not used for post processing
-                 * }
-                 */
+	string temporaryString = "";
+	if(isRefining){ // it is a refining field
+		RefiningFieldsVector.push_back(string(field.attribute(nameString).value()));
+		// Checking the validity of field type
+		temporaryString = string(field.attribute(typeString).value());
+		if (this->isValidFieldType(temporaryString , false)) {
+			RefiningFieldTypesVector.push_back(parseFieldType(temporaryString));
+		} else {
+			parseError << "Config File Error: " << temporaryString << " is not a valid field type for refining fields.\n";
+			parseError << " Note: refining fields only accept 'text', 'integer', 'float' and 'time'. Setting 'refining' or 'indexed' to true makes a field refining.\n";
+			return false;
+		}
 
+		// Check the validity of field default value based on it's type
+		if (string(field.attribute(defaultString).value()).compare("") != 0){
+			temporaryString = string(field.attribute("default").value());
+			if(isValidFieldDefaultValue(temporaryString , RefiningFieldTypesVector.at(RefiningFieldTypesVector.size()-1) , isMultiValued)){
 
-                bool isSearchable = false;
-                bool isRefining = false;
-                if(string(field.attribute(indexedString).value()).compare("") != 0){
-                    tempUse = string(field.attribute(indexedString).value());
-                    if(isValidBool(tempUse)){
-                        if(field.attribute(indexedString).as_bool()){ // indexed = true
-                            isSearchable = true;
-                            isRefining = true;
-                        }else{ // indexed = false
-                            if(string(field.attribute(searchableString).value()).compare("") != 0){
-                                tempUse = string(field.attribute(searchableString).value());
-                                if(isValidBool(tempUse)){
-                                    if(field.attribute(searchableString).as_bool()){
-                                        isSearchable = true;
-                                    }else{
-                                        isSearchable = false;
-                                    }
-                                }else{
-                                    parseError << "Config File Error: Unknown value for property 'searchable'.\n";
-                                    configSuccess = false;
-                                    return;
-                                }
-                            }
+				if(RefiningFieldTypesVector.at(RefiningFieldTypesVector.size()-1) == srch2::instantsearch::ATTRIBUTE_TYPE_TIME){
+					if(isMultiValued == false){
+						long timeValue = srch2is::DateAndTimeHandler::convertDateTimeStringToSecondsFromEpoch(temporaryString);
+						std::stringstream buffer;
+						buffer << timeValue;
+						temporaryString = buffer.str();
+					}else{ // in the case of multivalued date and time we need to convert all values and reconstruct the list
+						// For example: ["01/01/1980","01/01/1980","01/01/1990","01/01/1982"]
+						                 string convertedDefaultValues = "";
+						                 vector<string> defaultValueTokens;
+						                 splitString(temporaryString , "," , defaultValueTokens);
+						                 for(vector<string>::iterator defaultValueToken = defaultValueTokens.begin() ;
+						                		 defaultValueToken != defaultValueTokens.end() ; ++defaultValueToken){
+						                	 long timeValue = srch2is::DateAndTimeHandler::convertDateTimeStringToSecondsFromEpoch(*defaultValueToken);
+						                	 std::stringstream buffer;
+						                	 buffer << timeValue;
+						                	 if(defaultValueToken == defaultValueTokens.begin()){
+						                		 convertedDefaultValues = buffer.str();
+						                	 }else{
+						                		 convertedDefaultValues = ","+buffer.str();
+						                	 }
+						                 }
+					}
+				}
+			}else{
+				parseError << "Config File Error: " << temporaryString << " is not compatible with the type used for this field.\n";
+				temporaryString = "";
+			}
+			RefiningAttributesDefaultVector.push_back(temporaryString);
+		}else{
+			RefiningAttributesDefaultVector.push_back("");
+		}
 
-                            if(string(field.attribute(refiningString).value()).compare("") != 0){
-                                tempUse = string(field.attribute(refiningString).value());
-                                if(isValidBool(tempUse)){
-                                    if(field.attribute(refiningString).as_bool()){
-                                        isRefining = true;
-                                    }else{
-                                        isRefining = false;
-                                    }
-                                }else{
-                                    parseError << "Config File Error: Unknown value for property 'refining'.\n";
-                                    configSuccess = false;
-                                    return;
-                                }
-                            }
-                        }
-                    }else{
-                        parseError << "Config File Error: Unknown value for property 'indexed'.\n";
-                        configSuccess = false;
-                        return;
-                    }
-                }else{ // indexed property is not there ...
-                    if(string(field.attribute(searchableString).value()).compare("") != 0){
-                        tempUse = string(field.attribute(searchableString).value());
-                        if(isValidBool(tempUse)){
-                            if(field.attribute(searchableString).as_bool()){
-                                isSearchable = true;
-                            }else{
-                                isSearchable = false;
-                            }
-                        }else{
-                            parseError << "Config File Error: Unknown value for property 'searchable'.\n";
-                            configSuccess = false;
-                            return;
-                        }
-                    }
+		temporaryString = string(field.attribute(requiredString).value());
+		if (string(field.attribute(requiredString).value()).compare("") != 0 && isValidBool(temporaryString)){
+			RefiningAttributesRequiredFlagVector.push_back(field.attribute("required").as_bool());
+		}else{
+			RefiningAttributesRequiredFlagVector.push_back(false);
+		}
 
-                    if(string(field.attribute(refiningString).value()).compare("") != 0){
-                        tempUse = string(field.attribute(refiningString).value());
-                        if(isValidBool(tempUse)){
-                            if(field.attribute(refiningString).as_bool()){
-                                isRefining = true;
-                            }else{
-                                isRefining = false;
-                            }
-                        }else{
-                            parseError << "Config File Error: Unknown value for property 'refining'.\n";
-                            configSuccess = false;
-                            return;
-                        }
-                    }
-                }
+		RefiningAttributesIsMultiValued.push_back(isMultiValued);
+	}
 
-                bool isHighlightEnabled = false;
-                if(string(field.attribute(highLightString).value()).compare("") != 0){
-                	tempUse = string(field.attribute(highLightString).value());
-                	if (isValidBool(tempUse)){
-                		if(field.attribute(indexedString).as_bool()){
-                			isHighlightEnabled = true;
-                		}
-                	}
-                }
+	return true;
+}
 
-                // If this field is the primary key, we only care about searchable and/or refining options.
-                // We want to set primaryKey as a searchable and/or refining field
-                // We assume the primary key is text, we don't get any type from user.
-                // And no default value is accepted from user.
-                if(string(field.attribute(nameString).value()).compare(coreInfo->primaryKey) == 0){
-                	if(isMultiValued){
-                		configSuccess = false;
-                		parseError << "Config File Error: Primary Key cannot be multivalued";
-                		return;
-                	}
-                    if(isSearchable){
-                        coreInfo->isPrimSearchable = 1;
-                        coreParseState->searchableFieldsVector.push_back(string(field.attribute(nameString).value()));
-                        // there is no need for default value for primary key
-                        coreParseState->searchableAttributesDefaultVector.push_back("");
-                        // primary key is always required.
-                        coreParseState->searchableAttributesRequiredFlagVector.push_back(true);
-                        coreParseState->searchableAttributesHighlight.push_back(isHighlightEnabled);
-                        coreParseState->searchableAttributesIsMultiValued.push_back(isMultiValued);
-                    }
+void ConfigManager::parseFacetFields(const xml_node &schemaNode, CoreInfo_t *coreInfo, std::stringstream &parseError){
 
-                    if(isRefining){
-                        RefiningFieldsVector.push_back(coreInfo->primaryKey);
-                        RefiningFieldTypesVector.push_back(srch2::instantsearch::ATTRIBUTE_TYPE_TEXT);
-                        RefiningAttributesDefaultVector.push_back("");
-                        RefiningAttributesRequiredFlagVector.push_back(true);
-                        RefiningAttributesIsMultiValued.push_back(isMultiValued);
-                    }
-                    continue;
-                }
-                // Checking if the values are empty or not
-                if (string(field.attribute(nameString).value()).compare("") != 0
-                    && string(field.attribute(typeString).value()).compare("") != 0) {
-                    if(isSearchable){ // it is a searchable field
-                        coreParseState->searchableFieldsVector.push_back(string(field.attribute(nameString).value()));
-                        coreParseState->searchableAttributesHighlight.push_back(isHighlightEnabled);
-                        // Checking the validity of field type
-                        tempUse = string(field.attribute(typeString).value());
-                        if (isValidFieldType(tempUse , true)) {
-                            coreParseState->searchableFieldTypesVector.push_back(tempUse);
-                        } else {
-                            parseError << "Config File Error: " << tempUse << " is not a valid field type for searchable fields.\n";
-                            parseError << " Note: searchable fields only accept 'text' type. Setting 'searchable' or 'indexed' to true makes a field searchable.\n";
-                            configSuccess = false;
-                            return;
-                        }
+	xml_node childNode;
+	string temporaryString;
+	if(coreInfo->facetEnabled){
+		childNode = schemaNode.child(facetFieldsString);
+		if (childNode) {
+			for (xml_node field = childNode.first_child(); field; field = field.next_sibling()) {
+				if (string(field.name()).compare(facetFieldString) == 0) {
+					if (string(field.attribute(nameString).value()).compare("") != 0
+							&& string(field.attribute(facetTypeString).value()).compare("") != 0){
 
-                        if (string(field.attribute(defaultString).value()).compare("") != 0){
-                            coreParseState->searchableAttributesDefaultVector.push_back(string(field.attribute(defaultString).value()));
-                        }else{
-                            coreParseState->searchableAttributesDefaultVector.push_back("");
-                        }
+						// insert the name of the facet
+						coreInfo->facetAttributes.push_back(string(field.attribute(nameString).value()));
+						// insert the type of the facet
+						temporaryString = string(field.attribute(facetTypeString).value());
+						int facetType = parseFacetType(temporaryString);
+						if(facetType == 0){ // categorical
+							coreInfo->facetTypes.push_back(facetType);
+							// insert place holders for start,end and gap
+							coreInfo->facetStarts.push_back("");
+							coreInfo->facetEnds.push_back("");
+							coreInfo->facetGaps.push_back("");
+						}else if(facetType == 1){ // range
+							coreInfo->facetTypes.push_back(facetType);
+							// insert start
+							string startTextValue = string(field.attribute(facetStartString).value());
+							string facetAttributeString = string(field.attribute(nameString).value());
+							srch2::instantsearch::FilterType facetAttributeType ;
+							if(coreInfo->refiningAttributesInfo.find(facetAttributeString) != coreInfo->refiningAttributesInfo.end()){
+								facetAttributeType = coreInfo->refiningAttributesInfo.find(facetAttributeString)->second.attributeType;
+							}else{
+								parseError << "Facet attribute is not declared as a non-searchable attribute. Facet disabled.\n";
+								coreInfo->facetEnabled = false;
+								break;
+							}
+							if(facetAttributeType == srch2is::ATTRIBUTE_TYPE_TIME){
+								if(srch2is::DateAndTimeHandler::verifyDateTimeString(startTextValue , srch2is::DateTimeTypePointOfTime)
+								|| srch2is::DateAndTimeHandler::verifyDateTimeString(startTextValue , srch2is::DateTimeTypeNow) ){
+									long timeValue = srch2is::DateAndTimeHandler::convertDateTimeStringToSecondsFromEpoch(startTextValue);
+									std::stringstream buffer;
+									buffer << timeValue;
+									startTextValue = buffer.str();
+								}else{
+									parseError << "Facet attribute start value is in wrong format.Facet disabled.\n";
+									coreInfo->facetEnabled = false;
+									break;
+								}
+							}
+							coreInfo->facetStarts.push_back(startTextValue);
 
-                        tempUse = string(field.attribute(requiredString).value());
-                        if (string(field.attribute(requiredString).value()).compare("") != 0 && isValidBool(tempUse)){
-                            coreParseState->searchableAttributesRequiredFlagVector.push_back(field.attribute(requiredString).as_bool());
-                        }else{
-                            coreParseState->searchableAttributesRequiredFlagVector.push_back(false);
-                        }
-                        coreParseState->searchableAttributesIsMultiValued.push_back(isMultiValued);
-                    }
+							// insert end
+							string endTextValue = string(field.attribute(facetEndString).value());
+							if(coreInfo->refiningAttributesInfo.find(facetAttributeString) != coreInfo->refiningAttributesInfo.end()){
+								facetAttributeType = coreInfo->refiningAttributesInfo.find(facetAttributeString)->second.attributeType;
+							}else{
+								parseError << "Facet attribute is not declared as a non-searchable attribute. Facet disabled.\n";
+								coreInfo->facetEnabled = false;
+								break;
+							}
+							if(facetAttributeType == srch2is::ATTRIBUTE_TYPE_TIME){
+								if(srch2is::DateAndTimeHandler::verifyDateTimeString(endTextValue , srch2is::DateTimeTypePointOfTime)
+								|| srch2is::DateAndTimeHandler::verifyDateTimeString(endTextValue , srch2is::DateTimeTypeNow) ){
+									long timeValue = srch2is::DateAndTimeHandler::convertDateTimeStringToSecondsFromEpoch(endTextValue);
+									std::stringstream buffer;
+									buffer << timeValue;
+									endTextValue = buffer.str();
+								}else{
+									parseError << "Facet attribute start value is in wrong format.Facet disabled.\n";
+									coreInfo->facetEnabled = false;
+									break;
+								}
+							}
+							coreInfo->facetEnds.push_back(endTextValue);
 
-                    if(isRefining){ // it is a refining field
-                        RefiningFieldsVector.push_back(string(field.attribute(nameString).value()));
-                        // Checking the validity of field type
-                        tempUse = string(field.attribute(typeString).value());
-                        if (this->isValidFieldType(tempUse , false)) {
-                            RefiningFieldTypesVector.push_back(parseFieldType(tempUse));
-                        } else {
-                            parseError << "Config File Error: " << tempUse << " is not a valid field type for refining fields.\n";
-                            parseError << " Note: refining fields only accept 'text', 'integer', 'float' and 'time'. Setting 'refining' or 'indexed' to true makes a field refining.\n";
-                            configSuccess = false;
-                            return;
-                        }
+							// insert gap
+							string gapTextValue = string(field.attribute(facetGapString).value());
+							if(coreInfo->refiningAttributesInfo.find(facetAttributeString) != coreInfo->refiningAttributesInfo.end()){
+								facetAttributeType = coreInfo->refiningAttributesInfo.find(facetAttributeString)->second.attributeType;
+							}else{
+								parseError << "Facet attribute is not declared as a non-searchable attribute. Facet disabled.\n";
+								coreInfo->facetEnabled = false;
+								break;
+							}
+							if(facetAttributeType == srch2is::ATTRIBUTE_TYPE_TIME){
+								if(!srch2is::DateAndTimeHandler::verifyDateTimeString(gapTextValue , srch2is::DateTimeTypeDurationOfTime) ){
+									parseError << "Facet attribute end value is in wrong format.Facet disabled.\n";
+									coreInfo->facetEnabled = false;
+									break;
+								}
+							}
+							coreInfo->facetGaps.push_back(gapTextValue);
+						}else{
+							parseError << "Facet type is not recognized. Facet disabled.";
+							coreInfo->facetEnabled = false;
+							break;
+						}
 
-
-                        // Check the validity of field default value based on it's type
-                        if (string(field.attribute(defaultString).value()).compare("") != 0){
-                            tempUse = string(field.attribute("default").value());
-                            if(isValidFieldDefaultValue(tempUse , RefiningFieldTypesVector.at(RefiningFieldTypesVector.size()-1) , isMultiValued)){
-
-                                if(RefiningFieldTypesVector.at(RefiningFieldTypesVector.size()-1) == srch2::instantsearch::ATTRIBUTE_TYPE_TIME){
-                                    if(isMultiValued == false){
-                                        long timeValue = srch2is::DateAndTimeHandler::convertDateTimeStringToSecondsFromEpoch(tempUse);
-                                        std::stringstream buffer;
-                                        buffer << timeValue;
-                                        tempUse = buffer.str();
-                                    }else{ // in the case of multivalued date and time we need to convert all values and reconstruct the list
-                                        // For example: ["01/01/1980","01/01/1980","01/01/1990","01/01/1982"]
-                                        string convertedDefaultValues = "";
-                                        vector<string> defaultValueTokens;
-                                        splitString(tempUse , "," , defaultValueTokens);
-                                        for(vector<string>::iterator defaultValueToken = defaultValueTokens.begin() ;
-                                            defaultValueToken != defaultValueTokens.end() ; ++defaultValueToken){
-                                            long timeValue = srch2is::DateAndTimeHandler::convertDateTimeStringToSecondsFromEpoch(*defaultValueToken);
-                                            std::stringstream buffer;
-                                            buffer << timeValue;
-                                            if(defaultValueToken == defaultValueTokens.begin()){
-                                                convertedDefaultValues = buffer.str();
-                                            }else{
-                                                convertedDefaultValues = ","+buffer.str();
-                                            }
-                                        }
-                                    }
-                                }
-                            }else{
-                                parseError << "Config File Error: " << tempUse << " is not compatible with the type used for this field.\n";
-                                tempUse = "";
-                            }
-                            RefiningAttributesDefaultVector.push_back(tempUse);
-                        }else{
-                            RefiningAttributesDefaultVector.push_back("");
-                        }
-
-                        tempUse = string(field.attribute(requiredString).value());
-                        if (string(field.attribute(requiredString).value()).compare("") != 0 && isValidBool(tempUse)){
-                            RefiningAttributesRequiredFlagVector.push_back(field.attribute("required").as_bool());
-                        }else{
-                            RefiningAttributesRequiredFlagVector.push_back(false);
-                        }
-
-                        RefiningAttributesIsMultiValued.push_back(isMultiValued);
-                    }
-
-                    // Checks for geo types. location_latitude and location_longitude are geo types
-                    if (string(field.attribute(typeString).value()).compare(locationLatitudeString) == 0) {
-                        coreParseState->hasLatitude = true;
-                        coreInfo->fieldLatitude = string(field.attribute(nameString).value());
-                    }
-                    if (string(field.attribute(typeString).value()).compare(locationLongitudeString) == 0) {
-                        coreParseState->hasLongitude = true;
-                        coreInfo->fieldLongitude = string(field.attribute(nameString).value());
-                    }
-
-                } else { // if one of the values of name, type or indexed is empty
-                    parseError << "For the searchable fields, "
-                               << "providing values for 'name' and 'type' is required\n ";
-                    configSuccess = false;
-                    return;
-                }
-            } else {
-                parseWarnings << "Unexpected XML node " << field.name() << " within <fields>";
-            }
-        }
-    } else { // No searchable fields provided.
-        parseError << "No fields are provided.\n";
-        configSuccess = false;
-        return;
-    }
-
-    // Checking if there is any field or not.
-    if (coreParseState->searchableFieldsVector.size() == 0) {
-        parseError << "No searchable fields are provided.\n";
-        configSuccess = false;
-        return;
-    }
-
-    if(RefiningFieldsVector.size() != 0){
-        for (unsigned iter = 0; iter < RefiningFieldsVector.size(); iter++) {
-
-            coreInfo->refiningAttributesInfo[RefiningFieldsVector[iter]] =
-                RefiningAttributeInfoContainer(RefiningFieldsVector[iter] ,
-                                               RefiningFieldTypesVector[iter] ,
-                                               RefiningAttributesDefaultVector[iter] ,
-                                               RefiningAttributesRequiredFlagVector[iter],
-                                               RefiningAttributesIsMultiValued[iter]);
-        }
-    }
-
-    /*
-     * <facetEnabled>  in config.xml file
-     */
-    coreInfo->facetEnabled = false; // by default it is false
-    xml_node childNode = schemaNode.child(facetEnabledString);
-    if (childNode && childNode.text()) {
-        string qtmt = childNode.text().get();
-        if (isValidBool(qtmt)) {
-            coreInfo->facetEnabled = childNode.text().as_bool();
-        } else {
-            parseError << "The facetEnabled that is provided is not valid";
-            configSuccess = false;
-            return;
-        }
-    }
-
-    /*
-     * <facetFields>  in config.xml file
-     */
-
-    if(coreInfo->facetEnabled){
-        childNode = schemaNode.child(facetFieldsString);
-        if (childNode) {
-            for (xml_node field = childNode.first_child(); field; field = field.next_sibling()) {
-                if (string(field.name()).compare(facetFieldString) == 0) {
-                    if (string(field.attribute(nameString).value()).compare("") != 0
-                        && string(field.attribute(facetTypeString).value()).compare("") != 0){
-
-                        // insert the name of the facet
-                        coreInfo->facetAttributes.push_back(string(field.attribute(nameString).value()));
-                        // insert the type of the facet
-                        tempUse = string(field.attribute(facetTypeString).value());
-                        int facetType = parseFacetType(tempUse);
-                        if(facetType == 0){ // categorical
-                            coreInfo->facetTypes.push_back(facetType);
-                            // insert place holders for start,end and gap
-                            coreInfo->facetStarts.push_back("");
-                            coreInfo->facetEnds.push_back("");
-                            coreInfo->facetGaps.push_back("");
-                        }else if(facetType == 1){ // range
-                            coreInfo->facetTypes.push_back(facetType);
-                            // insert start
-                            string startTextValue = string(field.attribute(facetStartString).value());
-                            string facetAttributeString = string(field.attribute(nameString).value());
-                            srch2::instantsearch::FilterType facetAttributeType ;
-                            if(coreInfo->refiningAttributesInfo.find(facetAttributeString) != coreInfo->refiningAttributesInfo.end()){
-                                facetAttributeType = coreInfo->refiningAttributesInfo.find(facetAttributeString)->second.attributeType;
-                            }else{
-                                parseError << "Facet attribute is not declared as a non-searchable attribute. Facet disabled.\n";
-                                coreInfo->facetEnabled = false;
-                                break;
-                            }
-                            if(facetAttributeType == srch2is::ATTRIBUTE_TYPE_TIME){
-                                if(srch2is::DateAndTimeHandler::verifyDateTimeString(startTextValue , srch2is::DateTimeTypePointOfTime)
-                                   || srch2is::DateAndTimeHandler::verifyDateTimeString(startTextValue , srch2is::DateTimeTypeNow) ){
-                                    long timeValue = srch2is::DateAndTimeHandler::convertDateTimeStringToSecondsFromEpoch(startTextValue);
-                                    std::stringstream buffer;
-                                    buffer << timeValue;
-                                    startTextValue = buffer.str();
-                                }else{
-                                    parseError << "Facet attribute start value is in wrong format.Facet disabled.\n";
-                                    coreInfo->facetEnabled = false;
-                                    break;
-                                }
-                            }
-                            coreInfo->facetStarts.push_back(startTextValue);
-
-                            // insert end
-                            string endTextValue = string(field.attribute(facetEndString).value());
-                            if(coreInfo->refiningAttributesInfo.find(facetAttributeString) != coreInfo->refiningAttributesInfo.end()){
-                                facetAttributeType = coreInfo->refiningAttributesInfo.find(facetAttributeString)->second.attributeType;
-                            }else{
-                                parseError << "Facet attribute is not declared as a non-searchable attribute. Facet disabled.\n";
-                                coreInfo->facetEnabled = false;
-                                break;
-                            }
-                            if(facetAttributeType == srch2is::ATTRIBUTE_TYPE_TIME){
-                                if(srch2is::DateAndTimeHandler::verifyDateTimeString(endTextValue , srch2is::DateTimeTypePointOfTime)
-                                   || srch2is::DateAndTimeHandler::verifyDateTimeString(endTextValue , srch2is::DateTimeTypeNow) ){
-                                    long timeValue = srch2is::DateAndTimeHandler::convertDateTimeStringToSecondsFromEpoch(endTextValue);
-                                    std::stringstream buffer;
-                                    buffer << timeValue;
-                                    endTextValue = buffer.str();
-                                }else{
-                                    parseError << "Facet attribute start value is in wrong format.Facet disabled.\n";
-                                    coreInfo->facetEnabled = false;
-                                    break;
-                                }
-                            }
-                            coreInfo->facetEnds.push_back(endTextValue);
-
-                            // insert gap
-                            string gapTextValue = string(field.attribute(facetGapString).value());
-                            if(coreInfo->refiningAttributesInfo.find(facetAttributeString) != coreInfo->refiningAttributesInfo.end()){
-                                facetAttributeType = coreInfo->refiningAttributesInfo.find(facetAttributeString)->second.attributeType;
-                            }else{
-                                parseError << "Facet attribute is not declared as a non-searchable attribute. Facet disabled.\n";
-                                coreInfo->facetEnabled = false;
-                                break;
-                            }
-                            if(facetAttributeType == srch2is::ATTRIBUTE_TYPE_TIME){
-                                if(!srch2is::DateAndTimeHandler::verifyDateTimeString(gapTextValue , srch2is::DateTimeTypeDurationOfTime) ){
-                                    parseError << "Facet attribute end value is in wrong format.Facet disabled.\n";
-                                    coreInfo->facetEnabled = false;
-                                    break;
-                                }
-                            }
-                            coreInfo->facetGaps.push_back(gapTextValue);
-                        }else{
-                            parseError << "Facet type is not recognized. Facet disabled.";
-                            coreInfo->facetEnabled = false;
-                            break;
-                        }
-
-                    }
-                }
-            }
-        }
-    }
+					}
+				}
+			}
+		}
+	}
 
     if(! coreInfo->facetEnabled){
         coreInfo->facetAttributes.clear();
@@ -1582,100 +1358,368 @@ void ConfigManager::parseSchema(const xml_node &schemaNode, CoreConfigParseState
         coreInfo->facetGaps.clear();
     }
 
-    // Analyzer flags : Everything is disabled by default.
-    coreInfo->stemmerFlag = false;
-    coreInfo->stemmerFile = "";
-    coreInfo->stopFilterFilePath = "";
-    coreInfo->synonymFilterFilePath = "";
-    coreInfo->protectedWordsFilePath = "";
-    coreInfo->synonymKeepOrigFlag = false;
-
-    childNode = schemaNode.child(typesString);
-    if (childNode) {        // Checks if <schema><types> exists or not
-        for (xml_node fieldType = childNode.first_child(); fieldType; fieldType = fieldType.next_sibling()) { // Going on the children
-            if ((string(fieldType.name()).compare(fieldTypeString) == 0)) { // Finds the fieldTypes
-                if (string(fieldType.attribute(nameString).value()).compare(textEnString) == 0) {
-                    // Checking if the values are empty or not
-                    xml_node childNodeTemp = fieldType.child(analyzerString); // looks for analyzer
-                    for (xml_node field = childNodeTemp.first_child(); field; field = field.next_sibling()) {
-                        if (string(field.name()).compare(filterString) == 0) {
-                            if (string(field.attribute(nameString).value()).compare(porterStemFilterString) == 0) { // STEMMER FILTER
-                                if (string(field.attribute(dictionaryString).value()).compare("") != 0) { // the dictionary for porter stemmer is set.
-                                    coreInfo->stemmerFlag = true;
-                                    tempUse = string(field.attribute(dictionaryString).value());
-                                    trimSpacesFromValue(tempUse, porterStemFilterString, parseWarnings);
-                                    coreInfo->stemmerFile = boost::filesystem::path(this->srch2Home + tempUse).normalize().string();
-                                }
-                            } else if (string(field.attribute(nameString).value()).compare(stopFilterString) == 0) { // STOP FILTER
-                                if (string(field.attribute(wordsString).value()).compare("") != 0) { // the words file for stop filter is set.
-                                    tempUse = string(field.attribute(wordsString).value());
-                                    trimSpacesFromValue(tempUse, stopFilterString, parseWarnings);
-                                    coreInfo->stopFilterFilePath = boost::filesystem::path(srch2Home + tempUse).normalize().string();
-                                }
-                            } /*else if (string(field.attribute(nameString).value()).compare(SynonymFilterString) == 0) {
-                                if (string(field.attribute(synonymsString).value()).compare("") != 0) { // the dictionary file for synonyms is set
-                                this->synonymFilterFilePath = boost::filesystem::path(this->srch2Home).normalize().string();
-                                + string(field.attribute(synonymsString).value());
-                                // checks the validity of boolean provided for 'expand'
-                                tempUse = string(field.attribute(expandString).value());
-                                if (this->isValidBool(tempUse)) {
-                                this->synonymKeepOrigFlag = field.attribute(expandString).as_bool();
-                                } else {
-                                parseError << "Config File Error: can not convert from '" << tempUse
-                                << "' to boolean\n";
-                                configSuccess = false;
-                                return;
-                                }
-                                }
-                                }*/
-                            else if (string(field.attribute(nameString).value()).compare(protectedWordFilterString) == 0) {
-                                if (string(field.attribute(wordsString).value()).compare("") != 0) { // the file for protected words filter is set.
-                                    tempUse = string(field.attribute(wordsString).value());
-                                    trimSpacesFromValue(tempUse, protectedWordFilterString, parseWarnings);
-                                    coreInfo->protectedWordsFilePath = boost::filesystem::path(srch2Home + tempUse).normalize().string();
-                                }
-                            }
-                        } else if (string(field.name()).compare(allowedRecordSpecialCharactersString) == 0) {
-                            CharSet charTyper;
-                            string in = field.text().get(), out; // TODO: Using type string NOT multi-lingual?
-
-                            // validate allowed characters
-                            for (std::string::iterator iterator = in.begin(); iterator != in.end(); iterator++) {
-                                switch (charTyper.getCharacterType(*iterator)) {
-                                case CharSet::DELIMITER_TYPE:
-                                    out += *iterator;
-                                    break;
-                                case CharSet::LATIN_TYPE:
-                                case CharSet::BOPOMOFO_TYPE:
-                                case CharSet::HANZI_TYPE:
-                                    Logger::warn("%s character %c already included in terms, ignored", allowedRecordSpecialCharactersString, *iterator);
-                                    break;
-                                case CharSet::WHITESPACE:
-                                    Logger::warn("%s character %c is whitespace and cannot be treated as part of a term, ignored", allowedRecordSpecialCharactersString, *iterator);
-                                    break;
-                                default:
-                                    Logger::warn("%s character %c of unexpected type %d, ignored", allowedRecordSpecialCharactersString, *iterator, static_cast<int> (charTyper.getCharacterType(*iterator)));
-                                    break;
-                                }
-                            }
-
-                            coreInfo->allowedRecordTokenizerCharacters = out;
-                        }
-                    }
-                }
-            }
-        }
-    } else {
-        parseWarnings << "Analyzer Filters will be disabled.\n";
-    }
-    /*
-     * <Schema/>: End
-     */
 }
+
+void ConfigManager::parseSchemaType(const xml_node &childNode, CoreInfo_t *coreInfo, std::stringstream &parseWarnings){
+
+	string temporaryString = "";
+	if (childNode) {        // Checks if <schema><types> exists or not
+		for (xml_node fieldType = childNode.first_child(); fieldType; fieldType = fieldType.next_sibling()) { // Going on the children
+			if ((string(fieldType.name()).compare(fieldTypeString) == 0)) { // Finds the fieldTypes
+				if (string(fieldType.attribute(nameString).value()).compare(textEnString) == 0) {
+					// Checking if the values are empty or not
+					xml_node childNodeTemp = fieldType.child(analyzerString); // looks for analyzer
+					for (xml_node field = childNodeTemp.first_child(); field; field = field.next_sibling()) {
+						if (string(field.name()).compare(filterString) == 0) {
+							if (string(field.attribute(nameString).value()).compare(porterStemFilterString) == 0) { // STEMMER FILTER
+								if (string(field.attribute(dictionaryString).value()).compare("") != 0) { // the dictionary for porter stemmer is set.
+									coreInfo->stemmerFlag = true;
+									temporaryString = string(field.attribute(dictionaryString).value());
+									trimSpacesFromValue(temporaryString, porterStemFilterString, parseWarnings);
+									coreInfo->stemmerFile = boost::filesystem::path(this->srch2Home + temporaryString).normalize().string();
+								}else{
+									Logger::warn("Dictionary file is not set for PorterStemFilter, so stemming is disabled");
+								}
+							} else if (string(field.attribute(nameString).value()).compare(stopFilterString) == 0) { // STOP FILTER
+								if (string(field.attribute(wordsString).value()).compare("") != 0) { // the words file for stop filter is set.
+									temporaryString = string(field.attribute(wordsString).value());
+									trimSpacesFromValue(temporaryString, stopFilterString, parseWarnings);
+									coreInfo->stopFilterFilePath = boost::filesystem::path(srch2Home + temporaryString).normalize().string();
+								}else{
+									Logger::warn("word parameter in StopFilter is empty, so stop word filter is disabled");
+								}
+							}
+							else if (string(field.attribute(nameString).value()).compare(protectedWordFilterString) == 0) {
+								if (string(field.attribute(wordsString).value()).compare("") != 0) { // the file for protected words filter is set.
+									temporaryString = string(field.attribute(wordsString).value());
+									trimSpacesFromValue(temporaryString, protectedWordFilterString, parseWarnings);
+									coreInfo->protectedWordsFilePath = boost::filesystem::path(srch2Home + temporaryString).normalize().string();
+								}else{
+									Logger::warn("words parameter for protected keywords is empty, so protected words filter is disabled");
+								}
+							}
+						} else if (string(field.name()).compare(allowedRecordSpecialCharactersString) == 0) {
+							CharSet charTyper;
+							string in = field.text().get(), out; // TODO: Using type string NOT multi-lingual?
+
+							// validate allowed characters
+							for (std::string::iterator iterator = in.begin(); iterator != in.end(); iterator++) {
+								switch (charTyper.getCharacterType(*iterator)) {
+								case CharSet::DELIMITER_TYPE:
+									out += *iterator;
+									break;
+								case CharSet::LATIN_TYPE:
+								case CharSet::BOPOMOFO_TYPE:
+								case CharSet::HANZI_TYPE:
+									Logger::warn("%s character %c already included in terms, ignored", allowedRecordSpecialCharactersString, *iterator);
+									break;
+								case CharSet::WHITESPACE:
+									Logger::warn("%s character %c is whitespace and cannot be treated as part of a term, ignored", allowedRecordSpecialCharactersString, *iterator);
+									break;
+								default:
+									Logger::warn("%s character %c of unexpected type %d, ignored", allowedRecordSpecialCharactersString, *iterator, static_cast<int> (charTyper.getCharacterType(*iterator)));
+									break;
+								}
+							}
+
+							coreInfo->allowedRecordTokenizerCharacters = out;
+						}else{
+							Logger::error("Valid tag is not set, it can only be filter or allowedrecordspecialcharacters");
+						}
+					}
+				}else{
+					Logger::error("Not a valid fieldType name in config file, currently we only support text_en");
+				}
+			}
+		}
+	} else {
+		parseWarnings << "Analyzer Filters will be disabled.\n";
+	}
+
+}
+
+
+void ConfigManager::parseSchema(const xml_node &schemaNode, CoreConfigParseState_t *coreParseState, CoreInfo_t *coreInfo, bool &configSuccess, std::stringstream &parseError, std::stringstream &parseWarnings)
+{
+	    string temporaryString = "";
+	    vector<string> RefiningFieldsVector;
+	    vector<srch2::instantsearch::FilterType> RefiningFieldTypesVector;
+	    vector<bool> RefiningAttributesRequiredFlagVector;
+	    vector<string> RefiningAttributesDefaultVector;
+	    vector<bool> RefiningAttributesIsMultiValued;
+
+	    /*
+	     * <field>  in config.xml file
+	     */
+	    coreInfo->isPrimSearchable = 0;
+
+	    xml_node fieldsNode = schemaNode.child(fieldsString);
+	    if (fieldsNode) {
+	        for (xml_node field = fieldsNode.first_child(); field; field = field.next_sibling()) {
+	            if (string(field.name()).compare(fieldString) == 0) {
+
+	            	bool isMultiValued = false;
+	            	bool isSearchable = false;
+	            	bool isRefining = false;
+	                bool isHighlightEnabled = false;
+	                if(!setFieldFlagsFromFile(field, isMultiValued, isSearchable, isRefining, isHighlightEnabled, parseError, configSuccess)){
+	                	configSuccess = false;
+	                	return;
+	                }
+
+	                //This code gets executed only if the field is primary key
+	                if(string(field.attribute(nameString).value()).compare(coreInfo->primaryKey) == 0){
+
+	                	if(isMultiValued){
+	                		configSuccess = false;
+	                		parseError << "Config File Error: Primary Key cannot be multivalued";
+	                		return;
+	                	}
+	                	if(isSearchable){
+	                		coreInfo->isPrimSearchable = 1;
+	                		coreParseState->searchableFieldsVector.push_back(string(field.attribute(nameString).value()));
+	                		// there is no need for default value for primary key
+	                		coreParseState->searchableAttributesDefaultVector.push_back("");
+	                		// primary key is always required.
+	                		coreParseState->searchableAttributesRequiredFlagVector.push_back(true);
+	                		coreParseState->searchableAttributesHighlight.push_back(isHighlightEnabled);
+	                		coreParseState->searchableAttributesIsMultiValued.push_back(isMultiValued);
+	                	}
+
+	                	if(isRefining){
+	                		RefiningFieldsVector.push_back(coreInfo->primaryKey);
+	                		RefiningFieldTypesVector.push_back(srch2::instantsearch::ATTRIBUTE_TYPE_TEXT);
+	                		RefiningAttributesDefaultVector.push_back("");
+	                		RefiningAttributesRequiredFlagVector.push_back(true);
+	                		RefiningAttributesIsMultiValued.push_back(isMultiValued);
+	                	}
+	                	continue;
+	                }
+
+	                if (string(field.attribute(nameString).value()).compare("") != 0
+	                                   && string(field.attribute(typeString).value()).compare("") != 0) {
+
+	                	if(!setCoreParseStateVector( isSearchable,  isRefining,  isMultiValued,  isHighlightEnabled,  coreParseState,  coreInfo,  parseError, field)){
+	                		configSuccess = false;
+	                		return;
+	                	}
+
+	                	if(!setRefiningStateVectors(field, isMultiValued, isRefining, RefiningFieldsVector, RefiningFieldTypesVector, RefiningAttributesRequiredFlagVector, RefiningAttributesDefaultVector, RefiningAttributesIsMultiValued, parseError)){
+	                		configSuccess = false;
+	                		return;
+	                	}
+
+	                    // Checks for geo types. location_latitude and location_longitude are geo types
+	                    if (string(field.attribute(typeString).value()).compare(locationLatitudeString) == 0) {
+	                        coreParseState->hasLatitude = true;
+	                        coreInfo->fieldLatitude = string(field.attribute(nameString).value());
+	                    }
+	                    if (string(field.attribute(typeString).value()).compare(locationLongitudeString) == 0) {
+	                        coreParseState->hasLongitude = true;
+	                        coreInfo->fieldLongitude = string(field.attribute(nameString).value());
+	                    }
+	                }else { // if one of the values of name, type or indexed is empty
+	                    parseError << "For the searchable fields, "
+	                               << "providing values for 'name' and 'type' is required\n ";
+	                    configSuccess = false;
+	                    return;
+	                }
+
+	            }else {
+	                parseWarnings << "Unexpected XML node " << field.name() << " within <fields>";
+	            }
+	        }
+	    }
+	    else { // No searchable fields provided.
+	    	parseError << "No fields are provided.\n";
+	    	configSuccess = false;
+	    	return;
+	    }
+
+	    // Checking if there is any field or not.
+	        if (coreParseState->searchableFieldsVector.size() == 0) {
+	            parseError << "No searchable fields are provided.\n";
+	            configSuccess = false;
+	            return;
+	        }
+
+	        if(RefiningFieldsVector.size() != 0){
+	            for (unsigned iter = 0; iter < RefiningFieldsVector.size(); iter++) {
+
+	                coreInfo->refiningAttributesInfo[RefiningFieldsVector[iter]] =
+	                    RefiningAttributeInfoContainer(RefiningFieldsVector[iter] ,
+	                                                   RefiningFieldTypesVector[iter] ,
+	                                                   RefiningAttributesDefaultVector[iter] ,
+	                                                   RefiningAttributesRequiredFlagVector[iter],
+	                                                   RefiningAttributesIsMultiValued[iter]);
+	            }
+	        }
+
+	        /*
+	         * <facetEnabled>  in config.xml file
+	         */
+	        coreInfo->facetEnabled = false; // by default it is false
+	        xml_node childNode = schemaNode.child(facetEnabledString);
+	        if (childNode && childNode.text()) {
+	            string qtmt = childNode.text().get();
+	            if (isValidBool(qtmt)) {
+	                coreInfo->facetEnabled = childNode.text().as_bool();
+	            } else {
+	                parseError << "The facetEnabled that is provided is not valid";
+	                configSuccess = false;
+	                return;
+	            }
+	        }
+
+	        /*
+	         * <facetFields>  in config.xml file
+	         */
+
+	        parseFacetFields(schemaNode, coreInfo, parseError);
+
+	        // Analyzer flags : Everything is disabled by default.
+	        coreInfo->stemmerFlag = false;
+	        coreInfo->stemmerFile = "";
+	        coreInfo->stopFilterFilePath = "";
+	        coreInfo->synonymFilterFilePath = "";
+	        coreInfo->protectedWordsFilePath = "";
+	        coreInfo->synonymKeepOrigFlag = false;
+
+	        childNode = schemaNode.child(typesString);
+
+	        parseSchemaType(childNode, coreInfo, parseWarnings);
+
+	        /*
+	         * <Schema/>: End
+	         */
+}
+
+
+bool ConfigManager::setSearchableRefiningFromIndexedAttribute(const xml_node &field, bool &isSearchable, bool &isRefining, std::stringstream &parseError, bool &configSuccess){
+
+string temporaryString = "";
+temporaryString = string(field.attribute(indexedString).value());
+if(isValidBool(temporaryString)){
+	if(field.attribute(indexedString).as_bool()){ // indexed = true
+		isSearchable = true;
+		isRefining = true;
+	}else{ // indexed = false
+		if(string(field.attribute(searchableString).value()).compare("") != 0){
+			temporaryString = string(field.attribute(searchableString).value());
+			if(isValidBool(temporaryString)){
+				if(field.attribute(searchableString).as_bool()){
+					isSearchable = true;
+				}else{
+					isSearchable = false;
+				}
+			}else{
+				parseError << "Config File Error: Unknown value for property 'searchable'.\n";
+				configSuccess = false;
+				return false;
+			}
+		}
+
+		if(string(field.attribute(refiningString).value()).compare("") != 0){
+			temporaryString = string(field.attribute(refiningString).value());
+			if(isValidBool(temporaryString)){
+				if(field.attribute(refiningString).as_bool()){
+					isRefining = true;
+				}else{
+					isRefining = false;
+				}
+			}else{
+				parseError << "Config File Error: Unknown value for property 'refining'.\n";
+				configSuccess = false;
+				return false;
+			}
+		}
+	}
+}else{
+	parseError << "Config File Error: Unknown value for property 'indexed'.\n";
+	configSuccess = false;
+	return false;
+}
+
+return true;
+}
+
+bool ConfigManager::setSearchableAndRefining(const xml_node &field, bool &isSearchable, bool &isRefining, std::stringstream &parseError, bool &configSuccess){
+
+	string temporaryString = "";
+	if(string(field.attribute(searchableString).value()).compare("") != 0){
+		temporaryString = string(field.attribute(searchableString).value());
+		if(isValidBool(temporaryString)){
+			if(field.attribute(searchableString).as_bool()){
+				isSearchable = true;
+			}else{
+				isSearchable = false;
+			}
+		}else{
+			parseError << "Config File Error: Unknown value for property 'searchable'.\n";
+			configSuccess = false;
+			return false;
+		}
+	}
+
+	if(string(field.attribute(refiningString).value()).compare("") != 0){
+		temporaryString = string(field.attribute(refiningString).value());
+		if(isValidBool(temporaryString)){
+			if(field.attribute(refiningString).as_bool()){
+				isRefining = true;
+			}else{
+				isRefining = false;
+			}
+		}else{
+			parseError << "Config File Error: Unknown value for property 'refining'.\n";
+			configSuccess = false;
+			return false;
+		}
+	}
+	return true;
+}
+
+//bool ConfigManager::setCoreParseState()
+
+bool ConfigManager::setFieldFlagsFromFile(const xml_node &field, bool &isMultiValued, bool &isSearchable, bool &isRefining, bool &isHighlightEnabled, std::stringstream &parseError, bool &configSuccess){
+	string temporaryString = "";
+	if(string(field.attribute(multiValuedString).value()).compare("") != 0){
+		temporaryString = string(field.attribute(multiValuedString).value());
+	    if(isValidBool(temporaryString)){
+	    	isMultiValued = field.attribute(multiValuedString).as_bool();
+	    }else{
+            parseError << "Config File Error: Unknown value for property '"<< multiValuedString <<"'.\n";
+	    	return false;
+	    }
+	}
+
+        if(string(field.attribute(indexedString).value()).compare("") != 0){
+			if(!setSearchableRefiningFromIndexedAttribute(field,  isSearchable,  isRefining,  parseError,  configSuccess)){
+				configSuccess = false;
+				return false;
+			}
+        }else{
+        	if(!setSearchableAndRefining(field,  isSearchable,  isRefining,  parseError,  configSuccess)){
+        		configSuccess = false;
+        		return false;
+        	}
+        }
+
+        //set highlight flags
+        if(string(field.attribute(highLightString).value()).compare("") != 0){
+        	temporaryString = string(field.attribute(highLightString).value());
+        	if (isValidBool(temporaryString)){
+        		if(field.attribute(indexedString).as_bool()){
+        			isHighlightEnabled = true;
+        		}
+        	}
+        }
+        return true;
+	}
+
 
 void ConfigManager::parseUpdateHandler(const xml_node &updateHandlerNode, CoreInfo_t *coreInfo, bool &configSuccess, std::stringstream &parseError, std::stringstream &parseWarnings)
 {
-    string tempUse = "";
+    string temporaryString = "";
 
     xml_node childNode = updateHandlerNode.child(maxDocsString);
     bool mdflag = false;
@@ -1771,9 +1815,9 @@ void ConfigManager::parseUpdateHandler(const xml_node &updateHandlerNode, CoreIn
     // accessLogFile is required
     childNode = updateHandlerNode.child(updateLogString).child(accessLogFileString);
     if (childNode && childNode.text()) {
-        tempUse = string(childNode.text().get());
-        trimSpacesFromValue(tempUse, updateLogString, parseWarnings);
-        this->httpServerAccessLogFile = this->srch2Home + "/" + coreInfo->getName() + "/" + tempUse;
+        temporaryString = string(childNode.text().get());
+        trimSpacesFromValue(temporaryString, updateLogString, parseWarnings);
+        this->httpServerAccessLogFile = this->srch2Home + "/" + coreInfo->getName() + "/" + temporaryString;
     } else {
         parseError << "httpServerAccessLogFile is not set.\n";
         configSuccess = false;
@@ -1804,7 +1848,7 @@ void ConfigManager::parse(const pugi::xml_document& configDoc,
                           std::stringstream &parseError,
                           std::stringstream &parseWarnings)
 {
-    string tempUse = ""; // This is just for temporary use.
+    string temporaryString = ""; // This is just for temporary use.
     vector<string> ipAddressOfKnownHost;
 
     int flag_cluster = 0;
@@ -1814,10 +1858,10 @@ void ConfigManager::parse(const pugi::xml_document& configDoc,
     xml_node wellKnownHost = configNode.child(wellKnownHosts);
     if(wellKnownHost && wellKnownHost.text()){
 
-    	tempUse = string(wellKnownHost.text().get());
-		trimSpacesFromValue(tempUse, "WellKnownHosts", parseWarnings);
+    	temporaryString = string(wellKnownHost.text().get());
+		trimSpacesFromValue(temporaryString, "WellKnownHosts", parseWarnings);
     	string delimiterComma = ",";
-    	this->splitString(tempUse,delimiterComma,ipAddressOfKnownHost);
+    	this->splitString(temporaryString,delimiterComma,ipAddressOfKnownHost);
 
     	for (int i = 0; i < ipAddressOfKnownHost.size(); i++){
     	    vector<string> temp;
@@ -1836,17 +1880,17 @@ void ConfigManager::parse(const pugi::xml_document& configDoc,
     if(transportNode){
     	xml_node transportIpAddressNode = transportNode.child(transportIpAddress);
     	if(transportIpAddressNode && transportIpAddressNode.text()){
-    		tempUse = string(transportIpAddressNode.text().get());
-    		trimSpacesFromValue(tempUse, "transport-IpAddress", parseWarnings);
-    		transport.setIpAddress(tempUse);
+    		temporaryString = string(transportIpAddressNode.text().get());
+    		trimSpacesFromValue(temporaryString, "transport-IpAddress", parseWarnings);
+    		transport.setIpAddress(temporaryString);
     	}
 
     	 xml_node transportPortNode = transportNode.child(transportPort);
     	 if(transportPortNode && transportPortNode.text()){
-    	   	tempUse = string(transportPortNode.text().get());
-    	   	trimSpacesFromValue(tempUse, "transport-port", parseWarnings);
-    	   	if(isNumber(tempUse))
-    	   		transport.setPort((uint)atol(tempUse.c_str()));
+    		 temporaryString = string(transportPortNode.text().get());
+    	   	trimSpacesFromValue(temporaryString, "transport-port", parseWarnings);
+    	   	if(isNumber(temporaryString))
+    	   		transport.setPort((uint)atol(temporaryString.c_str()));
     	   	else
     	   		parseWarnings << "port number specified within transport is not valid, engine will use the default value 8088";
     	 }
@@ -1857,34 +1901,34 @@ void ConfigManager::parse(const pugi::xml_document& configDoc,
     if(multicastDiscoveryNode){
     	xml_node groupAddressNode = multicastDiscoveryNode.child(multicastGroupAddress);
     	if(groupAddressNode && groupAddressNode.text()){
-    		tempUse = string(groupAddressNode.text().get());
-    		trimSpacesFromValue(tempUse, "group-address", parseWarnings);
-    		mDiscovery.setGroupAddress(tempUse);
+    		temporaryString = string(groupAddressNode.text().get());
+    		trimSpacesFromValue(temporaryString, "group-address", parseWarnings);
+    		mDiscovery.setGroupAddress(temporaryString);
     	}
 
         xml_node multicastIpAddressNode = multicastDiscoveryNode.child(multicastIpAddress);
         if(multicastIpAddressNode && multicastIpAddressNode.text()){
-        	tempUse = string(multicastIpAddressNode.text().get());
-       		trimSpacesFromValue(tempUse, "multicast-IpAddress", parseWarnings);
-       		mDiscovery.setIpAddress(tempUse);
+        	temporaryString = string(multicastIpAddressNode.text().get());
+       		trimSpacesFromValue(temporaryString, "multicast-IpAddress", parseWarnings);
+       		mDiscovery.setIpAddress(temporaryString);
        	}
 
         xml_node multicastPortNode = multicastDiscoveryNode.child(multicastPort);
         if(multicastPortNode && multicastPortNode.text()){
-        	tempUse = string(multicastPortNode.text().get());
-        	trimSpacesFromValue(tempUse, "multicast-port", parseWarnings);
-        	if(isNumber(tempUse))
-        		mDiscovery.setPort((uint)atol(tempUse.c_str()));
+        	temporaryString = string(multicastPortNode.text().get());
+        	trimSpacesFromValue(temporaryString, "multicast-port", parseWarnings);
+        	if(isNumber(temporaryString))
+        		mDiscovery.setPort((uint)atol(temporaryString.c_str()));
         	else
         		parseWarnings << "port number specified within multicast is not valid, engine will use the default value 8088";
         }
 
         xml_node multicastTtlNode = multicastDiscoveryNode.child(multicastTtl);
         if(multicastTtlNode && multicastTtlNode.text()){
-        	tempUse = string(multicastTtlNode.text().get());
-        	trimSpacesFromValue(tempUse, "multicast-ttl", parseWarnings);
-        	if(isNumber(tempUse))
-        		mDiscovery.setTtl((uint)atol(tempUse.c_str()));
+        	temporaryString = string(multicastTtlNode.text().get());
+        	trimSpacesFromValue(temporaryString, "multicast-ttl", parseWarnings);
+        	if(isNumber(temporaryString))
+        		mDiscovery.setTtl((uint)atol(temporaryString.c_str()));
         	else
         		parseWarnings << "ttl specified within multicast is not valid, engine will use the default value of 5";
         }
@@ -1896,10 +1940,10 @@ void ConfigManager::parse(const pugi::xml_document& configDoc,
     if(pingNode){
         xml_node pingInterval = pingNode.child(pingIntervalTag);
         if(pingInterval && pingInterval.text()){
-           tempUse = string(pingInterval.text().get());
-           trimSpacesFromValue(tempUse, "pingInterval", parseWarnings);
-           if(isNumber(tempUse))
-               ping.setPingInterval((uint)atol(tempUse.c_str()));
+        	temporaryString = string(pingInterval.text().get());
+           trimSpacesFromValue(temporaryString, "pingInterval", parseWarnings);
+           if(isNumber(temporaryString))
+               ping.setPingInterval((uint)atol(temporaryString.c_str()));
            else{
         	   parseWarnings<<"Ping interval specified is not valid, engine will use the default value 1";
            }
@@ -1907,10 +1951,10 @@ void ConfigManager::parse(const pugi::xml_document& configDoc,
 
         xml_node pingTimeout = pingNode.child(pingTimeoutTag);
         if(pingTimeout && pingTimeout.text()){
-            tempUse = string(pingTimeout.text().get());
-            trimSpacesFromValue(tempUse, "pingTimeout", parseWarnings);
-            if(isNumber(tempUse))
-                ping.setPingTimeout((uint)atol(tempUse.c_str()));
+        	temporaryString = string(pingTimeout.text().get());
+            trimSpacesFromValue(temporaryString, "pingTimeout", parseWarnings);
+            if(isNumber(temporaryString))
+                ping.setPingTimeout((uint)atol(temporaryString.c_str()));
             else{
          	   parseWarnings<<"Ping timeout specified is not valid, engine will use the default value 1";
             }
@@ -1918,10 +1962,10 @@ void ConfigManager::parse(const pugi::xml_document& configDoc,
 
         xml_node retryCount = pingNode.child(retryCountTag);
         if(retryCount && retryCount.text()){
-            tempUse = string(retryCount.text().get());
-            trimSpacesFromValue(tempUse, "retryCount", parseWarnings);
-            if(isNumber(tempUse))
-                ping.setRetryCount((uint)atol(tempUse.c_str()));
+        	temporaryString = string(retryCount.text().get());
+            trimSpacesFromValue(temporaryString, "retryCount", parseWarnings);
+            if(isNumber(temporaryString))
+                ping.setRetryCount((uint)atol(temporaryString.c_str()));
             else{
                 parseWarnings<<"Retry count specified is not valid, engine will use the default value 1";
             }
@@ -1930,10 +1974,10 @@ void ConfigManager::parse(const pugi::xml_document& configDoc,
 
     xml_node clusterName = configNode.child(clusterNameTag);
     if (clusterName && clusterName.text()) {
-    	tempUse = string(clusterName.text().get());
-    	trimSpacesFromValue(tempUse, clusterNameTag, parseWarnings);
-    	if (tempUse != "") {
-    		this->clusterNameStr = tempUse;
+    	temporaryString = string(clusterName.text().get());
+    	trimSpacesFromValue(temporaryString, clusterNameTag, parseWarnings);
+    	if (temporaryString != "") {
+    		this->clusterNameStr = temporaryString;
     	} else {
     		this->clusterNameStr = string(DefaultClusterName);
     		parseWarnings << "Cluster name is not specified. Engine will use the default value " << this->clusterNameStr << "\n";
@@ -1947,15 +1991,15 @@ void ConfigManager::parse(const pugi::xml_document& configDoc,
     if (clusterNameSibling && clusterNameSibling.text()){
           parseWarnings << "Duplicate definition of \"" << clusterNameTag << "\".  The engine will use the first value: " << this->clusterNameStr << "\n";    }
 
-    tempUse = "";
+    temporaryString = "";
 
     std::string nodeName = "srch2-node";
     //  node-name -- optional
     xml_node xmlnodeNameTag = configNode.child(nodeNameTag);
     if (xmlnodeNameTag && xmlnodeNameTag.text()) { // checks if the config/node-name has any text in it or not
-        tempUse = string(xmlnodeNameTag.text().get());
-        trimSpacesFromValue(tempUse, nodeNameTag, parseWarnings);
-        nodeName = tempUse;
+    	temporaryString = string(xmlnodeNameTag.text().get());
+        trimSpacesFromValue(temporaryString, nodeNameTag, parseWarnings);
+        nodeName = temporaryString;
     } else {
     	parseWarnings << "Node name is not defined in the config file. Using a default value = " << nodeName << endl;
     }
@@ -1969,9 +2013,9 @@ void ConfigManager::parse(const pugi::xml_document& configDoc,
     // srch2Home is a required field
     xml_node childNode = configNode.child(srch2HomeString);
     if (childNode && childNode.text()) { // checks if the config/srch2Home has any text in it or not
-        tempUse = string(childNode.text().get());
-        trimSpacesFromValue(tempUse, srch2HomeString, parseWarnings, "/");
-        srch2Home = tempUse;
+        temporaryString = string(childNode.text().get());
+        trimSpacesFromValue(temporaryString, srch2HomeString, parseWarnings, "/");
+        srch2Home = temporaryString;
     } else {
         parseError << "srch2Home is not set.\n";
         configSuccess = false;
