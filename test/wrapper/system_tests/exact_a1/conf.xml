@@ -25,15 +25,6 @@
     <srch2Home>./</srch2Home>
  
     <!--
-        License Key File
-        Required
-         
-        Email contact@srch2.com to get a key file.  
-        Make sure to set the variable to the SRCH2 license key file.
-    -->
-    <licenseFile>../conf/srch2_license_key.txt</licenseFile>
- 
-    <!--
         Hostname and Port Number
         Required
          
@@ -297,31 +288,7 @@
           <mergeEveryNSeconds>10</mergeEveryNSeconds>
           <mergeEveryMWrites>100</mergeEveryMWrites>
         </mergePolicy>
-         
-         
-        <updateLog>
-            <!-- 
-                Log Level
-                Optional
-                 
-                Log level
-                    0 SILENT
-                    1 ERROR
-                    2 WARN
-                    3 INFO
-                Defaults to 3 INFO
-            -->
-            <logLevel>3</logLevel>
-                         
-            <!--
-                Access Log File
-                Required
-                 
-                Path to Access Log File
-            -->
-            <accessLogFile>./data/exact_a1/log.txt</accessLogFile>
-        </updateLog>
-     
+             
     </updatehandler>
 
 	<schema>
@@ -360,6 +327,7 @@
 	   -->
 	   <field name="category" type="text" indexed="true" />
 	   <field name="name" type="text" indexed="true" />
+           <field name="relevance" type="float" refining="true" highlight="true" />
 	 </fields>
 	 
 	 <!--
@@ -406,7 +374,7 @@
 	  
 	  
 	  <types>
-	    <fieldType name="text_en">
+	    <fieldType name="text_standard">
 		<analyzer>
 		    <!--
 		        Stemmer
@@ -443,6 +411,30 @@
 	    </fieldType>
 	 </types>
 	</schema>
+	
+	       <updateLog>
+            <!-- 
+                Log Level
+                Optional
+                 
+                Log level
+                    0 SILENT
+                    1 ERROR
+                    2 WARN
+                    3 INFO
+                Defaults to 3 INFO
+            -->
+            <logLevel>3</logLevel>
+                         
+            <!--
+                Access Log File
+                Required
+                 
+                Path to Access Log File
+            -->
+            <accessLogFile>./data/exact_a1/log.txt</accessLogFile>
+        </updateLog>
+ 	
 </config>
  
 

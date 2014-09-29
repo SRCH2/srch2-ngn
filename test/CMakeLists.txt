@@ -32,6 +32,13 @@ MESSAGE(STATUS  "BUILDING TEST: ${CMAKE_CURRENT_BINARY_DIR}")
 
 SET(UNIT_TEST_INDEX_DIR ${CMAKE_SOURCE_DIR}/test/core/unit/test_data/)
 
+ADD_TEST(JSONValueObjectToRecord_Test ${CMAKE_CURRENT_BINARY_DIR}/wrapper/unit/JSONValueObjectToRecord_Test "--verbose")
+SET_TESTS_PROPERTIES(JSONValueObjectToRecord_Test PROPERTIES ENVIRONMENT "srch2_config_file=${CMAKE_SOURCE_DIR}/test/wrapper/unit/JSONValueObjectToRecord_Test")
+
+ADD_TEST(ConfigManager_Test ${CMAKE_CURRENT_BINARY_DIR}/wrapper/unit/ConfigManager_Test "--verbose")
+SET_TESTS_PROPERTIES(ConfigManager_Test PROPERTIES ENVIRONMENT "srch2_config_file=${CMAKE_SOURCE_DIR}/test/wrapper/unit")
+
+
 ADD_TEST(Logger_Test ${CMAKE_CURRENT_BINARY_DIR}/core/unit/Logger_Test "--verbose")
 
 ADD_TEST(Trie_Test ${CMAKE_CURRENT_BINARY_DIR}/core/unit/Trie_Test "--verbose")
@@ -61,11 +68,7 @@ ADD_TEST(QueryEvaluator_Test  ${CMAKE_CURRENT_BINARY_DIR}/core/unit/QueryEvaluat
 ADD_TEST(Trie_Test ${CMAKE_CURRENT_BINARY_DIR}/core/unit/Trie_Test "--verbose")
 
 ADD_TEST(Analyzer_Test ${CMAKE_CURRENT_BINARY_DIR}/core/unit/Analyzer_Test "--verbose")
-SET_TESTS_PROPERTIES(Analyzer_Test PROPERTIES ENVIRONMENT "dataDir=${CMAKE_SOURCE_DIR}/test/core/unit/test_data/analyzer")
-    
-ADD_TEST(ReadWriteMutex_Test ${CMAKE_CURRENT_BINARY_DIR}/core/unit/ReadWriteMutex_Test "--verbose")
-
-ADD_TEST(ReadWriteMutexCondWait_Test ${CMAKE_CURRENT_BINARY_DIR}/core/unit/ReadWriteMutexCondWait_Test "--verbose")
+SET_TESTS_PROPERTIES(Analyzer_Test PROPERTIES ENVIRONMENT "dataDir=${CMAKE_SOURCE_DIR}/test/core/unit/test_data/analyzer;cnDictBuilder=${CMAKE_BINARY_DIR}/utilities/dictionary-builder/DictionaryBuilder;cnDictTxt=${CMAKE_SOURCE_DIR}/utilities/dictionary-builder/data/chinese.dict")
 
 ADD_TEST(AttributedBasedSearch_Test ${CMAKE_CURRENT_BINARY_DIR}/core/unit/AttributedBasedSearch_Test "--verbose")
 SET_TESTS_PROPERTIES(AttributedBasedSearch_Test
@@ -137,14 +140,13 @@ SET_TESTS_PROPERTIES(GetAllResultsQuery_Test PROPERTIES ENVIRONMENT "index_dir=$
  
 ADD_TEST(Lookup_Test ${CMAKE_CURRENT_BINARY_DIR}/core/integration/Lookup_Test "--verbose")
 SET_TESTS_PROPERTIES(Lookup_Test PROPERTIES ENVIRONMENT "index_dir=${INTEGRATION_TEST_INDEX_DIR}ranking-newly-inserted/")
- 
-ADD_TEST(GeoCompleteTermSearch_Test ${CMAKE_CURRENT_BINARY_DIR}/core/integration/GeoCompleteTermSearch_Test "--verbose")
-SET_TESTS_PROPERTIES(GeoCompleteTermSearch_Test PROPERTIES ENVIRONMENT "index_dir=${INTEGRATION_TEST_INDEX_DIR}geo-complete/")
- 
-ADD_TEST(QuadTree_Test  ${CMAKE_CURRENT_BINARY_DIR}/core/unit/QuadTree_Test "--verbose")
-SET_TESTS_PROPERTIES(QuadTree_Test PROPERTIES ENVIRONMENT "directoryName=${CMAKE_SOURCE_DIR}/test/core/unit/test_data")
+
+ADD_TEST(ThreadSafetyReadWriteGeo_Test ${CMAKE_CURRENT_BINARY_DIR}/core/integration/ThreadSafetyReadWriteGeo_Test "--verbose")
+SET_TESTS_PROPERTIES(ThreadSafetyReadWriteGeo_Test PROPERTIES ENVIRONMENT "index_dir=${INTEGRATION_TEST_INDEX_DIR}threadsafetyreadwritegeo_test/")
 	  
-ADD_TEST(VariableLengthAttributeContainer_Test ${CMAKE_CURRENT_BINARY_DIR}/core/unit/VariableLengthAttributeContainer_Test "--verbose")
+ADD_TEST(RecordBasedAccessControl_Test ${CMAKE_CURRENT_BINARY_DIR}/core/unit/RecordBasedAccessControl_Test "--verbose")
+SET_TESTS_PROPERTIES(RecordBasedAccessControl_Test PROPERTIES ENVIRONMENT "index_dir=${INTEGRATION_TEST_INDEX_DIR}recordbasedaccesscontrol_test/")
+	  
 ADD_TEST(ULEB128_Test ${CMAKE_CURRENT_BINARY_DIR}/core/unit/ULEB128_Test "--verbose")
 
 ADD_TEST(PhraseSearch_Test ${CMAKE_CURRENT_BINARY_DIR}/core/unit/PhraseSearch_Test "--verbose")
@@ -174,8 +176,6 @@ ADD_TEST(RandomAccessVerificationNot_Test ${CMAKE_CURRENT_BINARY_DIR}/core/unit/
 
 #wrapper related tests should be added below this line
 
-CONFIGURE_FILE(${CMAKE_SOURCE_DIR}/test/wrapper/conf/conf.xml-input ${CMAKE_CURRENT_BINARY_DIR}/wrapper/integration/conf.xml-WrapperCreateIndexFromJsonFile_Test)
-ADD_TEST(WrapperCreateIndexFromJsonFile_Test  ${CMAKE_CURRENT_BINARY_DIR}/wrapper/integration/WrapperCreateIndexFromFile_Test "--config-file=${CMAKE_CURRENT_BINARY_DIR}/wrapper/integration/conf.xml-WrapperCreateIndexFromJsonFile_Test")
 ADD_TEST(PostProcessingFilter_Test ${CMAKE_CURRENT_BINARY_DIR}/wrapper/integration/PostProcessingFilter_Test "--verbose")
 
 ADD_TEST(XMLParser_Test ${CMAKE_CURRENT_BINARY_DIR}/wrapper/integration/XMLParser_Test   "--verbose")
@@ -184,9 +184,6 @@ SET_TESTS_PROPERTIES(XMLParser_Test PROPERTIES ENVIRONMENT "XmlFilePath=${CMAKE_
 ADD_TEST(IndexUpdater_Test  ${CMAKE_CURRENT_BINARY_DIR}/core/integration/IndexUpdater_Test "--verbose")
 SET_TESTS_PROPERTIES(IndexUpdater_Test 
     				PROPERTIES ENVIRONMENT "data_file=${INTEGRATION_TEST_INDEX_DIR}dblp/dblp40000records.csv;index_dir=${INTEGRATION_TEST_INDEX_DIR}update-test-data/;")
-
-ADD_TEST(GeoIndexUpdate_Test ${CMAKE_CURRENT_BINARY_DIR}/core/unit/GeoIndexUpdate_Test "--verbose")
-SET_TESTS_PROPERTIES(GeoIndexUpdate_Test PROPERTIES ENVIRONMENT "directoryName=${CMAKE_SOURCE_DIR}/test/core/unit/test_data")
 
 if (SYSTEM_TEST_ENABLED)
     ADD_TEST( System_Tests ${CMAKE_SOURCE_DIR}/test/wrapper/system_tests/main.sh ${CMAKE_SOURCE_DIR}/test/wrapper/system_tests ${CMAKE_BINARY_DIR}/src/server)

@@ -64,25 +64,27 @@
 
 #include <instantsearch/Indexer.h>
 #include <instantsearch/Record.h>
+#include <instantsearch/Constants.h>
 
 //#include "index/IndexUtil.h"
 #include "index/Trie.h"
 //#include "index/InvertedIndex.h"
 #include "index/ForwardIndex.h"
-//#include "geo/QuadTree.h"
+#include "geo/QuadTree.h"
 //#include "record/AnalyzerInternal.h"
 //#include "record/SchemaInternal.h"
 //#include "license/LicenseVerifier.h"
 //#include "operation/Cache.h"
 #include "util/RankerExpression.h"
-#include "util/ReadWriteMutex.h"  // for locking
 
 #include <string>
 #include <vector>
+#include <map>
 #include <memory>
 
 using std::vector;
 using std::string;
+using std::map;
 
 namespace srch2
 {
@@ -93,7 +95,6 @@ namespace instantsearch
  *  It would be nice to move them to a separate forward declaration header file
  */
 class InvertedIndex;
-class QuadTree;
 //class ForwardIndex;
 class Analyzer;
 class SchemaInternal;
@@ -117,6 +118,9 @@ struct IndexReadStateSharedPtr_Token
 
     typedef boost::shared_ptr<vectorview<InvertedListContainerPtr> > InvertedIndexReadView;
     InvertedIndexReadView invertedIndexReadViewSharedPtr;
+
+    typedef boost::shared_ptr<QuadTreeRootNodeAndFreeLists> QuadTreeRootNodeSharedPtr;
+    QuadTreeRootNodeSharedPtr quadTreeRootNodeSharedPtr;
 };
 
 // Uses spinlock and volatile to increment count.
@@ -198,6 +202,49 @@ class WriteCounter
         uint32_t numberOfDocumentsIndex;
 };
 
+// we use this permission map for deleting a role core. then we can delete this role id from resources' access list
+// we don't need to use lock for permission map because only writers use this data and the engine makes
+// sure only one writer can access the indexes at any time.
+class PermissionMap{
+public:
+	// Adds resource id to some of the role ids.
+	// for each role id if it exists in the permission map it will add this resource id to its vector
+	// otherwise it adds new record to the map with this role id and then adds this resource id to it.
+	void appendResourceToRoles(const string &resourceId, vector<string> &roleIds);
+
+	// Deletes resource id from the role ids.
+	void deleteResourceFromRoles(const string &resourceId, vector<string> &roleIds);
+
+	// return the resource ids for the given role id
+	// notice that we can use this without lock because only one writer at a moment use this permission map (we only have one writer in the system)
+	vector<string>* getResourceIdsForRole(const string &roleId){
+		map<string, vector<string> >::iterator it = permissionMap.find(roleId);
+		if( it != permissionMap.end()){
+			return &(it->second);
+		}else{
+			return NULL;
+		}
+	}
+
+	// deletes a role id from the permission map
+	void deleteRole(const string &roleId){
+		map<string, vector<string> >::iterator it = permissionMap.find(roleId);
+		if( it != permissionMap.end() ){
+			permissionMap.erase(it);
+		}
+	}
+
+private:
+	map<string, vector<string> > permissionMap;
+
+	friend class boost::serialization::access;
+
+	template<class Archive>
+	void serialize(Archive & ar, const unsigned int version) {
+		ar & this->permissionMap;
+	}
+};
+
 class IndexData
 {
 private:
@@ -225,6 +272,8 @@ private:
     void loadCounts(const std::string &indeDataPathFileName);
     void saveCounts(const std::string &indeDataPathFileName) const;
 
+    // This function is called when a necessary lock is already acquired (in M1) or no lock is acquired (in A1).
+    INDEXWRITE_RETVAL _addRecordWithoutLock(const Record *record, Analyzer *analyzer);
 public:
     
     inline static IndexData* create(const string& directoryName,
@@ -242,16 +291,25 @@ public:
 
     Trie_Internal *trie;
     InvertedIndex *invertedIndex;
+
     QuadTree *quadTree;
 
     ForwardIndex *forwardIndex;
     SchemaInternal *schemaInternal;
     
+    AttributeAccessControl *attributeAcl;
+
     RankerExpression *rankerExpression;
+
+    // we store a map from role ids to resource ids. then when we delete a record from a role core
+    // we can use this map to delete the id of this record from the access lists of the resource records
+    // Notice that this map is only used by a writer, and it is never used by a reader. So concurrency control is simple.
+    PermissionMap* permissionMap;
+
     // a global RW lock for readers and writers;
     // Used in several places, such as KeywordIdReassign and memory
     // recollection for deleted records
-    ReadWriteMutex *globalRwMutexForReadersWriters;
+    mutable boost::shared_mutex globalRwMutexForReadersWriters;
     
     inline bool isMergeRequired() const{
     	return mergeRequired;
@@ -259,15 +317,19 @@ public:
 
     virtual ~IndexData();
 
-    void getReadView(IndexReadStateSharedPtr_Token &readToken)
-    {
-        this->trie->getTrieRootNode_ReadView(readToken.trieRootNodeSharedPtr);
-        this->readCounter->increment();
-    }
+    void getReadView(IndexReadStateSharedPtr_Token &readToken);
 
     // add a record
     INDEXWRITE_RETVAL _addRecord(const Record *record, Analyzer *analyzer);
     
+    // Edit role ids of a record's access list based on command type
+    INDEXWRITE_RETVAL _aclModifyRecordAccessList(const std::string& resourcePrimaryKeyID, vector<string> &roleIds, RecordAclCommandType commandType);
+
+    // Deletes the role id from the permission map
+    // we use this function for deleting a record from a role core
+    // then we need to delete this record from the permission map of the resource cores of this core
+    INDEXWRITE_RETVAL _aclRoleRecordDelete(const std::string& rolePrimaryKeyID);
+
     inline uint64_t _getReadCount() const { return this->readCounter->getCount(); }
     inline uint32_t _getWriteCount() const { return this->writeCounter->getCount(); }
     inline uint32_t _getNumberOfDocumentsInIndex() const { return this->writeCounter->getNumberOfDocuments(); }
@@ -322,9 +384,6 @@ public:
     void changeKeywordIdsOnForwardLists(const map<TrieNode *, unsigned> &trieNodeIdMapper,
                                         const map<unsigned, unsigned> &keywordIdMapper,
                                         map<unsigned, unsigned> &processedRecordIds);
-
-    void changeKeywordIdsOnForwardListsAndOCFilters(map<unsigned, unsigned> &keywordIdMapper,
-                                                    map<unsigned, unsigned> &recordIdsToProcess);
 };
 
 }}

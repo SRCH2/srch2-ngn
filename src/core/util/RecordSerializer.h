@@ -144,6 +144,7 @@ class RecordSerializer {
   offset_type getSearchableOffset(const unsigned);
   offset_type getSearchableOffset(const std::string &searchableAttrName);
   offset_type getRefiningOffset(const unsigned);
+  offset_type getRefiningOffset(const std::string &refiningAttrName);
 
   RecordSerializerBuffer serialize();
 
@@ -172,6 +173,11 @@ inline
 offset_type RecordSerializer::getRefiningOffset(const unsigned refiningId) {
   ASSERT(0 <= refiningId && refiningId < offsets.second.size());
   return offsets.second.at(refiningId);
+}
+inline
+offset_type RecordSerializer::getRefiningOffset(const std::string &refiningAttrName) {
+  unsigned refiningId = schema.getRefiningAttributeId(refiningAttrName);
+  return getRefiningOffset(refiningId);
 }
 
 template<typename T> inline

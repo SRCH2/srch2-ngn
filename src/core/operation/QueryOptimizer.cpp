@@ -35,6 +35,8 @@ void QueryOptimizer::buildAndOptimizePhysicalPlan(PhysicalPlan & physicalPlan,Lo
     // apply optimization rules
     applyOptimizationRulesOnThePlan(physicalPlan);
 
+    //physicalPlan.getPlanTree()->getPhysicalPlanOptimizationNode()->printSubTree();
+
 }
 
 
@@ -98,6 +100,7 @@ void QueryOptimizer::buildIncompleteTreeOptions(vector<PhysicalPlanOptimizationN
             case PhysicalPlanNode_RandomAccessAnd:
             case PhysicalPlanNode_RandomAccessOr:
             case PhysicalPlanNode_RandomAccessNot:
+            case PhysicalPlanNode_RandomAccessGeo:
                 // delete
                 break;
             default:{
@@ -136,6 +139,9 @@ void QueryOptimizer::buildIncompleteSubTreeOptions(LogicalPlanNode * root, vecto
         case LogicalPlanNodeTypeTerm:
             buildIncompleteSubTreeOptionsTerm(root, treeOptions);
             break;
+        case LogicalPlanNodeTypeGeo:
+        	buildIncompleteSubTreeOptionsGeo(root, treeOptions);
+        	break;
     }
 
 }
@@ -262,6 +268,26 @@ void QueryOptimizer::buildIncompleteSubTreeOptionsTerm(LogicalPlanNode * root, v
     }
 }
 
+// if the type is not specified we will create all the options for this node
+// and if the type is specified in the forcedPhysicalNode variable then we only create that type
+void QueryOptimizer::buildIncompleteSubTreeOptionsGeo(LogicalPlanNode * root, vector<PhysicalPlanOptimizationNode *> & treeOptions){
+	if(root->forcedPhysicalNode == PhysicalPlanNode_NOT_SPECIFIED){
+		PhysicalPlanOptimizationNode *op = (PhysicalPlanOptimizationNode *)
+					this->queryEvaluator->getPhysicalOperatorFactory()->createGeoNearestNeighborOptimizationOperator();
+		op->setLogicalPlanNode(root);
+		treeOptions.push_back(op);
+		op = (PhysicalPlanOptimizationNode *)this->queryEvaluator->getPhysicalOperatorFactory()->createRandomAccessVerificationGeoOptimizationOperator();
+		op->setLogicalPlanNode(root);
+		treeOptions.push_back(op);
+		op = (PhysicalPlanOptimizationNode *)this->queryEvaluator->getPhysicalOperatorFactory()->createGeoSimpleScanOptimizationOperator();
+		op->setLogicalPlanNode(root);
+		treeOptions.push_back(op);
+	}else if(root->forcedPhysicalNode == PhysicalPlanNode_RandomAccessGeo){
+		PhysicalPlanOptimizationNode *op = (PhysicalPlanOptimizationNode *)this->queryEvaluator->getPhysicalOperatorFactory()->createRandomAccessVerificationGeoOptimizationOperator();
+		op->setLogicalPlanNode(root);
+		treeOptions.push_back(op);
+	}
+}
 
 void QueryOptimizer::injectRequiredSortOperators(vector<PhysicalPlanOptimizationNode *> & treeOptions){
     // 1. iterate on trees and inject sort operators
@@ -302,6 +328,7 @@ void QueryOptimizer::injectRequiredSortOperators(PhysicalPlanOptimizationNode * 
             case PhysicalPlanNode_RandomAccessAnd:
             case PhysicalPlanNode_RandomAccessOr:
             case PhysicalPlanNode_RandomAccessNot:
+            case PhysicalPlanNode_RandomAccessGeo:
                 shouldCheckProperties = false;
                 break;
             default:
@@ -322,7 +349,7 @@ void QueryOptimizer::injectRequiredSortOperators(PhysicalPlanOptimizationNode * 
             for(vector<PhysicalPlanIteratorProperty>::iterator property = reasonOfDisMatch.properties.begin();
                     property != reasonOfDisMatch.properties.end() ; ++property){
                 switch (*property) {
-                    case     PhysicalPlanIteratorProperty_SortById:
+                    case PhysicalPlanIteratorProperty_SortById:
                     {
                         // we must inject a SortById operator here
                         SortByIdOptimizationOperator * sortByIdOp =
@@ -376,6 +403,7 @@ PhysicalPlanOptimizationNode * QueryOptimizer::findTheMinimumCostTree(vector<Phy
             numberOfGetNextCalls = treeOption->getLogicalPlanNode()->stats->getEstimatedNumberOfResults();
         }
 
+
         cost = cost + treeOption->getCostOfOpen(*(physicalPlan.getExecutionParameters()));
         cost = cost +
                 treeOption->getCostOfGetNext(*(physicalPlan.getExecutionParameters())).cost *
@@ -422,10 +450,16 @@ PhysicalPlanNode * QueryOptimizer::buildPhysicalPlanFirstVersionFromTreeStructur
          chosenTree->getType() == 
          PhysicalPlanNode_UnionLowestLevelSimpleScanOperator
          || chosenTree->getType() == 
-         PhysicalPlanNode_UnionLowestLevelSuggestion)){
-        if(logicalPlan->getPostProcessingInfo()->getFilterQueryEvaluator() != NULL){
+         PhysicalPlanNode_UnionLowestLevelSuggestion
+         || chosenTree->getType() ==
+         PhysicalPlanNode_GeoNearestNeighbor
+         || chosenTree->getType() ==
+         PhysicalPlanNode_GeoSimpleScan)){
+    	// we need to create a FilterQueryOperator if we have a filter in the query or if we have record-base access control.
+        if(logicalPlan->getPostProcessingInfo()->getFilterQueryEvaluator() != NULL  || logicalPlan->getPostProcessingInfo()->getRoleId()->compare("") != 0){
             filterQueryOp = this->queryEvaluator->getPhysicalOperatorFactory()->
-                    createFilterQueryOperator(logicalPlan->getPostProcessingInfo()->getFilterQueryEvaluator() );
+                    createFilterQueryOperator(logicalPlan->getPostProcessingInfo()->getFilterQueryEvaluator(),
+                    		*(logicalPlan->getPostProcessingInfo()->getRoleId()));
             FilterQueryOptimizationOperator * filterQueryOpOp = this->queryEvaluator->getPhysicalOperatorFactory()->
                     createFilterQueryOptimizationOperator();
             filterQueryOp->setPhysicalPlanOptimizationNode(filterQueryOpOp);
@@ -472,6 +506,21 @@ PhysicalPlanNode * QueryOptimizer::buildPhysicalPlanFirstVersionFromTreeStructur
             optimizationResult = (PhysicalPlanOptimizationNode *)this->queryEvaluator->getPhysicalOperatorFactory()->createUnionLowestLevelSimpleScanOptimizationOperator();
             executableResult = (PhysicalPlanNode *)this->queryEvaluator->getPhysicalOperatorFactory()->createUnionLowestLevelSimpleScanOperator();
             break;
+        }
+        case PhysicalPlanNode_GeoNearestNeighbor:{
+        	optimizationResult = (PhysicalPlanOptimizationNode *)this->queryEvaluator->getPhysicalOperatorFactory()->createGeoNearestNeighborOptimizationOperator();
+        	executableResult = (PhysicalPlanNode *)this->queryEvaluator->getPhysicalOperatorFactory()->createGeoNearestNeighborOperator();
+        	break;
+        }
+        case PhysicalPlanNode_GeoSimpleScan:{
+        	optimizationResult = (PhysicalPlanOptimizationNode *)this->queryEvaluator->getPhysicalOperatorFactory()->createGeoSimpleScanOptimizationOperator();
+        	executableResult = (PhysicalPlanNode *)this->queryEvaluator->getPhysicalOperatorFactory()->createGeoSimpleScanOperator();
+        	break;
+        }
+        case PhysicalPlanNode_RandomAccessGeo:{
+        	optimizationResult = (PhysicalPlanOptimizationNode *)this->queryEvaluator->getPhysicalOperatorFactory()->createRandomAccessVerificationGeoOptimizationOperator();
+        	executableResult = (PhysicalPlanNode *)this->queryEvaluator->getPhysicalOperatorFactory()->createRandomAccessVerificationGeoOperator();
+        	break;
         }
         case PhysicalPlanNode_RandomAccessTerm:{
             optimizationResult = (PhysicalPlanOptimizationNode *)this->queryEvaluator->getPhysicalOperatorFactory()->createRandomAccessVerificationTermOptimizationOperator();

@@ -87,7 +87,7 @@ PhysicalPlanRecordItem * UnionSortedByIDOperator::getNext(const PhysicalPlanExec
 	vector<float> runtimeScores;
 	vector<TrieNodePointer> recordKeywordMatchPrefixes;
 	vector<unsigned> recordKeywordMatchEditDistances;
-	vector<unsigned> recordKeywordMatchBitmaps;
+	vector<vector<unsigned> > matchedAttributeIdsList;
 	vector<unsigned> positionIndexOffsets;
 	vector<TermType> termTypes;
 	for(unsigned childOffset = 0; childOffset < numberOfChildren; ++childOffset){
@@ -96,7 +96,7 @@ PhysicalPlanRecordItem * UnionSortedByIDOperator::getNext(const PhysicalPlanExec
 			runtimeScores.push_back( this->nextItemsFromChildren.at(childOffset)->getRecordRuntimeScore() );
 			this->nextItemsFromChildren.at(childOffset)->getRecordMatchingPrefixes(recordKeywordMatchPrefixes);
 			this->nextItemsFromChildren.at(childOffset)->getRecordMatchEditDistances(recordKeywordMatchEditDistances);
-			this->nextItemsFromChildren.at(childOffset)->getRecordMatchAttributeBitmaps(recordKeywordMatchBitmaps);
+			this->nextItemsFromChildren.at(childOffset)->getRecordMatchAttributeBitmaps(matchedAttributeIdsList);
 			this->nextItemsFromChildren.at(childOffset)->getPositionIndexOffsets(positionIndexOffsets);
 			this->nextItemsFromChildren.at(childOffset)->getTermTypes(termTypes);
 			// static score, not for now
@@ -109,7 +109,7 @@ PhysicalPlanRecordItem * UnionSortedByIDOperator::getNext(const PhysicalPlanExec
 	minIDRecord->setRecordRuntimeScore(params.ranker->computeAggregatedRuntimeScoreForOr(runtimeScores));
 	minIDRecord->setRecordMatchingPrefixes(recordKeywordMatchPrefixes);
 	minIDRecord->setRecordMatchEditDistances(recordKeywordMatchEditDistances);
-	minIDRecord->setRecordMatchAttributeBitmaps(recordKeywordMatchBitmaps);
+	minIDRecord->setRecordMatchAttributeBitmaps(matchedAttributeIdsList);
 	minIDRecord->setPositionIndexOffsets(positionIndexOffsets);
 	minIDRecord->setTermTypes(termTypes);
 
@@ -214,7 +214,9 @@ bool UnionSortedByIDOptimizationOperator::validateChildren(){
 			case PhysicalPlanNode_RandomAccessAnd:
 			case PhysicalPlanNode_RandomAccessOr:
 			case PhysicalPlanNode_RandomAccessNot:
+			case PhysicalPlanNode_RandomAccessGeo:
 			case PhysicalPlanNode_UnionLowestLevelTermVirtualList:
+			case PhysicalPlanNode_GeoNearestNeighbor:
 				// this operator cannot have TVL as a child, TVL overhead is not needed for this operator
 				return false;
 			default:{

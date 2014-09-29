@@ -39,23 +39,25 @@ Analyzer::Analyzer(const StemmerContainer *stemmer,
                    const StopWordContainer *stopWords,
                    const ProtectedWordsContainer *protectedWords,
                    const SynonymContainer *synonyms,
-                   const std::string &delimiters,
+                   const std::string &allowedSpecialCharacters,
                    const AnalyzerType &analyzerType,
-                   const std::string &chineseDictFilePath)
+                   const ChineseDictionaryContainer* chineseDictionaryContainer
+                   )
 {
     switch (analyzerType) {
     case SIMPLE_ANALYZER:
         this->analyzerInternal = new SimpleAnalyzer(stemmer, stopWords, protectedWords, synonyms,
-                                                    delimiters);
+                                                    allowedSpecialCharacters);
         break;
     case CHINESE_ANALYZER:
-        this->analyzerInternal = new ChineseAnalyzer(chineseDictFilePath,
-                                                     stopWords, protectedWords, synonyms, delimiters);
+        this->analyzerInternal = new ChineseAnalyzer(chineseDictionaryContainer,
+                                                     stopWords, protectedWords, synonyms,
+                                                     allowedSpecialCharacters);
         break;
     case STANDARD_ANALYZER:
     default:
         this->analyzerInternal = new StandardAnalyzer(stemmer, stopWords, protectedWords, synonyms,
-                                                      delimiters);
+                                                      allowedSpecialCharacters);
         break;
     }
     analyzerInternal->setTokenStream( analyzerInternal->createOperatorFlow());
@@ -98,8 +100,8 @@ void Analyzer::clearFilterStates(){
 }
 
 void Analyzer::tokenizeQuery(const std::string &queryString,
-        std::vector<PositionalTerm> &queryKeywords) const {
-    this->analyzerInternal->tokenizeQuery(queryString, queryKeywords);
+        std::vector<AnalyzedTermInfo> &queryKeywords,  bool isPrefix) const {
+    this->analyzerInternal->tokenizeQuery(queryString, queryKeywords, isPrefix);
 }
 
 void Analyzer::tokenizeRecord(const Record *record,
@@ -112,17 +114,6 @@ AnalyzerType Analyzer::getAnalyzerType() const
     return this->analyzerInternal->getAnalyzerType();
 }
 
-// TODO: Refactor the function and its arguments. Possibly move to wrapper
-void Analyzer::tokenizeQueryWithFilter(const std::string &queryString,
-        std::vector<PositionalTerm> &queryKeywords, const char &delimiterCharacter,
-        const char &filterDelimiterCharacter, const char &fieldsAndCharacter,
-        const char &fieldsOrCharacter,
-        const std::map<std::string, unsigned> &searchableAttributesNameToId,
-        std::vector<unsigned> &filters) const {
-    this->analyzerInternal->tokenizeQueryWithFilter(queryString, queryKeywords,
-            delimiterCharacter, filterDelimiterCharacter, fieldsAndCharacter,
-            fieldsOrCharacter, searchableAttributesNameToId, filters);
-}
 
 void Analyzer::load(boost::archive::binary_iarchive &ia){
     this->analyzerInternal->load(ia);
@@ -142,6 +133,14 @@ unsigned Analyzer::getProcessedTokenCharOffset() {
 }
 unsigned Analyzer::getProcessedTokenPosition() {
 	return this->analyzerInternal->getTokenStream()->getProcessedTokenPosition();
+}
+
+unsigned Analyzer::getProcessedTokenLen() {
+	return this->analyzerInternal->getTokenStream()->getProcessedTokenLen();
+}
+
+AnalyzedTokenType Analyzer::getProcessedTokenType() {
+	return this->analyzerInternal->getTokenStream()->getProcessedTokentype();
 }
 
 void Analyzer::save(boost::archive::binary_oarchive &oa) {

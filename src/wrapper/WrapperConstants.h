@@ -38,6 +38,7 @@ typedef enum {
     KeywordSimilarityThreshold,
     KeywordBoostLevel,
     FieldFilter,
+    AccessControl,
     QueryPrefixCompleteFlag,
     IsPhraseKeyword,
     IsDebugEnabled,
@@ -47,11 +48,11 @@ typedef enum {
     MaxTimeAllowed,
     IsOmitHeader,
     ResponseFormat,
+    GeoSearchFlag,
     FilterQueryEvaluatorFlag,
     RetrieveByIdSearchType,
     TopKSearchType,
     GetAllResultsSearchType,
-    GeoSearchType,
     // values related to search type specific parameters
     FacetQueryHandler,
     SortQueryHandler,
@@ -86,7 +87,7 @@ typedef enum {
 typedef enum {
 	DATA_SOURCE_NOT_SPECIFIED,
 	DATA_SOURCE_JSON_FILE,
-	DATA_SOURCE_MONGO_DB
+	DATA_SOURCE_DATABASE
 } DataSourceType;
 
 }

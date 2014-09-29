@@ -1,0 +1,567 @@
+#RESTful API - Search
+
+##1. Overview
+
+The SRCH2 engine provides a RESTful API that receives a request (query, insert/delete/update, or a control message) and gives a response in the JSON format.  This documentation describes the detail of the search API.  It begins with a set of sample queries to give an overview of the query language. It then dives into the language with an explanation of its basic concepts. Then it gives details of the structural components of a query with emphasis on their syntax specifications.  
+
+Refer to [this page](../restful-insert-update-delete) about the insert/delete/update API and [this page](../restful-control) about the control API. 
+
+Note that each RESTful request needs to use a proper [URL encoder](http://www.w3schools.com/tags/ref_urlencode.asp) to be converted to characters in a format that can be transmitted properly.
+
+##2. Sample queries
+
+Let us start with sample queries to give an idea of the query syntax.  For clarity, we provide both the easy-to-read query URL and when necessary, a curl command with the URL encoding necessary to send the query (in parentheses).  
+URL encoding is also necessary if you choose to use a web browser.  In our example commands, we assume you have installed the 
+SRCH2 server locally on port 8081.
+
+The following query f1 searches for all records containing the word "terminator". The result set will contain all records with the word "terminator" in a [searchable field](configuration.mkd#112-fields-required), as specified in the configuration file.
+
+```
+ f1) curl -i "http://localhost:8081/search?q=terminator"
+```
+
+Query f2 gets records with the word "terminator" in its <i>title</i>
+field and the word "cameron" in its <i>director</i> field.
+
+```
+ f2) http://localhost:8081/search?q=title:terminator AND director:cameron
+ curl command with URL encoding: curl -i "http://localhost:8081/search?q=title:terminator%20AND%20director:cameron"
+```
+The following is the result:
+```json
+{
+  "estimated_number_of_results": 2,
+  "fuzzy": 1,
+  "limit": 2,
+  "message": "NOTICE : topK query",
+  "offset": 0,
+  "payload_access_time": 0,
+  "query_keywords": [
+    "terminator",
+    "cameron"
+  ],
+  "query_keywords_complete": [
+    false,
+    false
+  ],
+  "results": [
+    {
+      "edit_dist": [
+        0,
+        0
+      ],
+      "matching_prefix": [
+        "terminator",
+        "cameron"
+      ],
+      "record_id": "156005",
+      "score": 13.769531250,
+      "record": {
+        "id": "156005",
+        "director": "James Cameron",
+        "genre": "Action",
+        "id": "156005",
+        "title": "The Terminator",
+        "year": "1984"
+      },
+      "snippet": [
+        
+      ]
+    },
+    {
+      "edit_dist": [
+        0,
+        0
+      ],
+      "matching_prefix": [
+        "terminator",
+        "cameron"
+      ],
+      "record_id": "755010",
+      "score": 13.769531250,
+      "record": {
+        "id": "755010",
+        "director": "James Cameron",
+        "genre": "Science Fiction",
+        "id": "755010",
+        "title": "Terminator 2",
+        "year": "1991"
+      },
+      "snippet": [
+        
+      ]
+    }
+  ],
+  "results_found": 2,
+  "searcher_time": 1,
+  "type": 0
+}
+```
+
+Query f3 filters the results based on the <i>year</i> field, i.e., the
+<i>year</i> value needs to be between 1983 and 1992 (both inclusive). 
+```
+ f3) http://localhost:8081/search?q=title:terminator AND director:cameron&fq=year:[1983 TO 1992]
+ (curl -i "http://localhost:8081/search?q=title:terminator%20AND%20director:cameron&fq=year:%5B1983%20TO%201992%5D")
+```
+
+Query f4 filters the results based on the <i>genre</i> field.
+
+```
+ f4) "http://localhost:8081/search?q=title:terminator AND director:cameron&fq=genre:action
+ (curl -i "http://localhost:8081/search?q=title:terminator%20AND%20director:cameron&fq=genre:action")
+```
+
+Query f5 includes a filtering expression, as specified by the syntax
+"boolexp$ ... $", which selects movies made after 1982.
+```
+ f5) http://localhost:8081/search?q=title:terminator AND director:cameron&fq=boolexp$ year>1982 $
+ (curl -i "http://localhost:8081/search?q=title:terminator%20AND%20director:cameron&fq=boolexp$%20year%3E1982%20$")
+```
+
+Query f6 sorts the results based on the <i>year</i> attribute in the ascending order.
+```
+ f6) curl -i "http://localhost:8081/search?q=cameron&sort=year&orderby=asc"
+```
+
+Query f7 requests the engine to return faceted information for the record's <i>genre</i> field.
+```
+ f7) curl -i "http://localhost:8081/search?q=cameron&facet=true&facet.field=genre"
+```
+
+Note: The response of a RESTful request is in the
+[JSON](http://www.json.org/) format.  The engine also supports the
+[JSONP](http://en.wikipedia.org/wiki/JSONP) format. In order to get
+the response data in JSONP, append a parameter field "callback" to the
+query URL. For example:
+```
+ curl -i "http://localhost:8081/search?q=terminator&callback=myfunc"
+```
+
+##3. Basic Concepts
+
+Before going into queries and their components, let us first understand the basic elements of a query: <i>fields</i> and <i>terms</i>.
+
+### 3.1. Fields 
+
+When performing a search, we can either specify a field or use a default value. A field that is labeled as "[searchable](configuration.mkd#112-fields-required)" or "[indexed](configuration.mkd#112-fields-required)" can be searched with the syntax field name followed by a colon ":" and the search term. For example, suppose the data contains two fields, <i>title</i> and <i>year</i>. To find the records with "star" and "wars" in the "title" field, we can use the following query:
+```
+ title:star AND wars
+ (title:star%20AND%20wars)
+```
+### 3.2. Terms 
+
+There are two types of terms: "single term" and "phrase." A single term is a single word such as <i>terminator</i> or <i>cameron</i>. A phrase is a group of words surrounded by double quotes such as <i>"star wars"</i>.
+
+### 3.3. Term Modifiers 
+
+The engine supports modifying query terms to provide a wide range of search options.
+
+### 3.3.1. Prefix Search
+
+The engine supports prefix searches. For instance, the following query searches for records with a keyword that has the prefix "term*":
+```
+ q=term*
+```
+
+### 3.3.2. Fuzzy Search
+
+The engine supports fuzzy search based on <a href="http://en.wikipedia.org/wiki/Levenshtein_distance">Levenshtein distance (edit distance)</a>. The engine does a fuzzy search when the tilde symbol (<i>~</i>) is added to the end of a single term. The engine uses a customizable threshold (normalized based on the term length) to determine the edit distance used in finding the set of matching keywords. We can also specify the edit-distance threshold by explicitly giving a normalized similarity threshold (a float number between 0 and 1) for a term. Let "s" be the similarity threshold for a term given in the query. The engine will use the formula 
+```
+    floor((1-s) * length(keyword))
+```
+to compute the edit-distance threshold to do the search. If "s" is 1, we do an exact search. As example, consider the following query:
+```
+ q=spielburrg~0.8
+```
+The internal edit-distance threshold is floor((1-0.8) * length("spielburrg")) = floor(0.2 * 10) = 2. So the engine will find records with a keyword whose edit distance to the term "spielburrg" is at most two.
+
+The engine allows each fuzzy search term to specify its own similarity value.
+
+If a term does not have a similarity value, e.g.,
+
+```
+ spielburrg~
+```
+the engine will use the similarity threshold specified in the [configuration file](configuration.mkd#83-term-similarity-threshold-optional).
+
+### 3.3.3. Boosting a Term
+
+The engine provides the relevance level of matching records based on its matching terms. To boost the importance of a given term, we can use the caret symbol (<i>^</i>) with a boost number at the end of the given term. The higher the boost value, the more relevant the term will be.
+
+Boosting allows control over the relevance of a record by boosting the significance of its terms. For example, if we are searching for two terms "star" and "wars", and we want the term "star" to be more relevant, we can boost it using the <i>^</i> symbol along with the boost value next to the term. We would type:
+```
+ star^4 AND wars
+ (star%5E4%20AND%20wars)
+```
+The boost value must be a positive integer, and its default value is 1.
+
+*Note:* we can specify all three modifiers to a single term, but the order of modifiers must always be prefix, boost, and then fuzzy. The following are valid query examples:
+```
+ 1) q=sta*^4~0.6 AND wars^~0.8
+   (q=sta*%5E4~0.6%20AND%20wars%5E~0.8)
+ 2) q=star^4~0.6 AND wars^~ AND cam*
+   (q=star%5E4~0.6%20AND%20wars%5E~%20AND%20cam*)
+ 3) q=star~0.6 AND wars^5~0.8
+   (q=star~0.6%20AND%20wars%5E5~0.8)
+```
+The following are <b>invalid</b> query examples:
+```
+ Invalid query 1) q=sta^4*
+ Invalid query 2) q=star~.4^3*
+ Invalid query 3) q=star~.6*
+```
+###3.3.4. Proximity Search
+
+The engine supports finding words that are within a specified proximity. To use this feature, we need to set the [enablePositionIndex](configuration.mkd#74-enable-positional-index-optional) flag to true in the configuration file.
+
+To do a proximity search, we use the tilde symbol ("~") at the end of a phrase. For example, the following query searches for records with the keywords "saving" and "ryan" within 1 word (that is, either zero or one word separates them) of each other in a document:
+```
+ q="saving ryan"~1
+ (q=%22saving%20ryan%22~1)
+```
+Notice that a proximity search does not support edit-distance-based fuzzy match, i.e., we do not allow typos in the keywords in the quotes.
+
+
+### 3.4. Boolean Operators 
+
+The engine supports three boolean operators: AND, OR, and NOT. For example:
+```
+ q=(star^4 AND wars) OR "George Lucas"
+```
+returns all records which either contain "star" and "wars" or the phrase "George Lucas". As you see, Term Modifiers and Phrase Search can be used with a boolean expression. A few more examples are:
+
+```
+ q=("star wars" AND "episode 3") OR ("George Lucas" AND NOT "Indiana Jones")
+
+ q=big AND fish AND ("Tim Burton" OR MacGregor~0.5)
+
+ q=pulp AND fiction AND (Tarenti~0.6* OR Travolta OR Jackson) AND NOT "Jesse Jackson"
+```
+
+##4. Query Components
+
+The components and sub-components of a query are shown in Figure 1. The "Local Parameters" component has query-related meta data specification, and the "Query Parameters" component includes specifications for the main query, post-processing filters, sorting, and facets.
+<br>
+<span ><center><img style="width:65%" src="../images/Srch2-querysyntax.png" /></center></span>
+<center>Figure 1: Query Components</center>
+
+##5. Local Parameters
+
+<i>LocalParams</i> stands for "local parameters." It defines the default way to deal with those terms in the query.
+To indicate a LocalParam, we prefix the target argument with curly braces containing a series of <i>key=value</i> pairs separated by a white space. So if the original query keyword is "hunt", applying LocalParams would look something like <i>{k1=v1 k2=v2 k3=v3}hunt</i>. For example, we can specify a default field in local parameters as follows:
+```
+ q={defaultSearchFields=title}hunt
+ (q=%7BdefaultSearchFields=title%7Dhunt)
+```
+The above query searches for records with the word "hunt" in the field <i>title</i>.  The field <i>title</i> is searched by default unless specified elsewhere in the query (see below). We can specify more than one defaultSearch field. We can also specify what logical operator to use between these fields. For example:
+```
+ q={defaultFieldOperator=AND defaultSearchFields=director,title}hunt
+ (q=%7BdefaultFieldOperator=AND%20defaultSearchFields=director,title%7Dhunt)
+```
+
+The above query will return records with the word "hunt" in both <i>director</i> and <i>title</i> fields. If "hunt" is present only in one of the specified defaultSearchFields, the engine will not return the record. If we want the engine to return a record with the word "hunt" present in any of the given defaultSearchFields, then we can set the value of defaultFieldOperator to "OR". The corresponding query is the following:
+```
+ q={defaultFieldOperator=OR defaultSearchFields=director,title}hunt
+ (q=%7BdefaultFieldOperator=OR%20defaultSearchFields=director,title%7Dhunt)
+```
+
+The following are valid localParams:
+
+ - [defaultSimilarityThreshold](configuration.mkd#83-term-similarity-threshold-optional): a number between 0 and 1. For example, "0.8" is a valid similarity threshold in fuzzy search.    
+
+ - [defaultBoostLevel](configuration.mkd#71-field-boosts-optional): a non-negative integer, e.g., 2.
+
+ - [defaultPrefixComplete](configuration.mkd#811-query-term-prefix-type-optional): "PREFIX" or "COMPLETE" (without quotes, case sensitive), indicating whether the term is treated as a prefix or a complete term.
+
+ - [defaultSearchFields](configuration.mkd#88-field-based-search-optional): default fields to search in, e.g., <i>title</i>. We can specify more than one field by using comma (',') to separate them, e.g., 'defaultSearchFields=title,director,year' (without quotes).
+
+ - defaultFieldOperator: "AND" or "OR" (without quotes). It's a boolean operator to be applied between the default search fields specified by comma-separated fields.
+
+##6. Query Parameters 
+
+### 6.1. q: Main query parameter
+
+A search over a searchable field is denoted by its name and the search term separated with a colon ":". For example, consider the query below:
+```
+ q=title:wind
+```
+This searches for the keyword "wind" in the field <i>title</i>. If no field is provided, but local parameter defaultSearchFields described above is provided, the fields specified by that parameter will be searched.  If neither parameter was provided, the engine will search on the [indexed field(s)](configuration.mkd#112-fields-required) as specified in the [configuration file](../example-demo/srch2-config.xml). For example,
+```
+ q=wind
+```
+The above query searches for the keyword "wind" in all the searchable fields as specified in the configuration file.<br>
+
+*Note:* all the field names used in "q" must have their "searchable" property or "indexed" property set to true in the configuration file.
+
+### 6.2. fq: Filter-query parameter
+
+This parameter is used to specify a filter restricting the set of records returned, without influencing their scores. In the example below, only records having year equal to 2012 will return.
+```
+ fq=year:2012
+```
+A range query allows us to match records whose field value is between a specified lower bound and upper bound (both inclusive). For example:
+```
+ year:[2010 TO 2012]
+ (year:%5B2010%20TO%202012%5D)
+```
+
+The above query finds records whose <i>year</i> of release has a value between 2010 and 2012 (both inclusive). <br>
+
+Please note: range queries are not just for numerical fields. We could also use range queries on non-numerical fields. Example:
+```
+ genre:[comedy TO drama]
+ (genre:%5Bcomedy TO drama%5D)
+```
+This will find all records whose <i>genre</i> value is alphabetically between "comedy" and "drama" (both inclusive).
+
+*Note:* the engine supports only one kind of boolean operator (OR or AND) between all the filter terms. The following are examples of valid arguments:
+```
+ 1) fq=id:[1000 TO *] AND genre:drama AND year:[* TO 1975]
+    (fq=id:%5B1000%20TO%20*%5D%20AND%20genre:drama%20AND%20year:%5B*%20TO%202000%5D)
+ 2) fq=id:[1000 TO *] OR genre:drama OR year:[* TO 1975]
+    (fq=id:%5B1000%20TO%20*%5D%20OR%20genre:drama%20OR%20year:%5B*%20TO%201975%5D)
+```
+The first query returns the records with an <i>id</i> greater than or equal to 1000, a <i>genre</i> of drama, and <i>year</i> less than or equal to 1975.
+
+The engine supports specifying boolean expressions only as filters. These expressions must be surrounded by "boolexp$" and "$".
+```
+ fq=boolexp$log(year) + 5 > log(2003)$
+ (fq=boolexp%24log%28year%29%20%2B%205%20%3E%20log%282003%29%24)
+```
+Please note: for the predicate "boolexp$ numOfReviews * 5 + numOfLikes * 2 > 940$", the engine will evaluate the boolean expression between the two '$' signs, which in this case is "numOfReviews * 5 + numOfLikes * 2 > 940". Here <i>numOfReviews</i> and <i>numOfLikes</i> are two fields defined in the schema.
+
+In filter query terms, we can use the "-" operator before a field:term binding to tell the engine to exclude the records from the results that match the given binding criterion. For example:
+```
+ fq=-year:[1975 TO *]
+ (fq=-year:%5B1975%20TO%20*%5D)
+```
+The above filter query will find records for movies released before 1975.
+
+Please note: the attributes used in "fq" must have the "refining" property set to true in the configuration file. 
+Also, only the attributes of type INT and FLOAT can be used in the "boolexp$$" block.
+In the movie demo, some of the attributes are not refining. 
+
+### 6.3. fl: Field list parameter
+
+This parameter in a query is used to specify fields or attributes that the user wants the engine to return for this query. For example the following url:
+```
+http://localhost:8087/search?q=services&fl=name,category
+```
+will return records containing the term "services" in it, but the record returned will only contain the two fields "name" and "category" in it.
+
+Note that the fields to be returned by the engine can also be specified through the "responseContent" tag in the configuration file. But fields specified through the "fl" parameter of a query will always override the parameter specified in the "responseContent" tag of the configuration file.   
+
+## 7. Facet Parameters 
+
+### 7.1. facet 
+
+This value is "true", "false" or "only", indicating whether we want to enable faceting. To turn faceting on, we need to include the following
+```
+ facet=true
+```
+Setting facet to "only" will make the engine only return facet results. This option helps the user when he only needs facet results and wants to avoid network communication overhead of sending back the results.
+
+Please note: facet must also be enabled from the configuration file by setting the
+ ["facetEnabled"](configuration.mkd#114-enable-facet-optional) tag to true.
+
+### 7.2. Facet by Category 
+
+###7.2.1 facet.field 
+
+This parameter specifies a field to be treated as a categorical facet. It finds the number of distinct values in the specified field and returns the number of records that match each value. This parameter can be specified multiple times to indicate multiple facet fields.
+```
+ facet=true&facet.field=year&facet.field=genre
+```
+This query specifies <i>"facet=true"</i> to turn on faceting. The parameters <i>facet.field</i> request that the engine include in the response the facets for the fields <i>year</i> and <i>genre</i>.
+  
+### 7.2.2 f.<i>category</i>.rows 
+This is the maximum number of categories with maximal frequencies to be returned. All categories are returned by default. Example: adding the following parameter to the query will tell the engine to return the top 10 most popular genres.
+```
+ f.genre.rows=10
+```
+Note the different query parameter name of <i>f</i> instead of <i>field</i> for backward compatibility to Solr.
+
+### 7.3. Facet by Range 
+
+###7.3.1 facet.range 
+
+This parameter can be used to specify a field that should be treated as a range facet. It allows us to specify fields for which only facets within a specified range will be included. Example:
+```
+ facet.range=year
+```
+The response of the above query includes facet information for the <i>year</i> field. <br>
+
+Please note that the configuration file should define the default <i>facet.start</i>, <i>facet.end</i>, and <i>facet.gap</i> values.
+
+###7.3.2. f.<i>category</i>.range.start 
+
+This is the minimum value (inclusive) of the range. Example:
+```
+ f.year.facet.start=1995
+```
+The above query defines the lower bounds of the facet range for the <i>year</i> field.
+
+###7.3.3. f.<i>category</i>.range.end 
+
+It is the upper bound (exclusive) of the range. Example:
+```
+ f.year.facet.end=2020
+```
+The above query defines the upper bounds of the facet range for the <i>year</i> field.
+
+###7.3.4. f.<i>category</i>.range.gap 
+
+This parameter determines the size of each range by which to group the facet values starting from the minimum value. Example:
+```
+ f.year.facet.gap=5
+```
+The above query defines the gap between each consecutive faceted value of the facet range for the <i>year</i> field.
+
+Note that all start, end, and gap values, if given in the query, will override the corresponding values in the configuration file.
+
+*Note:* if the expected number of results of a query is greater than 10K, facet results are made based on the best 2000 results.
+
+## 8. Search Type
+
+The engine offers two different strategies for searching records:
+
+ - topK: The results will be sorted descending by their score. This score is calculated for each record. This approach has a high performance, but does not support facet and sort operations. <br>
+ - getAll: Use this strategy if facets and sort query parameters are needed.
+
+The following are examples of using searchType:
+```
+ 1) searchType=topK
+ 2) searchType=getAll
+ 3) searchType=getAll&sort=director
+```
+*Note:* if searchType is not included in the query, it is set to topK by default. However, if any facet or sort parameter is included in the query, the search type will be getAll.
+*Note:* If the searchType is 'getAll' and if the expected number of results is more than 10,000, the engine will return the top 2000 results based on the ranking score.
+
+## 9. Sort
+
+The engine's default behavior is to sort the results using a descending order by the overall score of each record. The user can specify sorting by other fields. For example:
+```
+ sort=director,year,title
+```
+*Note:* if a sort request is included in the query, the returned records' scores are still those calculated scores by the engine, but the order of the results corresponds to the user specification.
+*Note:* if the expected number of results of a query is greater than 10K, the ranking function is used to find the best 2000 results, which are then sorted based on the sort parameter and returned.
+
+## 10. Orderby
+
+It specifies the order in which the result set should be sorted. Its default value is "desc" (descending). This order is valid for all the fields specified in the sort parameter.
+```
+ orderby=asc
+```
+*Note:* the order specified in the <i>orderby</i> parameter will be applied to all the fields mentioned in the sort parameter. Currently, specifying different <i>orderby</i> values for different fields is not supported.
+
+## 11. Start
+
+It is the offset in the complete result set of the query, where the set of returned records should begin. The default value is 0.
+```
+ start=10
+```
+
+## 12. Rows
+
+It indicates the number of records to return from the complete result set. Its default value is 0.
+```
+ rows=7
+```
+This parameter and <i>start</i> can be used to implement pagination.
+
+## 13. Fetch a Record
+
+The SRCH2 engine provides an API that allows the user to fetch a record by giving its primary key value.  An example of such a request is:
+
+```
+ curl -i "http://localhost:8081/search?docid=929"
+```
+
+which returns the record with "929" (text) as its primary key value. Note that the primary key is defined by the tag "uniqueKey" under the "schema" tag.
+
+## 14. Multi-core
+
+The "Cores" tag set in the [configuration file](configuration.mkd#13-cores-optional) allows the user to search on multiple "cores" within the same server. 
+A query can specify a particular core.  For instance, the following query:
+```
+ http://localhost:8081/example-core/search?q=term
+```
+retrieves answers for the keyword "term" from the core called "example-core".  In the case when no core is specified in a query, 
+the server will use the default core specified by the "defaultCoreName" tag.
+
+If a user wants to get results from all the cores, the query should add a prefix "/_all/search" to the request. For instance, the following query:
+```
+ http://localhost:8081/_all/search?q=martn~
+```
+requests that all cores process the "term" query. The "search-all" response encapsulates the results from each source with a tag of the core name.
+For example, the following is a sample response from two cores:
+```
+ {
+    "core1":{
+        "estimated_number_of_results":3,
+        ...
+        "results":[
+            {
+                "edit_dist":[
+                    1
+                ],
+                "matching_prefix":[  
+                    "martin"
+                ],
+                "record_id":"156001",
+                "score":4.598437309265137,
+                "record":{  
+                   "id":"156001",
+                   "director":"Martin Scorsese",
+                   "genre":"Drama",
+                   "id":"156001",
+                   "title":"Aviator",
+                   "year":"2004"
+                }
+            },
+            { # 2nd result
+                ...
+            },
+            { # 3rd result
+                ...
+            }
+        ],
+        "results_found":3,
+        "searcher_time":0,
+        "type":0
+    },
+    "core2":{  
+        "estimated_number_of_results":1,
+        ...
+        "results":[  
+             {  
+                "edit_dist":[  
+                    1
+                ],
+                "matching_prefix":[  
+                    "martin"
+                ],
+                "record_id":"6385931",
+                "score":0.5666015744209290,
+                "record":{  
+                    "id":"6385931",
+                    "author_name":"Martin",
+                    "creation_date":"06/17/2011",
+                    "title":"Silverlight 4 - downloading data into tooltip w/ Bing Maps",
+                },
+            }
+        ],
+        "results_found":1,
+        "searcher_time":0,
+        "type":0
+    }
+
+```
+## 15. Access Control
+
+When an [attribute based access control](../configuration/#113-attribute-access-control-optional) or [record based access control]()) is enabled in the config file, the role-id can be specified using <code>roleId</code> parameter. For example.
+```
+curl "http://localhost:8087/search?q=project_name:food&roleId=spiderman
+```
+If <code>roleId=spiderman</code> has access to the field <code>project_name</code>, then the engine will search in the field <code>project_name</code>; otherwise no result will be returned.

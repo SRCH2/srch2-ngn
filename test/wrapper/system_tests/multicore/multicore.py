@@ -8,7 +8,7 @@
 #     <search-term>||<core1 ID result set>@<core2 ID result set>@<core3 ID result set>
 # where each ID result set is a space separated list of record IDs expected from the server.
 
-import sys, urllib2, json, time, subprocess, os, commands, signal, re
+import sys,shutil, urllib2, json, time, subprocess, os, commands, signal, re
 
 sys.path.insert(0, 'srch2lib')
 import test_lib
@@ -23,7 +23,7 @@ def checkResult(query, responseJson,resultValue):
     if  len(responseJson) == len(resultValue):
         for i in range(0, len(resultValue)):
             #print response_json['results'][i]['record']['id']
-            if int(responseJson[i]['record']['id']) !=  int(resultValue[i]):
+           if (resultValue.count(responseJson[i]['record']['id']) != 1):
                 isPass=0
                 print query+' test failed'
                 print 'query results||given results'
@@ -86,8 +86,12 @@ def testMultipleCores(queriesAndResultsPath, queriesAndResultsPath2, binary_path
 
     print 'starting engine: ' + args[0] + ' ' + args[1]
     serverHandle = test_lib.startServer(args)
+    # sometime it fails, it might be that the multicore need more time to load ? 
+    time.sleep(2)
 
-    test_lib.pingServer(port)
+    if test_lib.pingServer(port) != 0:
+        print 'pingServer failed, here is the args:'
+        print args
     failCount = 0
 
     #######################################
@@ -158,7 +162,7 @@ def testMultipleCores(queriesAndResultsPath, queriesAndResultsPath2, binary_path
         queryValue=value[0].split()
         allResults=value[1].split('@')
 
-        coreNum=[ 1, 4 ] # coreNum are the literal core numbers to use in path this time
+        coreNum= [1,4]  # coreNum are the literal core numbers to use in path this time
         index = 0 # and index iterates coreNum
         for coreResult in allResults:
             resultValue=coreResult.split()
@@ -167,7 +171,6 @@ def testMultipleCores(queriesAndResultsPath, queriesAndResultsPath2, binary_path
             query = query + prepareQuery(queryValue, False)
 
             #do the query
-            print query
             response = urllib2.urlopen(query).read()
 
             # TODO - Replace srch2 bad JSON (spurious comma).  Ticket SRCN-335 already filed.
@@ -181,17 +184,49 @@ def testMultipleCores(queriesAndResultsPath, queriesAndResultsPath2, binary_path
 
             index += 1
 
-        
+        # Test search_all functionality
+        query='http://localhost:' + port + '/_all/search?' + prepareQuery(queryValue, False)
+        response = urllib2.urlopen(query).read()
+        response_json = json.loads(response)
+        # Check the search_all result 
+        index = 0
+        for coreResult in allResults:
+            resultValue = coreResult.split()
+            coreName = 'core' + str(coreNum[index])
+            failCount += checkResult(query, response_json[coreName]['results'], resultValue)
+            index +=1
+
+    time.sleep(5)
     test_lib.killServer(serverHandle)
 
     print '=============================='
     return failCount
 
 if __name__ == '__main__':      
+    if(os.path.exists("./multicore/core1Data")):
+        shutil.rmtree("./multicore/core1Data")
+    if(os.path.exists("./multicore/core2Data")):
+        shutil.rmtree("./multicore/core2Data")
+    if(os.path.exists("./multicore/core3Data")):
+        shutil.rmtree("./multicore/core3Data")
+    if(os.path.exists("./multicore/core4Data")):
+        shutil.rmtree("./multicore/core4Data")
+    if(os.path.exists("./multicore/coreGeoData")):
+        shutil.rmtree("./multicore/coreGeoData")
     #Path of the query file
     #each line like "trust||01c90b4effb2353742080000" ---- query||record_ids(results)
     binary_path = sys.argv[1]
     queriesAndResultsPath = sys.argv[2]
     queriesAndResultsPath2 = sys.argv[3]
     exitCode = testMultipleCores(queriesAndResultsPath, queriesAndResultsPath2, binary_path)
+    if(os.path.exists("./multicore/core1Data")):
+        shutil.rmtree("./multicore/core1Data")
+    if(os.path.exists("./multicore/core2Data")):
+        shutil.rmtree("./multicore/core2Data")
+    if(os.path.exists("./multicore/core3Data")):
+        shutil.rmtree("./multicore/core3Data")
+    if(os.path.exists("./multicore/core4Data")):
+        shutil.rmtree("./multicore/core4Data")
+    if(os.path.exists("./multicore/coreGeoData")):
+        shutil.rmtree("./multicore/coreGeoData")
     os._exit(exitCode)

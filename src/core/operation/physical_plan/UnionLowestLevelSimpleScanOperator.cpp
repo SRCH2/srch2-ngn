@@ -9,6 +9,10 @@ namespace instantsearch {
 ////////////////////////////////////////////////////////////////////////////////////////////////////
 ///////////////////////////// merge when lists are sorted by ID Only top K////////////////////////////
 
+#ifdef ANDROID
+   double inline log2(double x) { return log(x) / log (2);  }
+#endif
+
 UnionLowestLevelSimpleScanOperator::UnionLowestLevelSimpleScanOperator() {
     queryEvaluator = NULL;
     parentIsCacheEnabled = false;
@@ -120,17 +124,17 @@ PhysicalPlanRecordItem * UnionLowestLevelSimpleScanOperator::getNext(const Physi
 
     bool foundValidHit = 0;
     float termRecordStaticScore = 0;
-    unsigned termAttributeBitmap = 0;
+    vector<unsigned> matchedAttributeIdsList;
     while (1) {
         // We check the record only if it's valid
         if (keywordOffset != FORWARDLIST_NOTVALID &&
             this->queryEvaluator->getInvertedIndex()->isValidTermPositionHit(forwardIndexDirectoryReadView,
                 recordID,
                 keywordOffset,
-                term->getAttributeToFilterTermHits(), termAttributeBitmap,
+                term->getAttributesToFilter(),term->getFilterAttrOperation(), matchedAttributeIdsList,
                 termRecordStaticScore) ) {
-            foundValidHit = 1;
-            break;
+        	foundValidHit = 1;
+        	break;
         }
         this->cursorOnInvertedList ++;
         if (this->cursorOnInvertedList < this->invertedLists.at(this->invertedListOffset)->size()) {
@@ -183,9 +187,9 @@ PhysicalPlanRecordItem * UnionLowestLevelSimpleScanOperator::getNext(const Physi
     // static score
     newItem->setRecordStaticScore(termRecordStaticScore);
     // attributeBitmap
-    vector<unsigned> attributeBitmaps;
-    attributeBitmaps.push_back(termAttributeBitmap);
-    newItem->setRecordMatchAttributeBitmaps(attributeBitmaps);
+    vector<vector<unsigned> > matchedAttribureIdsList;
+    matchedAttribureIdsList.push_back(matchedAttributeIdsList);
+    newItem->setRecordMatchAttributeBitmaps(matchedAttribureIdsList);
 
     newItem->addTermType(term->getTermType());
 

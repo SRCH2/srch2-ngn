@@ -39,6 +39,46 @@ namespace instantsearch {
 class UnionLowestLevelSuggestionOperator : public PhysicalPlanNode {
 	friend class PhysicalOperatorFactory;
 public:
+	/*
+	 * This struct is used with a heap to output records sorted by their score
+	 */
+	struct SuggestionCursorHeapItem{
+		SuggestionCursorHeapItem(){
+			this->suggestionIndex = 0;
+			this->invertedListCursor = 0;
+			this->recordId = 0;
+			this->score = 0;
+			this->termRecordStaticScore = 0;
+		}
+		SuggestionCursorHeapItem(unsigned suggestionIndex, unsigned invertedListCursor, unsigned recordId,  float score,
+				const vector<unsigned>& attributeIdsList, float termRecordStaticScore){
+			this->suggestionIndex = suggestionIndex;
+			this->invertedListCursor = invertedListCursor;
+			this->recordId = recordId;
+			this->score = score;
+			this->attributeIdsList = attributeIdsList;
+			this->termRecordStaticScore = termRecordStaticScore;
+		}
+		SuggestionCursorHeapItem(const SuggestionCursorHeapItem & src){
+			this->suggestionIndex = src.suggestionIndex;
+			this->invertedListCursor = src.invertedListCursor;
+			this->recordId = src.recordId;
+			this->score = src.score;
+			this->attributeIdsList = src.attributeIdsList;
+			this->termRecordStaticScore = src.termRecordStaticScore;
+		}
+
+		bool operator()(const SuggestionCursorHeapItem & left, const SuggestionCursorHeapItem & right){
+			return left.score < right.score;
+		}
+
+		unsigned suggestionIndex;
+		unsigned invertedListCursor;
+		unsigned recordId;
+		float score;
+		vector<unsigned> attributeIdsList ;
+		float termRecordStaticScore ;
+	};
 	bool open(QueryEvaluatorInternal * queryEvaluator, PhysicalPlanExecutionParameters & params);
 	PhysicalPlanRecordItem * getNext(const PhysicalPlanExecutionParameters & params) ;
 	bool close(PhysicalPlanExecutionParameters & params);
@@ -48,13 +88,31 @@ public:
 private:
 	UnionLowestLevelSuggestionOperator() ;
 
+	// vector of all suggestions of the keyword
 	std::vector<SuggestionInfo > suggestionPairs;
-	unsigned suggestionPairCursor ;
-	unsigned invertedListCursor ;
+	// inverted lists corresponding to suggestions. We keep them in this vector for improving efficiency.
+	std::vector<shared_ptr<vectorview<unsigned> > > suggestionPairsInvertedListReadViews;
+	// this heap keeps the most top unread records of inverted lists and always keeps the best one
+	// according to runtime score on top
+	std::vector<SuggestionCursorHeapItem> recordItemsHeap;
+
 	QueryEvaluatorInternal * queryEvaluatorIntrnal;
 	shared_ptr<vectorview<InvertedListContainerPtr> > invertedListDirectoryReadView;
     shared_ptr<vectorview<unsigned> > invertedIndexKeywordIdsReadView;
 	shared_ptr<vectorview<ForwardListPtr> > forwardIndexDirectoryReadView;
+
+	/*
+	 * this function iterates on possible suggestions and puts the first record
+	 * of each inverted list in a max heap
+	 */
+	void initializeHeap(Term * term, Ranker * ranker, float prefixMatchPenalty);
+	/*
+	 * This function returns the top element of recordItemsHeap and uses the same inverted
+	 * list to push another record to the heap
+	 */
+	bool getNextHeapItem(Term * term, Ranker * ranker, float prefixMatchPenalty,
+			UnionLowestLevelSuggestionOperator::SuggestionCursorHeapItem & item);
+
 
 };
 

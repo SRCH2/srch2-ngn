@@ -65,7 +65,7 @@ public:
         this->recordAllowedSpecialCharacters = recordAllowedSpecialCharacters;
         if (tokenStream != NULL) {
             tokenStream->characterSet.setRecordAllowedSpecialCharacters(recordAllowedSpecialCharacters);
-            // TODO - should we call prepareRegexExpression() here?
+            prepareRegexExpression();
         }
     }
 
@@ -121,14 +121,8 @@ public:
      * @param[in] delimiterCharater
      */
     void tokenizeQuery(const string &queryString,
-                    vector<PositionalTerm> &queryKeywords) const;
+                    vector<AnalyzedTermInfo> &queryKeywords, bool isPrefix = false) const;
 
-    void tokenizeQueryWithFilter(const string &queryString,
-                    vector<PositionalTerm> &queryKeywords, const char &delimiterCharacter,
-                    const char &filterDelimiterCharacter,
-                    const char &fieldsAndCharacter, const char &fieldsOrCharacter,
-                    const std::map<std::string, unsigned> &searchableAttributesNameToId,
-                    vector<unsigned> &filter) const;
 
     // getter for the protected fields
     virtual AnalyzerType getAnalyzerType() const = 0;

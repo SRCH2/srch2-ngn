@@ -147,8 +147,8 @@ void categorizeSearchableAttributes(const int numberOfSearchableAttributes,
 inline void categorizeRefiningAttributes(const int numberOfRefiningAttributes,
     srch2::instantsearch::Schema& schema,
     //categories
-    std::vector<int>& refiningUnsigned,
-    std::vector<int>& refiningFloats, std::vector<int>& refiningTimes,
+    std::vector<int>& refiningInt, std::vector<int>& refiningLong,
+    std::vector<int>& refiningFloat, std::vector<int>& refiningDouble, std::vector<int>& refiningTimes,
     std::vector<int>& refiningMultiValued, std::vector<int>& refiningTexts) {
 
   //adds IDS of refining attributes
@@ -157,20 +157,26 @@ inline void categorizeRefiningAttributes(const int numberOfRefiningAttributes,
       refiningMultiValued.push_back(i);
       break;
     }
-    switch(schema.getTypeOfRefiningAttribute(i)) {
-      case srch2::instantsearch::ATTRIBUTE_TYPE_UNSIGNED:
-        refiningUnsigned.push_back(i);
-        break;
-      case  srch2::instantsearch::ATTRIBUTE_TYPE_FLOAT:
-        refiningFloats.push_back(i);
-        break;
-      case srch2::instantsearch::ATTRIBUTE_TYPE_TEXT:
-        refiningTexts.push_back(i);
-        break;
-      case srch2::instantsearch::ATTRIBUTE_TYPE_TIME:
-        refiningTimes.push_back(i);
-        break;
-      default:
+        switch (schema.getTypeOfRefiningAttribute(i)) {
+        case srch2::instantsearch::ATTRIBUTE_TYPE_INT:
+            refiningInt.push_back(i);
+            break;
+        case srch2::instantsearch::ATTRIBUTE_TYPE_LONG:
+            refiningLong.push_back(i);
+            break;
+        case srch2::instantsearch::ATTRIBUTE_TYPE_FLOAT:
+            refiningFloat.push_back(i);
+            break;
+        case srch2::instantsearch::ATTRIBUTE_TYPE_DOUBLE:
+            refiningDouble.push_back(i);
+            break;
+        case srch2::instantsearch::ATTRIBUTE_TYPE_TEXT:
+            refiningTexts.push_back(i);
+            break;
+        case srch2::instantsearch::ATTRIBUTE_TYPE_TIME:
+            refiningTimes.push_back(i);
+            break;
+        default:
         //should not enter this case
         //ASSERT(false);
         break;
@@ -197,8 +203,8 @@ initAttributeOffsetArray(srch2::instantsearch::Schema& schema,
   const int numberOfRefining = schema.getNumberOfRefiningAttributes();
 
   // harvest IDs of all attributes
-  std::vector<int> refiningTexts, refiningUnsigned,
-    refiningFloats, refiningTimes, refiningMultiValued,
+  std::vector<int> refiningTexts, refiningInt, refiningLong,
+    refiningFloat, refiningDouble, refiningTimes, refiningMultiValued,
     searchableStrings;
 
   categorizeSearchableAttributes(numberOfSearchable, schema, 
@@ -206,7 +212,7 @@ initAttributeOffsetArray(srch2::instantsearch::Schema& schema,
 
 
   categorizeRefiningAttributes(numberOfRefining, schema,
-    refiningUnsigned, refiningFloats, refiningTimes,
+    refiningInt, refiningLong, refiningFloat, refiningDouble, refiningTimes,
     refiningMultiValued, refiningTexts);
 
   // creates offset array 
@@ -217,20 +223,24 @@ initAttributeOffsetArray(srch2::instantsearch::Schema& schema,
 
   // sets offsets to find attributes based off their id 
   offset = 0;
-  initializeOffsetArray(refiningUnsigned, refiningOffsets, offset, 
-      sizeof(offset_type));
-  initializeOffsetArray(refiningTimes, refiningOffsets, offset, 
+  initializeOffsetArray(refiningInt, refiningOffsets, offset,
+      sizeof(int));
+  initializeOffsetArray(refiningLong, refiningOffsets, offset,
+        sizeof(long));
+  initializeOffsetArray(refiningFloat, refiningOffsets, offset,
+          sizeof(float));
+  initializeOffsetArray(refiningDouble, refiningOffsets, offset,
+          sizeof(double));
+  initializeOffsetArray(refiningTimes, refiningOffsets, offset,
       sizeof(long));
-  initializeOffsetArray(refiningFloats, refiningOffsets, offset, 
-      sizeof(float));
 
   variableLengthOffsetStart = offset;
 
-    initializeOffsetArray(refiningTexts, refiningOffsets, offset, 
+    initializeOffsetArray(refiningTexts, refiningOffsets, offset,
         sizeof(offset_type));
-    initializeOffsetArray(refiningMultiValued, refiningOffsets, offset, 
+    initializeOffsetArray(refiningMultiValued, refiningOffsets, offset,
         sizeof(offset_type));
-    initializeOffsetArray(searchableStrings, searchableOffsets, offset, 
+    initializeOffsetArray(searchableStrings, searchableOffsets, offset,
         sizeof(offset_type));
 
   //have variable sized Attributes

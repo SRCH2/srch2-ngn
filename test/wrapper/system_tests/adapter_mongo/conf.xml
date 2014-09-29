@@ -1,0 +1,135 @@
+<!--
+    Configuration file for SRCH2 search server. 
+
+    For more information about how to use this configuration file, please
+    visit http://srch2.com/download/ and select the correct
+    documentation version.
+
+    Please email contact@srch2.com if you have questions.
+-->
+ 
+<config>
+    <srch2Home>./</srch2Home>
+        <!-- Make sure to specify the home of your SRCH2 installation.  Example: 
+	  <srch2Home>/home/joe/srch2</srch2Home>
+        -->
+ 
+    <licenseFile>../conf/srch2_license_key.txt</licenseFile>
+ 
+    <listeningHostname>0.0.0.0</listeningHostname>
+    <listeningPort>8087</listeningPort>
+ 
+    <dataDir>./data/</dataDir>
+
+    <maxSearchThreads>2</maxSearchThreads>
+    
+    <schema>
+       <fields>
+          <field name="title" type="text" indexed="true"/>
+          <field name="director" type="text" indexed="true"/>
+          <field name="genre" type="text" indexed="true"
+                 default="HORROR" required="false"/>
+          <field name="year" type="integer" indexed="false" refining="true"
+                 default="2000" required="false"/>
+          <field name="id" type="text" refining="true" indexed="false"/>
+       </fields>
+       
+       <uniqueKey>_id</uniqueKey>
+           
+       <facetEnabled>true</facetEnabled>
+        <facetFields>
+          <facetField name="genre" facetType="categorical"/>
+          <facetField name="year"  facetType="range" facetStart="1990" facetEnd="2050" facetGap="10"/>
+        </facetFields>
+        
+        <types>
+          <fieldType name="text_standard">
+              <analyzer>
+                  <filter name="PorterStemFilter" dictionary="" />
+                  <filter name="StopFilter" words="" />
+              </analyzer>
+          </fieldType>
+       </types>
+    </schema>
+
+    <indexConfig>
+         
+        <indexType>0</indexType>
+         
+        <supportSwapInEditDistance>true</supportSwapInEditDistance>
+
+        <fieldBoost>title^2 director^1</fieldBoost>
+
+        <defaultQueryTermBoost>1</defaultQueryTermBoost>
+
+	<enablePositionIndex>1</enablePositionIndex> 
+    
+    </indexConfig>
+  
+  
+    <query>
+        <rankingAlgorithm>
+            <recordScoreExpression>idf_score*doc_boost</recordScoreExpression>
+        </rankingAlgorithm>
+ 
+        <fuzzyMatchPenalty>0.9</fuzzyMatchPenalty>
+
+	<queryTermSimilarityThreshold>0.75</queryTermSimilarityThreshold>
+         
+        <prefixMatchPenalty>0.95</prefixMatchPenalty>
+ 
+        <cacheSize>65536000</cacheSize>
+
+        <rows>10</rows>
+
+        <fieldBasedSearch>1</fieldBasedSearch>
+         
+        <searcherType>0</searcherType>
+         
+        <queryTermFuzzyType>1</queryTermFuzzyType>
+         
+        <queryTermPrefixType>0</queryTermPrefixType>
+ 
+        <queryResponseWriter>
+            <responseFormat>1</responseFormat>
+        </queryResponseWriter>
+
+    </query>
+  
+    <updatehandler>
+
+        <maxDocs>15000000</maxDocs>
+ 
+        <maxMemory>10000000</maxMemory>
+        
+        <mergePolicy>
+          <mergeEveryNSeconds>10</mergeEveryNSeconds>
+          <mergeEveryMWrites>10</mergeEveryMWrites>
+        </mergePolicy>
+         
+    </updatehandler>
+
+    <!-- 
+        Database settings
+        Required if dataSourceType = 2
+    -->
+
+    <dataSourceType>2</dataSourceType>
+    <dbParameters>
+        <dbSharedLibraryPath>../../../db_connectors/build</dbSharedLibraryPath>
+        <dbSharedLibraryName>libmongodbConnector</dbSharedLibraryName>
+        <dbKeyValues>
+            <dbKeyValue key="host" value="127.0.0.1" />
+            <dbKeyValue key="port" value="27017" />
+            <dbKeyValue key="db" value="srch2Test" />
+            <dbKeyValue key="collection" value="movies" />
+            <dbKeyValue key="listenerWaitTime" value="3" />
+        </dbKeyValues>
+    </dbParameters>
+ 
+           <updateLog>
+            <logLevel>4</logLevel>
+            <accessLogFile>./logs/srch2-log.txt</accessLogFile>
+        </updateLog>
+    
+</config>

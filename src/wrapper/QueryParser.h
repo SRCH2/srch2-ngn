@@ -137,6 +137,7 @@ private:
     static const char* const queryFieldBoostParamName;//solr
     static const char* const isFuzzyParamName; //srch2
     static const char* const docIdParamName;
+
     // local parameter params
     static const char* const lpKeyValDelimiter; //solr
     static const char* const lpQueryBooleanOperatorParamName; //srch2
@@ -162,6 +163,10 @@ private:
     static const char* const facetField;
     static const char* const facetRangeField;
     static const char* const highlightSwitch;
+    // access control
+    static const char* const roleIdParamName;
+    static const char* const attrAclFlag;
+
     static const string getFacetRangeKey(const string &facetField,
             const string &facetRangeProperty) {
         return "f."+facetField+".facet."+facetRangeProperty;
@@ -203,6 +208,16 @@ private:
      * checks to see if "fuzzy" exists in parameters.
      */
     void isFuzzyParser();
+
+    /*
+     *  check to see if role id exists in parameters.
+     */
+    void accessControlParser();
+
+    /*
+     *  check to see if a flag to turn off attribute acl exists in parameters.
+     */
+    void attributeAclFlagParser();
 
     /*
      * parses the lengthBoost parameter and fills up the container
@@ -330,9 +345,7 @@ private:
     void getAllResultsParser();
 
     /*
-     * this function parsers the parameters related to geo search like latitude and longitude .
-     * 1. also calls the facet parser. : facetParser();
-     * 2. also calls the sort parser: sortParser();
+     * this function parses the parameters related to geo search like latitude and longitude .
      *
      */
     void geoParser();

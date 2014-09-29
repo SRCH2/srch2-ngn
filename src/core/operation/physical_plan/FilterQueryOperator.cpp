@@ -9,12 +9,13 @@
 #include "instantsearch/TypedValue.h"
 #include <vector>
 #include "string"
+#include "util/RecordSerializerUtil.h"
+using namespace srch2::util;
 
 namespace srch2
 {
 namespace instantsearch
 {
-
 
 bool FilterQueryOperator::open(QueryEvaluatorInternal * queryEvaluatorInternal, PhysicalPlanExecutionParameters & params){
 	ASSERT(this->getPhysicalPlanOptimizationNode()->getChildrenCount() == 1);
@@ -30,7 +31,7 @@ PhysicalPlanRecordItem * FilterQueryOperator::getNext(const PhysicalPlanExecutio
 		}
 		Schema * schema = queryEvaluatorInternal->getSchema();
 		ForwardIndex * forwardIndex = queryEvaluatorInternal->getForwardIndex();
-		if(doPass(schema, forwardIndex, nextRecord)){
+		if(hasAccessToRecord(forwardIndex, nextRecord->getRecordId()) && doPass(schema, forwardIndex, nextRecord)){
 			return nextRecord;
 		}
 	}
@@ -45,7 +46,11 @@ bool FilterQueryOperator::close(PhysicalPlanExecutionParameters & params){
 }
 
 string FilterQueryOperator::toString(){
-	string result = "filterQueryOperator" + this->filterQueryEvaluator->toString() ;
+	string result;
+	if(this->filterQueryEvaluator != NULL)
+		result = "filterQueryOperator" + this->filterQueryEvaluator->toString() + this->roleId ;
+	else
+		result = this->roleId;
 	if(this->getPhysicalPlanOptimizationNode()->getLogicalPlanNode() != NULL){
 		result += this->getPhysicalPlanOptimizationNode()->getLogicalPlanNode()->toString();
 	}
@@ -57,18 +62,20 @@ bool FilterQueryOperator::verifyByRandomAccess(PhysicalPlanRandomAccessVerificat
 }
 FilterQueryOperator::~FilterQueryOperator(){}
 
-FilterQueryOperator::FilterQueryOperator(RefiningAttributeExpressionEvaluator * filterQueryEvaluator) {
+FilterQueryOperator::FilterQueryOperator(RefiningAttributeExpressionEvaluator * filterQueryEvaluator, string &roleId) {
 	this->filterQueryEvaluator = filterQueryEvaluator;
+	this->roleId = roleId;
 }
 
 bool FilterQueryOperator::doPass(Schema * schema, ForwardIndex * forwardIndex ,PhysicalPlanRecordItem * record){
+	// Because we use this operator for filters and for access control. When we just have access control the filter query evaluator is NULL
+	if(this->filterQueryEvaluator == NULL) // filterQueryEvaluator is null. So we don't have any filter
+		return true;
     // fetch the names and ids of non searchable attributes from schema
     vector<string> attributes;
-    vector<unsigned> attributeIds;
     for(map<string,unsigned>::const_iterator attr = schema->getRefiningAttributes()->begin();
             attr != schema->getRefiningAttributes()->end() ; ++attr ){
         attributes.push_back(attr->first);
-        attributeIds.push_back(attr->second);
     }
 
     shared_ptr<vectorview<ForwardListPtr> > readView;
@@ -80,8 +87,8 @@ bool FilterQueryOperator::doPass(Schema * schema, ForwardIndex * forwardIndex ,P
     // return false if this record is not valid (i.e., already deleted)
     if (!isValid)
       return false;
-    const Byte * refiningAttributesData = list->getRefiningAttributeContainerData();
-    VariableLengthAttributeContainer::getBatchOfAttributes(attributeIds,schema,refiningAttributesData ,&typedValues);
+    StoredRecordBuffer refiningAttributesData = list->getInMemoryData();
+    RecordSerializerUtil::getBatchOfAttributes(attributes, schema,refiningAttributesData.start.get() ,&typedValues);
 
     // now call the evaluator to see if this record passes the criteria or not
     // A criterion can be for example price:12 or price:[* TO 100]
@@ -94,6 +101,17 @@ bool FilterQueryOperator::doPass(Schema * schema, ForwardIndex * forwardIndex ,P
     }
     return this->filterQueryEvaluator->evaluate(valuesForEvaluation);
 }
+
+bool FilterQueryOperator::hasAccessToRecord(ForwardIndex * forwardIndex, unsigned recordId){
+	if(roleId == "") // it means that we don't have any access control check
+		return true;
+
+	shared_ptr<vectorview<ForwardListPtr> > forwardListDirectoryReadView;
+	forwardIndex->getForwardListDirectory_ReadView(forwardListDirectoryReadView);
+
+	return this->queryEvaluatorInternal->getForwardIndex()->hasAccessToForwardList(forwardListDirectoryReadView, recordId, this->roleId);
+}
+
 // The cost of open of a child is considered only once in the cost computation
 // of parent open function.
 PhysicalPlanCost FilterQueryOptimizationOperator::getCostOfOpen(const PhysicalPlanExecutionParameters & params) {

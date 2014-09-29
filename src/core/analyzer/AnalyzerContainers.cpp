@@ -11,6 +11,7 @@
 #include <boost/serialization/set.hpp>
 #include <boost/serialization/string.hpp>
 #include <boost/serialization/map.hpp>
+#include <boost/serialization/vector.hpp>
 #include <boost/algorithm/string.hpp>
 
 using srch2::util::Logger;
@@ -30,7 +31,7 @@ void AnalyzerContainer::free(const string &path)
 
 void AnalyzerContainer::freeAll()
 {
-	AnalyzerContainer::Map_t::iterator iter = containers.begin();
+    AnalyzerContainer::Map_t::iterator iter = containers.begin();
     for (; iter != containers.end(); ++iter) {
        delete iter->second;
     }
@@ -85,108 +86,181 @@ SynonymContainer *SynonymContainer::getInstance(const std::string &filePath,
  * orange: Nothing will be in the map for it.
  */
 void SynonymContainer::init() {
-	// using file path to create an ifstream object
-	std::ifstream input(filePath.c_str());
+    // using file path to create an ifstream object
+    std::ifstream input(filePath.c_str());
 
-	if (!input.good())
-	{
-		Logger::warn("The synonym file = \"%s\" could not be opened.", filePath.c_str());
-		return;
-	}
-	this->synonymMap.clear();
-	// Reads the map file line by line and fills the map
-	std::string line;
-	while (getline(input, line)) {
-		/*
-		 * for example we have "A=>B" in the file
-		 * "A" is leftHandSide
-		 * "B" is rightHandSide
-		 */
-		std::size_t index = line.find(this->synonymDelimiter);
-		// if we don't have any synonymDelimeter in this line OR leftHandSide is empty, we should go to next line.
-		if (index <= 0) {
-			continue;
-		}
-		std::string leftHandSide = line.substr(0, index);
-		std::string rightHandSide = line.substr(index + this->synonymDelimiter.length());
+    if (!input.good())
+    {
+        Logger::warn("The synonym file = \"%s\" could not be opened.", filePath.c_str());
+        return;
+    }
+    this->synonymMap.clear();
+    this->prefixMap.clear();
+    // Reads the map file line by line and fills the map
+    std::string line;
+    bool expandFlag = false;
+    while (getline(input, line)) {
 
-		boost::algorithm::trim(leftHandSide);
-		boost::algorithm::trim(rightHandSide);
+        if (line.size() == 0 || line.at(0) == '#') {
+            // line is empty or is a comment.
+            continue;
+        }
 
-		/*
-		 * This part will put the whole lefthandside into the map.
-		 * It checks if it already exists or not.
-		 * If the lefthandside is already there: only if it was prefix_only we will change it to prefix_and_complete, Otherwise, we won't touch it.
-		 * If the lefthandside is not already there: it inserst it into the map.
-		 */
-		std::map<std::string, std::pair<SynonymTokenType, std::string> >::const_iterator pos = this->synonymMap.find(leftHandSide);
-		if (pos != this->synonymMap.end()) {
-			if (this->synonymMap[leftHandSide].first == SYNONYM_PREFIX_ONLY) {
-				ASSERT(this->synonymMap[leftHandSide].second == "");
-				this->synonymMap[leftHandSide].first =  SYNONYM_PREFIX_AND_COMPLETE;
-				this->synonymMap[leftHandSide].second =  rightHandSide;
-			}
-		} else {
-			this->synonymMap.insert(make_pair(leftHandSide, make_pair(SYNONYM_COMPLETE_ONLY, rightHandSide)));
-		}
-		ASSERT(this->synonymMap[leftHandSide].first != SYNONYM_NOT_PREFIX_NOT_COMPLETE);
+        /* We allow synonym file similar to Solr. There are two types of synonym declaration.
+         * 1.  Explicit declaration
+         * for example we have "A=>B" in the file
+         * "A" is leftHandSide
+         * "B" is rightHandSide
+         *
+         * Each instance of A will be replaced with B in the index or query.
+         *
+         * 2. Equivalent synonyms :  A, B, C
+         *
+         * if Keep Original is ON, then treat it as:
+         * A => B, C B => A, C C => A, B
+         * Otherwise if Keep Original is OFF then it is treated as B, C => A
+         */
+        std::size_t index = line.find(this->synonymDelimiter);
+        //leftHandSide is empty, we should go to next line.
+        if (index == 0) {
+            continue;
+        }
+        vector<string> leftHandSideTokens;
+        vector<string> rightHandSideTokens;
+        std::string leftHandSide;
+        std::string rightHandSide;
+        expandFlag = false;
+        if (index == string::npos) {
+            // if we don't have any synonymDelimeter in this line, then we may have equivalent
+            // synonyms declared in this line.
+            vector<string> synonyms;
+            boost::algorithm::split(synonyms, line, boost::is_any_of(","));
+            if (synonyms.size() <= 1) {
+                // unknown format ..skip
+                continue;
+            }
+            // we have line in form of A,B,C
+            if (synonymKeepOriginFlag == SYNONYM_KEEP_ORIGIN) {
+                // A,B,C => A,B,C
+                leftHandSideTokens.assign(synonyms.begin(), synonyms.end());
+                rightHandSideTokens.assign(synonyms.begin(), synonyms.end());
+                expandFlag = true;
+            } else {
+                // B,C => A
+                leftHandSideTokens.assign(synonyms.begin() + 1, synonyms.end());
+                rightHandSideTokens.push_back(synonyms[0]);
+            }
+        } else {
+            std::string leftHandSide = line.substr(0, index);
+            std::string rightHandSide = line.substr(index + this->synonymDelimiter.length());
 
-		/*
-		 * Here will add the sub sequence of Tokens to the map.
-		 * For example, if the lefthandside is "new york city", the whole std::string is already inserted into the map.
-		 * Now we should take care of "new york" and "new"
-		 * In the while() loop, first "new york" will be added and then "new"
-		 * For each of them, if it is already there and its flag is complete_only, we change it to prefix_and_complete and if it is not there, we add it as prefix_only
-		 */
-		std::size_t found ;
-		while (true) {
-			found = leftHandSide.rfind(" ");
-			if (found == std::string::npos) {
-				break;
-			}
-			leftHandSide = leftHandSide.substr(0, found);
-			std::map<std::string, std::pair<SynonymTokenType, std::string> >::const_iterator pos = this->synonymMap.find(leftHandSide);
-			if (pos != this->synonymMap.end()) {
-				if (this->synonymMap[leftHandSide].first == SYNONYM_COMPLETE_ONLY) {
-					ASSERT(this->synonymMap[leftHandSide].second != ""); // unless the righthandsde is empty in the synonym file
-					this->synonymMap[leftHandSide].first =  SYNONYM_PREFIX_AND_COMPLETE;
-				}
-			} else {
-				this->synonymMap.insert(std::make_pair(leftHandSide, std::make_pair(SYNONYM_PREFIX_ONLY, "")));
-			}
-			ASSERT(this->synonymMap[leftHandSide].first != SYNONYM_NOT_PREFIX_NOT_COMPLETE);
-		}
+            boost::algorithm::split(leftHandSideTokens, leftHandSide, boost::is_any_of(","));
+            boost::algorithm::split(rightHandSideTokens, rightHandSide, boost::is_any_of(","));
+        }
 
-	}
+        /*
+         * Iterate through the synonym mapping of "A, B, C => A, B, C".
+         * For the outer loop, we are dealing with A first. For the inner loop,
+         * we are dealing with "B, C".
+         */
+
+        for (unsigned i = 0; i < leftHandSideTokens.size(); ++i) {
+            leftHandSide = leftHandSideTokens[i];
+            boost::algorithm::trim(leftHandSide);
+            if (leftHandSide.size() == 0) {
+                continue;
+            }
+            transform(leftHandSide.begin(),leftHandSide.end(),leftHandSide.begin(),::tolower);
+            for (unsigned j = 0; j < rightHandSideTokens.size(); ++j) {
+
+                rightHandSide = rightHandSideTokens[j];
+                boost::algorithm::trim(rightHandSide);
+                if (rightHandSide.size() == 0) {
+                    continue;
+                }
+                transform(rightHandSide.begin(),rightHandSide.end(),rightHandSide.begin(),::tolower);
+                if (leftHandSide == rightHandSide)
+                    continue;
+
+                /*
+                 * This part will put the whole lefthandside into the map.
+                 * It checks if it already exists or not.
+                 */
+
+                std::map<std::string, std::pair<bool ,SynonymVector> >::const_iterator pos = this->synonymMap.find(leftHandSide);
+                if (pos != this->synonymMap.end()) {
+                    SynonymVector& synonymVector = this->synonymMap[leftHandSide].second;
+                    if (find(synonymVector.begin(), synonymVector.end(), rightHandSide) == synonymVector.end()){
+                        this->synonymMap[leftHandSide].second.push_back(rightHandSide);
+                    }
+                } else {
+                    SynonymVector synonymVector;
+                    this->synonymMap.insert(make_pair(leftHandSide, make_pair(expandFlag, synonymVector)));
+                    this->synonymMap[leftHandSide].second.push_back(rightHandSide);
+                }
+
+                /*
+                 * Here will add the sub sequence of Tokens to the map.
+                 * For example, if the lefthandside is "new york city", the whole std::string is
+                 * already inserted into the map. Now we should take care of "new york" and "new"
+                 * In the while() loop, first "new york" will be added and then "new"
+                 * The reason that we need to keep the prefix map is to keep track of multi-word
+                 * synonyms which arrive from upstream filters as a individual token. So when we
+                 * see "new" token then using prefix map we know that we might get a possible synonym
+                 * in next iteration.
+                 */
+                std::size_t found ;
+                string prefixToken = leftHandSide;
+                while (true) {
+                    found = prefixToken.rfind(" ");
+                    if (found == std::string::npos) {
+                        break;
+                    }
+                    prefixToken = prefixToken.substr(0, found);
+                    this->prefixMap.insert(prefixToken);
+                }
+            }
+        }
+
+    }
 
 }
 
 bool SynonymContainer::contains(const std::string& str) const
 {
-	std::map<std::string, pair<SynonymTokenType, std::string> >::const_iterator pos = synonymMap.find(str);
-	if (pos != this->synonymMap.end())
-		return true;
-	else
-		return false;
+    std::map<std::string, std::pair<bool, SynonymVector> >::const_iterator pos = synonymMap.find(str);
+    if (pos != this->synonymMap.end())
+        return true;
+    else
+        return false;
 }
 
-void SynonymContainer::getValue(const std::string& str, std::pair<SynonymTokenType, std::string>& returnValue) const
+bool SynonymContainer::isPrefix(const std::string& str) const
 {
-	std::map<std::string, pair<SynonymTokenType, std::string> >::const_iterator pos = synonymMap.find(str);
-	if (pos != this->synonymMap.end()) {
-		returnValue = pos->second;
-	}
-	else {
-		returnValue = make_pair(SYNONYM_NOT_PREFIX_NOT_COMPLETE, "");
-	}
+    std::set<std::string>::const_iterator pos = prefixMap.find(str);
+    if (pos != this->prefixMap.end())
+        return true;
+    else
+        return false;
+}
+bool SynonymContainer::getValue(const std::string& str, SynonymVector& returnValue) const
+{
+    std::map<std::string, std::pair<bool, SynonymVector> >::const_iterator pos = synonymMap.find(str);
+    if (pos != this->synonymMap.end()) {
+        returnValue.assign(pos->second.second.begin(), pos->second.second.end());
+        return pos->second.first;
+    }
+    return false;
 }
 
 void SynonymContainer::loadSynonymContainer (boost::archive::binary_iarchive& ia) {
-	ia >> synonymMap;
+    ia >> synonymMap;
+    ia >> prefixMap;
 }
 
 void SynonymContainer::saveSynonymContainer (boost::archive::binary_oarchive& oa) {
-	oa << synonymMap;
+    oa << synonymMap;
+    oa << prefixMap;
 }
 
 
@@ -212,37 +286,37 @@ StemmerContainer *StemmerContainer::getInstance(const std::string &filePath)
 
 void StemmerContainer::init()
 {
-	std::ifstream input(filePath.c_str());
-	//  If the file path is OK, it will be passed, else this if will run and the error will be shown
-	if (input.fail()) {
+    std::ifstream input(filePath.c_str());
+    //  If the file path is OK, it will be passed, else this if will run and the error will be shown
+    if (input.fail()) {
         Logger::warn("The stemmer file = \"%s\" could not be opened.", filePath.c_str());
- 		return;
-	}
-	//	Reads the dictionary file line by line and makes the Map, dictionaryWords are the words extracted from the dictionary file
-	this->dictionaryWords.clear();
-	std::string str;
-	while (getline(input, str)) {
-		boost::algorithm::trim(str);
-		this->dictionaryWords.insert(make_pair(str, 1));
-	}
+         return;
+    }
+    //    Reads the dictionary file line by line and makes the Map, dictionaryWords are the words extracted from the dictionary file
+    this->dictionaryWords.clear();
+    std::string str;
+    while (getline(input, str)) {
+        boost::algorithm::trim(str);
+        this->dictionaryWords.insert(make_pair(str, 1));
+    }
 }
 
 bool StemmerContainer::contains(const std::string& str) const
 {
-	std::map<std::string, int>::const_iterator iter = this->dictionaryWords.find(str);
-	if (iter != this->dictionaryWords.end()) {
-		return true;
-	} else {
-		return false;
-	}
+    std::map<std::string, int>::const_iterator iter = this->dictionaryWords.find(str);
+    if (iter != this->dictionaryWords.end()) {
+        return true;
+    } else {
+        return false;
+    }
 }
 
 void StemmerContainer::loadStemmerContainer(boost::archive::binary_iarchive& ia) {
-	ia >> dictionaryWords;
+    ia >> dictionaryWords;
 }
 
 void StemmerContainer::saveStemmerContainer(boost::archive::binary_oarchive& oa) {
-	oa << dictionaryWords;
+    oa << dictionaryWords;
 }
 
 
@@ -268,32 +342,32 @@ StopWordContainer *StopWordContainer::getInstance(const std::string &filePath)
 
 void StopWordContainer::init()
 {
-	std::string str;
-	//  using file path to create an ifstream object
-	std::ifstream input(filePath.c_str());
-		//  If the file path is OK, it will be passed, else this if will run and the error will be shown
-	if (input.fail()) {
-	    Logger::warn("The stop words file = \"%s\" could not be opened.", filePath.c_str());
-		return;
-	}
-	//	Reads the stop word files line by line and fills the vector
-	this->stopWordsSet.clear();
-	while (getline(input, str)) {
-		boost::algorithm::trim(str);
-		this->stopWordsSet.insert(str);
-	}
+    std::string str;
+    //  using file path to create an ifstream object
+    std::ifstream input(filePath.c_str());
+        //  If the file path is OK, it will be passed, else this if will run and the error will be shown
+    if (input.fail()) {
+        Logger::warn("The stop words file = \"%s\" could not be opened.", filePath.c_str());
+        return;
+    }
+    //    Reads the stop word files line by line and fills the vector
+    this->stopWordsSet.clear();
+    while (getline(input, str)) {
+        boost::algorithm::trim(str);
+        this->stopWordsSet.insert(str);
+    }
 }
 
 bool StopWordContainer::contains(const std::string& str) const
 {
-	return (this->stopWordsSet.find(str) != this->stopWordsSet.end());
+    return (this->stopWordsSet.find(str) != this->stopWordsSet.end());
 }
 void StopWordContainer::loadStopWordContainer( boost::archive::binary_iarchive& ia) {
-	ia >> this->stopWordsSet;
+    ia >> this->stopWordsSet;
 }
 
 void StopWordContainer::saveStopWordContainer(boost::archive::binary_oarchive& oa) {
-	oa << this->stopWordsSet;
+    oa << this->stopWordsSet;
 }
 
 
@@ -319,27 +393,79 @@ ProtectedWordsContainer *ProtectedWordsContainer::getInstance(const std::string 
 
 void ProtectedWordsContainer::init()
 {
-	std::string str;
-	//  using file path to create an ifstream object
-	std::ifstream input(filePath.c_str());
-		//  If the file path is OK, it will be passed, else this if will run and the error will be shown
-	if (input.fail()) {
-	    Logger::warn("The protected words file = \"%s\" could not be opened.", filePath.c_str());
-		return;
-	}
-	//	Reads the stop word files line by line and fills the vector
-	this->protectedWords.clear();
-	while (getline(input, str)) {
-		boost::algorithm::trim(str);
-		std::transform(str.begin(), str.end(), str.begin(), ::tolower);
-		this->protectedWords.insert(str);
-	}
+    std::string str;
+    //  using file path to create an ifstream object
+    std::ifstream input(filePath.c_str());
+        //  If the file path is OK, it will be passed, else this if will run and the error will be shown
+    if (input.fail()) {
+        Logger::warn("The protected words file = \"%s\" could not be opened.", filePath.c_str());
+        return;
+    }
+    //    Reads the stop word files line by line and fills the vector
+    this->protectedWords.clear();
+    while (getline(input, str)) {
+        boost::algorithm::trim(str);
+        std::transform(str.begin(), str.end(), str.begin(), ::tolower);
+        this->protectedWords.insert(str);
+    }
+    input.close();
 }
 
 bool ProtectedWordsContainer::isProtected(const string& val) const
 {
     return protectedWords.count(val) > 0; 
 }
+
+ChineseDictionaryContainer* ChineseDictionaryContainer::getInstance(const std::string &filePath){
+    ChineseDictionaryContainer *chineseDictionaryContainer= NULL;
+    const string key = string("ChineseDictionaryContainer:") + filePath;
+    Map_t::iterator iterator = containers.find(key);
+    if (iterator == containers.end()) {
+        chineseDictionaryContainer = new ChineseDictionaryContainer();
+        chineseDictionaryContainer->filePath = filePath;
+        containers[key] = chineseDictionaryContainer;
+    } else {
+        chineseDictionaryContainer = dynamic_cast<ChineseDictionaryContainer*> (iterator->second);
+        // in case the same path was used to create a different type of container
+        if (chineseDictionaryContainer == NULL) {
+            Logger::warn("AnalyzerContainer for %s found but of type %s instead of ChineseDictionaryContainer",
+                filePath.c_str(), typeid(*(iterator->second)).name());
+        }
+        ASSERT(chineseDictionaryContainer!= NULL);
+    }
+    return chineseDictionaryContainer;
+}
+
+void ChineseDictionaryContainer::init(){
+    std::ifstream input(filePath.c_str());
+    if (input.fail()){
+        Logger::warn("The Chinese dictionary file :\"%s\" could not be opened.", filePath.c_str());
+        return ;
+    }
+    input.close();
+    chineseDictionary.loadDict(filePath);
+}
+
+void ChineseDictionaryContainer::loadDictionaryContainer(boost::archive::binary_iarchive &ia){
+    ia >> this->chineseDictionary;
+}
+
+void ChineseDictionaryContainer::saveDictionaryContainer(boost::archive::binary_oarchive &oa){
+    oa << this->chineseDictionary;
+}
+
+short ChineseDictionaryContainer::getFreq(const std::vector<CharType> &buffer, unsigned istart, unsigned length) const {
+    return  chineseDictionary.getFreq(buffer, istart, length);
+}
+
+short ChineseDictionaryContainer::getFreq(const std::string &str) const {
+    return chineseDictionary.getFreq(str);
+}
+
+int ChineseDictionaryContainer::getMaxWordLength() const {
+    return chineseDictionary.getMaxWordLength();
+}
+
 
 } // instantsearch
 } // namespace srch2

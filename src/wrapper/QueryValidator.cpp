@@ -32,8 +32,9 @@ namespace httpwrapper {
 
 QueryValidator::QueryValidator(const Schema & schema,
         const CoreInfo_t &indexDataContainerConf,
-        ParsedParameterContainer * paramContainer) :
-        schema(schema), indexDataContainerConf(indexDataContainerConf){
+        ParsedParameterContainer * paramContainer,
+        const AttributeAccessControl & attrAcl) :
+        schema(schema), indexDataContainerConf(indexDataContainerConf), attributeAcl(attrAcl){
     this->paramContainer = paramContainer;
 }
 
@@ -53,9 +54,6 @@ bool QueryValidator::validate() {
     if (paramContainer->hasParameterInQuery(GetAllResultsSearchType)) {
         numberOfProvidedSearchTypes++;
     }
-    if (paramContainer->hasParameterInQuery(GeoSearchType)) {
-        numberOfProvidedSearchTypes++;
-    }
     if (numberOfProvidedSearchTypes != 1) { // search type is not clear , fatal error
         paramContainer->messages.push_back(
                 std::make_pair(MessageError,
@@ -63,47 +61,28 @@ bool QueryValidator::validate() {
         return false;
     }
 
-    // validation case: if search type is TopK or GetAllResults, query keywords should not be empty
-    if (paramContainer->hasParameterInQuery(TopKSearchType)
-            || paramContainer->hasParameterInQuery(GetAllResultsSearchType)) { // search type is either TopK or GetAllResults
-		ParseTreeLeafNodeIterator termIterator(paramContainer->parseTreeRoot);
-		unsigned numberOfTerms = 0;
-		while(termIterator.hasMore()){
-			termIterator.getNext();
-			numberOfTerms ++;
+    // validation case: if search type is TopK or GetAllResults, query keywords should not be empty.
+    if(paramContainer->hasParameterInQuery(GeoSearchFlag) == false){
+		if (paramContainer->hasParameterInQuery(TopKSearchType)
+				|| paramContainer->hasParameterInQuery(GetAllResultsSearchType)) { // search type is either TopK or GetAllResults
+			ParseTreeLeafNodeIterator termIterator(paramContainer->parseTreeRoot);
+			unsigned numberOfTerms = 0;
+			while(termIterator.hasMore()){
+				termIterator.getNext();
+				numberOfTerms ++;
+			}
+			if (numberOfTerms == 0) {
+				paramContainer->messages.push_back(
+						std::make_pair(MessageError,
+								"No keywords provided for search."));
+				return false;
+			}
 		}
-        if (numberOfTerms == 0) {
-            paramContainer->messages.push_back(
-                    std::make_pair(MessageError,
-                            "No keywords provided for search."));
-            return false;
-        }
     }
 
-    // validation case: If search type is Geo, some latitude longitude must be provided.
-    if (paramContainer->hasParameterInQuery(GeoSearchType)) {
-        if (!(paramContainer->geoParameterContainer->hasParameterInQuery(GeoTypeRectangular) // no rectangular values
-                || paramContainer->geoParameterContainer->hasParameterInQuery(GeoTypeCircular))) { // no circular values
-            paramContainer->messages.push_back(
-                    std::make_pair(MessageError,
-                            "No latitude longitude provided for geo search."));
-            return false;
-        }
-    }
-
-    // validation case: if search type is TopK/GetAllResults, index type must be TopK/GetAllResults too
-    if (paramContainer->hasParameterInQuery(TopKSearchType)
-            || paramContainer->hasParameterInQuery(GetAllResultsSearchType)) {
-        if (indexDataContainerConf.getIndexType() != 0) { // zero means normal index type
-            paramContainer->messages.push_back(
-                    std::make_pair(MessageError,
-                            "Geo index type is not compatible with this query."));
-            return false;
-        }
-    }
-
+    // TODO: in case of removing the geo index type from config file we should remove this part
     // validation case: if search type is Geo, index type must be Geo too
-    if (paramContainer->hasParameterInQuery(GeoSearchType)) {
+    if (paramContainer->hasParameterInQuery(GeoSearchFlag)) {
         if (indexDataContainerConf.getIndexType() != 1) { // One means geo index type
             paramContainer->messages.push_back(
                     std::make_pair(MessageError,
@@ -111,18 +90,6 @@ bool QueryValidator::validate() {
             return false;
         }
     }
-
-    // validation case : if search type is Geo, we don't support boolean expression queries
-    // --- so the parse tree should be only one AND and a list of TERM children.
-    if (paramContainer->hasParameterInQuery(GeoSearchType)) {
-    	if ( ! validateParseTreeStructureForGeo() ){
-            paramContainer->messages.push_back(
-                    std::make_pair(MessageError,
-                            "Only AND separated list of keywords is accepted for Geo search. e.g. TERM1 AND TERM2"));
-            return false;
-    	}
-    }
-
 
     // validate filter list
     // Example : q= title,name:foo AND body.abstract:bar
@@ -180,23 +147,37 @@ bool QueryValidator::validateExistenceOfAttributesInQueryFieldBoost() {
 
         const std::map<std::string, unsigned>& searchableAttributes =
                 schema.getSearchableAttribute();
-        std::vector<QueryFieldAttributeBoost>&
-          boosts(paramContainer->qfContainer->boosts);
+        std::vector<QueryFieldAttributeBoost> validatedBoostFields;
 
-        for (std::vector<QueryFieldAttributeBoost>::iterator boost =
-                boosts.begin(); boost != boosts.end(); ++boost) {
-                if (searchableAttributes.find(boost->attribute)
-                        == searchableAttributes.end()) {
-                  // field does not exist in searchable attributes
-                        // write a warning and remove it
-                    paramContainer->messages.push_back(
-                            std::make_pair(MessageWarning,
-                                    "Field " + boost->attribute
-                                            + " is not a searchable field."
-                                           "It will be removed"));
-                    boost= boosts.erase(boost);
-                } 
+        for (std::vector<QueryFieldAttributeBoost>::iterator boostIter =
+        		paramContainer->qfContainer->boosts.begin();
+        		boostIter != paramContainer->qfContainer->boosts.end(); ++boostIter) {
+
+        	bool validField = false;
+        	if (paramContainer->attrAclOn) {
+        		// if the attribute acl switch is ON then check attribute ACL for validity
+        		// of this field.
+        		validField = attributeAcl.isSearchableFieldAccessibleForRole(paramContainer->roleId,
+        		        			boostIter->attribute);
+        	} else {
+        		// if the attribute acl switch is OFF then check whether the field is searchable
+        		validField =  searchableAttributes.count(boostIter->attribute) > 0 ? true : false;
+        	}
+
+        	if (!validField){
+        		// field does not exist in accessible searchable attributes
+        		// write a warning and remove it
+        		paramContainer->messages.push_back(
+        				std::make_pair(MessageWarning,
+        						"Field " + boostIter->attribute
+        						+ " is not an accessible searchable field."
+        						"It will be removed"));
+        		continue;
+        	}
+
+        	validatedBoostFields.push_back(*boostIter);
         }
+        paramContainer->qfContainer->boosts.swap(validatedBoostFields);
     }  
     return true;
 }
@@ -247,11 +228,24 @@ bool QueryValidator::validateExistenceOfAttributesInSortFiler() {
     for (std::vector<std::string>::iterator field =
             sortQueryContainer->evaluator->field.begin();
             field != sortQueryContainer->evaluator->field.end(); ++field) {
-        if (schema.getRefiningAttributeId(*field) < 0) { // field does not exist
+
+    	bool validField = false;
+    	if (paramContainer->attrAclOn) {
+    		// if the attribute acl switch is ON then check attribute ACL for validity
+    		// of this field.
+    		validField = attributeAcl.isRefiningFieldAccessibleForRole(paramContainer->roleId,
+    				*field);
+    	} else {
+    		// if the attribute acl switch is OFF then check whether the field is refining
+    		validField =  schema.getRefiningAttributes()->count(*field) > 0 ? true : false;
+    	}
+
+        if (!validField) {
+        	// field does not exist in accessible refining list.
             paramContainer->messages.push_back(
                     std::make_pair(MessageWarning,
                             "Field " + *field
-                                    + " is not a non-searchable field. No sort will be performed. "));
+                                    + " is not an accessible refining field. No sort will be performed. "));
 
             sortFilterShouldBeRemoved = true;
             break;
@@ -289,23 +283,36 @@ bool QueryValidator::validateExistenceOfAttributesInFacetFiler() {
         return false;
     }
 
-    int facetParallelVectorsIndex = 0;
+    int facetParallelVectorsIndex = -1;
     vector<int> facetParallelVectorsIndexesToErase;
     for (std::vector<std::string>::iterator field =
             facetQueryContainer->fields.begin();
             field != facetQueryContainer->fields.end(); ++field) {
+        facetParallelVectorsIndex++;
 
-        //1. Validate the existence of attributes
-        if (schema.getRefiningAttributeId(*field) < 0) { // field does not exist
-            // Warning : Facet will be canceled for this field.
-            paramContainer->messages.push_back(
-                    std::make_pair(MessageWarning,
-                            "Field " + *field
-                                    + " is not a proper field. No facet will be calculated on this field. "));
+        //1. Validate the existence of attributes and also
+        //   check whether the attribute is accessible for current role.
+    	bool validField = false;
+    	if (paramContainer->attrAclOn) {
+    		// if the attribute acl switch is ON then check attribute ACL for validity
+    		// of this field.
+    		validField = attributeAcl.isRefiningFieldAccessibleForRole(paramContainer->roleId,
+    				*field);
+    	} else {
+    		// if the attribute acl switch is OFF then check whether the field is refining
+    		validField =  schema.getRefiningAttributes()->count(*field) > 0 ? true : false;
+    	}
 
-            facetParallelVectorsIndexesToErase.push_back(
-                    facetParallelVectorsIndex);
-            continue; // no need to do anymore validation for this field because it'll be removed from facets.
+        if (!validField) {
+            //Facet will be not be calculated for this field.
+        	paramContainer->messages.push_back(
+        			std::make_pair(MessageWarning,
+        					"Field " + *field
+        					+ " is unaccessible refining field. No facet will be calculated on this field. "));
+
+        	facetParallelVectorsIndexesToErase.push_back(
+        			facetParallelVectorsIndex);
+        	continue; // no need to do anymore validation for this field because it'll be removed from facets.
         }
 
         //2. Range facets should be of type unsigned or float or date
@@ -315,8 +322,8 @@ bool QueryValidator::validateExistenceOfAttributesInFacetFiler() {
         if (   !facetQueryContainer->types.empty()
             && facetQueryContainer->types.at(facetParallelVectorsIndex) == srch2is::FacetTypeRange
             && !(
-                    fieldType == srch2is::ATTRIBUTE_TYPE_UNSIGNED ||
-                    fieldType == srch2is::ATTRIBUTE_TYPE_FLOAT ||
+                    fieldType == srch2is::ATTRIBUTE_TYPE_INT ||fieldType == srch2is::ATTRIBUTE_TYPE_LONG ||
+                    fieldType == srch2is::ATTRIBUTE_TYPE_FLOAT ||fieldType == srch2is::ATTRIBUTE_TYPE_DOUBLE||
                     fieldType == srch2is::ATTRIBUTE_TYPE_TIME
              )) {
             paramContainer->messages.push_back(
@@ -415,8 +422,6 @@ bool QueryValidator::validateExistenceOfAttributesInFacetFiler() {
             continue;
         }
 
-        //
-        facetParallelVectorsIndex++;
     }
     if (facetQueryContainer->fields.size() != 0 &&
             facetParallelVectorsIndexesToErase.size() == facetQueryContainer->fields.size()) {
@@ -473,7 +478,8 @@ bool QueryValidator::validateExistenceOfAttributesInFacetFiler() {
 bool QueryValidator::validateFilterQuery(){
     if(paramContainer->hasParameterInQuery(FilterQueryEvaluatorFlag)){
         FilterQueryContainer * filterQueryContainer = paramContainer->filterQueryContainer;
-        if (! filterQueryContainer->evaluator->validate(schema)){
+        if (! filterQueryContainer->evaluator->validate(schema, paramContainer->roleId,
+        		attributeAcl, paramContainer->attrAclOn)){
             paramContainer->parametersInQuery.erase(
                     remove(
                             paramContainer->parametersInQuery.begin(),
@@ -552,28 +558,6 @@ bool QueryValidator::isParseSubtreeComputableRecursive(ParseTreeNode * node){
 	return true;
 }
 
-bool QueryValidator::validateParseTreeStructureForGeo(){
-	// there might be no keywords for Geo
-	if(paramContainer->parseTreeRoot == NULL) {
-		return true;
-	}
-	// root must be AND
-	if( paramContainer->parseTreeRoot->type != LogicalPlanNodeTypeAnd && paramContainer->parseTreeRoot->type != LogicalPlanNodeTypeTerm){
-		return false;
-	}
-	// all children of root must be TERM
-	for(vector<ParseTreeNode *>::iterator child = paramContainer->parseTreeRoot->children.begin() ;
-			child != paramContainer->parseTreeRoot->children.end() ; ++child){
-		if(*child == NULL){
-			ASSERT(false);
-			return false;
-		}
-		if((*child)->type != LogicalPlanNodeTypeTerm){
-			return false;
-		}
-	}
-	return true;
-}
 
 }
 }

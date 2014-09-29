@@ -22,11 +22,11 @@ namespace instantsearch
  */
 class LowerCaseFilter:public TokenFilter {
 public:
-	LowerCaseFilter(TokenStream* tokenStream);
-	bool processToken();
-	virtual ~LowerCaseFilter();
+    LowerCaseFilter(TokenStream* tokenStream);
+    bool processToken();
+    virtual ~LowerCaseFilter();
 private:
-	void transformToLowerCase(std::vector<CharType> &token);
+    void transformToLowerCase(std::vector<CharType> &token);
 };
 }}
 #endif /* __CORE_ANALYZER__LOWERCASEFILTER_H__ */

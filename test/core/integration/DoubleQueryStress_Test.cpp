@@ -108,7 +108,7 @@ int main(int argc, char **argv)
             clock_gettime(CLOCK_REALTIME, &tstart_each);
 
             unsigned resultCount = 10;
-            pingNormalQuery(analyzer, queryEvaluator,*vectIter,resultCount,0);
+            pingNormalQuery(analyzer, queryEvaluator,*vectIter,resultCount, vector<unsigned>(), ATTRIBUTES_OP_AND);
 
             clock_gettime(CLOCK_REALTIME, &tend_each);
             double ts2 = (tend_each.tv_sec - tstart_each.tv_sec) * 1000 + (tend_each.tv_nsec - tstart_each.tv_nsec)/1000000;
@@ -149,7 +149,7 @@ int main(int argc, char **argv)
 
             unsigned resultCount = 10;
             std::cout << "[[" << *vectIter << "]]" << std::endl;
-            doubleSearcherPing(analyzer, queryEvaluator,*vectIter,resultCount,0);
+            doubleSearcherPing(analyzer, queryEvaluator,*vectIter,resultCount, 0, vector<unsigned>(), ATTRIBUTES_OP_AND);
     
             clock_gettime(CLOCK_REALTIME, &tend_d_each);
             double ts2 = (tend_d_each.tv_sec - tstart_d_each.tv_sec) * 1000 

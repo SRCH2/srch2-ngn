@@ -143,13 +143,20 @@ public:
     bool setRefiningAttributeValue(const unsigned attributeId,
                     const std::string &attributeValue);
 
+    void setRoleIds(const std::vector<std::string> &roleId);
+
+    std::vector<std::string>* getRoleIds() const;
+
+    bool hasRoleIds() const;
+
     /**
      * Returns the value of the attribute corresponding to the attributeId.
      */
     void getSearchableAttributeValue(const unsigned attributeId , std::string & attributeValue) const;
     void getSearchableAttributeValues(const unsigned attributeId , std::vector<std::string> & attributeStringValues) const;
-
+    void getSearchableAttributeValues(const std::string& attributeName , std::vector<std::string> & attributeStringValues) const;
     std::string *getRefiningAttributeValue(const unsigned attributeId) const;
+    void getRefiningAttributeValue(const std::string& attributeName, std::string& attributeValue) const;
 
     /**
      *

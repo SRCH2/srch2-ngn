@@ -10,6 +10,7 @@
 #include <sstream>
 #include <algorithm>
 #include "thirdparty/snappy-1.0.4/snappy.h"
+#include "util/DateAndTimeHandler.h"
 
 using namespace srch2::instantsearch;
 
@@ -49,8 +50,10 @@ void RecordSerializerUtil::populateStoredSchema(Schema* storedSchema, const Sche
 		}
 		srch2is::FilterType type = schema->getTypeOfRefiningAttribute(refiningAttributeIter->second);
 		switch (type) {
-		case srch2is::ATTRIBUTE_TYPE_UNSIGNED:
+		case srch2is::ATTRIBUTE_TYPE_INT:
+		case srch2is::ATTRIBUTE_TYPE_LONG:
 		case srch2is::ATTRIBUTE_TYPE_FLOAT:
+		case srch2is::ATTRIBUTE_TYPE_DOUBLE:
 			storedSchema->setRefiningAttribute(refiningAttributeIter->first,
 					type, *schema->getDefaultValueOfRefiningAttribute(refiningAttributeIter->second),
 					false);
@@ -80,6 +83,10 @@ void RecordSerializerUtil::convertCompactToJSONString(Schema * storedAttrSchema,
 		{
 			if (attrToReturn &&
 			    std::find(attrToReturn->begin(), attrToReturn->end(), iter->first) == attrToReturn->end()) {
+				continue;
+			}
+			// check if it is also a primary key, skip if true because PK is emitted already.
+			if (*(storedAttrSchema->getPrimaryKey()) == iter->first) {
 				continue;
 			}
 			unsigned id = storedAttrSchema->getSearchableAttributeId(iter->first);
@@ -127,28 +134,50 @@ void RecordSerializerUtil::convertCompactToJSONString(Schema * storedAttrSchema,
 					std::find(attrToReturn->begin(), attrToReturn->end(), iter->first) == attrToReturn->end()) {
 				continue;
 			}
+			// check if it is also a primary key, skip if true because PK is emitted already.
+			if (*(storedAttrSchema->getPrimaryKey()) == iter->first) {
+				continue;
+			}
 			unsigned id = storedAttrSchema->getRefiningAttributeId(iter->first);
 			unsigned lenOffset = compactRecDeserializer.getRefiningOffset(id);
 			jsonBuffer+='"'; jsonBuffer+=iter->first; jsonBuffer+='"';
 			jsonBuffer+=':';
 			jsonBuffer+='"';
 			switch(storedAttrSchema->getTypeOfRefiningAttribute(id)){
-			case srch2is::ATTRIBUTE_TYPE_FLOAT:
+			case srch2is::ATTRIBUTE_TYPE_INT:
 			{
-				float attrdata = *((float *)(buffer.start.get() + lenOffset));
+				int attrdata = *((int *)(buffer.start.get() + lenOffset));
 				stringstream ss;
 				ss << attrdata;
 				jsonBuffer += ss.str();
 				break;
 			}
-			case srch2is::ATTRIBUTE_TYPE_UNSIGNED:
-			{
-				unsigned attrdata = *((unsigned *)(buffer.start.get() + lenOffset));
-				stringstream ss;
-				ss << attrdata;
-				jsonBuffer += ss.str();
-				break;
-			}
+            case srch2is::ATTRIBUTE_TYPE_LONG:
+            {
+                long attrdata = *((long *)(buffer.start.get() + lenOffset));
+                stringstream ss;
+                ss << attrdata;
+                jsonBuffer += ss.str();
+                break;
+            }
+            case srch2is::ATTRIBUTE_TYPE_FLOAT:
+            {
+                float attrdata = *((float *)(buffer.start.get() + lenOffset));
+                stringstream ss;
+                ss << attrdata;
+                jsonBuffer += ss.str();
+                break;
+            }
+            case srch2is::ATTRIBUTE_TYPE_DOUBLE:
+            {
+                double attrdata;
+                void * source = (void *)(buffer.start.get() + lenOffset);
+                memcpy(&attrdata, source, sizeof(double));
+                stringstream ss;
+                ss << attrdata;
+                jsonBuffer += ss.str();
+                break;
+            }
 			default: break;
 				// should not come here.
 			}
@@ -166,7 +195,10 @@ void RecordSerializerUtil::cleanAndAppendToBuffer(const string& in, string& out)
 	unsigned inIdx = 0;
 	while (inIdx < inLen) {
 		// remove non printable characters
-		if (in[inIdx] < 32) {
+		// A byte of a non-ASCII character can be >= 128. 
+		// For example, the utf8 byte array of "李" is e6-9d-8e. 
+		// Thus "in[inIdx]" will be negative, and we have to treat it as an unsigned value.
+		if ( static_cast<unsigned char> (in[inIdx]) < 32) {
 			++inIdx; continue;
 		}
 		switch(in[inIdx]) {
@@ -190,6 +222,264 @@ void RecordSerializerUtil::cleanAndAppendToBuffer(const string& in, string& out)
 			out += in[inIdx];
 		}
 		++inIdx;
+	}
+}
+
+/*
+ *  The function returns the list of values for the list of refining attributes from
+ *  the in-memory representation in forward Index.
+ */
+void RecordSerializerUtil::getBatchOfAttributes(
+        const std::vector<string> & refiningAttributes, const Schema * schema, const Byte* data,
+        std::vector<TypedValue> * typedValuesArg)  {
+
+    std::vector<TypedValue>& typedValues = (*typedValuesArg);
+    Schema *storedSchema = Schema::create();
+    RecordSerializerUtil::populateStoredSchema(storedSchema, schema);
+    RecordSerializer recSerializer(*storedSchema);
+    // now extract the scores
+    unsigned startOffset = 0;
+    for(unsigned i = 0 ; i < refiningAttributes.size(); ++i){
+    	const string& name = refiningAttributes[i];
+    	FilterType type = getAttributeType(name, schema);
+    	bool multiVal = schema->isRefiningAttributeMultiValued(schema->getRefiningAttributeId(name));
+        TypedValue attributeValue;
+        convertByteArrayToTypedValue(name , multiVal, type, recSerializer, data , &attributeValue);
+        typedValues.push_back(attributeValue);
+    }
+    delete storedSchema;
+}
+
+FilterType RecordSerializerUtil::getAttributeType(const string& name,
+        const Schema * schema) {
+	unsigned id = schema->getRefiningAttributeId(name);
+	return schema->getTypeOfRefiningAttribute(id);
+}
+
+/*
+ *  read an int value at an offset (= startOffset) from the data pointer.
+ */
+int RecordSerializerUtil::convertByteArrayToInt(
+        unsigned startOffset , const Byte * data) {
+
+    const Byte * bytePointer = data + startOffset;
+    int * intPointer = (int *) bytePointer;
+    return *intPointer;
+}
+
+/*
+ *  read a long value at an offset (= startOffset) from the data pointer.
+ */
+long RecordSerializerUtil::convertByteArrayToLong(
+        unsigned startOffset, const Byte * data) {
+    const Byte * bytePointer = data + startOffset;
+    long * longPointer = (long *) bytePointer;
+    return *longPointer;
+}
+
+
+/*
+ *  read a float value at an offset (= startOffset) from the data pointer.
+ */
+float RecordSerializerUtil::convertByteArrayToFloat(unsigned startOffset, const Byte * data) {
+    const Byte * bytePointer = data + startOffset;
+    float * floatPointer = (float *) bytePointer;
+    return *floatPointer;
+}
+
+/*
+ *  read a float value at an offset (= startOffset) from the data pointer.
+ */
+double RecordSerializerUtil::convertByteArrayToDouble(unsigned startOffset,
+        const Byte * data) {
+    const Byte * bytePointer = data + startOffset;
+
+    double attrdata;
+    memcpy(&attrdata, bytePointer, sizeof(double));
+    return attrdata;
+}
+/*
+ *   Given a refining attribute name and type, fetch its value from in-memory compact representation.
+ *   - Single value refining attribute of type int , float and long are stored as it is in the byte
+ *     array.
+ *   - Multivalue refining attributes are stored as single compressed string where each values is
+ *     separated by a delimiter (MULTI_VAL_ATTR_DELIMITER defined in Constants.h).
+ *   - Single Value refining attributes of type text and time are stored as compressed string.
+ *     Note: time string is converted to long format.
+ */
+void RecordSerializerUtil::convertByteArrayToTypedValue(const string& name,
+		bool isMultiValued, const FilterType& type, RecordSerializer& recSerializer, const Byte * data,
+		TypedValue * result) {
+
+	if(isMultiValued == false){ // case of single value
+		int intValue = 0;
+		long longValue = 0;
+		float floatValue = 0;
+		double doubleValue = 0;
+		unsigned sizeOfString = 0;
+		string stringValue = "";
+		switch (type) {
+		case ATTRIBUTE_TYPE_INT:
+		{
+			unsigned startOffset = 0;
+			if (recSerializer.getStorageSchema().getRefiningAttributeId(name) != -1) {
+				startOffset = recSerializer.getRefiningOffset(name);
+				intValue = convertByteArrayToInt(startOffset,data);
+			} else {
+				ASSERT(false);  // for Debug mode
+			}
+			result->setTypedValue(intValue, ATTRIBUTE_TYPE_INT);
+			break;
+		}
+        case ATTRIBUTE_TYPE_LONG:
+        {
+            unsigned startOffset = 0;
+            if (recSerializer.getStorageSchema().getRefiningAttributeId(name) != -1) {
+                startOffset = recSerializer.getRefiningOffset(name);
+                longValue = convertByteArrayToLong(startOffset,data);
+            } else {
+                ASSERT(false);  // for Debug mode
+            }
+            result->setTypedValue(longValue, ATTRIBUTE_TYPE_LONG);
+            break;
+        }
+		case ATTRIBUTE_TYPE_FLOAT:
+		{
+			unsigned startOffset = 0;
+			if (recSerializer.getStorageSchema().getRefiningAttributeId(name) != -1) {
+				startOffset = recSerializer.getRefiningOffset(name);
+				floatValue = convertByteArrayToFloat(startOffset,data);
+			} else {
+				ASSERT(false);  // for Debug mode
+			}
+			result->setTypedValue(floatValue, ATTRIBUTE_TYPE_FLOAT);
+			break;
+		}
+        case ATTRIBUTE_TYPE_DOUBLE:
+        {
+            unsigned startOffset = 0;
+            if (recSerializer.getStorageSchema().getRefiningAttributeId(name) != -1) {
+                startOffset = recSerializer.getRefiningOffset(name);
+                doubleValue = convertByteArrayToDouble(startOffset,data);
+            } else {
+                ASSERT(false);  // for Debug mode
+            }
+            result->setTypedValue(doubleValue, ATTRIBUTE_TYPE_DOUBLE);
+            break;
+        }
+		case ATTRIBUTE_TYPE_TEXT:
+		{
+			unsigned lenOffset = 0;
+			if (recSerializer.getStorageSchema().getSearchableAttributeId(name) != -1) {
+				lenOffset = recSerializer.getSearchableOffset(name);
+				const char *attrdata = data + *((unsigned *)(data + lenOffset));
+				unsigned len = *(((unsigned *)(data + lenOffset)) + 1) -
+						*((unsigned *)(data + lenOffset));
+				snappy::Uncompress(attrdata,len, &stringValue);
+				std::transform(stringValue.begin(), stringValue.end(), stringValue.begin(), ::tolower);
+			} else {
+				ASSERT(false);  // for Debug mode
+			}
+			result->setTypedValue(stringValue,ATTRIBUTE_TYPE_TEXT);
+			break;
+		}
+		case ATTRIBUTE_TYPE_TIME:
+		{
+			unsigned lenOffset = 0;
+			if (recSerializer.getStorageSchema().getSearchableAttributeId(name) != -1) {
+				lenOffset = recSerializer.getSearchableOffset(name);
+				const char *attrdata = data + *((unsigned *)(data + lenOffset));
+				unsigned len = *(((unsigned *)(data + lenOffset)) + 1) -
+						*((unsigned *)(data + lenOffset));
+				snappy::Uncompress(attrdata,len, &stringValue);
+				longValue = DateAndTimeHandler::convertDateTimeStringToSecondsFromEpoch(stringValue);
+			} else {
+				ASSERT(false);  // for Debug mode
+			}
+			result->setTypedValue(longValue,ATTRIBUTE_TYPE_TIME);
+			break;
+		}
+
+		default:
+			ASSERT(false);
+			break;
+		}
+	}else{ // case of multi value
+
+		unsigned lenOffset = 0;
+		string stringValue = "";
+		vector<string> multiValues;
+		if (recSerializer.getStorageSchema().getSearchableAttributeId(name) != -1) {
+			lenOffset = recSerializer.getSearchableOffset(name);
+			const char *attrdata = data + *((unsigned *)(data + lenOffset));
+			unsigned len = *(((unsigned *)(data + lenOffset)) + 1) -
+					*((unsigned *)(data + lenOffset));
+			snappy::Uncompress(attrdata,len, &stringValue);
+			size_t lastpos = 0;
+			while(1) {
+				size_t pos = stringValue.find(MULTI_VAL_ATTR_DELIMITER, lastpos) ;
+				if (pos == string::npos)
+					break;
+				string result =  stringValue.substr(lastpos, pos - lastpos);
+				std::transform(result.begin(), result.end(), result.begin(), ::tolower);
+				multiValues.push_back(result);
+				lastpos = pos + 4;
+			}
+			string lastVal = stringValue.substr(lastpos, stringValue.size());
+			std::transform(lastVal.begin(), lastVal.end(), lastVal.begin(), ::tolower);
+			multiValues.push_back(lastVal);
+		} else {
+			ASSERT(false);  // for debug ..else we return empty values
+		}
+
+		vector<int> intValues;
+		vector<long> longValues;
+		vector<float> floatValues;
+		vector<double> doubleValues;
+		vector<long> timeValues;
+
+		switch (type) {
+		case ATTRIBUTE_TYPE_INT:
+			for(int i=0;i<multiValues.size(); i++){
+				intValues.push_back(static_cast<int>(strtol(multiValues[i].c_str(),NULL,10)));
+			}
+			result->setTypedValue(intValues,ATTRIBUTE_TYPE_MULTI_INT);
+			break;
+        case ATTRIBUTE_TYPE_LONG:
+            for(int i=0;i<multiValues.size(); i++){
+                longValues.push_back(strtol(multiValues[i].c_str(),NULL,10));
+            }
+            result->setTypedValue(longValues,ATTRIBUTE_TYPE_MULTI_LONG);
+            break;
+		case ATTRIBUTE_TYPE_FLOAT:
+			for(int i=0;i<multiValues.size(); i++){
+				floatValues.push_back(static_cast<float>(strtod(multiValues[i].c_str(),NULL)));
+			}
+			result->setTypedValue(floatValues,ATTRIBUTE_TYPE_MULTI_FLOAT);
+			break;
+        case ATTRIBUTE_TYPE_DOUBLE:
+            for(int i=0;i<multiValues.size(); i++){
+                doubleValues.push_back(strtod(multiValues[i].c_str(),NULL));
+            }
+            result->setTypedValue(doubleValues,ATTRIBUTE_TYPE_MULTI_DOUBLE);
+            break;
+		case ATTRIBUTE_TYPE_TEXT:
+			result->setTypedValue(multiValues,ATTRIBUTE_TYPE_MULTI_TEXT);
+			break;
+		case ATTRIBUTE_TYPE_TIME:
+			for(int i=0;i<multiValues.size(); i++){
+				long lTime = DateAndTimeHandler::convertDateTimeStringToSecondsFromEpoch(multiValues[i]);
+				timeValues.push_back(lTime);
+			}
+			result->setTypedValue(timeValues,ATTRIBUTE_TYPE_MULTI_TIME);
+			break;
+		case ATTRIBUTE_TYPE_DURATION:
+			ASSERT(false);
+			break;
+		default:
+			ASSERT(false);
+			break;
+		}
 	}
 }
 

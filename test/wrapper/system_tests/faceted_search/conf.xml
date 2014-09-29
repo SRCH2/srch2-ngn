@@ -297,31 +297,7 @@
           <mergeEveryNSeconds>10</mergeEveryNSeconds>
           <mergeEveryMWrites>100</mergeEveryMWrites>
         </mergePolicy>
-         
-         
-        <updateLog>
-            <!-- 
-                Log Level
-                Optional
-                 
-                Log level
-                    0 SILENT
-                    1 ERROR
-                    2 WARN
-                    3 INFO
-                Defaults to 3 INFO
-            -->
-            <logLevel>3</logLevel>
-                         
-            <!--
-                Access Log File
-                Required
-                 
-                Path to Access Log File
-            -->
-            <accessLogFile>./data/faceted_search/log.txt</accessLogFile>
-        </updateLog>
-     
+              
     </updatehandler>
 
 	<schema>
@@ -358,6 +334,7 @@
 		    here and indexed="false" it will be also used for sort,filtering and facet.
 		    - 
 	   -->
+           <field name="relevance" type="float" refining="true" highlight="true" />
 	   <field name="category" type="text" indexed="true" />
 	   <field name="name" type="text" indexed="true" />
 	   <field name="model" default="benz" required="true" type="text" indexed="false" refining="true"/>
@@ -409,7 +386,7 @@
 	  
 	  
 	  <types>
-	    <fieldType name="text_en">
+	    <fieldType name="text_standard">
 		<analyzer>
 		    <!--
 		        Stemmer
@@ -446,6 +423,30 @@
 	    </fieldType>
 	 </types>
 	</schema>
+	
+    <updateLog>
+            <!-- 
+                Log Level
+                Optional
+                 
+                Log level
+                    0 SILENT
+                    1 ERROR
+                    2 WARN
+                    3 INFO
+                Defaults to 3 INFO
+            -->
+            <logLevel>3</logLevel>
+                         
+            <!--
+                Access Log File
+                Required
+                 
+                Path to Access Log File
+            -->
+            <accessLogFile>./data/faceted_search/log.txt</accessLogFile>
+    </updateLog>
+	
 </config>
  
 

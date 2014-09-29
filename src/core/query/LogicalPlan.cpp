@@ -17,15 +17,27 @@ LogicalPlanNode::LogicalPlanNode(Term * exactTerm, Term * fuzzyTerm){
 	this->nodeType = LogicalPlanNodeTypeTerm;
 	this->exactTerm= exactTerm;
 	this->fuzzyTerm = fuzzyTerm;
+	this->regionShape = NULL;
 	stats = NULL;
 	forcedPhysicalNode = PhysicalPlanNode_NOT_SPECIFIED;
 }
 
 LogicalPlanNode::LogicalPlanNode(LogicalPlanNodeType nodeType){
 	ASSERT(nodeType != LogicalPlanNodeTypeTerm);
+	ASSERT(nodeType != LogicalPlanNodeTypeGeo);
 	this->nodeType = nodeType;
 	this->exactTerm= NULL;
 	this->fuzzyTerm = NULL;
+	this->regionShape = NULL;
+	stats = NULL;
+	forcedPhysicalNode = PhysicalPlanNode_NOT_SPECIFIED;
+}
+
+LogicalPlanNode::LogicalPlanNode(Shape* regionShape){
+	this->nodeType = LogicalPlanNodeTypeGeo;
+	this->exactTerm = NULL;
+	this->fuzzyTerm = NULL;
+	this->regionShape = regionShape;
 	stats = NULL;
 	forcedPhysicalNode = PhysicalPlanNode_NOT_SPECIFIED;
 }
@@ -36,6 +48,9 @@ LogicalPlanNode::~LogicalPlanNode(){
 	}
 	if(this->fuzzyTerm != NULL){
 		delete fuzzyTerm;
+	}
+	if(this->regionShape != NULL){
+		delete regionShape;
 	}
 	for(vector<LogicalPlanNode *>::iterator child = children.begin() ; child != children.end() ; ++child){
 		if(*child != NULL){
@@ -57,6 +72,9 @@ string LogicalPlanNode::toString(){
 	}
 	if(this->fuzzyTerm != NULL){
 		ss << this->fuzzyTerm->toString();
+	}
+	if(this->regionShape != NULL){
+		ss << this->regionShape->toString();
 	}
 	ss << this->forcedPhysicalNode;
 	return ss.str();
@@ -91,24 +109,32 @@ LogicalPlan::~LogicalPlan(){
 	delete fuzzyQuery; delete exactQuery;
 }
 
-LogicalPlanNode * LogicalPlan::createTermLogicalPlanNode(const std::string &queryKeyword, TermType type,const float boost, const float fuzzyMatchPenalty, const uint8_t threshold , unsigned fieldFilter){
+LogicalPlanNode * LogicalPlan::createTermLogicalPlanNode(const std::string &queryKeyword,
+		TermType type,const float boost, const float fuzzyMatchPenalty,
+		const uint8_t threshold , const vector<unsigned>& fieldFilter,ATTRIBUTES_OP attrOp){
 	Term * term = new Term(queryKeyword, type, boost, fuzzyMatchPenalty, threshold);
-	term->addAttributeToFilterTermHits(fieldFilter);
+	term->addAttributesToFilter(fieldFilter, attrOp);
 	LogicalPlanNode * node = new LogicalPlanNode(term , NULL);
 	return node;
 }
 
 LogicalPlanNode * LogicalPlan::createOperatorLogicalPlanNode(LogicalPlanNodeType nodeType){
 	ASSERT(nodeType != LogicalPlanNodeTypeTerm);
+	ASSERT(nodeType != LogicalPlanNodeTypeGeo);
 	LogicalPlanNode * node = new LogicalPlanNode(nodeType);
 	return node;
 }
 LogicalPlanNode * LogicalPlan::createPhraseLogicalPlanNode(const vector<string>& phraseKeyWords,
 		const vector<unsigned>& phraseKeywordsPosition,
-		short slop, unsigned fieldFilter) {
+		short slop, const vector<unsigned>& fieldFilter, ATTRIBUTES_OP attrOp) {
 
 	LogicalPlanNode * node = new LogicalPlanPhraseNode(phraseKeyWords, phraseKeywordsPosition,
-			slop, fieldFilter);
+			slop, fieldFilter, attrOp);
+	return node;
+}
+
+LogicalPlanNode * LogicalPlan::createGeoLogicalPlanNode(Shape *regionShape){
+	LogicalPlanNode * node = new LogicalPlanNode(regionShape);
 	return node;
 }
 

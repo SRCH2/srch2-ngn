@@ -1,0 +1,65 @@
+
+##Overview
+
+SRCH2 is a search engine written in C++ ground up.  By utilizing advanced indexing structures and algorithms,
+it delivers superior features with high performance.  It runs on both servers as well as mobile devices.  
+
+The following figure illustrates how to use the engine in an application.  We provide a configuration 
+file that specifies parameters for the engine, such as socket a port number, a data source (a JSON file,
+MongoDB, or SQLite) and ranking-related values.
+
+<span ><center><img style="width:45%" src="images/SRCH2-Overview.jpg" /></center></span>
+
+SRCH2 provides a RESTful API, using which a client can insert/delete/update records, 
+submit search queries, and send control messages such as getting status information, 
+saving indexes to the disk, and shutting down the engine gracefully.  The engine returns the results in
+the [JSON](http://json.org/) format.
+
+##Features
+
+- Full-text search
+- Instant search (prefix predicates)
+- Error correction (fuzzy search)
+- Boolean expressions
+- Faceted search
+- Stemming and stop words
+- Phrase search (e.g., "new york")
+- Rich data types (e.g., text, int, float, and date)
+- Chinese tokenization
+- Attribute-based search
+- Sorting (e.g., "price < 20")
+- Geo search
+- Server-side highlighting
+- Query logging
+- Configurable ranking (including prefix and fuzzy predicates)
+- Real-time updates
+- Multi-threaded
+- Multiple languages
+- Multiple data sources
+- RESTful API
+- Support of control messages (e.g., system status and index serialization)
+- Port-level network security
+- Token-based authorization
+- Access control (record based and attribute based)
+- Connectors to MongoDB and SQLite, with connectors for other data sources coming soon
+
+##What's new in SRCH2 4.4.2
+####Features:
+- Added support of Chinese language with a [Chinese tokenizer](./configuration/#116-analyzer).
+
+####Improvements:
+- Removed  the requirement to specify "roleCore" for the record-based acl in the config file.
+- Changed API aclRecordRoleAdd to aclRecordRoleReplace.
+- Changed API aclAttributeRoleAdd to aclAttributeRoleReplace.
+- Improved documentation.
+
+##Platforms
+
+The SRCH2 engine runs on 64-bit Linux (with a kernel version >= 2.6.32), Mac OS (10.5 and above, Intel x86), 
+and Android devices (ARM architecture).  The engine supports all [Unicode characters](http://en.wikipedia.org/wiki/List_of_Unicode_characters) encoded using [UTF-8](http://en.wikipedia.org/wiki/UTF-8).
+
+The rest of the documentation illustrates how to set up a simple SRCH2 instance. We'll take you through 
+the basic steps required to download SRCH2, index data, configure search features, and run 
+the search server. Enjoy!
+</br>
+

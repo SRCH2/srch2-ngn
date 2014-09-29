@@ -12,6 +12,7 @@
 #include <instantsearch/Schema.h>
 #include <instantsearch/Record.h>
 #include "util/RecordSerializer.h"
+#include "instantsearch/TypedValue.h"
 #include <vector>
 
 using namespace std;
@@ -31,6 +32,29 @@ private:
 	static void cleanAndAppendToBuffer(const string& in, string& out);
 	RecordSerializerUtil();
 	virtual ~RecordSerializerUtil();
+
+public:
+
+    // gets values of attributes in iters in Score objects. iters must be ascending.
+    static void getBatchOfAttributes(
+            const std::vector<string> & nonSearchableAttributeIndexs,
+            const Schema * schema, const Byte * data, std::vector<TypedValue> * scores);
+
+private:
+
+    static FilterType getAttributeType(const string& name, const Schema * schema) ;
+
+    static int convertByteArrayToInt(unsigned startOffset, const Byte * data) ;
+
+    static long convertByteArrayToLong(unsigned startOffset, const Byte * data) ;
+
+    static float convertByteArrayToFloat(unsigned startOffset, const Byte * data) ;
+
+    static double convertByteArrayToDouble(unsigned startOffset, const Byte * data) ;
+
+    static void convertByteArrayToTypedValue(const string& name, bool isMultiValued, const FilterType& type,
+    		RecordSerializer& recSerializer, const Byte * data, TypedValue * result) ;
+
 };
 
 } /* namespace util */

@@ -46,8 +46,9 @@ namespace httpwrapper {
 
 QueryRewriter::QueryRewriter(const CoreInfo_t *config,
         const Schema & schema, const Analyzer & analyzer,
-        ParsedParameterContainer * paramContainer) :
-        schema(schema), analyzer(analyzer) {
+        ParsedParameterContainer * paramContainer,
+        const AttributeAccessControl & attrAcl) :
+        schema(schema), analyzer(analyzer), attributeAcl(attrAcl) {
     this->paramContainer = paramContainer;
     indexDataConfig = config;
 }
@@ -59,6 +60,11 @@ bool QueryRewriter::rewrite(LogicalPlan & logicalPlan) {
 		logicalPlan.setQueryType(srch2is::SearchTypeRetrieveById);
 		logicalPlan.setDocIdForRetrieveByIdSearchType(this->paramContainer->docIdForRetrieveByIdSearchType);
 		return true;
+	}
+
+	//If query contains list of attributes to return, we set the vector<string> attributesToReturn vector inside LogicalPlan.
+	if(this->paramContainer->responseAttributesList.size() != 0){
+	    logicalPlan.setAttrToReturn(this->paramContainer->responseAttributesList);
 	}
     // go through the queryParameters and call the analyzer on the query if needed.
 
@@ -164,7 +170,7 @@ bool QueryRewriter::applyAnalyzer() {
 		string keywordAfterAnalyzer = "";
 		if (leafNode->termIntermediateStructure->isPhraseKeywordFlag){
 			PhraseInfo pi;
-			std::vector<PositionalTerm> analyzedQueryKeywords;
+			std::vector<AnalyzedTermInfo> analyzedQueryKeywords;
 			analyzerNotConst.tokenizeQuery(leafNode->termIntermediateStructure->rawQueryKeyword, analyzedQueryKeywords);
 			keywordAfterAnalyzer.clear();
 			for (int i=0; i < analyzedQueryKeywords.size(); ++i){
@@ -175,7 +181,7 @@ bool QueryRewriter::applyAnalyzer() {
 				pi.phraseKeywordPositionIndex.push_back(analyzedQueryKeywords[i].position);
 			}
 			pi.proximitySlop = leafNode->termIntermediateStructure->phraseSlop;
-			pi.attributeBitMap = leafNode->termIntermediateStructure->fieldFilterNumber;
+			pi.attributeIdsList = leafNode->termIntermediateStructure->fieldFilterList;
 			if (analyzedQueryKeywords.size() > 0) {
 				paramContainer->PhraseKeyWordsInfoMap[keywordAfterAnalyzer] = pi;
 			}
@@ -204,8 +210,8 @@ bool QueryRewriter::applyAnalyzer() {
 		termIterator.getNext();
 		numberOfKeywords ++;
 	}
-
-    if(numberOfKeywords == 0){
+	// If query has geo parameters then it can be without any terms. but if it doesn't have geo parameters it should have at least one term for search.
+	if(paramContainer->hasParameterInQuery(GeoSearchFlag) == false && numberOfKeywords == 0){
         if(paramContainer->hasParameterInQuery(TopKSearchType) || paramContainer->hasParameterInQuery(GetAllResultsSearchType)){
             paramContainer->messages.push_back(
                     std::make_pair(MessageWarning,
@@ -226,11 +232,21 @@ void QueryRewriter::prepareFieldFilters() {
     	ParseTreeLeafNodeIterator termIterator(paramContainer->parseTreeRoot);
     	while(termIterator.hasMore()){
     		leafNode = termIterator.getNext();
-    		leafNode->termIntermediateStructure->fieldFilterNumber = 0x7fffffff;
+    		leafNode->termIntermediateStructure->fieldFilterAttrOperation = ATTRIBUTES_OP_OR;
     	}
         return;
     }
-    if(paramContainer->hasParameterInQuery(FieldFilter) ){
+    vector<unsigned> *allowedAttributesForRole = NULL;
+    if (paramContainer->attrAclOn) {
+    	boost::shared_ptr<vector<unsigned> > allowedAttributesSharedPtr;
+    	// Fetch list of attributes accessible by this role-id
+    	attributeAcl.fetchSearchableAttrsAcl(paramContainer->roleId, allowedAttributesSharedPtr);
+    	allowedAttributesForRole = allowedAttributesSharedPtr.get();
+    }
+
+	const vector<unsigned>& schemaNonAclAttrsList = schema.getNonAclSearchableAttrIdsList();
+
+    if(paramContainer->hasParameterInQuery(FieldFilter ) ){
         // some filters are provided in query so these two vectors are the same size as keywords vector
 
     	ParseTreeNode * leafNode;
@@ -240,41 +256,195 @@ void QueryRewriter::prepareFieldFilters() {
 
             srch2is::BooleanOperation op = leafNode->termIntermediateStructure->fieldFilterOp;
 
-            unsigned filter = 0;
             if (leafNode->termIntermediateStructure->fieldFilter.size() == 0) {
-                filter = 0x7fffffff;  // it can appear in all fields
-                // TODO : get it from configuration file
+            	if (paramContainer->attrAclOn) {
+            		// filtering attributes are not specified for this term. Get them from ACL map
+            		getFieldFiltersBasedOnAcl(leafNode->termIntermediateStructure->fieldFilterList,
+            				leafNode->termIntermediateStructure->fieldFilterAttrOperation,
+            				allowedAttributesForRole);
+            	} else {
+            		leafNode->termIntermediateStructure->fieldFilterAttrOperation = ATTRIBUTES_OP_OR;
+            	}
             } else {
-                bool shouldApplyAnd = true;
+            	vector<unsigned> attributeFilter;
+            	// flag is used to indicate whether the wildcard "*" was found in attributes list in
+            	// attribute based search.
+                bool hasWildCard = false;
                 for (std::vector<std::string>::iterator field = leafNode->termIntermediateStructure->fieldFilter.begin();
                         field != leafNode->termIntermediateStructure->fieldFilter.end(); ++field) {
 
                     if (field->compare("*") == 0) { // all fields
-                        filter = 0x7fffffff;
-                        shouldApplyAnd = false;
+                    	attributeFilter.clear();
+                    	hasWildCard = true;
                         break;
                     }
                     unsigned id = schema.getSearchableAttributeId(*field);
-                    unsigned bit = 1;
-                    bit <<= id;
-                    filter |= bit;
+                    // if a user has specified a filtering attribute, then first check whether the
+                    // attribute acl is OFF or ON. If attribute acl is OFF then add this field to
+                    // attribute filter vector. If attribute acl is ON the check whether it is present
+                    // in allowed attributes list for this role-id OR it is present in non-acl attributes
+                    // list. If found then use this attribute for filtering. If not found then this
+                    // attribute is unaccessible for current search and should not be used for filtering
+                    // Note: The unaccessible attributes are just ignored without considering the
+                    //  filtering operation (AND or OR). Another alternative option could be to return
+                    // no result for when one the filtering attribute is unaccessible and filtering
+                    // operation is (AND). This option is not chosen.
+                    if ( !paramContainer->attrAclOn ||
+                    	(allowedAttributesForRole &&
+                    	find(allowedAttributesForRole->begin(), allowedAttributesForRole->end(), id)
+                    		!= allowedAttributesForRole->end()) ||
+                    	find (schemaNonAclAttrsList.begin(), schemaNonAclAttrsList.end(), id)
+                    		!= schemaNonAclAttrsList.end())  {
+                    	attributeFilter.push_back(id);
+                    }
                 }
-                if (op == srch2is::BooleanOperatorAND && shouldApplyAnd) {
-                    filter |= 0x80000000;
+                if (!hasWildCard) {
+
+                	if (attributeFilter.size() == 0) {
+                		// if attributeFilter size is 0 , it indicates that all the attributes specified
+                		// in the attribute based search were NOT accessible by a given acl role-id. We
+                		// set the operation as NAND to indicate that the term should not match in any of
+                		// the attributes of a record. See ForwardIndex.cpp isValidTermHits().
+                		leafNode->termIntermediateStructure->fieldFilterAttrOperation = ATTRIBUTES_OP_NAND;
+                	} else if (op == srch2is::BooleanOperatorAND) {
+                		// if attributeFilter size is > 0. Then use user specified operands AND or OR
+                		leafNode->termIntermediateStructure->fieldFilterAttrOperation = ATTRIBUTES_OP_AND;
+                	} else {
+                		leafNode->termIntermediateStructure->fieldFilterAttrOperation = ATTRIBUTES_OP_OR;
+                	}
+                	leafNode->termIntermediateStructure->fieldFilterList = attributeFilter;
+                } else {
+                	// if wildcard is used then get filtering attributes from ACL map
+                	if (paramContainer->attrAclOn) {
+                		getFieldFiltersBasedOnAcl(leafNode->termIntermediateStructure->fieldFilterList,
+                				leafNode->termIntermediateStructure->fieldFilterAttrOperation,
+                				allowedAttributesForRole);
+                	}else {
+                		leafNode->termIntermediateStructure->fieldFilterList.clear();
+                		leafNode->termIntermediateStructure->fieldFilterAttrOperation = ATTRIBUTES_OP_OR;
+                	}
                 }
             }
-            leafNode->termIntermediateStructure->fieldFilterNumber = filter;
-
     	}
 
     }else{
+    	// filtering attributes are not specified for any term. Get them from ACL map
     	ParseTreeNode * leafNode;
     	ParseTreeLeafNodeIterator termIterator(paramContainer->parseTreeRoot);
     	while(termIterator.hasMore()){
     		leafNode = termIterator.getNext();
-    		leafNode->termIntermediateStructure->fieldFilterNumber = 0x7fffffff;
+    		if (paramContainer->attrAclOn) {
+    			getFieldFiltersBasedOnAcl(leafNode->termIntermediateStructure->fieldFilterList,
+    					leafNode->termIntermediateStructure->fieldFilterAttrOperation, allowedAttributesForRole);
+    		} else {
+    			leafNode->termIntermediateStructure->fieldFilterList.clear();
+    			leafNode->termIntermediateStructure->fieldFilterAttrOperation = ATTRIBUTES_OP_OR;
+    		}
     	}
     }
+
+}
+
+/*
+ *   This function decides the filter attributes for the current role-id and operation
+ *   to be performed among those attributes (AND, OR , NAND). This API is called when a user has
+ *   not specified any attributes in a query. First get three sets
+ *
+ *   set1 : set of non-acl attributes ( accessible by all)
+ *   set2 : set of acl attributes (access only to specific role-id based on acl definition)
+ *   set3 : set of attributes allowed for this role-id.
+ *
+ *   allowed attributes set (A) : set1 union set3
+ *   not-allowed attributes (NA) set: set2 - set3
+ *
+ *   if  len(A) > len(NA) then filter attributes are (A) with OR operation
+ *   (i.e. keyword should match in any one attribute)
+ *
+ *   otherwise filter attributes are (NA) with NAND operation.(i.e. keyword should NOT be present
+ *   in only these attribute)
+ *
+ *   The decision to use smaller length set is for optimization so that forward index has to scan
+ *   smaller filter list.
+ *
+ *   e.g
+ *   sample schema in config file.
+ *   <fields name = f1 .....acl=true >
+ *   <fields name = f2 .....acl=true >
+ *   <fields name = f3 .....acl=false >
+ *   <fields name = f4 .....acl=false >
+ *
+ *   set1 (non-acl attributes) = [f3 , f4]
+ *   set2 (acl attributes) = [f1 , f2]
+ *   set3 = [ f2, f3 ]  for role-id = 100  (fetched from attributes ACL map)
+ *
+ *   allowed attributes set (A) : set1 union set3 : [ f2 f3 f4 ]
+ *   not-allowed attributes (NA) set: set2 - set3 : [ f1 ]
+ *
+ *   and len(NA) = 1  < len(A) = 3
+ *
+ *   so the filtering attributes for forward index is (NA) i.e. [f1]
+ *   and the filtering attributes operation is NAND. i.e. do NOT match in [f1]
+ *
+ *   If the record's term hit is only on [f1] attribute then the record will not be returned.
+ *   See ForwardIndex.cpp : isValidRecordTermHit() for more detail.
+ */
+void QueryRewriter::getFieldFiltersBasedOnAcl(vector<unsigned>& parseNodeFieldFilter,
+		ATTRIBUTES_OP& parseNodeFieldFilterOperaton, vector<unsigned> *allowedAttributesForRole) {
+
+	const vector<unsigned>& schemaAclAttrsList = schema.getAclSearchableAttrIdsList();
+	const vector<unsigned>& schemaNonAclAttrsList = schema.getNonAclSearchableAttrIdsList();
+
+	vector<unsigned>  accessibleAttrsList;
+	vector<unsigned>  unAccessibleAttrsList;
+	if (allowedAttributesForRole != NULL && allowedAttributesForRole->size() > 0) {
+
+		accessibleAttrsList.reserve(schemaNonAclAttrsList.size() + allowedAttributesForRole->size());
+		set_union(schemaNonAclAttrsList.begin(), schemaNonAclAttrsList.end(),
+				allowedAttributesForRole->begin(), allowedAttributesForRole->end(),
+				back_inserter(accessibleAttrsList));
+
+		unAccessibleAttrsList.reserve(schemaAclAttrsList.size());
+		set_difference(schemaAclAttrsList.begin(), schemaAclAttrsList.end(),
+				allowedAttributesForRole->begin(), allowedAttributesForRole->end(),
+				back_inserter(unAccessibleAttrsList));
+	} else {
+		// when no role is specified or role is not found in acl map then
+		// attributes marked as non-acl (public) are accessible
+		// and attributes marked as acl (private) are not accessible.
+		accessibleAttrsList = schemaNonAclAttrsList;
+		unAccessibleAttrsList = schemaAclAttrsList;
+	}
+
+	if (accessibleAttrsList.size() == 0) {
+		// if all the fields are acl controlled. Then set parseNodeFieldFilter empty
+		// and set operation as NAND to indicate that the term should not be found in any of the
+		// attributes of the record.
+		parseNodeFieldFilter.clear();
+		parseNodeFieldFilterOperaton = ATTRIBUTES_OP_NAND;
+		return;
+	}
+	if (unAccessibleAttrsList.size() == 0) {
+		// if all the fields are NOT acl controlled. Then set parseNodeFieldFilter empty
+		// and set operation as OR to indicate that the term can be found in any of the
+		// attributes of the record.
+		parseNodeFieldFilter.clear();
+		parseNodeFieldFilterOperaton = ATTRIBUTES_OP_OR;
+		return;
+	}
+
+	// both accessible and unaccessible list cannot be 0 because there are always non-zero fields
+	// in schema.
+	ASSERT(accessibleAttrsList.size() != 0 && unAccessibleAttrsList.size() != 0);
+
+	if (accessibleAttrsList.size() > unAccessibleAttrsList.size()) {
+		parseNodeFieldFilter.assign(
+				unAccessibleAttrsList.begin(), unAccessibleAttrsList.end());
+		parseNodeFieldFilterOperaton = ATTRIBUTES_OP_NAND;
+	} else {
+		parseNodeFieldFilter.assign(
+				accessibleAttrsList.begin(), accessibleAttrsList.end());
+		parseNodeFieldFilterOperaton = ATTRIBUTES_OP_OR;
+	}
 
 }
 
@@ -462,9 +632,17 @@ void QueryRewriter::prepareLogicalPlan(LogicalPlan & plan){
     createPostProcessingPlan(plan);
 
 	/*
+	 * 0. Add Geo node to the parseTree if it has GeoSearchFlag
+	 */
+	if(paramContainer->hasParameterInQuery(GeoSearchFlag)){
+		addGeoToParseTree();
+	}
+
+	/*
 	 * 1. rewrite the parseTree
 	 */
 	rewriteParseTree();
+
 	/*
 	 * 2. Build the logicalPlan tree from the parse tree
 	 */
@@ -476,6 +654,42 @@ void QueryRewriter::prepareLogicalPlan(LogicalPlan & plan){
 void QueryRewriter::rewriteParseTree(){
 	// rule 1 : merge similar levels in the tree
 	paramContainer->parseTreeRoot = TreeOperations::mergeSameOperatorLevels(paramContainer->parseTreeRoot);
+}
+
+// This function add the a new node to the parse tree for geo search
+// so it add a new and node and make it the root and the previous root of the parse tree and the new geo node become its chilren
+//
+//                  |---- The previous root of parse tree
+//    NewAndNode ---|
+//                  |---- New Geo Node
+void QueryRewriter::addGeoToParseTree(){
+	ParseTreeNode* newGeoNode;
+	if(paramContainer->parseTreeRoot != NULL){
+		ParseTreeNode* newAndNode = new ParseTreeNode(LogicalPlanNodeTypeAnd, NULL);
+		newAndNode->children.push_back(paramContainer->parseTreeRoot);
+		paramContainer->parseTreeRoot->parent = newAndNode;
+		paramContainer->parseTreeRoot = newAndNode;
+		newGeoNode = new ParseTreeNode(LogicalPlanNodeTypeGeo, newAndNode);
+		newAndNode->children.push_back(newGeoNode);
+		//newGeoNode->geoIntermediateStructure
+	}else{ // if the root of parse tree is null, the new geo node become the new root
+		newGeoNode = new ParseTreeNode(LogicalPlanNodeTypeGeo, NULL);
+		paramContainer->parseTreeRoot = newGeoNode;
+	}
+	// now we should fill the value of new geo node's variables
+	if(paramContainer->geoParameterContainer->hasParameterInQuery(GeoTypeRectangular)){
+		newGeoNode->geoIntermediateStructure = new GeoIntermediateStructure(
+				paramContainer->geoParameterContainer->leftBottomLatitude,
+				paramContainer->geoParameterContainer->leftBottomLongitude,
+				paramContainer->geoParameterContainer->rightTopLatitude,
+				paramContainer->geoParameterContainer->rightTopLongitude);
+	}else if(paramContainer->geoParameterContainer->hasParameterInQuery(GeoTypeCircular)){
+		newGeoNode->geoIntermediateStructure = new GeoIntermediateStructure(
+				paramContainer->geoParameterContainer->centerLatitude,
+				paramContainer->geoParameterContainer->centerLongitude,
+				paramContainer->geoParameterContainer->radius);
+	}
+
 }
 
 void QueryRewriter::buildLogicalPlan(LogicalPlan & logicalPlan){
@@ -525,7 +739,8 @@ LogicalPlanNode * QueryRewriter::buildLogicalPlan(ParseTreeNode * root, LogicalP
 						result = logicalPlan.createPhraseLogicalPlanNode(phraseKeyWords,
 								iter->second.phraseKeywordPositionIndex,
 								root->termIntermediateStructure->phraseSlop,
-								root->termIntermediateStructure->fieldFilterNumber);
+								root->termIntermediateStructure->fieldFilterList,
+								root->termIntermediateStructure->fieldFilterAttrOperation);
 						result->children.push_back(mergeNode);
 					}else {
 						result = mergeNode;
@@ -538,7 +753,8 @@ LogicalPlanNode * QueryRewriter::buildLogicalPlan(ParseTreeNode * root, LogicalP
 											root->termIntermediateStructure->keywordBoostLevel ,
 											1, 				   // no fuzzy match
 											0,
-											root->termIntermediateStructure->fieldFilterNumber);
+											root->termIntermediateStructure->fieldFilterList,
+											root->termIntermediateStructure->fieldFilterAttrOperation);
 						/*
 						 *  Although phrase terms should not have fuzzy terms, it is created and
 						 *  assigned to the term node because it avoids issues with histogram manager that
@@ -551,7 +767,9 @@ LogicalPlanNode * QueryRewriter::buildLogicalPlan(ParseTreeNode * root, LogicalP
 									root->termIntermediateStructure->keywordBoostLevel ,
 									1,
 									0);
-							fuzzyTerm->addAttributeToFilterTermHits(root->termIntermediateStructure->fieldFilterNumber);
+							fuzzyTerm->addAttributesToFilter(
+									root->termIntermediateStructure->fieldFilterList,
+									root->termIntermediateStructure->fieldFilterAttrOperation);
 							termNode->setFuzzyTerm(fuzzyTerm);
 						}
 						mergeNode->children.push_back(termNode);
@@ -562,7 +780,8 @@ LogicalPlanNode * QueryRewriter::buildLogicalPlan(ParseTreeNode * root, LogicalP
                         root->termIntermediateStructure->keywordBoostLevel ,
                         indexDataConfig->getFuzzyMatchPenalty(),
                         0,
-                        root->termIntermediateStructure->fieldFilterNumber);
+                        root->termIntermediateStructure->fieldFilterList,
+                        root->termIntermediateStructure->fieldFilterAttrOperation);
                 if(logicalPlan.isFuzzy()){
                     Term * fuzzyTerm = new Term(root->termIntermediateStructure->rawQueryKeyword ,
                             root->termIntermediateStructure->keywordPrefixComplete,
@@ -571,9 +790,29 @@ LogicalPlanNode * QueryRewriter::buildLogicalPlan(ParseTreeNode * root, LogicalP
                             computeEditDistanceThreshold(getUtf8StringCharacterNumber(
                                                     root->termIntermediateStructure->rawQueryKeyword) ,
                                                     root->termIntermediateStructure->keywordSimilarityThreshold));
-                    fuzzyTerm->addAttributeToFilterTermHits(root->termIntermediateStructure->fieldFilterNumber);
+                    fuzzyTerm->addAttributesToFilter(
+                    		root->termIntermediateStructure->fieldFilterList,
+                    		root->termIntermediateStructure->fieldFilterAttrOperation);
                     result->setFuzzyTerm(fuzzyTerm);
                 }
+			}
+			break;
+		case LogicalPlanNodeTypeGeo:
+			if(root->geoIntermediateStructure->type == GeoTypeRectangular){
+				Rectangle* regionShape = new Rectangle();
+				regionShape->min.x = root->geoIntermediateStructure->lblat;
+				regionShape->min.y = root->geoIntermediateStructure->lblong;
+				regionShape->max.x = root->geoIntermediateStructure->rtlat;
+				regionShape->max.y = root->geoIntermediateStructure->rtlong;
+				result = logicalPlan.createGeoLogicalPlanNode(regionShape);
+			}else if(root->geoIntermediateStructure->type == GeoTypeCircular){
+				Point center;
+				center.x = root->geoIntermediateStructure->clat;
+				center.y = root->geoIntermediateStructure->clong;
+				Circle* regionShape = new Circle(center,root->geoIntermediateStructure->radius);
+				result = logicalPlan.createGeoLogicalPlanNode(regionShape);
+			}else{
+				ASSERT(false); // the type of the geoIntermediateStructure is not correct.
 			}
 			break;
 		default:
@@ -594,9 +833,8 @@ void QueryRewriter::createExactAndFuzzyQueries(LogicalPlan & plan) {
         plan.setQueryType(srch2is::SearchTypeTopKQuery);
     } else if (paramContainer->hasParameterInQuery(GetAllResultsSearchType)) { // get all results
         plan.setQueryType(srch2is::SearchTypeGetAllResultsQuery);
-    } else if (paramContainer->hasParameterInQuery(GeoSearchType)) { // GEO
-        plan.setQueryType(srch2is::SearchTypeMapQuery);
-    } // else : there is no else because validator makes sure type is set in parser
+    }
+	// else : there is no else because validator makes sure type is set in parser
 
     // 2. see if it is a fuzzy search or exact search, if there is no keyword (which means GEO search), then fuzzy is always false
 	ParseTreeLeafNodeIterator termIterator(paramContainer->parseTreeRoot);
@@ -629,15 +867,13 @@ void QueryRewriter::createExactAndFuzzyQueries(LogicalPlan & plan) {
     }
 
     // 5. based on the search type, get needed information and create the query objects
+    // TODO: check if we can merge this two function and remove the switch-case
     switch (plan.getQueryType()) {
     case srch2is::SearchTypeTopKQuery:
         createExactAndFuzzyQueriesForTopK(plan);
         break;
     case srch2is::SearchTypeGetAllResultsQuery:
         createExactAndFuzzyQueriesForGetAllTResults(plan);
-        break;
-    case srch2is::SearchTypeMapQuery:
-        createExactAndFuzzyQueriesForGeo(plan);
         break;
     default:
         ASSERT(false);
@@ -649,6 +885,29 @@ void QueryRewriter::createExactAndFuzzyQueries(LogicalPlan & plan) {
 
 void QueryRewriter::fillExactAndFuzzyQueriesWithCommonInformation(
         LogicalPlan & plan) {
+
+	// 0. Extract the common information from the container
+	//  Geo query information
+	if(paramContainer->hasParameterInQuery(GeoSearchFlag)){
+		GeoParameterContainer * gpc = paramContainer->geoParameterContainer;
+		if (gpc->hasParameterInQuery(GeoTypeRectangular)) {
+			plan.getExactQuery()->setRange(gpc->leftBottomLatitude,
+					gpc->leftBottomLongitude, gpc->rightTopLatitude,
+					gpc->rightTopLongitude);
+			if (plan.isFuzzy()) {
+				plan.getFuzzyQuery()->setRange(gpc->leftBottomLatitude,
+						gpc->leftBottomLongitude, gpc->rightTopLatitude,
+						gpc->rightTopLongitude);
+			}
+		} else if (gpc->hasParameterInQuery(GeoTypeCircular)) {
+			plan.getExactQuery()->setRange(gpc->centerLatitude,
+					gpc->centerLongitude, gpc->radius);
+			if (plan.isFuzzy()) {
+				plan.getFuzzyQuery()->setRange(gpc->centerLatitude,
+						gpc->centerLongitude, gpc->radius);
+			}
+		}
+	}
 
     // 1. first check to see if there is any keyword in the query
     if (! paramContainer->hasParameterInQuery(RawQueryKeywords)) {
@@ -716,13 +975,7 @@ void QueryRewriter::fillExactAndFuzzyQueriesWithCommonInformation(
 		}
 	}
 
-	termIterator.init(paramContainer->parseTreeRoot);
-	while(termIterator.hasMore()){
-		leafNode = termIterator.getNext();
-		if (leafNode->termIntermediateStructure->fieldFilterNumber == 0) { // get it from configuration file
-			leafNode->termIntermediateStructure->fieldFilterNumber = 0x7fffffff;// 0x7fffffff means all attributes with OR operator
-		}
-	}
+
 
 	termIterator.init(paramContainer->parseTreeRoot);
 	while(termIterator.hasMore()){
@@ -743,7 +996,9 @@ void QueryRewriter::fillExactAndFuzzyQueriesWithCommonInformation(
 			exactTerm = new srch2is::Term(leafNode->termIntermediateStructure->rawQueryKeyword,
 					leafNode->termIntermediateStructure->keywordPrefixComplete, leafNode->termIntermediateStructure->keywordBoostLevel,
 					indexDataConfig->getFuzzyMatchPenalty(), 0);
-			exactTerm->addAttributeToFilterTermHits(leafNode->termIntermediateStructure->fieldFilterNumber);
+			exactTerm->addAttributesToFilter(
+					leafNode->termIntermediateStructure->fieldFilterList,
+					leafNode->termIntermediateStructure->fieldFilterAttrOperation);
 
 			plan.getExactQuery()->add(exactTerm);
 
@@ -756,7 +1011,9 @@ void QueryRewriter::fillExactAndFuzzyQueriesWithCommonInformation(
 				exactTerm = new srch2is::Term(phraseKeyWords[pIndx],
 						srch2is::TERM_TYPE_COMPLETE, leafNode->termIntermediateStructure->keywordBoostLevel,
 						1 , 0);
-				exactTerm->addAttributeToFilterTermHits(leafNode->termIntermediateStructure->fieldFilterNumber);
+				exactTerm->addAttributesToFilter(
+						leafNode->termIntermediateStructure->fieldFilterList,
+						leafNode->termIntermediateStructure->fieldFilterAttrOperation);
 				plan.getExactQuery()->add(exactTerm);
 			}
 		}
@@ -776,7 +1033,9 @@ void QueryRewriter::fillExactAndFuzzyQueriesWithCommonInformation(
                     computeEditDistanceThreshold(getUtf8StringCharacterNumber(leafNode->termIntermediateStructure->rawQueryKeyword) , leafNode->termIntermediateStructure->keywordSimilarityThreshold));
                     // this is the place that we do normalization, in case we want to make this
                     // configurable we should change this place.
-            fuzzyTerm->addAttributeToFilterTermHits(leafNode->termIntermediateStructure->fieldFilterNumber);
+            fuzzyTerm->addAttributesToFilter(
+            		leafNode->termIntermediateStructure->fieldFilterList,
+            		leafNode->termIntermediateStructure->fieldFilterAttrOperation);
 
             plan.getFuzzyQuery()->add(fuzzyTerm);
     	}
@@ -788,12 +1047,10 @@ void QueryRewriter::createExactAndFuzzyQueriesForTopK(LogicalPlan & plan){
     // allocate the objects
     plan.setExactQuery(new Query(srch2is::SearchTypeTopKQuery));
     if (plan.isFuzzy()) {
-        plan.setFuzzyQuery(new Query(srch2is::SearchTypeTopKQuery));
+    	plan.setFuzzyQuery(new Query(srch2is::SearchTypeTopKQuery));
     }
-
 }
-void QueryRewriter::createExactAndFuzzyQueriesForGetAllTResults(
-        LogicalPlan & plan) {
+void QueryRewriter::createExactAndFuzzyQueriesForGetAllTResults(LogicalPlan & plan) {
     plan.setExactQuery(new Query(srch2is::SearchTypeGetAllResultsQuery));
     srch2is::SortOrder order =
             (indexDataConfig->getOrdering() == 0) ?
@@ -810,33 +1067,6 @@ void QueryRewriter::createExactAndFuzzyQueriesForGetAllTResults(
         plan.getFuzzyQuery()->setSortableAttribute(
         		indexDataConfig->getAttributeToSort(), order);
     }
-}
-
-void QueryRewriter::createExactAndFuzzyQueriesForGeo(LogicalPlan & plan) {
-    plan.setExactQuery(new Query(srch2is::SearchTypeMapQuery));
-    if (plan.isFuzzy()) {
-        plan.setFuzzyQuery(new Query(srch2is::SearchTypeMapQuery));
-    }
-    GeoParameterContainer * gpc = paramContainer->geoParameterContainer;
-
-    if (gpc->hasParameterInQuery(GeoTypeRectangular)) {
-        plan.getExactQuery()->setRange(gpc->leftBottomLatitude,
-                gpc->leftBottomLongitude, gpc->rightTopLatitude,
-                gpc->rightTopLongitude);
-        if (plan.isFuzzy()) {
-            plan.getFuzzyQuery()->setRange(gpc->leftBottomLatitude,
-                    gpc->leftBottomLongitude, gpc->rightTopLatitude,
-                    gpc->rightTopLongitude);
-        }
-    } else if (gpc->hasParameterInQuery(GeoTypeCircular)) {
-        plan.getExactQuery()->setRange(gpc->centerLatitude,
-                gpc->centerLongitude, gpc->radius);
-        if (plan.isFuzzy()) {
-            plan.getFuzzyQuery()->setRange(gpc->centerLatitude,
-                    gpc->centerLongitude, gpc->radius);
-        }
-    }
-
 }
 
 // creates a post processing plan based on information from Query
@@ -866,6 +1096,12 @@ void QueryRewriter::createPostProcessingPlan(LogicalPlan & plan) {
 				paramContainer->facetQueryContainer;
 
 		plan.getPostProcessingInfo()->setFacetInfo(container);
+	}
+
+	//4. if there is a role id set the role id for access control
+	if(paramContainer->hasParameterInQuery(AccessControl)){ // there is access control
+		if(paramContainer->hasRoleCore)
+			plan.getPostProcessingInfo()->setRoleId(paramContainer->roleId);
 	}
 
 }

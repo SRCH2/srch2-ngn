@@ -4,15 +4,24 @@
 echo "BUILDING JSONCPP..."
 
 cd ./json
-tar -xvf jsoncpp-src-0.5.0.tar.gz
-cp scons-local-2.1.0.tar.gz jsoncpp-src-0.5.0
-cd jsoncpp-src-0.5.0
+tar -xvf jsoncpp-src-0.6.0.tar.gz
+rm -rf jsoncpp-src
+mv jsoncpp-src-0.6.0 jsoncpp-src
+cp scons-local-2.1.0.tar.gz jsoncpp-src
+cd jsoncpp-src
 tar -xvf scons-local-2.1.0.tar.gz
 python scons.py platform=linux-gcc
 
+if [ ! -d "build" ]; then
+    mkdir build
+fi
+cd build
+cmake ..
+make
+
 echo "BUILDING LIBEVENT..."
 
-cd ../../event
+cd ../../../event
 tar -xvf libevent-2.0.21-stable.tar.gz
 cd libevent-2.0.21-stable
 
@@ -40,9 +49,25 @@ echo "INSTALLING google perftools in $CURRENTDIR/../"
 LDFLAGS=-L$CURRENTDIR/../../libunwind/lib/ ./configure --prefix=$CURRENTDIR/../
 make && make install
 
-cd ../..
-tar -xf mongodb-linux-x86_64-v2.4-latest.tgz
-cd mongo-cxx-driver-v2.4
+cd ../../mongo-cxx-driver
+tar -xvf mongo-cxx-driver-legacy-0.0-26compat-2.6.2.tar.gz
+rm -rf mongo-cxx-driver
+mv mongo-cxx-driver-legacy-0.0-26compat-2.6.2 mongo-cxx-driver
+cd mongo-cxx-driver
 CURRENTDIR=$(pwd)
-echo "Building mongo driver in $CURRENTDIR"
-python ../json/jsoncpp-src-0.5.0/scons.py 
+echo "Building mongodb driver in $CURRENTDIR"
+
+if [ "$(uname)" == "Darwin" ]; then
+    echo "Building mongodb driver under MAC_OS"
+    python ../../json/jsoncpp-src/scons.py --osx-version-min=10.7 --use-system-boost --sharedclient --full install-mongoclient 
+else
+    echo "Building mongodb driver under LINUX"
+    python ../../json/jsoncpp-src/scons.py --prefix=srch2 --use-system-boost --sharedclient --full install-mongoclient
+fi
+
+
+cd ../../pymongo
+tar -xvf pymongo.tar.gz
+cd pymongo
+CURRENTDIR=$(pwd)
+echo "Building python mongodb driver in $CURRENTDIR"

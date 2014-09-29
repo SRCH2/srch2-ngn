@@ -14,8 +14,6 @@
 	  <srch2Home>/home/joe/srch2</srch2Home>
         -->
  
-    <licenseFile>./srch2_license_key.txt</licenseFile>
- 
     <listeningHostname>0.0.0.0</listeningHostname>
     <listeningPort>8087</listeningPort>
  
@@ -101,16 +99,7 @@
           <mergeEveryMWrites>10</mergeEveryMWrites>
 
         </mergePolicy>
-         
-         
-        <updateLog>
-
-            <logLevel>3</logLevel>
-                         
-            <accessLogFile>./logs/srch2-log.txt</accessLogFile>
-
-        </updateLog>
-     
+              
     </updatehandler>
 
     <schema>
@@ -137,7 +126,7 @@
         </facetfields>
         
         <types>
-          <fieldType name="text_en">
+          <fieldType name="text_standard">
               <analyzer>
 
                   <filter name="PorterStemFilter" dictionary="" />
@@ -148,4 +137,13 @@
           </fieldType>
        </types>
     </schema>
+    
+           <updateLog>
+
+            <logLevel>3</logLevel>
+                         
+            <accessLogFile>./logs/srch2-log.txt</accessLogFile>
+
+        </updateLog>
+    
 </config>

@@ -49,6 +49,7 @@ struct Record::Impl
     std::string inMemoryRecordString;
     char * inMemoryStoredRecord;
     unsigned inMemoryStoredRecordLen;
+    std::vector<string> roleIds;
 
     //Point : The location lat,lang value of the geo object
     Point point;
@@ -164,6 +165,20 @@ bool Record::setRefiningAttributeValue(const unsigned attributeId,
     return true;
 }
 
+void Record::setRoleIds(const std::vector<std::string> &roleId){
+	impl->roleIds = roleId;
+}
+
+std::vector<std::string>* Record::getRoleIds() const{
+	return &(this->impl->roleIds);
+}
+
+bool Record::hasRoleIds() const{
+	if(this->impl->roleIds.size() == 0)
+		return false;
+	return true;
+}
+
 
 void Record::getSearchableAttributeValue(const unsigned attributeId, string & attributeValue) const
 {
@@ -178,7 +193,7 @@ void Record::getSearchableAttributeValue(const unsigned attributeId, string & at
     for(vector<string>::iterator attributeValueIter = impl->searchableAttributeValues[attributeId].begin() ;
     		attributeValueIter != impl->searchableAttributeValues[attributeId].end() ; ++attributeValueIter){
     	if(attributeValueIter == impl->searchableAttributeValues[attributeId].begin()){
-    		attributeValue += MULTI_VALUED_ATTRIBUTES_VALUE_DELIMITER;
+    		attributeValue += MULTI_VAL_ATTR_DELIMITER;
     	}
     	attributeValue += *attributeValueIter;
     }
@@ -193,7 +208,15 @@ void Record::getSearchableAttributeValues(const unsigned attributeId , std::vect
     return;
 }
 
+void Record::getSearchableAttributeValues(const string& attributeName ,
+		std::vector<string> & attributeStringValues) const {
 
+	int attributeId = impl->schema->getSearchableAttributeId(attributeName);
+	if (attributeId < 0) {
+		return;
+	}
+	getSearchableAttributeValues(attributeId, attributeStringValues);
+}
 std::string *Record::getRefiningAttributeValue(const unsigned attributeId) const
 {
     if (attributeId >= impl->schema->getNumberOfRefiningAttributes())
@@ -201,6 +224,17 @@ std::string *Record::getRefiningAttributeValue(const unsigned attributeId) const
         return NULL;
     }
     return &impl->refiningAttributeValues[attributeId];
+}
+
+void Record::getRefiningAttributeValue(const string& attributeName, string& attributeValue) const
+{
+	int attributeId = impl->schema->getRefiningAttributeId(attributeName);
+    if (attributeId < 0 || attributeId >= impl->schema->getNumberOfRefiningAttributes())
+    {
+        return;
+    }
+    attributeValue = impl->refiningAttributeValues[attributeId];
+    return;
 }
 
 // add the primary key value
@@ -293,6 +327,7 @@ void Record::clear()
     vector<string> emptyVector;
     impl->searchableAttributeValues.assign(impl->schema->getNumberOfSearchableAttributes(),emptyVector);
     impl->refiningAttributeValues.assign(impl->schema->getNumberOfRefiningAttributes(), "");
+    impl->roleIds.clear();
     impl->boost = 1;
     impl->primaryKey = "";
     impl->inMemoryRecordString = "";

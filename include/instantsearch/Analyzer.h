@@ -34,40 +34,38 @@ namespace srch2 {
 namespace instantsearch {
 
 class AnalyzerInternal;
-
-struct PositionalTerm {
+enum AnalyzedTokenType {
+	ANALYZED_ORIGINAL_TOKEN,
+	ANALYZED_SYNONYM_TOKEN
+};
+struct AnalyzedTermInfo {
 	string term;
 	unsigned position;
 	unsigned charOffset;
+	unsigned charLength;
+	AnalyzedTokenType analyzedTokenType;
 };
 
 struct TokenAttributeHits {
-    /** Each entry has position information as follows:
-     *  Attribute -> First 8bits -> Attribute in which the token hit occurred
-     *  Hits -> Last 24 bits -> Position within the attribute where the token hit occurred.
-     *  The positions start from 1, this is because the positions in PositionIndex are ZERO terminated.
-     *
-     *  The maximum number of allowed Attributes is checked by the following assert
-     *  ASSERT( attribute <  0xff);
-     *
-     *  i.e. 255
-     *
-     *  The maximum number of the positionHit is checked by the following assert
-     *  ASSERT( position <  0xffffff);
-     *
-     * i.e. 4 294 967 295
-     *
-     */
-    vector<unsigned> attributeList;
-    vector<unsigned> charOffsetOfTermInAttribute;
+	// list of attributes this token belongs to
+    vector<unsigned> attributeIdList;
+    // list of word positions of a term in all attributes
+    vector<unsigned> positionsOfTermInAttribute;
+    // list of character offsets of a term in all attributes
+    vector<unsigned> charOffsetsOfTermInAttribute;
+    // list of original term's length of a synonym term in all attributes
+    vector<unsigned> charLensOfTermInAttribute;
+    // list of flag indicating whether a current position/offset of a term is synonym or not.
+    vector<AnalyzedTokenType> typesOfTermInAttribute;
 };
 
 
 class Record;
 class StemmerContainer;
 class StopWordContainer;
-class  ProtectedWordsContainer;
-class  SynonymContainer;
+class ProtectedWordsContainer;
+class SynonymContainer;
+class ChineseDictionaryContainer;
 /**
  * An Analyzer is used at query time to tokenize a queryString into
  * a vector of query keywords and also prevents very common words from
@@ -80,12 +78,12 @@ public:
              const StopWordContainer *stopWords,
              const ProtectedWordsContainer *protectedWords,
              const SynonymContainer *synonyms,
-             const std::string &delimiters,
+             const std::string &allowedSpecialCharacters,
              const AnalyzerType &analyzerType = STANDARD_ANALYZER,
-             const std::string &chineseDictFilePath = "");
+             const ChineseDictionaryContainer* chineseDict = NULL);
 
 
-	void setRecordAllowedSpecialCharacters(const std::string &delimiters);
+	void setRecordAllowedSpecialCharacters(const std::string &allowedSpecialCharacters);
 
 	const std::string& getRecordAllowedSpecialCharacters() const ;
 
@@ -102,7 +100,7 @@ public:
 	void clearFilterStates();
 
 	void tokenizeQuery(const std::string &queryString,
-			std::vector<PositionalTerm> &queryKeywords) const;
+			std::vector<AnalyzedTermInfo> &queryKeywords, bool isPrefix = false) const;
 
 	void tokenizeRecord(const Record *record,
 	        std::map<string, TokenAttributeHits> &tokenAttributeHitsMap) const;
@@ -113,21 +111,13 @@ public:
 
     void save(boost::archive::binary_oarchive &oa);
 
-	// TODO: Refactor the function and its arguments. Possibly move to wrapper
-	void tokenizeQueryWithFilter(const std::string &queryString,
-			std::vector<PositionalTerm> &queryKeywords,
-			const char &splitterCharacter,
-			const char &filterSplitterCharacter,
-			const char &fieldsAndCharacter,
-			const char &fieldsOrCharacter,
-			const std::map<std::string, unsigned> &searchableAttributesNameToId,
-			std::vector<unsigned> &filter) const ;
-
 	void fillInCharacters(const char * data);
 	bool processToken();
 	std::vector<CharType> & getProcessedToken();
 	unsigned getProcessedTokenCharOffset();
 	unsigned getProcessedTokenPosition();
+	unsigned getProcessedTokenLen();
+	AnalyzedTokenType getProcessedTokenType();
 	/**
 	 * Destructor to free persistent resources used by the Analyzer.
 	 */

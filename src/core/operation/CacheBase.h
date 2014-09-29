@@ -20,7 +20,6 @@
 #define __CACHEBASE_H__
 
 #include <instantsearch/GlobalCache.h>
-#include "util/ReadWriteMutex.h"
 #include <instantsearch/Term.h>
 #include "util/BusyBit.h"
 #include "operation/ActiveNode.h"
@@ -115,6 +114,7 @@ public:
 
 	bool put(string & key, boost::shared_ptr<T> & objectPointer){
 		boost::unique_lock< boost::shared_mutex > lock(_access);
+
 //		ASSERT(checkCacheConsistency());
 		CacheEntry<T> * newEntry = new CacheEntry<T>(key , objectPointer);
 		unsigned numberOfBytesNeededForNewEntry = getNumberOfBytesUsedByEntry(newEntry);
@@ -172,6 +172,7 @@ public:
 		return true;
 	}
 	bool get(string & key, boost::shared_ptr<T> & objectPointer) {
+
 		boost::unique_lock< boost::shared_mutex > lock(_access);
 //		ASSERT(checkCacheConsistency());
 		//1. compute the hashed key

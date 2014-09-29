@@ -25,6 +25,8 @@
 #include "index/InvertedIndex.h"
 #include "operation/HistogramManager.h"
 #include "PhysicalPlan.h"
+#include "operation/physical_plan/GeoNearestNeighborOperator.h"
+#include "operation/physical_plan/GeoSimpleScanOperator.h"
 
 using namespace std;
 
@@ -208,6 +210,38 @@ public:
 	// when the cost of parent is being calculated.
 	PhysicalPlanCost getCostOfGetNext(const PhysicalPlanExecutionParameters & params) ;
 	// the cost of close of a child is only considered once since each node's close function is only called once.
+	PhysicalPlanCost getCostOfClose(const PhysicalPlanExecutionParameters & params) ;
+	PhysicalPlanCost getCostOfVerifyByRandomAccess(const PhysicalPlanExecutionParameters & params);
+	void getOutputProperties(IteratorProperties & prop);
+	void getRequiredInputProperties(IteratorProperties & prop);
+	PhysicalPlanNodeType getType() ;
+	bool validateChildren();
+};
+
+class RandomAccessVerificationGeoOperator : public PhysicalPlanNode {
+	friend class PhysicalOperatorFactory;
+public:
+	bool open(QueryEvaluatorInternal * queryEvaluator, PhysicalPlanExecutionParameters & params);
+	PhysicalPlanRecordItem * getNext(const PhysicalPlanExecutionParameters & params) ;
+	bool close(PhysicalPlanExecutionParameters & params);
+	string toString();
+	bool verifyByRandomAccess(PhysicalPlanRandomAccessVerificationParameters & parameters) ;
+	~RandomAccessVerificationGeoOperator();
+private:
+	RandomAccessVerificationGeoOperator();
+
+	QueryEvaluatorInternal* queryEvaluator;
+	Shape* queryShape;         // keep the shape of the query region
+	shared_ptr<vectorview<ForwardListPtr> > forwardListDirectoryReadView;
+	unsigned latOffset;       // offset of the latitude attribute in the refining attribute memory
+	unsigned longOffset;      // offset of the longitude attribute in the refining attribute memory
+};
+
+class RandomAccessVerificationGeoOptimizationOperator : public PhysicalPlanOptimizationNode {
+	friend class PhysicalOperatorFactory;
+public:
+	PhysicalPlanCost getCostOfOpen(const PhysicalPlanExecutionParameters & params) ;
+	PhysicalPlanCost getCostOfGetNext(const PhysicalPlanExecutionParameters & params) ;
 	PhysicalPlanCost getCostOfClose(const PhysicalPlanExecutionParameters & params) ;
 	PhysicalPlanCost getCostOfVerifyByRandomAccess(const PhysicalPlanExecutionParameters & params);
 	void getOutputProperties(IteratorProperties & prop);
@@ -410,7 +444,7 @@ public:
 						std::vector<float> & runTimeTermRecordScores,
 						std::vector<float> & staticTermRecordScores,
 						std::vector<TrieNodePointer> & termRecordMatchingKeywords,
-						std::vector<unsigned> & attributeBitmaps,
+						std::vector<vector<unsigned> > & attributeIdsList,
 						std::vector<unsigned> & prefixEditDistances,
 						std::vector<unsigned> & positionIndexOffsets,
 						std::vector<TermType>& termTypes,
@@ -566,6 +600,8 @@ public:
 	RandomAccessVerificationOrOptimizationOperator * createRandomAccessVerificationOrOptimizationOperator();
 	RandomAccessVerificationNotOperator * createRandomAccessVerificationNotOperator();
 	RandomAccessVerificationNotOptimizationOperator * createRandomAccessVerificationNotOptimizationOperator();
+	RandomAccessVerificationGeoOperator * createRandomAccessVerificationGeoOperator();
+	RandomAccessVerificationGeoOptimizationOperator * createRandomAccessVerificationGeoOptimizationOperator();
 	SortByIdOperator * createSortByIdOperator();
 	SortByIdOptimizationOperator * createSortByIdOptimizationOperator();
 	SortByScoreOperator* createSortByScoreOperator();
@@ -584,10 +620,15 @@ public:
 	UnionLowestLevelSimpleScanOptimizationOperator * createUnionLowestLevelSimpleScanOptimizationOperator();
 	UnionLowestLevelSuggestionOperator * createUnionLowestLevelSuggestionOperator();
 	UnionLowestLevelSuggestionOptimizationOperator * createUnionLowestLevelSuggestionOptimizationOperator();
-	FilterQueryOperator * createFilterQueryOperator(RefiningAttributeExpressionEvaluator * filterQueryEvaluator);
+	FilterQueryOperator * createFilterQueryOperator(RefiningAttributeExpressionEvaluator * filterQueryEvaluator, string & roleId);
 	FilterQueryOptimizationOperator * createFilterQueryOptimizationOperator();
 	PhraseSearchOperator * createPhraseSearchOperator(PhraseInfo * phraseSearchInfo);
 	PhraseSearchOptimizationOperator * createPhraseSearchOptimzationOperator();
+	GeoNearestNeighborOperator * createGeoNearestNeighborOperator();
+	GeoNearestNeighborOptimizationOperator * createGeoNearestNeighborOptimizationOperator();
+	GeoSimpleScanOperator * createGeoSimpleScanOperator();
+	GeoSimpleScanOptimizationOperator * createGeoSimpleScanOptimizationOperator();
+
 
 private:
 	vector<PhysicalPlanNode *> executionNodes;

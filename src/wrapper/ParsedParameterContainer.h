@@ -30,6 +30,7 @@
 #include "SortFilterEvaluator.h"
 #include "instantsearch/LogicalPlan.h"
 #include "instantsearch/ResultsPostProcessor.h"
+#include "ParsedParameterContainer.h"
 
 
 namespace srch2 {
@@ -44,11 +45,11 @@ namespace httpwrapper {
 class TermIntermediateStructure{
 public:
 	TermIntermediateStructure(){
-		fieldFilterNumber = 0;
 		keywordBoostLevel = 1;
 		keywordSimilarityThreshold = 1;
 		keywordPrefixComplete = TERM_TYPE_NOT_SPECIFIED;
 		isPhraseKeywordFlag = false;
+		fieldFilterAttrOperation = ATTRIBUTES_OP_OR;
 	}
 	// termQueryString contains the keyword and all the modifiers. It's the original
 	// string coming from the query. For example, if the query is "foo*~0.5 AND author:bar",
@@ -68,11 +69,43 @@ public:
 	bool isPhraseKeywordFlag ;
 	short phraseSlop;
 
-	unsigned fieldFilterNumber;
-
+	vector<unsigned> fieldFilterList;
+	ATTRIBUTES_OP fieldFilterAttrOperation;
 	void print(){
 		Logger::console("Term : (%s %f %d %d) ",rawQueryKeyword.c_str(),keywordSimilarityThreshold,keywordBoostLevel,keywordPrefixComplete);
 	}
+};
+
+/*
+ * This class contains the information required for a geo search coming from the
+ * query. This information (such as rblat and lblong and ...) are
+ * specified in the query, then saved in this class.
+ */
+class GeoIntermediateStructure{
+public:
+	GeoIntermediateStructure(float lblat, float lblong, float rtlat, float rtlong){
+		this->type = GeoTypeRectangular;
+		this->lblat = lblat;
+		this->lblong = lblong;
+		this->rtlat = rtlat;
+		this->rtlong = rtlong;
+	}
+
+	GeoIntermediateStructure(float clat, float clong, float radius){
+		this->type = GeoTypeCircular;
+		this->clat = clat;
+		this->clong = clong;
+		this->radius = radius;
+	}
+
+	ParameterName type; // specified the type of the region of the query. It could be GeoTypeRectangular or GeoTypeCircular
+	float lblat;        // latitude of left bottom point of the rectangle for rectangular query region
+	float lblong;       // longitude of left bottom point of the rectangle for rectangular query region
+	float rtlat;        // latitude of right top point of the rectangle for rectangular query region
+	float rtlong;       // longitude of right top point of the rectangle for rectangular query region
+	float clat;         // latitude of center of the circle for circular query region
+	float clong;        // longitude of center of the circle for circular query region
+	float radius;       // radius of the circle for circular query region
 };
 
 class ParseTreeNode{
@@ -81,12 +114,14 @@ public:
 	ParseTreeNode * parent;
 	vector<ParseTreeNode *> children;
 	TermIntermediateStructure * termIntermediateStructure;
+	GeoIntermediateStructure * geoIntermediateStructure;
 
 //	static int objectCount;
 	ParseTreeNode(	LogicalPlanNodeType type,	ParseTreeNode * parent){
 	 this->type = type;
 	 this->parent = parent;
 	 this->termIntermediateStructure = NULL;
+	 this->geoIntermediateStructure  = NULL;
 //	 objectCount++;
 	}
     ~ParseTreeNode(){
@@ -96,6 +131,9 @@ public:
 
 		if(termIntermediateStructure != NULL){
 			delete termIntermediateStructure;
+		}
+		if(geoIntermediateStructure  != NULL){
+			delete geoIntermediateStructure;
 		}
 //		objectCount--;
 	}
@@ -124,6 +162,9 @@ public:
 				break;
 			case LogicalPlanNodeTypePhrase:
 				cout << indentation(indent) << "-- PHRASE" << endl;
+				break;
+			case LogicalPlanNodeTypeGeo:
+				cout << indentation(indent) << "-- Geo"  << endl;
 				break;
 		}
 		for(vector<ParseTreeNode *>::iterator child = children.begin() ; child != children.end() ; ++child){
@@ -253,6 +294,10 @@ public:
 
 class GeoParameterContainer {
 public:
+
+	~GeoParameterContainer(){
+		parametersInQuery.clear();
+	}
 	// while we are parsing we populate this vector by the names of those members
 	// which are set. It's a summary of the query parameters.
 	std::vector<ParameterName> parametersInQuery;
@@ -283,6 +328,7 @@ public:
         filterQueryContainer = NULL;
     	facetQueryContainer = NULL;
     	sortQueryContainer = NULL;
+    	geoParameterContainer = NULL;
         onlyFacets = false;
         isFuzzy=true;
         prefixMatchPenalty=0;
@@ -301,6 +347,8 @@ public:
         parseTreeRoot = NULL;
         qfContainer= NULL;
         isHighlightOn=true;
+        hasRoleCore = false;
+        attrAclOn = true;
     }
 
     ~ParsedParameterContainer() {
@@ -311,6 +359,9 @@ public:
             delete sortQueryContainer;
         if(parseTreeRoot != NULL){
         	delete parseTreeRoot;
+        }
+        if(geoParameterContainer != NULL){
+        	delete geoParameterContainer;
         }
     }
     // while we are parsing we populate this vector by the names of those members
@@ -324,6 +375,12 @@ public:
     float lengthBoost; // store the value of lengthboost query parameter
     float prefixMatchPenalty; // stores the value of 'pmp' query parameter.
     bool isHighlightOn;
+    std::string roleId;  // if acl-id is given in the query, we will return results that has this id in their access list.
+    bool hasRoleCore;
+    // attrAclOn flag is populated from the search query. If it "false", then it means that we ignore
+    // attribute ACL during the search process, but still do attribute ACL when generating the JSON results.
+    // If it is "true", then attribute ACL is ON for searching as well as generating the results.
+    bool attrAclOn;
 
     // This object contains the boolean structure of terms. For example for query
     // q= (A AND B)OR(C AND D)
@@ -423,6 +480,7 @@ public:
     // "into the wild" becomes "into wild" after applying stop word filter.
     // the map stores key = "into wild" and value = "1, 3".
     std::map<string, PhraseInfo> PhraseKeyWordsInfoMap;
+
 };
 
 }

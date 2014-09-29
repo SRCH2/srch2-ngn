@@ -55,7 +55,7 @@ results =  { 1 :
 
 9:
 [
-[u"<b>delicious</b> <b>meals</b> but the shrimp burro stole the show.  So much flavor.  I snagged some bites from my hubbys mole and mahi mahi ...was too hot, in fact it all was, but I'm a big wimp when it comes to hot peppers. The horchata is handmade and <b>delicious</b>...."]
+[u"...  Here's what I've had so far: La Condesa Shrimp Burro and Baja Sur Dogfish Shark Taco.  They are both were very <b>delicious</b> <b>meals</b> but the shrimp burro stole the show.  So much flavor.  I snagged some bites from my hubbys mole and mahi mahi ..."]
 ],
 
 10:

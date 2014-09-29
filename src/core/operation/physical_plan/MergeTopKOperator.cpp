@@ -66,7 +66,7 @@ bool MergeTopKOperator::open(QueryEvaluatorInternal * queryEvaluator, PhysicalPl
 				std::vector<float> runTimeTermRecordScores;
 				std::vector<float>  staticTermRecordScores;
 				std::vector<TrieNodePointer> termRecordMatchingKeywords;
-				std::vector<unsigned> attributeBitmaps;
+				std::vector<vector<unsigned> > attributeIdsList;
 				std::vector<unsigned> prefixEditDistances;
 				std::vector<unsigned> positionIndexOffsets;
 				std::vector<TermType> termTypes;
@@ -74,7 +74,7 @@ bool MergeTopKOperator::open(QueryEvaluatorInternal * queryEvaluator, PhysicalPl
 				runTimeTermRecordScores.push_back(mergeTopKCacheEntry->candidatesList.at(i)->getRecordRuntimeScore());
 				staticTermRecordScores.push_back(mergeTopKCacheEntry->candidatesList.at(i)->getRecordStaticScore());
 				mergeTopKCacheEntry->candidatesList.at(i)->getRecordMatchingPrefixes(termRecordMatchingKeywords);
-				mergeTopKCacheEntry->candidatesList.at(i)->getRecordMatchAttributeBitmaps(attributeBitmaps);
+				mergeTopKCacheEntry->candidatesList.at(i)->getRecordMatchAttributeBitmaps(attributeIdsList);
 				mergeTopKCacheEntry->candidatesList.at(i)->getRecordMatchEditDistances(prefixEditDistances);
 				mergeTopKCacheEntry->candidatesList.at(i)->getPositionIndexOffsets(positionIndexOffsets);
 				mergeTopKCacheEntry->candidatesList.at(i)->getTermTypes(termTypes);
@@ -97,8 +97,8 @@ bool MergeTopKOperator::open(QueryEvaluatorInternal * queryEvaluator, PhysicalPl
 					staticTermRecordScores.push_back(parameters.staticTermRecordScore);
 					termRecordMatchingKeywords.insert(
 							termRecordMatchingKeywords.end(),parameters.termRecordMatchingPrefixes.begin(),parameters.termRecordMatchingPrefixes.end());
-					attributeBitmaps.insert(
-							attributeBitmaps.end(),parameters.attributeBitmaps.begin(),parameters.attributeBitmaps.end());
+					attributeIdsList.insert(
+							attributeIdsList.end(),parameters.attributeIdsList.begin(),parameters.attributeIdsList.end());
 					prefixEditDistances.insert(
 							prefixEditDistances.end(),parameters.prefixEditDistances.begin(),parameters.prefixEditDistances.end());
 					positionIndexOffsets.insert(
@@ -111,10 +111,11 @@ bool MergeTopKOperator::open(QueryEvaluatorInternal * queryEvaluator, PhysicalPl
 					continue;
 				}
 				// set the members
-				mergeTopKCacheEntry->candidatesList.at(i)->setRecordMatchAttributeBitmaps(attributeBitmaps);
+				mergeTopKCacheEntry->candidatesList.at(i)->setRecordMatchAttributeBitmaps(attributeIdsList);
 				mergeTopKCacheEntry->candidatesList.at(i)->setRecordMatchEditDistances(prefixEditDistances);
 				mergeTopKCacheEntry->candidatesList.at(i)->setRecordMatchingPrefixes(termRecordMatchingKeywords);
 				mergeTopKCacheEntry->candidatesList.at(i)->setPositionIndexOffsets(positionIndexOffsets);
+				mergeTopKCacheEntry->candidatesList.at(i)->setTermTypes(termTypes);
 				// nextRecord->setRecordStaticScore() Should we set static score as well ?
 				mergeTopKCacheEntry->candidatesList.at(i)->setRecordRuntimeScore(params.ranker->computeAggregatedRuntimeScoreForAnd( runTimeTermRecordScores));
 
@@ -239,13 +240,13 @@ PhysicalPlanRecordItem * MergeTopKOperator::getNext(const PhysicalPlanExecutionP
 		std::vector<float> runTimeTermRecordScores;
 		std::vector<float> staticTermRecordScores;
 		std::vector<TrieNodePointer> termRecordMatchingKeywords;
-		std::vector<unsigned> attributeBitmaps;
+		std::vector<vector<unsigned> > attributeIdsList;
 		std::vector<unsigned> prefixEditDistances;
 		std::vector<unsigned> positionIndexOffsets;
 		std::vector<TermType> termTypes;
 
 		if(verifyRecordWithChildren(nextRecord, childToGetNextRecordFrom,  runTimeTermRecordScores, staticTermRecordScores,
-				termRecordMatchingKeywords, attributeBitmaps, prefixEditDistances , positionIndexOffsets, termTypes, params ) == false){
+				termRecordMatchingKeywords, attributeIdsList, prefixEditDistances , positionIndexOffsets, termTypes, params ) == false){
 			continue;	// 3.1. and 3.2.
 		}
 
@@ -254,7 +255,7 @@ PhysicalPlanRecordItem * MergeTopKOperator::getNext(const PhysicalPlanExecutionP
 		// from this point, nextRecord is a candidate
 		//4.
 		// set the members
-		nextRecord->setRecordMatchAttributeBitmaps(attributeBitmaps);
+		nextRecord->setRecordMatchAttributeBitmaps(attributeIdsList);
 		nextRecord->setRecordMatchEditDistances(prefixEditDistances);
 		nextRecord->setRecordMatchingPrefixes(termRecordMatchingKeywords);
 		nextRecord->setPositionIndexOffsets(positionIndexOffsets);
@@ -371,7 +372,7 @@ bool MergeTopKOperator::verifyRecordWithChildren(PhysicalPlanRecordItem * record
 					std::vector<float> & runTimeTermRecordScores,
 					std::vector<float> & staticTermRecordScores,
 					std::vector<TrieNodePointer> & termRecordMatchingKeywords,
-					std::vector<unsigned> & attributeBitmaps,
+					std::vector<vector<unsigned> > & attributeIdsList,
 					std::vector<unsigned> & prefixEditDistances,
 					std::vector<unsigned> & positionIndexOffsets,
 					std::vector<TermType>& termTypes,
@@ -384,7 +385,7 @@ bool MergeTopKOperator::verifyRecordWithChildren(PhysicalPlanRecordItem * record
 			runTimeTermRecordScores.push_back(recordItem->getRecordRuntimeScore());
 			staticTermRecordScores.push_back(recordItem->getRecordStaticScore());
 			recordItem->getRecordMatchingPrefixes(termRecordMatchingKeywords);
-			recordItem->getRecordMatchAttributeBitmaps(attributeBitmaps);
+			recordItem->getRecordMatchAttributeBitmaps(attributeIdsList);
 			recordItem->getRecordMatchEditDistances(prefixEditDistances);
 			recordItem->getPositionIndexOffsets(positionIndexOffsets);
 			recordItem->getTermTypes(termTypes);
@@ -404,8 +405,8 @@ bool MergeTopKOperator::verifyRecordWithChildren(PhysicalPlanRecordItem * record
 			staticTermRecordScores.push_back(parameters.staticTermRecordScore);
 			termRecordMatchingKeywords.insert(
 					termRecordMatchingKeywords.end(),parameters.termRecordMatchingPrefixes.begin(),parameters.termRecordMatchingPrefixes.end());
-			attributeBitmaps.insert(
-					attributeBitmaps.end(),parameters.attributeBitmaps.begin(),parameters.attributeBitmaps.end());
+			attributeIdsList.insert(
+					attributeIdsList.end(),parameters.attributeIdsList.begin(),parameters.attributeIdsList.end());
 			prefixEditDistances.insert(
 					prefixEditDistances.end(),parameters.prefixEditDistances.begin(),parameters.prefixEditDistances.end());
 			positionIndexOffsets.insert(
@@ -815,7 +816,6 @@ PhysicalPlanCost MergeTopKOptimizationOperator::getCostOfClose(const PhysicalPla
 	for(unsigned childOffset = 0 ; childOffset != this->getChildrenCount() ; ++childOffset){
 		resultCost = resultCost + this->getChildAt(childOffset)->getCostOfClose(params);
 	}
-
 	return resultCost;
 }
 PhysicalPlanCost MergeTopKOptimizationOperator::getCostOfVerifyByRandomAccess(const PhysicalPlanExecutionParameters & params){
@@ -825,7 +825,6 @@ PhysicalPlanCost MergeTopKOptimizationOperator::getCostOfVerifyByRandomAccess(co
 	for(unsigned childOffset = 0 ; childOffset != this->getChildrenCount() ; ++childOffset){
 		resultCost = resultCost + this->getChildAt(childOffset)->getCostOfVerifyByRandomAccess(params);
 	}
-
 	return resultCost;
 }
 void MergeTopKOptimizationOperator::getOutputProperties(IteratorProperties & prop){
@@ -847,7 +846,9 @@ bool MergeTopKOptimizationOperator::validateChildren(){
 			case PhysicalPlanNode_RandomAccessAnd:
 			case PhysicalPlanNode_RandomAccessOr:
 			case PhysicalPlanNode_RandomAccessNot:
+			case PhysicalPlanNode_RandomAccessGeo:
 			case PhysicalPlanNode_UnionLowestLevelSimpleScanOperator:
+			case PhysicalPlanNode_GeoSimpleScan:
 				// TopK should connect to InvertedIndex only by TVL
 				return false;
 			default:{

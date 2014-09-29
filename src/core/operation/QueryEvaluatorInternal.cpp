@@ -30,7 +30,6 @@
 #include "index/InvertedIndex.h"
 #include "util/Assert.h"
 #include "index/ForwardIndex.h"
-#include "geo/QuadTree.h"
 #include "HistogramManager.h"
 #include "physical_plan/PhysicalPlan.h"
 #include "physical_plan/PhysicalOperators.h"
@@ -43,6 +42,10 @@
 #include <algorithm>
 #include <iostream>
 #include <sstream>
+
+#include <boost/thread/mutex.hpp>
+#include <boost/thread/shared_mutex.hpp>
+#include <boost/thread/locks.hpp>
 
 using namespace std;
 
@@ -64,8 +67,7 @@ QueryEvaluatorInternal::QueryEvaluatorInternal(IndexReaderWriter *indexer , Quer
     this->cacheManager = dynamic_cast<CacheManager*>(indexer->getCache());
     this->indexer = indexer;
     setPhysicalOperatorFactory(new PhysicalOperatorFactory());
-    setPhysicalPlanRecordItemFactory(this->cacheManager->getPhysicalPlanRecordItemFactory());
-    setForwardIndex_ReadView();
+    this->physicalPlanRecordItemPool = new PhysicalPlanRecordItemPool();
 }
 
 /*
@@ -79,9 +81,8 @@ int QueryEvaluatorInternal::suggest(const string & keyword, float fuzzyMatchPena
 		return 0;
 	}
 
-    this->indexData->globalRwMutexForReadersWriters->lockRead(); // need to lock the mutex
+	boost::shared_lock< boost::shared_mutex > lock(this->indexData->globalRwMutexForReadersWriters); // need to lock the mutex
     if (this->indexData->isBulkLoadDone() == false){
-	this->indexData->globalRwMutexForReadersWriters->unlockRead(); // need to unlock the mutex
         return -1;
     }
 
@@ -108,15 +109,19 @@ int QueryEvaluatorInternal::suggest(const string & keyword, float fuzzyMatchPena
     int suggestionCount = 0;
     for(std::vector<SuggestionInfo >::iterator suggestion = suggestionPairs.begin() ;
     		suggestion != suggestionPairs.end() && suggestionCount < numberOfSuggestionsToReturn ; ++suggestion , ++suggestionCount){
-    	string suggestionString ;
-		boost::shared_ptr<TrieRootNodeAndFreeList > trieRootNode_ReadView;
-		this->getTrie()->getTrieRootNode_ReadView(trieRootNode_ReadView);
-        this->getTrie()->getPrefixString(trieRootNode_ReadView->root,
-                                               suggestion->suggestedCompleteTermNode, suggestionString);
-    	suggestions.push_back(suggestionString);
+      string suggestionString ;
+      boost::shared_ptr<TrieRootNodeAndFreeList > trieRootNode_ReadView;
+
+      // We need to get the read view from this->indexReadToken
+      // instead of calling this->getTrie()->getTrieRootNode_ReadView()
+      // since the latter may give a read view that is different from
+      // the one we got when the search started.
+      trieRootNode_ReadView = this->indexReadToken.trieRootNodeSharedPtr;
+      this->getTrie()->getPrefixString(trieRootNode_ReadView->root,
+				       suggestion->suggestedCompleteTermNode, suggestionString);
+      suggestions.push_back(suggestionString);
     }
-	this->indexData->globalRwMutexForReadersWriters->unlockRead(); // need to unlock the mutex
-	return 0;
+    return 0;
 }
 
 bool suggestionComparator(const SuggestionInfo & left ,
@@ -173,14 +178,14 @@ int QueryEvaluatorInternal::search(LogicalPlan * logicalPlan , QueryResults *que
 
 
 	ASSERT(logicalPlan != NULL);
-        this->indexData->globalRwMutexForReadersWriters->lockRead(); // need to lock the mutex
+	// need to lock the mutex
+	boost::shared_lock< boost::shared_mutex > lock(this->indexData->globalRwMutexForReadersWriters);
 	//1. first check to see if we have this query in cache
 	string key = logicalPlan->getUniqueStringForCaching();
 	boost::shared_ptr<QueryResultsCacheEntry> cachedObject ;
 	if(this->cacheManager->getQueryResultsCache()->getQueryResults(key , cachedObject) == true){
 		// cache hit
 		cachedObject->copyToQueryResultsInternal(queryResults->impl);
-                this->indexData->globalRwMutexForReadersWriters->unlockRead(); // need to unlock the mutex
 		return queryResults->impl->sortedFinalResults.size();
 	}
 	 /*
@@ -257,7 +262,12 @@ int QueryEvaluatorInternal::search(LogicalPlan * logicalPlan , QueryResults *que
 
 
 	boost::shared_ptr<TrieRootNodeAndFreeList > trieRootNode_ReadView;
-	this->getTrie()->getTrieRootNode_ReadView(trieRootNode_ReadView);
+
+	// We need to get the read view from this->indexReadToken
+	// instead of calling this->getTrie()->getTrieRootNode_ReadView()
+	// since the latter may give a read view that is different from
+	// the one we got when the search started.
+	trieRootNode_ReadView = this->indexReadToken.trieRootNodeSharedPtr;
 	while(true){
 
 		PhysicalPlanRecordItem * newRecord = topOperator->getNext(dummy);
@@ -272,7 +282,7 @@ int QueryEvaluatorInternal::search(LogicalPlan * logicalPlan , QueryResults *que
 		queryResult->internalRecordId = newRecord->getRecordId();
 		newRecord->getRecordMatchEditDistances(queryResult->editDistances);
 		//
-		queryResult->_score.setTypedValue(newRecord->getRecordRuntimeScore());
+		queryResult->_score.setTypedValue(newRecord->getRecordRuntimeScore(),ATTRIBUTE_TYPE_FLOAT);
 
 		newRecord->getRecordMatchingPrefixes(queryResult->matchingKeywordTrieNodes);
 
@@ -286,10 +296,14 @@ int QueryEvaluatorInternal::search(LogicalPlan * logicalPlan , QueryResults *que
 			charTypeVectorToUtf8String(temp, str);
 			queryResult->matchingKeywords.push_back(str);
 		}
-		newRecord->getRecordMatchAttributeBitmaps(queryResult->attributeBitmaps);
+		newRecord->getRecordMatchAttributeBitmaps(queryResult->attributeIdsList);
 
-		this->getForwardIndex()->getExternalRecordIdFromInternalRecordId(this->forwardIndexDirectoryReadView,
-				queryResult->internalRecordId,queryResult->externalRecordId );
+		// We need to get the read view from this->indexReadToken
+		// instead of calling this->getTrie()->getTrieRootNode_ReadView()
+		// since the latter may give a read view that is different from
+		// the one we got when the search started.
+		this->getForwardIndex()->getExternalRecordIdFromInternalRecordId(this->indexReadToken.forwardIndexReadViewSharedPtr,
+										 queryResult->internalRecordId,queryResult->externalRecordId );
 	}
 
 	if(facetOperatorPtr != NULL){
@@ -318,51 +332,27 @@ int QueryEvaluatorInternal::search(LogicalPlan * logicalPlan , QueryResults *que
 		delete sortOperator;
 	}
 
-        this->indexData->globalRwMutexForReadersWriters->unlockRead(); // need to unlock the mutex
 	return queryResults->impl->sortedFinalResults.size();
-}
-
-/**
- * Does Map Search
- */
-int QueryEvaluatorInternal::geoSearch(const Query *query, QueryResults *queryResults){
-    this->indexData->globalRwMutexForReadersWriters->lockRead(); // need to lock the mutex
-    int returnValue = this->searchMapQuery(query, queryResults);
-    this->indexData->globalRwMutexForReadersWriters->unlockRead();
-    return returnValue;
-}
-
-// for doing a geo range query with a circle
-void QueryEvaluatorInternal::geoSearch(const Circle &queryCircle, QueryResults *queryResults){
-    QueryResultsInternal *queryResultsInternal = queryResults->impl;
-    this->indexData->globalRwMutexForReadersWriters->lockRead(); // need to lock the mutex
-    this->indexData->quadTree->rangeQueryWithoutKeywordInformation(queryCircle,queryResultsInternal);
-    queryResultsInternal->finalizeResults(this->indexData->forwardIndex);
-    this->indexData->globalRwMutexForReadersWriters->unlockRead();
-}
-
-// for doing a geo range query with a rectangle
-void QueryEvaluatorInternal::geoSearch(const Rectangle &queryRectangle, QueryResults *queryResults){
-    QueryResultsInternal *queryResultsInternal = queryResults->impl;
-    this->indexData->globalRwMutexForReadersWriters->lockRead(); // need to lock the mutex
-    this->indexData->quadTree->rangeQueryWithoutKeywordInformation(queryRectangle,queryResultsInternal);
-    queryResultsInternal->finalizeResults(this->indexData->forwardIndex);
-    this->indexData->globalRwMutexForReadersWriters->unlockRead();
 }
 
 // for retrieving only one result by having the primary key
 void QueryEvaluatorInternal::search(const std::string & primaryKey, QueryResults *queryResults){
 	unsigned internalRecordId ; // ForwardListId is the same as InternalRecordId
-        this->indexData->globalRwMutexForReadersWriters->lockRead(); // need to lock the mutex
+    // need to lock the mutex
+	boost::shared_lock< boost::shared_mutex > lock(this->indexData->globalRwMutexForReadersWriters);
 	if ( this->indexData->forwardIndex->getInternalRecordIdFromExternalRecordId(primaryKey , internalRecordId) == false ){
-                this->indexData->globalRwMutexForReadersWriters->unlockRead(); // need to unlock the mutex
 		return;
 	}
 	// The query result to be returned.
 	// First check to see if the record is valid.
 	bool validForwardList;
-    shared_ptr<vectorview<ForwardListPtr> > readView;
-    this->indexData->forwardIndex->getForwardListDirectory_ReadView(readView);
+	shared_ptr<vectorview<ForwardListPtr> > readView;
+
+	// We need to get the read view from this->indexReadToken
+	// instead of calling this->getTrie()->getTrieRootNode_ReadView()
+	// since the latter may give a read view that is different from
+	// the one we got when the search started.
+	readView = this->indexReadToken.forwardIndexReadViewSharedPtr;
 	this->indexData->forwardIndex->getForwardList(readView, internalRecordId, validForwardList);
 	if (validForwardList == false) {
 		return;
@@ -371,9 +361,8 @@ void QueryEvaluatorInternal::search(const std::string & primaryKey, QueryResults
 	QueryResult * queryResult = queryResults->impl->getReultsFactory()->impl->createQueryResult();
 	queryResult->externalRecordId = primaryKey;
 	queryResult->internalRecordId = internalRecordId;
-	queryResult->_score.setTypedValue((float)0.0);
+	queryResult->_score.setTypedValue((float)0.0,ATTRIBUTE_TYPE_FLOAT);
 	queryResults->impl->sortedFinalResults.push_back(queryResult);
-        this->indexData->globalRwMutexForReadersWriters->unlockRead(); // need to unlock the mutex
 	return;
 }
 
@@ -398,7 +387,9 @@ boost::shared_ptr<PrefixActiveNodeSet> QueryEvaluatorInternal::computeActiveNode
     // 1. Get the longest prefix that has active nodes
     unsigned cachedPrefixLength = 0;
     boost::shared_ptr<PrefixActiveNodeSet> initialPrefixActiveNodeSet ;
-    int cacheResponse = this->cacheManager->getActiveNodesCache()->findLongestPrefixActiveNodes(term, initialPrefixActiveNodeSet); //initialPrefixActiveNodeSet is Busy
+    //TODO: Active node cache is disabled for geo search for now. There is a bug related to Cache/Trie and Geo.
+    // We should fix this bug when we will be actively working on Geo.
+    int cacheResponse = 0 ; // this->cacheManager->getActiveNodesCache()->findLongestPrefixActiveNodes(term, initialPrefixActiveNodeSet); //initialPrefixActiveNodeSet is Busy
 
     if ( cacheResponse == 0) { // NO CacheHit,  response = 0
         //std::cout << "|NO Cache|" << std::endl;;
@@ -433,115 +424,22 @@ void QueryEvaluatorInternal::cacheClear() {
     this->cacheManager->clear();
 }
 
-int QueryEvaluatorInternal::searchMapQuery(const Query *query, QueryResults* queryResults){
-    QueryResultsInternal *queryResultsInternal = queryResults->impl;
-
-    const std::vector<Term* > *queryTerms = query->getQueryTerms();
-
-    //Empty Query case
-    if (queryTerms->size() == 0) {
-        return 0;
-    }
-
-    //build mario's SearcherTerm for each query term
-    //timespec ts1;
-    //timespec ts2;
-    //clock_gettime(CLOCK_REALTIME, &ts1);
-    vector<MapSearcherTerm> mapSearcherTermVector;
-    for (unsigned i = 0; i < queryTerms->size(); i++) {
-        MapSearcherTerm mapSearcherTerm;
-        // TODO
-        // after the bug in active node is fixed, see if we should use LeafNodeSetIterator/ActiveNodeSetIterator for PREFIX/COMPLETE terms.
-        // see TermVirtualList::TermVirtualList() in src/operation/TermVirtualList.cpp
-        boost::shared_ptr<PrefixActiveNodeSet> prefixActiveNodeSet = computeActiveNodeSet(queryTerms->at(i));
-        for (ActiveNodeSetIterator iter(prefixActiveNodeSet.get(), queryTerms->at(i)->getThreshold()); !iter.isDone(); iter.next()) {
-            TrieNodePointer trieNode;
-            unsigned distance;
-            iter.getItem(trieNode, distance);
-            ExpansionStructure expansion(trieNode->getMinId(), trieNode->getMaxId(), (unsigned char)distance, trieNode);
-            //expansion.termPtr = queryTerms->at(i);
-
-            if(queryTerms->at(i)->getTermType() == TERM_TYPE_COMPLETE){
-                distance = prefixActiveNodeSet->getEditdistanceofPrefix(trieNode);
-                // If the keyword is a fuzzy complete keyword, we also need to add additional keywords with a distance up to the threashold
-                addMoreNodesToExpansion(trieNode, distance, queryTerms->at(i)->getThreshold(), mapSearcherTerm);
-            }
-            else{
-                mapSearcherTerm.expansionStructureVector.push_back(expansion);
-            }
-        }
-
-        mapSearcherTerm.termPtr = queryTerms->at(i);
-        mapSearcherTermVector.push_back(mapSearcherTerm);
-    }
-    //clock_gettime(CLOCK_REALTIME, &ts2);
-    //cout << "Time to compute active nodes " << ((double)(ts2.tv_nsec - ts1.tv_nsec)) / 1000000.0 << " milliseconds" << endl;
-
-    //clock_gettime(CLOCK_REALTIME, &ts1);
-    // TODO bad design, should change Query::getRange()
-    vector<double> values;
-    query->getRange(values);
-    Shape *searchRange = NULL;
-    if (values.size()==3) {
-        Point p;
-        p.x = values[0];
-        p.y = values[1];
-        searchRange = new Circle(p, values[2]);
-    } else {
-        pair<pair<double, double>, pair<double, double> > rect;
-        rect.first.first = values[0];
-        rect.first.second = values[1];
-        rect.second.first = values[2];
-        rect.second.second = values[3];
-        searchRange = new Rectangle(rect);
-    }
-    const SpatialRanker *ranker = dynamic_cast<const SpatialRanker*>(query->getRanker());
-    indexData->quadTree->rangeQuery(queryResultsInternal, *searchRange, mapSearcherTermVector, ranker, query->getPrefixMatchPenalty());
-
-    delete searchRange;
-
-    //clock_gettime(CLOCK_REALTIME, &ts2);
-    //cout << "Time to range query " << ((double)(ts2.tv_nsec - ts1.tv_nsec)) / 1000000.0 << " milliseconds" << endl;
-
-    queryResultsInternal->finalizeResults(this->indexData->forwardIndex);
-
-    return queryResultsInternal->sortedFinalResults.size();
-}
-
-// Given a trie node, a distance, and an upper bound, we want to insert its descendants to the mapSearcherTerm.exapnsions (as restricted by the distance and the bound)
-void QueryEvaluatorInternal::addMoreNodesToExpansion(const TrieNode* trieNode, unsigned distance, unsigned bound, MapSearcherTerm &mapSearcherTerm)
-{
-    if (trieNode->isTerminalNode()) {
-        ExpansionStructure expansion(trieNode->getMinId(), trieNode->getMaxId(), (unsigned char)distance, trieNode);
-        mapSearcherTerm.expansionStructureVector.push_back(expansion);
-    }
-    if (distance < bound) {
-        for (unsigned int childIterator = 0; childIterator < trieNode->getChildrenCount(); childIterator++) {
-            const TrieNode *child = trieNode->getChild(childIterator);
-            addMoreNodesToExpansion(child, distance+1, bound, mapSearcherTerm);
-        }
-    }
-}
-
 
 QueryEvaluatorInternal::~QueryEvaluatorInternal() {
 	delete physicalOperatorFactory;
-	this->physicalPlanRecordItemFactory->closeRecordItemPool(this->physicalPlanRecordItemPoolHandle);
+    delete physicalPlanRecordItemPool;
 }
 
 PhysicalOperatorFactory * QueryEvaluatorInternal::getPhysicalOperatorFactory(){
-	return this->physicalOperatorFactory;
+    return this->physicalOperatorFactory;
 }
+
 void QueryEvaluatorInternal::setPhysicalOperatorFactory(PhysicalOperatorFactory * physicalOperatorFactory){
-	this->physicalOperatorFactory = physicalOperatorFactory;
+    this->physicalOperatorFactory = physicalOperatorFactory;
 }
 
 PhysicalPlanRecordItemPool * QueryEvaluatorInternal::getPhysicalPlanRecordItemPool(){
-	return this->physicalPlanRecordItemFactory->getRecordItemPool(this->physicalPlanRecordItemPoolHandle);
-}
-void QueryEvaluatorInternal::setPhysicalPlanRecordItemFactory(PhysicalPlanRecordItemFactory * physicalPlanRecordItemFactory){
-	this->physicalPlanRecordItemFactory = physicalPlanRecordItemFactory;
-	this->physicalPlanRecordItemPoolHandle = this->physicalPlanRecordItemFactory->openRecordItemPool();
+    return this->physicalPlanRecordItemPool;
 }
 
 //DEBUG function. Used in CacheIntegration_Test

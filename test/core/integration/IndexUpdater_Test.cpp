@@ -29,7 +29,7 @@
 #include "util/Assert.h"
 #include "IntegrationTestHelper.h"
 #include <stdlib.h>
-
+#include "util/RecordSerializerUtil.h"
 #include <time.h>
 #include <iostream>
 #include <cstdlib>
@@ -38,7 +38,7 @@
 #include <string>
 #include <vector>
 #include <cstring>
-
+using namespace srch2::util;
 using namespace std;
 namespace srch2is = srch2::instantsearch;
 using namespace srch2is;
@@ -56,6 +56,10 @@ void addSimpleRecords()
 
     Record *record = new Record(schema);
 
+    Schema * storedSchema = Schema::create();
+    RecordSerializerUtil::populateStoredSchema(storedSchema, schema);
+    RecordSerializer recSerializer(*storedSchema);
+
     Analyzer *analyzer = new Analyzer(NULL, NULL, NULL, NULL, "");
     
     unsigned mergeEveryNSeconds = 2;    
@@ -72,6 +76,14 @@ void addSimpleRecords()
     record->setPrimaryKey(1001);
     record->setSearchableAttributeValue("article_authors", "Tom Smith and Jack Lennon");
     record->setSearchableAttributeValue("article_title", "Come Yesterday Once More");
+    {
+    	recSerializer.addSearchableAttribute("article_authors", (string)"Tom Smith and Jack Lennon");
+    	recSerializer.addSearchableAttribute("article_title", (string)"Come Yesterday Once More");
+    	RecordSerializerBuffer compactBuffer = recSerializer.serialize();
+    	record->setInMemoryData(compactBuffer.start, compactBuffer.length);
+    	recSerializer.nextRecord();
+    }
+
     record->setRecordBoost(90);
     index->addRecord(record, analyzer);
 
@@ -79,6 +91,13 @@ void addSimpleRecords()
     record->setPrimaryKey(1002);
     record->setSearchableAttributeValue(1, "Jimi Hendrix");
     record->setSearchableAttributeValue(2, "Little wing");
+    {
+    	recSerializer.addSearchableAttribute("article_authors", (string)"Jimi Hendrix");
+    	recSerializer.addSearchableAttribute("article_title", (string)"Little wing");
+    	RecordSerializerBuffer compactBuffer = recSerializer.serialize();
+    	record->setInMemoryData(compactBuffer.start, compactBuffer.length);
+    	recSerializer.nextRecord();
+    }
     record->setRecordBoost(90);
     index->addRecord(record, analyzer);
 
@@ -86,6 +105,13 @@ void addSimpleRecords()
     record->setPrimaryKey(1003);
     record->setSearchableAttributeValue(1, "Tom Smith and Jack The Ripper");
     record->setSearchableAttributeValue(2, "Come Tomorrow Two More");
+    {
+    	recSerializer.addSearchableAttribute("article_authors", (string)"Tom Smith and Jack The Ripper");
+    	recSerializer.addSearchableAttribute("article_title", (string)"Come Tomorrow Two More");
+    	RecordSerializerBuffer compactBuffer = recSerializer.serialize();
+    	record->setInMemoryData(compactBuffer.start, compactBuffer.length);
+    	recSerializer.nextRecord();
+    }
     record->setRecordBoost(10);
     index->addRecord(record, analyzer);
 
@@ -96,6 +122,7 @@ void addSimpleRecords()
     delete record;
     delete analyzer;
     delete index;
+    delete storedSchema;
 }
 
 void addAdvancedRecordsWithScoreSortableAttributes()
@@ -108,10 +135,14 @@ void addAdvancedRecordsWithScoreSortableAttributes()
     schema->setSearchableAttribute("article_title", 7); // searchable text
 
 
-    schema->setRefiningAttribute("citationcount" , srch2::instantsearch::ATTRIBUTE_TYPE_UNSIGNED, "0");
+    schema->setRefiningAttribute("citationcount" , srch2::instantsearch::ATTRIBUTE_TYPE_INT, "0");
     schema->setRefiningAttribute("pagerank", srch2::instantsearch::ATTRIBUTE_TYPE_FLOAT, "1" );
 
     Record *record = new Record(schema);
+
+    Schema * storedSchema = Schema::create();
+    RecordSerializerUtil::populateStoredSchema(storedSchema, schema);
+    RecordSerializer recSerializer(*storedSchema);
 
     Analyzer *analyzer = new Analyzer(NULL, NULL, NULL, NULL, "");
     unsigned mergeEveryNSeconds = 2;    
@@ -130,6 +161,15 @@ void addAdvancedRecordsWithScoreSortableAttributes()
     record->setRecordBoost(90);
     record->setRefiningAttributeValue(0, "100");
     record->setRefiningAttributeValue(1, "9.1");
+    {
+    	recSerializer.addSearchableAttribute("article_authors", (string)"Tom Smith and Jack Lennon");
+    	recSerializer.addSearchableAttribute("article_title", (string)"Come Yesterday Once More");
+    	recSerializer.addRefiningAttribute(0, 100);
+    	recSerializer.addRefiningAttribute(1, (float)9.1);
+    	RecordSerializerBuffer compactBuffer = recSerializer.serialize();
+    	record->setInMemoryData(compactBuffer.start, compactBuffer.length);
+    	recSerializer.nextRecord();
+    }
     index->addRecord(record, analyzer);
 
     record->clear();
@@ -139,6 +179,15 @@ void addAdvancedRecordsWithScoreSortableAttributes()
     record->setRefiningAttributeValue(0, "200");
     record->setRefiningAttributeValue(1, "3.14159265");
     record->setRecordBoost(90);
+    {
+    	recSerializer.addSearchableAttribute("article_authors", (string)"Jimi Hendrix");
+    	recSerializer.addSearchableAttribute("article_title", (string)"Little wing");
+    	recSerializer.addRefiningAttribute(0, 200);
+    	recSerializer.addRefiningAttribute(1, (float)3.14159265);
+    	RecordSerializerBuffer compactBuffer = recSerializer.serialize();
+    	record->setInMemoryData(compactBuffer.start, compactBuffer.length);
+    	recSerializer.nextRecord();
+    }
     index->addRecord(record, analyzer);
 
     record->clear();
@@ -148,6 +197,15 @@ void addAdvancedRecordsWithScoreSortableAttributes()
     record->setRefiningAttributeValue(0, "300");
     record->setRefiningAttributeValue(1, "4.234");
     record->setRecordBoost(10);
+    {
+    	recSerializer.addSearchableAttribute("article_authors", (string)"Tom Smith and Jack The Ripper");
+    	recSerializer.addSearchableAttribute("article_title", (string)"Come Tomorrow Two More");
+    	recSerializer.addRefiningAttribute(0, 300);
+    	recSerializer.addRefiningAttribute(1, (float)4.234);
+    	RecordSerializerBuffer compactBuffer = recSerializer.serialize();
+    	record->setInMemoryData(compactBuffer.start, compactBuffer.length);
+    	recSerializer.nextRecord();
+    }
     index->addRecord(record, analyzer);
 
     //indexer->print_Index();
@@ -187,13 +245,13 @@ void test1()
         vector<unsigned> recordIds;
         recordIds.push_back(1001);
         recordIds.push_back(1003);
-        ASSERT ( ping(analyzer, queryEvaluator, "tom" , 2 , recordIds) == true);
+        ASSERT ( ping(analyzer, queryEvaluator, "tom" , 2 , recordIds, vector<unsigned>(), ATTRIBUTES_OP_AND) == true);
     }
     //Query: "jimi", hit -> 1002
     {
         vector<unsigned> recordIds;
         recordIds.push_back(1002);
-        ASSERT ( ping(analyzer, queryEvaluator, "jimi" , 1 , recordIds) == true);
+        ASSERT ( ping(analyzer, queryEvaluator, "jimi" , 1 , recordIds, vector<unsigned>(), ATTRIBUTES_OP_AND) == true);
     }
 
     //Update Index
@@ -202,6 +260,17 @@ void test1()
     record->setSearchableAttributeValue(1, "steve jobs tom");
     record->setSearchableAttributeValue(2, "digital magician");
     record->setRecordBoost(90);
+    {
+    	Schema * storedSchema = Schema::create();
+    	RecordSerializerUtil::populateStoredSchema(storedSchema, index->getSchema());
+    	RecordSerializer recSerializer(*storedSchema);
+    	recSerializer.addSearchableAttribute("article_authors", (string)"steve jobs tom");
+    	recSerializer.addSearchableAttribute("article_title", (string)"digital magician");
+    	RecordSerializerBuffer compactBuffer = recSerializer.serialize();
+    	record->setInMemoryData(compactBuffer.start, compactBuffer.length);
+    	recSerializer.nextRecord();
+    	delete storedSchema;
+    }
     index->addRecord(record, analyzer);
 
     sleep(mergeEveryNSeconds+1);
@@ -214,14 +283,14 @@ void test1()
         vector<unsigned> recordIds;
         recordIds.push_back(1001);
         recordIds.push_back(1003);
-        ASSERT ( ping(analyzer, queryEvaluator, "smith" , 2 , recordIds) == true);
+        ASSERT ( ping(analyzer, queryEvaluator, "smith" , 2 , recordIds, vector<unsigned>(), ATTRIBUTES_OP_AND) == true);
     }
 
     //Query: "jobs", hit -> 1999
     {
         vector<unsigned> recordIds;
         recordIds.push_back(1999);
-        ASSERT ( ping(analyzer, queryEvaluator, "jobs" , 1 , recordIds) == true);
+        ASSERT ( ping(analyzer, queryEvaluator, "jobs" , 1 , recordIds, vector<unsigned>(), ATTRIBUTES_OP_AND) == true);
     }
 
     //indexer->print_index();
@@ -232,7 +301,7 @@ void test1()
         recordIds.push_back(1001);
         recordIds.push_back(1003);
         recordIds.push_back(1999);
-        ASSERT ( ping(analyzer, queryEvaluator, "tom" , 3 , recordIds) == true);
+        ASSERT ( ping(analyzer, queryEvaluator, "tom" , 3 , recordIds, vector<unsigned>(), ATTRIBUTES_OP_AND) == true);
     }
 
     //Query: "tom", hits -> 1001, 1003
@@ -240,7 +309,7 @@ void test1()
         vector<unsigned> recordIds;
         recordIds.push_back(1001);
         recordIds.push_back(1003);
-        ASSERT ( ping(analyzer, queryEvaluator, "tom" , 2 , recordIds) == false);
+        ASSERT ( ping(analyzer, queryEvaluator, "tom" , 2 , recordIds, vector<unsigned>(), ATTRIBUTES_OP_AND) == false);
     }
 
     index->commit();
@@ -252,7 +321,7 @@ void test1()
         recordIds.push_back(1001);
         recordIds.push_back(1003);
         recordIds.push_back(1999);
-        ASSERT ( ping(analyzer, queryEvaluator, "tom" , 3 , recordIds) == true);
+        ASSERT ( ping(analyzer, queryEvaluator, "tom" , 3 , recordIds, vector<unsigned>(), ATTRIBUTES_OP_AND) == true);
     }
 
     (void)analyzer;
@@ -285,7 +354,7 @@ void test2()
         vector<unsigned> recordIds;
         recordIds.push_back(1001);
         recordIds.push_back(1003);
-        ASSERT ( ping(analyzer, queryEvaluator, "smith" , 2 , recordIds) == true);
+        ASSERT ( ping(analyzer, queryEvaluator, "smith" , 2 , recordIds, vector<unsigned>(), ATTRIBUTES_OP_AND) == true);
     }
 
     //Query: "tom", hits -> 1001, 1003 , 1999
@@ -294,14 +363,14 @@ void test2()
         recordIds.push_back(1001);
         recordIds.push_back(1003);
         recordIds.push_back(1999);
-        ASSERT ( ping(analyzer, queryEvaluator, "tom" , 3 , recordIds) == true);
+        ASSERT ( ping(analyzer, queryEvaluator, "tom" , 3 , recordIds, vector<unsigned>(), ATTRIBUTES_OP_AND) == true);
     }
 
     //Query: "jobs", hit -> 1999
     {
         vector<unsigned> recordIds;
         recordIds.push_back(1999);
-        ASSERT ( ping(analyzer, queryEvaluator, "jobs" , 1 , recordIds) == true);
+        ASSERT ( ping(analyzer, queryEvaluator, "jobs" , 1 , recordIds, vector<unsigned>(), ATTRIBUTES_OP_AND) == true);
     }
 
     //Update a Deserialised Index
@@ -322,7 +391,7 @@ void test2()
         vector<unsigned> recordIds;
         recordIds.push_back(1002);
         recordIds.push_back(1998);
-        ASSERT ( ping(analyzer, queryEvaluator, "jimi" , 2 , recordIds) == true);
+        ASSERT ( ping(analyzer, queryEvaluator, "jimi" , 2 , recordIds, vector<unsigned>(), ATTRIBUTES_OP_AND) == true);
     }
 
     //Query: "jobs", hits -> 1998 , 1999
@@ -330,7 +399,7 @@ void test2()
         vector<unsigned> recordIds;
         recordIds.push_back(1999);
         recordIds.push_back(1998);
-        ASSERT ( ping(analyzer, queryEvaluator, "jobs" , 2 , recordIds) == true);
+        ASSERT ( ping(analyzer, queryEvaluator, "jobs" , 2 , recordIds, vector<unsigned>(), ATTRIBUTES_OP_AND) == true);
     }
 
     //Query: "tom", hits -> 1001, 1003 , 1999
@@ -339,7 +408,7 @@ void test2()
         recordIds.push_back(1001);
         recordIds.push_back(1003);
         recordIds.push_back(1999);
-        ASSERT ( ping(analyzer, queryEvaluator, "tom" , 3 , recordIds) == true);
+        ASSERT ( ping(analyzer, queryEvaluator, "tom" , 3 , recordIds, vector<unsigned>(), ATTRIBUTES_OP_AND) == true);
     }
 
     index->commit();
@@ -404,7 +473,7 @@ void test3()
         vector<unsigned> recordIds;
         recordIds.push_back(1002);
         recordIds.push_back(1998);
-        ASSERT ( ping(analyzer, queryEvaluator, "jimi" , 2 , recordIds) == true);
+        ASSERT ( ping(analyzer, queryEvaluator, "jimi" , 2 , recordIds, vector<unsigned>(), ATTRIBUTES_OP_AND) == true);
     }
 
     //Query: "jobs", hits -> 1998 , 1999
@@ -412,7 +481,7 @@ void test3()
         vector<unsigned> recordIds;
         recordIds.push_back(1999);
         recordIds.push_back(1998);
-        ASSERT ( ping(analyzer, queryEvaluator, "jobs" , 2 , recordIds) == true);
+        ASSERT ( ping(analyzer, queryEvaluator, "jobs" , 2 , recordIds, vector<unsigned>(), ATTRIBUTES_OP_AND) == true);
     }
 
     //Query: "tom", hits -> 1001, 1003 , 1999
@@ -421,7 +490,7 @@ void test3()
         recordIds.push_back(1001);
         recordIds.push_back(1003);
         recordIds.push_back(1999);
-        ASSERT ( ping(analyzer, queryEvaluator, "tom" , 3 , recordIds) == true);
+        ASSERT ( ping(analyzer, queryEvaluator, "tom" , 3 , recordIds, vector<unsigned>(), ATTRIBUTES_OP_AND) == true);
     }
 
     index->commit();
@@ -465,7 +534,7 @@ void test4()
         vector<unsigned> recordIds;
         recordIds.push_back(1002);
         //recordIds.push_back(1998);
-        ASSERT ( ping(analyzer, queryEvaluator, "jimi" , 1 , recordIds) == true);
+        ASSERT ( ping(analyzer, queryEvaluator, "jimi" , 1 , recordIds, vector<unsigned>(), ATTRIBUTES_OP_AND) == true);
     }
 
     //Query: "jobs", hits -> 1998 , 1999
@@ -473,7 +542,7 @@ void test4()
         vector<unsigned> recordIds;
         //recordIds.push_back(1998);
         recordIds.push_back(1999);
-        ASSERT ( ping(analyzer, queryEvaluator, "jobs" , 1 , recordIds) == true);
+        ASSERT ( ping(analyzer, queryEvaluator, "jobs" , 1 , recordIds, vector<unsigned>(), ATTRIBUTES_OP_AND) == true);
     }
 
     //Query: "tom", hits -> 1001, 1003 , 1999
@@ -482,7 +551,7 @@ void test4()
         recordIds.push_back(1001);
         recordIds.push_back(1003);
         recordIds.push_back(1999);
-        ASSERT ( ping(analyzer, queryEvaluator, "tom" , 3 , recordIds) == true);
+        ASSERT ( ping(analyzer, queryEvaluator, "tom" , 3 , recordIds, vector<unsigned>(), ATTRIBUTES_OP_AND) == true);
     }
 
     index->save(INDEX_DIR);
@@ -517,6 +586,17 @@ void test5()
     record->setPrimaryKey(1998);
     record->setSearchableAttributeValue(1, "jimi hendrix");// THis record must not be added to index
     record->setSearchableAttributeValue(2, "steve jobs shot the sheriff");
+    {
+    	Schema * storedSchema = Schema::create();
+    	RecordSerializerUtil::populateStoredSchema(storedSchema, index->getSchema());
+    	RecordSerializer recSerializer(*storedSchema);
+    	recSerializer.addSearchableAttribute("article_authors", (string)"jimi hendrix");
+    	recSerializer.addSearchableAttribute("article_title", (string)"steve jobs shot the sheriff");
+    	RecordSerializerBuffer compactBuffer = recSerializer.serialize();
+    	record->setInMemoryData(compactBuffer.start, compactBuffer.length);
+    	recSerializer.nextRecord();
+    	delete storedSchema;
+    }
     record->setRecordBoost(100);
     index->addRecord(record, analyzer);
 
@@ -530,7 +610,7 @@ void test5()
         vector<unsigned> recordIds;
         recordIds.push_back(1002);
         recordIds.push_back(1998);
-        ASSERT ( ping(analyzer, queryEvaluator, "jimi" , 2 , recordIds) == true);
+        ASSERT ( ping(analyzer, queryEvaluator, "jimi" , 2 , recordIds, vector<unsigned>(), ATTRIBUTES_OP_AND) == true);
     }
 
     //Query: "jobs", hits -> 1998, 1999
@@ -538,7 +618,7 @@ void test5()
         vector<unsigned> recordIds;
         recordIds.push_back(1999);
         recordIds.push_back(1998);
-        ASSERT ( ping(analyzer, queryEvaluator, "jobs" , 2 , recordIds) == true);
+        ASSERT ( ping(analyzer, queryEvaluator, "jobs" , 2 , recordIds, vector<unsigned>(), ATTRIBUTES_OP_AND) == true);
     }
 
     //Query: "tom", hits -> 1001, 1003 , 1999
@@ -547,7 +627,7 @@ void test5()
         recordIds.push_back(1001);
         recordIds.push_back(1003);
         recordIds.push_back(1999);
-        ASSERT ( ping(analyzer, queryEvaluator, "tom" , 3 , recordIds) == true);
+        ASSERT ( ping(analyzer, queryEvaluator, "tom" , 3 , recordIds, vector<unsigned>(), ATTRIBUTES_OP_AND) == true);
     }
 
     index->commit();
@@ -582,7 +662,7 @@ void test6()
         vector<unsigned> recordIds;
         recordIds.push_back(1002);
         recordIds.push_back(1998);
-        ASSERT ( ping(analyzer, queryEvaluator, "jemi" , 2 , recordIds) == true);
+        ASSERT ( ping(analyzer, queryEvaluator, "jemi" , 2 , recordIds, vector<unsigned>(), ATTRIBUTES_OP_AND) == true);
     }
 
     //Query: "jobsi", hits -> 1998 , 1999
@@ -590,14 +670,14 @@ void test6()
         vector<unsigned> recordIds;
         recordIds.push_back(1999);
         recordIds.push_back(1998);
-        ASSERT ( ping(analyzer, queryEvaluator, "jobsi" , 2 , recordIds) == true);
+        ASSERT ( ping(analyzer, queryEvaluator, "jobsi" , 2 , recordIds, vector<unsigned>(), ATTRIBUTES_OP_AND) == true);
     }
 
     //Query: "shiref", hits -> 1999
     {
         vector<unsigned> recordIds;
         recordIds.push_back(1998);
-        ASSERT ( ping(analyzer, queryEvaluator, "shiref" , 1 , recordIds) == true);
+        ASSERT ( ping(analyzer, queryEvaluator, "shiref" , 1 , recordIds, vector<unsigned>(), ATTRIBUTES_OP_AND) == true);
     }
 
     //delete analyzer;
@@ -693,7 +773,7 @@ void test8()
         vector<unsigned> recordIds;
         //recordIds.push_back(1002);
         recordIds.push_back(1998);
-        ASSERT ( ping(analyzer, queryEvaluator, "jimi+jobs" , 1 , recordIds) == true);
+        ASSERT ( ping(analyzer, queryEvaluator, "jimi+jobs" , 1 , recordIds, vector<unsigned>(), ATTRIBUTES_OP_AND) == true);
     }
 
     //Query: "tom", hits -> 1001, 1003 , 1999
@@ -702,7 +782,7 @@ void test8()
         recordIds.push_back(1001);
         recordIds.push_back(1003);
         recordIds.push_back(1999);
-        ASSERT ( ping(analyzer, queryEvaluator, "tom" , 3 , recordIds) == true);
+        ASSERT ( ping(analyzer, queryEvaluator, "tom" , 3 , recordIds, vector<unsigned>(), ATTRIBUTES_OP_AND) == true);
     }
 
     //Query: "jack", hits -> 1001, 1003
@@ -710,7 +790,7 @@ void test8()
         vector<unsigned> recordIds;
         recordIds.push_back(1001);
         recordIds.push_back(1003);
-        ASSERT ( ping(analyzer, queryEvaluator, "jack" , 2 , recordIds) == true);
+        ASSERT ( ping(analyzer, queryEvaluator, "jack" , 2 , recordIds, vector<unsigned>(), ATTRIBUTES_OP_AND) == true);
     }
 
     //Query: "tom+jack", hits -> 1001, 1003
@@ -718,7 +798,7 @@ void test8()
         vector<unsigned> recordIds;
         recordIds.push_back(1001);
         recordIds.push_back(1003);
-        ASSERT ( ping(analyzer, queryEvaluator, "tom+jack" , 2 , recordIds) == true);
+        ASSERT ( ping(analyzer, queryEvaluator, "tom+jack" , 2 , recordIds, vector<unsigned>(), ATTRIBUTES_OP_AND) == true);
     }
 
     //indexer->print_Index();
@@ -776,14 +856,14 @@ void test9()
         vector<unsigned> recordIds;
         recordIds.push_back(1001);
         recordIds.push_back(1003);
-        ASSERT ( ping(analyzer, queryEvaluator, "tom" , 2 , recordIds) == true);
+        ASSERT ( ping(analyzer, queryEvaluator, "tom" , 2 , recordIds, vector<unsigned>(), ATTRIBUTES_OP_AND) == true);
     }
 
     //Query: "jimi", hit -> 1002
     {
         vector<unsigned> recordIds;
         recordIds.push_back(1002);
-        ASSERT ( ping(analyzer, queryEvaluator, "jimi" , 1 , recordIds) == true);
+        ASSERT ( ping(analyzer, queryEvaluator, "jimi" , 1 , recordIds, vector<unsigned>(), ATTRIBUTES_OP_AND) == true);
     }
 
     //Update Index
@@ -794,6 +874,18 @@ void test9()
     record->setRefiningAttributeValue(0, "400");
     record->setRefiningAttributeValue(1, "2.234");
     record->setRecordBoost(90);
+    {
+        Schema * storedSchema = Schema::create();
+        RecordSerializerUtil::populateStoredSchema(storedSchema, index->getSchema());
+        RecordSerializer recSerializer(*storedSchema);
+    	recSerializer.addSearchableAttribute("article_authors", (string)"steve jobs tom");
+    	recSerializer.addSearchableAttribute("article_title", (string)"digital magician");
+    	recSerializer.addRefiningAttribute(0, 400);
+    	recSerializer.addRefiningAttribute(1, (float)2.234);
+    	RecordSerializerBuffer compactBuffer = recSerializer.serialize();
+    	record->setInMemoryData(compactBuffer.start, compactBuffer.length);
+    	recSerializer.nextRecord();
+    }
     index->addRecord(record, analyzer);
 
     sleep(mergeEveryNSeconds+1);
@@ -806,14 +898,14 @@ void test9()
         vector<unsigned> recordIds;
         recordIds.push_back(1001);
         recordIds.push_back(1003);
-        ASSERT ( ping(analyzer, queryEvaluator, "smith" , 2 , recordIds) == true);
+        ASSERT ( ping(analyzer, queryEvaluator, "smith" , 2 , recordIds, vector<unsigned>(), ATTRIBUTES_OP_AND) == true);
     }
 
     //Query: "jobs", hit -> 1002
     {
         vector<unsigned> recordIds;
         recordIds.push_back(1999);
-        ASSERT ( ping(analyzer, queryEvaluator, "jobs" , 1 , recordIds) == true);
+        ASSERT ( ping(analyzer, queryEvaluator, "jobs" , 1 , recordIds, vector<unsigned>(), ATTRIBUTES_OP_AND) == true);
     }
 
     index->commit();
@@ -858,7 +950,7 @@ void test10()
         vector<unsigned> recordIds;
         //recordIds.push_back(1002);
         recordIds.push_back(1998);
-        ASSERT ( pingGetAllResultsQuery(analyzer, queryEvaluator, "jimi+jobs" , 1 , recordIds,-1,0) == true);
+        ASSERT ( pingGetAllResultsQuery(analyzer, queryEvaluator, "jimi+jobs" , 1 , recordIds, vector<unsigned>(), ATTRIBUTES_OP_AND ,0) == true);
     }
 
     //Query: "tom", hits -> 1001, 1003 , 1999 ;descending ;sortAttribute 0;
@@ -867,7 +959,7 @@ void test10()
         recordIds.push_back(1999);
         recordIds.push_back(1003);
         recordIds.push_back(1001);
-        ASSERT ( pingGetAllResultsQuery(analyzer, queryEvaluator, "tom" , 3 , recordIds,-1,0) == true);
+        ASSERT ( pingGetAllResultsQuery(analyzer, queryEvaluator, "tom" , 3 , recordIds, vector<unsigned>(), ATTRIBUTES_OP_AND ,0) == true);
     }
 
     //Query: "jack", hits -> 1001, 1003 ;descending ;sortAttribute 0;
@@ -875,7 +967,7 @@ void test10()
         vector<unsigned> recordIds;
         recordIds.push_back(1003);
         recordIds.push_back(1001);
-        ASSERT ( pingGetAllResultsQuery(analyzer, queryEvaluator, "jack" , 2 , recordIds,-1,0) == true);
+        ASSERT ( pingGetAllResultsQuery(analyzer, queryEvaluator, "jack" , 2 , recordIds, vector<unsigned>(), ATTRIBUTES_OP_AND ,0) == true);
     }
 
     //Query: "jack", hits -> 1001, 1003 ;descending ;sortAttribute 1;
@@ -883,7 +975,7 @@ void test10()
         vector<unsigned> recordIds;
         recordIds.push_back(1001);
         recordIds.push_back(1003);
-        ASSERT ( pingGetAllResultsQuery(analyzer, queryEvaluator, "jack" , 2 , recordIds,-1,1) == true);
+        ASSERT ( pingGetAllResultsQuery(analyzer, queryEvaluator, "jack" , 2 , recordIds, vector<unsigned>(), ATTRIBUTES_OP_AND ,1) == true);
     }
 
     //Query: "tom+jack", hits -> 1001, 1003 ;descending ;sortAttribute 1;
@@ -891,7 +983,7 @@ void test10()
         vector<unsigned> recordIds;
         recordIds.push_back(1001);
         recordIds.push_back(1003);
-        ASSERT ( pingGetAllResultsQuery(analyzer, queryEvaluator, "tom+jack" , 2 , recordIds,-1,1) == true);
+        ASSERT ( pingGetAllResultsQuery(analyzer, queryEvaluator, "tom+jack" , 2 , recordIds, vector<unsigned>(), ATTRIBUTES_OP_AND ,1) == true);
     }
 
     //indexer->print_Index();
@@ -901,7 +993,7 @@ void test10()
         vector<unsigned> recordIds;
         recordIds.push_back(1003);
         recordIds.push_back(1001);
-        ASSERT ( pingGetAllResultsQuery(analyzer, queryEvaluator, "tom+jack" , 2 , recordIds,-1,0) == true);
+        ASSERT ( pingGetAllResultsQuery(analyzer, queryEvaluator, "tom+jack" , 2 , recordIds, vector<unsigned>(), ATTRIBUTES_OP_AND ,0) == true);
     }
 
     /// positional index disabled, ignore the filter related tests for now
@@ -996,14 +1088,14 @@ void test11()
         vector<unsigned> recordIds;
         recordIds.push_back(1001);
         recordIds.push_back(1003); // Should not be seen before commit
-        ASSERT ( ping(analyzer, queryEvaluator, "tom" , 2 , recordIds) == true);
+        ASSERT ( ping(analyzer, queryEvaluator, "tom" , 2 , recordIds, vector<unsigned>(), ATTRIBUTES_OP_AND) == true);
     }
 
     //Query: "jimi", hit -> 1002
     {
         vector<unsigned> recordIds;
         recordIds.push_back(1002);
-        ASSERT ( ping(analyzer, queryEvaluator, "jimi" , 1 , recordIds) == true);
+        ASSERT ( ping(analyzer, queryEvaluator, "jimi" , 1 , recordIds, vector<unsigned>(), ATTRIBUTES_OP_AND) == true);
     }
 
     //Update Index
@@ -1024,7 +1116,7 @@ void test11()
         vector<unsigned> recordIds;
         recordIds.push_back(1001);
         recordIds.push_back(1003);
-        ASSERT ( ping(analyzer, queryEvaluator, "smith" , 2 , recordIds) == true);
+        ASSERT ( ping(analyzer, queryEvaluator, "smith" , 2 , recordIds, vector<unsigned>(), ATTRIBUTES_OP_AND) == true);
     }
 
     //Query: "jobs", hit -> 1002
@@ -1043,7 +1135,7 @@ void test11()
         recordIds.push_back(1001);
         recordIds.push_back(1003);
         recordIds.push_back(1999);
-        ASSERT ( ping(analyzer, queryEvaluator, "tom" , 3 , recordIds) == true);
+        ASSERT ( ping(analyzer, queryEvaluator, "tom" , 3 , recordIds, vector<unsigned>(), ATTRIBUTES_OP_AND) == true);
     }
 
     //Query: "tom", hits -> 1001, 1003
@@ -1051,7 +1143,7 @@ void test11()
         vector<unsigned> recordIds;
         recordIds.push_back(1001);
         recordIds.push_back(1003);
-        ASSERT ( ping(analyzer, queryEvaluator, "tom" , 2 , recordIds) == false);
+        ASSERT ( ping(analyzer, queryEvaluator, "tom" , 2 , recordIds, vector<unsigned>(), ATTRIBUTES_OP_AND) == false);
     }
 
     index->save(INDEX_DIR);
@@ -1062,7 +1154,7 @@ void test11()
         recordIds.push_back(1001);
         recordIds.push_back(1003);
         recordIds.push_back(1999);
-        ASSERT ( ping(analyzer, queryEvaluator, "tom" , 3 , recordIds) == true);
+        ASSERT ( ping(analyzer, queryEvaluator, "tom" , 3 , recordIds, vector<unsigned>(), ATTRIBUTES_OP_AND) == true);
     }
 
     delete queryEvaluator;

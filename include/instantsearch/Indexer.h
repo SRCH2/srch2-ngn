@@ -39,6 +39,7 @@ class Analyzer;
 class Schema;
 class Record;
 class GlobalCache;
+class AttributeAccessControl;
 
 class IndexMetaData
 {
@@ -111,6 +112,14 @@ public:
     * Adds a record. If primary key is duplicate, insert fails and -1 is returned. Otherwise, 0 is returned.*/
     virtual INDEXWRITE_RETVAL addRecord(const Record *record, Analyzer *analyzer) = 0;
 
+    // Edits the record's access list based on the command type
+    virtual INDEXWRITE_RETVAL aclRecordModifyRoles(const std::string &resourcePrimaryKeyID, vector<string> &roleIds, RecordAclCommandType commandType) = 0;
+
+    // Deletes the role id from the permission map
+    // we use this function for deleting a record from a role core
+    // then we need to delete this record from the permission map of the resource cores of this core
+    virtual INDEXWRITE_RETVAL deleteRoleRecord(const std::string &rolePrimaryKeyID) = 0;
+
     /*
     * Deletes all the records.*/
     virtual INDEXWRITE_RETVAL deleteRecord(const std::string &primaryKeyID) = 0;
@@ -138,6 +147,8 @@ public:
     virtual srch2::instantsearch::Schema *getSchema() = 0;
 
     virtual StoredRecordBuffer getInMemoryData(unsigned internalRecordId) const = 0;
+
+    virtual const AttributeAccessControl & getAttributeAcl() const = 0;
 
     /**
      * Builds the index. The records are made searchable after the first commit.

@@ -37,25 +37,6 @@ using namespace std;
 namespace srch2 {
 namespace instantsearch {
 
-/**
- * Helper function to tokenizeRecord
- * @param attribbute
- * @param position
- * @return an unsigned with bits set with the following logic:
- * Attribute -> First 8bits -> Attribute in which the token hit occurred
- * Position -> Last 24 bits -> Position within the attribute where the token hit occurred.
- */
-unsigned setAttributePositionBitVector(unsigned attribute, unsigned position) {
-    ///assert that attribute is less than maximum allowed attributes
-    ASSERT(attribute < 0xff);
-
-    ///assert that position is less than maximum allowed document size
-    ASSERT(position < 0xffffff);
-
-    return ((attribute + 1) << 24) + (position & 0xffffff);
-
-//    return 1 << attribute;
-}
 
 bool isEmpty(const string &inString) {
     return inString.compare("") == 0;
@@ -112,6 +93,7 @@ string AnalyzerInternal::applyFilters(string input, bool isPrefix) {
 void AnalyzerInternal::clearFilterStates() {
   // clear the state of each filter on the chain
   if (tokenStream != NULL) {
+
     tokenStream->clearState();
   }
 }
@@ -153,7 +135,7 @@ void AnalyzerInternal::tokenizeRecord(const Record *record,
     tokenAttributeHitsMap.clear();
     const Schema *schema = record->getSchema();
     // token string to vector<CharType>
-    vector<PositionalTerm> tokens;
+    vector<AnalyzedTermInfo> tokens;
     for (unsigned attributeIterator = 0;
             attributeIterator < schema->getNumberOfSearchableAttributes();
             attributeIterator++) {
@@ -185,21 +167,44 @@ void AnalyzerInternal::tokenizeRecord(const Record *record,
 					charVector = tokenStream->getProcessedToken();
 					unsigned termPosition = tokenStream->getProcessedTokenPosition();
 					unsigned charOffset = tokenStream->getProcessedTokenCharOffset();
+					AnalyzedTokenType tokenType =  tokenStream->getProcessedTokentype();
+					unsigned charLen = tokenStream->getProcessedTokenLen();
 					charTypeVectorToUtf8String(charVector, currentToken);
-					// Bumps are added to the positions after tokenizer gives us the values.
-					PositionalTerm pterm = {currentToken, termPosition + valueOffset * MULTI_VALUED_ATTRIBUTE_POSITION_BUMP,
-							prevAttrCombinedLen+ charOffset};
-					tokens.push_back(pterm);
+
+					if (tokenType == ANALYZED_SYNONYM_TOKEN) {
+						vector<string> currentTokens;
+						unsigned synonymCharOffset = prevAttrCombinedLen + charOffset;
+						boost::algorithm::split(currentTokens, currentToken, boost::is_any_of(" "));
+						for (unsigned i = 0; i < currentTokens.size(); ++i) {
+							if (i != 0) {
+								// For multi word synonym we do not store char offset for non-first token.
+								// e.g. nyc => new york , and "new york" begin the generated synonym,
+								// "new" offset is same as "nyc" and "york" offset is 0.
+								synonymCharOffset = 0;
+							}
+							AnalyzedTermInfo pterm = {currentTokens[i], termPosition + i + valueOffset * MULTI_VALUED_ATTRIBUTE_POSITION_BUMP,
+									synonymCharOffset , charLen, tokenType};
+							tokens.push_back(pterm);
+						}
+					} else {
+						// Bumps are added to the positions after tokenizer gives us the values.
+						AnalyzedTermInfo pterm = {currentToken, termPosition + valueOffset * MULTI_VALUED_ATTRIBUTE_POSITION_BUMP,
+								prevAttrCombinedLen+ charOffset, charLen, tokenType};
+						tokens.push_back(pterm);
+					}
 				}
 				prevAttrCombinedLen += attributeValue.length() + MULTI_VAL_ATTR_DELIMITER_LEN /*multivalue separator " $$ "*/;
         	}
 			for (unsigned i = 0; i< tokens.size(); ++i) {
 				if (tokens[i].term.size()) {
-					tokenAttributeHitsMap[tokens[i].term].attributeList.push_back(
-							setAttributePositionBitVector(attributeIterator,
-									tokens[i].position));
-					tokenAttributeHitsMap[tokens[i].term].charOffsetOfTermInAttribute.push_back(
+					tokenAttributeHitsMap[tokens[i].term].attributeIdList.push_back(attributeIterator);
+					tokenAttributeHitsMap[tokens[i].term].positionsOfTermInAttribute.push_back(tokens[i].position);
+					tokenAttributeHitsMap[tokens[i].term].charOffsetsOfTermInAttribute.push_back(
 							tokens[i].charOffset);
+					tokenAttributeHitsMap[tokens[i].term].charLensOfTermInAttribute.push_back(
+							tokens[i].charLength);
+					tokenAttributeHitsMap[tokens[i].term].typesOfTermInAttribute.push_back(
+							tokens[i].analyzedTokenType);
 				}
 			}
 
@@ -209,7 +214,7 @@ void AnalyzerInternal::tokenizeRecord(const Record *record,
 
 //token utf-8 string to vector<vector<CharType> >
 void AnalyzerInternal::tokenizeQuery(const string &queryString,
-        vector<PositionalTerm> &queryKeywords) const {
+        vector<AnalyzedTermInfo> &queryKeywords, bool isPrefix) const {
     queryKeywords.clear();
     this->tokenStream->fillInCharacters(queryString);
     string currentToken = "";
@@ -219,7 +224,7 @@ void AnalyzerInternal::tokenizeQuery(const string &queryString,
         charVector = this->tokenStream->getProcessedToken();
         unsigned position = this->tokenStream->getProcessedTokenPosition();
         charTypeVectorToUtf8String(charVector, currentToken);
-        PositionalTerm pterm = {currentToken, position};
+        AnalyzedTermInfo pterm = {currentToken, position};
         queryKeywords.push_back(pterm);
         //cout<<currentToken<<endl;
     }
@@ -232,103 +237,6 @@ bool queryIsEmpty(string str) {
     return str.empty();
 }
 
-void AnalyzerInternal::tokenizeQueryWithFilter(const string &queryString,
-        vector<PositionalTerm> &queryKeywords, const char &delimiterCharacter,
-        const char &filterDelimiterCharacter, const char &fieldsAndCharacter,
-        const char &fieldsOrCharacter,
-        const std::map<string, unsigned> &searchableAttributesNameToId,
-        vector<unsigned> &filters) const {
-    stringstream charToString;
-    string delimiter;
-    string filterDelimiter;
-    string fieldDelimiter;
-    charToString << delimiterCharacter;
-    charToString >> delimiter;
-    charToString.clear();
-    charToString << filterDelimiterCharacter;
-    charToString >> filterDelimiter;
-    charToString.clear();
-    charToString << fieldsAndCharacter;
-    charToString << fieldsOrCharacter;
-    charToString >> fieldDelimiter;
-
-    string query = queryString;
-    queryKeywords.clear();
-    filters.clear();
-    std::transform(query.begin(), query.end(), query.begin(), ::tolower);
-
-    vector<string> parts;
-    replace_if(query.begin(), query.end(), boost::is_any_of(delimiter),
-            DEFAULT_DELIMITER);
-
-    boost::split(parts, query, boost::is_any_of(" "));
-    std::vector<string>::iterator iter = std::remove_if(parts.begin(),
-            parts.end(), queryIsEmpty);
-    parts.erase(iter, parts.end());
-    // print the queries
-    //std::cout<<"parts number:" << parts.size()<<std::endl;
-
-    bool malformed = false;
-    for (unsigned i = 0; i < parts.size(); i++) {
-        replace_if(parts[i].begin(), parts[i].end(),
-                boost::is_any_of(filterDelimiter), DEFAULT_DELIMITER);
-        vector<string> one_pair;
-        boost::split(one_pair, parts[i], boost::is_any_of(" "));
-
-        if (one_pair.size() > 2 || one_pair.size() == 0) {
-            malformed = true;
-            break;
-        }
-
-        const string cleanString = this->cleanString(one_pair[0]);
-        PositionalTerm pterm = {cleanString, i + 1};
-        queryKeywords.push_back(pterm);  // i + 1 because i is 0 based whereas position starts with 1
-
-        if (one_pair.size() == 1) {        // have no filter information
-            filters.push_back(0x7fffffff); // can appear in any field, the top bit is reserved for AND/OR relationship.
-            continue;
-        }
-
-        vector<string> fields;
-
-        bool AND = false;
-        bool OR = false;
-        if (one_pair[1].find(fieldsAndCharacter) != string::npos)
-            AND = true;
-        if (one_pair[1].find(fieldsOrCharacter) != string::npos)
-            OR = true;
-        if (AND && OR) {
-            malformed = true;
-            break;
-        }
-
-        boost::split(fields, one_pair[1], boost::is_any_of(fieldDelimiter));
-        unsigned filter = 0;
-        for (unsigned j = 0; j < fields.size(); j++) {
-            map<string, unsigned>::const_iterator iter =
-                    searchableAttributesNameToId.find(fields[j]);
-            if (iter == searchableAttributesNameToId.end()) {
-                malformed = true;
-                break;
-            }
-
-            unsigned bit = 1;
-            ASSERT(iter->second < 31); // the left most bit is reserved for indicating the AND/OR relation between fields
-            bit <<= iter->second;
-            filter |= bit;
-        }
-        if (AND)
-            filter |= 0x80000000;
-
-        if (malformed)
-            break;
-        else
-            filters.push_back(filter);
-    }
-
-    if (malformed || (queryKeywords.size() == 1 && isEmpty(queryKeywords[0].term)))
-        queryKeywords.clear();
-}
 
 const string& AnalyzerInternal::getRecordAllowedSpecialCharacters() const{
     return this->recordAllowedSpecialCharacters;

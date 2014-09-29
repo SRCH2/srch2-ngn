@@ -22,7 +22,7 @@ bool UnionLowestLevelSuggestionOperator::open(QueryEvaluatorInternal * queryEval
     this->queryEvaluatorIntrnal->getForwardIndex()->getForwardListDirectory_ReadView(forwardIndexDirectoryReadView);
     // 1. first iterate on active nodes and find best estimated leaf nodes.
     Term * term = this->getPhysicalPlanOptimizationNode()->getLogicalPlanNode()->getTerm(params.isFuzzy);
-    unsigned numberOfSuggestionsToFind = 10;
+    unsigned numberOfSuggestionsToFind = 350;
     /*
      * Maybe we can get this value from a constant later
      */
@@ -32,83 +32,162 @@ bool UnionLowestLevelSuggestionOperator::open(QueryEvaluatorInternal * queryEval
             activeNodeSets.get() ,
             numberOfSuggestionsToFind , suggestionPairs);
 
-    suggestionPairCursor = invertedListCursor = 0;
+
+    // save shared pointer to inverted list read views for performance improvement
+    for(std::vector<SuggestionInfo >::iterator suggestionInfoItr = suggestionPairs.begin();
+			suggestionInfoItr != suggestionPairs.end(); ++suggestionInfoItr){
+        shared_ptr<vectorview<unsigned> > invertedListReadView;
+        queryEvaluatorIntrnal->getInvertedIndex()->
+                    getInvertedListReadView(invertedListDirectoryReadView,
+                            suggestionInfoItr->suggestedCompleteTermNode->getInvertedListOffset(), invertedListReadView);
+        suggestionPairsInvertedListReadViews.push_back(invertedListReadView);
+
+    }
+
+    initializeHeap(term, params.ranker, params.prefixMatchPenalty);
 
     return true;
 }
 PhysicalPlanRecordItem * UnionLowestLevelSuggestionOperator::getNext(const PhysicalPlanExecutionParameters & params) {
-    if (suggestionPairCursor >= suggestionPairs.size()) {
-        return NULL;
-    }
 
     Term * term = this->getPhysicalPlanOptimizationNode()->getLogicalPlanNode()->getTerm(params.isFuzzy);
-    shared_ptr<vectorview<unsigned> > invertedListReadView;
-    queryEvaluatorIntrnal->getInvertedIndex()->
-                getInvertedListReadView(invertedListDirectoryReadView,
-                        suggestionPairs[suggestionPairCursor].suggestedCompleteTermNode->getInvertedListOffset(), invertedListReadView);
-    unsigned termAttributeBitmap = 0;
-    float termRecordStaticScore = 0;
-    // move on inverted list and add the records which are valid
-    while(true){
-        if(invertedListCursor < invertedListReadView->size() && suggestionPairCursor < suggestionPairs.size()){
-            unsigned recordId = invertedListReadView->getElement(invertedListCursor++);
-            unsigned keywordOffset = queryEvaluatorIntrnal->getInvertedIndex()->getKeywordOffset(
-                    this->forwardIndexDirectoryReadView,
-                    this->invertedIndexKeywordIdsReadView,
-                    recordId, suggestionPairs[suggestionPairCursor].suggestedCompleteTermNode->getInvertedListOffset());
-            // We check the record only if it's valid
-            if (keywordOffset != FORWARDLIST_NOTVALID &&
-                queryEvaluatorIntrnal->getInvertedIndex()->isValidTermPositionHit(forwardIndexDirectoryReadView,
-                    recordId,
-                    keywordOffset,
-                    0x7fffffff,  termAttributeBitmap, termRecordStaticScore)) { // 0x7fffffff means OR on all attributes
-                // return the item.
-                PhysicalPlanRecordItem * newItem = this->queryEvaluatorIntrnal->getPhysicalPlanRecordItemPool()->createRecordItem();
-                // record id
-                newItem->setRecordId(recordId);
-                // edit distance
-                vector<unsigned> editDistances;
-                editDistances.push_back(suggestionPairs[suggestionPairCursor].distance);
-                newItem->setRecordMatchEditDistances(editDistances);
-                // matching prefix
-                vector<TrieNodePointer> matchingPrefixes;
-                matchingPrefixes.push_back(suggestionPairs[suggestionPairCursor].queryTermNode);
-                newItem->setRecordMatchingPrefixes(matchingPrefixes);
-                // runtime score
-                bool isPrefixMatch = true;
-                newItem->setRecordRuntimeScore(    params.ranker->computeTermRecordRuntimeScore(termRecordStaticScore,
-                        suggestionPairs[suggestionPairCursor].distance,
-                        term->getKeyword()->size(),
-                        isPrefixMatch,
-                        params.prefixMatchPenalty , term->getSimilarityBoost())/*added by Jamshid*/*term->getBoost());
-                // static score
-                newItem->setRecordStaticScore(termRecordStaticScore);
-                // attributeBitmap
-                vector<unsigned> attributeBitmaps;
-                attributeBitmaps.push_back(termAttributeBitmap);
-                newItem->setRecordMatchAttributeBitmaps(attributeBitmaps);
-                newItem->addTermType(term->getTermType());
+	// get the next item from heap
+	UnionLowestLevelSuggestionOperator::SuggestionCursorHeapItem nextItem;
+	if(getNextHeapItem(term, params.ranker, params.prefixMatchPenalty, nextItem) == false){
+		// heap is empty so there is no more results to return
+		return NULL;
+	}
+    // return the item.
+    PhysicalPlanRecordItem * newItem = this->queryEvaluatorIntrnal->getPhysicalPlanRecordItemPool()->createRecordItem();
+    // record id
+    newItem->setRecordId(nextItem.recordId);
+    // edit distance
+    vector<unsigned> editDistances;
+    editDistances.push_back(suggestionPairs[nextItem.suggestionIndex].distance);
+    newItem->setRecordMatchEditDistances(editDistances);
+    // matching prefix
+    vector<TrieNodePointer> matchingPrefixes;
+    matchingPrefixes.push_back(suggestionPairs[nextItem.suggestionIndex].queryTermNode);
+    newItem->setRecordMatchingPrefixes(matchingPrefixes);
+    // runtime score
+    bool isPrefixMatch = true;
+    // runtime score is calculated before and used in heap
+    newItem->setRecordRuntimeScore(nextItem.score);
+    // static score
+    newItem->setRecordStaticScore(nextItem.termRecordStaticScore);
+    // attributeBitmap
+    vector<vector<unsigned> > matchedAttributeIdsList;
+    matchedAttributeIdsList.push_back(nextItem.attributeIdsList);
+    newItem->setRecordMatchAttributeBitmaps(matchedAttributeIdsList);
+    newItem->addTermType(term->getTermType());
+    return newItem;
 
-                return newItem;
-            }
-        }else{
-            suggestionPairCursor ++;
-            if(suggestionPairCursor >= suggestionPairs.size()){
-                return NULL;
-            }
-            queryEvaluatorIntrnal->getInvertedIndex()->
-                        getInvertedListReadView(invertedListDirectoryReadView,
-                                suggestionPairs[suggestionPairCursor].suggestedCompleteTermNode->getInvertedListOffset(), invertedListReadView);
-            invertedListCursor = 0;
-        }
-    }
-
-    return NULL;// we never reach here
 }
 bool UnionLowestLevelSuggestionOperator::close(PhysicalPlanExecutionParameters & params){
     suggestionPairs.clear();
-    suggestionPairCursor = invertedListCursor = 0;
+    suggestionPairsInvertedListReadViews.clear();
+    recordItemsHeap.clear();
     return true;
+}
+
+void UnionLowestLevelSuggestionOperator::initializeHeap(Term * term, Ranker * ranker, float prefixMatchPenalty){
+
+	// move on suggestions and for each one find the first valid record and put it in heap
+	for(unsigned suggestionIndex = 0 ; suggestionIndex < suggestionPairsInvertedListReadViews.size() ; ++suggestionIndex){
+
+		unsigned firstInvertedListCursotToAdd = 0;
+		vector<unsigned> matchedAttributeIdsList;
+		float termRecordStaticScore = 0;
+		while(true){
+			// inverted list of this suggestion is completely invalid so we don't put anything from this
+			// suggestion in heap
+			if(suggestionPairsInvertedListReadViews.at(suggestionIndex)->size() <= firstInvertedListCursotToAdd){
+				break;
+			}
+			unsigned recordId = suggestionPairsInvertedListReadViews.at(suggestionIndex)->getElement(firstInvertedListCursotToAdd);
+			unsigned keywordOffset = queryEvaluatorIntrnal->getInvertedIndex()->getKeywordOffset(
+					this->forwardIndexDirectoryReadView,
+					this->invertedIndexKeywordIdsReadView,
+					recordId, suggestionPairs[suggestionIndex].suggestedCompleteTermNode->getInvertedListOffset());
+			// We check the record only if it's valid
+			vector<unsigned> filterAttributes;
+			if (keywordOffset != FORWARDLIST_NOTVALID &&
+				queryEvaluatorIntrnal->getInvertedIndex()->isValidTermPositionHit(forwardIndexDirectoryReadView,
+					recordId,
+					keywordOffset,
+					filterAttributes, ATTRIBUTES_OP_OR, matchedAttributeIdsList, termRecordStaticScore)) { // 0x7fffffff means OR on all attributes
+
+				// calculate the runtime score of this record
+				float score = ranker->computeTermRecordRuntimeScore(termRecordStaticScore,
+                        suggestionPairs[suggestionIndex].distance,
+                        term->getKeyword()->size(),
+                        true,
+                        prefixMatchPenalty , term->getSimilarityBoost())*term->getBoost();
+				// put the item in heap
+				recordItemsHeap.push_back(SuggestionCursorHeapItem(suggestionIndex, firstInvertedListCursotToAdd,
+						recordId, score, matchedAttributeIdsList, termRecordStaticScore ));
+				break;
+			}else{
+				firstInvertedListCursotToAdd++;
+			}
+		}
+	}
+
+	// heapify
+	std::make_heap (recordItemsHeap.begin(),recordItemsHeap.end(),SuggestionCursorHeapItem());
+}
+
+bool UnionLowestLevelSuggestionOperator::getNextHeapItem(Term * term, Ranker * ranker, float prefixMatchPenalty,
+		UnionLowestLevelSuggestionOperator::SuggestionCursorHeapItem & item){
+	// if heap is empty return false so that getNext returns NULL
+	if(recordItemsHeap.size() == 0){
+		return false;
+	}
+
+	// pop the top element of heap
+	item = recordItemsHeap.front();
+	std::pop_heap (recordItemsHeap.begin(),recordItemsHeap.end(),SuggestionCursorHeapItem()); recordItemsHeap.pop_back();
+
+
+	// iterate on the same inverted list and push another record item to
+	// heap (starting from the next position on inverted list)
+	unsigned firstInvertedListCursotToAdd = item.invertedListCursor+1;
+	vector<unsigned> matchedAttributeIdsList;
+	float termRecordStaticScore = 0;
+	while(true){
+		if(suggestionPairsInvertedListReadViews.at(item.suggestionIndex)->size() <= firstInvertedListCursotToAdd){
+			break;
+		}
+		unsigned recordId = suggestionPairsInvertedListReadViews.at(item.suggestionIndex)->getElement(firstInvertedListCursotToAdd);
+		unsigned keywordOffset = queryEvaluatorIntrnal->getInvertedIndex()->getKeywordOffset(
+				this->forwardIndexDirectoryReadView,
+				this->invertedIndexKeywordIdsReadView,
+				recordId, suggestionPairs[item.suggestionIndex].suggestedCompleteTermNode->getInvertedListOffset());
+		// We check the record only if it's valid
+		vector<unsigned> attributeFilter;
+		if (keywordOffset != FORWARDLIST_NOTVALID &&
+			queryEvaluatorIntrnal->getInvertedIndex()->isValidTermPositionHit(forwardIndexDirectoryReadView,
+				recordId,
+				keywordOffset,
+				attributeFilter, ATTRIBUTES_OP_OR, matchedAttributeIdsList, termRecordStaticScore)) { // 0x7fffffff means OR on all attributes
+
+			float score = ranker->computeTermRecordRuntimeScore(termRecordStaticScore,
+					suggestionPairs[item.suggestionIndex].distance,
+					term->getKeyword()->size(),
+					true,
+					prefixMatchPenalty , term->getSimilarityBoost())*term->getBoost();
+			recordItemsHeap.push_back(SuggestionCursorHeapItem(item.suggestionIndex, firstInvertedListCursotToAdd,
+					recordId, score, matchedAttributeIdsList, termRecordStaticScore ));
+			std::push_heap(recordItemsHeap.begin(), recordItemsHeap.end(),SuggestionCursorHeapItem());
+			return true;
+		}else{
+			firstInvertedListCursotToAdd++;
+		}
+	}
+	// if we reach here, it means that inverted list didn't have any more records
+	return true;
+
+
 }
 
 string UnionLowestLevelSuggestionOperator::toString(){
@@ -148,7 +227,7 @@ PhysicalPlanCost UnionLowestLevelSuggestionOptimizationOperator::getCostOfVerify
     return PhysicalPlanCost();// costing is not needed for this operator.
 }
 void UnionLowestLevelSuggestionOptimizationOperator::getOutputProperties(IteratorProperties & prop){
-    // no output property
+    prop.addProperty(PhysicalPlanIteratorProperty_SortByScore);
 }
 void UnionLowestLevelSuggestionOptimizationOperator::getRequiredInputProperties(IteratorProperties & prop){
     // the only requirement for input is to be directly connected to inverted index,

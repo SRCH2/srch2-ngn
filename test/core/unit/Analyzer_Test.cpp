@@ -23,6 +23,7 @@
 #include <string>
 #include <cstring>
 #include <stdlib.h>
+#include <sys/stat.h>
 #include <iostream>
 #include <functional>
 #include <map>
@@ -102,11 +103,12 @@ void testStandardAnalyzer()
 }
 
 void testChineseAnalyzer(const string &dataDir){
-    string dictPath = dataDir + "/srch2_dict_ch.core";
+    string dictPath = dataDir + "/srch2_dictionary_zh_cn.bin";
     string src="We are美丽 Chineseㄓㄠ我是一个中国人。，上海自来水来自海上，从４月１０号起，“一票制” 朱镕基";
     src +="!，。》@##%     在民国时期，插画Picture在中国曾经盛极一时。";
     src += "END";
-    AnalyzerInternal *chineseAnalyzer = new ChineseAnalyzer(dictPath, NULL, NULL, NULL, string(""));
+    ChineseDictionaryContainer *dict = ChineseDictionaryContainer::getInstance(dictPath);
+    AnalyzerInternal *chineseAnalyzer = new ChineseAnalyzer(dict, NULL, NULL, NULL, string(""));
     TokenStream * tokenStream = chineseAnalyzer->createOperatorFlow();
     chineseAnalyzer->setTokenStream(tokenStream);
     tokenStream->fillInCharacters(src);
@@ -397,8 +399,9 @@ void testStopFilter(string dataDir) {
     stop->free();
 
     stop = StopWordContainer::getInstance(dataDir + "/stopWordsFile.txt");
+    ChineseDictionaryContainer * dict = ChineseDictionaryContainer::getInstance(dataDir +"/srch2_dictionary_zh_cn.bin");
     AnalyzerInternal *chineseAnalyzer = new ChineseAnalyzer(
-            dataDir + "/srch2_dict_ch.core", 
+            dict,
             stop,
             NULL, NULL,
             "" // special characters
@@ -436,7 +439,7 @@ void testStopFilter(string dataDir) {
 void testSynonymFilter(string dataDir) {
     cout << "\n\n";
     cout << "#########################################################################" << endl;
-    cout << "#########################################################################" << "Stop Filter" << endl;
+    cout << "############################ Synonym Test ###############################" << endl;
     cout << "stopWords File:  " << dataDir + "/stopWordsFile.txt" << "\n";
     cout << "stemmer File:  " << dataDir + "/StemmerHeadwords.txt" << "\n";
     cout << "stynonym File:  " << dataDir + "/synonymFile.txt" << "\n\n";
@@ -812,8 +815,9 @@ void testSynonymFilter(string dataDir) {
 
     // TEST 11 : Test ChineseAnayzer
     Logger::info("current dir:%s", dataDir.c_str());
-    AnalyzerInternal* chineseAnalyzer = new ChineseAnalyzer(
-            dataDir + "/srch2_dict_ch.core", stop, NULL, syn, "");
+    ChineseDictionaryContainer* dict = ChineseDictionaryContainer::getInstance(dataDir + "/srch2_dictionary_zh_cn.bin");
+    AnalyzerInternal* chineseAnalyzer = new ChineseAnalyzer( dict
+            , stop, NULL, syn, "");
     tokenStream = chineseAnalyzer->createOperatorFlow();
     chineseAnalyzer->setTokenStream(tokenStream);
     src = "ok~dd 美丽还是美";
@@ -843,6 +847,84 @@ void testSynonymFilter(string dataDir) {
     syn->free();
     stem->free();
     stop->free();
+
+    /*
+     *    Test 12. This test case tests whether the filter picks shorter synonym when large synonym
+     *    prefix do not match eventually.
+     *
+     *    Test record: "club los angeles galaxy"
+     *    synonym rule for this test:
+     *    los angeles = la
+     *    club los angeles lakers = showtime
+     */
+    SynonymContainer *synonymContainer = SynonymContainer::getInstance(dataDir + "/synonymFile.txt", SYNONYM_KEEP_ORIGIN);
+    simpleAnlyzer = new SimpleAnalyzer(NULL, NULL, NULL, synonymContainer, string(""));
+    tokenStream = simpleAnlyzer->createOperatorFlow();
+    simpleAnlyzer->setTokenStream(tokenStream);
+
+    string testRecord = "club los angeles galaxy";
+    tokenStream->fillInCharacters(testRecord);
+
+    cout << "## Test 12:  " << testRecord << endl;
+    vectorString.clear();
+    vectorString.push_back("club");
+    vectorString.push_back("los");
+    vectorString.push_back("angeles");
+    vectorString.push_back("la");  // los angeles = la
+    vectorString.push_back("galaxy");
+
+    i = 0;
+    while (tokenStream->processToken()) {
+        vector<CharType> charVector;
+        charVector = tokenStream->getProcessedToken();
+        charTypeVectorToUtf8String(charVector, src);
+        int pos = tokenStream->getProcessedTokenPosition();
+        int offset = tokenStream->getProcessedTokenCharOffset();
+        int charLen = tokenStream->getProcessedTokenLen();
+        AnalyzedTokenType type = tokenStream->getProcessedTokentype();
+
+        cout << "+++++++ SynonymFilter:  " << src  << " : " << pos << " : " << offset << " : "
+        		<<  charLen << " : " << type <<  endl;
+        ASSERT(vectorString[i] == src);
+        i++;
+    }
+
+    /*
+     *    Test 13. This test case tests replacement only synonyms. It ignores the expansion flag and
+     *    always replaces original token by its synonym.
+     *
+     *    Test record: "uci cs department"
+     *    synonym rule for this test:
+     *    cs=>computer science
+     */
+
+    testRecord = "uci cs department";
+    cout << "## Test 13:  " << testRecord << endl;
+
+    tokenStream->fillInCharacters(testRecord);
+
+    vectorString.clear();
+    vectorString.push_back("uci");
+    vectorString.push_back("computer science");   // cs=computer science
+    vectorString.push_back("department");
+
+    i = 0;
+    while (tokenStream->processToken()) {
+    	vector<CharType> charVector;
+    	charVector = tokenStream->getProcessedToken();
+    	charTypeVectorToUtf8String(charVector, src);
+        int pos = tokenStream->getProcessedTokenPosition();
+        int offset = tokenStream->getProcessedTokenCharOffset();
+        int charLen = tokenStream->getProcessedTokenLen();
+        AnalyzedTokenType type = tokenStream->getProcessedTokentype();
+
+        cout << "+++++++ SynonymFilter:  " << src  << " : " << pos << " : " << offset << " : "
+        		<<  charLen << " : " << type <<  endl;
+    	ASSERT(vectorString[i] == src);
+    	i++;
+    }
+    delete simpleAnlyzer;
+
 }
 
 void testAnalyzerSerilization(string dataDir) {
@@ -1097,6 +1179,23 @@ void testProtectedWords(string dataDir){
     stop->free();
 }
 
+int buildChineseDictionary(const string & builder, const string & textFile, const string &outputBin){
+    Logger::debug("builder: %s", builder.c_str());
+    Logger::debug("textFile: %s", textFile.c_str());
+    Logger::debug("outputBin: %s", outputBin.c_str());
+    struct stat stResult;
+    if ( stat(builder.c_str(), &stResult) != 0){
+        Logger::error("utility bin not found, the test will not rebuild the ChineseDictionary.%s"
+                , outputBin.c_str());
+        return -1;
+    }
+    string command = builder + " " + textFile + " " + outputBin;
+    int ret = system(command.c_str());
+    if (ret != 0){
+        Logger::error("ChineseDictionaryBuilder run error.");
+    }
+    return ret;
+}
 
 int main() {
     if ((getenv("dataDir") == NULL) ) {
@@ -1109,9 +1208,18 @@ int main() {
 
     string dataDir(getenv("dataDir"));
 
+    string chineseDictionaryBuilder(getenv("cnDictBuilder"));
+    string chineseDictionaryTextFile(getenv("cnDictTxt"));
+    const string chineseDictionaryBinary = dataDir +"/srch2_dictionary_zh_cn.bin";
+
+    int ret = buildChineseDictionary(chineseDictionaryBuilder, chineseDictionaryTextFile, 
+            chineseDictionaryBinary);
+    if (ret != 0) return ret;
+
     SynonymContainer::getInstance(dataDir + "/synonymFile.txt", SYNONYM_KEEP_ORIGIN)->init();
     StemmerContainer::getInstance(dataDir + "/StemmerHeadwords.txt")->init();
     StopWordContainer::getInstance(dataDir + "/stopWordsFile.txt")->init();
+    ChineseDictionaryContainer::getInstance(chineseDictionaryBinary)->init();
 
     testSimpleAnalyzer();
     cout << "SimpleAnalyzer test passed" << endl;

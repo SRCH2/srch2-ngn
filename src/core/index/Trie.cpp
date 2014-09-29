@@ -50,6 +50,7 @@ TrieNode::TrieNode()
     this->insertCounters = 0;
     this->setLeftInsertCounter(1); // default values: 1
     this->setRightInsertCounter(1);
+    this->isCopy = false;
 }
 
 TrieNode::TrieNode(bool create_root)
@@ -70,9 +71,10 @@ TrieNode::TrieNode(bool create_root)
     this->insertCounters = 0;
     this->setLeftInsertCounter(1); // default values: 1
     this->setRightInsertCounter(1);
+    this->isCopy = false;
 }
 
-TrieNode::TrieNode(int depth, CharType character)
+TrieNode::TrieNode(int depth, CharType character, bool isCopy)
 {
     this->leftMostDescendant = NULL;
     this->rightMostDescendant = NULL;
@@ -88,9 +90,10 @@ TrieNode::TrieNode(int depth, CharType character)
     this->insertCounters = 0;
     this->setLeftInsertCounter(1); // default values: 1
     this->setRightInsertCounter(1);
+    this->isCopy = isCopy;
 }
 
-TrieNode::TrieNode(const TrieNode *src)
+TrieNode::TrieNode(const TrieNode *src, bool isCopy)
 {
     this->character = src->character;
     this->id = src->id;
@@ -106,6 +109,7 @@ TrieNode::TrieNode(const TrieNode *src)
     this->insertCounters = 0;
     this->setLeftInsertCounter(src->getLeftInsertCounter());
     this->setRightInsertCounter(src->getRightInsertCounter());
+    this->isCopy = isCopy;
 }
 
 TrieNode::~TrieNode()
@@ -313,6 +317,24 @@ int TrieNode::findLowerBoundChildNodePositionByMinId(unsigned minId) const
     return first - 1;    // failed to find key, return lower bound
 }
 
+void TrieNode::resetCopyFlag(){
+	// We don't need concurrency control for this flag, since the
+	// flag is only used by writers (not readers), and there can
+	// be only one writer in the system at any time. 
+	this->isCopy = false;
+	// If one child has isCopy == false, then all the nodes under
+	// that subtrie should have isCopy == false. 
+	// The reason is that trie nodes were copied starting from the
+	// root during insertions, and it's impossible to have 
+	// a trie node with isCopy == true while its parent has isCopy
+	// == false. 
+	for(unsigned i = 0; i < this->childrenPointerList.size() ; i++){
+		if(this->childrenPointerList[i] != NULL && this->childrenPointerList[i]->isCopy == true){
+			this->childrenPointerList[i]->resetCopyFlag();
+		}
+	}
+}
+
 
 
 TrieRootNodeAndFreeList::TrieRootNodeAndFreeList()
@@ -458,7 +480,8 @@ void Trie::addKeyword_SetPrevIdNexIdByPathTrace(vector<TrieNode* > &pathTrace,
         // This block of code is used to get the nextKeywordID
 
         // Corner case: an already existing trie node is made into a terminal node.
-        // For example, say "cats" keyword is already in Trie and we add "cat". No new trie nodes are created by we
+        // For example, say "cats" keyword is already in Trie and we
+        // add "cat". No new trie nodes are created by we 
         // make an existing trienode into a terminal node.
         if (!isNewTrieNode) {
             unsigned pathTraceIterator = pathTrace.size() - 1;
@@ -731,15 +754,22 @@ unsigned Trie::addKeyword_ThreadSafe(const std::vector<CharType> &keyword, unsig
             // clone a new trie node
             TrieNode *childNode = nodeCopy->getChild(childPosition);
 
-            childNodeCopy = new TrieNode(childNode);
-            oldToNewTrieNodeMap[childNode] = childNodeCopy; // remember the mapping
-            nodeCopy->setChild(childPosition, childNodeCopy);
+	    // If the child node is already a copy from the read view,
+	    // we don't need to copy it again during the new insertion. 
+            if(childNode->isCopy){
+            	childNodeCopy = childNode;
+            }else{
+            	childNodeCopy = new TrieNode(childNode, true);
+            	oldToNewTrieNodeMap[childNode] = childNodeCopy; // remember the mapping
+            	nodeCopy->setChild(childPosition, childNodeCopy);
 
-            // Add to free_list for future deletion
-            trieRootNode_ReadView->free_list.push_back(childNode);
+            	// Add to free_list for future deletion
+            	trieRootNode_ReadView->free_list.push_back(childNode);
+            }
+
         } else {
             // create a TrieNode with terminal flag set to false.
-            childNodeCopy = new TrieNode(depthCounter, (CharType) *charTypeIterator);
+            childNodeCopy = new TrieNode(depthCounter, (CharType) *charTypeIterator, true);
             nodeCopy->addChild(-childPosition-1, childNodeCopy);
             isNewTrieNode = true;
         }
@@ -1141,13 +1171,21 @@ void Trie::doReassignment(const vector<TrieNode *> &reassignRange, map<TrieNode 
         trieNodeIdMapper[reassignRange[reassignRange.size()-1]] = MAX_ALLOCATED_KEYWORD_ID;
     }
 
-    // calculate the distance between each Id
-    ASSERT(leftId < rightId);
-    unsigned pace = (rightId - leftId) / (reassignRange.size()-1);
+    if (reassignRange.size() > 1) {
+    	// calculate the distance between each Id
+    	ASSERT(leftId < rightId);
+    	unsigned pace = (rightId - leftId) / (reassignRange.size()-1);
 
-    // store the reassigned Id in a map
-    for (unsigned i = 1; i < reassignRange.size() - 1; i++)
-        trieNodeIdMapper[reassignRange[i]] = leftId + i * pace;
+    	// store the reassigned Id in a map
+    	for (unsigned i = 1; i < reassignRange.size() - 1; i++)
+    		trieNodeIdMapper[reassignRange[i]] = leftId + i * pace;
+    } else {
+    	// when trie is empty and first insertion only has one keyword leftId and rightId both are zero
+    	// and reassignRange.size() is 1
+    	// So in this special case we just assign id "MAX_ALLOCATED_KEYWORD_ID/2" to this node
+    	trieNodeIdMapper[reassignRange[0]] = MAX_ALLOCATED_KEYWORD_ID/2;
+    }
+
 }
 
 // For all the TrieNodes we need to reassign,
@@ -1312,7 +1350,7 @@ void Trie::calculateNodeHistogramValuesFromChildren(TrieNode *node,
 					node->getInvertedListOffset(), invertedListReadView);
 
 			float termRecordStaticScore = 0;
-			unsigned termAttributeBitmap = 0;
+			vector<unsigned> matchedAttrsList;
 			// move on inverted list to find the first record which is valid
 			unsigned invertedListCursor = 0;
 			while(invertedListCursor < invertedListReadView->size()){
@@ -1325,9 +1363,10 @@ void Trie::calculateNodeHistogramValuesFromChildren(TrieNode *node,
 				// if the record is not valid (e.g., deleted), ignore it.
 				if (keywordOffset == FORWARDLIST_NOTVALID)
 					continue;
+				vector<unsigned> filterAttributeList;
 				if (invertedIndex->isValidTermPositionHit(forwardIndexDirectoryReadView, recordId,
 						keywordOffset,
-						0x7fffffff,  termAttributeBitmap, termRecordStaticScore)) { // 0x7fffffff means OR on all attributes
+						filterAttributeList, ATTRIBUTES_OP_OR,  matchedAttrsList, termRecordStaticScore)) { // 0x7fffffff means OR on all attributes
 					break;
 				}
 			}
@@ -1476,6 +1515,8 @@ void Trie::merge(const InvertedIndex * invertedIndex ,
 		const unsigned totalNumberOfRecords  , bool updateHistogram)
 {
 
+	// We change the isCopy of the nodes in the write view.
+	this->root_writeview->resetCopyFlag();
 	// if it's the time for updating histogram (because we don't do it for all merges, it's for example every 10 merges)
 	// then update the histogram information in Trie.
 	if(updateHistogram == true){
@@ -1512,6 +1553,8 @@ void Trie::commit()
     ASSERT(commited == false);
     // we remove the old readview's root first
     delete this->root_readview->root;
+    // We change the isCopy of the nodes in the write view.
+    this->root_writeview->resetCopyFlag();
     this->root_readview->root = root_writeview;
     // We create a new write view's root by copying the root of the read review
     this->root_writeview = new TrieNode(this->root_readview->root);

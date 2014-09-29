@@ -119,7 +119,8 @@ class PhraseInfo{
         vector<unsigned> keywordIds;
         vector<unsigned> phraseKeywordPositionIndex;
         unsigned proximitySlop;
-        unsigned attributeBitMap;
+        vector<unsigned> attributeIdsList;
+        ATTRIBUTES_OP attrOps;  // flag to indicate conjunction/disjunction in between attributes
 
         string toString(){
         	stringstream ss;
@@ -133,7 +134,10 @@ class PhraseInfo{
         		ss << phraseKeywordPositionIndex[i];
         	}
         	ss << proximitySlop;
-        	ss << attributeBitMap;
+        	ss << attrOps;
+        	for(unsigned i = 0 ; i < attributeIdsList.size() ; ++i ){
+        		ss << attributeIdsList[i];
+        	}
         	return ss.str();
         }
 };
@@ -144,11 +148,12 @@ public:
 	void addPhrase(const vector<string>& phraseKeywords,
 			const vector<unsigned>& phraseKeywordsPositionIndex,
 			unsigned proximitySlop,
-			unsigned attributeBitMap){
+			const vector<unsigned>& attributeIdsList, ATTRIBUTES_OP attrOps){
 
 		PhraseInfo pi;
 		pi.phraseKeywordPositionIndex = phraseKeywordsPositionIndex;
-		pi.attributeBitMap = attributeBitMap;
+		pi.attributeIdsList = attributeIdsList;
+		pi.attrOps = attrOps;
 		pi.phraseKeyWords = phraseKeywords;
 		pi.proximitySlop = proximitySlop;
 		phraseInfoVector.push_back(pi);
@@ -179,6 +184,9 @@ public:
 	void setPhraseSearchInfoContainer(PhraseSearchInfoContainer * phraseSearchInfoContainer);
 	PhraseSearchInfoContainer * getPhraseSearchInfoContainer();
 
+	void setRoleId(string & roleId);
+	string* getRoleId();
+
 
 	string toString();
 private:
@@ -186,6 +194,7 @@ private:
 	SortEvaluator * sortEvaluator;
 	RefiningAttributeExpressionEvaluator * filterQueryEvaluator;
 	PhraseSearchInfoContainer * phraseSearchInfoContainer;
+	string roleId;
 };
 
 

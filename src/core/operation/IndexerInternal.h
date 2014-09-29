@@ -125,6 +125,14 @@ public:
      */
     INDEXWRITE_RETVAL addRecord(const Record *record, Analyzer *analyzer);
 
+    // Edits the records access list base on the command type
+    INDEXWRITE_RETVAL aclRecordModifyRoles(const std::string &resourcePrimaryKeyID, vector<string> &roleIds, RecordAclCommandType commandType);
+
+    // Deletes the role id from the permission map
+    // we use this function for deleting a record from a role core
+    // then we need to delete this record from the permission map of the resource cores of this core
+    INDEXWRITE_RETVAL deleteRoleRecord(const std::string &rolePrimaryKeyID);
+
     /**
      * Deletes all the records.
      */
@@ -157,6 +165,9 @@ public:
         return this->index->getInMemoryData(internalRecordId);
     }
 
+    const AttributeAccessControl & getAttributeAcl() const {
+    	return *(this->index->attributeAcl);
+    }
     void exportData(const string &exportedDataFileName);
 
     void save();
@@ -171,11 +182,11 @@ public:
     inline const string getIndexHealth() const
     {
         std::stringstream str;
-        str << "\"engine_status\":{";
+        str << "{\"engine_status\":{";
         str << "\"search_requests\":\"" << this->index->_getReadCount() << "\",";
         str << "\"write_requests\":\"" <<  this->index->_getWriteCount() << "\",";
         str << "\"docs_in_index\":\"" << this->index->_getNumberOfDocumentsInIndex() << "\",";
-        str << this->indexHealthInfo.getIndexHealthString() << "}";
+        str << this->indexHealthInfo.getIndexHealthString() << "}}";
         return str.str();
     }
     
@@ -202,7 +213,12 @@ public:
         this->merge(false);
     }
 
-    inline QuadTree *getQuadTree() const { return this->index->quadTree; }
+    boost::shared_ptr<QuadTreeRootNodeAndFreeLists> getQuadTree_ReadView(){
+    	boost::shared_ptr<QuadTreeRootNodeAndFreeLists> quadTreeRootNodeAndFreeLists;
+    	this->index->quadTree->getQuadTreeRootNode_ReadView(quadTreeRootNodeAndFreeLists);
+    	return quadTreeRootNodeAndFreeLists;
+    }
+
     inline ForwardIndex * getForwardIndex() const { return this->index->forwardIndex; }
 
     pthread_t createAndStartMergeThreadLoop();

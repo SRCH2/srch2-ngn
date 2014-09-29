@@ -31,7 +31,6 @@
 #include <instantsearch/Ranker.h>
 #include <query/QueryResultsInternal.h>
 #include "index/ForwardIndex.h"
-#include "geo/QuadNodeInternalStructures.h"
 #include "operation/IndexData.h"
 #include <instantsearch/LogicalPlan.h>
 #include "physical_plan/PhysicalPlan.h"
@@ -87,17 +86,6 @@ public:
      */
     int search(LogicalPlan * logicalPlan , QueryResults *queryResults);
 
-    /**
-     * Does Map Search
-     */
-    int geoSearch(const Query *query, QueryResults *queryResults) ;
-
-    // for doing a geo range query with a circle
-    void geoSearch(const Circle &queryCircle, QueryResults *queryResults) ;
-
-    // for doing a geo range query with a rectangle
-    void geoSearch(const Rectangle &queryRectangle, QueryResults *queryResults) ;
-
     // for retrieving only one result by having the primary key
     void search(const std::string & primaryKey, QueryResults *queryResults) ;
 
@@ -116,10 +104,11 @@ public:
     }
 
     void getForwardIndex_ReadView(shared_ptr<vectorview<ForwardListPtr> > & readView){
-    	readView = this->forwardIndexDirectoryReadView;
-    }
-    void setForwardIndex_ReadView(){
-        this->indexData->forwardIndex->getForwardListDirectory_ReadView(forwardIndexDirectoryReadView);
+	// We need to get the read view from this->indexReadToken
+	// instead of calling this->getTrie()->getTrieRootNode_ReadView()
+	// since the latter may give a read view that is different from
+	// the one we got when the search started.
+    	readView = this->indexReadToken.forwardIndexReadViewSharedPtr;
     }
 
     Schema * getSchema() {
@@ -141,7 +130,6 @@ public:
     PhysicalOperatorFactory * getPhysicalOperatorFactory();
     void setPhysicalOperatorFactory(PhysicalOperatorFactory * physicalOperatorFactory);
     PhysicalPlanRecordItemPool * getPhysicalPlanRecordItemPool();
-    void setPhysicalPlanRecordItemFactory(PhysicalPlanRecordItemFactory * physicalPlanRecordItemFactory);
 
     //DEBUG function. Used in CacheIntegration_Test
     bool cacheHit(const Query *query);
@@ -166,13 +154,8 @@ private:
     QueryEvaluatorRuntimeParametersContainer parameters;
     CacheManager *cacheManager;
     PhysicalOperatorFactory * physicalOperatorFactory;
-    PhysicalPlanRecordItemFactory * physicalPlanRecordItemFactory;
-    unsigned physicalPlanRecordItemPoolHandle;
+    PhysicalPlanRecordItemPool * physicalPlanRecordItemPool;
 
-    shared_ptr<vectorview<ForwardListPtr> > forwardIndexDirectoryReadView;
-    // search functions for map search
-    int searchMapQuery(const Query *query, QueryResults* queryResults);
-    void addMoreNodesToExpansion(const TrieNode* trieNode, unsigned distance, unsigned bound, MapSearcherTerm &mapSearcherTerm);
 };
 
 }
