@@ -103,7 +103,7 @@ namespace srch2
     	const TimeDuration & getTimeDuration() const;
 
 
-    	const TypedValue & minimumValue();
+    	TypedValue minimumValue();
 
     	float castToFloat();
 
@@ -127,7 +127,7 @@ namespace srch2
     	 * which returns a list of indices (also refer to findIndexOfContainingInterval)
     	 * Example: <1,3,5> will cause calling findIndexOfContainingInterval for 1, 3 and 5 three times.
     	 */
-    	const vector<unsigned> & findIndicesOfContainingIntervals(TypedValue & start , TypedValue & end, TypedValue & gap) const;
+    	const vector<unsigned> findIndicesOfContainingIntervals(TypedValue & start , TypedValue & end, TypedValue & gap) const;
 
     	string toString() const;
 

@@ -181,6 +181,7 @@ void Srch2Server::createAndBootStrapIndexer(const string & directoryPath)
 	    AnalyzerHelper::initializeAnalyzerResource(this->getCoreInfo());
 	    const srch2is::Schema *schema = this->getCoreInfo()->getSchema();
 	    indexer = Indexer::create(indexMetaData, schema);
+		RecordSerializerUtil::populateStoredSchema(storedAttrSchema, getIndexer()->getSchema());
 	    switch(getCoreInfo()->getDataSourceType())
 	    {
 	    case srch2http::DATA_SOURCE_JSON_FILE:
@@ -189,7 +190,6 @@ void Srch2Server::createAndBootStrapIndexer(const string & directoryPath)
 	        	if(getDataFilePath().compare("") != 0){
 					// Create from JSON and save to index-dir
 					Logger::console("Creating indexes from JSON file...");
-					RecordSerializerUtil::populateStoredSchema(storedAttrSchema, getIndexer()->getSchema());
 					indexedCounter = DaemonDataSource::createNewIndexFromFile(getIndexer(),
 							storedAttrSchema, this->getCoreInfo(),getDataFilePath());
 	        	}

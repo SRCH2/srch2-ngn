@@ -766,7 +766,7 @@ namespace srch2
 		return timeDurationTypedValue;
 	}
 
-	const TypedValue & TypedValue::minimumValue(){
+	TypedValue TypedValue::minimumValue(){
 		TypedValue result ;
 		switch (valueType) {
 				case ATTRIBUTE_TYPE_INT:
@@ -974,7 +974,7 @@ namespace srch2
     }
 
 
-	const vector<unsigned> & TypedValue::findIndicesOfContainingIntervals(TypedValue & start , TypedValue & end, TypedValue & gap) const{
+	const vector<unsigned> TypedValue::findIndicesOfContainingIntervals(TypedValue & start , TypedValue & end, TypedValue & gap) const{
 		vector<unsigned> result;
 		// move on all single values and find the index for each one of them
 		vector<TypedValue> singleValues;
