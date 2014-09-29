@@ -98,12 +98,14 @@ class LogicalPlanPhraseNode : public LogicalPlanNode{
 public:
 	LogicalPlanPhraseNode(const vector<string>& phraseKeyWords,
 	    		const vector<unsigned>& phraseKeywordsPosition,
-	    		short slop, const vector<unsigned>& fieldFilter) : LogicalPlanNode(LogicalPlanNodeTypePhrase) {
+	    		short slop, const vector<unsigned>& fieldFilter,
+                        ATTRIBUTES_OP attrOp) : LogicalPlanNode(LogicalPlanNodeTypePhrase) {
 		phraseInfo = new PhraseInfo();
 		phraseInfo->attributeIdsList = fieldFilter;
 		phraseInfo->phraseKeyWords = phraseKeyWords;
 		phraseInfo->phraseKeywordPositionIndex = phraseKeywordsPosition;
 		phraseInfo->proximitySlop = slop;
+		phraseInfo->attrOps = attrOp; 
 	}
 
 
@@ -187,7 +189,7 @@ public:
     LogicalPlanNode * createOperatorLogicalPlanNode(LogicalPlanNodeType nodeType);
     LogicalPlanNode * createPhraseLogicalPlanNode(const vector<string>& phraseKeyWords,
     		const vector<unsigned>& phraseKeywordsPosition,
-    		short slop, const vector<unsigned>& fieldFilter) ;
+    		short slop, const vector<unsigned>& fieldFilter, ATTRIBUTES_OP attrOp) ;
 
 	ResultsPostProcessorPlan* getPostProcessingPlan() const {
 		return postProcessingPlan;

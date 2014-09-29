@@ -526,7 +526,8 @@ LogicalPlanNode * QueryRewriter::buildLogicalPlan(ParseTreeNode * root, LogicalP
 						result = logicalPlan.createPhraseLogicalPlanNode(phraseKeyWords,
 								iter->second.phraseKeywordPositionIndex,
 								root->termIntermediateStructure->phraseSlop,
-								root->termIntermediateStructure->fieldFilterList);
+								root->termIntermediateStructure->fieldFilterList,
+								root->termIntermediateStructure->fieldFilterAttrOperation);
 						result->children.push_back(mergeNode);
 					}else {
 						result = mergeNode;
