@@ -6309,7 +6309,7 @@ PUGI__NS_BEGIN
 		char* exponent_string = strchr(buffer, 'e');
 		assert(exponent_string);
 
-		int exponent = atoi(exponent_string + 1);
+		int exponent = static_cast<int>(strtol(exponent_string + 1,NULL,10));
 
 		// extract mantissa string: skip sign
 		char* mantissa = buffer[0] == '-' ? buffer + 1 : buffer;
@@ -6431,7 +6431,7 @@ PUGI__NS_BEGIN
 	#ifdef PUGIXML_WCHAR_MODE
 		return wcstod(string, 0);
 	#else
-		return atof(string);
+		return static_cast<float>(strtod(string,NULL));
 	#endif
 	}
 

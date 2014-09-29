@@ -311,10 +311,11 @@ static bool checkOperationPermission(evhttp_request *req,
 	}
 
 	if(!configuredPort) {
-		//error
-		//TODO: make sure cm return defaultPort on portType which are not set
-		// this operation not set to a specific port so only accepted
-		// on the default port
+        // this operation not set to a specific port so only accepted on the default port
+        configuredPort =
+                static_cast<unsigned short>(strtoul(
+                        srch2Server->indexDataConfig->getHTTPServerListeningPort().c_str(),
+                        NULL, 10));
 	}
 
 	// compare arrival port to configuration file port
@@ -816,7 +817,8 @@ static int getHttpServerMetadata(ConfigManager *config, PortSocketMap_t *globalP
 	globalHostName = config->getHTTPServerListeningHostname().c_str();
 
 	// add the default port
-	globalDefaultPort = atoi(config->getHTTPServerDefaultListeningPort().c_str());
+    globalDefaultPort = static_cast<unsigned short>(strtoul(
+            config->getHTTPServerDefaultListeningPort().c_str(), NULL, 10));
 	if (globalDefaultPort > 0) {
 		ports.insert(globalDefaultPort);
 	}
@@ -873,6 +875,26 @@ static int createHTTPServersAndAccompanyingThreads(int MAX_THREADS,
 	}
 	return 0;
 }
+//=======
+//static int startServers(ConfigManager *config, vector<struct event_base *> *evBases, vector<struct evhttp *> *evServers, CoreNameServerMap_t *coreNameServerMap, PortSocketMap_t *globalPortSocketMap)
+//{
+//    // Step 1: Waiting server
+//    // http://code.google.com/p/imhttpd/source/browse/trunk/MHttpd.c
+//    /* 1). event initialization */
+//    globalDefaultPort = static_cast<unsigned short>(strtoul(
+//            config->getHTTPServerListeningPort().c_str(), NULL, 10));
+//    globalHostName = config->getHTTPServerListeningHostname().c_str(); //"127.0.0.1";
+//
+//    // bind the default port
+//    if (globalDefaultPort > 0 && globalPortSocketMap->find(globalDefaultPort) == globalPortSocketMap->end()) {
+//        int socketFd = bindSocket(globalHostName, globalDefaultPort);
+//        if (socketFd < 0) {
+//            perror("socket bind error");
+//            return 255;
+//        }
+//        (*globalPortSocketMap)[globalDefaultPort] = socketFd;
+//    }
+//>>>>>>> pullrequest-14-437
 
 
 /*

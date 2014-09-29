@@ -33,6 +33,9 @@ MESSAGE(STATUS  "BUILDING TEST: ${CMAKE_CURRENT_BINARY_DIR}")
 
 SET(UNIT_TEST_INDEX_DIR ${CMAKE_SOURCE_DIR}/test/core/unit/test_data/)
 
+ADD_TEST(JSONValueObjectToRecord_Test ${CMAKE_CURRENT_BINARY_DIR}/wrapper/unit/JSONValueObjectToRecord_Test "--verbose")
+SET_TESTS_PROPERTIES(JSONValueObjectToRecord_Test PROPERTIES ENVIRONMENT "srch2_config_file=${CMAKE_SOURCE_DIR}/test/wrapper/unit/JSONValueObjectToRecord_Test")
+
 ADD_TEST(ConfigManager_Test ${CMAKE_CURRENT_BINARY_DIR}/wrapper/unit/ConfigManager_Test "--verbose")
 SET_TESTS_PROPERTIES(ConfigManager_Test PROPERTIES ENVIRONMENT "srch2_config_file=${CMAKE_SOURCE_DIR}/test/wrapper/unit")
 
