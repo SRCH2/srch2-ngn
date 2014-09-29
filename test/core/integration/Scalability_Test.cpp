@@ -42,7 +42,7 @@ void buildIndex(string dataFile, string indexDir) {
     		mergeEveryNSeconds, mergeEveryMWrites,
     		updateHistogramEveryPMerges, updateHistogramEveryQWrites,
     		indexDir);
-    Indexer *indexer = Indexer::create(indexMetaData, analyzer, schema);
+    Indexer *indexer = Indexer::create(indexMetaData, schema);
 
     Record *record = new Record(schema);
 
@@ -111,7 +111,7 @@ void buildGeoIndex(string dataFile, string indexDir) {
     		mergeEveryNSeconds, mergeEveryMWrites,
     		updateHistogramEveryPMerges, updateHistogramEveryQWrites,
     		indexDir);
-    Indexer *indexer = Indexer::create(indexMetaData, analyzer, schema);
+    Indexer *indexer = Indexer::create(indexMetaData, schema);
 
     Record *record = new Record(schema);
 
@@ -354,7 +354,8 @@ void testSearch(const string& dataFile, const string& indexDir, const string& qu
     		mergeEveryNSeconds, mergeEveryMWrites,
     		updateHistogramEveryPMerges, updateHistogramEveryQWrites,
     		indexDir);
-    Indexer *index = Indexer::load(indexMetaData);
+    Indexer *index = Indexer::create(indexMetaData);
+    index->bootStrapFromDisk();
     QueryEvaluatorRuntimeParametersContainer runtimeParameters;
     QueryEvaluator * queryEvaluator = new QueryEvaluator(index, &runtimeParameters);
 

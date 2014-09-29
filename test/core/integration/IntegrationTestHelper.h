@@ -113,7 +113,7 @@ void buildIndex(string indexDir)
     		mergeEveryNSeconds, mergeEveryMWrites,
     		updateHistogramEveryPMerges, updateHistogramEveryQWrites,
     		indexDir);
-    Indexer *indexer = Indexer::create(indexMetaData, analyzer, schema);
+    Indexer *indexer = Indexer::create(indexMetaData,  schema);
     
     Record *record = new Record(schema);
 
@@ -203,7 +203,7 @@ void buildFactualIndex(string indexDir, unsigned docsToIndex)
     		mergeEveryNSeconds, mergeEveryMWrites,
     		updateHistogramEveryPMerges, updateHistogramEveryQWrites,
     		indexDir);
-    Indexer *indexer = Indexer::create(indexMetaData, analyzer, schema);
+    Indexer *indexer = Indexer::create(indexMetaData,  schema);
     
     Record *record = new Record(schema);
 

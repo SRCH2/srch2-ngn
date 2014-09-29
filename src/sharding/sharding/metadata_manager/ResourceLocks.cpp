@@ -368,25 +368,25 @@ void PendingLockRequestBuffer::applyNodeFailure(const unsigned failedNodeId){
 }
 
 void PendingLockRequestBuffer::print() const{
-	if(pendingRequests.size() == 0){
-//		cout << "Pending lock requests : empty." << endl;
-		return;
-	}
-	cout << "**************************************************************************************************" << endl;
-	cout << "Pending requests : " << endl;
-	cout << "**************************************************************************************************" << endl;
-	vector<string> pendingHeaders;
-	pendingHeaders.push_back("Info");
-	vector<string> pendingLables;
-	for(unsigned i = 0 ; i < pendingRequests.size(); ++i){
-		pendingLables.push_back("");
-	}
-	srch2::util::TableFormatPrinter pendingTable("Pending lock requests", 80, pendingHeaders, pendingLables );
-	pendingTable.printColumnHeaders();
-	pendingTable.startFilling();
-	for(unsigned i = 0 ; i < pendingRequests.size(); ++i){
-		pendingTable.printNextCell(pendingRequests.at(i).toString());
-	}
+//	if(pendingRequests.size() == 0){
+////		cout << "Pending lock requests : empty." << endl;
+//		return;
+//	}
+//	cout << "**************************************************************************************************" << endl;
+//	cout << "Pending requests : " << endl;
+//	cout << "**************************************************************************************************" << endl;
+//	vector<string> pendingHeaders;
+//	pendingHeaders.push_back("Info");
+//	vector<string> pendingLables;
+//	for(unsigned i = 0 ; i < pendingRequests.size(); ++i){
+//		pendingLables.push_back("");
+//	}
+//	srch2::util::TableFormatPrinter pendingTable("Pending lock requests", 80, pendingHeaders, pendingLables );
+//	pendingTable.printColumnHeaders();
+//	pendingTable.startFilling();
+//	for(unsigned i = 0 ; i < pendingRequests.size(); ++i){
+//		pendingTable.printNextCell(pendingRequests.at(i).toString());
+//	}
 }
 
 LockHoldersRepository::LockHoldersRepository(){

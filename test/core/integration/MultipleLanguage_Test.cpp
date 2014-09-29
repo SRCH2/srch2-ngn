@@ -48,7 +48,7 @@ void addSimpleChineseRecords() {
 			updateHistogramEveryPMerges, updateHistogramEveryQWrites,
 			INDEX_DIR);
 
-	Indexer *index = Indexer::create(indexMetaData1, analyzer, schema);
+	Indexer *index = Indexer::create(indexMetaData1, schema);
 
 	//pure english
 	record->setPrimaryKey(1001);
@@ -200,7 +200,8 @@ void testSimpleChinese() {
 				mergeEveryNSeconds, mergeEveryMWrites, updateHistogramEveryPMerges, updateHistogramEveryQWrites, INDEX_DIR);
 
 
-	Indexer *index = Indexer::load(indexMetaData1);
+	Indexer *index = Indexer::create(indexMetaData1);
+	index->bootStrapFromDisk();
 	index->createAndStartMergeThreadLoop();
     QueryEvaluatorRuntimeParametersContainer runtimeParameters;
     QueryEvaluator * queryEvaluator = new QueryEvaluator(index, &runtimeParameters);
@@ -443,7 +444,7 @@ void addSimpleZhuyinRecords() {
 	IndexMetaData *indexMetaData1 = new IndexMetaData(new CacheManager(),
 				mergeEveryNSeconds, mergeEveryMWrites, updateHistogramEveryPMerges, updateHistogramEveryQWrites, INDEX_DIR);
 
-	Indexer *index = Indexer::create(indexMetaData1, analyzer, schema);
+	Indexer *index = Indexer::create(indexMetaData1,  schema);
 
 	//pure english
 	record->setPrimaryKey(1001);
@@ -596,7 +597,8 @@ void testSimpleZhuyin() {
 	IndexMetaData *indexMetaData1 = new IndexMetaData(new CacheManager(),
 				mergeEveryNSeconds, mergeEveryMWrites, updateHistogramEveryPMerges, updateHistogramEveryQWrites, INDEX_DIR);
 
-	Indexer *index = Indexer::load(indexMetaData1);
+	Indexer *index = Indexer::create(indexMetaData1);
+	index->bootStrapFromDisk();
 	index->createAndStartMergeThreadLoop();
 	    QueryEvaluatorRuntimeParametersContainer runtimeParameters;
     QueryEvaluator * queryEvaluator = new QueryEvaluator(index, &runtimeParameters);
@@ -844,7 +846,7 @@ void addJapaneseRecords() {
 	IndexMetaData *indexMetaData1 = new IndexMetaData(new CacheManager(),
 				mergeEveryNSeconds, mergeEveryMWrites, updateHistogramEveryPMerges, updateHistogramEveryQWrites, INDEX_DIR);
 
-	Indexer *index = Indexer::create(indexMetaData1, analyzer, schema);
+	Indexer *index = Indexer::create(indexMetaData1,  schema);
 
 	//pure english
 	record->setPrimaryKey(1001);
@@ -964,7 +966,8 @@ void testJapanese() {
 	IndexMetaData *indexMetaData1 = new IndexMetaData(new CacheManager(),
 				mergeEveryNSeconds, mergeEveryMWrites, updateHistogramEveryPMerges, updateHistogramEveryQWrites, INDEX_DIR);
 
-	Indexer *index = Indexer::load(indexMetaData1);
+	Indexer *index = Indexer::create(indexMetaData1);
+	index->bootStrapFromDisk();
 	index->createAndStartMergeThreadLoop();
 	    QueryEvaluatorRuntimeParametersContainer runtimeParameters;
     QueryEvaluator * queryEvaluator = new QueryEvaluator(index, &runtimeParameters);
@@ -1155,7 +1158,7 @@ void addFrenchRecords() {
 	IndexMetaData *indexMetaData1 = new IndexMetaData(new CacheManager(),
 				mergeEveryNSeconds, mergeEveryMWrites, updateHistogramEveryPMerges, updateHistogramEveryQWrites, INDEX_DIR);
 
-	Indexer *index = Indexer::create(indexMetaData1, analyzer, schema);
+	Indexer *index = Indexer::create(indexMetaData1,  schema);
 
 	//pure english
 	record->setPrimaryKey(1001);
@@ -1260,7 +1263,8 @@ void testFrench() {
 	IndexMetaData *indexMetaData1 = new IndexMetaData(new CacheManager(),
 				mergeEveryNSeconds, mergeEveryMWrites, updateHistogramEveryPMerges, updateHistogramEveryQWrites, INDEX_DIR);
 
-	Indexer *index = Indexer::load(indexMetaData1);
+	Indexer *index = Indexer::create(indexMetaData1);
+	index->bootStrapFromDisk();
 	index->createAndStartMergeThreadLoop();
 	    QueryEvaluatorRuntimeParametersContainer runtimeParameters;
     QueryEvaluator * queryEvaluator = new QueryEvaluator(index, &runtimeParameters);
@@ -1431,7 +1435,7 @@ void addTranditionalChineseRecords() {
 	IndexMetaData *indexMetaData1 = new IndexMetaData(new CacheManager(),
 				mergeEveryNSeconds, mergeEveryMWrites, updateHistogramEveryPMerges, updateHistogramEveryQWrites, INDEX_DIR);
 
-	Indexer *index = Indexer::create(indexMetaData1, analyzer, schema);
+	Indexer *index = Indexer::create(indexMetaData1,  schema);
 
 	//pure english
 	record->setPrimaryKey(1001);
@@ -1508,7 +1512,8 @@ void testTranditionalChinese() {
 	IndexMetaData *indexMetaData1 = new IndexMetaData(new CacheManager(),
 				mergeEveryNSeconds, mergeEveryMWrites, updateHistogramEveryPMerges, updateHistogramEveryQWrites, INDEX_DIR);
 
-	Indexer *index = Indexer::load(indexMetaData1);
+	Indexer *index = Indexer::create(indexMetaData1);
+	index->bootStrapFromDisk();
 	index->createAndStartMergeThreadLoop();
 	    QueryEvaluatorRuntimeParametersContainer runtimeParameters;
     QueryEvaluator * queryEvaluator = new QueryEvaluator(index, &runtimeParameters);
@@ -1582,7 +1587,7 @@ void addBulgarianRecords() {
 	IndexMetaData *indexMetaData1 = new IndexMetaData(new CacheManager(),
 				mergeEveryNSeconds, mergeEveryMWrites, updateHistogramEveryPMerges, updateHistogramEveryQWrites, INDEX_DIR);
 
-	Indexer *index = Indexer::create(indexMetaData1, analyzer, schema);
+	Indexer *index = Indexer::create(indexMetaData1,  schema);
 
 	//pure english
 	record->setPrimaryKey(1001);
@@ -1662,7 +1667,8 @@ void testBulgarian() {
 	IndexMetaData *indexMetaData1 = new IndexMetaData(new CacheManager(),
 				mergeEveryNSeconds, mergeEveryMWrites, updateHistogramEveryPMerges, updateHistogramEveryQWrites, INDEX_DIR);
 
-	Indexer *index = Indexer::load(indexMetaData1);
+	Indexer *index = Indexer::create(indexMetaData1);
+	index->bootStrapFromDisk();
 	index->createAndStartMergeThreadLoop();
 	    QueryEvaluatorRuntimeParametersContainer runtimeParameters;
     QueryEvaluator * queryEvaluator = new QueryEvaluator(index, &runtimeParameters);
@@ -1719,7 +1725,7 @@ void addPinyinChineseRecords() {
 	IndexMetaData *indexMetaData1 = new IndexMetaData(new CacheManager(),
 				mergeEveryNSeconds, mergeEveryMWrites, updateHistogramEveryPMerges, updateHistogramEveryQWrites, INDEX_DIR);
 
-	Indexer *index = Indexer::create(indexMetaData1, analyzer, schema);
+	Indexer *index = Indexer::create(indexMetaData1,  schema);
 
 	record->clear();
 	record->setPrimaryKey(1101);
@@ -1798,7 +1804,8 @@ void testPinyinChinese() {
 	IndexMetaData *indexMetaData1 = new IndexMetaData(new CacheManager(),
 				mergeEveryNSeconds, mergeEveryMWrites, updateHistogramEveryPMerges, updateHistogramEveryQWrites, INDEX_DIR);
 
-	Indexer *index = Indexer::load(indexMetaData1);
+	Indexer *index = Indexer::create(indexMetaData1);
+	index->bootStrapFromDisk();
 	index->createAndStartMergeThreadLoop();
 	    QueryEvaluatorRuntimeParametersContainer runtimeParameters;
     QueryEvaluator * queryEvaluator = new QueryEvaluator(index, &runtimeParameters);
@@ -1887,7 +1894,7 @@ void addZhuyinChineseRecords() {
 	IndexMetaData *indexMetaData1 = new IndexMetaData(new CacheManager(),
 				mergeEveryNSeconds, mergeEveryMWrites, updateHistogramEveryPMerges, updateHistogramEveryQWrites, INDEX_DIR);
 
-	Indexer *index = Indexer::create(indexMetaData1, analyzer, schema);
+	Indexer *index = Indexer::create(indexMetaData1,  schema);
 
 	// pure French characters
 	record->clear();
@@ -1967,7 +1974,8 @@ void testZhuyinChinese() {
 	IndexMetaData *indexMetaData1 = new IndexMetaData(new CacheManager(),
 				mergeEveryNSeconds, mergeEveryMWrites, updateHistogramEveryPMerges, updateHistogramEveryQWrites, INDEX_DIR);
 
-	Indexer *index = Indexer::load(indexMetaData1);
+	Indexer *index = Indexer::create(indexMetaData1);
+	index->bootStrapFromDisk();
 	index->createAndStartMergeThreadLoop();
 	    QueryEvaluatorRuntimeParametersContainer runtimeParameters;
     QueryEvaluator * queryEvaluator = new QueryEvaluator(index, &runtimeParameters);
@@ -2062,7 +2070,7 @@ void addCroatianRecords() {
 	IndexMetaData *indexMetaData1 = new IndexMetaData(new CacheManager(),
 				mergeEveryNSeconds, mergeEveryMWrites, updateHistogramEveryPMerges, updateHistogramEveryQWrites, INDEX_DIR);
 
-	Indexer *index = Indexer::create(indexMetaData1, analyzer, schema);
+	Indexer *index = Indexer::create(indexMetaData1,  schema);
 
 	//pure english
 	record->setPrimaryKey(1001);
@@ -2141,7 +2149,8 @@ void testCroatian() {
 	IndexMetaData *indexMetaData1 = new IndexMetaData(new CacheManager(),
 				mergeEveryNSeconds, mergeEveryMWrites, updateHistogramEveryPMerges, updateHistogramEveryQWrites, INDEX_DIR);
 
-	Indexer *index = Indexer::load(indexMetaData1);
+	Indexer *index = Indexer::create(indexMetaData1);
+	index->bootStrapFromDisk();
 	index->createAndStartMergeThreadLoop();
 	    QueryEvaluatorRuntimeParametersContainer runtimeParameters;
     QueryEvaluator * queryEvaluator = new QueryEvaluator(index, &runtimeParameters);
@@ -2214,7 +2223,7 @@ void addCzechRecords() {
 	IndexMetaData *indexMetaData1 = new IndexMetaData(new CacheManager(),
 				mergeEveryNSeconds, mergeEveryMWrites, updateHistogramEveryPMerges, updateHistogramEveryQWrites, INDEX_DIR);
 
-	Indexer *index = Indexer::create(indexMetaData1, analyzer, schema);
+	Indexer *index = Indexer::create(indexMetaData1,  schema);
 
 	//pure english
 	record->setPrimaryKey(1001);
@@ -2295,7 +2304,8 @@ void testCzech() {
 	IndexMetaData *indexMetaData1 = new IndexMetaData(new CacheManager(),
 				mergeEveryNSeconds, mergeEveryMWrites, updateHistogramEveryPMerges, updateHistogramEveryQWrites, INDEX_DIR);
 
-	Indexer *index = Indexer::load(indexMetaData1);
+	Indexer *index = Indexer::create(indexMetaData1);
+	index->bootStrapFromDisk();
 	index->createAndStartMergeThreadLoop();
 	    QueryEvaluatorRuntimeParametersContainer runtimeParameters;
     QueryEvaluator * queryEvaluator = new QueryEvaluator(index, &runtimeParameters);
@@ -2368,7 +2378,7 @@ void addDanishRecords() {
 	IndexMetaData *indexMetaData1 = new IndexMetaData(new CacheManager(),
 				mergeEveryNSeconds, mergeEveryMWrites, updateHistogramEveryPMerges, updateHistogramEveryQWrites, INDEX_DIR);
 
-	Indexer *index = Indexer::create(indexMetaData1, analyzer, schema);
+	Indexer *index = Indexer::create(indexMetaData1,  schema);
 
 	//pure english
 	record->setPrimaryKey(1001);
@@ -2448,7 +2458,8 @@ void testDanish() {
 	IndexMetaData *indexMetaData1 = new IndexMetaData(new CacheManager(),
 				mergeEveryNSeconds, mergeEveryMWrites, updateHistogramEveryPMerges, updateHistogramEveryQWrites, INDEX_DIR);
 
-	Indexer *index = Indexer::load(indexMetaData1);
+	Indexer *index = Indexer::create(indexMetaData1);
+	index->bootStrapFromDisk();
 	index->createAndStartMergeThreadLoop();
 	    QueryEvaluatorRuntimeParametersContainer runtimeParameters;
     QueryEvaluator * queryEvaluator = new QueryEvaluator(index, &runtimeParameters);
@@ -2520,7 +2531,7 @@ void addDutchRecords() {
 	IndexMetaData *indexMetaData1 = new IndexMetaData(new CacheManager(),
 				mergeEveryNSeconds, mergeEveryMWrites, updateHistogramEveryPMerges, updateHistogramEveryQWrites, INDEX_DIR);
 
-	Indexer *index = Indexer::create(indexMetaData1, analyzer, schema);
+	Indexer *index = Indexer::create(indexMetaData1,  schema);
 
 	//pure english
 	record->setPrimaryKey(1001);
@@ -2600,7 +2611,8 @@ void testDutch() {
 	IndexMetaData *indexMetaData1 = new IndexMetaData(new CacheManager(),
 				mergeEveryNSeconds, mergeEveryMWrites, updateHistogramEveryPMerges, updateHistogramEveryQWrites, INDEX_DIR);
 
-	Indexer *index = Indexer::load(indexMetaData1);
+	Indexer *index = Indexer::create(indexMetaData1);
+	index->bootStrapFromDisk();
 	index->createAndStartMergeThreadLoop();
 	    QueryEvaluatorRuntimeParametersContainer runtimeParameters;
     QueryEvaluator * queryEvaluator = new QueryEvaluator(index, &runtimeParameters);
@@ -2671,7 +2683,7 @@ void addEstonianRecords() {
 	IndexMetaData *indexMetaData1 = new IndexMetaData(new CacheManager(),
 				mergeEveryNSeconds, mergeEveryMWrites, updateHistogramEveryPMerges, updateHistogramEveryQWrites, INDEX_DIR);
 
-	Indexer *index = Indexer::create(indexMetaData1, analyzer, schema);
+	Indexer *index = Indexer::create(indexMetaData1,  schema);
 
 	//pure english
 	record->setPrimaryKey(1001);
@@ -2750,7 +2762,8 @@ void testEstonian() {
 	IndexMetaData *indexMetaData1 = new IndexMetaData(new CacheManager(),
 				mergeEveryNSeconds, mergeEveryMWrites, updateHistogramEveryPMerges, updateHistogramEveryQWrites, INDEX_DIR);
 
-	Indexer *index = Indexer::load(indexMetaData1);
+	Indexer *index = Indexer::create(indexMetaData1);
+	index->bootStrapFromDisk();
 	index->createAndStartMergeThreadLoop();
 	    QueryEvaluatorRuntimeParametersContainer runtimeParameters;
     QueryEvaluator * queryEvaluator = new QueryEvaluator(index, &runtimeParameters);
@@ -2807,7 +2820,7 @@ void addFinnishRecords() {
 	IndexMetaData *indexMetaData1 = new IndexMetaData(new CacheManager(),
 				mergeEveryNSeconds, mergeEveryMWrites, updateHistogramEveryPMerges, updateHistogramEveryQWrites, INDEX_DIR);
 
-	Indexer *index = Indexer::create(indexMetaData1, analyzer, schema);
+	Indexer *index = Indexer::create(indexMetaData1,  schema);
 
 	//pure english
 	record->setPrimaryKey(1001);
@@ -2886,7 +2899,8 @@ void testFinnish() {
 	IndexMetaData *indexMetaData1 = new IndexMetaData(new CacheManager(),
 				mergeEveryNSeconds, mergeEveryMWrites, updateHistogramEveryPMerges, updateHistogramEveryQWrites, INDEX_DIR);
 
-	Indexer *index = Indexer::load(indexMetaData1);
+	Indexer *index = Indexer::create(indexMetaData1);
+	index->bootStrapFromDisk();
 	index->createAndStartMergeThreadLoop();
 	    QueryEvaluatorRuntimeParametersContainer runtimeParameters;
     QueryEvaluator * queryEvaluator = new QueryEvaluator(index, &runtimeParameters);
@@ -2959,7 +2973,7 @@ void addGermanRecords() {
 	IndexMetaData *indexMetaData1 = new IndexMetaData(new CacheManager(),
 				mergeEveryNSeconds, mergeEveryMWrites, updateHistogramEveryPMerges, updateHistogramEveryQWrites, INDEX_DIR);
 
-	Indexer *index = Indexer::create(indexMetaData1, analyzer, schema);
+	Indexer *index = Indexer::create(indexMetaData1,  schema);
 
 	//pure english
 	record->setPrimaryKey(1001);
@@ -3039,7 +3053,8 @@ void testGerman() {
 	IndexMetaData *indexMetaData1 = new IndexMetaData(new CacheManager(),
 				mergeEveryNSeconds, mergeEveryMWrites, updateHistogramEveryPMerges, updateHistogramEveryQWrites, INDEX_DIR);
 
-	Indexer *index = Indexer::load(indexMetaData1);
+	Indexer *index = Indexer::create(indexMetaData1);
+	index->bootStrapFromDisk();
 	index->createAndStartMergeThreadLoop();
 	    QueryEvaluatorRuntimeParametersContainer runtimeParameters;
     QueryEvaluator * queryEvaluator = new QueryEvaluator(index, &runtimeParameters);
@@ -3111,7 +3126,7 @@ void addGreekRecords() {
 	IndexMetaData *indexMetaData1 = new IndexMetaData(new CacheManager(),
 				mergeEveryNSeconds, mergeEveryMWrites, updateHistogramEveryPMerges, updateHistogramEveryQWrites, INDEX_DIR);
 
-	Indexer *index = Indexer::create(indexMetaData1, analyzer, schema);
+	Indexer *index = Indexer::create(indexMetaData1,  schema);
 
 	//pure english
 	record->setPrimaryKey(1001);
@@ -3191,7 +3206,8 @@ void testGreek() {
 	IndexMetaData *indexMetaData1 = new IndexMetaData(new CacheManager(),
 				mergeEveryNSeconds, mergeEveryMWrites, updateHistogramEveryPMerges, updateHistogramEveryQWrites, INDEX_DIR);
 
-	Indexer *index = Indexer::load(indexMetaData1);
+	Indexer *index = Indexer::create(indexMetaData1);
+	index->bootStrapFromDisk();
 	index->createAndStartMergeThreadLoop();
 	    QueryEvaluatorRuntimeParametersContainer runtimeParameters;
     QueryEvaluator * queryEvaluator = new QueryEvaluator(index, &runtimeParameters);
@@ -3256,7 +3272,7 @@ void addHungarianRecords() {
 	IndexMetaData *indexMetaData1 = new IndexMetaData(new CacheManager(),
 				mergeEveryNSeconds, mergeEveryMWrites, updateHistogramEveryPMerges, updateHistogramEveryQWrites, INDEX_DIR);
 
-	Indexer *index = Indexer::create(indexMetaData1, analyzer, schema);
+	Indexer *index = Indexer::create(indexMetaData1,  schema);
 
 	//pure english
 	record->setPrimaryKey(1001);
@@ -3335,7 +3351,8 @@ void testHungarian() {
 	IndexMetaData *indexMetaData1 = new IndexMetaData(new CacheManager(),
 				mergeEveryNSeconds, mergeEveryMWrites, updateHistogramEveryPMerges, updateHistogramEveryQWrites, INDEX_DIR);
 
-	Indexer *index = Indexer::load(indexMetaData1);
+	Indexer *index = Indexer::create(indexMetaData1);
+	index->bootStrapFromDisk();
 	index->createAndStartMergeThreadLoop();
 	    QueryEvaluatorRuntimeParametersContainer runtimeParameters;
     QueryEvaluator * queryEvaluator = new QueryEvaluator(index, &runtimeParameters);
@@ -3408,7 +3425,7 @@ void addIndonesiaRecords() {
 	IndexMetaData *indexMetaData1 = new IndexMetaData(new CacheManager(),
 				mergeEveryNSeconds, mergeEveryMWrites, updateHistogramEveryPMerges, updateHistogramEveryQWrites, INDEX_DIR);
 
-	Indexer *index = Indexer::create(indexMetaData1, analyzer, schema);
+	Indexer *index = Indexer::create(indexMetaData1,  schema);
 
 	//pure english
 	record->setPrimaryKey(1001);
@@ -3486,7 +3503,8 @@ void testIndonesia() {
 	IndexMetaData *indexMetaData1 = new IndexMetaData(new CacheManager(),
 				mergeEveryNSeconds, mergeEveryMWrites, updateHistogramEveryPMerges, updateHistogramEveryQWrites, INDEX_DIR);
 
-	Indexer *index = Indexer::load(indexMetaData1);
+	Indexer *index = Indexer::create(indexMetaData1);
+	index->bootStrapFromDisk();
 	index->createAndStartMergeThreadLoop();
 	    QueryEvaluatorRuntimeParametersContainer runtimeParameters;
     QueryEvaluator * queryEvaluator = new QueryEvaluator(index, &runtimeParameters);
@@ -3544,7 +3562,7 @@ void addItalianRecords() {
 	IndexMetaData *indexMetaData1 = new IndexMetaData(new CacheManager(),
 				mergeEveryNSeconds, mergeEveryMWrites, updateHistogramEveryPMerges, updateHistogramEveryQWrites, INDEX_DIR);
 
-	Indexer *index = Indexer::create(indexMetaData1, analyzer, schema);
+	Indexer *index = Indexer::create(indexMetaData1,  schema);
 
 	//pure english
 	record->setPrimaryKey(1001);
@@ -3621,7 +3639,8 @@ void testItalian() {
 	IndexMetaData *indexMetaData1 = new IndexMetaData(new CacheManager(),
 				mergeEveryNSeconds, mergeEveryMWrites, updateHistogramEveryPMerges, updateHistogramEveryQWrites, INDEX_DIR);
 
-	Indexer *index = Indexer::load(indexMetaData1);
+	Indexer *index = Indexer::create(indexMetaData1);
+	index->bootStrapFromDisk();
 	index->createAndStartMergeThreadLoop();
 	    QueryEvaluatorRuntimeParametersContainer runtimeParameters;
     QueryEvaluator * queryEvaluator = new QueryEvaluator(index, &runtimeParameters);
@@ -3692,7 +3711,7 @@ void addKoreanRecords() {
 	IndexMetaData *indexMetaData1 = new IndexMetaData(new CacheManager(),
 				mergeEveryNSeconds, mergeEveryMWrites, updateHistogramEveryPMerges, updateHistogramEveryQWrites, INDEX_DIR);
 
-	Indexer *index = Indexer::create(indexMetaData1, analyzer, schema);
+	Indexer *index = Indexer::create(indexMetaData1,  schema);
 
 	//pure english
 	record->setPrimaryKey(1001);
@@ -3769,7 +3788,8 @@ void testKorean() {
 	IndexMetaData *indexMetaData1 = new IndexMetaData(new CacheManager(),
 				mergeEveryNSeconds, mergeEveryMWrites, updateHistogramEveryPMerges, updateHistogramEveryQWrites, INDEX_DIR);
 
-	Indexer *index = Indexer::load(indexMetaData1);
+	Indexer *index = Indexer::create(indexMetaData1);
+	index->bootStrapFromDisk();
 	index->createAndStartMergeThreadLoop();
 	    QueryEvaluatorRuntimeParametersContainer runtimeParameters;
     QueryEvaluator * queryEvaluator = new QueryEvaluator(index, &runtimeParameters);
@@ -3838,7 +3858,7 @@ void addLatvianRecords() {
 	IndexMetaData *indexMetaData1 = new IndexMetaData(new CacheManager(),
 				mergeEveryNSeconds, mergeEveryMWrites, updateHistogramEveryPMerges, updateHistogramEveryQWrites, INDEX_DIR);
 
-	Indexer *index = Indexer::create(indexMetaData1, analyzer, schema);
+	Indexer *index = Indexer::create(indexMetaData1,  schema);
 
 	//pure english
 	record->setPrimaryKey(1001);
@@ -3916,7 +3936,8 @@ void testLatvian() {
 	IndexMetaData *indexMetaData1 = new IndexMetaData(new CacheManager(),
 				mergeEveryNSeconds, mergeEveryMWrites, updateHistogramEveryPMerges, updateHistogramEveryQWrites, INDEX_DIR);
 
-	Indexer *index = Indexer::load(indexMetaData1);
+	Indexer *index = Indexer::create(indexMetaData1);
+	index->bootStrapFromDisk();
 	index->createAndStartMergeThreadLoop();
 	    QueryEvaluatorRuntimeParametersContainer runtimeParameters;
     QueryEvaluator * queryEvaluator = new QueryEvaluator(index, &runtimeParameters);
@@ -3971,7 +3992,7 @@ void addLithuanianRecords() {
 	IndexMetaData *indexMetaData1 = new IndexMetaData(new CacheManager(),
 				mergeEveryNSeconds, mergeEveryMWrites, updateHistogramEveryPMerges, updateHistogramEveryQWrites, INDEX_DIR);
 
-	Indexer *index = Indexer::create(indexMetaData1, analyzer, schema);
+	Indexer *index = Indexer::create(indexMetaData1,  schema);
 
 	//pure english
 	record->setPrimaryKey(1001);
@@ -4049,7 +4070,8 @@ void testLithuanian() {
 	IndexMetaData *indexMetaData1 = new IndexMetaData(new CacheManager(),
 				mergeEveryNSeconds, mergeEveryMWrites, updateHistogramEveryPMerges, updateHistogramEveryQWrites, INDEX_DIR);
 
-	Indexer *index = Indexer::load(indexMetaData1);
+	Indexer *index = Indexer::create(indexMetaData1);
+	index->bootStrapFromDisk();
 	index->createAndStartMergeThreadLoop();
 	    QueryEvaluatorRuntimeParametersContainer runtimeParameters;
     QueryEvaluator * queryEvaluator = new QueryEvaluator(index, &runtimeParameters);
@@ -4105,7 +4127,7 @@ void addNorwegianRecords() {
 	IndexMetaData *indexMetaData1 = new IndexMetaData(new CacheManager(),
 				mergeEveryNSeconds, mergeEveryMWrites, updateHistogramEveryPMerges, updateHistogramEveryQWrites, INDEX_DIR);
 
-	Indexer *index = Indexer::create(indexMetaData1, analyzer, schema);
+	Indexer *index = Indexer::create(indexMetaData1,  schema);
 
 	//pure english
 	record->setPrimaryKey(1001);
@@ -4183,7 +4205,8 @@ void testNorwegian() {
 	IndexMetaData *indexMetaData1 = new IndexMetaData(new CacheManager(),
 				mergeEveryNSeconds, mergeEveryMWrites, updateHistogramEveryPMerges, updateHistogramEveryQWrites, INDEX_DIR);
 
-	Indexer *index = Indexer::load(indexMetaData1);
+	Indexer *index = Indexer::create(indexMetaData1);
+	index->bootStrapFromDisk();
 	index->createAndStartMergeThreadLoop();
 	    QueryEvaluatorRuntimeParametersContainer runtimeParameters;
     QueryEvaluator * queryEvaluator = new QueryEvaluator(index, &runtimeParameters);

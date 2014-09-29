@@ -55,9 +55,7 @@ void testIndexData()
     /// Create IndexData
     string INDEX_DIR = ".";
     IndexData *indexData = IndexData::create(INDEX_DIR,
-                                            analyzer,
-                                            schema,
-                                            srch2::instantsearch::DISABLE_STEMMER_NORMALIZER);
+                                            schema);
 
     Record *record = new Record(schema);
 
@@ -196,7 +194,7 @@ void test1()
     		updateHistogramEveryPMerges, updateHistogramEveryQWrites,
     		INDEX_DIR);
     
-    Indexer *index = Indexer::create(indexMetaData, analyzer, schema);
+    Indexer *index = Indexer::create(indexMetaData, schema);
     Record *record = new Record(schema);
     char* authorsCharStar = new char[30];
     char* titleCharStar = new char[30];
@@ -259,7 +257,7 @@ void addRecords()
     		mergeEveryNSeconds, mergeEveryMWrites,
     		updateHistogramEveryPMerges, updateHistogramEveryQWrites,
     		INDEX_DIR);
-    Indexer *index = Indexer::create(indexMetaData, analyzer, schema);
+    Indexer *index = Indexer::create(indexMetaData, schema);
     
     record->setPrimaryKey(1001);
     record->setSearchableAttributeValue("article_authors", "Tom Smith and Jack Lennon");
@@ -319,7 +317,8 @@ void test3()
     		updateHistogramEveryPMerges, updateHistogramEveryQWrites,
     		INDEX_DIR);
     
-    Indexer *indexer = Indexer::load(indexMetaData);
+    Indexer *indexer = Indexer::create(indexMetaData);
+    indexer->bootStrapFromDisk();
 
     //index->print_Index();
 

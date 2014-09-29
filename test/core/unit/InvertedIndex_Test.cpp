@@ -57,7 +57,7 @@ void addRecords()
     		updateHistogramEveryPMerges, updateHistogramEveryQWrites,
     		INDEX_DIR);
     
-    Indexer *index = Indexer::create(indexMetaData, analyzer, schema);
+    Indexer *index = Indexer::create(indexMetaData, schema);
     
     record->setPrimaryKey(1001);
     record->setSearchableAttributeValue("article_authors", "Tom Smith and Jack Lennon");
@@ -227,8 +227,8 @@ bool test3()
     		updateHistogramEveryPMerges, updateHistogramEveryQWrites,
     		INDEX_DIR);
     
-    Indexer *indexer = Indexer::load(indexMetaData);
-
+    Indexer *indexer = Indexer::create(indexMetaData);
+    indexer->bootStrapFromDisk();
     QueryEvaluatorRuntimeParametersContainer runTimeParameters;
     QueryEvaluatorInternal * queryEvaluatorInternal = new QueryEvaluatorInternal(dynamic_cast<IndexReaderWriter *>(indexer), &runTimeParameters);
     //(void)indexSearcherInternal;

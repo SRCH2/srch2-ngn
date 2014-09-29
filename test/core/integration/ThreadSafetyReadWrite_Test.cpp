@@ -73,7 +73,7 @@ void addSimpleRecords()
     		updateHistogramEveryPMerges , updateHistogramEveryQWrites,
     		INDEX_DIR);
            
-    Indexer *index = Indexer::create(indexMetaData1, analyzer, schema);
+    Indexer *index = Indexer::create(indexMetaData1,  schema);
     
     record->setPrimaryKey(1001);
     record->setSearchableAttributeValue("article_authors", "Tom Smith and Jack Lennon");
@@ -325,7 +325,8 @@ void test0()
     		mergeEveryNSeconds, mergeEveryMWrites,
     		updateHistogramEveryPMerges, updateHistogramEveryQWrites,
     		INDEX_DIR);
-    Indexer *indexer = Indexer::load(indexMetaData1);
+    Indexer *indexer = Indexer::create(indexMetaData1);
+    indexer->bootStrapFromDisk();
 
     threadReaders = (pthread_t *) malloc(n * sizeof(*threadReaders));
 
@@ -371,7 +372,8 @@ void test1()
     		mergeEveryNSeconds, mergeEveryMWrites,
     		updateHistogramEveryPMerges, updateHistogramEveryQWrites,
     		INDEX_DIR);
-    Indexer * indexer = Indexer::load(indexMetaData1);
+    Indexer * indexer = Indexer::create(indexMetaData1);
+    indexer->bootStrapFromDisk();
 
     threadReaders1 = (pthread_t *) malloc(n * sizeof(*threadReaders1));
     //threadReaders2 = (pthread_t *) malloc(n * sizeof(*threadReaders2));
@@ -437,7 +439,8 @@ void test2()
     		mergeEveryNSeconds, mergeEveryMWrites,
     		updateHistogramEveryPMerges, updateHistogramEveryQWrites,
     		INDEX_DIR);
-    Indexer* indexer = Indexer::load(indexMetaData1);
+    Indexer* indexer = Indexer::create(indexMetaData1);
+    indexer->bootStrapFromDisk();
     
     threadReaders = (pthread_t *) malloc(n * sizeof(*threadReaders));
     threadWriters = (pthread_t *) malloc(n * sizeof(*threadWriters));

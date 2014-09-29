@@ -71,7 +71,7 @@ void buildLocalIndex(string INDEX_DIR)
     		mergeEveryNSeconds, mergeEveryMWrites,
     		updateHistogramEveryPMerges, updateHistogramEveryQWrites,
     		INDEX_DIR);
-    Indexer *index = Indexer::create(indexMetaData, analyzer, schema);
+    Indexer *index = Indexer::create(indexMetaData,  schema);
 
     // add a record
     index->addRecord(record, analyzer);
@@ -129,7 +129,8 @@ void test1()
     		mergeEveryNSeconds, mergeEveryMWrites,
     		updateHistogramEveryPMerges, updateHistogramEveryQWrites,
     		INDEX_DIR);
-    Indexer *indexer = Indexer::load(indexMetaData);
+    Indexer *indexer = Indexer::create(indexMetaData);
+    indexer->bootStrapFromDisk();
     indexer->getSchema()->setSupportSwapInEditDistance(true);
     QueryEvaluatorRuntimeParametersContainer runtimeParameters;
     QueryEvaluator * queryEvaluator = new QueryEvaluator(indexer, &runtimeParameters);
@@ -239,7 +240,8 @@ void test2()
     		mergeEveryNSeconds, mergeEveryMWrites,
     		updateHistogramEveryPMerges, updateHistogramEveryQWrites,
     		INDEX_DIR);
-    Indexer *indexer = Indexer::load(indexMetaData);
+    Indexer *indexer = Indexer::create(indexMetaData);
+    indexer->bootStrapFromDisk();
     indexer->getSchema()->setSupportSwapInEditDistance(false);
     QueryEvaluatorRuntimeParametersContainer runtimeParameters;
     QueryEvaluator * queryEvaluator = new QueryEvaluator(indexer, &runtimeParameters);

@@ -38,7 +38,7 @@ Indexer *buildGeoIndex(string data_file, string index_dir)
     		mergeEveryNSeconds, mergeEveryMWrites,
     		updateHistogramEveryPMerges, updateHistogramEveryQWrites,
     		index_dir);
-    Indexer *indexer = Indexer::create(indexMetaData, analyzer, schema);
+    Indexer *indexer = Indexer::create(indexMetaData, schema);
 
     Record *record = new Record(schema);
 
@@ -217,7 +217,8 @@ int main(int argc, char **argv)
     		mergeEveryNSeconds, mergeEveryMWrites,
     		updateHistogramEveryPMerges, updateHistogramEveryQWrites,
     		index_dir);
-    Indexer *indexer = Indexer::load(indexMetaData);
+    Indexer *indexer = Indexer::create(indexMetaData);
+    indexer->bootStrapFromDisk();
 
     // Three records:
     // 1^prefix^dummy^0.441715770673^44.968654^-89.635963
