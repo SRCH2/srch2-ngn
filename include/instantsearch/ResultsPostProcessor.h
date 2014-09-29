@@ -148,7 +148,8 @@ class PhraseInfo{
     public:
 	PhraseInfo(const PhraseInfo & info){
 		this->proximitySlop = info.proximitySlop;
-		this->attributeBitMap = info.attributeBitMap;
+		this->attributeIdsList = info.attributeIdsList;
+		this->attrOps = info.attrOps;
 		this->keywordIds = info.keywordIds;
 		this->phraseKeywordPositionIndex = info.phraseKeywordPositionIndex;
 		this->phraseKeyWords = info.phraseKeyWords;
@@ -157,10 +158,11 @@ class PhraseInfo{
 
 	}
 	unsigned proximitySlop;
-	unsigned attributeBitMap;
 	vector<unsigned> keywordIds;
 	vector<unsigned> phraseKeywordPositionIndex;
 	vector<string> phraseKeyWords;
+    vector<unsigned> attributeIdsList;
+    ATTRIBUTES_OP attrOps;  // flag to indicate conjunction/disjunction in between attributes
 
 	string toString();
 
@@ -179,6 +181,7 @@ class PhraseInfo{
 	 * | proximitySlop | attributeBitMap | keywordIds  | phraseKeywordPositionIndex | phraseKeyWords |
 	 */
 	unsigned getNumberOfBytesForSerializationForNetwork() const;
+
 };
 
 
@@ -187,7 +190,7 @@ public:
 	void addPhrase(const vector<string>& phraseKeywords,
 			const vector<unsigned>& phraseKeywordsPositionIndex,
 			unsigned proximitySlop,
-			unsigned attributeBitMap);
+			const vector<unsigned>& attributeIdsList, ATTRIBUTES_OP attrOps);
 	PhraseSearchInfoContainer(){};
 	PhraseSearchInfoContainer(const PhraseSearchInfoContainer & container){
 		this->phraseInfoVector = container.phraseInfoVector;

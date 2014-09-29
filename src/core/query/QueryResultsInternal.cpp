@@ -308,9 +308,9 @@ void QueryResultsInternal::finalizeResults(const ForwardIndex *forwardIndex) {
             qs->matchingKeywords.assign(
                     this->nextKResultsHeap.top()->matchingKeywords.begin(),
                     this->nextKResultsHeap.top()->matchingKeywords.end());
-            qs->attributeBitmaps.assign(
-                    this->nextKResultsHeap.top()->attributeBitmaps.begin(),
-                    this->nextKResultsHeap.top()->attributeBitmaps.end());
+            qs->attributeIdsList.assign(
+                    this->nextKResultsHeap.top()->attributeIdsList.begin(),
+                    this->nextKResultsHeap.top()->attributeIdsList.end());
             qs->editDistances.assign(
                     this->nextKResultsHeap.top()->editDistances.begin(),
                     this->nextKResultsHeap.top()->editDistances.end());
@@ -349,7 +349,9 @@ unsigned QueryResult::getNumberOfBytes(){
 	for(unsigned i=0 ; i< matchingKeywords.size(); ++i){
 		result += matchingKeywords[i].capacity();
 	}
-	result += attributeBitmaps.capacity() * sizeof(unsigned);
+	for (unsigned i = 0; i < attributeIdsList.size(); ++i){
+		result += attributeIdsList[i].capacity() * sizeof(unsigned);
+	}
 	result += editDistances.capacity() * sizeof(unsigned);
 	result += termTypes.capacity() * sizeof(unsigned);
 	result += matchingKeywordTrieNodes.capacity() * sizeof(TrieNodePointer);
@@ -366,7 +368,7 @@ void * QueryResult::serializeForNetwork(void * buffer){
 	buffer = srch2::util::serializeFixedTypes(physicalDistance, buffer);
 	buffer = _score.serializeForNetwork(buffer);
 	buffer = srch2::util::serializeString(externalRecordId, buffer);
-	buffer = srch2::util::serializeVectorOfFixedTypes(attributeBitmaps, buffer);
+	buffer = srch2::util::serializeVectorOfFixedTypes(attributeIdsList, buffer);
 	buffer = srch2::util::serializeVectorOfFixedTypes(editDistances, buffer);
 	buffer = srch2::util::serializeVectorOfFixedTypes(termTypes, buffer);
 	buffer = srch2::util::serializeVectorOfString(matchingKeywords, buffer);
@@ -384,7 +386,7 @@ void * QueryResult::deserializeForNetwork(QueryResult * &queryResult, void * buf
 	buffer = srch2::util::deserializeFixedTypes(buffer, queryResult->physicalDistance);
 	buffer = TypedValue::deserializeForNetwork(queryResult->_score, buffer);
 	buffer = srch2::util::deserializeString(buffer, queryResult->externalRecordId);
-	buffer = srch2::util::deserializeVectorOfFixedTypes(buffer, queryResult->attributeBitmaps);
+	buffer = srch2::util::deserializeVectorOfFixedTypes(buffer, queryResult->attributeIdsList);
 	buffer = srch2::util::deserializeVectorOfFixedTypes(buffer, queryResult->editDistances);
 	buffer = srch2::util::deserializeVectorOfFixedTypes(buffer, queryResult->termTypes);
 	buffer = srch2::util::deserializeVectorOfString(buffer, queryResult->matchingKeywords);
@@ -402,7 +404,7 @@ unsigned QueryResult::getNumberOfBytesForSerializationForNetwork(){
 	numberOfBytes += sizeof(physicalDistance);
 	numberOfBytes += _score.getNumberOfBytesForSerializationForNetwork();
 	numberOfBytes += sizeof(unsigned) + externalRecordId.size();
-	numberOfBytes += srch2::util::getNumberOfBytesVectorOfFixedTypes(attributeBitmaps);
+	numberOfBytes += srch2::util::getNumberOfBytesVectorOfFixedTypes(attributeIdsList);
 	numberOfBytes += srch2::util::getNumberOfBytesVectorOfFixedTypes(editDistances);
 	numberOfBytes += srch2::util::getNumberOfBytesVectorOfFixedTypes(termTypes);
 	numberOfBytes += srch2::util::getNumberOfBytesVectorOfString(matchingKeywords);

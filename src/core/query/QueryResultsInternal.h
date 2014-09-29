@@ -57,7 +57,7 @@ public:
     double physicalDistance; // TODO check if there is a better way to structure the "location result"
     TypedValue _score;
     string externalRecordId;
-    std::vector<unsigned> attributeBitmaps;
+    std::vector<vector<unsigned> > attributeIdsList;
     std::vector<unsigned> editDistances;
     std::vector<TermType> termTypes;
     std::vector< TrieNodePointer > matchingKeywordTrieNodes;
@@ -95,7 +95,7 @@ private:
     	internalRecordId = copy_from_me.internalRecordId;
     	_score = copy_from_me._score;
     	matchingKeywords = copy_from_me.matchingKeywords;
-    	attributeBitmaps = copy_from_me.attributeBitmaps;
+    	attributeIdsList = copy_from_me.attributeIdsList;
     	editDistances = copy_from_me.editDistances;
     	termTypes = copy_from_me.termTypes;
     	matchingKeywordTrieNodes = copy_from_me.matchingKeywordTrieNodes;

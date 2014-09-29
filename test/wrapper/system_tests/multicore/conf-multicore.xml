@@ -32,7 +32,7 @@
         <cores defaultCoreName="core1">
             <core name="core1">
                 <dataFile>movie-data.json</dataFile>
-                <dataDir>core1</dataDir>
+                <dataDir>core1Data</dataDir>
                 <dataSourceType>1</dataSourceType>
                 <indexConfig>
                     <indexType>0</indexType>
@@ -107,7 +107,7 @@
             </core>
 
             <core name="core2">
-                <dataDir>core2</dataDir>
+                <dataDir>core2Data</dataDir>
                 <dataSourceType>1</dataSourceType>
                 <dataFile>stackoverflow-data-100.json</dataFile>
                 <indexConfig>
@@ -194,7 +194,7 @@
 
             <core name="core3">
                 <dataFile>business-directory-data.json</dataFile>
-                <dataDir>core3</dataDir>
+                <dataDir>core3Data</dataDir>
                 <indexConfig>
                     <!--
                     Index Type
@@ -548,8 +548,8 @@
 </core>
 
 <core name="core4">
-    <dataFile>../core1/movie-data.json</dataFile>
-    <dataDir>core4</dataDir>
+    <dataFile>movie-data.json</dataFile>
+    <dataDir>core4Data</dataDir>
     <dataSourceType>1</dataSourceType>
     <indexConfig>
         <indexType>0</indexType>
@@ -618,14 +618,14 @@
         </mergePolicy>
         <updateLog>
             <logLevel>4</logLevel>
-            <accessLogFile>./logs/core4-log.txt</accessLogFile>
+            <accessLogFile>core4-log.txt</accessLogFile>
         </updateLog>
     </updatehandler>
 </core>
 <core name="coreGeo">
 
-    <dataDir>./data/geo/</dataDir>
-    <dataFile>./geo/data.json</dataFile>
+    <dataDir>coreGeoData</dataDir>
+    <dataFile>data.json</dataFile>
     <indexConfig>
         <indexType>1</indexType>
         <supportSwapInEditDistance>false</supportSwapInEditDistance>          
@@ -706,7 +706,7 @@
 
                 Path to Access Log File
             -->
-            <accessLogFile>./data/geo/log.txt</accessLogFile>
+            <accessLogFile>../coreGeoData/geolog.txt</accessLogFile>
         </updateLog>
 
     </updatehandler>

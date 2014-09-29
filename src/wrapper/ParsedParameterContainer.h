@@ -44,11 +44,11 @@ namespace httpwrapper {
 class TermIntermediateStructure{
 public:
 	TermIntermediateStructure(){
-		fieldFilterNumber = 0;
 		keywordBoostLevel = 1;
 		keywordSimilarityThreshold = 1;
 		keywordPrefixComplete = TERM_TYPE_NOT_SPECIFIED;
 		isPhraseKeywordFlag = false;
+		fieldFilterAttrOperation = ATTRIBUTES_OP_OR;
 	}
 	// termQueryString contains the keyword and all the modifiers. It's the original
 	// string coming from the query. For example, if the query is "foo*~0.5 AND author:bar",
@@ -68,8 +68,8 @@ public:
 	bool isPhraseKeywordFlag ;
 	short phraseSlop;
 
-	unsigned fieldFilterNumber;
-
+	vector<unsigned> fieldFilterList;
+	ATTRIBUTES_OP fieldFilterAttrOperation;
 	void print(){
 		Logger::console("Term : (%s %f %d %d) ",rawQueryKeyword.c_str(),keywordSimilarityThreshold,keywordBoostLevel,keywordPrefixComplete);
 	}

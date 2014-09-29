@@ -518,7 +518,7 @@ srch2is::Schema* JSONRecordParser::createAndPopulateSchema(const CoreInfo_t *ind
     // Set PrimaryKey
     string primaryKey = indexDataContainerConf->getPrimaryKey();
 
-    schema->setPrimaryKey(primaryKey); // integer, not searchable unless set as an attribute using setSearchableAttribute() function.
+    schema->setPrimaryKey(primaryKey);
 
     if (indexDataContainerConf->getIsPrimSearchable())
     {

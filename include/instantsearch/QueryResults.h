@@ -148,10 +148,9 @@ public:
      */
     void getEditDistances(const unsigned position, std::vector<unsigned> &editDistances) const ;
 
-    // The following two functions only work for attribute based search
-    virtual void getMatchedAttributeBitmaps(const unsigned position, std::vector<unsigned> &matchedAttributeBitmaps) const ;
-
+    // The following function only works for attribute based search
     void getMatchedAttributes(const unsigned position, std::vector<std::vector<unsigned> > &matchedAttributes) const ;
+
     void getTermTypes(unsigned position, std::vector<TermType>& tt) const;
     /*
      *   In Geo search return distance between location of the result and center of the query rank.

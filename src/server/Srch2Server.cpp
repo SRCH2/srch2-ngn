@@ -232,6 +232,16 @@ void Srch2Server::createAndBootStrapIndexer(const string & directoryPath)
         indexer = Indexer::create(indexMetaData);
         indexer->bootStrapFromDisk();
 
+
+        /***    Added in merge, TODO      ****/
+//        if (!checkSchemaConsistency(schema, indexer->getSchema())) {
+//            Logger::warn("The schema in the config file is different from the"
+//                    " serialized schema on the disk. The engine will ignore "
+//                    "the schema from the config file. Please make sure they "
+//                    "are consistent. One possible solution is to remove all "
+//                    "the index files and run the engine again.");
+//        }
+
 	    // Load Analyzer data from disk
 	    AnalyzerHelper::loadAnalyzerResource(this->getCoreInfo());
 	    getIndexer()->getSchema()->setSupportSwapInEditDistance(getCoreInfo()->getSupportSwapInEditDistance());
@@ -250,8 +260,62 @@ void Srch2Server::createAndBootStrapIndexer(const string & directoryPath)
     }
     createHighlightAttributesVector(storedAttrSchema);
     delete storedAttrSchema;
+    /********  Added in merge, TODO  ************/
+//    delete schema;
     // start merger thread
     getIndexer()->createAndStartMergeThreadLoop();
+}
+
+/*
+ * This function will check the consistency of the schema that is loaded from the
+ * disk and the schema that is loaded from the config file.
+ */
+bool Srch2Server::checkSchemaConsistency(srch2is::Schema *confSchema,
+        srch2is::Schema *loadedSchema) {
+    if (confSchema->getNumberOfRefiningAttributes()
+            != loadedSchema->getNumberOfRefiningAttributes()) {
+        return false;
+    }
+
+    if (confSchema->getNumberOfSearchableAttributes()
+            != loadedSchema->getNumberOfSearchableAttributes()) {
+        return false;
+    }
+
+    for (std::map<std::string, unsigned>::const_iterator confIt =
+            confSchema->getRefiningAttributes()->begin(), loadedIt =
+            loadedSchema->getRefiningAttributes()->begin();
+            confIt != confSchema->getRefiningAttributes()->end()
+                    && loadedIt != loadedSchema->getRefiningAttributes()->end();
+            confIt++, loadedIt++) {
+        //Compare the refining attribute's name and type to see if they are same.
+        if (confIt->first.compare(loadedIt->first) != 0) {
+            return false;
+        }
+
+        if (confSchema->getTypeOfRefiningAttribute(confIt->second)
+                != loadedSchema->getTypeOfRefiningAttribute(loadedIt->second)) {
+            return false;
+        }
+    }
+    for (std::map<std::string, unsigned>::const_iterator confIt =
+            confSchema->getSearchableAttribute().begin(), loadedIt =
+            loadedSchema->getSearchableAttribute().begin();
+            confIt != confSchema->getSearchableAttribute().end()
+                    && loadedIt != loadedSchema->getSearchableAttribute().end();
+            confIt++, loadedIt++) {
+        //Compare the searchable attribute's name and type to see if they are same.
+        if (confIt->first.compare(loadedIt->first) != 0) {
+            return false;
+        }
+
+        if (confSchema->getTypeOfSearchableAttribute(confIt->second)
+                != loadedSchema->getTypeOfSearchableAttribute(
+                        loadedIt->second)) {
+            return false;
+        }
+    }
+    return true;
 }
 
 /*

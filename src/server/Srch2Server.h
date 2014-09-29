@@ -76,6 +76,11 @@ public:
     // Check if index files already exist.
     bool checkIndexExistence(const string & directoryPath);
 
+    // Check if the schema loaded from the disk is
+    // same as the one loaded from the config file.
+    bool checkSchemaConsistency(srch2is::Schema *confSchema,
+            srch2is::Schema *loadedSchema);
+
     IndexMetaData *createIndexMetaData(const string & directoryPath);
 
     void createAndBootStrapIndexer(const string & directoryPath);

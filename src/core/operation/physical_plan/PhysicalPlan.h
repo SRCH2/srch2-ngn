@@ -120,7 +120,7 @@ struct PhysicalPlanRandomAccessVerificationParameters {
     float runTimeTermRecordScore;
     float staticTermRecordScore;
     std::vector<TrieNodePointer> termRecordMatchingPrefixes;
-    std::vector<unsigned> attributeBitmaps;
+    std::vector<vector<unsigned> > attributeIdsList;
     std::vector<unsigned> prefixEditDistances;
     std::vector<unsigned> positionIndexOffsets;
     std::vector<TermType> termTypes;

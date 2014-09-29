@@ -43,7 +43,8 @@ struct Term::Impl
 	    this->boost = impl.boost;
 	    this->similarityBoost = impl.similarityBoost;
 	    this->threshold  = impl.threshold;
-	    this->searchableAttributeIdToFilter  = impl.searchableAttributeIdToFilter;
+	    this->searchableAttributeIdsToFilter  = impl.searchableAttributeIdsToFilter;
+	    this->attrOp = impl.attrOp;
 	    this->type  = impl.type;
 	    this->keyword  = impl.keyword;
 	};
@@ -51,7 +52,8 @@ struct Term::Impl
     float boost;
     float similarityBoost;
     uint8_t threshold;
-    unsigned searchableAttributeIdToFilter;
+    vector<unsigned> searchableAttributeIdsToFilter;
+    ATTRIBUTES_OP attrOp;
     TermType type;
     string keyword;
 
@@ -62,7 +64,9 @@ struct Term::Impl
     	ss << boost;
     	ss << similarityBoost;
     	ss << (threshold+1) << "";
-    	ss << (searchableAttributeIdToFilter + 1);
+    	ss << attrOp;
+    	for (unsigned i = 0; i < searchableAttributeIdsToFilter.size(); ++i)
+    		ss << searchableAttributeIdsToFilter[i];
     	return ss.str();
     }
 
@@ -74,7 +78,8 @@ struct Term::Impl
     	buffer = srch2::util::serializeFixedTypes(boost, buffer);
     	buffer = srch2::util::serializeFixedTypes(similarityBoost, buffer);
     	buffer = srch2::util::serializeFixedTypes(threshold, buffer);
-    	buffer = srch2::util::serializeFixedTypes(searchableAttributeIdToFilter, buffer);
+    	buffer = srch2::util::serializeVectorOfFixedTypes(searchableAttributeIdsToFilter, buffer);
+    	buffer = srch2::util::serializeFixedTypes(attrOp, buffer);
     	buffer = srch2::util::serializeFixedTypes(type, buffer);
     	buffer = srch2::util::serializeString(keyword, buffer);
 
@@ -84,7 +89,8 @@ struct Term::Impl
     	buffer = srch2::util::deserializeFixedTypes(buffer, boost );
     	buffer = srch2::util::deserializeFixedTypes(buffer,similarityBoost);
     	buffer = srch2::util::deserializeFixedTypes(buffer,threshold);
-    	buffer = srch2::util::deserializeFixedTypes(buffer,searchableAttributeIdToFilter);
+    	buffer = srch2::util::deserializeVectorOfFixedTypes(buffer, searchableAttributeIdsToFilter);
+    	buffer = srch2::util::deserializeFixedTypes(buffer,attrOp);
     	buffer = srch2::util::deserializeFixedTypes(buffer,type);
     	buffer = srch2::util::deserializeString(buffer,keyword);
 
@@ -95,7 +101,8 @@ struct Term::Impl
     	numberOfBytes += sizeof(boost);
     	numberOfBytes += sizeof(similarityBoost);
     	numberOfBytes += sizeof(threshold);
-    	numberOfBytes += sizeof(searchableAttributeIdToFilter);
+    	numberOfBytes += srch2::util::getNumberOfBytesVectorOfFixedTypes(searchableAttributeIdsToFilter);
+    	numberOfBytes += sizeof(attrOp);
     	numberOfBytes += sizeof(type);
     	numberOfBytes += sizeof(unsigned) + keyword.size();
 
@@ -111,7 +118,7 @@ Term::Term(const string &keywordStr, TermType type, const float boost, const flo
     impl->boost = boost;
     impl->similarityBoost = fuzzyMatchPenalty;
     impl->threshold = threshold;
-    impl->searchableAttributeIdToFilter = -1;
+    impl->attrOp = ATTRIBUTES_OP_OR;
 }
 
 Term::Term(const Term & term){
@@ -191,14 +198,19 @@ TermType Term::getTermType() const
     return impl->type;
 }
 
-void Term::addAttributeToFilterTermHits(unsigned searchableAttributeId)
+void Term::addAttributesToFilter(const vector<unsigned>& searchableAttributeId, ATTRIBUTES_OP attrOp)
 {
-    this->impl->searchableAttributeIdToFilter = searchableAttributeId;
+    this->impl->searchableAttributeIdsToFilter = searchableAttributeId;
+    this->impl->attrOp = attrOp;
 }
 
-unsigned Term::getAttributeToFilterTermHits() const
+ATTRIBUTES_OP Term::getFilterAttrOperation() {
+	return this->impl->attrOp;
+}
+
+vector<unsigned>& Term::getAttributesToFilter() const
 {
-    return this->impl->searchableAttributeIdToFilter;
+    return this->impl->searchableAttributeIdsToFilter;
 }
 
 string Term::toString(){

@@ -296,7 +296,10 @@ string PhraseInfo::toString(){
 		ss << phraseKeywordPositionIndex[i];
 	}
 	ss << proximitySlop;
-	ss << attributeBitMap;
+	ss << attrOps;
+	for(unsigned i = 0 ; i < attributeIdsList.size() ; ++i ){
+		ss << attributeIdsList[i];
+	}
 	return ss.str();
 }
 
@@ -306,7 +309,8 @@ string PhraseInfo::toString(){
  */
 void * PhraseInfo::serializeForNetwork(void * buffer) const {
 	buffer = srch2::util::serializeFixedTypes(proximitySlop,  buffer);
-	buffer = srch2::util::serializeFixedTypes(attributeBitMap,  buffer);
+	buffer = srch2::util::serializeFixedTypes(attrOps,  buffer);
+	buffer = srch2::util::serializeVectorOfFixedTypes(attributeIdsList,  buffer);
 	buffer = srch2::util::serializeVectorOfFixedTypes(keywordIds,  buffer);
 	buffer = srch2::util::serializeVectorOfFixedTypes(phraseKeywordPositionIndex,  buffer);
 	buffer = srch2::util::serializeVectorOfString(phraseKeyWords,  buffer);
@@ -318,7 +322,8 @@ void * PhraseInfo::serializeForNetwork(void * buffer) const {
  */
 void * PhraseInfo::deserializeForNetwork(void * buffer) {
 	buffer = srch2::util::deserializeFixedTypes(buffer, proximitySlop);
-	buffer = srch2::util::deserializeFixedTypes(buffer, attributeBitMap);
+	buffer = srch2::util::deserializeFixedTypes(buffer, attrOps);
+	buffer = srch2::util::deserializeVectorOfFixedTypes(buffer, attributeIdsList);
 	buffer = srch2::util::deserializeVectorOfFixedTypes(buffer, keywordIds);
 	buffer = srch2::util::deserializeVectorOfFixedTypes(buffer, phraseKeywordPositionIndex);
 	buffer = srch2::util::deserializeVectorOfString(buffer, phraseKeyWords);
@@ -330,8 +335,9 @@ void * PhraseInfo::deserializeForNetwork(void * buffer) {
  */
 unsigned PhraseInfo::getNumberOfBytesForSerializationForNetwork() const{
 	unsigned numberOfBytes = 0;
-	numberOfBytes += sizeof(attributeBitMap);
+	numberOfBytes += sizeof(attrOps);
 	numberOfBytes += sizeof(proximitySlop);
+	numberOfBytes += srch2::util::getNumberOfBytesVectorOfFixedTypes(attributeIdsList);
 	numberOfBytes += srch2::util::getNumberOfBytesVectorOfFixedTypes(keywordIds);
 	numberOfBytes += srch2::util::getNumberOfBytesVectorOfFixedTypes(phraseKeywordPositionIndex);
 	numberOfBytes += srch2::util::getNumberOfBytesVectorOfString(phraseKeyWords);
@@ -341,11 +347,12 @@ unsigned PhraseInfo::getNumberOfBytesForSerializationForNetwork() const{
 void PhraseSearchInfoContainer::addPhrase(const vector<string>& phraseKeywords,
 		const vector<unsigned>& phraseKeywordsPositionIndex,
 		unsigned proximitySlop,
-		unsigned attributeBitMap){
+		const vector<unsigned>& attributeIdsList, ATTRIBUTES_OP attrOps){
 
 	PhraseInfo pi;
 	pi.phraseKeywordPositionIndex = phraseKeywordsPositionIndex;
-	pi.attributeBitMap = attributeBitMap;
+	pi.attributeIdsList = attributeIdsList;
+	pi.attrOps = attrOps;
 	pi.phraseKeyWords = phraseKeywords;
 	pi.proximitySlop = proximitySlop;
 	phraseInfoVector.push_back(pi);
