@@ -245,6 +245,14 @@ boost::shared_ptr<Json::Value> SearchResultsAggregator::printResults(evhttp_requ
     (*root)["searcher_time"] = ts1;
     clock_gettime(CLOCK_REALTIME, &tstart);
 
+    vector<string> attributesToReturnFromQuery = queryPlan.getAttrToReturn();
+    vector<string> *attributesToReturnFromQueryPtr;
+    if (attributesToReturnFromQuery.size() != 0){
+		attributesToReturnFromQueryPtr = &attributesToReturnFromQuery;
+    }else{
+    	attributesToReturnFromQueryPtr = NULL;
+    }
+
     if(onlyFacets == false){ // We send the matching records only if "facet != only".
         (*root)["results"].resize(end - start);
         unsigned counter = 0;
@@ -263,18 +271,36 @@ boost::shared_ptr<Json::Value> SearchResultsAggregator::printResults(evhttp_requ
                         - allResults.at(i).first->_score.getFloatTypedValue()); //the actual distance between the point of record and the center point of the range
                 if (indexDataConfig->getSearchResponseFormat() == RESPONSE_WITH_STORED_ATTR){
                     string sbuffer;
-                    genRecordJsonString(indexDataConfig->getSchema(), inMemoryData, allResults.at(i).first->externalRecordId, sbuffer);
+                    //This case executes when all the attributes are to be returned. However we let the user
+					//override if field list parameter is given in query
+                    genRecordJsonString(indexDataConfig->getSchema(), inMemoryData, allResults.at(i).first->externalRecordId,
+                    		sbuffer, attributesToReturnFromQueryPtr);
                     // The class CustomizableJsonWriter allows us to
                     // attach the data string to the JSON tree without parsing it.
                     (*root)["results"][counter][global_internal_record.first] = sbuffer;
                 } else if (indexDataConfig->getSearchResponseFormat() == RESPONSE_WITH_SELECTED_ATTR){
                     string sbuffer;
                     const vector<string> *attrToReturn = indexDataConfig->getAttributesToReturn();
+                	//Return the attributes specified in the config file
+                	//If query has field list parameter we override attrToReturn using the attributes from query
+                	//otherwise we use attributes mentioned in config file
+                	if(attributesToReturnFromQuery.size() > 0){
+                	    attrToReturn = attributesToReturnFromQueryPtr;
+                	}
                     genRecordJsonString(indexDataConfig->getSchema(), inMemoryData, allResults.at(i).first->externalRecordId,
                             sbuffer, attrToReturn);
                     // The class CustomizableJsonWriter allows us to
                     // attach the data string to the JSON tree without parsing it.
                     (*root)["results"][counter][global_internal_record.first] = sbuffer;
+                }else{
+                    //Return the attributes specified explicitly in the query otherwise no attributes are returned
+                    string stringBuffer;
+                    if(attributesToReturnFromQuery.size() > 0){
+                        genRecordJsonString(indexDataConfig->getSchema(), inMemoryData, allResults.at(i).first->externalRecordId,
+                                stringBuffer, attributesToReturnFromQueryPtr);
+                        (*root)["results"][counter][global_internal_record.first] = stringBuffer;
+                    }
+
                 }
                 ++counter;
             }
@@ -315,7 +341,10 @@ boost::shared_ptr<Json::Value> SearchResultsAggregator::printResults(evhttp_requ
                 if (indexDataConfig->getSearchResponseFormat() == RESPONSE_WITH_STORED_ATTR) {
                     unsigned internalRecordId = allResults.at(i).first->internalRecordId;
                     string sbuffer;
-                    genRecordJsonString(indexDataConfig->getSchema(), inMemoryData, allResults.at(i).first->externalRecordId,sbuffer);
+                    //This case executes when all the attributes are to be returned. However we let the user
+					//override if field list parameter is given in query
+                    genRecordJsonString(indexDataConfig->getSchema(), inMemoryData, allResults.at(i).first->externalRecordId,
+                    		sbuffer, attributesToReturnFromQueryPtr);
                     // The class CustomizableJsonWriter allows us to
                     // attach the data string to the JSON tree without parsing it.
                     (*root)["results"][counter][global_internal_record.first] = sbuffer;
@@ -323,11 +352,26 @@ boost::shared_ptr<Json::Value> SearchResultsAggregator::printResults(evhttp_requ
                     unsigned internalRecordId = allResults.at(i).first->internalRecordId;
                     string sbuffer;
                     const vector<string> *attrToReturn = indexDataConfig->getAttributesToReturn();
+                    //Return the attributes specified in the config file
+                    //If query has field list parameter we override attrToReturn using the attributes from query
+                    //otherwise we use attributes mentioned in config file
+                    if(attributesToReturnFromQuery.size() > 0){
+                        attrToReturn = attributesToReturnFromQueryPtr;
+                    }
+
                     genRecordJsonString(indexDataConfig->getSchema(), inMemoryData, allResults.at(i).first->externalRecordId,
                             sbuffer, attrToReturn);
                     // The class CustomizableJsonWriter allows us to
                     // attach the data string to the JSON tree without parsing it.
                     (*root)["results"][counter][global_internal_record.first] = sbuffer;
+                }else{
+                    //Return the attributes specified explicitly in the query otherwise no attributes are returned
+                    string stringBuffer;
+                    if(attributesToReturnFromQuery.size() > 0){
+                        genRecordJsonString(indexDataConfig->getSchema(), inMemoryData, allResults.at(i).first->externalRecordId,
+                                stringBuffer, attributesToReturnFromQueryPtr);
+                        (*root)["results"][counter][global_internal_record.first] = stringBuffer;
+                    }
                 }
 
                 string sbuffer = string();
@@ -493,6 +537,14 @@ boost::shared_ptr<Json::Value> SearchResultsAggregator::printOneResultRetrievedB
     // For logging
     string logQueries;
 
+    vector<string> attributesToReturnFromQuery = queryPlan.getAttrToReturn();
+    vector<string> *attributesToReturnFromQueryPtr;
+    if (attributesToReturnFromQuery.size() != 0){
+    	attributesToReturnFromQueryPtr = &attributesToReturnFromQuery;
+    }else{
+    	attributesToReturnFromQueryPtr = NULL;
+    }
+
     (*root)["searcher_time"] = ts1;
     (*root)["results"].resize(allResults.size());
 
@@ -513,17 +565,34 @@ boost::shared_ptr<Json::Value> SearchResultsAggregator::printOneResultRetrievedB
         if (indexDataConfig->getSearchResponseFormat() == RESPONSE_WITH_STORED_ATTR) {
             unsigned internalRecordId = allResults.at(i).first->internalRecordId;
             string sbuffer;
-            genRecordJsonString(indexDataConfig->getSchema(), inMemoryData, allResults.at(i).first->externalRecordId, sbuffer);
+            //This case executes when all the attributes are to be returned. However we let the user
+            //override if field list parameter is given in query
+            genRecordJsonString(indexDataConfig->getSchema(), inMemoryData, allResults.at(i).first->externalRecordId,
+            		sbuffer, attributesToReturnFromQueryPtr);
             (*root)["results"][counter][global_internal_record.first] = sbuffer;
         } else if (indexDataConfig->getSearchResponseFormat() == RESPONSE_WITH_SELECTED_ATTR){
             unsigned internalRecordId = allResults.at(i).first->internalRecordId;
             string sbuffer;
             const vector<string> *attrToReturn = indexDataConfig->getAttributesToReturn();
+            //Return the attributes specified in the config file
+            //If query has field list parameter we override attrToReturn using the attributes from query
+            //otherwise we use attributes mentioned in config file
+            if(attributesToReturnFromQuery.size() > 0){
+                attrToReturn = attributesToReturnFromQueryPtr;
+            }
             genRecordJsonString(indexDataConfig->getSchema(), inMemoryData, allResults.at(i).first->externalRecordId,
                     sbuffer, attrToReturn);
             // The class CustomizableJsonWriter allows us to
             // attach the data string to the JSON tree without parsing it.
             (*root)["results"][counter][global_internal_record.first] = sbuffer;
+        }else{
+            //Return the attributes specified explicitly in the query otherwise no attributes are returned
+            string stringBuffer;
+            if(attributesToReturnFromQuery.size() > 0){
+                genRecordJsonString(indexDataConfig->getSchema(), inMemoryData, allResults.at(i).first->externalRecordId,
+                        stringBuffer, attributesToReturnFromQueryPtr);
+                (*root)["results"][counter][global_internal_record.first] = stringBuffer;
+            }
         }
         ++counter;
     }

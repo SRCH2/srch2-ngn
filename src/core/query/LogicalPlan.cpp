@@ -317,6 +317,8 @@ LogicalPlan::LogicalPlan(const LogicalPlan & logicalPlan){
 		this->tree = NULL;
 	}
 
+	this->attributesToReturn = logicalPlan.attributesToReturn;
+
 	this->offset = logicalPlan.offset;
 	this->numberOfResultsToRetrieve = logicalPlan.numberOfResultsToRetrieve;
 	this->shouldRunFuzzyQuery = logicalPlan.shouldRunFuzzyQuery;
@@ -421,6 +423,9 @@ string LogicalPlan::getUniqueStringForCaching(){
 	if(this->fuzzyQuery != NULL){
 		ss << this->fuzzyQuery->toString().c_str();
 	}
+	for(unsigned i = 0 ; i < this->attributesToReturn.size(); ++i){
+		ss << this->attributesToReturn.at(i).c_str();
+	}
 	return ss.str();
 }
 
@@ -456,6 +461,9 @@ void * LogicalPlan::serializeForNetwork(void * buffer){
 	if(tree != NULL){
 		buffer = tree->serializeForNetwork(buffer);
 	}
+
+	buffer = srch2::util::serializeVectorOfString(this->attributesToReturn, buffer);
+
 	return buffer;
 }
 
@@ -507,6 +515,8 @@ void * LogicalPlan::deserializeForNetwork(LogicalPlan & logicalPlan , void * buf
 		logicalPlan.tree = NULL;
 	}
 
+	buffer = srch2::util::deserializeVectorOfString(buffer, logicalPlan.attributesToReturn);
+
 	return buffer;
 }
 
@@ -543,6 +553,8 @@ unsigned LogicalPlan::getNumberOfBytesForSerializationForNetwork(){
 	if(this->tree != NULL){
 		numberOfBytes += this->tree->getNumberOfBytesForSerializationForNetwork();
 	}
+
+	numberOfBytes += srch2::util::getNumberOfBytesVectorOfString(this->attributesToReturn);
 
 	return numberOfBytes;
 }
