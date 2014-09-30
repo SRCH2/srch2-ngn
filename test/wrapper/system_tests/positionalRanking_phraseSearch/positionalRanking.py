@@ -18,20 +18,22 @@ import test_lib
 port = '8087'
 
 #Function of checking the results
-def checkResult(query, responseJson,resultValue):
+def checkResult(query, responseJson,resultValue, scores):
 #    for key, value in responseJson:
 #        print key, value
     isPass=1
     if  len(responseJson) == len(resultValue):
         for i in range(0, len(resultValue)):
             #print response_json['results'][i]['record']['id']
-            if (resultValue[i] != responseJson[i]['record']['id']):
+            if (resultValue[i] != responseJson[i]['record']['id'] or (float(responseJson[i]['score']) != float(scores[i]))):
                 isPass=0
+                print "score is of the record is " + str(responseJson[i]['score'])
                 print query+' test failed'
                 print 'query results||given results'
                 print 'number of results:'+str(len(responseJson))+'||'+str(len(resultValue))
                 for i in range(0, len(responseJson)):
                     print str(responseJson[i]['record']['id'])+'||'+str(resultValue[i])
+                    print "score: " + str(responseJson[i]['score'])
                 break
     else:
         isPass=0
@@ -74,13 +76,14 @@ def testPhraseSearch(queriesAndResultsPath, binary_path):
         value=line.split('||')
         phrase=value[0]
         expectedRecordIds=(value[1]).split()
+        scores = (value[2]).split()
         query='http://localhost:' + port + '/search?q='+ urllib.quote(phrase)
         print query
         response = urllib2.urlopen(query).read()
         response_json = json.loads(response)
         #print response_json['results']
         #check the result
-        failTotal += checkResult(query, response_json['results'], expectedRecordIds)
+        failTotal += checkResult(query, response_json['results'], expectedRecordIds, scores)
 
     test_lib.killServer(serverHandle)
     print '=============================='

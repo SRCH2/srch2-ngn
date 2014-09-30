@@ -214,6 +214,10 @@ test_case "lot of attributes" "python ./attributes/attributes.py $SRCH2_ENGINE"
 
 sleep 3
 
+test_case "positional ranking in phrase search" "python ./positionalRanking_phraseSearch/positionalRanking.py $SRCH2_ENGINE ./positionalRanking_phraseSearch/queries.txt"
+
+sleep 3
+
 test_case "synonyms" "python ./synonyms/synonyms.py $SRCH2_ENGINE" 
 
 sleep 3
