@@ -304,11 +304,13 @@ change the indexes.
 
 ###4.1. Install MySQL
 
-Follow the instructions at [here](http://dev.mysql.com/doc/refman/5.7/en/installing.html) to install MySQL. For Ubuntu:
+####4.1.1.Follow the instructions at [here](http://dev.mysql.com/doc/refman/5.7/en/installing.html) to install MySQL:
 
+For Ubuntu:
 ```
 shell> sudo apt-get install mysql-server
 ```
+For MAC OS, please follow the instructions at [here](http://dev.mysql.com/doc/refman/5.5/en/macosx-installation-pkg.html)
 
 Notice that the [MySQL Replication
 Listener](https://launchpad.net/mysql-replication-listener) works with
@@ -317,11 +319,14 @@ Log](http://dev.mysql.com/doc/refman/5.0/en/binary-log.html) mode
 enabled. The MySQL host specified in the configuration file should be
 the primary of the replica set.
 
-To enable the [Binary
-Log](http://dev.mysql.com/doc/refman/5.0/en/binary-log.html) (needed
-only once), edit the
-[my.cnf](http://dev.mysql.com/doc/refman/5.1/en/option-files.html)
-file.  Find the following lines in the file:
+
+####4.1.2. To enable the [BinaryLog](http://dev.mysql.com/doc/refman/5.0/en/binary-log.html) (neededonly once):
+For MAC OS, if /etc/my.cnf does not exist, run the following commands:
+```
+shell> cd /usr/local/mysql/support-files/
+shell> sudo cp my-huge.cnf /etc/my.cnf
+```
+For both platforms, find the following lines in the [my.cnf](http://dev.mysql.com/doc/refman/5.1/en/option-files.html) file.
 ```
 #server-id               = 1
 #log_bin                 = /var/log/mysql/mysql-bin.log
@@ -334,22 +339,32 @@ log_bin                 = /var/log/mysql/mysql-bin.log
 binlog-format	        = ROW
 ```
 
-Restart the mysql service and reset the row-based binlog:
+
+####4.1.3. Stop/start the mysql service:
+
+For Ubuntu:
 ```
 shell> sudo /etc/init.d/mysql stop
 shell> sudo /etc/init.d/mysql start
+```
+For MAC OS:
+```
+shell> sudo /usr/local/mysql/support-files/mysql.server stop 
+shell> sudo /usr/local/mysql/support-files/mysql.server start
+```
+####4.1.4.Reset the row-based binlog:
+```
 shell> mysql -u root -p
 mysql> reset master;
 ```
-These commands will start the MySQL service with the binary log row-based mode enabled. 
 
-To check binlog status, run the following commands:
+Check binlog status:
 ```
 mysql> show variables like 'binlog_format';
 mysql> show master status;
 mysql> show binlog events;
 ```
-
+These commands will show the status of the binlog.
 
 ###4.2. Populate MySQL
 
