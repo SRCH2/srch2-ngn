@@ -19,16 +19,19 @@ LogicalPlanNode::LogicalPlanNode(Term * exactTerm, Term * fuzzyTerm){
 	this->nodeType = LogicalPlanNodeTypeTerm;
 	this->exactTerm= exactTerm;
 	this->fuzzyTerm = fuzzyTerm;
+	this->regionShape = NULL;
 	this->stats = NULL;
 	this->forcedPhysicalNode = PhysicalPlanNode_NOT_SPECIFIED;
 }
 
 LogicalPlanNode::LogicalPlanNode(LogicalPlanNodeType nodeType){
 	ASSERT(this->nodeType != LogicalPlanNodeTypeTerm);
+	ASSERT(nodeType != LogicalPlanNodeTypeGeo);
 	this->nodeType = nodeType;
 	this->exactTerm= NULL;
 	this->fuzzyTerm = NULL;
 	this->stats = NULL;
+	this->regionShape = NULL;
 	this->forcedPhysicalNode = PhysicalPlanNode_NOT_SPECIFIED;
 }
 
@@ -40,6 +43,7 @@ LogicalPlanNode::LogicalPlanNode(){
 	this->exactTerm= NULL;
 	this->fuzzyTerm = NULL;
 	this->stats = NULL;
+	this->regionShape = NULL;
 	this->forcedPhysicalNode = PhysicalPlanNode_NOT_SPECIFIED;
 }
 
@@ -72,6 +76,15 @@ LogicalPlanNode::LogicalPlanNode(const LogicalPlanNode & node){
 	//}
 }
 
+LogicalPlanNode::LogicalPlanNode(Shape* regionShape){
+	this->nodeType = LogicalPlanNodeTypeGeo;
+	this->exactTerm = NULL;
+	this->fuzzyTerm = NULL;
+	this->regionShape = regionShape;
+	stats = NULL;
+	forcedPhysicalNode = PhysicalPlanNode_NOT_SPECIFIED;
+}
+
 LogicalPlanNode::~LogicalPlanNode(){
 	if(this->exactTerm != NULL){
 		delete exactTerm;
@@ -79,7 +92,11 @@ LogicalPlanNode::~LogicalPlanNode(){
 	if(this->fuzzyTerm != NULL){
 		delete fuzzyTerm;
 	}
-	for(vector<LogicalPlanNode *>::iterator child = this->children.begin() ; child != this->children.end() ; ++child){
+
+	if(this->regionShape != NULL){
+		delete regionShape;
+	}
+	for(vector<LogicalPlanNode *>::iterator child = children.begin() ; child != children.end() ; ++child){
 		if(*child != NULL){
 			delete *child;
 		}
@@ -99,6 +116,9 @@ string LogicalPlanNode::toString(){
 	}
 	if(this->fuzzyTerm != NULL){
 		ss << this->fuzzyTerm->toString();
+	}
+	if(this->regionShape != NULL){
+		ss << this->regionShape->toString();
 	}
 	ss << this->forcedPhysicalNode;
 	return ss.str();
@@ -322,6 +342,7 @@ LogicalPlanNode * LogicalPlan::createTermLogicalPlanNode(const std::string &quer
 
 LogicalPlanNode * LogicalPlan::createOperatorLogicalPlanNode(LogicalPlanNodeType nodeType){
 	ASSERT(nodeType != LogicalPlanNodeTypeTerm);
+	ASSERT(nodeType != LogicalPlanNodeTypeGeo);
 	LogicalPlanNode * node = new LogicalPlanNode(nodeType);
 	return node;
 }
@@ -331,6 +352,11 @@ LogicalPlanNode * LogicalPlan::createPhraseLogicalPlanNode(const vector<string>&
 
 	LogicalPlanNode * node = new LogicalPlanPhraseNode(phraseKeyWords, phraseKeywordsPosition,
 			slop, fieldFilter, attrOp);
+	return node;
+}
+
+LogicalPlanNode * LogicalPlan::createGeoLogicalPlanNode(Shape *regionShape){
+	LogicalPlanNode * node = new LogicalPlanNode(regionShape);
 	return node;
 }
 

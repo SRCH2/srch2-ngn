@@ -20,9 +20,10 @@
 
 #include <instantsearch/Ranker.h>
 #include "util/Assert.h"
+#include "util/AttributeIterator.h"
+#include "geo/QuadTreeNode.h"
 #include <iostream>
 #include <math.h>
-#include "util/AttributeIterator.h"
 #include <cfloat>
 
 using std::vector;
@@ -138,6 +139,14 @@ namespace srch2
 
     float DefaultTopKRanker::computeScoreForNot(float score){
     	return 1 - score;
+    }
+
+    double DefaultTopKRanker::computeScoreforGeo(Point &recordPosition, Shape &queryShape){
+    	// calculate the score
+    	double minDist2UpperBound = max( queryShape.getSearchRadius2() , GEO_MIN_SEARCH_RANGE_SQUARE);
+    	double resultMinDist2 = queryShape.getMinDist2FromLatLong(recordPosition.x, recordPosition.y);
+    	double distanceRatio = ((double)sqrt(minDist2UpperBound) - (double)sqrt(resultMinDist2)) / (double)sqrt(minDist2UpperBound);
+    	return max( distanceRatio * distanceRatio, GEO_MIN_DISTANCE_SCORE );
     }
 
     /*float DefaultTopKRanker::computeOverallRecordScore(const Query *query, const vector<float> &queryResultTermScores, unsigned recordLength) const

@@ -816,7 +816,6 @@ PhysicalPlanCost MergeTopKOptimizationOperator::getCostOfClose(const PhysicalPla
 	for(unsigned childOffset = 0 ; childOffset != this->getChildrenCount() ; ++childOffset){
 		resultCost = resultCost + this->getChildAt(childOffset)->getCostOfClose(params);
 	}
-
 	return resultCost;
 }
 PhysicalPlanCost MergeTopKOptimizationOperator::getCostOfVerifyByRandomAccess(const PhysicalPlanExecutionParameters & params){
@@ -826,7 +825,6 @@ PhysicalPlanCost MergeTopKOptimizationOperator::getCostOfVerifyByRandomAccess(co
 	for(unsigned childOffset = 0 ; childOffset != this->getChildrenCount() ; ++childOffset){
 		resultCost = resultCost + this->getChildAt(childOffset)->getCostOfVerifyByRandomAccess(params);
 	}
-
 	return resultCost;
 }
 void MergeTopKOptimizationOperator::getOutputProperties(IteratorProperties & prop){
@@ -848,7 +846,9 @@ bool MergeTopKOptimizationOperator::validateChildren(){
 			case PhysicalPlanNode_RandomAccessAnd:
 			case PhysicalPlanNode_RandomAccessOr:
 			case PhysicalPlanNode_RandomAccessNot:
+			case PhysicalPlanNode_RandomAccessGeo:
 			case PhysicalPlanNode_UnionLowestLevelSimpleScanOperator:
+			case PhysicalPlanNode_GeoSimpleScan:
 				// TopK should connect to InvertedIndex only by TVL
 				return false;
 			default:{

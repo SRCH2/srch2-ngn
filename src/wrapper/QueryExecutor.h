@@ -46,7 +46,6 @@ public:
 	void executeForDPInternal(QueryResults * finalResults,
 			map<string, std::pair<string, RecordSnippet> > & inMemoryRecordStrings) ;
 	void executeKeywordSearch(QueryResults * finalResults);
-	void executeGeo(QueryResults * finalResults);
 	void executeRetrieveById(QueryResults * finalResults);
 
 	void executePostProcessingPlan(Query * query,QueryResults * input, QueryResults *  output);

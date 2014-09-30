@@ -112,30 +112,6 @@ public:
 		return searchType;
 	}
 
-
-	// this function translates searchType enum flags to correspondent unsigned values
-	unsigned getSearchTypeCode() const {
-		// TODO : there must be some functions in Config file that give us these codes.
-		switch (getSearchType()) {
-			case srch2http::TopKSearchType:
-				return 0;
-				break;
-			case srch2http::GetAllResultsSearchType:
-				return 1;
-				break;
-			case srch2http::GeoSearchType:
-				return 2;
-				break;
-			case srch2http::RetrieveByIdSearchType:
-				return 3;
-				break;
-			default:
-
-				break;
-		}
-		return 0;
-	}
-
 	void setSearchType(ParameterName searchType) {
 		this->searchType = searchType;
 	}

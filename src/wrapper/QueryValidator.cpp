@@ -52,9 +52,6 @@ bool QueryValidator::validate() {
     if (paramContainer->hasParameterInQuery(GetAllResultsSearchType)) {
         numberOfProvidedSearchTypes++;
     }
-    if (paramContainer->hasParameterInQuery(GeoSearchType)) {
-        numberOfProvidedSearchTypes++;
-    }
     if (numberOfProvidedSearchTypes != 1) { // search type is not clear , fatal error
         paramContainer->messages.push_back(
                 std::make_pair(MessageError,
@@ -62,47 +59,28 @@ bool QueryValidator::validate() {
         return false;
     }
 
-    // validation case: if search type is TopK or GetAllResults, query keywords should not be empty
-    if (paramContainer->hasParameterInQuery(TopKSearchType)
-            || paramContainer->hasParameterInQuery(GetAllResultsSearchType)) { // search type is either TopK or GetAllResults
-		ParseTreeLeafNodeIterator termIterator(paramContainer->parseTreeRoot);
-		unsigned numberOfTerms = 0;
-		while(termIterator.hasMore()){
-			termIterator.getNext();
-			numberOfTerms ++;
+    // validation case: if search type is TopK or GetAllResults, query keywords should not be empty.
+    if(paramContainer->hasParameterInQuery(GeoSearchFlag) == false){
+		if (paramContainer->hasParameterInQuery(TopKSearchType)
+				|| paramContainer->hasParameterInQuery(GetAllResultsSearchType)) { // search type is either TopK or GetAllResults
+			ParseTreeLeafNodeIterator termIterator(paramContainer->parseTreeRoot);
+			unsigned numberOfTerms = 0;
+			while(termIterator.hasMore()){
+				termIterator.getNext();
+				numberOfTerms ++;
+			}
+			if (numberOfTerms == 0) {
+				paramContainer->messages.push_back(
+						std::make_pair(MessageError,
+								"No keywords provided for search."));
+				return false;
+			}
 		}
-        if (numberOfTerms == 0) {
-            paramContainer->messages.push_back(
-                    std::make_pair(MessageError,
-                            "No keywords provided for search."));
-            return false;
-        }
     }
 
-    // validation case: If search type is Geo, some latitude longitude must be provided.
-    if (paramContainer->hasParameterInQuery(GeoSearchType)) {
-        if (!(paramContainer->geoParameterContainer->hasParameterInQuery(GeoTypeRectangular) // no rectangular values
-                || paramContainer->geoParameterContainer->hasParameterInQuery(GeoTypeCircular))) { // no circular values
-            paramContainer->messages.push_back(
-                    std::make_pair(MessageError,
-                            "No latitude longitude provided for geo search."));
-            return false;
-        }
-    }
-
-    // validation case: if search type is TopK/GetAllResults, index type must be TopK/GetAllResults too
-    if (paramContainer->hasParameterInQuery(TopKSearchType)
-            || paramContainer->hasParameterInQuery(GetAllResultsSearchType)) {
-        if (indexDataContainerConf.getIndexType() != 0) { // zero means normal index type
-            paramContainer->messages.push_back(
-                    std::make_pair(MessageError,
-                            "Geo index type is not compatible with this query."));
-            return false;
-        }
-    }
-
+    // TODO: in case of removing the geo index type from config file we should remove this part
     // validation case: if search type is Geo, index type must be Geo too
-    if (paramContainer->hasParameterInQuery(GeoSearchType)) {
+    if (paramContainer->hasParameterInQuery(GeoSearchFlag)) {
         if (indexDataContainerConf.getIndexType() != 1) { // One means geo index type
             paramContainer->messages.push_back(
                     std::make_pair(MessageError,
@@ -110,18 +88,6 @@ bool QueryValidator::validate() {
             return false;
         }
     }
-
-    // validation case : if search type is Geo, we don't support boolean expression queries
-    // --- so the parse tree should be only one AND and a list of TERM children.
-    if (paramContainer->hasParameterInQuery(GeoSearchType)) {
-    	if ( ! validateParseTreeStructureForGeo() ){
-            paramContainer->messages.push_back(
-                    std::make_pair(MessageError,
-                            "Only AND separated list of keywords is accepted for Geo search. e.g. TERM1 AND TERM2"));
-            return false;
-    	}
-    }
-
 
     // validate filter list
     // Example : q= title,name:foo AND body.abstract:bar
@@ -551,28 +517,6 @@ bool QueryValidator::isParseSubtreeComputableRecursive(ParseTreeNode * node){
 	return true;
 }
 
-bool QueryValidator::validateParseTreeStructureForGeo(){
-	// there might be no keywords for Geo
-	if(paramContainer->parseTreeRoot == NULL) {
-		return true;
-	}
-	// root must be AND
-	if( paramContainer->parseTreeRoot->type != LogicalPlanNodeTypeAnd && paramContainer->parseTreeRoot->type != LogicalPlanNodeTypeTerm){
-		return false;
-	}
-	// all children of root must be TERM
-	for(vector<ParseTreeNode *>::iterator child = paramContainer->parseTreeRoot->children.begin() ;
-			child != paramContainer->parseTreeRoot->children.end() ; ++child){
-		if(*child == NULL){
-			ASSERT(false);
-			return false;
-		}
-		if((*child)->type != LogicalPlanNodeTypeTerm){
-			return false;
-		}
-	}
-	return true;
-}
 
 }
 }

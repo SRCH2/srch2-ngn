@@ -72,6 +72,7 @@ private:
 	void buildIncompleteSubTreeOptionsNot(LogicalPlanNode * root, vector<PhysicalPlanOptimizationNode *> & treeOptions);
 	void buildIncompleteSubTreeOptionsTerm(LogicalPlanNode * root, vector<PhysicalPlanOptimizationNode *> & treeOptions);
 	void buildIncompleteSubTreeOptionsPhrase(LogicalPlanNode * root, vector<PhysicalPlanOptimizationNode *> & treeOptions);
+	void buildIncompleteSubTreeOptionsGeo(LogicalPlanNode * root, vector<PhysicalPlanOptimizationNode *> & treeOptions);
 	void injectRequiredSortOperators(vector<PhysicalPlanOptimizationNode *> & treeOptions);
 	void injectRequiredSortOperators(PhysicalPlanOptimizationNode * root);
 
