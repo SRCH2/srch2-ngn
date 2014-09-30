@@ -2,5 +2,5 @@
 "srch2ngnGitRepoDir" : "/home/prateek/gitrepo/srch2-ngn/",
 "integrationTestDir" : "/test/sharding/integration/",
 "testBinaryDir"      : "/build/src/server/",
-"testBinaryFileName" : "srch2-search-server-debug"
+"testBinaryFileName" : "srch2-search-server"
 }

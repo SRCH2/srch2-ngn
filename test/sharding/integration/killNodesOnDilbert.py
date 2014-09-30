@@ -25,3 +25,4 @@ if __name__ == '__main__':
   sshClient.set_missing_host_key_policy(paramiko.AutoAddPolicy())
   sshClient.connect("dilbert.calit2.uci.edu")
   stdin, stdout, stderr = sshClient.exec_command('cd ' + str(integrationTestDir) + '; python killNodes.py')
+  stdin, stdout, stderr = sshClient.exec_command('cd ' + str(integrationTestDir) + ';rm -rf SRCH2_Cluster/node-*')

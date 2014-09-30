@@ -32,5 +32,6 @@ if __name__ == '__main__':
     processId = pid[1].split()
     for i in range(len(processId)):
         killNodesOutput = commands.getstatusoutput('kill -9 ' + processId[i])
+        #err2 = os.system('rm -rf SRCH2_Cluster/node-*')
         print killNodesOutput 
-
+    err2 = os.system('rm -rf SRCH2_Cluster/node-*')
