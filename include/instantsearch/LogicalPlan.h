@@ -161,6 +161,7 @@ private:
 	// SearchType
 	// PostProcessingInfo
     LogicalPlanNode * tree;
+    vector<string> attributesToReturn;
 
 public:
     LogicalPlan();
@@ -168,6 +169,13 @@ public:
 
     ~LogicalPlan();
 
+    void setAttrToReturn(const vector<string>& attr){
+        attributesToReturn = attr;
+    }
+
+    const vector<string> getAttrToReturn() const{
+        return this->attributesToReturn;
+    }
 
 	// the offset of requested results in the result set
 	int offset;
