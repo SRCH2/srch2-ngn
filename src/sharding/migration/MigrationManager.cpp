@@ -353,6 +353,7 @@ void MigrationService::receiveShard(ClusterShardId shardId, unsigned remoteNode)
 	unsigned mmapBufferSize = 0;
 	void * mmapBuffer = NULL;
 	unsigned maxMappedSize = 0;
+	bool emptyshard = false;
 
 	for (unsigned i =0; i < componentCount; ++i) {
 
@@ -362,6 +363,7 @@ void MigrationService::receiveShard(ClusterShardId shardId, unsigned remoteNode)
 			Logger::console("Migration: shard %s : timeout!", shardId.toString().c_str());
 			close(commSocket);
 			close(receiveSocket);
+			delete migratedShard;
 			migrationMgr->notifySHMAndCleanup(sessionKey, MM_STATUS_FAILURE);
 			return;
 		}
@@ -382,6 +384,7 @@ void MigrationService::receiveShard(ClusterShardId shardId, unsigned remoteNode)
 				Logger::console("Migration:I/O error for shard %s", shardId.toString().c_str());
 				close(commSocket);
 				close(receiveSocket);
+				delete migratedShard;
 				migrationMgr->notifySHMAndCleanup(sessionKey, MM_STATUS_FAILURE);
 				return;
 			}
@@ -394,6 +397,7 @@ void MigrationService::receiveShard(ClusterShardId shardId, unsigned remoteNode)
 		if (componentSize == 0) {
 			std::istringstream inputStream(ios::binary);
 			migratedShard->bootStrapShardComponentFromByteStream(inputStream, currentSessionInfo.shardCompName);
+			emptyshard = true;
 			sleep(1);
 			Logger::console("%u/%u Received", 0, componentSize);
 			//Send ACK
@@ -409,6 +413,7 @@ void MigrationService::receiveShard(ClusterShardId shardId, unsigned remoteNode)
 			Logger::console("Migration:I/O error for shard %s", shardId.toString().c_str());
 			close(commSocket);
 			close(receiveSocket);
+			delete migratedShard;
 			migrationMgr->notifySHMAndCleanup(sessionKey, MM_STATUS_FAILURE);
 			return;
 		}
@@ -424,6 +429,7 @@ void MigrationService::receiveShard(ClusterShardId shardId, unsigned remoteNode)
 			Logger::console("Migration error for shard %s", shardId.toString().c_str());
 			close(receiveSocket);
 			close(commSocket);
+			delete migratedShard;
 			migrationMgr->notifySHMAndCleanup(sessionKey, MM_STATUS_FAILURE);
 			return;
 		}
@@ -448,6 +454,7 @@ void MigrationService::receiveShard(ClusterShardId shardId, unsigned remoteNode)
 				munmap(mmapBuffer, componentSize);
 				close(receiveSocket);
 				close(commSocket);
+				delete migratedShard;
 				migrationMgr->notifySHMAndCleanup(sessionKey, MM_STATUS_FAILURE);
 				return;
 			}
@@ -474,6 +481,10 @@ void MigrationService::receiveShard(ClusterShardId shardId, unsigned remoteNode)
 	migrationMgr->sendComponentDoneMsg(currentSessionInfo);
 
 	// create an empty shard
+	if (emptyshard) {
+		migratedShard->getIndexer()->commit();
+	}
+	migratedShard->postBootStrap();
 	currentSessionInfo.shard.reset(migratedShard);
 
 	Logger::console("Saving shard to : %s", directoryPath.c_str());
@@ -590,8 +601,6 @@ void MigrationService::sendShard(ClusterShardId shardId, unsigned destinationNod
 		migrationMgr->notifySHMAndCleanup(sessionKey, MM_STATUS_FAILURE);
 		return;
 	}
-
-	std::sort(indexFilesWithSize.begin(), indexFilesWithSize.end(), IndexSizeComparator);
 
 	if (currentSessionInfo.status != MM_STATE_INIT_ACK_RCVD ) {
 		Logger::console("Unable to migrate shard ..destination node did not respond");

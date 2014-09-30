@@ -190,7 +190,8 @@ int main(int argc, char *argv[])
     		mergeEveryNSeconds, mergeEveryMWrites,
     		updateHistogramEveryPMerges, updateHistogramEveryQWrites,
     		INDEX_DIR);
-    indexerDataContainer.indexer = Indexer::load(indexMetaData1);
+    indexerDataContainer.indexer = Indexer::create(indexMetaData1);
+    indexerDataContainer.indexer->bootStrapFromDisk();
     indexerDataContainer.analyzer = getAnalyzer();
 
     std::string line;

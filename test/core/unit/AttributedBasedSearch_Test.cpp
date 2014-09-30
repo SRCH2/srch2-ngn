@@ -48,7 +48,7 @@ Indexer *buildIndex(string data_file, string index_dir, string expression)
     		mergeEveryNSeconds, mergeEveryMWrites,
     		updateHistogramEveryPMerges, updateHistogramEveryQWrites,
     		index_dir);
-    Indexer *indexer = Indexer::create(indexMetaData, analyzer, schema);
+    Indexer *indexer = Indexer::create(indexMetaData, schema);
 
     Record *record = new Record(schema);
 

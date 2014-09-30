@@ -24,7 +24,7 @@ LogicalPlanNode::LogicalPlanNode(Term * exactTerm, Term * fuzzyTerm){
 }
 
 LogicalPlanNode::LogicalPlanNode(LogicalPlanNodeType nodeType){
-	ASSERT(this->nodeType != LogicalPlanNodeTypeTerm);
+	ASSERT(nodeType != LogicalPlanNodeTypeTerm);
 	this->nodeType = nodeType;
 	this->exactTerm= NULL;
 	this->fuzzyTerm = NULL;

@@ -77,7 +77,7 @@ void addRecords()
     		mergeEveryNSeconds, mergeEveryMWrites,
     		updateHistogramEveryPMerges, updateHistogramEveryQWrites,
     		INDEX_DIR);
-    Indexer *index = Indexer::create(indexMetaData, analyzer, schema);
+    Indexer *index = Indexer::create(indexMetaData, schema);
     
     record->setPrimaryKey(1001);
     record->setSearchableAttributeValue("article_authors", "Tom Smith and Jack Lennon");
@@ -479,8 +479,9 @@ void TermVirtualList_Tests()
     		mergeEveryNSeconds, mergeEveryMWrites,
     		updateHistogramEveryPMerges, updateHistogramEveryQWrites,
     		INDEX_DIR);
-       Indexer *indexer = Indexer::load(indexMetaData);
-    
+       Indexer *indexer = Indexer::create(indexMetaData);
+       indexer->bootStrapFromDisk();
+
     QueryEvaluatorRuntimeParametersContainer runtimeParameters;
     QueryEvaluator * queryEvaluator = new QueryEvaluator(indexer, &runtimeParameters);
     QueryEvaluatorInternal * queryEvaluatorInternal = queryEvaluator->impl;

@@ -956,7 +956,7 @@ void testAnalyzerSerilization(string dataDir) {
     		updateHistogramEveryPMerges, updateHistogramEveryQWrites,
     		INDEX_DIR);
 
-    Indexer *index = Indexer::create(indexMetaData, analyzer, schema);
+    Indexer *index = Indexer::create(indexMetaData, schema);
 
     record->setPrimaryKey(1001);
     record->setSearchableAttributeValue("article_authors", "Tom Smith and Jack Lennon");
@@ -1013,7 +1013,7 @@ void testAnalyzerSerilization(string dataDir) {
     		updateHistogramEveryPMerges, updateHistogramEveryQWrites,
     		INDEX_DIR);
 
-    Indexer *index2 = Indexer::create(indexMetaData3, analyzer2, schema2);
+    Indexer *index2 = Indexer::create(indexMetaData3, schema2);
 
     record2->setPrimaryKey(1001);
     record2->setSearchableAttributeValue("article_authors", " and Jack Lennon");

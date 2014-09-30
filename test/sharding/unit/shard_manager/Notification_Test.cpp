@@ -161,6 +161,7 @@ void testCopyToMeNotification(){
 void testMetadataReport(){
 	string confPath(getenv("ConfigManagerFilePath"));
 	for(unsigned code = 0 ; code < 20; ++code){
+		// remove lock file.
 		Cluster_Writeview * writeview = createWriteview(code, confPath);
 		MessageAllocator messageAllocator;
 		MetadataReport * report = new MetadataReport(writeview);

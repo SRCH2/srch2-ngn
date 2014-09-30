@@ -59,7 +59,8 @@ int main(int argc, char **argv)
 			updateHistogramEveryPMerges, updateHistogramEveryQWrites,
 			index_dir);
 	   	
-	Indexer *index = Indexer::load(indexMetaData1);
+    Indexer *index = Indexer::create(indexMetaData1);
+    index->bootStrapFromDisk();
     QueryEvaluatorRuntimeParametersContainer runtimeParameters;
     QueryEvaluator * queryEvaluator = new QueryEvaluator(index, &runtimeParameters);
 	Analyzer *analyzer = getAnalyzer();

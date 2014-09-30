@@ -71,7 +71,7 @@ void addSimpleRecords()
     		updateHistogramEveryPMerges, updateHistogramEveryQWrites,
     		INDEX_DIR);
            
-    Indexer *index = Indexer::create(indexMetaData1, analyzer, schema);
+    Indexer *index = Indexer::create(indexMetaData1,  schema);
 
     record->setPrimaryKey(1001);
     record->setSearchableAttributeValue("article_authors", "Tom Smith and Jack Lennon");
@@ -153,7 +153,7 @@ void addAdvancedRecordsWithScoreSortableAttributes()
     		mergeEveryNSeconds, mergeEveryMWrites,
     		updateHistogramEveryPMerges, updateHistogramEveryQWrites,
     		INDEX_DIR);
-    Indexer *index = Indexer::create(indexMetaData1, analyzer, schema);
+    Indexer *index = Indexer::create(indexMetaData1,  schema);
 
     record->setPrimaryKey(1001);
     record->setSearchableAttributeValue("article_authors", "Tom Smith and Jack Lennon");
@@ -234,7 +234,9 @@ void test1()
     		updateHistogramEveryPMerges, updateHistogramEveryQWrites,
     		INDEX_DIR);
            
-    Indexer *index = Indexer::load(indexMetaData1);
+    Indexer *index = Indexer::create(indexMetaData1);
+    index->bootStrapFromDisk();
+
     index->createAndStartMergeThreadLoop();
     QueryEvaluatorRuntimeParametersContainer runtimeParameters;
     QueryEvaluator * queryEvaluator = new QueryEvaluator(index, &runtimeParameters);
@@ -343,7 +345,8 @@ void test2()
     		updateHistogramEveryPMerges, updateHistogramEveryQWrites,
     		INDEX_DIR);
            
-    Indexer *index = Indexer::load(indexMetaData1);
+    Indexer *index = Indexer::create(indexMetaData1);
+    index->bootStrapFromDisk();
     index->createAndStartMergeThreadLoop();
     QueryEvaluatorRuntimeParametersContainer runtimeParameters;
     QueryEvaluator * queryEvaluator = new QueryEvaluator(index, &runtimeParameters);
@@ -433,7 +436,8 @@ void test3()
     		updateHistogramEveryPMerges, updateHistogramEveryQWrites,
     		INDEX_DIR);
            
-    Indexer *index = Indexer::load(indexMetaData1);
+    Indexer *index = Indexer::create(indexMetaData1);
+    index->bootStrapFromDisk();
     index->createAndStartMergeThreadLoop();
     QueryEvaluatorRuntimeParametersContainer runtimeParameters;
     QueryEvaluator * queryEvaluator = new QueryEvaluator(index, &runtimeParameters);
@@ -515,7 +519,8 @@ void test4()
     		updateHistogramEveryPMerges, updateHistogramEveryQWrites,
     		INDEX_DIR);
            
-    Indexer *index = Indexer::load(indexMetaData1);
+    Indexer *index = Indexer::create(indexMetaData1);
+    index->bootStrapFromDisk();
     index->createAndStartMergeThreadLoop();
     QueryEvaluatorRuntimeParametersContainer runtimeParameters;
     QueryEvaluator * queryEvaluator = new QueryEvaluator(index, &runtimeParameters);
@@ -575,7 +580,8 @@ void test5()
     		updateHistogramEveryPMerges, updateHistogramEveryQWrites,
     		INDEX_DIR);
            
-    Indexer *index = Indexer::load(indexMetaData1);
+    Indexer *index = Indexer::create(indexMetaData1);
+    index->bootStrapFromDisk();
     index->createAndStartMergeThreadLoop();
     QueryEvaluatorRuntimeParametersContainer runtimeParameters;
     QueryEvaluator * queryEvaluator = new QueryEvaluator(index, &runtimeParameters);
@@ -651,7 +657,8 @@ void test6()
     		updateHistogramEveryPMerges, updateHistogramEveryQWrites,
     		INDEX_DIR);
            
-    Indexer *index = Indexer::load(indexMetaData1);
+    Indexer *index = Indexer::create(indexMetaData1);
+    index->bootStrapFromDisk();
     index->createAndStartMergeThreadLoop();
     QueryEvaluatorRuntimeParametersContainer runtimeParameters;
     QueryEvaluator * queryEvaluator = new QueryEvaluator(index, &runtimeParameters);
@@ -761,7 +768,8 @@ void test8()
     		updateHistogramEveryPMerges, updateHistogramEveryQWrites,
     		INDEX_DIR);
            
-    Indexer *index = Indexer::load(indexMetaData1);
+    Indexer *index = Indexer::create(indexMetaData1);
+    index->bootStrapFromDisk();
     index->createAndStartMergeThreadLoop();
     QueryEvaluatorRuntimeParametersContainer runtimeParameters;
     QueryEvaluator * queryEvaluator = new QueryEvaluator(index, &runtimeParameters);
@@ -845,7 +853,8 @@ void test9()
     		updateHistogramEveryPMerges, updateHistogramEveryQWrites,
     		INDEX_DIR);
            
-    Indexer *index = Indexer::load(indexMetaData1);
+    Indexer *index = Indexer::create(indexMetaData1);
+    index->bootStrapFromDisk();
     index->createAndStartMergeThreadLoop();
     QueryEvaluatorRuntimeParametersContainer runtimeParameters;
     QueryEvaluator * queryEvaluator = new QueryEvaluator(index, &runtimeParameters);
@@ -939,7 +948,8 @@ void test10()
     		updateHistogramEveryPMerges, updateHistogramEveryQWrites,
     		INDEX_DIR);
            
-    Indexer *index = Indexer::load(indexMetaData1);
+    Indexer *index = Indexer::create(indexMetaData1);
+    index->bootStrapFromDisk();
     index->createAndStartMergeThreadLoop();
     QueryEvaluatorRuntimeParametersContainer runtimeParameters;
     QueryEvaluator * queryEvaluator = new QueryEvaluator(index, &runtimeParameters);
@@ -1043,7 +1053,7 @@ void test11()
     		updateHistogramEveryPMerges, updateHistogramEveryQWrites,
     		INDEX_DIR);
            
-    Indexer *index = Indexer::create(indexMetaData1, analyzer, schema);
+    Indexer *index = Indexer::create(indexMetaData1, schema);
 
     // This commit should not fail even if there is no record in the index.
     ASSERT(index->commit() != 0);

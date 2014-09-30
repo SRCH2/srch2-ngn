@@ -44,7 +44,7 @@ void buildIndex(string data_file, string index_dir)
     		mergeEveryNSeconds, mergeEveryMWrites,
     		updateHistogramEveryPMerges, updateHistogramEveryQWrites,
     		index_dir);
-    Indexer *indexer = Indexer::create(indexMetaData, analyzer, schema);
+    Indexer *indexer = Indexer::create(indexMetaData, schema);
 
     Record *record = new Record(schema);
 
@@ -209,8 +209,8 @@ int main(int argc, char **argv)
     		mergeEveryNSeconds, mergeEveryMWrites,
     		updateHistogramEveryPMerges, updateHistogramEveryQWrites,
     		index_dir);
-    Indexer *index = Indexer::load(indexMetaData);
-
+    Indexer *index = Indexer::create(indexMetaData);
+    index->bootStrapFromDisk();
     cout << "Index loaded." << endl;
 
     updateIndex(update_data_file, index);
@@ -228,5 +228,7 @@ int main(int argc, char **argv)
     delete indexMetaData;
     delete analyzer;
 
+
+	cout << "LargeInsertionAfterCommit unit test: Passed" << endl;
     return 0;
 }

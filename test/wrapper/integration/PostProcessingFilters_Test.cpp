@@ -104,8 +104,7 @@ void addRecords() {
             mergeEveryNSeconds, mergeEveryMWrites,
             updateHistogramEveryPMerges, updateHistogramEveryQWrites,
             INDEX_DIR);
-    srch2is::Indexer *index = srch2is::Indexer::create(indexMetaData, analyzer,
-            schema);
+    srch2is::Indexer *index = srch2is::Indexer::create(indexMetaData, schema);
 
     record->setPrimaryKey(1001);
     record->setSearchableAttributeValue("article_authors",
@@ -969,7 +968,8 @@ void Searcher_Tests() {
             updateHistogramEveryPMerges , updateHistogramEveryQWrites,
             INDEX_DIR);
 
-    Indexer* indexer = Indexer::load(indexMetaData);
+    Indexer *indexer = Indexer::create(indexMetaData);
+    indexer->bootStrapFromDisk();
 
     QueryEvaluatorRuntimeParametersContainer runtimeParameters;
     QueryEvaluator * queryEvaluator = new QueryEvaluator(indexer, &runtimeParameters);

@@ -46,7 +46,7 @@ Indexer *buildIndex(string data_file, string index_dir, string expression, vecto
     		mergeEveryNSeconds, mergeEveryMWrites,
     		updateHistogramEveryPMerges, updateHistogramEveryQWrites,
     		index_dir);
-    Indexer *indexer = Indexer::create(indexMetaData, analyzer, schema);
+    Indexer *indexer = Indexer::create(indexMetaData, schema);
 
     Record *record = new Record(schema);
 
@@ -186,7 +186,7 @@ Indexer *buildGeoIndex(string data_file, string index_dir, string expression, ve
     		mergeEveryNSeconds, mergeEveryMWrites,
     		updateHistogramEveryPMerges, updateHistogramEveryQWrites,
     		index_dir);
-    Indexer *indexer = Indexer::create(indexMetaData, analyzer, schema);
+    Indexer *indexer = Indexer::create(indexMetaData, schema);
 
     Record *record = new Record(schema);
 
@@ -393,7 +393,8 @@ void testDefaultIndex(string index_dir)
     		updateHistogramEveryPMerges, updateHistogramEveryQWrites,
     		index_dir);
 
-    Indexer *indexerLoaded = Indexer::load(indexMetaData);
+    Indexer *indexerLoaded = Indexer::create(indexMetaData);
+    indexerLoaded->bootStrapFromDisk();
     QueryEvaluator * queryEvaluatorLoaded = new QueryEvaluator(indexerLoaded, &runtimeParameters);
 
     Analyzer *analyzerLoaded = getAnalyzer();
@@ -438,7 +439,8 @@ void testGeoIndex(string index_dir)
     		updateHistogramEveryPMerges, updateHistogramEveryQWrites,
     		index_dir);
 
-    Indexer *indexerLoaded = Indexer::load(indexMetaData);
+    Indexer *indexerLoaded = Indexer::create(indexMetaData);
+    indexerLoaded->bootStrapFromDisk();
     QueryEvaluator * queryEvaluatorLoaded = new QueryEvaluator(indexer,&runTimeParameters );
     Analyzer *analyzerLoaded = getAnalyzer();
 

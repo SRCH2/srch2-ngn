@@ -18,7 +18,7 @@
 #include "util/Assert.h"
 #include <assert.h>
 #include "util/Logger.h"
-#include "ConfigManager.h"
+#include "sharding/configuration/ConfigManager.h"
 #include "HTTPRequestHandler.h"
 #include "Srch2Server.h"
 

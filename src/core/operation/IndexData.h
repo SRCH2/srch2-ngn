@@ -213,7 +213,6 @@ private:
     
     ReadCounter *readCounter;
     WriteCounter *writeCounter;
-    bool hasSchema;
 
     
     /**
@@ -252,6 +251,7 @@ public:
 
     ForwardIndex *forwardIndex;
     SchemaInternal *schemaInternal;
+    bool hasSchema;
     
     RankerExpression *rankerExpression;
     // a global RW lock for readers and writers;

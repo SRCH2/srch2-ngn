@@ -155,6 +155,8 @@ public:
 	void init(QueryResultFactory * resultsFactory ,const QueryEvaluatorInternal *queryEvaluatorInternal, Query *query);
 
     QueryResultsInternal(QueryResultFactory * resultsFactory , const QueryEvaluatorInternal *queryEvaluatorInternal, Query *query);
+    QueryResultsInternal(const QueryResultsInternal & copy);
+    QueryResultsInternal & operator=(const QueryResultsInternal & rhs);
     virtual ~QueryResultsInternal();
 
     std::vector<TermVirtualList* > *getVirtualListVector() { return virtualListVector; };
@@ -194,10 +196,8 @@ public:
 
     std::vector<QueryResult *> sortedFinalResults;
     std::vector<TermVirtualList* > *virtualListVector;
-    
     // This flag indicates whether the results are approximated
     bool resultsApproximated;
-
     // This member keeps the estimated number of results in case of top k, if all results are actually calculated, this value is -1
     int estimatedNumberOfResults;
 	// map of attribute name to : "aggregation results for categories"
@@ -219,10 +219,7 @@ public:
     Query* query;
     unsigned nextK;
     const QueryEvaluatorInternal *queryEvaluatorInternal;
-
     QueryResultFactory * resultsFactory;
-
-
     // OPT use QueryResults Pointers.
     // TODO: DONE add an iterator to consume the results by converting ids using getExternalRecordId(recordId)
     std::priority_queue<QueryResult *, std::vector<QueryResult *>, QueryResultComparator > nextKResultsHeap;

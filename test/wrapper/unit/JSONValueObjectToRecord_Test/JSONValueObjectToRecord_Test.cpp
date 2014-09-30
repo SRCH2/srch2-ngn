@@ -16,7 +16,7 @@
 #include "JSONRecordParser.h"
 #include <iostream>
 #include <string>
-#include "ConfigManager.h"
+#include "sharding/configuration/ConfigManager.h"
 #include <assert.h>
 #include <stdlib.h>
 #include "util/RecordSerializerUtil.h"

@@ -39,6 +39,19 @@ QueryResults::QueryResults(){
 	impl = new QueryResultsInternal();
 }
 
+QueryResults::QueryResults(const QueryResults & copy){
+	this->impl = new QueryResultsInternal(*(copy.impl));
+}
+QueryResults & QueryResults::operator=(const QueryResults & rhs){
+	if(this != &rhs){
+		if(impl != NULL){
+			delete impl;
+		}
+		this->impl = new QueryResultsInternal(*(rhs.impl));
+	}
+	return *this;
+}
+
 void QueryResults::init(QueryResultFactory * resultsFactory, const QueryEvaluator* queryEvaluator, Query* query){
 	impl->init(resultsFactory,queryEvaluator->impl,query);
 }

@@ -71,7 +71,7 @@ void ActiveNodeSet_test()
 			mergeEveryNSeconds, mergeEveryMWrites,
 			updateHistogramEveryPMerges, updateHistogramEveryQWrites,
 			INDEX_DIR);
-	srch2is::Indexer *indexer = srch2is::Indexer::create(indexMetaData, analyzer, schema);
+	srch2is::Indexer *indexer = srch2is::Indexer::create(indexMetaData, schema);
 
 	record->setPrimaryKey(1001);
 	record->setSearchableAttributeValue("article_title", "cancer canada canteen can cat dog");
@@ -142,8 +142,7 @@ void addRecords() {
             mergeEveryNSeconds, mergeEveryMWrites,
             updateHistogramEveryPMerges, updateHistogramEveryQWrites,
             INDEX_DIR);
-    srch2is::Indexer *index = srch2is::Indexer::create(indexMetaData, analyzer,
-            schema);
+    srch2is::Indexer *index = srch2is::Indexer::create(indexMetaData, schema);
 
     record->setPrimaryKey(1001);
     record->setSearchableAttributeValue("article_authors",
@@ -518,7 +517,8 @@ void Searcher_Tests() {
             updateHistogramEveryPMerges, updateHistogramEveryQWrites,
             INDEX_DIR);
 
-    Indexer* indexer = Indexer::load(indexMetaData);
+    Indexer* indexer = Indexer::create(indexMetaData);
+    indexer->bootStrapFromDisk();
 
     QueryEvaluatorRuntimeParametersContainer runTimeParameters(10000, 500, 500);
     QueryEvaluator * queryEvaluator =

@@ -97,7 +97,8 @@ int main(int argc, char **argv)
         unsigned updateHistogramEveryQWrites = 5;
         IndexMetaData *indexMetaData = new IndexMetaData(cache,
         		mergeEveryNSeconds, mergeEveryMWrites, updateHistogramEveryPMerges, updateHistogramEveryQWrites, index_dir);
-        Indexer *indexer = Indexer::load(indexMetaData);
+        Indexer *indexer = Indexer::create(indexMetaData);
+        indexer->bootStrapFromDisk();
         QueryEvaluatorRuntimeParametersContainer runtimeParameters;
         QueryEvaluator * queryEvaluator = new QueryEvaluator(indexer, &runtimeParameters);
         const Analyzer *analyzer = getAnalyzer();
@@ -139,7 +140,8 @@ int main(int argc, char **argv)
         unsigned updateHistogramEveryQWrites = 5;
         IndexMetaData *indexMetaData = new IndexMetaData( cache,
         		mergeEveryNSeconds, mergeEveryMWrites, updateHistogramEveryPMerges, updateHistogramEveryQWrites, index_dir);
-        Indexer *indexer = Indexer::load(indexMetaData);
+        Indexer *indexer = Indexer::create(indexMetaData);
+        indexer->bootStrapFromDisk();
         QueryEvaluatorRuntimeParametersContainer runtimeParameters;
         QueryEvaluator * queryEvaluator = new QueryEvaluator(indexer, &runtimeParameters);
         const Analyzer *analyzer = getAnalyzer();

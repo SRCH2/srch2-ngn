@@ -576,7 +576,7 @@ void testSmallInitLargeInsertion(const string directoryName)
     // Create an analyzer
     SynonymContainer *syn = SynonymContainer::getInstance(string(""), SYNONYM_DONOT_KEEP_ORIGIN);
     Analyzer *analyzer = new Analyzer(NULL, NULL, NULL, syn, "");
-    Indexer *indexer = Indexer::create(indexMetaData, analyzer, schema);
+    Indexer *indexer = Indexer::create(indexMetaData, schema);
 
     vector< pair<string, pair<string, Point> > > recordsToSearch;
     addLocationRecordWithSingleAttr(recordsToSearch, indexer, schema, analyzer, 10000001, "gravity paul", 29.743723, -94.96186);
@@ -601,7 +601,8 @@ void testSmallInitLargeInsertion(const string directoryName)
     delete indexer;
 
     // Load the index again
-    Indexer *loadedIndexer = Indexer::load(indexMetaData);
+    Indexer *loadedIndexer = Indexer::create(indexMetaData);
+    loadedIndexer->bootStrapFromDisk();
     loadedIndexer->createAndStartMergeThreadLoop();
 
     // Search the loaded index
@@ -639,7 +640,7 @@ void testIncrementalUpdateGeoIndex(const string directoryName)
     // Create an analyzer
     SynonymContainer *syn = SynonymContainer::getInstance(string(""), SYNONYM_DONOT_KEEP_ORIGIN);
     Analyzer *analyzer = new Analyzer(NULL, NULL, NULL, syn, "");
-    Indexer *indexer = Indexer::create(indexMetaData, analyzer, schema);
+    Indexer *indexer = Indexer::create(indexMetaData, schema);
 
     vector< pair<string, pair<string, Point> > > recordsToSearch;
 
@@ -667,7 +668,8 @@ void testIncrementalUpdateGeoIndex(const string directoryName)
     indexer->save();
     delete indexer;
     // Load the index again
-    Indexer *loadedIndexer = Indexer::load(indexMetaData);
+    Indexer *loadedIndexer = Indexer::create(indexMetaData);
+    loadedIndexer->bootStrapFromDisk();
     loadedIndexer->createAndStartMergeThreadLoop();
     // Search the loaded index
     searchRecords(recordsToSearch, loadedIndexer, analyzer);

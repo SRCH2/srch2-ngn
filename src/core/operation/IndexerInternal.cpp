@@ -194,6 +194,8 @@ void IndexReaderWriter::setSchema(const Schema* schema) {
 		delete this->index->schemaInternal;
 		this->index->schemaInternal = new SchemaInternal( *(dynamic_cast<const SchemaInternal *>(schema)) );
 		this->index->rankerExpression = new RankerExpression(this->index->schemaInternal->getScoringExpression());
+		this->index->hasSchema = true;
+		this->index->forwardIndex->setSchema(this->index->schemaInternal);
 	}
 	pthread_mutex_unlock(&lockForWriters);
 }

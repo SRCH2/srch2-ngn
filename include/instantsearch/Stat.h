@@ -37,6 +37,22 @@ public:
         accumulatedTime = 0.0;
         //clock_gettime(CLOCK_REALTIME, &tstart);
     };
+    Stat(const Stat & copy){
+    	this->tstart = copy.tstart;
+    	this->accumulatedTime = copy.accumulatedTime;
+    	this->counter = copy.counter;
+    	this->statList = copy.statList;
+    }
+    Stat & operator=(const Stat & rhs){
+    	if(this != &rhs){
+        	this->tstart = rhs.tstart;
+        	this->accumulatedTime = rhs.accumulatedTime;
+        	this->counter = rhs.counter;
+        	this->statList = rhs.statList;
+    	}
+    	return *this;
+    }
+
     virtual ~Stat() { statList.clear(); };
 
     void startMessage()

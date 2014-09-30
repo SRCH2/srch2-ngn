@@ -81,7 +81,7 @@ void addSimpleRecords()
     		updateHistogramEveryPMerges, updateHistogramEveryQWrites,
     		INDEX_DIR);
            
-    Indexer *index = Indexer::create(indexMetaData1, analyzer, schema);
+    Indexer *index = Indexer::create(indexMetaData1, schema);
     
     record->setPrimaryKey(1001);
     record->setSearchableAttributeValue("article_authors", "Tom Smith and Jack Lennon");
@@ -310,7 +310,8 @@ void test1()
     		mergeEveryNSeconds, mergeEveryMWrites,
     		updateHistogramEveryPMerges, updateHistogramEveryQWrites,
     		INDEX_DIR);
-    indexer = Indexer::load(indexMetaData1);
+    indexer = Indexer::create(indexMetaData1);
+    indexer->bootStrapFromDisk();
 
     //threadNumber = 1000;
     threadNumber = 1;
