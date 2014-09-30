@@ -310,7 +310,7 @@ protected:
 	// parsing helper functions for modularity
 	void parseIndexConfig(const xml_node &indexConfigNode, CoreInfo_t *coreInfo, map<string, unsigned> &boostsMap, bool &configSuccess, std::stringstream &parseError, std::stringstream &parseWarnings);
 
-	void parseMongoDb(const xml_node &mongoDbNode, CoreInfo_t *coreInfo, bool &configSuccess, std::stringstream &parseError, std::stringstream &parseWarnings);
+	 void parseDbParameters(const xml_node &dbNode, CoreInfo_t *coreInfo, bool &configSuccess, std::stringstream &parseError, std::stringstream &parseWarnings);
 
 	//CoreConfigParseState_t argument is added to parseQuery function because coreInfo's searchableAttributesInfo is not
 	//populated when this function is called, it is required to check responseContent
@@ -422,13 +422,10 @@ public:
 
 	bool loadConfigFile(srch2http::ResourceMetadataManager * metadataManager = NULL) ;
 
-	// Mongo related getter/setter
-	const string& getMongoServerHost(const string &coreName) const;
-	const string& getMongoServerPort(const string &coreName) const;
-	const string& getMongoDbName(const string &coreName) const;
-	const string& getMongoCollection (const string &coreName) const;
-	const unsigned getMongoListenerWaitTime (const string &coreName) const;
-	const unsigned getMongoListenerMaxRetryCount(const string &coreName) const;
+	// Database related getter/setter
+	const map<string,string> * getDbParameters(const string &coreName) const;
+	const string& getDatabaseSharedLibraryName(const string &coreName) const;
+	const string& getDatabaseSharedLibraryPath(const string &coreName) const;
 
 	const unsigned getGetAllResultsNumberOfResultsThreshold() const {
 		return this->getAllResultsNumberOfResultsThreshold;
@@ -494,13 +491,18 @@ private:
 	static const char* const authorizationKeyTag;
 	static const char* const analyzerString;
 	static const char* const cacheSizeString;
-	static const char* const collectionString;
 	static const char* const configString;
 	static const char* const dataDirString;
 	static const char* const dataFileString;
 	static const char* const multipleDataFilesTag;
 	static const char* const dataSourceTypeString;
-	static const char* const dbString;
+    static const char* const dbKeyString;
+    static const char* const dbKeyValuesString;
+    static const char* const dbKeyValueString;
+    static const char* const dbParametersString;
+    static const char* const dbSharedLibraryPathString;
+    static const char* const dbSharedLibraryNameString;
+    static const char* const dbValueString;
 	static const char* const defaultString;
 	static const char* const defaultQueryTermBoostString;
 	static const char* const dictionaryString;

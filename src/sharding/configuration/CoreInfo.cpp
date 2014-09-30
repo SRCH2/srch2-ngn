@@ -11,6 +11,64 @@ namespace srch2 {
 namespace httpwrapper {
 
 
+CoreInfo_t::CoreInfo_t(const CoreInfo_t &src) {
+    name = src.name;
+
+    configManager = src.configManager;
+
+    dataDir = src.dataDir;
+    dataSourceType = src.dataSourceType;
+    dataFile = src.dataFile;
+    dataFilePath = src.dataFilePath;
+
+    dbParameters = src.dbParameters;
+    dbSharedLibraryName = src.dbSharedLibraryName;
+    dbSharedLibraryPath = src.dbSharedLibraryPath;
+
+    isPrimSearchable = src.isPrimSearchable;
+
+    primaryKey = src.primaryKey;
+
+    fieldLatitude = src.fieldLatitude;
+    fieldLongitude = src.fieldLongitude;
+    indexType = src.indexType;
+
+    searchableAttributesInfo = src.searchableAttributesInfo;
+    refiningAttributesInfo = src.refiningAttributesInfo;
+
+    supportSwapInEditDistance = src.supportSwapInEditDistance;
+
+    enableWordPositionIndex = src.enableWordPositionIndex;
+    enableCharOffsetIndex = src.enableCharOffsetIndex;
+
+    recordBoostFieldFlag = src.recordBoostFieldFlag;
+    recordBoostField = src.recordBoostField;
+    queryTermBoost = src.queryTermBoost;
+    indexCreateOrLoad = src.indexCreateOrLoad;
+
+    searchType = src.searchType;
+
+    supportAttributeBasedSearch = src.supportAttributeBasedSearch;
+
+    facetEnabled = src.facetEnabled;
+    facetTypes = src.facetTypes;
+    facetAttributes = src.facetAttributes;
+    facetStarts = src.facetStarts;
+    facetEnds = src.facetEnds;
+    facetGaps = src.facetGaps;
+
+    stemmerFlag = src.stemmerFlag;
+    stemmerFile = src.stemmerFile;
+    synonymFilterFilePath = src.synonymFilterFilePath;
+    synonymKeepOrigFlag = src.synonymKeepOrigFlag;
+    stopFilterFilePath = src.stopFilterFilePath;
+    protectedWordsFilePath = src.protectedWordsFilePath;
+
+    allowedRecordTokenizerCharacters = src.allowedRecordTokenizerCharacters;
+
+    ports = src.ports;
+}
+
 ClusterShardId CoreInfo_t::getPrimaryShardId(unsigned partitionId) const{
 	ClusterShardId rtn ;
 	rtn.coreId = this->coreId;
@@ -182,6 +240,11 @@ void CoreInfo_t::setPort(PortType_t portType, unsigned short portNumber)
 // JUST FOR Wrapper TEST
 void CoreInfo_t::setDataFilePath(const string& path) {
     dataFilePath = path;
+}
+
+unsigned CoreInfo_t::getCacheSizeInBytes() const
+{
+    return cacheSizeInBytes;
 }
 
 }

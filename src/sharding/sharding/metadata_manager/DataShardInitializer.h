@@ -47,14 +47,6 @@ public:
 
 		server = boost::shared_ptr<Srch2Server>(new Srch2Server(indexDataConfig, indexDirectory, ""));
 
-	    if(indexDataConfig->getDataSourceType() ==
-	            srch2::httpwrapper::DATA_SOURCE_MONGO_DB) {
-	        // set current time as cut off time for further updates
-	        // this is a temporary solution. TODO
-	        MongoDataSource::bulkLoadEndTime = time(NULL);
-	        //require srch2Server
-	        MongoDataSource::spawnUpdateListener(server.get());
-	    }
 		//load the index from the data source
 	    try{
 	        server->init();
@@ -88,14 +80,6 @@ public:
 
 		server = boost::shared_ptr<Srch2Server>(new Srch2Server(indexDataConfig, indexDirectory, jsonFileCompletePath));
 
-	    if(indexDataConfig->getDataSourceType() ==
-	            srch2::httpwrapper::DATA_SOURCE_MONGO_DB) {
-	        // set current time as cut off time for further updates
-	        // this is a temporary solution. TODO
-	        MongoDataSource::bulkLoadEndTime = time(NULL);
-	        //require srch2Server
-	        MongoDataSource::spawnUpdateListener(server.get());
-	    }
 		//load the index from the data source
 	    try{
 	        server->init();
@@ -134,14 +118,6 @@ public:
 
 		server = boost::shared_ptr<Srch2Server>(new Srch2Server(indexDataConfig, indexDirectory, ""));
 
-	    if(indexDataConfig->getDataSourceType() ==
-	            srch2::httpwrapper::DATA_SOURCE_MONGO_DB) {
-	        // set current time as cut off time for further updates
-	        // this is a temporary solution. TODO
-	        MongoDataSource::bulkLoadEndTime = time(NULL);
-	        //require srch2Server
-	        MongoDataSource::spawnUpdateListener(server.get());
-	    }
 		//load the index from the data source
 	    try{
 	        server->init();

@@ -123,6 +123,8 @@ public:
 		schema = NULL;
 	};
 
+	CoreInfo_t(const CoreInfo_t &src);
+
 	~CoreInfo_t() {
 		if(schema != NULL){
 			delete schema;
@@ -150,13 +152,15 @@ public:
 	// THIS FUNCTION IS JUST FOR WRAPPER TEST
 	void setDataFilePath(const string& path);
 
-	const string &getMongoServerHost() const { return mongoHost; }
-	const string &getMongoServerPort() const { return mongoPort; }
-	const string &getMongoDbName() const { return mongoDbName; }
-	const string &getMongoCollection() const { return mongoCollection; }
-	unsigned getMongoListenerWaitTime() const { return mongoListenerWaitTime; }
-	unsigned getMongoListenerMaxRetryOnFailure() const { return mongoListenerMaxRetryOnFailure; }
-	unsigned getMongoListenerMaxRetryCount() const { return mongoListenerMaxRetryOnFailure; }
+    const map<string, string> * getDbParameters() const {
+        return &dbParameters;
+    }
+    const string& getDatabaseSharedLibraryPath() const {
+        return dbSharedLibraryPath;
+    }
+    const string& getDatabaseSharedLibraryName() const {
+        return dbSharedLibraryName;
+    }
 
 	int getIndexType() const { return indexType; }
 	int getSearchType() const { return searchType; }
@@ -317,12 +321,10 @@ protected:
 	string dataFile;
 	string dataFilePath;
 
-	// mongo db related settings
-	string mongoHost;
-	string mongoPort;
-	string mongoDbName;
-	string mongoCollection;
-	unsigned mongoListenerWaitTime;
+    // database related settings
+    map<string, string>  dbParameters;
+    string dbSharedLibraryName;
+    string dbSharedLibraryPath;
 
 	// stores the value of maximum allowed retries when MongoDB listener encounters some problem.
 	unsigned mongoListenerMaxRetryOnFailure;

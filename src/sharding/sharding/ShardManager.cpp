@@ -24,6 +24,7 @@
 
 #include "core/util/Assert.h"
 #include <pthread.h>
+#include <signal.h>
 
 namespace srch2is = srch2::instantsearch;
 using namespace srch2is;

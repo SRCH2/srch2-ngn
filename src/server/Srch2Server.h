@@ -18,7 +18,6 @@
 #include "util/Logger.h"
 #include "util/FileOps.h"
 #include "index/IndexUtil.h"
-#include "MongodbAdapter.h"
 #include <string>
 #include <vector>
 #include <iostream>

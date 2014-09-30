@@ -114,19 +114,6 @@ void Srch2Server::createAndBootStrapIndexer(const string & directoryPath)
 				}
 				break;
 		}
-#ifndef ANDROID
-	    case srch2http::DATA_SOURCE_MONGO_DB:
-	        {
-		    Logger::console("Creating indexes from a MongoDb instance...");
-		    unsigned indexedCounter = MongoDataSource::createNewIndexes(getIndexer(), this->getCoreInfo());
-		    getIndexer()->commit();
-		    if (indexedCounter > 0) {
-		    	getIndexer()->save();
-			Logger::console("Indexes saved.");
-		    }
-		    break;
-		}
-#endif
 	    default:
 	        {
 		    indexer->commit();

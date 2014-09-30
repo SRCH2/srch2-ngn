@@ -88,21 +88,9 @@ enum ShardingMessageType{
 
 //Adding portions of new header file, beginning from here
 enum ShardState {
-	SHARDSTATE_NULL,
-	SHARDSTATE_ALLOCATED,  // must have a valid node
-	SHARDSTATE_UNALLOCATED,
-	SHARDSTATE_MIGRATING,
-	SHARDSTATE_INDEXING,
-	// these are the constants that DPEx, DPInt, RM and MM use
-	SHARDSTATE_REGISTERED,
-	SHARDSTATE_NOT_COMMITTED,
-	SHARDSTATE_COMMITTED,
-
-	//
 	SHARDSTATE_UNASSIGNED,
 	SHARDSTATE_PENDING,
 	SHARDSTATE_READY
-
 };
 
 enum ShardingNodeState{

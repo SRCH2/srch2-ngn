@@ -1,6 +1,10 @@
 #include "SearchResultsAggregatorAndPrint.h"
 #include "core/util/RecordSerializerUtil.h"
 #include "sharding/processor/PendingMessages.h"
+
+// From merge : TODO : do we really need signal.h ?
+#include <signal.h>
+
 namespace srch2is = srch2::instantsearch;
 using namespace std;
 
