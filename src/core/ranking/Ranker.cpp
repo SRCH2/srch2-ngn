@@ -271,7 +271,7 @@ uint8_t computeEditDistanceThreshold(unsigned keywordLength , float similarityTh
 // http://lucene.apache.org/core/4_0_0/core/org/apache/lucene/search/similarities/DefaultSimilarity.html
 // This explains how the function to calculate sloppy frequency is implemented
 
-float DefaultTopKRanker::computeSloppyFrequency(vector<unsigned>& listOfSlopDistances) const{
+float DefaultTopKRanker::computeSloppyFrequency(const vector<unsigned>& listOfSlopDistances) const{
 
     float sum = 0;
     for(int i = 0; i < listOfSlopDistances.size(); i++){

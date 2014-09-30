@@ -218,8 +218,9 @@ bool PhraseSearcher::proximityMatch(const vector<vector<unsigned> >& positionLis
             unsigned pos = positionListVector[i][cursors[i]];
             matchedPosition.push_back(pos);
         }
-        if ((signed)inputSlop >= getPhraseSlopDistance(offsetsInPhrase, matchedPosition)) {
-            listOfSlopDistances.push_back(getPhraseSlopDistance(offsetsInPhrase, matchedPosition));
+        signed phraseSlopDistance = getPhraseSlopDistance(offsetsInPhrase, matchedPosition);
+        if ((signed)inputSlop >= phraseSlopDistance) {
+            listOfSlopDistances.push_back(phraseSlopDistance);
             matchedPositions.push_back(matchedPosition);
             if (stopAtFirstMatch)
                 return true;

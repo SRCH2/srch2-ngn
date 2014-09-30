@@ -401,6 +401,8 @@ sleep 3
 
 test_case "validate json response" "python ./json_response/json_response_format_test.py $SRCH2_ENGINE"
 
+sleep 3
+
 test_case "test Chinese" "python ./chinese/chinese_analyzer.py $SRCH2_ENGINE"
 
 
