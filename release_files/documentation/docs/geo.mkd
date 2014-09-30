@@ -5,25 +5,11 @@ This documentation discusses how to use the SRCH2 engine to do powerful geo sear
 
 ##1. Configuration
 
-The engine has two indexing options:
-
-* Option 1: Keyword Search;
-
-* Option 2: Keyword + Geo Search, which can do location-based search.
-
-We need to choose one option before starting the engine, since the engine will index the data differently depending on the option.
-
-To enable geo indexing, use the following parameter in the configuration file:
+To enable geo indexing we need to have two fields with the type "location_latitude" and "location_longitude", respectively. For example:
 
 ```
-<indexType>1</indexType>
-```
-
-The value "1" means that the indexing type is for geo. Correspondingly, we need to have two fields with the type "location_latitude" and "location_longitude", respectively. For example:
-
-```
-<field name="lat" default="0" required="true" type="location_latitude"/>
-<field name="lng" default="0" required="true" type="location_longitude"/>
+<field name="lat" type="location_latitude"/>
+<field name="lng" type="location_longitude"/>
 ```
 Each record should have two corresponding values for these two types, and they should be float numbers.  For example:
 ```
@@ -33,7 +19,7 @@ Each record should have two corresponding values for these two types, and they s
 
 ##2. Query
 
-If geo indexing is used, a geo query should use one of the following two ways to define a geo region to search on:
+If geo indexing is used, a geo query can use one of the following two ways to define a geo region to search on:
 
  - Specify a bounding box:
 

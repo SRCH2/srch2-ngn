@@ -232,6 +232,8 @@ public:
         this->merge(false);
     }
 
+    //surendra- this API should not be made public. Use commit API instead of this.
+    // commit after bulk load  == merge.
     INDEXWRITE_RETVAL merge(){
         pthread_mutex_lock(&lockForWriters);
         bool updateHistogramFlag = shouldUpdateHistogram();
@@ -243,9 +245,12 @@ public:
         return result;
     }
 
+    boost::shared_ptr<QuadTreeRootNodeAndFreeLists> getQuadTree_ReadView(){
+    	boost::shared_ptr<QuadTreeRootNodeAndFreeLists> quadTreeRootNodeAndFreeLists;
+    	this->index->quadTree->getQuadTreeRootNode_ReadView(quadTreeRootNodeAndFreeLists);
+    	return quadTreeRootNodeAndFreeLists;
+    }
 
-
-    inline QuadTree *getQuadTree() const { return this->index->quadTree; }
     inline ForwardIndex * getForwardIndex() const { return this->index->forwardIndex; }
 
     pthread_t createAndStartMergeThreadLoop();

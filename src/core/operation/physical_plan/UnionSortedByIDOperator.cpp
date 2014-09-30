@@ -214,7 +214,9 @@ bool UnionSortedByIDOptimizationOperator::validateChildren(){
 			case PhysicalPlanNode_RandomAccessAnd:
 			case PhysicalPlanNode_RandomAccessOr:
 			case PhysicalPlanNode_RandomAccessNot:
+			case PhysicalPlanNode_RandomAccessGeo:
 			case PhysicalPlanNode_UnionLowestLevelTermVirtualList:
+			case PhysicalPlanNode_GeoNearestNeighbor:
 				// this operator cannot have TVL as a child, TVL overhead is not needed for this operator
 				return false;
 			default:{

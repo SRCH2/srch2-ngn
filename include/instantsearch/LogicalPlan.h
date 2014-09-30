@@ -23,6 +23,7 @@
 #include "instantsearch/Term.h"
 #include "instantsearch/ResultsPostProcessor.h"
 #include "util/Assert.h"
+#include "record/LocationRecordUtil.h"
 #include <vector>
 #include <string>
 #include <sstream>
@@ -49,6 +50,7 @@ public:
 	Term * exactTerm;
 	Term * fuzzyTerm;
 	vector<LogicalPlanNode *> children;
+	Shape* regionShape;
 	LogicalPlanNodeAnnotation * stats;
 
 
@@ -92,6 +94,7 @@ protected:
 	LogicalPlanNode(LogicalPlanNodeType nodeType);
 private:
 	LogicalPlanNode();
+	LogicalPlanNode(Shape* regionShape);
 };
 
 class LogicalPlanPhraseNode : public LogicalPlanNode{
@@ -190,6 +193,7 @@ public:
     LogicalPlanNode * createPhraseLogicalPlanNode(const vector<string>& phraseKeyWords,
     		const vector<unsigned>& phraseKeywordsPosition,
     		short slop, const vector<unsigned>& fieldFilter, ATTRIBUTES_OP attrOp) ;
+	LogicalPlanNode * createGeoLogicalPlanNode(Shape *regionShape);
 
 	ResultsPostProcessorPlan* getPostProcessingPlan() const {
 		return postProcessingPlan;

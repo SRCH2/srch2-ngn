@@ -19,16 +19,19 @@ LogicalPlanNode::LogicalPlanNode(Term * exactTerm, Term * fuzzyTerm){
 	this->nodeType = LogicalPlanNodeTypeTerm;
 	this->exactTerm= exactTerm;
 	this->fuzzyTerm = fuzzyTerm;
+	this->regionShape = NULL;
 	this->stats = NULL;
 	this->forcedPhysicalNode = PhysicalPlanNode_NOT_SPECIFIED;
 }
 
 LogicalPlanNode::LogicalPlanNode(LogicalPlanNodeType nodeType){
 	ASSERT(nodeType != LogicalPlanNodeTypeTerm);
+	ASSERT(nodeType != LogicalPlanNodeTypeGeo);
 	this->nodeType = nodeType;
 	this->exactTerm= NULL;
 	this->fuzzyTerm = NULL;
 	this->stats = NULL;
+	this->regionShape = NULL;
 	this->forcedPhysicalNode = PhysicalPlanNode_NOT_SPECIFIED;
 }
 
@@ -40,6 +43,7 @@ LogicalPlanNode::LogicalPlanNode(){
 	this->exactTerm= NULL;
 	this->fuzzyTerm = NULL;
 	this->stats = NULL;
+	this->regionShape = NULL;
 	this->forcedPhysicalNode = PhysicalPlanNode_NOT_SPECIFIED;
 }
 
@@ -55,6 +59,21 @@ LogicalPlanNode::LogicalPlanNode(const LogicalPlanNode & node){
 		this->fuzzyTerm = new Term(*(node.fuzzyTerm));
 	}else{
 		this->fuzzyTerm = NULL;
+	}
+
+	if(node.regionShape != NULL){
+		ASSERT(node.nodeType == LogicalPlanNodeTypeGeo);
+		switch (node.regionShape->getShapeType()) {
+			case Shape::TypeRectangle:
+				this->regionShape = new Rectangle(*(Rectangle *)(this->regionShape));
+				break;
+			case Shape::TypeCircle:
+				this->regionShape = new Circle(*(Circle *)(this->regionShape));
+				break;
+			default :
+				ASSERT(false);
+				break;
+		}
 	}
 	for(unsigned childIdx = 0 ; childIdx < node.children.size(); ++childIdx){
 		if(node.children.at(childIdx)->nodeType == LogicalPlanNodeTypePhrase){
@@ -72,6 +91,16 @@ LogicalPlanNode::LogicalPlanNode(const LogicalPlanNode & node){
 	//}
 }
 
+LogicalPlanNode::LogicalPlanNode(Shape* regionShape){
+	ASSERT(regionShape != NULL);
+	this->nodeType = LogicalPlanNodeTypeGeo;
+	this->exactTerm = NULL;
+	this->fuzzyTerm = NULL;
+	this->regionShape = regionShape;
+	stats = NULL;
+	forcedPhysicalNode = PhysicalPlanNode_NOT_SPECIFIED;
+}
+
 LogicalPlanNode::~LogicalPlanNode(){
 	if(this->exactTerm != NULL){
 		delete exactTerm;
@@ -79,7 +108,11 @@ LogicalPlanNode::~LogicalPlanNode(){
 	if(this->fuzzyTerm != NULL){
 		delete fuzzyTerm;
 	}
-	for(vector<LogicalPlanNode *>::iterator child = this->children.begin() ; child != this->children.end() ; ++child){
+
+	if(this->regionShape != NULL){
+		delete regionShape;
+	}
+	for(vector<LogicalPlanNode *>::iterator child = children.begin() ; child != children.end() ; ++child){
 		if(*child != NULL){
 			delete *child;
 		}
@@ -99,6 +132,9 @@ string LogicalPlanNode::toString(){
 	}
 	if(this->fuzzyTerm != NULL){
 		ss << this->fuzzyTerm->toString();
+	}
+	if(this->regionShape != NULL){
+		ss << this->regionShape->toString();
 	}
 	ss << this->forcedPhysicalNode;
 	return ss.str();
@@ -126,12 +162,16 @@ void * LogicalPlanNode::serializeForNetwork(void * buffer){
 
 	buffer = srch2::util::serializeFixedTypes(bool(this->exactTerm != NULL), buffer);
 	buffer = srch2::util::serializeFixedTypes(bool(this->fuzzyTerm != NULL), buffer);
+	buffer = srch2::util::serializeFixedTypes(bool(this->regionShape != NULL), buffer);
 
 	if(this->exactTerm != NULL){
 		buffer = this->exactTerm->serializeForNetwork(buffer);
 	}
 	if(this->fuzzyTerm != NULL){
 		buffer = this->fuzzyTerm->serializeForNetwork(buffer);
+	}
+	if(this->regionShape != NULL){
+		buffer = this->regionShape->serializeForNetwork(buffer);
 	}
 
 	if(nodeType == LogicalPlanNodeTypePhrase){
@@ -167,6 +207,7 @@ void * LogicalPlanNode::deserializeForNetwork(LogicalPlanNode * &node, void * bu
 		case LogicalPlanNodeTypeOr:
 		case LogicalPlanNodeTypeTerm:
 		case LogicalPlanNodeTypeNot:
+		case LogicalPlanNodeTypeGeo:
 			node = new LogicalPlanNode();
 			break;
 		case LogicalPlanNodeTypePhrase:
@@ -178,8 +219,10 @@ void * LogicalPlanNode::deserializeForNetwork(LogicalPlanNode * &node, void * bu
 
 	bool isExactTermNotNull = false;
 	bool isFuzzyTermNotNull = false;
+	bool isRegionShapeNotNull = false;
 	buffer = srch2::util::deserializeFixedTypes(buffer, isExactTermNotNull); // not NULL
 	buffer = srch2::util::deserializeFixedTypes(buffer, isFuzzyTermNotNull); // not NULL
+	buffer = srch2::util::deserializeFixedTypes(buffer, isRegionShapeNotNull); // not NULL
 
 	if(isExactTermNotNull){
 		// just for memory allocation. This object gets filled in deserialization
@@ -190,6 +233,11 @@ void * LogicalPlanNode::deserializeForNetwork(LogicalPlanNode * &node, void * bu
 		// just for memory allocation. This object gets filled in deserialization
 		node->fuzzyTerm = FuzzyTerm::create("",TERM_TYPE_NOT_SPECIFIED);
 		buffer = Term::deserializeForNetwork(*node->fuzzyTerm,buffer);
+	}
+
+	if(isRegionShapeNotNull){
+		ASSERT(node->nodeType == LogicalPlanNodeTypeGeo);
+		buffer = Shape::deserializeForNetwork(node->regionShape, buffer);
 	}
 
 	if(node->nodeType == LogicalPlanNodeTypePhrase){
@@ -227,6 +275,11 @@ unsigned LogicalPlanNode::getNumberOfBytesForSerializationForNetwork(){
 	numberOfBytes += sizeof(bool);
 	if(this->fuzzyTerm != NULL){
 		numberOfBytes += this->fuzzyTerm->getNumberOfBytesForSerializationForNetwork();
+	}
+
+	numberOfBytes += sizeof(bool);
+	if(this->regionShape != NULL){
+		numberOfBytes += this->regionShape->getNumberOfBytesForSerializationForNetwork();
 	}
 
 	if(this->nodeType == LogicalPlanNodeTypePhrase){
@@ -322,6 +375,7 @@ LogicalPlanNode * LogicalPlan::createTermLogicalPlanNode(const std::string &quer
 
 LogicalPlanNode * LogicalPlan::createOperatorLogicalPlanNode(LogicalPlanNodeType nodeType){
 	ASSERT(nodeType != LogicalPlanNodeTypeTerm);
+	ASSERT(nodeType != LogicalPlanNodeTypeGeo);
 	LogicalPlanNode * node = new LogicalPlanNode(nodeType);
 	return node;
 }
@@ -331,6 +385,11 @@ LogicalPlanNode * LogicalPlan::createPhraseLogicalPlanNode(const vector<string>&
 
 	LogicalPlanNode * node = new LogicalPlanPhraseNode(phraseKeyWords, phraseKeywordsPosition,
 			slop, fieldFilter, attrOp);
+	return node;
+}
+
+LogicalPlanNode * LogicalPlan::createGeoLogicalPlanNode(Shape *regionShape){
+	LogicalPlanNode * node = new LogicalPlanNode(regionShape);
 	return node;
 }
 

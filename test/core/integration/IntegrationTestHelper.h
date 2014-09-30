@@ -372,6 +372,25 @@ void parseFuzzyCompleteQuery(const Analyzer *analyzer, Query *query, string quer
     queryKeywords.clear();
 }
 
+void parseExactCompleteGeoQuery(const Analyzer *analyzer, Query *query, string queryString, float lat, float lng, float radius, vector<unsigned> attributeIdToFilter, ATTRIBUTES_OP attrOp)
+{
+    vector<AnalyzedTermInfo> queryKeywords;
+    analyzer->tokenizeQuery(queryString,queryKeywords);
+    // for each keyword in the user input, add a term to the querygetThreshold(queryKeywords[i].size())
+    //cout<<"Query:";
+    for (unsigned i = 0; i < queryKeywords.size(); ++i)
+    {
+        //cout << "(" << queryKeywords[i] << ")("<< getNormalizedThreshold(queryKeywords[i].size()) << ")\t";
+        TermType termType = TERM_TYPE_COMPLETE;
+        Term *term = ExactTerm::create(queryKeywords[i].term, termType, 1, 0.5);
+        term->addAttributesToFilter(attributeIdToFilter, attrOp);
+        query->add(term);
+        query->setRange(lat, lng, radius);
+    }
+    //cout << endl;
+    queryKeywords.clear();
+}
+
 void parseFuzzyQueryWithEdSet(const Analyzer *analyzer, Query *query, const string &queryString, int ed)
 {
     vector<AnalyzedTermInfo> queryKeywords;
@@ -857,6 +876,29 @@ bool ping(const Analyzer *analyzer, QueryEvaluator *queryEvaluator, string query
     queryEvaluator->search(logicalPlan , queryResults);
     bool returnvalue =  checkResults(queryResults, numberofHits, recordIDs);
     //printResults(queryResults);
+    queryResults->printStats();
+    delete queryResults;
+    delete query;
+    return returnvalue;
+}
+
+
+bool ping_WithGeo(const Analyzer *analyzer, QueryEvaluator *queryEvaluator, string queryString, float lat, float lng, float radius, unsigned numberofHits , const vector<unsigned> &recordIDs, vector<unsigned> attributeIdToFilter, ATTRIBUTES_OP attrOps)
+{
+    Query *query = new Query(srch2::instantsearch::SearchTypeTopKQuery);
+    parseExactCompleteGeoQuery(analyzer, query, queryString, lat, lng, radius, attributeIdToFilter, attrOps);
+    int resultCount = 10;
+
+    //cout << "[" << queryString << "]" << endl;
+
+    // for each keyword in the user input, add a term to the query
+    QueryResults *queryResults = new QueryResults(new QueryResultFactory(),queryEvaluator, query);
+
+    LogicalPlan * logicalPlan = prepareLogicalPlanForGeoTest(query , NULL, 0, resultCount, false, srch2::instantsearch::SearchTypeTopKQuery);
+    queryEvaluator->search(logicalPlan , queryResults);
+    bool returnvalue =  checkResults(queryResults, numberofHits, recordIDs);
+    //printResults(queryResults);
+    //cout << "-------------------------" << endl;
     queryResults->printStats();
     delete queryResults;
     delete query;

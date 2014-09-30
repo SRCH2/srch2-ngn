@@ -45,7 +45,7 @@ void QueryExecutor::execute(QueryResults * finalResults) {
 	/*
 	 * changes:
 	 * 1. GetAll and topK must be merged. The difference must be pushed to the core.
-	 * 2. MapQuery and retrievById will remain unchanged (their search function must change because the names will change)
+	 * 2. retrievById will remain unchanged (their search function must change because the names will change)
 	 * 3. LogicalPlan must be passed to QueryEvaluator (which is in core) to be evaluated.
 	 * 4. No exact/fuzzy policy must be applied here.
 	 * 5. Postprocessing framework must be prepared to be applied on the results (its code comes from QueryPlanGen)
@@ -68,9 +68,6 @@ void QueryExecutor::execute(QueryResults * finalResults) {
     case srch2is::SearchTypeTopKQuery: //TopK
     case srch2is::SearchTypeGetAllResultsQuery: //GetAllResults
         executeKeywordSearch(finalResults);
-        break;
-    case srch2is::SearchTypeMapQuery: //MapQuery
-        executeGeo(finalResults);
         break;
     case srch2is::SearchTypeRetrieveById:
     	executeRetrieveById(finalResults);
@@ -115,9 +112,6 @@ void QueryExecutor::executeForDPInternal(QueryResults * finalResults,
     case srch2is::SearchTypeTopKQuery: //TopK
     case srch2is::SearchTypeGetAllResultsQuery: //GetAllResults
         executeKeywordSearch(finalResults);
-        break;
-    case srch2is::SearchTypeMapQuery: //MapQuery
-        executeGeo(finalResults);
         break;
     case srch2is::SearchTypeRetrieveById:
     	executeRetrieveById(finalResults);
@@ -165,99 +159,6 @@ void QueryExecutor::executeKeywordSearch(QueryResults * finalResults) {
 //    executePostProcessingPlan(this->queryPlan.getExactQuery(),
 //            exactQueryResults, finalResults);
 
-}
-
-
-void QueryExecutor::executeGeo(QueryResults * finalResults) {
-
-    // execute post processing
-    // since this object is only allocated with an empty constructor, this init function needs to be called to
-    // initialize the object.
-    finalResults->init(this->queryResultFactory, queryEvaluator,
-            this->queryPlan.getExactQuery());
-
-    int idsExactFound = 0;
-    // for the range query without keywords.
-    srch2is::QueryResults *exactQueryResults = new QueryResults(
-            this->queryResultFactory, queryEvaluator,
-            this->queryPlan.getExactQuery());
-    if (this->queryPlan.getExactQuery()->getQueryTerms()->empty()) //check if query type is a range query without keywords
-    {
-        vector<double> values;
-        this->queryPlan.getExactQuery()->getRange(values); //get  query range: use the number of values to decide if it is rectangle range or circle range
-        //range query with a circle
-        if (values.size() == 3) {
-            Point p;
-            p.x = values[0];
-            p.y = values[1];
-            Circle *circleRange = new Circle(p, values[2]);
-            queryEvaluator->geoSearch(*circleRange, exactQueryResults);
-            delete circleRange;
-        } else {
-            pair<pair<double, double>, pair<double, double> > rect;
-            rect.first.first = values[0];
-            rect.first.second = values[1];
-            rect.second.first = values[2];
-            rect.second.second = values[3];
-            Rectangle *rectangleRange = new Rectangle(rect);
-            queryEvaluator->geoSearch(*rectangleRange, exactQueryResults);
-            delete rectangleRange;
-        }
-    } else // keywords and geo search
-    {
-        queryEvaluator->geoSearch(this->queryPlan.getExactQuery(),
-                exactQueryResults);
-        idsExactFound = exactQueryResults->getNumberOfResults();
-
-        //fill visitedList
-        std::set<std::string> exactVisitedList;
-        for (unsigned i = 0; i < exactQueryResults->getNumberOfResults(); ++i) {
-            exactVisitedList.insert(exactQueryResults->getRecordId(i)); // << queryResults->getRecordId(i);
-        }
-
-        int idsFuzzyFound = 0;
-
-        if (this->queryPlan.isFuzzy()
-                && idsExactFound
-                        < (int) (this->queryPlan.getOffset()
-                                + this->queryPlan.getNumberOfResultsToRetrieve())) {
-            QueryResults *fuzzyQueryResults = new QueryResults(
-                    this->queryResultFactory, queryEvaluator,
-                    this->queryPlan.getFuzzyQuery());
-            queryEvaluator->geoSearch(this->queryPlan.getFuzzyQuery(),
-                    fuzzyQueryResults);
-            idsFuzzyFound = fuzzyQueryResults->getNumberOfResults();
-
-            // create final queryResults to print.
-            QueryResultsInternal *exact_qs = exactQueryResults->impl;
-            QueryResultsInternal *fuzzy_qs = fuzzyQueryResults->impl;
-
-            unsigned fuzzyQueryResultsIter = 0;
-
-            while (exact_qs->sortedFinalResults.size()
-                    < (unsigned) (this->queryPlan.getOffset()
-                            + this->queryPlan.getNumberOfResultsToRetrieve())
-                    && fuzzyQueryResultsIter
-                            < fuzzyQueryResults->getNumberOfResults()) {
-                std::string recordId = fuzzyQueryResults->getRecordId(
-                        fuzzyQueryResultsIter);
-                if (!exactVisitedList.count(recordId)) // recordid not there
-                        {
-                    exact_qs->sortedFinalResults.push_back(
-                            fuzzy_qs->sortedFinalResults[fuzzyQueryResultsIter]);
-                }
-                fuzzyQueryResultsIter++;
-            }
-            delete fuzzyQueryResults;
-        }
-    }
-
-    // this post processing plan will be applied on exactQueryResults object and
-    // the final results will be copied into finalResults
-    executePostProcessingPlan(this->queryPlan.getExactQuery(),
-            exactQueryResults, finalResults);
-
-    delete exactQueryResults;
 }
 
 /*

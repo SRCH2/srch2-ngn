@@ -23,6 +23,7 @@
 #include <instantsearch/platform.h>
 #include <instantsearch/Term.h>
 #include <instantsearch/Constants.h>
+#include "record/LocationRecordUtil.h"
 #include <vector>
 #include <string>
 
@@ -105,7 +106,7 @@ public:
      * The number of elements in \parameter values is used to
      * see if it is rectangle or circle.
      */
-    void getRange(std::vector<double> &values) const;
+    Shape* getShape() const;
 
 
     /*

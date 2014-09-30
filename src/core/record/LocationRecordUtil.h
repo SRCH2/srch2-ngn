@@ -24,6 +24,8 @@
 #include <boost/archive/binary_iarchive.hpp>
 #include <cmath>
 #include <vector>
+#include <string>
+#include <sstream>
 
 namespace srch2
 {
@@ -46,6 +48,14 @@ public:
     Point(const Point & p){
     	this->x = p.x;
     	this->y = p.y;
+    }
+
+    Point & operator=(const Point & rhs){
+    	if(this != &rhs){
+        	this->x = rhs.x;
+        	this->y = rhs.y;
+    	}
+    	return *this;
     }
 
     bool operator==(const Point &point) const
@@ -82,7 +92,8 @@ public:
     Shape() {};
     virtual ~Shape() {};
 
-    virtual bool contains(const Point &point) const = 0;
+    virtual bool contain(const Point &point) const = 0;
+    virtual bool contain(const Rectangle &rectangle) const = 0;
     virtual bool intersects(const Rectangle &) const = 0;
     virtual double getMinDist2FromLatLong(double resultLat, double resultLng) const = 0;
     virtual double getSearchRadius2() const = 0;
@@ -108,6 +119,11 @@ public:
 //    		return buffer;
 //    	}
 //    }
+
+    virtual double getMinDistFromBoundary(double lat, double lng) const = 0;
+    virtual void getCenter(Point &point) = 0;
+    virtual std::string toString() = 0;
+
 };
 
 class Rectangle : public Shape
@@ -134,6 +150,14 @@ public:
         this->max.y = rect.second.second;
     }
 
+    Rectangle & operator=(const Rectangle & rhs){
+    	if(this != &rhs){
+            this->min = rhs.min;
+            this->max = rhs.max;
+    	}
+    	return *this;
+    }
+
     Rectangle(const Rectangle & rectangle)
     {
         this->min = rectangle.min;
@@ -150,10 +174,16 @@ public:
     };
 
     // check whether the rectangle contains the point
-    virtual bool contains(const Point &point) const
+    virtual bool contain(const Point &point) const
     {
         return min.x <= point.x && max.x >= point.x
             && min.y <= point.y && max.y >= point.y;
+    };
+
+    // check whether the rectangle contains the rectangle
+    virtual bool contain(const Rectangle &rectangle) const
+    {
+    	return this->contain(rectangle.min) && this->contain(rectangle.max);
     };
 
     // check whether this rectangle is contained by another
@@ -175,6 +205,25 @@ public:
         return pow((resultLat - rangeMidLat), 2) + pow((resultLng - rangeMidLng), 2);
     }
 
+    // this function will return the distance of closest point on the boundary of the shape to the input point
+    virtual double getMinDistFromBoundary(double lat, double lng) const
+    {
+    	Point point;
+    	point.x = lat;
+    	point.y = lng;
+    	if(this->contain(point))
+    		return 0;
+    	double xDist =  std::min(abs(max.x - lat), abs(min.x - lat));
+    	double yDist =  std::min(abs(max.y - lng), abs(min.y - lng));
+    	return sqrt(xDist * xDist + yDist * yDist);
+    }
+
+    // this function will return the center of the shape
+    virtual void getCenter(Point &point){
+    	point.x = (this->max.x + this->min.x) / 2.0;
+    	point.y = (this->max.y + this->min.y) / 2.0;
+    }
+
     virtual double getSearchRadius2() const
     {
         return pow((this->max.x - this->min.x)/2.0, 2) + pow((this->max.y - this->min.y)/2.0, 2);
@@ -188,8 +237,18 @@ public:
         values.push_back(this->max.y);
     }
 
+
     ShapeType getShapeType() const {
     	return Shape::TypeRectangle;
+    }
+
+    virtual std::string toString(){
+    	std::ostringstream ss;
+    	ss << "Rectangle";
+    	ss << "/" << this->min.x << "/" << this->min.y;
+    	ss << "/" << this->max.x << "/" << this->max.y;
+    	return ss.str();
+
     }
 
 private:
@@ -224,11 +283,31 @@ public:
     	this->radius = c.radius;
     }
 
+    Circle & operator=(const Circle & rhs){
+    	if(this != &rhs){
+        	this->center = rhs.center;
+        	this->radius = rhs.radius;
+    	}
+    	return *this;
+    }
+
     virtual ~Circle() {}
 
-    virtual bool contains(const Point &point) const
+    virtual bool contain(const Point &point) const
     {
         return center.distSquare(point) <= radius*radius;
+    }
+
+    // check whether the Circle contains the rectangle
+    virtual bool contain(const Rectangle &rectangle) const
+    {
+    	Point point1;
+    	point1.x = rectangle.max.x;
+    	point1.y = rectangle.min.y;
+    	Point point2;
+    	point2.x = rectangle.min.x;
+    	point2.y = rectangle.max.y;
+    	return this->contain(point1) && this->contain(point2) && this->contain(rectangle.max) && this->contain(rectangle.min);
     }
 
     // how to detect the intersection between a circle and a rectangle
@@ -260,6 +339,23 @@ public:
         return pow((resultLat - center.x), 2) + pow((resultLng - center.y), 2);
     }
 
+    // this function will return the distance of closest point on the boundary of the shape to the input point
+    virtual double getMinDistFromBoundary(double lat, double lng) const
+    {
+    	Point point;
+    	point.x = lat;
+    	point.y = lng;
+    	if(this->contain(point))
+    		return 0;
+    	return sqrt(this->getMinDist2FromLatLong(lat,lng)) - this->radius;
+    }
+
+    // this function will return the center of the shape
+    virtual void getCenter(Point &point){
+    	point.x = this->center.x;
+    	point.y = this->center.y;
+    }
+
     virtual double getSearchRadius2() const
     {
         return pow(radius, 2);
@@ -274,6 +370,14 @@ public:
 
     ShapeType getShapeType() const {
     	return Shape::TypeCircle;
+    }
+    virtual std::string toString(){
+    	std::ostringstream ss;
+    	ss << "Circle";
+    	ss << "/" << this->center.x;
+    	ss << "/" << this->center.y;
+    	ss << "/" << this->radius;
+    	return ss.str();
     }
 
 };

@@ -675,7 +675,8 @@ int main(int argc, char **argv)
     string data_file = index_dir + "/data";
 
     testScoreDefaultIndex(index_dir, data_file);
-    testScoreGeoIndex(index_dir, data_file);
+    //TODO: Mahdi: Add this line after adding new code for geo search
+    //testScoreGeoIndex(index_dir, data_file);
 
     return 0;
 }
