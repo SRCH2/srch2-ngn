@@ -258,7 +258,7 @@ int SQLiteConnector::runListener() {
     Json::Value record;
     Json::FastWriter writer;
 
-    Logger::debug("SQLITECONNECTOR: waiting for updates ...");
+    Logger::info("SQLITECONNECTOR: waiting for updates ...");
     bool fatal_error = false;
     do {
         /*
@@ -387,7 +387,7 @@ int SQLiteConnector::runListener() {
 //                this->serverHandle->saveChanges();
                 deleteProcessedLog(lastAccessedLogRecordTime);
                 saveLastAccessedLogRecordTime(lastAccessedLogRecordTime);
-                Logger::debug("SQLITECONNECTOR: waiting for updates ...");
+                Logger::info("SQLITECONNECTOR: waiting for updates ...");
             }
             sleep(listenerWaitTime);
         }

@@ -304,6 +304,7 @@ int MySQLConnector::runListener() {
         sleep(listenerWaitTime);
     }
 
+    Logger::info("MYSQLCONNECTOR: waiting for updates ...");
     bool quit = false;
     while (!quit) {
         Binary_log_event *event;
