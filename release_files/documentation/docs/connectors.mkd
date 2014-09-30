@@ -93,7 +93,7 @@ Change the parameters if needed.  Make sure that you have also set the "srch2Hom
 Go to the install folder of SRCH2 and run the following:
 
 ```
-shell> ./bin/srch2-engine --config-file=./example-demo/srch2-config-mongo.xml
+ /home/joe/srch2/example-demo> ../bin/srch2-engine --config-file=./example-demo/srch2-config-mongo.xml
 ```
 
 The engine will use a MongoDB connector to read the data from the MongoDB table, build indexes, and wait for queries. It also starts a thread that periodically pulls latest changes from MongoDB (as specified by the "listenerWaitTime" parameter) and add these changes to its indexes.  
@@ -194,12 +194,14 @@ sqlite> .import company-data.csv COMPANY
 To check if the data has been loaded, run following command:
 ```
 sqlite> SELECT * FROM COMPANY;
-1, 'Paul',32, 'California',20000.0
-2, 'Allen',25, 'Texas',15000.0
-3, 'Teddy',23, 'Norway',20000.0
-4, 'Mark',25, 'Rich-Mond ',65000.0
-5, 'David',27, 'Texas',85000.0
-6, 'Kim',22, 'South-Hall',45000.0
+
+| ID | NAME  | AGE | ADDRESS    | SALARY |
+|  1 | Paul  |  32 | California |  20000 |
+|  2 | Allen |  25 | Texas      |  15000 |
+|  3 | Teddy |  23 | Norway     |  20000 |
+|  4 | Mark  |  25 | Rich-Mond  |  65000 |
+|  5 | David |  27 | Texas      |  85000 |
+|  6 | Kim   |  22 | South-Hall |  45000 |
 ```
 As shown above, there should be six records in the "COMPANY" table.
 
@@ -229,7 +231,7 @@ called "libsqliteConnector" for SQLite, which is included in the package.  Chang
 Go to the install folder of SRCH2 and run the following:
 
 ```
-shell> ./bin/srch2-engine --config-file=./example-demo/srch2-config-sqlite.xml
+ /home/joe/srch2/example-demo> ../bin/srch2-engine --config-file=./example-demo/srch2-config-sqlite.xml
 ```
 
 The engine should read the data from the SQLite instance, build indexes, and wait for queries. It also starts a thread that periodically pulls latest changes from SQLite (as specified by the "listenerWaitTime" parameter) and add these changes to its search indexes.
@@ -302,15 +304,15 @@ change the indexes.
 
 <span ><center><img style="float: center" width="60%" src="../images/mysql-connector.png" /></center></span>
 
-###4.1. Install MySQL
+###4.1. Setup MySQL
 
-####4.1.1.Follow the instructions at [here](http://dev.mysql.com/doc/refman/5.7/en/installing.html) to install MySQL:
+####4.1.1. Follow the instructions at [here](http://dev.mysql.com/doc/refman/5.7/en/installing.html) to install MySQL:
 
 For Ubuntu:
 ```
 shell> sudo apt-get install mysql-server
 ```
-For MAC OS, please follow the instructions at [here](http://dev.mysql.com/doc/refman/5.5/en/macosx-installation-pkg.html)
+For MAC OS, please follow the instructions at [here](http://dev.mysql.com/doc/refman/5.5/en/macosx-installation-pkg.html).
 
 Notice that the [MySQL Replication
 Listener](https://launchpad.net/mysql-replication-listener) works with
@@ -320,8 +322,9 @@ enabled. The MySQL host specified in the configuration file should be
 the primary of the replica set.
 
 
-####4.1.2. To enable the [BinaryLog](http://dev.mysql.com/doc/refman/5.0/en/binary-log.html) (neededonly once):
-For MAC OS, if /etc/my.cnf does not exist, run the following commands:
+####4.1.2. To enable [BinaryLog](http://dev.mysql.com/doc/refman/5.0/en/binary-log.html) (needed only once):
+
+For MAC OS, if the file <tt>/etc/my.cnf</tt> does not exist, run the following commands:
 ```
 shell> cd /usr/local/mysql/support-files/
 shell> sudo cp my-huge.cnf /etc/my.cnf
@@ -390,12 +393,15 @@ To check if the data has been loaded, run following command:
 shell> mysql -u root -p
 mysql> USE demo;
 mysql> SELECT * FROM COMPANY;
-1, 'Paul',32, 'California',20000.0
-2, 'Allen',25, 'Texas',15000.0
-3, 'Teddy',23, 'Norway',20000.0
-4, 'Mark',25, 'Rich-Mond ',65000.0
-5, 'David',27, 'Texas',85000.0
-6, 'Kim',22, 'South-Hall',45000.0
+
+| ID | NAME  | AGE | ADDRESS    | SALARY |
+|  1 | Paul  |  32 | California |  20000 |
+|  2 | Allen |  25 | Texas      |  15000 |
+|  3 | Teddy |  23 | Norway     |  20000 |
+|  4 | Mark  |  25 | Rich-Mond  |  65000 |
+|  5 | David |  27 | Texas      |  85000 |
+|  6 | Kim   |  22 | South-Hall |  45000 |
+
 ```
 As shown above, there should be six records in the "COMPANY" table.
 
@@ -429,10 +435,13 @@ called "libmysqlConnector" for MySQL, which is included in the package.  Change 
 Go to the install folder of SRCH2 and run the following:
 
 ```
-shell> ./bin/srch2-engine --config-file=./example-demo/srch2-config-mysql.xml
+ /home/joe/srch2/example-demo> ../bin/srch2-engine --config-file=./srch2-config-mysql.xml
 ```
 
-The engine will use a MySQL connector to read the data from the MySQL database, build indexes, and wait for queries. It also starts a thread that listens the latest changes from MySQL by using MySQL Replication Listener and add these changes to its indexes.  
+The engine will use a MySQL connector to read the data from the MySQL
+database, build indexes, and wait for queries. It also starts a thread
+that listens to the latest changes from the database by using MySQL
+Replication Listener and add these changes to its indexes. 
 
 ###4.5. Search
 
@@ -483,6 +492,7 @@ Again, wait for about 4 seconds for the SRCH2 server to save the change, then do
 ```
 shell> curl "http://localhost:8081/search?q=Kim"
 ```
-The SRCH2 engine should not return the record that we just deleted.
+The SRCH2 engine should not return the deleted record.
 
-Besides MongoDB, SQLite and MySQL, we are developing connectors for other database sources.
+Besides MongoDB, SQLite, and MySQL, we are developing connectors for
+other data sources.

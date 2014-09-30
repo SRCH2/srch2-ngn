@@ -14,7 +14,7 @@
 
 	<maxSearchThreads>2</maxSearchThreads>
 
-			<dataDir>./data/</dataDir>
+			<dataDir>./mysql/</dataDir>
 			<schema>
 				<fields>
 					<field name="SALARY" type="text" indexed="true" />
@@ -30,8 +30,8 @@
 				<types>
 					<fieldType name="text_standard">
 						<analyzer>
-							<filter name="PorterStemFilter" dictionary="" />
-							<filter name="StopFilter" words="" />
+							<filter name="PorterStemFilter" dictionary="srch2_stemmer_words.txt" />
+							<filter name="StopFilter" words="stop-words.txt" />
 						</analyzer>
 					</fieldType>
 				</types>
