@@ -120,11 +120,12 @@ void InvertedListContainer::sortAndMerge(const unsigned keywordId, const Forward
 
     unsigned newTotalSize = invertedListElements.size();
     std::sort(invertedListElements.begin() + validRecordCountFromReadView,
-              invertedListElements.begin() + newTotalSize,
+              invertedListElements.end(),
               InvertedListContainer::InvertedListElementGreaterThan());
-    cout << "readViewListSize = " << readViewListSize << ", writeViewListSize" << writeViewListSize
-         << ", validRecordCountFromReadView = " << validRecordCountFromReadView
-         << ", validRecordCountFromWriteView " << validRecordCountFromWriteView << endl;
+//    cout << "readViewListSize = " << readViewListSize << ", writeViewListSize" << writeViewListSize
+//         << ", validRecordCountFromReadView = " << validRecordCountFromReadView
+//         << ", validRecordCountFromWriteView " << validRecordCountFromWriteView << endl;
+
     // if the read view and the write view are the same, it means we have added a new keyword with a new COWvector.
     // In this case, instead of calling "merge()", we call "commit()" to let this COWvector commit.
     if (readView.get() == writeView) {
@@ -133,8 +134,8 @@ void InvertedListContainer::sortAndMerge(const unsigned keywordId, const Forward
     }
 
     std::inplace_merge (invertedListElements.begin(),
-            invertedListElements.begin() + readViewListSize,
-            invertedListElements.begin() + newTotalSize,
+            invertedListElements.begin() + validRecordCountFromReadView,
+            invertedListElements.end(),
             InvertedListContainer::InvertedListElementGreaterThan());
 
     // If the read view and write view are sharing the same array, we have to separate the write view from the read view.
@@ -336,7 +337,8 @@ void InvertedIndex::merge()
 
     for (set<unsigned>::const_iterator iter = this->invertedListSetToMerge.begin();
         iter != this->invertedListSetToMerge.end(); ++iter) {
-        writeView->at(*iter)->sortAndMerge(keywordIdsWriteView->getElement(*iter), this->forwardIndex);
+    	ASSERT(*iter < writeView->size());
+    	writeView->at(*iter)->sortAndMerge(keywordIdsWriteView->getElement(*iter), this->forwardIndex);
     }
     this->invertedListSetToMerge.clear();
 }
@@ -452,6 +454,18 @@ void InvertedIndex::print_test() const
         Logger::debug("Inverted List: %d, KeywordId: %d", vectorIterator , keywordIdsReadView->at(vectorIterator));
         this->printInvList(vectorIterator);
     }
+}
+void InvertedIndex::findAndMarkInvertedListForMerge(const unsigned *listofKeywordIds,unsigned keywordsCount){
+	const unsigned * begin = listofKeywordIds;
+	const unsigned * end = listofKeywordIds + keywordsCount;
+
+	vectorview<unsigned>* invertedListKeywordIds = keywordIds->getWriteView();
+	for (unsigned i = 0; i < invertedListKeywordIds->size(); ++i) {
+		unsigned invertedListKeywordId = invertedListKeywordIds->getElement(i);
+		if ( end != find(begin, end, invertedListKeywordId)) {
+			invertedListSetToMerge.insert(i);
+		}
+	}
 }
 
 }

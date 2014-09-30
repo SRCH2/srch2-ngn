@@ -422,7 +422,17 @@ INDEXWRITE_RETVAL IndexData::_deleteRecord(
 			this->forwardIndex->deleteRecord(externalRecordId) ?
 					OP_SUCCESS : OP_FAIL;
 
+
 	if (success == OP_SUCCESS) {
+		ForwardList * fwdList = this->forwardIndex->getForwardList_ForCommit(internalRecordId);
+		if (fwdList) {
+			unsigned keywordsCount = fwdList->getNumberOfKeywords();
+        	const unsigned * listofKeywordIds = fwdList->getKeywordIds();
+        	// walk over the inverted index vector and mark all the inverted list which
+        	// matches with keywordIds of the forward list.
+        	this->invertedIndex->findAndMarkInvertedListForMerge(listofKeywordIds, keywordsCount);
+		}
+
 		this->mergeRequired = true; // need to tell the merge thread to merge
 		this->writeCounter->decDocsCounter();
 		this->writeCounter->incWritesCounter();

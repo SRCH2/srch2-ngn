@@ -298,6 +298,7 @@ public:
     // Merge is required if the list is not empty
     bool mergeRequired() const  { return !(invertedListSetToMerge.empty()); }
 
+    void findAndMarkInvertedListForMerge(const unsigned *listofKeywordIds,unsigned keywordsCount);
 private:
 
     float getIdf(const unsigned totalNumberOfDocuments, const unsigned keywordId) const;
