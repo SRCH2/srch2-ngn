@@ -228,5 +228,7 @@ int main(int argc, char **argv)
     delete indexMetaData;
     delete analyzer;
 
+
+	cout << "LargeInsertionAfterCommit unit test: Passed" << endl;
     return 0;
 }

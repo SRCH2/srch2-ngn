@@ -69,10 +69,12 @@ public:
      * @param[in] query the reference to a Query object.
      */
     QueryResults(QueryResultFactory * resultsFactory, const QueryEvaluator* queryEvaluator, Query* query);
-
-
+	QueryResults(const QueryResults & copy);
+	QueryResults & operator=(const QueryResults & rhs);
 	QueryResults();
 	void init(QueryResultFactory * resultsFactory, const QueryEvaluator* queryEvaluator, Query* query);
+
+
 
 
     /**

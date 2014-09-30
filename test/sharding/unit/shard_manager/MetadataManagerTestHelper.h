@@ -689,6 +689,7 @@ Cluster_Writeview * createWriteview(const unsigned code, const string & confPath
 	nodeState[0] = NodeStatus_Ready;
 
 	if(code == codeCounter++){
+		delete serverConf;
 		ShardManager::deleteShardManager();
 		return new Cluster_Writeview(*(metadataManager->getClusterWriteview()));
 	}
@@ -696,6 +697,7 @@ Cluster_Writeview * createWriteview(const unsigned code, const string & confPath
 	testNode1FirstArrival(metadataManager->getClusterWriteview()->currentNodeId, metadataManager);
 
 	if(code == codeCounter++){
+		delete serverConf;
 		ShardManager::deleteShardManager();
 		return new Cluster_Writeview(*(metadataManager->getClusterWriteview()));
 	}
@@ -704,6 +706,7 @@ Cluster_Writeview * createWriteview(const unsigned code, const string & confPath
 	nodeState[1] = NodeStatus_Ready;
 
 	if(code == codeCounter++){
+		delete serverConf;
 		ShardManager::deleteShardManager();
 		return new Cluster_Writeview(*(metadataManager->getClusterWriteview()));
 	}
@@ -711,6 +714,7 @@ Cluster_Writeview * createWriteview(const unsigned code, const string & confPath
 	testNode2FirstArrival(metadataManager->getClusterWriteview()->currentNodeId, metadataManager);
 
 	if(code == codeCounter++){
+		delete serverConf;
 		ShardManager::deleteShardManager();
 		return new Cluster_Writeview(*(metadataManager->getClusterWriteview()));
 	}
@@ -719,6 +723,7 @@ Cluster_Writeview * createWriteview(const unsigned code, const string & confPath
 	nodeState[1] = NodeStatus_Pending;
 
 	if(code == codeCounter++){
+		delete serverConf;
 		ShardManager::deleteShardManager();
 		return new Cluster_Writeview(*(metadataManager->getClusterWriteview()));
 	}
@@ -731,6 +736,7 @@ Cluster_Writeview * createWriteview(const unsigned code, const string & confPath
 	nodeState[1] = NodeStatus_Ready;
 
 	if(code == codeCounter++){
+		delete serverConf;
 		ShardManager::deleteShardManager();
 		return new Cluster_Writeview(*(metadataManager->getClusterWriteview()));
 	}
@@ -742,6 +748,7 @@ Cluster_Writeview * createWriteview(const unsigned code, const string & confPath
 	nodeState[2] = NodeStatus_Ready;
 
 	if(code == codeCounter++){
+		delete serverConf;
 		ShardManager::deleteShardManager();
 		return new Cluster_Writeview(*(metadataManager->getClusterWriteview()));
 	}
@@ -751,6 +758,7 @@ Cluster_Writeview * createWriteview(const unsigned code, const string & confPath
 	nodeState[1] = NodeStatus_Unassigned;
 
 	if(code == codeCounter++){
+		delete serverConf;
 		ShardManager::deleteShardManager();
 		return new Cluster_Writeview(*(metadataManager->getClusterWriteview()));
 	}
@@ -761,6 +769,7 @@ Cluster_Writeview * createWriteview(const unsigned code, const string & confPath
 	validateRestart(serverConf, metadataManager, nodeState);
 
 	if(code == codeCounter++){
+		delete serverConf;
 		ShardManager::deleteShardManager();
 		return new Cluster_Writeview(*(metadataManager->getClusterWriteview()));
 	}
@@ -770,6 +779,7 @@ Cluster_Writeview * createWriteview(const unsigned code, const string & confPath
 	validateRestart(serverConf, metadataManager, nodeState);
 
 	if(code == codeCounter++){
+		delete serverConf;
 		ShardManager::deleteShardManager();
 		return new Cluster_Writeview(*(metadataManager->getClusterWriteview()));
 	}
@@ -779,6 +789,7 @@ Cluster_Writeview * createWriteview(const unsigned code, const string & confPath
 	nodeState[2] = NodeStatus_Ready;
 
 	if(code == codeCounter++){
+		delete serverConf;
 		ShardManager::deleteShardManager();
 		return new Cluster_Writeview(*(metadataManager->getClusterWriteview()));
 	}
@@ -788,6 +799,7 @@ Cluster_Writeview * createWriteview(const unsigned code, const string & confPath
 	validateRestart(serverConf, metadataManager, nodeState);
 
 	if(code == codeCounter++){
+		delete serverConf;
 		ShardManager::deleteShardManager();
 		return new Cluster_Writeview(*(metadataManager->getClusterWriteview()));
 	}
@@ -796,6 +808,7 @@ Cluster_Writeview * createWriteview(const unsigned code, const string & confPath
 	testNode2Reclaim(metadataManager->getClusterWriteview()->currentNodeId, metadataManager);
 	nodeState[2] = NodeStatus_Ready;
 
+	delete serverConf;
 	ShardManager::deleteShardManager();
 	return new Cluster_Writeview(*(metadataManager->getClusterWriteview()));
 }

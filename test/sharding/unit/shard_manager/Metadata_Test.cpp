@@ -63,6 +63,8 @@ int main(){
 	testNode2Reclaim(metadataManager->getClusterWriteview()->currentNodeId, metadataManager);
 	nodeState[2] = NodeStatus_Ready;
 
+	delete serverConf;
+
 //	metadataManager->getClusterWriteview()->print();
 	cout << "Metadata unit tests: Passed" << endl;
 }

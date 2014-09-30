@@ -72,6 +72,36 @@ QueryResultsInternal::QueryResultsInternal(QueryResultFactory * resultsFactory,
     this->estimatedNumberOfResults = -1;
 }
 
+QueryResultsInternal::QueryResultsInternal(const QueryResultsInternal & copy){
+	this->resultsFactory = copy.resultsFactory;
+	this->query = copy.query;
+	// TODO : since this member is not used anymore. We must delete it eventually.
+	this->virtualListVector = new vector<TermVirtualList*>;
+    this->queryEvaluatorInternal = copy.queryEvaluatorInternal;
+    this->stat = new Stat(*(copy.stat));
+    this->resultsApproximated = copy.resultsApproximated;
+    this->estimatedNumberOfResults = copy.estimatedNumberOfResults;
+    this->sortedFinalResults = copy.sortedFinalResults;
+    this->facetResults = copy.facetResults;
+    this->prefixToCompleteStore = copy.prefixToCompleteStore;
+}
+QueryResultsInternal & QueryResultsInternal::operator=(const QueryResultsInternal & rhs){
+	if(this != &rhs){
+		this->resultsFactory = rhs.resultsFactory;
+		this->query = rhs.query;
+		// TODO : since this member is not used anymore. We must delete it eventually.
+		this->virtualListVector = new vector<TermVirtualList*>;
+	    this->queryEvaluatorInternal = rhs.queryEvaluatorInternal;
+	    this->stat = new Stat(*(rhs.stat));
+	    this->resultsApproximated = rhs.resultsApproximated;
+	    this->estimatedNumberOfResults = rhs.estimatedNumberOfResults;
+	    this->sortedFinalResults = rhs.sortedFinalResults;
+	    this->facetResults = rhs.facetResults;
+	    this->prefixToCompleteStore = rhs.prefixToCompleteStore;
+	}
+	return *this;
+}
+
 // DEBUG function. Used in CacheIntegration_Test
 bool QueryResultsInternal::checkCacheHit(
         QueryEvaluatorInternal *queryEvaluatorInternal, Query *query) {

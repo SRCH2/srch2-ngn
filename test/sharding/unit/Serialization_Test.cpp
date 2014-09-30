@@ -328,6 +328,7 @@ void testSerializableSearchResults(){
 	QueryResults * queryResults1 = prepareQueryResults();
 	SearchCommandResults commandInput1;
 	SearchCommandResults::ShardResults * shardResults = new SearchCommandResults::ShardResults("identifier");
+	commandInput1.addShardResults(shardResults);
 	shardResults->searcherTime = 120;
 	shardResults->queryResults = *queryResults1;
 	delete queryResults1;
