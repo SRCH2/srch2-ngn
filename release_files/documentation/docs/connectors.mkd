@@ -93,7 +93,7 @@ Change the parameters if needed.  Make sure that you have also set the "srch2Hom
 Go to the install folder of SRCH2 and run the following:
 
 ```
- /home/joe/srch2/example-demo> ../bin/srch2-engine --config-file=./example-demo/srch2-config-mongo.xml
+ /home/joe/srch2/example-demo> ../bin/srch2-engine --config-file=./srch2-config-mongo.xml
 ```
 
 The engine will use a MongoDB connector to read the data from the MongoDB table, build indexes, and wait for queries. It also starts a thread that periodically pulls latest changes from MongoDB (as specified by the "listenerWaitTime" parameter) and add these changes to its indexes.  
@@ -231,7 +231,7 @@ called "libsqliteConnector" for SQLite, which is included in the package.  Chang
 Go to the install folder of SRCH2 and run the following:
 
 ```
- /home/joe/srch2/example-demo> ../bin/srch2-engine --config-file=./example-demo/srch2-config-sqlite.xml
+ /home/joe/srch2/example-demo> ../bin/srch2-engine --config-file=./srch2-config-sqlite.xml
 ```
 
 The engine should read the data from the SQLite instance, build indexes, and wait for queries. It also starts a thread that periodically pulls latest changes from SQLite (as specified by the "listenerWaitTime" parameter) and add these changes to its search indexes.
