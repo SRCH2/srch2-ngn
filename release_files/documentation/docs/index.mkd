@@ -6,7 +6,7 @@ it delivers superior features with high performance.  It runs on both servers as
 
 The following figure illustrates how to use the engine in an application.  We provide a configuration 
 file that specifies parameters for the engine, such as socket a port number, a data source (a JSON file,
-MongoDB, or SQLite) and ranking-related values.
+MySQL, SQLite, or MongoDB) and ranking-related values.
 
 <span ><center><img style="width:55%" src="images/SRCH2-Overview.jpg" /></center></span>
 
@@ -41,7 +41,7 @@ the [JSON](http://json.org/) format.
 - Port-level network security
 - Token-based authorization
 - Access control (record based and attribute based)
-- Connectors to MongoDB and SQLite, with connectors for other data sources coming soon
+- Connectors to MySQL, SQLite, MongoDB, with connectors for other data sources coming soon
 
 ##What's new in SRCH2 4.4.2
 ####Features:
