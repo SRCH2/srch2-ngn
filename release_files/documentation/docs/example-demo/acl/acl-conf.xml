@@ -1,0 +1,104 @@
+<!--
+    Configuration file for SRCH2 search server. 
+
+    For more information about how to use this configuration file, please
+    visit http://www.srch2.com/downloads.html and select the correct
+    documentation version.
+
+    Please email contact@srch2.com if you have questions.
+
+    This configuration file defines 2 separate cores (data sources) in order to allow testing of
+    access control functionality.  
+-->
+
+<config>
+    <srch2Home>./</srch2Home>
+    <listeningHostname>127.0.0.1</listeningHostname>
+    <listeningPort>8081</listeningPort>
+
+    <maxSearchThreads>2</maxSearchThreads>
+
+    <cores defaultCoreName="product">
+            <core name="product">
+                <dataFile>product.json</dataFile>
+                <dataDir>product-indexes</dataDir>
+                <dataSourceType>1</dataSourceType>
+                <indexConfig>
+                    <indexType>0</indexType>
+                    <supportSwapInEditDistance>true</supportSwapInEditDistance>
+                    <fieldBoost>name^2 description^1</fieldBoost>
+                    <defaultQueryTermBoost>1</defaultQueryTermBoost>
+                    <enablePositionIndex>1</enablePositionIndex> 
+                </indexConfig>
+                <query>
+                    <rankingAlgorithm>
+                        <recordScoreExpression>idf_score*doc_boost</recordScoreExpression>
+                    </rankingAlgorithm>
+                    <fuzzyMatchPenalty>0.9</fuzzyMatchPenalty>
+                    <queryTermSimilarityThreshold>0.75</queryTermSimilarityThreshold>
+                    <prefixMatchPenalty>0.95</prefixMatchPenalty>
+                    <cacheSize>65536000</cacheSize>
+                    <rows>5</rows>
+                    <fieldBasedSearch>1</fieldBasedSearch>
+                    <searcherType>0</searcherType>
+
+                    <queryTermFuzzyType>0</queryTermFuzzyType>
+
+                    <queryTermPrefixType>1</queryTermPrefixType>
+
+                    <queryResponseWriter>
+                        <responseFormat>1</responseFormat>
+                    </queryResponseWriter>
+                </query>
+                <schema>
+                    <fields>
+			<field name="pid" type="text"/>
+      			<field name="name" type="text" indexed="true"
+      			acl="true"/>
+       			<field name="description" type="text"
+      			indexed="true" acl="true"/>
+       			<field name="price" type="integer" indexed="false" required="true" refining="true"/>
+      			<field name="manufacturer" type="text" indexed="true" refining="true"/>
+       			<field name="state" type="text"	refining="true" indexed="true" acl="true"/>
+                    </fields>
+
+                    <uniqueKey>pid</uniqueKey>
+
+                    <facetEnabled>true</facetEnabled>
+                    <facetFields>
+                        <facetField name="state" facetType="categorical"/>
+                        <facetField name="price"  facetType="range" facetStart="100" facetEnd="2000"
+                            facetGap="10"/>
+                    </facetFields>
+                    
+                    <types>
+                        <fieldType name="text_standard">
+                            <analyzer>
+                                <filter name="protectedKeyWordsFilter" words="srch2_protected_words.txt" />
+                            </analyzer>
+                        </fieldType>
+                    </types>
+
+                </schema>
+                <updatehandler>
+                    <maxDocs>15000000</maxDocs>
+                    <maxMemory>10000000</maxMemory>
+                    <mergePolicy>
+                        <mergeEveryNSeconds>10</mergeEveryNSeconds>
+                        <mergeEveryMWrites>10</mergeEveryMWrites>
+                    </mergePolicy>
+              </updatehandler>
+
+              <access-control>
+		<record-acl     datafile="record-acl-product.json" />
+		<attribute-acl  datafile="attribute-acl-product.json" />
+              </access-control>
+            </core>
+    </cores>
+
+    <updateLog>
+        <logLevel>3</logLevel>
+        <accessLogFile>srch2-log.txt</accessLogFile>
+    </updateLog>   
+
+</config>

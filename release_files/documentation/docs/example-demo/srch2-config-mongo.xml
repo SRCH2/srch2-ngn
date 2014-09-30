@@ -43,8 +43,8 @@
         <types>
           <fieldType name="text_standard">
               <analyzer>
-                  <filter name="PorterStemFilter" dictionary="" />
-                  <filter name="StopFilter" words="" />
+                  <filter name="PorterStemFilter" dictionary="srch2_stemmer_words.txt" />
+                  <filter name="StopFilter" words="stop-words.txt" />
               </analyzer>
           </fieldType>
        </types>
@@ -105,11 +105,6 @@
           <mergeEveryMWrites>10</mergeEveryMWrites>
         </mergePolicy>
          
-        <updateLog>
-            <logLevel>3</logLevel>
-            <accessLogFile>./logs/srch2-log.txt</accessLogFile>
-        </updateLog>
-     
     </updatehandler>
 
     <!-- 
@@ -128,4 +123,10 @@
             <dbKeyValue key="listenerWaitTime" value="3" />
         </dbKeyValues>
     </dbParameters>
+
+    <updateLog>
+        <logLevel>3</logLevel>
+        <accessLogFile>./logs/srch2-log-mongo.txt</accessLogFile>
+    </updateLog>
+
 </config>

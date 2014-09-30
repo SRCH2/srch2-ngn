@@ -64,7 +64,6 @@ const char* const ConfigManager::enableCharOffsetIndexString =
         "enablecharoffsetindex";
 const char* const ConfigManager::expandString = "expand";
 const char* const ConfigManager::facetEnabledString = "facetenabled";
-const char* const ConfigManager::attributeAclFileString = "attributeaclfile";
 const char* const ConfigManager::facetEndString = "facetend";
 const char* const ConfigManager::facetFieldString = "facetfield";
 const char* const ConfigManager::facetFieldsString = "facetfields";
@@ -97,7 +96,7 @@ const char* const ConfigManager::mergeEveryMWritesString = "mergeeverymwrites";
 const char* const ConfigManager::mergeEveryNSecondsString = "mergeeverynseconds";
 const char* const ConfigManager::mergePolicyString = "mergepolicy";
 const char* const ConfigManager::nameString = "name";
-const char* const ConfigManager::porterStemFilterString = "PorterStemFilter";
+const char* const ConfigManager::porterStemFilterString = "porterstemfilter";
 const char* const ConfigManager::prefixMatchPenaltyString = "prefixmatchpenalty";
 const char* const ConfigManager::queryString = "query";
 const char* const ConfigManager::queryResponseWriterString =
@@ -122,12 +121,12 @@ const char* const ConfigManager::schemaString = "schema";
 const char* const ConfigManager::searchableString = "searchable";
 const char* const ConfigManager::searcherTypeString = "searchertype";
 const char* const ConfigManager::srch2HomeString = "srch2home";
-const char* const ConfigManager::stopFilterString = "StopFilter";
+const char* const ConfigManager::stopFilterString = "stopfilter";
 const char* const ConfigManager::protectedWordFilterString =
-        "protectedKeyWordsFilter";
+        "protectedkeywordsfilter";
 const char* const ConfigManager::supportSwapInEditDistanceString =
         "supportswapineditdistance";
-const char* const ConfigManager::synonymFilterString = "synonymFilter";
+const char* const ConfigManager::synonymFilterString = "synonymfilter";
 const char* const ConfigManager::synonymsString = "synonyms";
 const char* const ConfigManager::textEnString = "text_standard";
 const char* const ConfigManager::textZhString = "text_chinese";
@@ -166,12 +165,13 @@ const char* const ConfigManager::fuzzyTagPre = "fuzzytagpre";
 const char* const ConfigManager::fuzzyTagPost = "fuzzytagpost";
 const char* const ConfigManager::snippetSize = "snippetsize";
 
-const char* const ConfigManager::multipleAccessControlString = "access-controls";
-const char* const ConfigManager::resourceCore = "resourcecore";
-const char* const ConfigManager::roleCore = "rolecore";
-const char* const ConfigManager::accessControlDataFile = "acldatafile";
+const char* const ConfigManager::accessControlString = "access-control";
+//const char* const ConfigManager::resourceCore = "resourcecore";
+//const char* const ConfigManager::roleCore = "rolecore";
+const char* const ConfigManager::recordAclString = "record-acl";
 const char* const ConfigManager::aclRoleId = "roleId";
 const char* const ConfigManager::aclResourceId = "resourceId";
+const char* const ConfigManager::attributeAclString = "attribute-acl";
 
 const char* const ConfigManager::defaultFuzzyPreTag = "<b>";
 const char* const ConfigManager::defaultFuzzyPostTag = "</b>";
@@ -864,63 +864,6 @@ void ConfigManager::parseSingleCore(const xml_node &parentNode,
     }
 }
 
-// parse single access control in the config file here is an example:
-/*
-   <access-control>
-        <resourceCore> Product</resourceCore>
-        <roleCore> Company </roleCore>
-        <aclDataFile>data.json</aclDataFile>
-   </access-control>
- */
-void ConfigManager::parseSingleAccessControl(const xml_node &parentNode,
-		bool &configSuccess, std::stringstream &parseError,
-		std::stringstream &parseWarnings){
-	// 1- extract the resource core name-->  <resourceCore> Product </resourceCore>
-	xml_node resourceCoreNode = parentNode.child(resourceCore);
-	// 2- extract the role core name.-->   <roleCore> Company </roleCore>
-	xml_node roleCoreNode = parentNode.child(roleCore);
-	// both resourceCore and roleCore are requiered
-	if(resourceCoreNode && resourceCoreNode.text()){
-		if(roleCoreNode && roleCoreNode.text()){
-			string resourceCoreName = string(resourceCoreNode.text().get());
-			string roleCoreName = string(roleCoreNode.text().get());
-			// first we need to check if these cores exist
-			CoreInfoMap_t::iterator resourceIt = coreInfoMap.find(resourceCoreName);
-			if(resourceIt == coreInfoMap.end()){
-				parseError << resourceCoreName
-				<< " core does not exist\n";
-				configSuccess = false;
-				return;
-			}
-			CoreInfoMap_t::iterator roleIt = coreInfoMap.find(roleCoreName);
-			if(roleIt == coreInfoMap.end()){
-				parseError << roleCoreName
-						<< " core does not exist\n";
-				configSuccess = false;
-				return;
-			}
-			AccessControlInfo* newAccessControlInfo = new AccessControlInfo(resourceCoreName, roleCoreName);
-			// 3- extract the name of the data file for bulk load -->    <aclDataFile> data.json </aclDataFile>
-			xml_node dataFileNode = parentNode.child(accessControlDataFile);
-			if(dataFileNode && dataFileNode.text()){
-				newAccessControlInfo->aclDataFileName = srch2Home + string("")
-                            + (*resourceIt).second->getName() + string("/") + string(dataFileNode.text().get());
-			}
-			(*resourceIt).second->setAccessControlInfo(newAccessControlInfo);
-		}else{
-			parseError
-			<< " access-control roleCore is not set\n";
-			configSuccess = false;
-			return;
-		}
-	}else{
-		parseError
-		<< " access-control resourceCore is not set\n";
-		configSuccess = false;
-		return;
-	}
-}
-
 // only called by parseDataConfiguration()
 void ConfigManager::parseMultipleCores(const xml_node &coresNode,
         bool &configSuccess, std::stringstream &parseError,
@@ -953,21 +896,6 @@ void ConfigManager::parseMultipleCores(const xml_node &coresNode,
             }
         }
     }
-}
-
-void ConfigManager::parseAccessControls(const xml_node &accessControlsNode,
-        bool &configSuccess, std::stringstream &parseError,
-        std::stringstream &parseWarnings){
-	if(accessControlsNode){
-		// parse zero or more access-control settings
-		for ( xml_node accessControlNode = accessControlsNode.first_child(); accessControlNode;
-				accessControlNode = accessControlNode.next_sibling()){
-			parseSingleAccessControl(accessControlNode, configSuccess, parseError, parseWarnings);
-			if (configSuccess == false){
-				return;
-			}
-		}
-	}
 }
 
 /*
@@ -1219,6 +1147,49 @@ void ConfigManager::parseDataFieldSettings(const xml_node &parentNode,
             return;
         }
     }
+
+    /*
+     * <access-control>
+     *		<attribute-acl  datafile="" />
+     *		<record-acl  datafile="" />
+	 * </access-control>
+     */
+    coreInfo->hasRecordAcl = false;
+    coreInfo->recordAclFilePath = "";
+    coreInfo->attrAclFilePath = "";
+
+    xml_node aclNode = parentNode.child(accessControlString);
+    if (aclNode) {
+    	xml_node attrAclNode = aclNode.child(attributeAclString);
+    	if (attrAclNode) {
+    		string tempString = attrAclNode.attribute("datafile").value();
+    		if (tempString.size() > 0) {
+    			string attrAclFilePath;
+    			if (coreInfo->getName() == defaultCore) {
+    				attrAclFilePath = getSrch2Home() + tempString;
+    			} else {
+    				attrAclFilePath = getSrch2Home() + "/" + coreInfo->getName() + "/" + tempString;
+    			}
+    			coreInfo->attrAclFilePath = boost::filesystem::path(attrAclFilePath).normalize().string();
+    		}
+    	}
+
+    	xml_node recordAclNode = aclNode.child(recordAclString);
+    	if (recordAclNode) {
+    		coreInfo->hasRecordAcl = true;
+    		string tempString = recordAclNode.attribute("datafile").value();
+    		if (tempString.size() > 0) {
+    			string recordAclFilePath;
+    			if (coreInfo->getName() == defaultCore) {
+    				recordAclFilePath = getSrch2Home() + tempString;
+    			} else {
+    				recordAclFilePath = getSrch2Home() + "/" + coreInfo->getName() + "/" + tempString;
+    			}
+    			coreInfo->recordAclFilePath = boost::filesystem::path(recordAclFilePath).normalize().string();
+    		}
+    	}
+    }
+
 }
 
 void ConfigManager::parseDataConfiguration(const xml_node &configNode,
@@ -1279,14 +1250,14 @@ void ConfigManager::parseDataConfiguration(const xml_node &configNode,
         }
     }
 
-    // <access-controls>
-    childNode = configNode.child(multipleAccessControlString);
-    if(childNode){
-    	parseAccessControls(childNode, configSuccess, parseError, parseWarnings);
-    	if (configSuccess == false){
-    		return;
-    	}
-    }
+//    // <access-controls>
+//    childNode = configNode.child(multipleAccessControlString);
+//    if(childNode){
+//    	parseAccessControls(childNode, configSuccess, parseError, parseWarnings);
+//    	if (configSuccess == false){
+//    		return;
+//    	}
+//    }
 }
 
 bool ConfigManager::setCoreParseStateVector(bool isSearchable, bool isRefining,
@@ -1687,6 +1658,10 @@ void ConfigManager::setUpEnglishAnalyzer(CoreInfo_t * coreInfo, const xml_node &
     // Checking if the values are empty or not
     for (xml_node field = childNodeTemp.first_child(); field; field = field.next_sibling()) {
         std::string nameTag = field.attribute(nameString).value();
+
+        //made attribute values of "name" case insensitive
+        std::transform(nameTag.begin(), nameTag.end(), nameTag.begin(),
+                ::tolower);
         if ( nameTag.compare(porterStemFilterString) == 0){
             setUpStemmer(coreInfo, field, parseWarnings);
         } else if ( nameTag.compare(stopFilterString) == 0) { 
@@ -1698,7 +1673,7 @@ void ConfigManager::setUpEnglishAnalyzer(CoreInfo_t * coreInfo, const xml_node &
         } else if ( nameTag.compare(allowedRecordSpecialCharactersString) == 0){
             setUpRecordSpecialCharacters(coreInfo, field);
         } else {
-            Logger::error(" In core %s : Valid tag is not set, it can only be filter or allowedrecordspecialcharacters.", coreInfo->name.c_str());
+            Logger::error("In core %s : Each child under the analyzer tag should be a filter, not something else.", coreInfo->name.c_str());
         }
     }
 }
@@ -1710,6 +1685,10 @@ void ConfigManager::setUpChineseAnalyzer(CoreInfo_t * coreInfo, string& dictiona
     coreInfo->stemmerFlag = false;
     for (xml_node field = childNodeTemp.first_child(); field; field = field.next_sibling()) {
         std::string nameTag = field.attribute(nameString).value();
+
+        //made attribute values of "name" case insensitive
+        std::transform(nameTag.begin(), nameTag.end(), nameTag.begin(),
+                      ::tolower);
         if ( nameTag.compare(stopFilterString) == 0) { 
             setUpStopword(coreInfo, field, parseWarnings);
         } else if ( nameTag.compare(protectedWordFilterString) == 0){
@@ -1719,7 +1698,7 @@ void ConfigManager::setUpChineseAnalyzer(CoreInfo_t * coreInfo, string& dictiona
         } else if ( nameTag.compare(allowedRecordSpecialCharactersString) == 0){
             setUpRecordSpecialCharacters(coreInfo, field);
         } else {
-            Logger::error(" In core %s : Valid tag is not set, it can only be filter or allowedrecordspecialcharacters.", coreInfo->name.c_str());
+            Logger::error("In core %s : Each child under the analyzer tag should be a filter, not something else.", coreInfo->name.c_str());
         }
     }
 }
@@ -1747,7 +1726,7 @@ void ConfigManager::parseSchemaType(const xml_node &childNode,
             }
         }
     } else {
-        Logger::warn("In core %s : Analyzer Filters will be disabled.", coreInfo->name.c_str());
+        Logger::warn("In core %s : Inside <schema>, <types> tag is missing therefore analyzer filters will be disabled.", coreInfo->name.c_str());
     }
 
 }
@@ -1917,15 +1896,6 @@ void ConfigManager::parseSchema(const xml_node &schemaNode,
                             RefiningAttributesIsMultiValued[iter],
                             refiningAttributesAclEnabledFlags[iter]);
         }
-    }
-
-    /*
-     * <attributeAclFile> in config.xml file
-     */
-    xml_node aclFileNode = schemaNode.child(attributeAclFileString);
-    if (aclFileNode && aclFileNode.text()) {
-    	string tempString = aclFileNode.text().get();
-    	coreInfo->attrAclFilePath = boost::filesystem::path(getSrch2Home() + tempString).normalize().string();
     }
 
     /*
@@ -2216,50 +2186,87 @@ void ConfigManager::parse(const pugi::xml_document& configDoc,
     xml_node childNode = configNode.child(srch2HomeString);
     if (childNode && childNode.text()) { // checks if the config/srch2Home has any text in it or not
         temporaryString = string(childNode.text().get());
-        trimSpacesFromValue(temporaryString, srch2HomeString, parseWarnings,
-                "/");
-        srch2Home = temporaryString;
+        trimSpacesFromValue(temporaryString, srch2HomeString, parseWarnings);
+        int lastPosition = temporaryString.length() - 1;
+
+        //If config file has "/" in srch2Home we don't append "/", otherwise we do
+        if(temporaryString.length() > 0 && temporaryString[lastPosition] == '/')
+            srch2Home = temporaryString;
+        else
+            srch2Home = temporaryString + "/";
     } else {
         Logger::error("srch2Home is not set.");
         configSuccess = false;
         return;
     }
 
-      // logLevel is optional. To make loglevel optional the llflag's initial value has been set to false.
+      // logLevel is optional.
       // llflag is false, if log level is not set in config file or wrong value is given by the user, otherwise llflag remains true.
       this->loglevel = Logger::SRCH2_LOG_INFO;
-      xml_node updateLog = configNode.child(updateLogString);
-      childNode = updateLog.child(logLevelString);
-      bool llflag = false;
-      if (childNode && childNode.text()) {
-          string ll = childNode.text().get();
-          if (this->isValidLogLevel(ll)) {
-              this->loglevel =
-                      static_cast<Logger::LogLevel>(childNode.text().as_int());
-              llflag = true;
-          } else {
-              llflag = false;
-          }
-      }
-      if (!llflag) {
-          Logger::warn("Log Level is either not set or not set correctly, so the engine will use the"
-                          " default value 3");
-      }
-
       this->httpServerAccessLogFile = this->srch2Home + "logs" + "/" + "srch2-log.txt";
-      // accessLogFile is optional. The default value is "srch2Home/logs/srch2-log.txt"
-      childNode = updateLog.child(accessLogFileString);
-      if (childNode && childNode.text()) {
-          temporaryString = string(childNode.text().get());
-          trimSpacesFromValue(temporaryString, updateLogString, parseWarnings);
-          if(temporaryString != ""){
-              this->httpServerAccessLogFile = this->srch2Home
-                       + temporaryString;
+      xml_node updateLog = configNode.child(updateLogString);
+
+      //If <updateLog> exists, check for <logLevel> and <accessLogFile>
+      if(updateLog){
+
+          //To check if log level has been set or not, or if it is invalid, we use llflag
+          bool llflag = false;
+          childNode = updateLog.child(logLevelString);
+          if (childNode && childNode.text()) {
+              string ll = childNode.text().get();
+              if (this->isValidLogLevel(ll)) {
+                  this->loglevel =
+                          static_cast<Logger::LogLevel>(childNode.text().as_int());
+                  llflag = true;
+              } else {
+                  llflag = false;
+              }
           }
-      } else {
+          if (!llflag) {
+              Logger::warn("Log Level is not set, so the engine will use the"
+                              " default value 3");
+          }
+
+          // accessLogFile is optional. The default value is "srch2Home/logs/srch2-log.txt"
+          childNode = updateLog.child(accessLogFileString);
+          if (childNode && childNode.text()) {
+              temporaryString = string(childNode.text().get());
+              trimSpacesFromValue(temporaryString, updateLogString, parseWarnings);
+              if(temporaryString != ""){
+                  this->httpServerAccessLogFile = this->srch2Home
+                           + temporaryString;
+              }
+          } else {
+              //When srch2Home is "." or "./" warning message will be "httpServerAccessLogFile is not set, so the engine will use default location ./logs/srch2-log.txt"
+              string warning = "httpServerAccessLogFile is not set, so the engine will use default location ";
+              warning = warning + this->srch2Home + "logs" + "/" + "srch2-log.txt";
+              Logger::warn(warning.c_str());
+          }
+      }
+      else{
+          Logger::warn("<updateLog> is missing under <config> in configuration file.");
+
+          //Display warning message about default log file being used by engine
           string warning = "httpServerAccessLogFile is not set, so the engine will use default location ";
-          warning = warning + this->srch2Home + "/" + "logs" + "/" + "srch2-log.txt";
+          warning = warning + this->srch2Home + "logs" + "/" + "srch2-log.txt";
           Logger::warn(warning.c_str());
+
+          //Display warning message about default log level being used by engine
+          Logger::warn("Log Level is not set, so the engine will use the"
+                          " default value 3");
+
+          //This displays warning message if <updateLog> is present inside <cores>
+          xml_node coresTag = configNode.child("cores");
+          if(coresTag){
+              for(xml_node coreTag = coresTag.first_child(); coreTag; coreTag = coreTag.next_sibling()){
+                  xml_node updateHandlerTag = coreTag.child(updateHandlerString);
+                  xml_node updateLogTag = updateHandlerTag.child(updateLogString);
+                  if(updateLogTag){
+                      Logger::warn("<updateLog> should not be inside <core>. Please move it outside <core> and under <config>.");
+                      break;
+                  }
+              }
+          }
       }
 
     string authKey = "";

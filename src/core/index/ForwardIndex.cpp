@@ -275,7 +275,7 @@ bool ForwardIndex::deleteRoleFromResource(shared_ptr<vectorview<ForwardListPtr> 
 	return false;
 }
 
-RoleAccessList* ForwardIndex::getRecordAccessList(shared_ptr<vectorview<ForwardListPtr> > & forwardListDirectoryReadView,
+RecordAcl* ForwardIndex::getRecordAccessList(shared_ptr<vectorview<ForwardListPtr> > & forwardListDirectoryReadView,
 		const string& resourcePrimaryKeyID){
 	unsigned recordId;
 	bool hasRecord = getInternalRecordIdFromExternalRecordId(resourcePrimaryKeyID, recordId);

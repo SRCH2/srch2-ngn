@@ -93,9 +93,9 @@ typedef enum {
 
 // Type of the acl query command
 typedef enum{
-	AddRoles,
-	AppendRoles,
-	DeleteRoles
+	Acl_Record_Add,
+	Acl_Record_Append,
+	Acl_Record_Delete
 }RecordAclCommandType;
 
 /// Query constants

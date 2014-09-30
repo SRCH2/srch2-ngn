@@ -14,9 +14,9 @@ control:
  For each record, we can specify an access control list  (ACL) of
  roles who can access this record.
 
- <li> <b>Attribute-based</b>: a user can access certain attributes  in
- a core.  For each role,  we can specify the list of attributes the user
- can access.
+ <li> <b>Attribute-based</b>: a user can access certain attributes in
+ a core.  For each attribute, we can specify an access control list  (ACL) of
+ roles who can access this attribute.
 </ul>
 
 <center>
@@ -26,24 +26,24 @@ control:
 A simple way to do record-based access control 
 is to introduce a multi-valued attribute to a resource core to
 include the information about roles who can access each record.  This
-approach is known to be [slow and inefficient](http://stackoverflow.com/questions/9222835/solr-permissions-filtering-results-depending-on-access-rights), and not acceptable for 
-large amounts of information or very dynamic ACL changes.  To solve this problem, SRCH2 adopts an
-advanced implementation to deliver higher performance.
+approach is known to be [slow and
+inefficient](http://stackoverflow.com/questions/9222835/solr-permissions-filtering-results-depending-on-access-rights),
+and not acceptable for large amounts of information or very dynamic
+ACL changes.  To solve this problem, SRCH2 adopts an advanced
+implementation to deliver higher performance.
 
 In this documentation we use the following example to explain how to
 use SRCH2 to do access control:
 
 <ul>
- <li> <b>Product(pid, name, description, price, manufacturer,
- state)</b>: "pid" is the primary key;
- <li> <b>User(uid, name)</b>: "uid" is the primary key.
+ <li> <b>product(pid, name, description, price, manufacturer,
+ state)</b>: "pid" is the primary key.
 </ul>
 
-By doing access control, we can allow a user to access certain
-records and certain attributes in the <tt>Product</tt> table.  The following
-are sample records in the two cores:
+ 
+The following are sample records in the "product" core:
 
-<b>Product.json</b>
+<b>product.json</b>
 
 ```json
 {"pid" : "p501", "name" : "laptop", "description" : "Inspiron with Windows", "price" : 600, "manufacturer" : "Dell", "state" : "Texas"}
@@ -51,53 +51,48 @@ are sample records in the two cores:
 {"pid" : "p503", "name" : "phone", "description" : "iPhone 5", "price" : 500, "manufacturer" : "Apple", "state" : "California"}
 ```
 
-<b>User.json</b>
+The file is provided under the [example-demo/acl](../example-demo/acl) folder.
+By doing access control, we can allow a user (specified as a string) to access certain
+records and certain attributes in the <tt>product</tt> table. 
+
+### 1. Role-Based Search
+
+To submit a query as a specific user, we need to add a "roleId=XYZ"
+condition in the query, where "XYZ" is the id of the user.
+For instance, consider the following query:
 ```json
-{"uid" : "u25", "name" : "Alice"}
-{"uid" : "u26", "name" : "Bob"}
-{"uid" : "u27", "name" : "Cathy"}
-{"uid" : "u28", "name" : "Donald"}
-{"uid" : "u29", "name" : "Eric"}
-
+Q1: curl -i "http://127.0.0.1:8081/product/search?q=phone&roleId=u26"
 ```
 
-## 1. Record-Based
+This query is asking for products with the keyword "phone" as a user "u26". 
+The engine will find records that can accessed by this role with attributes 
+accessible by the role.
 
-###1.1 Configuration File
+## 2. Record-Based ACL
 
-In the configuration file, we want to tell the engine to use <tt>Product</tt>
-as the resource core and <tt>User</tt> as the role core. To specify
-this relationship we use an <i>access-control</i> tag as shown below:
+###2.1 Configuration File
+
+In the configuration file, we want to tell the engine to use <tt>product</tt>
+as the resource core. For this purpose, we use an <i>access-control</i> tag as shown below:
 
 ```
 <cores>
- <core name="Product">
+ <core name="product">
    ...
- </core>
-
- <core name="User">
- </core>
-<cores>
-
-<access-controls>
   <access-control>
-     <resourceCore>Product</resourceCore>
-     <roleCore>User</roleCore>
-     <aclDataFile>record-acl-product-user.json</aclDataFile>
-   </access-control>
-</access-controls>
+   <record-acl  datafile="record-acl-product.json" /> 
+  </access-control>
+ </core>
+
+<cores>
 
 ```
 
-We can have multiple <i>access-control</i> tags under
-<i>access-controls</i> if we want to specify many ACL pairs of
-cores.
-
-Under the <i>aclDataFile</i> tag, there is a data file
-<tt>record-acl-product-user.json</tt>, which includes the initial ACL
+Under the <i>record-acl</i> tag, there is a data file
+<tt>record-acl-product.json</tt>, which includes the initial ACL
 information to be loaded by the engine.  Each line includes an primary
-id of the <tt>Product</tt> core and an array of ids of the
-<tt>User</tt> core. The following are example records:
+id of the <tt>product</tt> core and an array of role ids (strings).
+The following are example records:
 
 ```json
 {"resourceId" : "p501" , "roleId" : ["u25", "u26"]}
@@ -106,94 +101,105 @@ id of the <tt>Product</tt> core and an array of ids of the
 ```
 
 For instance, the first line says that the product with the id "p501" can
-be accessed by users with ids "u25" and "u26".  The second
+be accessed by users named "u25" and "u26".  The second
 line says that the product with the id "p502" can be accessed by the user
-with the id "u26".
+named "u26".
 
-###1.2 Role-Based Search
 
-To submit a query as a specific user, we need to add a "roleId=XYZ"
-condition in the query, where "XYZ" is the id of the user.
-For instance, consider the following query:
-```json
-curl -i "http://localhost:8081/product/search?q=phone&roleId=u26"
-```
+###2.2 Search
 
-This query is asking for products with the keyword "phone" as
-a user with the id "u26". The engine returns product "p502"
+For query Q1 above, the engine returns product "p502"
 only.  It will not return product "p503", even though it has
 the keyword "phone", since it cannot be accessed by this user.
 In general, the engine ignores records that cannot
-be accessed by this role. 
+be accessed by this role. Notice that the core name "product" 
+is case sensitive.
 
-###1.3 Insert Records with ACL
+###2.3 Insert Records with ACL
 
-When we insert a record to the resource core <tt>Product</tt>, we can
+When we insert a record to the resource core <tt>product</tt>, we can
 optionally also include ids of roles that can access this record.  For instance,
 consider the following query:
 
 ```json
-curl "http://localhost:8081/product/docs" -i -X PUT -d '{"pid" : "p504", ..., "roleId" : ["u26", "u28"]}'
+curl "http://127.0.0.1:8081/product/docs" -i -X PUT -d '{"pid" : "p531", "name" : "laptop", "description" : "Vaio Windows", "price" : 550, "manufacturer" : "Sony", "state" : "Utah", "roleId" : ["u26", "u28"]}'
 ```
 
 The tag "roleId" is followed by an array of ids of roles that can
 access this new record.  If no "roleId" is provided, then by default
-no role can access this new record.
-
-###1.4 Replace an ACL
-
-We can modify the ACL of a product record by using a command called "aclRecordRoleAdd":
+no role can access this new record.  After the command above, the
+following query Q2 will not find record "p531", since this record
+cannot be accessed by user "u27".
 
 ```json
-curl "http://localhost:8081/product/aclRecordRoleAdd" -i -X PUT -d '{"resourceId":"p501", "roleId":["u27", "u28"]}'
+Q2: curl -i "http://127.0.0.1:8081/product/search?q=utah&roleId=u27"
+```
+
+###2.4 Replace an ACL
+
+We can modify the ACL of a product record by using a command "aclRecordRoleReplace":
+
+```json
+curl "http://127.0.0.1:8081/product/aclRecordRoleReplace" -i -X PUT -d '{"resourceId" : "p531", "roleId":["u27", "u28"]}'
 ```
 
 This command will replace the existing ACL (if any) of the product
-"p501" with two role ids, namely "u27" and "u28".  We can also pass an
-array of pairs of a product id and a list of role ids, e.g.:
+"p531" with two role ids, namely "u27" and "u28".  The old list of role ids for
+this product will be deleted.  After this command, query "Q2" should
+be able to find record "p531".
+
+We can also pass an array of pairs of a product id and a list of role ids, e.g.:
 
 ```json
-curl "http://localhost:8081/product/aclRecordRoleAdd" -i -X PUT -d '[{"resourceId": "p501", "roleId":["u27", "u28"]} , {"resourceId": "p502", "roleId":["u25"]}]'
+curl "http://127.0.0.1:8081/product/aclRecordRoleReplace" -i -X PUT -d '[{"resourceId": "p531", "roleId":["u26", "u28"]} , {"resourceId": "p502", "roleId":["u25"]}]'
 ```
 
-###1.5 Append Roles to ACL
+###2.5 Append Roles to ACL
 
 We can add more roles to the ACL of a product record by using a command called
 "aclRecordRoleAppend":
 
 ```json
-curl "http://localhost:8081/product/aclRecordRoleAppend" -i -X PUT -d
-'{"resourceId":"p501", "roleId":["u25", "u28"]}'
+curl "http://127.0.0.1:8081/product/aclRecordRoleAppend" -i -X PUT -d '{"resourceId":"p531", "roleId":["u25", "u28"]}'
 ```
 
 This command will add "u25" and "u28" to the existing ACL of the product
-"p501". If the ACL did not exist, the engine will create one.
+"p531". If the ACL did not exist, the engine will create one.
 We can also pass an array of pairs of a product id and a list of role ids, e.g.:
 
 ```json
-curl "http://localhost:8081/product/aclRecordRoleAppend" -i -X PUT -d '[{"resourceId": "p501", "roleId":["u25", "u28"]} , {"resourceId": "p502", "roleId":["u27"]}]'
+curl "http://127.0.0.1:8081/product/aclRecordRoleAppend" -i -X PUT -d '[{"resourceId": "p531", "roleId":["u25", "u28"]} , {"resourceId": "p502", "roleId":["u27"]}]'
 ```
 
-###1.6 Remove Roles from ACL
+###2.6 Remove Roles from ACL
 
 We can remove some roles from the ACL of a product record by using a command called
 "aclRecordRoleDelete":
 
 ```json
-curl "http://localhost:8081/product/aclRecordRoleDelete" -i -X PUT -d '{"resourceId":"p501", "roleId":["u25", "u27"]}'
+curl "http://127.0.0.1:8081/product/aclRecordRoleDelete" -i -X PUT -d '{"resourceId":"p531", "roleId":["u25", "u27"]}'
 ```
 
 This command will remove "u25" and "u27" from the ACL of the product
-"p501". We can also pass an array of pairs of a product id and a list of role ids, e.g.:
+"p531".  After running this command, query Q2 will no longer find record "p531".
+
+We can also pass an array of pairs of a product id and a list of role ids, e.g.:
 
 ```python
-curl "http://localhost:8081/product/aclRecordRoleDelete" -i -X PUT -d '[{"resourceId": "p501", "roleId":["u25", "u27"]} , {"resourceId": "p502", "roleId":["u25"]}]'
+curl "http://127.0.0.1:8081/product/aclRecordRoleDelete" -i -X PUT -d '[{"resourceId": "p531", "roleId":["u25", "u27"]} , {"resourceId": "p502", "roleId":["u25"]}]'
 ```
 
-## 2. Attribute-Based
+In the rest of the documentation, we want to start with the status where user "u27" can access product "p531" 
+by running the following command:
 
-The SRCH2 engine also allows developers to specify what attributes can
-be accessed by a role.  Here is how it works.
+```json
+curl "http://127.0.0.1:8081/product/aclRecordRoleAppend" -i -X PUT -d '{"resourceId":"p531", "roleId":["u27"]}'
+```
+
+## 3. Attribute-Based ACL
+
+The SRCH2 engine also allows developers to specify roles that can
+access an attribute.  Here is how it works.
 
 <ul>
  <li> To do access control for an attribute, when we declare it
@@ -206,7 +212,7 @@ be accessed by a role.  Here is how it works.
  accessed by all roles.
 
  <li> By using attribute-based ACL commands, we can explicitly allow
- or disallow a role to access some of the ACL-attributes.  
+ or disallow role to access ACL-attributes.
 
  <li> For a search query from a particular role, the conditions in the
  query can only be specified on those ACL-attributes accessible by
@@ -214,17 +220,17 @@ be accessed by a role.  Here is how it works.
  will be ignored.
 </ul>
 
-###2.1 Configuration File
+###3.1 Configuration File
 
 In the running example, suppose we want to do access control on the
 attributes <tt>name</tt>, <tt>description</tt>, and <tt>state</tt> of
-the <tt>Product</tt> core.  In the configuration file, we need to add 
-the tag <tt>acl="true"</tt> to these attributes:
+the <tt>product</tt> core.  In the configuration file, we need to add 
+the tag <tt>acl="true"</tt> to these three attributes:
 
 ```xml
 <cores>
  ...
- <core name="Product"> 
+ <core name="product"> 
   <schema>
     <fields>
        <field name="pid" type="text"/>
@@ -232,10 +238,15 @@ the tag <tt>acl="true"</tt> to these attributes:
        <field name="description" type="text" indexed="true" acl="true"/>
        <field name="price" type="integer" indexed="false" required="true" refining="true"/>
        <field name="manufacturer" type="text" indexed="true" refining="true"/>
-       <field name="state" type="text" refining="true" indexed="false" acl="true"/>
+       <field name="state" type="text" refining="true" indexed="true" acl="true"/>
     </fields>
   </schema>
   ...
+
+  <access-control>
+    <attribute-acl  datafile="attribute-acl-product.json" />
+  </access-control>
+
  </core> 
 ...
 </cores> 
@@ -246,96 +257,105 @@ they can be accessible by all roles, and we cannot do access control
 on them.
 
 We can also specify a file with initial attribute ACL information for
-the <tt>Product</tt> records:
-
-```xml
- <core name="Product"> 
-  <schema>
-     ...
-  </schema>
-  <attributeAclFile>./attribute-acl-data.json</attributeAclFile>
- </core>
-```
-
-The data file <tt>attribute-acl-data.json</tt> has attribute ACL
-information for roles.  For instance:
+the <tt>product</tt> attributes.  The data file
+<tt>attribute-acl-product.json</tt> under the "attribute-acl" tag has
+attribute ACL information for attributes.  For instance:
 
 ```json
 { "attributes": ["name", "description"], "roleId": ["u25"]}
 { "attributes": ["name", "state"], "roleId": ["u26", "u27"]}
 ```
 
-The first line says that role "u25" can access attributes "name" and
-"description", while the second line says that roles "u25" and "u27"
-can access attributes "name" and "state".
+The first line says that attributes "name" and "description" can be accessed by 
+role "u25", while the second line says that attributes "name" and "state"
+can be accessed by roles "u25" and "u27".
 
-###2.2 Replace Accessible Attributes
+###3.2 Search
 
-We can modify the attributes accessible by a role with a command called
-"aclAttributeRoleAdd".  For instance:
+For a role-based search, the engine will apply the conditions to those attributes that are
+either public (i.e., non-ACL), or accessible by this role.  Consider
+query Q1 as an example (copied below):
 
-```python
-curl "http://localhost:8081/product/aclAttributeRoleAdd" -i -X PUT
--d '{"attributes": ["name", "description"], "roleId": ["u27", "u28"] }'
+```json
+Q1: curl -i "http://127.0.0.1:8081/product/search?q=phone&roleId=u26"
 ```
 
-This command will replace the existing accessible attributes
-(if any) of the roles "u27" and "u28" with attributes "name" and
-"description". 
-
-###2.3 Append Accessible Attributes
-
-We can add more attributes accessible by a role with a command
-called "aclAttributeRoleAppend". For instance:
-
-```python
-curl "http://localhost:8081/product/aclAttributeRoleAppend" -i -X PUT
--d '{"attributes": ["state"], "roleId": ["u27", "u28"]
-}'
-```
-
-This command will add "state" to the list of accessible attributes
-of the roles "u27" and "u28".
-
-###2.4 Disallow Attributes
-
-We can disallow a role from accessing attributes with a command
-called "aclAttributeRoleDelete". For instance:
-
-```python
-curl "http://localhost:8081/product/aclAttributeRoleDelete" -i -X PUT
--d '{"attributes": ["description"], "roleId": ["u27", "u28"]
-}'
-```
-
-This command disallows the roles "u27" and "u28" from accessing the
-attribute "description".
-
-###2.5 Search
-
-Similar to the case of record-based access control, to submit a query
-as a specific user, we need to add a "roleId=XYZ" condition in the
-query, where "XYZ" is the role id.  The following is an example query
-submitted as role "u26":
-```python
-curl -i "http://localhost:8081/product/search?q=phone&roleId=u26"
-```
-
-The engine will apply the conditions to those attributes that are
-either public (i.e., non-ACL), or accessible by this role.  For
-instance, suppose role "u26" has accessible attributes "name" and
-"description", then the query will find records that have keyword
+Since role "u26" can access attributes "name" and
+"description", the query will find records that have keyword
 "phone" in attributes "pid" (public attribute), "name" (ACL attribute),
 "description" (ACL), "price" (public), "manufacturer" (public), but
 will ignore the attribute "state" since it cannot be accessible by
-this role.
+this role.  The query will find record "p502", without showing the "description"
+attribute since it cannot be accessed by this role.
 
-As another example, consider the following query that has a condition
-that the state of each matching record has to be Texas:
+As another example, consider the following query for keyword "laptop", with 
+a condition that the state of each matching record has to be "texas":
 
 ```python
-curl -i "http://localhost:8081/product/search?q=phone&fq=state:texas&roleId=u26"
+Q3: curl -i "http://127.0.0.1:8081/product/search?q=laptop&fq=state:texas&roleId=u25"
 ```
 
-Since this role does not have the access to the "state" attribute,
-this condition will be ignored by the engine.
+Since this role "u25" does not have the access to the "state" attribute,
+this "fq=state:texas" condition will be ignored by the engine.  As a consequence, the engine
+returns one record "p501", without showing the "state" value of the record.
+
+###3.3 Replace Roles of Attributes
+
+We can replace the ACL list of attributes using a command 
+"aclAttributeRoleReplace".  For instance:
+
+```python
+curl "http://127.0.0.1:8081/product/aclAttributeRoleReplace" -i -X PUT -d '{"attributes": ["description", "state"], "roleId": ["u26", "u28"] }'
+```
+
+This command will replace the existing ACLs of attributes 
+"descriptions" and "state" with roles "u26" and "u28". 
+After running this command, the query Q2 above will not find record
+"p531" any more since user "u27" can no longer access
+the attribute "state", which matches the keyword "utah".
+
+###3.4 Append Accessible Attributes
+
+We can add more attributes accessible by a role with a command
+"aclAttributeRoleAppend". For instance:
+
+```python
+curl "http://127.0.0.1:8081/product/aclAttributeRoleAppend" -i -X PUT -d '{"attributes": ["description", "state"], "roleId": ["u26", "u27"]}'
+```
+
+This command will allow the roles "u26" and "u27" to access the attributes "description" and "state".  After
+this command, query Q2 should be able to find record "p531" again.
+
+###3.5 Disallow Attributes
+
+We can disallow a role from accessing attributes with a command
+"aclAttributeRoleDelete". For instance:
+
+```python
+curl "http://127.0.0.1:8081/product/aclAttributeRoleDelete" -i -X PUT -d '{"attributes": ["state"], "roleId": ["u26", "u27"]}'
+```
+
+This command disallows the roles "u26" and "u27" from accessing the
+attribute "state".  After running this command, query Q2 can no longer find record "p531".
+
+###3.6 Disabling Attribute ACL
+
+We can disable attribute-based ACL in a search by passing a flag 
+"attributeAcl=off".  This flag means that the engine ignores
+attribute-based ACL during the search process, but still uses
+attribute ACL when generating the JSON results.  That is, the engine
+accesses all attributes during the search, but
+does not output attributes that cannot be accessed by this role.  Here
+is an example:
+
+```python
+Q4: curl -i "http://127.0.0.1:8081/product/search?q=texas&roleId=u26&attributeAcl=off"
+```
+
+Notice that role "u26" cannot access the "state" attribute.
+For this query, the engine will ignore the attribute ACL for role
+"u26" during the search, i.e., the engine will access all available
+attributes.  Thus it can find record "p501" with "texas" in the "state"
+attribute.  When generating query results, the engine will not output
+the "state" attribute, which cannot be accessed by this role "u26".
+If we drop the "attributeAcl=off" condition, the query will not find any record.

@@ -1,0 +1,68 @@
+# ----------------------------
+# test filter query with ACL
+# ---------------------------
+#FORMAT of test cases
+# test type = S (search) || query content || record ids || core name ( default if empty) 
+# test type = F (facet search) || query content || facet fields || core name ( default if empty) 
+# test type = H (check fields in snippet/highlighting) || query content || fields || core name ( default if empty) 
+# test type = R (check fields in record) || query content || fields || core name ( default if empty) 
+
+#case 1. acl-role-id is NOT provided and filter query attribute is acl controlled. Filter will not be performed 
+S||address:street&fq=eyeColor:brown||542251d5b2085fd4a352f94f 542251d5841cd4f09a7ffc94 54225286ddc8889cbcc2bcea 54225286fb256baa3d442cba 542252864bcc752c6ef16c25 542252864cb16af58d4ba49d 542252869fabaf56f81759e9
+
+#case 1. acl-role-id is NOT provided, filter query attribute is acl controlled, and attribute acl is turned off. Filter will be performed.
+S||address:street&fq=eyeColor:brown&attributeAcl=off||542251d5b2085fd4a352f94f 54225286ddc8889cbcc2bcea 542252864cb16af58d4ba49d 542252869fabaf56f81759e9
+
+#case 2. acl-role-id is provided and filter query attribute is accessible for the acl-role-id. Filter will be performed 
+S||address:street&fq=eyeColor:brown&roleId=superman||542251d5b2085fd4a352f94f 54225286ddc8889cbcc2bcea 542252864cb16af58d4ba49d 542252869fabaf56f81759e9
+
+#case 3. acl-role-id is NOT provided and sort attribute is acl controlled. Sort will not be performed 
+S||address:street&fq=eyeColor:brown&sort=age&orderby=asc||542251d5b2085fd4a352f94f 542251d5841cd4f09a7ffc94 54225286ddc8889cbcc2bcea 54225286fb256baa3d442cba 542252864bcc752c6ef16c25 542252864cb16af58d4ba49d 542252869fabaf56f81759e9
+
+#case 4. acl-role-id is NOT provided, sort and filter attribute is acl controlled, and attribute acl is turned off. Sort will be performed 
+S||address:street&fq=eyeColor:brown&sort=age&orderby=asc&attributeAcl=off||542251d5b2085fd4a352f94f 542252869fabaf56f81759e9 54225286ddc8889cbcc2bcea 542252864cb16af58d4ba49d
+
+#case 5. acl-role-id is provided and sort and filter attribute is accessible for the acl-role-id. Sort will be performed 
+S||address:street&fq=eyeColor:brown&sort=age&orderby=asc&roleId=superman||542251d5b2085fd4a352f94f 542252869fabaf56f81759e9 54225286ddc8889cbcc2bcea 542252864cb16af58d4ba49d
+
+#case 6. acl-role-id is NOT provided and facet attribute is acl controlled. Facet will not be calculated
+F||address:street&facet=only&facet.field=age||
+
+#case 7. acl-role-id is NOT provided and facet attribute is acl controlled. Attribute acl is turned off so facet will be calculated
+F||address:street&facet=only&facet.field=age&attributeAcl=off||age
+
+#case 8. acl-role-id is provided and facet attribute is accessible for the acl-role-id. Facet will be calculated
+F||address:street&facet=only&facet.field=age&roleId=superman||age
+
+#case 9. acl-role-id is NOT provided and facet attributes are acl controlled. Facet will not be calculated
+F||address:street&facet=only&facet.field=age&facet.field=eyeColor||
+
+#case 10. acl-role-id is NOT provided and facet attributes are acl controlled. Attribute acl is turned off so facet will be calculated
+F||address:street&facet=only&facet.field=age&facet.field=eyeColor&attributeAcl=off||age eyeColor
+
+#case 11. acl-role-id is provided and facet attributes are accessible for the acl-role-id. Facet will be calculated
+F||address:street&facet=only&facet.field=age&facet.field=eyeColor&roleId=superman||age eyeColor
+
+#case 12. acl-role-id is NOT provided. Snippet will be generated only for public (non-acl) searchable fields. 
+#        Note: in python script we check whether the snippet is persent for the fields listed below.
+H||address:street||address
+
+#case 13. acl-role-id is NOT provided and attribute Acl is turned off. Snippet will be generated only for public (non-acl) searchable fields. 
+#        Note: attribute acl switch does not disable access control on snippet attributes
+H||address:street&attributeAcl=off||address
+
+#case 14. acl-role-id is NOT provided. Only for public (non-acl) fields will be generated in response
+#        Note: in python script we check whether the response contains the fields listed below.
+R||address:street||_id address gender
+
+#case 14. acl-role-id is NOT provided and attribute Acl is turned off. Only for public (non-acl) fields will be generated in response
+#        Note: attribute acl switch does not disable access control on response attributes
+R||address:street&attributeAcl=off||_id address gender
+
+#case 16. acl-role-id is NOT provided and fl parameter is present in query.  Only public (non-acl) fields will be allowed from the fl list. 
+#        Note: in python script we check whether the response contains the fields listed below.
+R||address:street&fl=address%2Cbalance||_id address
+
+#case 16. acl-role-id is NOT provided, attribute Acl is turned off, and fl parameter is present in query.  Only public (non-acl) fields will be allowed from the fl list. 
+#        Note: attribute acl switch does not disable access control on response attributes
+R||address:street&fl=address%2Cbalance&attributeAcl=off||_id address
