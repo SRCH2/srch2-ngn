@@ -305,11 +305,11 @@ sleep 3
 
 test_case "sort filter" "python ./sort_filter/sort_filter.py $SRCH2_ENGINE ./sort_filter/queriesAndResults.txt ./sort_filter/facetResults.txt" 
 
-sleep 3
+sleep 4
 
 test_case "filter query" "python ./filter_query/filter_query.py $SRCH2_ENGINE ./filter_query/queriesAndResults.txt ./filter_query/facetResults.txt"
 
-sleep 3
+sleep 4
 
 test_case "test_solr_compatible_query_syntax" "python ./test_solr_compatible_query_syntax/test_solr_compatible_query_syntax.py $SRCH2_ENGINE \
     ./test_solr_compatible_query_syntax/queriesAndResults.txt ./test_solr_compatible_query_syntax/facetResults.txt"
