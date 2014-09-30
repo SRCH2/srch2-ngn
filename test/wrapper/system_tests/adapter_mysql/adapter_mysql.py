@@ -172,7 +172,7 @@ def testOfflineLog(conn,sqlQueriesPath,testQueriesPath):
     #Start the engine and wait it fetch the changes,
     #the engine will get the offline changes.
     startSrch2Engine()
-    time.sleep(10)
+    time.sleep(4)
 
     #Compare the results with the expecting results
     compareResults(testQueriesPath)
@@ -186,7 +186,7 @@ if __name__ == '__main__':
         shutil.rmtree("data")
     conn = None
     try:
-        conn = mysql.connector.connect(host="127.0.0.1",option_files="./adapter_mysql/my.cnf")
+        conn = mysql.connector.connect(host="127.0.0.1",option_files="./adapter_mysql/mysql.txt")
     except :
         print 'Access denied while connecting to the MySQL database. Set the MySQL user name and password in ./adapter_mysql/my.cnf'
         os._exit(-2)

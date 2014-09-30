@@ -286,11 +286,19 @@ The SRCH2 engine should not return the record that we just deleted.
 
 ##4. Search in MySQL
 
-This section describes how to use SRCH2 to do text search on [MySQL](http://www.mysql.com/).  The following figure illustrates how
-a SRCH2 connector interacts with a MySQL table.  In the configuration file of SRCH2, a user specifies a MySQL data source with 
-information such as host name, port number, and table name.  The SRCH2 engine will load the MySQL connector (as a shared library called "libmysqlConnector"), which 
-will read the records from the table, and insert the records into the SRCH2 engine.  In addition, the connector is using [MySQL Replication Listener](https://launchpad.net/mysql-replication-listener) to retrieve information about the changes (insert, delete, and update) from the binlog.  It
-will send these changes to the SRCH2 engine to modify the indexes.
+This section describes how to use SRCH2 to do text search on
+[MySQL](http://www.mysql.com/).  The following figure illustrates how
+a SRCH2 connector interacts with a MySQL table.  In the configuration
+file of SRCH2, a user specifies a MySQL data source with information
+such as host name, port number, and table name.  The SRCH2 engine will
+load the MySQL connector (as a shared library called
+"libmysqlConnector"), which will read the records from the table, and
+insert the records into the SRCH2 engine.  In addition, the connector
+is using [MySQL Replication
+Listener](https://launchpad.net/mysql-replication-listener) to
+retrieve information about the changes (insert, delete, and update)
+from the binlog.  It will send these changes to the SRCH2 engine to
+change the indexes.
 
 <span ><center><img style="float: center" width="60%" src="../images/mysql-connector.png" /></center></span>
 
@@ -302,13 +310,18 @@ Follow the instructions at [here](http://dev.mysql.com/doc/refman/5.7/en/install
 shell> sudo apt-get install mysql-server
 ```
 
-Notice that the [MySQL Replication Listener](https://launchpad.net/mysql-replication-listener) works with a MySQL server running with the [Binary Log](http://dev.mysql.com/doc/refman/5.0/en/binary-log.html) mode enabled. The MySQL host specified in the configuration file should be the primary of the replica set.
+Notice that the [MySQL Replication
+Listener](https://launchpad.net/mysql-replication-listener) works with
+a MySQL server running with the [Binary
+Log](http://dev.mysql.com/doc/refman/5.0/en/binary-log.html) mode
+enabled. The MySQL host specified in the configuration file should be
+the primary of the replica set.
 
-To enable the [Binary Log](http://dev.mysql.com/doc/refman/5.0/en/binary-log.html) (needed only once):
-
-Edit the [my.cnf](http://dev.mysql.com/doc/refman/5.1/en/option-files.html) file. 
-
-Find the following lines in the my.cnf:
+To enable the [Binary
+Log](http://dev.mysql.com/doc/refman/5.0/en/binary-log.html) (needed
+only once), edit the
+[my.cnf](http://dev.mysql.com/doc/refman/5.1/en/option-files.html)
+file.  Find the following lines in the file:
 ```
 #server-id               = 1
 #log_bin                 = /var/log/mysql/mysql-bin.log
@@ -321,16 +334,16 @@ log_bin                 = /var/log/mysql/mysql-bin.log
 binlog-format	        = ROW
 ```
 
-Restart the mysql service and reset the row based binlog:
+Restart the mysql service and reset the row-based binlog:
 ```
 shell> sudo /etc/init.d/mysql stop
 shell> sudo /etc/init.d/mysql start
 shell> mysql -u root -p
 mysql> reset master;
 ```
-These commands will start the MySQL service with the binary log row based mode enabled. 
+These commands will start the MySQL service with the binary log row-based mode enabled. 
 
-To Check binlog status:
+To check binlog status, run the following commands:
 ```
 mysql> show variables like 'binlog_format';
 mysql> show master status;
