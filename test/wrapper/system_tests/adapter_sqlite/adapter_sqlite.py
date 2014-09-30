@@ -169,7 +169,7 @@ def testOfflineLog(conn,sqlQueriesPath,testQueriesPath):
 	#Start the engine and wait it fetch the changes,
 	#the engine will get the offline changes.
 	startSrch2Engine()
-	time.sleep(10)
+	time.sleep(5)
 
 	#Compare the results with the expecting results
 	compareResults(testQueriesPath)

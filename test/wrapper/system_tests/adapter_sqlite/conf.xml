@@ -87,7 +87,7 @@
 				<maxMemory>10000000</maxMemory>
 
 				<mergePolicy>
-					<mergeEveryNSeconds>10</mergeEveryNSeconds>
+					<mergeEveryNSeconds>3</mergeEveryNSeconds>
 					<mergeEveryMWrites>10</mergeEveryMWrites>
 				</mergePolicy>
 

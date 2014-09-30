@@ -150,7 +150,7 @@ def testMongoDB(binary_path,queriesAndResultPath):
                 #Test 2: test  Listener, during the server running, update the record in mongodb, the listener will fetch the result.
                 if testNum == 1:
 			mongoDBUpdateRecord()
-			time.sleep(10)	#Has to be >=10 or test will be crashed, wait the engine to get the update.
+			time.sleep(5)	#Has to be >=10 or test will be crashed, wait the engine to get the update.
 
 		#Test 3: test offline modification, first shut down the engine and delete the record in mongodb, then start the engine to test if the engine can fetch the deletion.
 		if testNum == 2:
@@ -164,7 +164,7 @@ def testMongoDB(binary_path,queriesAndResultPath):
          		print 'starting engine: ' + args[0] + ' ' + args[1]
          		serverHandle = test_lib.startServer(args)
          		test_lib.pingServer(port)
-         		time.sleep(10)
+         		time.sleep(5)
 
 		#do the query
 		response = urllib2.urlopen(query).read()
