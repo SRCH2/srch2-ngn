@@ -402,18 +402,21 @@ void ConfigManager::parseIndexConfig(const xml_node &indexConfigNode, CoreInfo_t
     }
 
     // recordBoostField is an optional field
+    // We allow the tag to be missing and also empty string within the tag
     // It should be refining and of type float, otherwise engine will not run
     coreInfo->recordBoostFieldFlag = false;
     childNode = indexConfigNode.child(recordBoostFieldString);
     if (childNode && childNode.text()) {
         string recordBoostField = string(childNode.text().get());
-        if(coreInfo->refiningAttributesInfo[recordBoostField].attributeType != ATTRIBUTE_TYPE_FLOAT ){
-            Logger::error("Type of record boost field is invalid, it should be of type float");
-            configSuccess = false;
-            return;
+        if(recordBoostField != ""){
+            if(coreInfo->refiningAttributesInfo[recordBoostField].attributeType != ATTRIBUTE_TYPE_FLOAT ){
+                Logger::error("Type of record boost field is invalid, it should be of type float");
+                configSuccess = false;
+                return;
+            }
+            coreInfo->recordBoostFieldFlag = true;
+            coreInfo->recordBoostField = recordBoostField;
         }
-        coreInfo->recordBoostFieldFlag = true;
-        coreInfo->recordBoostField = recordBoostField;
     }
 
     // queryTermBoost is an optional field
@@ -494,7 +497,7 @@ void ConfigManager::parseMongoDb(const xml_node &mongoDbNode, CoreInfo_t *coreIn
     coreInfo->primaryKey = "_id";
 }
 
-void ConfigManager::parseQuery(const xml_node &queryNode,
+void ConfigManager::parseQuery(CoreConfigParseState_t *coreParseState , const xml_node &queryNode,
                                CoreInfo_t *coreInfo,
                                bool &configSuccess,
                                std::stringstream &parseError,
@@ -744,9 +747,43 @@ void ConfigManager::parseQuery(const xml_node &queryNode,
             return;
         }
 
+        //A warning is displayed if the field present in responseContent is neither searchable nor refining.
+        //This also trims spaces from the field values read from responseContent
+
         if (coreInfo->searchResponseContent == 2) {
             if (childNode.text()) {
-                splitString(string(childNode.text().get()), ",", coreInfo->attributesToReturn);
+            	vector<string> temp;
+                splitString(string(childNode.text().get()), ",", temp);
+                vector<string> wrongAttributes;
+                vector<string>::iterator it;
+                //This flag tells if the warning should be displayed or not, it gets set when the field is neither searchable nor refining
+                bool warningFlag = false;
+                for(int i = 0; i< temp.size(); i++){
+                    trimSpacesFromValue(temp[i], responseContentString, parseWarnings);
+                    bool isRefining  = (coreInfo->refiningAttributesInfo.count(temp[i]) != 0);
+                    it = (std::find(coreParseState->searchableFieldsVector.begin(), coreParseState->searchableFieldsVector.end(), temp[i]));
+                    bool isSearchable = (it != coreParseState->searchableFieldsVector.end());
+                    if(isRefining == false && isSearchable == false){
+                        warningFlag = true;
+                        wrongAttributes.push_back(temp[i]);
+                        continue;
+                    }
+                    //we push back only valid fields
+                    coreInfo->attributesToReturn.push_back(temp[i]);
+                }
+
+                if(warningFlag == true){
+                    string warning = "";
+                    if(wrongAttributes.size() > 1){
+                        for(int i = 0; i < wrongAttributes.size() - 1; i++){
+                            warning = warning + wrongAttributes[i] + ", ";
+                        }
+                        warning = warning + "and " + wrongAttributes[wrongAttributes.size()-1];
+                        Logger::warn("The fields entered in responseContent tag, %s, are neither searchable, refining nor indexed therefore will not be returned by the engine.", warning.c_str());
+                    }
+                    else
+                        Logger::warn("The field entered in responseContent tag, %s, is neither searchable, refining nor indexed therefore will not be returned by the engine.", wrongAttributes[0].c_str());
+                }
             } else {
                 parseError << "For specified response content type, return fields should be provided.";
                 configSuccess = false;
@@ -1028,7 +1065,7 @@ void ConfigManager::parseCoreInformationTags(const xml_node &parentNode, CoreInf
 
     childNode = parentNode.child(queryString);
     if (childNode) {
-        parseQuery(childNode, coreInfo, configSuccess, parseError, parseWarnings);
+        parseQuery(&coreParseState, childNode, coreInfo, configSuccess, parseError, parseWarnings);
         if (configSuccess == false) {
             return;
         }
