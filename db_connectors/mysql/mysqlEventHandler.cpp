@@ -135,7 +135,7 @@ void Applier::tableInsert(std::string & table_name,
         schema_it++;
     } while (field_it != fields.end() && schema_it != schemaName->end());
     std::string jsonString = writer.write(record);
-    Logger::info("MYSQLCONNECTOR: Inserting %s ", jsonString.c_str());
+    Logger::debug("MYSQLCONNECTOR: Inserting %s ", jsonString.c_str());
 
     serverHandle->insertRecord(jsonString);
 }
@@ -155,7 +155,7 @@ void Applier::tableDelete(std::string & table_name,
         std::string str;
         converter.to(str, *field_it);
         if ((*schema_it).compare(this->pk.c_str()) == 0) {
-            Logger::info("MYSQLCONNECTOR: Deleting primary key %s = %s ",
+            Logger::debug("MYSQLCONNECTOR: Deleting primary key %s = %s ",
                     this->pk.c_str(), str.c_str());
             serverHandle->deleteRecord(str);
             break;

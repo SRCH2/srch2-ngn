@@ -381,7 +381,7 @@ void MongoDBConnector::parseOpLogObject(mongo::BSONObj& bobj,
             primaryKeyStringValue = pk.valuestrsafe();
         }
 
-        Logger::info("MOGNOLISTENER: Delete pk = %s  val =  %s .", uniqueKey.c_str(),
+        Logger::debug("MOGNOLISTENER: Delete pk = %s  val =  %s .", uniqueKey.c_str(),
                 primaryKeyStringValue.c_str());
         this->serverHandle->deleteRecord(primaryKeyStringValue);
 
