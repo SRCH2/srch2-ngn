@@ -232,15 +232,13 @@ void Srch2Server::createAndBootStrapIndexer(const string & directoryPath)
         indexer = Indexer::create(indexMetaData);
         indexer->bootStrapFromDisk();
 
-
-        /***    Added in merge, TODO      ****/
-//        if (!checkSchemaConsistency(schema, indexer->getSchema())) {
-//            Logger::warn("The schema in the config file is different from the"
-//                    " serialized schema on the disk. The engine will ignore "
-//                    "the schema from the config file. Please make sure they "
-//                    "are consistent. One possible solution is to remove all "
-//                    "the index files and run the engine again.");
-//        }
+        if (!checkSchemaConsistency(this->getCoreInfo()->getSchema(), indexer->getSchema())) {
+            Logger::warn("The schema in the config file is different from the"
+                    " serialized schema on the disk. The engine will ignore "
+                    "the schema from the config file. Please make sure they "
+                    "are consistent. One possible solution is to remove all "
+                    "the index files and run the engine again.");
+        }
 
 	    // Load Analyzer data from disk
 	    AnalyzerHelper::loadAnalyzerResource(this->getCoreInfo());
@@ -260,8 +258,6 @@ void Srch2Server::createAndBootStrapIndexer(const string & directoryPath)
     }
     createHighlightAttributesVector(storedAttrSchema);
     delete storedAttrSchema;
-    /********  Added in merge, TODO  ************/
-//    delete schema;
     // start merger thread
     getIndexer()->createAndStartMergeThreadLoop();
 }
@@ -270,8 +266,8 @@ void Srch2Server::createAndBootStrapIndexer(const string & directoryPath)
  * This function will check the consistency of the schema that is loaded from the
  * disk and the schema that is loaded from the config file.
  */
-bool Srch2Server::checkSchemaConsistency(srch2is::Schema *confSchema,
-        srch2is::Schema *loadedSchema) {
+bool Srch2Server::checkSchemaConsistency(const srch2is::Schema *confSchema,
+        const srch2is::Schema *loadedSchema) {
     if (confSchema->getNumberOfRefiningAttributes()
             != loadedSchema->getNumberOfRefiningAttributes()) {
         return false;

@@ -78,8 +78,8 @@ public:
 
     // Check if the schema loaded from the disk is
     // same as the one loaded from the config file.
-    bool checkSchemaConsistency(srch2is::Schema *confSchema,
-            srch2is::Schema *loadedSchema);
+    bool checkSchemaConsistency(const srch2is::Schema *confSchema,
+            const srch2is::Schema *loadedSchema);
 
     IndexMetaData *createIndexMetaData(const string & directoryPath);
 

@@ -132,7 +132,7 @@
             Attribute used as the boost value of a record.
             Need to be float type in the json objects in the data file.
         -->
-        <recordBoostField>relevance</recordBoostField>
+        <!--<recordBoostField>relevance</recordBoostField>-->
          
          
         <!--
