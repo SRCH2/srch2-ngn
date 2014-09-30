@@ -213,17 +213,27 @@ The following are <b>invalid</b> query examples:
 ```
 ###3.3.4. Proximity Search
 
-The engine supports finding words that are within a specified proximity. To use this feature, we need to set the [enablePositionIndex](configuration.mkd#74-enable-positional-index-optional) flag to true in the configuration file.
+The engine supports finding words that are within a specified
+proximity. To use this feature, we need to set the
+[enablePositionIndex](configuration.mkd#74-enable-positional-index-optional)
+flag to true in the configuration file. 
 
-To do a proximity search, we use the tilde symbol ("~") at the end of a phrase. For example, the following query searches for records with the keywords "saving" and "ryan" within 1 word (that is, either zero or one word separates them) of each other in a document:
+To do a proximity search, we use the tilde symbol ("~") at the end of
+a phrase. For example, the following query searches for records with
+the keywords "saving" and "ryan" within 1 word (that is, either zero
+or one word separates them) of each other in a document:
 ```
  q="saving ryan"~1
  (q=%22saving%20ryan%22~1)
 ```
-Notice that a proximity search does not support edit-distance-based fuzzy match, i.e., we do not allow typos in the keywords in the quotes.
-Also note that the maximum value of the input slop can only be 100000.
+Notice that a proximity search does not support edit-distance-based
+fuzzy match, i.e., we do not allow typos in the keywords in the
+quotes. Also note that the maximum value of the input slop can only be
+100000.
 
-To know about how the scores are computed based on proximity of keywords please look into [ranking](ranking.mkd)
+To know about how the scores are computed based on proximity of
+keywords, please look into
+[ranking](ranking.mkd#3-proximity-ranking).
 
 ### 3.4. Boolean Operators 
 
