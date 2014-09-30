@@ -18,9 +18,9 @@ namespace instantsearch {
 
 template <class T>
 void printVector(const vector<T>& v);
-//100000 is the max slop value
+//10000 is the max slop value
 PhraseSearcher::PhraseSearcher() {
-    slopThreshold = 100000;
+    slopThreshold = 10000;
 }
 /*
  *  The function determines whether it is an exact match for the given phrase. The function
@@ -39,7 +39,7 @@ PhraseSearcher::PhraseSearcher() {
  *  q3 = "Shining 1980" is not an exact match even if analyzer drops stop words (is, a)
  *
  *  Also, listOfSlopDistances vector present in the argument gets initialized with slop values
- *  of all the phrase found in the record if stopAtFirstMatch is set to false.
+ *  of all the matching occurrences found in the record if stopAtFirstMatch is set to false.
  */
 bool PhraseSearcher::exactMatch(const vector<vector<unsigned> > &positionListVector,
                                 const vector<unsigned>& keyWordPositionsInPhrase,
@@ -151,7 +151,7 @@ bool PhraseSearcher::exactMatch(const vector<vector<unsigned> > &positionListVec
  *  first occurrence of proximity match.
  *
  *  Also, listOfSlopDistances vector present in the argument gets initialized with slop values
- *  of all the phrase found in the record if stopAtFirstMatch is set to false.
+ *  of all the matching occurrences found in the record if stopAtFirstMatch is set to false.
  *
  *  See getPhraseSlopDistance function below for more detail.
  *

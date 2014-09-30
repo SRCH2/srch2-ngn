@@ -229,7 +229,7 @@ or one word separates them) of each other in a document:
 Notice that a proximity search does not support edit-distance-based
 fuzzy match, i.e., we do not allow typos in the keywords in the
 quotes. Also note that the maximum value of the input slop can only be
-100000.
+10000.
 
 To know about how the scores are computed based on proximity of
 keywords, please look into
