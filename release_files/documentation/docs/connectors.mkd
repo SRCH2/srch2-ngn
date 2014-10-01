@@ -2,10 +2,20 @@
 
 ##1. Overview
 
-The SRCH2 engine provides connectors for [MongoDB](http://www.mongodb.org/) and [SQLite](http://www.sqlite.org/).  Notice that
-a SRCH2 instance can have multiple data sources ("cores" as described in [here](configuration.mkd#12-cores-optional)).
-Each core can be a JSON file, a MongoDB table, or a SQLite table.  Each SRCH2 connector for a database builds indexes for the records in the table, 
-and periodically checks data updates to incrementally maintain the indexes.
+The SRCH2 engine provides connectors for
+[MongoDB](http://www.mongodb.org/) and
+[SQLite](http://www.sqlite.org/).  Notice that a SRCH2 instance can
+have multiple data sources ("cores" as described in
+[here](configuration.mkd#12-cores-optional)). Each core can be a JSON
+file, a MongoDB table, or a SQLite table.  Each SRCH2 connector for a
+database builds indexes for the records in the table,  and
+periodically checks data updates to incrementally maintain the
+indexes.
+
+A connector for a data source can make sure all the record operations
+(insert/delete/update) at the source are sent to the
+SRCH2 engine so that the engine can find the latest results at the
+source.
 
 ##2. Search in MongoDB
 
