@@ -318,12 +318,13 @@ void HighlightAlgorithm::validatePhrasePositions(vector<matchedTermInfo>& highli
 				keyWordPosInPhrase.push_back(phraseInfo.phraseKeyWords[k].queryPosition);
 			}
 		}
+		vector<unsigned> listOfSlops;
 		if (phraseInfo.slop > 0) {
 			phraseSearcher.proximityMatch(positionListVector, keyWordPosInPhrase, phraseInfo.slop,
-					matchedPositions, false);
+					matchedPositions, listOfSlops, false);
 		} else {
 			phraseSearcher.exactMatch(positionListVector, keyWordPosInPhrase,
-					matchedPositions, false);
+					matchedPositions, listOfSlops, false);
 		}
 		allPhrasesMatchedPositions.push_back(matchedPositions);
 	}

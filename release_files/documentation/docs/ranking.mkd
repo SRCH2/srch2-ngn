@@ -49,3 +49,64 @@ The value "idf(<i>t_i</i>)" is the inverted document frequency, calculated as fo
 
 In the case where the record <i>r</i> has multiple keywords <i>w_i</i>'s that match term <i>t_i</i>, TermScore(<i>r</i>, <i>t_i</i>) is the largest value among them.
 
+##3. Proximity Ranking
+
+The engine can do ranking based on proximity of matching keywords
+in a record.  Intuitively, the closer the matching keywords are in a
+record, the more relevant this record is to the query.   Proximity
+ranking is used in a [phrase 
+search](restful-search.mkd#334-proximity-search) only.  For such a
+query <i>Q</i>, the final score for a record <i>r</i> is:
+<center> score(r, Q) * phraseFrequency(r, Q).</center>
+
+The value <i>score(r, Q)</i> is explained above. The value
+"<i>phraseFrequency(r, Q)</i>" quantifies the positional relevance of the 
+record <i>r</i> based 
+on the proximity of the matching keywords of <i>Q</i> in <i>r</i>.
+It is calculated as follows.  Suppose the keywords in <i>Q</i> have
+phrase occurrences <i>O_1</i>, <i>O_2</i>, ..., <i>O_p</i> in record
+<i>r</i>.  For each of them <i>O_i</i>, let <i>d_i</i> be the distance
+between this occurrence and the query keywords, i.e., the "edit distance"
+between the occurrence and the query keywords where we treat each word
+as a "character" in the definition of edit distance.  The value
+<i>phraseFrequency(r, Q)</i> is calculated as:
+<center><i>phraseFrequency(r, Q)</i> = <i>sqrt(1/(1+d_1) + 1/(1+d_2) + ... + 1/(1+d_p))</i>.</center>
+
+For example, consider a query "<i>class test</i>" and the following
+two records:
+
+- Record <i>r_1</i>: <b><tt>This is class test.</tt></b>
+- Record <i>r_2</i>: <b><tt>This is last and final class test. There will be no more class test.</tt></b>
+
+For record <i>r_1</i>, the query phrase has one occurrence, and its
+distance is 0.  So the phrase frequency is:
+<center><i>phraseFrequency(r_1, Q)</i> = <i>sqrt(1/(1+0) = 1</i>.</center>
+
+For record <i>r_2</i>, the query phrase has three occurrences.  To
+explain them, we put the offset number to each word:
+
+<b><tt>This(1) is(2) last(3) and(4) final(5) class(6) test(7). There(8) will(9) be(10) no(11) more(12) class(13) test(14).</tt></b>
+
+Here are the three occurrences:
+
+- Occurrence <i>O_1</i>: <b><tt>class(6) test(7)</tt></b>, with a distance 0;
+- Occurrence <i>O_2</i>: <b><tt>class(13) test(14)</tt></b>, with a distance 0;
+- Occurrence <i>O_3</i>: <b><tt>test(7) class(13)</tt></b>, with a
+ distance 7, because we can delete the 5 words between
+<b><tt>test(7)</tt></b> and <b><tt>class(13)</tt></b>, and do a swap
+operation (with a cost of 2) to obtain the query phrase <b><tt>class test</tt></b>.
+
+So the phrase frequency for this record is:
+
+<center><i>phraseFrequency(r_2, Q)</i> = <i>sqrt(1/(1+0) + 1/(1+0) + 1/(1+7)) = sqrt(2.125) = 1.457</i>.</center>
+
+For each record <i>r_i</i>, its phrase frequency is multiplied by its
+<i>score(r_i, Q)</i> to get the final proximity-based score of the
+record with respect to the query.
+
+Since a phrase-search condition is treated as a filter by the
+SRCH2 engine, to do proximity ranking, we can specify the keywords as a phrase with
+a large slop distance (at most 10000).  For instance, we can use 
+the condition <center>q="class test"~8000</center> to do proximity ranking for the
+two keywords, by only considering those occurrences where the two keywords
+are at most 8000 words apart.

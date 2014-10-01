@@ -41,13 +41,14 @@ public:
 	bool verifyByRandomAccess(PhysicalPlanRandomAccessVerificationParameters & parameters) ;
 	~PhraseSearchOperator();
 	PhraseSearchOperator(const PhraseInfo& phraseSearchInfo) ;
+
 private:
 	bool phraseErr;
 	PhraseInfo phraseSearchInfo;
 	QueryEvaluatorInternal * queryEvaluatorInternal;
 	PhraseSearcher *phraseSearcher;
 	// match phrase on attributes. do OR or AND logic depending upon the 32 bit of attributeBitMap
-	bool matchPhrase(const ForwardList* forwardListPtr, const PhraseInfo& phraseInfo);
+	bool matchPhrase(const ForwardList* forwardListPtr, const PhraseInfo& phraseInfo, vector<unsigned> &listOfSlops);
 	PhysicalPlanRecordItem * getNextCandidateRecord(const PhysicalPlanExecutionParameters & params);
 
 };
