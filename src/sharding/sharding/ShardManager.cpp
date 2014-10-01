@@ -526,7 +526,7 @@ bool ShardManager::resolveMessage(Message * msg, NodeId senderNode){
 		{
 			LoadBalancingReport * loadBalancingReportNotif =
 					ShardingNotification::deserializeAndConstruct<LoadBalancingReport>(Message::getBodyPointerFromMessagePointer(msg));
-			Logger::debug("%s | Load : %d", loadBalancingReportNotif->getDescription().c_str(), loadBalancingReportNotif->getLoad());
+			Logger::debug("%s | Load : %f", loadBalancingReportNotif->getDescription().c_str(), loadBalancingReportNotif->getLoad());
 			if(loadBalancingReportNotif->isBounced()){
 				Logger::debug("==> Bounced.");
 				ASSERT(false);
@@ -936,13 +936,13 @@ void * ShardManager::periodicWork(void *args) {
 			ShardManager::getShardManager()->stateMachine->registerOperation(new LoadBalancingStartOperation());
 		}
 
-//		// TODO remove
-//		cout << "===========================================================================================" << endl;
-//		cout << "===========================================================================================" << endl;
-//		cout << "===========================================================================================" << endl;
-//		cout << "===========================================================================================" << endl;
-//		cout << "===========================================================================================" << endl;
-//	    ShardManager::getShardManager()->print();
+		// TODO remove
+		cout << "===========================================================================================" << endl;
+		cout << "===========================================================================================" << endl;
+		cout << "===========================================================================================" << endl;
+		cout << "===========================================================================================" << endl;
+		cout << "===========================================================================================" << endl;
+	    ShardManager::getShardManager()->print();
 	}
 	return NULL;
 }
