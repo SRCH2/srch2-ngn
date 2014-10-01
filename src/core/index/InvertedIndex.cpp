@@ -455,16 +455,13 @@ void InvertedIndex::print_test() const
         this->printInvList(vectorIterator);
     }
 }
-void InvertedIndex::findAndMarkInvertedListForMerge(const unsigned *listofKeywordIds,unsigned keywordsCount){
-	const unsigned * begin = listofKeywordIds;
-	const unsigned * end = listofKeywordIds + keywordsCount;
-
-	vectorview<unsigned>* invertedListKeywordIds = keywordIds->getWriteView();
-	for (unsigned i = 0; i < invertedListKeywordIds->size(); ++i) {
-		unsigned invertedListKeywordId = invertedListKeywordIds->getElement(i);
-		if ( end != find(begin, end, invertedListKeywordId)) {
-			invertedListSetToMerge.insert(i);
-		}
+/*
+ *   This API appends the inverted lists supplied as an input to list of ids that need to
+ *   be merged.
+ */
+void InvertedIndex::appendInvertedListIdsForMerge(const vector<unsigned>& invertedListIds ){
+	for (unsigned i = 0; i < invertedListIds.size(); ++i) {
+			invertedListSetToMerge.insert(invertedListIds[i]);
 	}
 }
 
