@@ -278,17 +278,6 @@ bool ConfigManager::loadConfigFile(srch2http::ResourceMetadataManager * metadata
     Logger::debug("WARNINGS while reading the configuration file:");
     Logger::debug("%s\n", parseWarnings.str().c_str());
 
-    // Check if node-name is usable : we must see if there is any other instance using this name
-    if(this->getCurrentNodeName().compare("") == 0){
-        Logger::error("error: Node name is not usable.");
-        exit(-1);
-    }
-    if(! tryLockNodeName()){
-        Logger::error("error: Node name is not usable. Another instance is running with the same node name.");
-        exit(-1);
-    }
-
-
     if(metadataManager != NULL){
 		metadataManager->setWriteview(new Cluster_Writeview(0, clusterNameStr, clusterCores));
     }

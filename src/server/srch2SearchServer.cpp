@@ -142,6 +142,20 @@ int main(int argc, char** argv) {
 		exit(-1);
 	}
 
+	/*
+	 *  Check whether another process is holding the lock on node-name
+	 */
+
+	if(runtime->getConfigManager()->getCurrentNodeName().compare("") == 0){
+		Logger::error("error: Node name is not usable.");
+		exit(-1);
+	}
+	if(! runtime->getConfigManager()->tryLockNodeName()){
+		Logger::error("error: Node name is not usable. Another instance is running with the same node name.");
+		exit(-1);
+	}
+
+
 	/*****************
 	 * Setup the Logger.
 	 */

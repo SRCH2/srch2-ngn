@@ -362,7 +362,6 @@ int main(int argc, char **argv) {
     //Doing preparation for the tests.
     string configFile(string(getenv("srch2_config_file")) + "/conf.xml");
 
-    CoreInfo_t* indexDataConfig = NULL;
     stringstream log_str;
 
     ConfigManager * conf = new ConfigManager(configFile);
@@ -372,14 +371,8 @@ int main(int argc, char **argv) {
         exit(-1);
     }
 
-    //Get indexDataConfig from the core
-    for (ConfigManager::CoreInfoMap_t::const_iterator iterator =
-            conf->coreInfoIterateBegin();
-            iterator != conf->coreInfoIterateEnd(); iterator++) {
-
-        indexDataConfig = const_cast<CoreInfo_t *>(conf->getCoreInfo(
-                iterator->second->getName()));
-    }
+    CoreInfo_t* indexDataConfig = conf->getCoreByName("__DEFAULTCORE__");
+    ASSERT(indexDataConfig != NULL);
 
     //Create schema based on the config file.
     Schema * schema = JSONRecordParser::createAndPopulateSchema(
