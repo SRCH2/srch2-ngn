@@ -45,7 +45,6 @@
 #include "util/FileOps.h"
 #include "analyzer/AnalyzerContainers.cpp"
 #include "WrapperConstants.h"
-#include "ServerInterfaceInternal.h"
 #include "DataConnectorThread.h"
 namespace po = boost::program_options;
 namespace srch2is = srch2::instantsearch;
@@ -583,6 +582,9 @@ void graceful_exit(CoreNameServerMap_t &coreNameServerMap, vector<struct event_b
 
     for (CoreNameServerMap_t::iterator iterator = coreNameServerMap.begin(); iterator != coreNameServerMap.end(); iterator++) {
         iterator->second->indexer->save();
+
+        //Call the save function implemented by each database connector.
+        DataConnectorThread::saveConnectorTimeStamp();
         delete iterator->second;
     }
 

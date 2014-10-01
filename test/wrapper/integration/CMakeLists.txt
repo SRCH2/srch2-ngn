@@ -3,6 +3,7 @@ INCLUDE_DIRECTORIES(
 	${CMAKE_SOURCE_DIR}/src/
 	${CMAKE_SOURCE_DIR}/src/core/
 	${CMAKE_SOURCE_DIR}/src/wrapper/
+	${CMAKE_SOURCE_DIR}/src/adapter/
     ${Boost_INCLUDE_DIRS}
     ${CMAKE_SOURCE_DIR}
     ${CMAKE_SOURCE_DIR}/thirdparty/event/include
@@ -28,7 +29,7 @@ TARGET_LINK_LIBRARIES(PostProcessingFilter_Test
 ADD_DEPENDENCIES(PostProcessingFilter_Test srch2_core)
 
 					
-ADD_EXECUTABLE(XMLParser_Test XMLParser_Test.cpp $<TARGET_OBJECTS:SERVER_OBJECTS> $<TARGET_OBJECTS:WRAPPER_OBJECTS>)
+ADD_EXECUTABLE(XMLParser_Test XMLParser_Test.cpp $<TARGET_OBJECTS:SERVER_OBJECTS> $<TARGET_OBJECTS:WRAPPER_OBJECTS> $<TARGET_OBJECTS:ADAPTER_OBJECTS>)
 TARGET_LINK_LIBRARIES(XMLParser_Test
                         ${Srch2InstantSearch_LIBRARIES} 
                         ${jsoncpp_LIBRARY}  ${CMAKE_SOURCE_DIR}/thirdparty/event/lib/libevent.a 

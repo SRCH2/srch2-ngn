@@ -28,8 +28,13 @@ public:
     static void getDataConnectorThread(void * server);
     //The main function run by the thread, get connector and start listener.
     static void bootStrapConnector(ConnectorThreadArguments * connThreadArg);
+    static void saveConnectorTimeStamp();
 private:
     static bool checkIndexExistence(void * server);
+    static void getDataConnector(std::string & path, void * pdlHandle,
+            DataConnector *& connector);
+    static void closeDataConnector(void * pdlHandle, DataConnector *& connector);
+    static std::vector<DataConnector *> connectors;
 };
 
 #endif /* __DATACONNECTORTHREAD_H__ */

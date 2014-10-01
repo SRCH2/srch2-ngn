@@ -33,6 +33,9 @@ public:
     //and send corresponding requests to the SRCH2 engine.
     virtual int runListener();
 
+    //Save the lastAccessedLogRecordTime to the disk
+    virtual void saveLastAccessedLogRecordTime();
+
     //Return LOG_TABLE_NAME_DATE
     const char * getLogTableDateAttr();
     //Return LOG_TABLE_NAME_OP
@@ -58,7 +61,7 @@ private:
     std::string PRIMARY_KEY_TYPE;
     std::string PRIMARY_KEY_NAME;
     int listenerWaitTime;
-
+    std::string lastAccessedLogRecordTime;
     //Parameters for Sqlite
     sqlite3 *db;
     sqlite3_stmt *selectStmt;
@@ -83,14 +86,11 @@ private:
     //Create the log table
     bool createLogTableIfNotExistence();
 
-    //Save the lastAccessedLogRecordTime to the disk
-    void saveLastAccessedLogRecordTime(
-            const std::string & lastAccessedLogRecordTime);
     //Load the lastAccessedLogRecordTime from the disk
-    void loadLastAccessedLogRecordTime(std::string & lastAccessedLogRecordTime);
+    void loadLastAccessedLogRecordTime();
 
     //Delete the processed log from the table so that we can keep it small
-    bool deleteProcessedLog(const std::string & lastAccessedLogRecordTime);
+    bool deleteProcessedLog();
 };
 
 #endif /* __SQLITECONNECTOR_H__ */

@@ -43,11 +43,6 @@ public:
             const std::string& jsonString) = 0;
 
     /*
-     * "saveChanges" saves the indexes into the disk.
-     */
-    virtual int saveChanges() = 0;
-
-    /*
      * "configLookUp" provides key based lookup for the connector specific
      *  configuration. The return value can be a single value or multiple values
      *  separated by comma. 
@@ -90,6 +85,8 @@ public:
      * collection and insert them into the srch2-engine.
      */
     virtual int createNewIndexes() = 0;
+
+    virtual void saveLastAccessedLogRecordTime() = 0;
 };
 
 /*

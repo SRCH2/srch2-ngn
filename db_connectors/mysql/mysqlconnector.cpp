@@ -21,6 +21,7 @@ MySQLConnector::MySQLConnector() {
     serverHandle = NULL;
     listenerWaitTime = 1;
     stmt = NULL;
+    lastAccessedLogRecordTime = 0;
 }
 
 //Initialize the connector. Establish a connection to the MySQL database.
@@ -176,10 +177,6 @@ int MySQLConnector::createNewIndexes() {
             }
             Logger::info("MYSQLCONNECTOR: Total indexed %d / %d records. ",
                     indexedRecordsCount, totalRecordsCount);
-            //Save the time right after creating the new indexes.
-            saveLastSavingIndexTime(time(NULL));
-            this->serverHandle->saveChanges();
-
             stmt->close();/* free the object inside  */
             return 0;
         } catch (sql::SQLException &e) {
@@ -219,7 +216,7 @@ bool MySQLConnector::populateFieldName(std::string & tableName) {
 }
 
 //Load the lastSavingIndexTime from the disk
-bool MySQLConnector::loadLastSavingIndexTime(time_t & lastSavingIndexTime) {
+bool MySQLConnector::loadLastAccessedLogRecordTime() {
     std::string dataDir, srch2Home;
 
     this->serverHandle->configLookUp("srch2Home", srch2Home);
@@ -228,20 +225,19 @@ bool MySQLConnector::loadLastSavingIndexTime(time_t & lastSavingIndexTime) {
 
     if (checkFileExisted(path.c_str())) {
         ifstream a_file(path.c_str(), ios::in | ios::binary);
-        a_file >> lastSavingIndexTime;
+        a_file >> lastAccessedLogRecordTime;
         a_file.close();
         return true;
     } else {
-        Logger::warn("MYSQLCONNECTOR: Warning. Can not find %s."
+        Logger::debug("MYSQLCONNECTOR: Warning. Can not find %s."
                 " The connector will use the current time.", path.c_str());
-        lastSavingIndexTime = time(NULL);
+        lastAccessedLogRecordTime = time(NULL);
         return false;
     }
 }
 
 //Save lastSavingIndexTime to the disk
-void MySQLConnector::saveLastSavingIndexTime(
-        const time_t & lastSavingIndexTime) {
+void MySQLConnector::saveLastAccessedLogRecordTime() {
     std::string path, srch2Home;
     this->serverHandle->configLookUp("srch2Home", srch2Home);
     this->serverHandle->configLookUp("dataDir", path);
@@ -254,7 +250,7 @@ void MySQLConnector::saveLastSavingIndexTime(
 
     std::string pt = path + "data.bin";
     std::ofstream a_file(pt.c_str(), std::ios::trunc | std::ios::binary);
-    a_file << lastSavingIndexTime;
+    a_file << lastAccessedLogRecordTime;
     a_file.flush();
     a_file.close();
 }
@@ -273,8 +269,7 @@ int MySQLConnector::runListener() {
     this->serverHandle->configLookUp("logName", logName);
     this->serverHandle->configLookUp("uniqueKey", pk);
 
-    time_t lastSavingIndexTime;
-    loadLastSavingIndexTime(lastSavingIndexTime);
+    loadLastAccessedLogRecordTime();
 
     //Connect to the MySQL binlog by using MySQL replication listener
     stringstream url;
@@ -286,7 +281,7 @@ int MySQLConnector::runListener() {
     IncidentHandler incidentHandler;
     TableIndex tableEventHandler;
     Applier applier(&tableEventHandler, serverHandle, &fieldNames,
-            lastSavingIndexTime, pk);
+            lastAccessedLogRecordTime, pk);
 
     binlog.content_handler_pipeline()->push_back(&tableEventHandler);
     binlog.content_handler_pipeline()->push_back(&tableEventHandler);
@@ -300,7 +295,8 @@ int MySQLConnector::runListener() {
 
     //Initialize the binlog pointer.
     while (binlog.set_position(logName + ".000001", 4)) {
-        Logger::error("MYSQLCONNECTOR: Can't reposition the binary log reader. Please check if the binlog mode is enabled");
+        Logger::error(
+                "MYSQLCONNECTOR: Can't reposition the binary log reader. Please check if the binlog mode is enabled");
         sleep(listenerWaitTime);
     }
 
@@ -336,10 +332,9 @@ int MySQLConnector::runListener() {
             //Keep updating the executed log time stamp and periodically
             //saving into the disk.
             time_t rowEventTimestamp = event->header()->timestamp;
-            if (rowEventTimestamp - lastSavingIndexTime >= listenerWaitTime) {
-                lastSavingIndexTime = rowEventTimestamp;
-                saveLastSavingIndexTime(lastSavingIndexTime);
-//                this->serverHandle->saveChanges();
+            if (rowEventTimestamp - lastAccessedLogRecordTime
+                    >= listenerWaitTime) {
+                lastAccessedLogRecordTime = rowEventTimestamp;
             }
         }
             break;

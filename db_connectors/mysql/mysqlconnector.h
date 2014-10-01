@@ -34,9 +34,13 @@ public:
      */
     virtual int runListener();
 
+    //Save the lastAccessedLogRecordTime to the disk
+    virtual void saveLastAccessedLogRecordTime();
+
 private:
     ServerInterface * serverHandle;
     int listenerWaitTime;
+    time_t lastAccessedLogRecordTime;
 
     //Storing the table schema information
     std::vector<std::string> fieldNames;
@@ -52,10 +56,8 @@ private:
     //Fetch the table schema and store into tableSchema
     bool populateFieldName(std::string & tableName);
 
-    //Save the lastSavingIndexTime to the disk
-    void saveLastSavingIndexTime(const time_t & lastSavingIndexTime);
     //Load the lastSavingIndexTime from the disk
-    bool loadLastSavingIndexTime(time_t & lastSavingIndexTime);
+    bool loadLastAccessedLogRecordTime();
 
 };
 

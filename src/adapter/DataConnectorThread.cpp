@@ -13,6 +13,8 @@
 #include <cstdlib>
 #include "DataConnector.h"
 
+std::vector<DataConnector *> DataConnectorThread::connectors;
+
 //Called by the pthread_create, create the database connector
 void * spawnConnector(void *arg) {
     ConnectorThreadArguments * connThreadArg = (ConnectorThreadArguments *) arg;
@@ -25,18 +27,49 @@ void * spawnConnector(void *arg) {
 }
 
 //The main function run by the thread, get connector and start listener.
-void DataConnectorThread::bootStrapConnector(ConnectorThreadArguments * connThreadArg) {
+void DataConnectorThread::bootStrapConnector(
+        ConnectorThreadArguments * connThreadArg) {
     void * pdlHandle = NULL;
+    DataConnector * connector = NULL;
 
     //Get the pointer of the shared library
-    std::string libName =  connThreadArg->sharedLibraryFullPath;
+    std::string libName = connThreadArg->sharedLibraryFullPath;
+    getDataConnector(libName, pdlHandle, connector);
+    if (connector->init(connThreadArg->server) == 0) {
+        if (!connThreadArg->createNewIndexFlag) {
+            Logger::debug("Create Indices from empty");
+            if (connector->createNewIndexes() != 0) {
+                //Exit the database connector if create new indexes failed.
+                Logger::error("Create Indices Failed.");
+                closeDataConnector(pdlHandle, connector);
+                return;
+            }
+        }
+        connector->runListener();
+    }
+    //After the listener;
+    closeDataConnector(pdlHandle, connector);
+}
 
-    pdlHandle = dlopen(libName.c_str(), RTLD_LAZY); //Open the shared library.
+//Save all connectors timestamp to the disk.
+void DataConnectorThread::saveConnectorTimeStamp() {
+    for (std::vector<DataConnector *>::iterator it = connectors.begin();
+            it != connectors.end(); ++it) {
+        if ((*it) != NULL) {
+            Logger::console("Saving connector timestamp.");
+            (*it)->saveLastAccessedLogRecordTime();
+        }
+    }
+}
 
+//Get the handle of shared library
+void DataConnectorThread::getDataConnector(std::string & path, void * pdlHandle,
+        DataConnector *& connector) {
+    pdlHandle = dlopen(path.c_str(), RTLD_LAZY); //Open the shared library.
     if (!pdlHandle) {
-        Logger::error("Fail to load shared library %s due to %s",
-                libName.c_str(), dlerror());
-        return;   //Exit from the current thread if can not open the shared library
+        Logger::error("Fail to load shared library %s due to %s", path.c_str(),
+                dlerror());
+        return; //Exit from the current thread if can not open the shared library
     }
 
     /*
@@ -57,9 +90,19 @@ void DataConnectorThread::bootStrapConnector(ConnectorThreadArguments * connThre
                 "Cannot load symbol \"create\" in shared library due to: %s",
                 dlsym_error);
         dlclose(pdlHandle);
-        return;   //Exit from the current thread if can not open the shared library
+        return; //Exit from the current thread if can not open the shared library
     }
 
+    //Call the "create" function in the shared library.
+    connector = create_dataConnector();
+
+    //Save all the connector pointers into a static vector
+    connectors.push_back(connector);
+}
+
+//Close the handle of shared library
+void DataConnectorThread::closeDataConnector(void * pdlHandle,
+        DataConnector *& connector) {
     /*
      * Suppress specific warnings on gcc/g++.
      * See: http://www.mr-edd.co.uk/blog/supressing_gcc_warnings
@@ -71,33 +114,6 @@ void DataConnectorThread::bootStrapConnector(ConnectorThreadArguments * connThre
 #endif
     destroy_t* destroy_dataConnector = (destroy_t*) dlsym(pdlHandle, "destroy");
 
-    dlsym_error = dlerror();
-    if (dlsym_error) {
-        Logger::error(
-                "Cannot load symbol \"destroy\" in shared library due to: %s",
-                dlsym_error);
-        dlclose(pdlHandle);
-        return;   //Exit from the current thread if can not open the shared library
-    }
-
-    //Call the "create" function in the shared library.
-    DataConnector * connector = create_dataConnector();
-
-    if (connector->init(connThreadArg->server) == 0) {
-        if (!connThreadArg->createNewIndexFlag) {
-            Logger::debug("Create Indices from empty");
-            if (connector->createNewIndexes() != 0) {
-                //Exit the database connector if create new indexes failed.
-                Logger::error("Create Indices Failed.");
-                destroy_dataConnector(connector);
-                dlclose(pdlHandle);
-                return;
-            }
-        }
-        connector->runListener();
-    }
-
-    //After the listener;
     destroy_dataConnector(connector);
     dlclose(pdlHandle);
 }
@@ -123,25 +139,24 @@ void DataConnectorThread::getDataConnectorThread(void * server) {
                         + srch2Server->indexDataConfig->getDatabaseSharedLibraryPath()
                         + "/"
                         + srch2Server->indexDataConfig->getDatabaseSharedLibraryName();
-/*
- * Currently only support MAC_OS, LINUX_OS, ANDROID.
- * The engine will load the shared library with corresponding suffix
- *  based on the platform.
- */
+        /*
+         * Currently only support MAC_OS, LINUX_OS, ANDROID.
+         * The engine will load the shared library with corresponding suffix
+         *  based on the platform.
+         */
 #ifdef MAC_OS
-    if(dbArg->sharedLibraryFullPath.find(".dylib")==std::string::npos){
-        dbArg->sharedLibraryFullPath.append(".dylib");
-    }
+        if(dbArg->sharedLibraryFullPath.find(".dylib")==std::string::npos) {
+            dbArg->sharedLibraryFullPath.append(".dylib");
+        }
 #else
-    if(dbArg->sharedLibraryFullPath.find(".so")==std::string::npos){
-        dbArg->sharedLibraryFullPath.append(".so");
-    }
+        if (dbArg->sharedLibraryFullPath.find(".so") == std::string::npos) {
+            dbArg->sharedLibraryFullPath.append(".so");
+        }
 #endif
 
         int res = pthread_create(&tid, NULL, spawnConnector, (void *) dbArg);
     }
 }
-
 
 bool DataConnectorThread::checkIndexExistence(void * server) {
     srch2::httpwrapper::Srch2Server * srch2Server =

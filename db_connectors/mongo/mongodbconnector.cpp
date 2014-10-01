@@ -21,6 +21,7 @@ MongoDBConnector::MongoDBConnector() {
     serverHandle = NULL;
     oplogConnection = NULL;
     mongoConnector = NULL;
+    lastAccessedLogRecordTime = 0;
 }
 
 //Init the connector, call connect
@@ -31,8 +32,9 @@ int MongoDBConnector::init(ServerInterface *serverHandle) {
     std::string uniqueKey;
     this->serverHandle->configLookUp("uniqueKey", uniqueKey);
     if (uniqueKey.compare("_id") != 0) {
-        Logger::error("MOGNOLISTENER: The PrimaryKey in the config file for the "
-                "MongoDB adapter should always be \"_id\", not %s .",
+        Logger::error(
+                "MOGNOLISTENER: The PrimaryKey in the config file for the "
+                        "MongoDB adapter should always be \"_id\", not %s .",
                 uniqueKey.c_str());
         return -1;
     }
@@ -104,11 +106,13 @@ bool MongoDBConnector::connectToDB() {
             // first check whether the replication is
             // enabled and the host is primary of the replica set
             if (!oplogConnection->exists(mongoNamespace)) {
-                Logger::error("MOGNOLISTENER: oplog does not exist on host = %s .",
+                Logger::error(
+                        "MOGNOLISTENER: oplog does not exist on host = %s .",
                         host.c_str());
-                Logger::error("MOGNOLISTENER: either replication is not enabled on"
-                        " the host instance or the host is not a primary "
-                        "member of replica set .");
+                Logger::error(
+                        "MOGNOLISTENER: either replication is not enabled on"
+                                " the host instance or the host is not a primary "
+                                "member of replica set .");
                 Logger::info("MOGNOLISTENER: trying again ... ");
 
                 sleep(listenerWaitTime);
@@ -168,19 +172,18 @@ int MongoDBConnector::createNewIndexes() {
 
                     if (indexedRecordsCount
                             && (indexedRecordsCount % 1000) == 0)
-                        Logger::info("MOGNOLISTENER: Indexed %d records so far ...",
+                        Logger::info(
+                                "MOGNOLISTENER: Indexed %d records so far ...",
                                 indexedRecordsCount);
                 }
                 Logger::info("MOGNOLISTENER: Total indexed %d / %d records. ",
                         indexedRecordsCount, collectionCount);
 
             } else {
-                Logger::info("MOGNOLISTENER: No data found in the collection %s .",
+                Logger::info(
+                        "MOGNOLISTENER: No data found in the collection %s .",
                         filterNamespace.c_str());
             }
-            //Save the time right after create new indexes.
-            setLastAccessedLogRecordTime(time(NULL));
-            this->serverHandle->saveChanges();
         } catch (const mongo::DBException &e) {
             Logger::error("MOGNOLISTENER: MongoDb Exception %s ", e.what());
         } catch (const exception& ex) {
@@ -193,7 +196,7 @@ int MongoDBConnector::createNewIndexes() {
 }
 
 //Load the last time last oplog record accessed
-bool MongoDBConnector::getLastAccessedLogRecordTime(time_t& t) {
+bool MongoDBConnector::loadLastAccessedLogRecordTime() {
     std::string dataDir, srch2Home;
 
     this->serverHandle->configLookUp("srch2Home", srch2Home);
@@ -203,19 +206,19 @@ bool MongoDBConnector::getLastAccessedLogRecordTime(time_t& t) {
 
     if (checkFileExisted(path.c_str())) {
         ifstream a_file(path.c_str(), ios::in | ios::binary);
-        a_file >> t;
+        a_file >> lastAccessedLogRecordTime;
         a_file.close();
         return true;
     } else {
-        Logger::warn("MONGOLISTENER: Warning. Can not find %s."
+        Logger::debug("MONGOLISTENER: Warning. Can not find %s."
                 " The connector will use the current time.", path.c_str());
-        t = time(NULL);
+        lastAccessedLogRecordTime = time(NULL);
         return false;
     }
 }
 
 //Save the time last oplog record accessed
-void MongoDBConnector::setLastAccessedLogRecordTime(const time_t t) {
+void MongoDBConnector::saveLastAccessedLogRecordTime() {
     std::string srch2Home;
     std::string dataDir;
     this->serverHandle->configLookUp("srch2Home", srch2Home);
@@ -230,7 +233,7 @@ void MongoDBConnector::setLastAccessedLogRecordTime(const time_t t) {
 
     std::string pt = path + "data.bin";
     ofstream a_file(pt.c_str(), ios::trunc | ios::binary);
-    a_file << t;
+    a_file << lastAccessedLogRecordTime;
     a_file.flush();
     a_file.close();
 }
@@ -250,14 +253,11 @@ int MongoDBConnector::runListener() {
         NULL, 10));
     }
 
+    loadLastAccessedLogRecordTime();
+
     do {
         bool printOnce = true;
         time_t opLogTime = 0;
-        time_t threadSpecificCutOffTime = 0;
-        if (!getLastAccessedLogRecordTime(threadSpecificCutOffTime)) {
-            //If false, means the file is not found on the disk, so we save a new one.
-            setLastAccessedLogRecordTime(threadSpecificCutOffTime);
-        }
         try {
             mongo::BSONElement _lastValue = mongo::BSONObj().firstElement();
 
@@ -290,9 +290,10 @@ int MongoDBConnector::runListener() {
                             ss << timestampElement.timestampTime();
                             ss >> opLogTime;
                             opLogTime = opLogTime / 1000;
-                            if (opLogTime > threadSpecificCutOffTime) {
+                            if (opLogTime >= lastAccessedLogRecordTime) {
                                 parseOpLogObject(obj, filterNamespace,
                                         *oplogConnection);
+                                lastAccessedLogRecordTime = opLogTime;
                             }
                         }
                         _lastValue = obj["_id"];
@@ -305,15 +306,11 @@ int MongoDBConnector::runListener() {
                          *  filter out any records processed earlier.
                          *  Alternative is to store current time.
                          */
-                        if (threadSpecificCutOffTime != opLogTime) {
-                            setLastAccessedLogRecordTime(opLogTime);
-//                            this->serverHandle->saveChanges();
-                        }
-                        threadSpecificCutOffTime = opLogTime;
                         if (tailCursor->isDead())
                             break;
                         if (printOnce) {
-                            Logger::info("MOGNOLISTENER: waiting for updates ... ");
+                            Logger::info(
+                                    "MOGNOLISTENER: waiting for updates ... ");
                             printOnce = false;
                         }
 
@@ -327,11 +324,10 @@ int MongoDBConnector::runListener() {
             }
         } catch( const mongo::DBException &e ) {
             Logger::error("MOGNOLISTENER: MongoDb Exception %s ", e.what());
-            //Need to save the time stamp when the mongodb crashed
-            setLastAccessedLogRecordTime(opLogTime);
+            lastAccessedLogRecordTime = opLogTime;
         } catch (const exception& ex) {
             Logger::error("MOGNOLISTENER: Unknown exception %s ", ex.what());
-            setLastAccessedLogRecordTime(opLogTime);
+            lastAccessedLogRecordTime = opLogTime;
         }
         sleep(listenerWaitTime);
     } while (connectToDB());	//Retry connecting to the mongodb
@@ -342,7 +338,7 @@ int MongoDBConnector::runListener() {
 //Parse the record into json format and do the corresponding operation
 void MongoDBConnector::parseOpLogObject(mongo::BSONObj& bobj,
         string filterNamespace, mongo::DBClientBase& oplogConnection) {
-    Logger::info("MOGNOLISTENER: Processing %s .", bobj.jsonString().c_str());
+    Logger::debug("MOGNOLISTENER: Processing %s .", bobj.jsonString().c_str());
     string operation = bobj.getField("op").valuestrsafe();
     if (operation.size() == 0) {
         Logger::error("MOGNOLISTENER: oplog entry does not have op "
@@ -381,8 +377,8 @@ void MongoDBConnector::parseOpLogObject(mongo::BSONObj& bobj,
             primaryKeyStringValue = pk.valuestrsafe();
         }
 
-        Logger::debug("MOGNOLISTENER: Delete pk = %s  val =  %s .", uniqueKey.c_str(),
-                primaryKeyStringValue.c_str());
+        Logger::debug("MOGNOLISTENER: Delete pk = %s  val =  %s .",
+                uniqueKey.c_str(), primaryKeyStringValue.c_str());
         this->serverHandle->deleteRecord(primaryKeyStringValue);
 
         break;
@@ -400,8 +396,42 @@ void MongoDBConnector::parseOpLogObject(mongo::BSONObj& bobj,
         mongo::BSONObj _internalMongoId = bobj.getField("o2").Obj();
         auto_ptr<mongo::DBClientCursor> cursor = oplogConnection.query(
                 filterNamespace, _internalMongoId);
-        mongo::BSONObj updateRecord = cursor->next();  // should return only one
 
+        if(!cursor->more()){
+            /*
+             * For update event, mongodb uses 2 log events to record it.
+             * For example: update 'director' from 'Jim' to 'Joe', the 2 log
+             * events will be:
+             * 1.) { "ts" : { "$timestamp" : { "t" : 1412205101, "i" : 1 } },
+             * "h" : { "$numberLong" : "-2184731050177232433" }, "v" : 2,
+             * "op" : "u", "ns" : "srch2Test.movies",
+             * "o2" : { "_id" : { "$oid" : "542c8a252ca24a0aeebacb85" } },
+             * "o" : { "$set" : { "director" : "Joe" } } }
+             *
+             * 2.) { "_id" : { "$oid" : "542c8a252ca24a0aeebacb85" },
+             * "banner_url" : "http://ia.media-imdb.com/images/M/MV5BMTk
+             * 5NzM1ODgyN15BMl5BanBnXkFtZTcwMzA5MjAzMw@@._V1_SY317_CR0,0,
+             * 214,317_.jpg", "title" : "Terminator 3: Rise of the Machines",
+             * "director" : "Joe", "year" : 2003, "genre" : "drama",
+             * "trailer_url" : "http://www.youtube.com/watch?v=QHhZK-g7wHo",
+             * "id" : 765006 }
+             *
+             * We only need the 2nd log event, however, the 2nd log event doesn't
+             * have timestamp. So we need both log events. And call cursor->next()
+             * again if there is one more log event.
+             *
+             * There is one case that the update event is the last one before
+             * the engine shuts down. The next time the engine starts, the
+             * connector will only load the 1st one and the 2nd can not be load
+             * correctly with Exception: DBClientCursor next() called but
+             * more() is false.
+             *
+             * So we add one more check here to make sure the more() is true
+             * before next() is called.
+             */
+            break;
+        }
+        mongo::BSONObj updateRecord = cursor->next();  // should return only one
         if (string(updateRecord.firstElementFieldName()).compare("$err") == 0) {
             Logger::error(
                     "MONGOLISTENER: updated record could"

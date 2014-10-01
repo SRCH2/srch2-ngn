@@ -146,7 +146,8 @@ def testMongoDB(binary_path,queriesAndResultPath):
 		query = prepareQuery(queryValue)
 		#Test 1: test loading index from MongoDB table to create the index.
 		#Do nothing, just curl the query and check the result.		
-
+		if testNum == 0:
+			time.sleep(5)
                 #Test 2: test  Listener, during the server running, update the record in mongodb, the listener will fetch the result.
                 if testNum == 1:
 			mongoDBUpdateRecord()
@@ -184,6 +185,7 @@ if __name__ == '__main__':
 	binary_path = sys.argv[1]
 	queriesAndResultPath = sys.argv[2]
 	createConnection()
+	mongoDBDropTable()
 	process()	#Preprocess, insert a record into the mongodb before the engine start.
 
 	exitCode = 0

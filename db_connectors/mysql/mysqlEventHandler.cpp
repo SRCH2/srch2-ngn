@@ -13,8 +13,7 @@ using srch2::util::Logger;
 
 /****************************TableIndex*******************************/
 //Table index populates the table id and table name.
-mysql::Binary_log_event *TableIndex::process_event(
-        mysql::Table_map_event *tm) {
+mysql::Binary_log_event *TableIndex::process_event(mysql::Table_map_event *tm) {
     if (find(tm->table_id) == end())
         insert(std::pair<uint64_t, mysql::Table_map_event *>(tm->table_id, tm));
 
@@ -56,6 +55,9 @@ Applier::Applier(TableIndex * index, ServerInterface * serverHandle,
 }
 
 mysql::Binary_log_event * Applier::process_event(mysql::Row_event * rev) {
+    std::string tableName;
+    this->serverHandle->configLookUp("tableName", tableName);
+
     time_t ts = rev->header()->timestamp;
 
     //Ignore the event that earlier than the 'startTimestamp'.
@@ -73,6 +75,11 @@ mysql::Binary_log_event * Applier::process_event(mysql::Row_event * rev) {
                 " by any preceding table map event.");
         return rev;
     }
+
+    //Ignore all other tables
+    if (tableName.compare(ti_it->second->table_name) != 0) {
+        return rev;
+    }
     /*
      * Each row event contains multiple rows and fields. The Row_iterator
      * allows us to iterate one row at a time.
@@ -82,7 +89,7 @@ mysql::Binary_log_event * Applier::process_event(mysql::Row_event * rev) {
     //Create a fully qualified table name
     std::ostringstream os;
     os << ti_it->second->db_name << '.' << ti_it->second->table_name;
-    std::string  fullName = os.str();
+    std::string fullName = os.str();
     try {
         mysql::Row_event_set::iterator it = rows.begin();
         do {
@@ -105,7 +112,7 @@ mysql::Binary_log_event * Applier::process_event(mysql::Row_event * rev) {
 
         } while (++it != rows.end());
     } catch (const std::logic_error& le) {
-        Logger::error("MYSQLCONNECTOR: MySQL data type error : %s",le.what());
+        Logger::error("MYSQLCONNECTOR: MySQL data type error : %s", le.what());
     }
 
     return rev;
