@@ -91,11 +91,6 @@
 					<mergeEveryMWrites>10</mergeEveryMWrites>
 				</mergePolicy>
 
-				<updateLog>
-					<logLevel>4</logLevel>
-					<accessLogFile>./logs/srch2-log-sqlite.txt</accessLogFile>
-				</updateLog>
-
 			</updatehandler>
 
 			<!-- DB settings Required if dataSourceType = 2 -->
@@ -111,4 +106,9 @@
 				</dbKeyValues>
 			</dbParameters>
 
+			<updateLog>
+				<logLevel>4</logLevel>
+				<accessLogFile>./logs/srch2-log-sqlite.txt</accessLogFile>
+			</updateLog>
+									
 </config>

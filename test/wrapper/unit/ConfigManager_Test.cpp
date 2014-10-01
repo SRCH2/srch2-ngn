@@ -7,7 +7,9 @@
 
 /**
  * This test case tests schema section of the config file. Checks if it works for various combination and number of searchable, refining, and indexed fields.
- * It also checks for invalid boost, invalid record boost field and all possible combinations for character offset/positionalIndex and field based search.
+ * It checks for invalid boost, invalid record boost field and all possible combinations for character offset/positionalIndex and field based search.
+ *
+ * The conf-logging.xml file has log tag outside core, it enables testing of global log tag.
  */
 
 #include "server/util/xmlParser/pugixml.hpp"
@@ -55,6 +57,10 @@ int main(int argc, char* argv[])
     string configFile13(string(config_dir) + "/conf-fieldBasedSearch-3.xml");
     string configFile14(string(config_dir) + "/conf-fieldBasedSearch-4.xml");
     string configFile15(string(config_dir) + "/conf-responseContent.xml");
+    string configFile16(string(config_dir) + "/conf-singleCore.xml");
+    string configFile17(string(config_dir) + "/conf-responseContent.xml");
+    string configFile18(string(config_dir) + "/conf-sqlLite.xml");
+
     ConfigManager *serverConf1 = new ConfigManager(configFile1);
     ConfigManager *serverConf2 = new ConfigManager(configFile2);
     ConfigManager *serverConf3 = new ConfigManager(configFile3);
@@ -70,6 +76,11 @@ int main(int argc, char* argv[])
     ConfigManager *serverConf13 = new ConfigManager(configFile13);
     ConfigManager *serverConf14 = new ConfigManager(configFile14);
     ConfigManager *serverConf15 = new ConfigManager(configFile15);
+    ConfigManager *serverConf16 = new ConfigManager(configFile16);
+    ConfigManager *serverConf17 = new ConfigManager(configFile17);
+    ConfigManager *serverConf18 = new ConfigManager(configFile18);
+
+
     ASSERT(serverConf1->loadConfigFile() == true);
     ASSERT(serverConf2->loadConfigFile() == true);
     ASSERT(serverConf3->loadConfigFile() == true);
@@ -84,6 +95,17 @@ int main(int argc, char* argv[])
     ASSERT(serverConf13->loadConfigFile() == true);
     ASSERT(serverConf14->loadConfigFile() == true);
     ASSERT(serverConf15->loadConfigFile() == true);
+    ASSERT(serverConf16->loadConfigFile() == true);
+    ASSERT(serverConf17->loadConfigFile() == true);
+
+    //This config file is single core with no core tags and dataFile at top, but it
+    //has dataDir at the top level.
+    ASSERT(serverConf18->loadConfigFile() == true);
+
+    //This checks if the log file path and log level are correctly set in the config file where log
+    //tag has been moved out of core
+    ASSERT(serverConf15->getHTTPServerAccessLogFile() == "./multicore/srch2-log.txt");
+    ASSERT(serverConf15->getHTTPServerLogLevel() == 3);
 
     const std::string &expr_string = "invalid Expression";
     RankerExpression* rank = new RankerExpression(expr_string);
@@ -94,7 +116,6 @@ int main(int argc, char* argv[])
 
         ASSERT((*it)->getSupportAttributeBasedSearch() == 1);
     }
-
 
     for(it = serverConf13->coreInfoIterateBegin(); it != serverConf13->coreInfoIterateEnd(); it++) {
         ASSERT((*it)->getSupportAttributeBasedSearch() == 1);

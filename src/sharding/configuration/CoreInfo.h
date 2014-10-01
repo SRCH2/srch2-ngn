@@ -236,8 +236,6 @@ public:
 	// **** accessors for settings in ConfigManager (global to all cores) ****
 			const string &getSrch2Home() const ;
 	const string& getLicenseKeyFileName() const ;
-	const string& getHTTPServerListeningHostname() const;
-	const string& getHTTPServerListeningPort() const ;
 	const string& getHTTPServerAccessLogFile() const ;
 	const Logger::LogLevel& getHTTPServerLogLevel() const;
 
@@ -277,6 +275,7 @@ public:
 
 	unsigned short getPort(PortType_t portType) const;
 	void setPort(PortType_t portType, unsigned short portNumber);
+
 
 	void setSchema(srch2::instantsearch::Schema* schema) {
 		this->schema = schema;

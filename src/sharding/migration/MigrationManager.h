@@ -72,7 +72,7 @@ enum MIGRATION_STATE{
 	//Receiver's state
 	MM_STATE_INIT_RCVD,  MM_STATE_INFO_WAIT,
 	MM_STATE_INFO_RCVD,  MM_STATE_COMPONENT_RECEIVING,
-	MM_STATE_SHARD_RCVD,
+	MM_STATE_SHARD_RCVD
 };
 
 // Forward declarations
@@ -80,7 +80,7 @@ class ShardManager;
 class TransportManager;
 class Partitioner;
 
-const short MM_MIGRATION_PORT_START = 53000;
+const unsigned short int MM_MIGRATION_PORT_START = 53000;
 
 // MM internal structure to
 class MigrationSessionInfo {

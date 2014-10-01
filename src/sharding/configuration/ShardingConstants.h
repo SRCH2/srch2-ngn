@@ -101,7 +101,7 @@ enum ShardingNodeState{
 
 // enum to allow loop iteration over listening ports
 enum PortType_t {
-	SearchPort,
+	SearchPort = 0,
 	SuggestPort,
 	InfoPort,
 	DocsPort,
@@ -111,6 +111,7 @@ enum PortType_t {
 	ResetLoggerPort,
 	CommitPort,
 	MergePort,
+    SearchAllPort,
 	ShutdownPort,
 	NodeShutdownPort,
 	EndOfPortType // stop value - not valid (also used to indicate all/default ports)

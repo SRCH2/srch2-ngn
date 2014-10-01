@@ -86,12 +86,14 @@ Also the field "id" and "year" do not have searchable field specified, it has on
 		    <mergeEveryNSeconds>10</mergeEveryNSeconds>
 		    <mergeEveryMWrites>10</mergeEveryMWrites>
 		</mergePolicy>
-		<updateLog>
-		    <logLevel>3</logLevel>
-		    <accessLogFile>srch2-log.txt</accessLogFile>
-		</updateLog>
 	    </updatehandler>
         </core>
 
     </cores>
+    
+    	<updateLog>
+		    <logLevel>3</logLevel>
+		    <accessLogFile>srch2-log.txt</accessLogFile>
+		</updateLog>
+    
 </config>
