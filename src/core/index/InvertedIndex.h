@@ -297,7 +297,11 @@ public:
 
     // Merge is required if the list is not empty
     bool mergeRequired() const  { return !(invertedListSetToMerge.empty()); }
-
+    /*
+     *   This API appends the inverted lists supplied as an input to a set of inverted list ids
+     *   that need to be merged.
+     */
+    void appendInvertedListIdsForMerge(const vector<unsigned>& invertedListIds);
 private:
 
     float getIdf(const unsigned totalNumberOfDocuments, const unsigned keywordId) const;

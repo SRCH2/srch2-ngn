@@ -64,6 +64,15 @@ void InvertedListContainer::sortAndMergeBeforeCommit(const unsigned keywordId, c
     this->invList->commit();
 }
 
+// Main idea:
+// 1) go through the elements in the write view. For each element,
+// check if it's a valid record (i.e., not deleted in the forward index).
+// 2) Count such valid records from the read view and write view separately;
+// assuming those from the read view are already sorted based on scores.
+// 3) Store these valid records into a temporary vector with their scores.
+// Sort them assuming those from the read view are already sorted.
+// 4) Copy them back to the write view, which is resized based on the
+// total number of valid records.
 void InvertedListContainer::sortAndMerge(const unsigned keywordId, const ForwardIndex *forwardIndex)
 {
     shared_ptr<vectorview<ForwardListPtr> > forwardListDirectoryReadView;
@@ -74,19 +83,49 @@ void InvertedListContainer::sortAndMerge(const unsigned keywordId, const Forward
     unsigned readViewListSize = readView->size();
 
     vectorview<unsigned>* &writeView = this->invList->getWriteView();
-
     unsigned writeViewListSize = writeView->size();
-    vector<InvertedListIdAndScore> invertedListElements(writeView->size());
 
-    for (unsigned i = 0; i< writeView->size(); i++) {
-        invertedListElements[i].recordId = writeView->getElement(i);
-        invertedListElements[i].score = forwardIndex->getTermRecordStaticScore(invertedListElements[i].recordId,
-        forwardIndex->getKeywordOffset(forwardListDirectoryReadView, invertedListElements[i].recordId, keywordId));
+    // when merging an inverted list, we want to ignore those records that have
+    // been deleted.  That info needs to be retrieved from the forward index.
+    Logger::debug("SortnMerge: | %d | %d ", readViewListSize, writeViewListSize);
+    ASSERT(readViewListSize <= writeViewListSize);
+
+    // copy the elements from the write view to a vector to sort
+    // OPT: avoid this copy
+    vector<InvertedListIdAndScore> invertedListElements;
+    unsigned validRecordCountFromReadView = 0; // count # of records that are not deleted
+    unsigned validRecordCountFromWriteView = 0; // count # of records that are not deleted
+
+    for (unsigned i = 0; i < writeView->size(); i++) {
+        unsigned recordId = writeView->getElement(i);
+
+        bool valid = false;
+        const ForwardList* forwardList = forwardIndex->getForwardList(forwardListDirectoryReadView,
+               recordId, valid);
+        // if the record is not valid (e.g., marked deleted), we ignore it
+        if (!valid)
+            continue;
+
+        float score = forwardIndex->getTermRecordStaticScore(recordId,
+           forwardIndex->getKeywordOffset(forwardListDirectoryReadView, recordId, keywordId));
+
+        // add this new <recordId, score> pair to the vector
+        InvertedListIdAndScore iliasEntry = {recordId, score};
+        invertedListElements.push_back(iliasEntry);
+        if (i < readViewListSize)
+           validRecordCountFromReadView ++; // count the # of valid records
+        else
+           validRecordCountFromWriteView ++;
     }
 
-    Logger::debug("SortnMerge: | %d | %d ", readViewListSize, writeViewListSize);
+    unsigned newTotalSize = invertedListElements.size();
+    std::sort(invertedListElements.begin() + validRecordCountFromReadView,
+              invertedListElements.end(),
+              InvertedListContainer::InvertedListElementGreaterThan());
+//    cout << "readViewListSize = " << readViewListSize << ", writeViewListSize" << writeViewListSize
+//         << ", validRecordCountFromReadView = " << validRecordCountFromReadView
+//         << ", validRecordCountFromWriteView " << validRecordCountFromWriteView << endl;
 
-    std::sort(invertedListElements.begin() + readViewListSize, invertedListElements.begin() + writeViewListSize, InvertedListContainer::InvertedListElementGreaterThan());
     // if the read view and the write view are the same, it means we have added a new keyword with a new COWvector.
     // In this case, instead of calling "merge()", we call "commit()" to let this COWvector commit.
     if (readView.get() == writeView) {
@@ -94,13 +133,18 @@ void InvertedListContainer::sortAndMerge(const unsigned keywordId, const Forward
         return;
     }
 
-    std::inplace_merge (invertedListElements.begin(), invertedListElements.begin() + readViewListSize, invertedListElements.begin() + writeViewListSize, InvertedListContainer::InvertedListElementGreaterThan());
+    std::inplace_merge (invertedListElements.begin(),
+            invertedListElements.begin() + validRecordCountFromReadView,
+            invertedListElements.end(),
+            InvertedListContainer::InvertedListElementGreaterThan());
 
     // If the read view and write view are sharing the same array, we have to separate the write view from the read view.
     if (writeView->getArray() == readView->getArray())
         writeView->forceCreateCopy();
 
-    for (unsigned i = 0; i< writeView->size(); i++) {
+    // OPT: resize the vector to shrink it if needed
+    writeView->setSize(newTotalSize);
+    for (unsigned i = 0; i < writeView->size(); i++) {
         writeView->at(i) = invertedListElements[i].recordId;
     }
 
@@ -291,8 +335,10 @@ void InvertedIndex::merge()
     // get keywordIds writeView
     vectorview<unsigned>* &keywordIdsWriteView = this->keywordIds->getWriteView();
 
-    for ( set<unsigned>::const_iterator iter = this->invertedListSetToMerge.begin(); iter != this->invertedListSetToMerge.end(); ++iter) {
-        writeView->at(*iter)->sortAndMerge(keywordIdsWriteView->getElement(*iter), this->forwardIndex);
+    for (set<unsigned>::const_iterator iter = this->invertedListSetToMerge.begin();
+        iter != this->invertedListSetToMerge.end(); ++iter) {
+    	ASSERT(*iter < writeView->size());
+    	writeView->at(*iter)->sortAndMerge(keywordIdsWriteView->getElement(*iter), this->forwardIndex);
     }
     this->invertedListSetToMerge.clear();
 }
@@ -408,6 +454,15 @@ void InvertedIndex::print_test() const
         Logger::debug("Inverted List: %d, KeywordId: %d", vectorIterator , keywordIdsReadView->at(vectorIterator));
         this->printInvList(vectorIterator);
     }
+}
+/*
+ *   This API appends the inverted lists supplied as an input to a set of inverted list ids
+ *   that need to be merged.
+ */
+void InvertedIndex::appendInvertedListIdsForMerge(const vector<unsigned>& invertedListIds ){
+	for (unsigned i = 0; i < invertedListIds.size(); ++i) {
+			invertedListSetToMerge.insert(invertedListIds[i]);
+	}
 }
 
 }
