@@ -32,6 +32,7 @@ ADD_EXECUTABLE(XMLParser_Test XMLParser_Test.cpp $<TARGET_OBJECTS:SERVER_OBJECTS
 TARGET_LINK_LIBRARIES(XMLParser_Test
                         ${Srch2InstantSearch_LIBRARIES} 
                         ${jsoncpp_LIBRARY}  ${CMAKE_SOURCE_DIR}/thirdparty/event/lib/libevent.a 
+                        ${CMAKE_SOURCE_DIR}/thirdparty/event/lib/libevent_pthreads.a
                         ${Boost_LIBRARIES} ${CMAKE_REQUIRED_LIBRARIES}  ${GPERFTOOL_LIBS}
                     )
 ADD_DEPENDENCIES(XMLParser_Test srch2_core)

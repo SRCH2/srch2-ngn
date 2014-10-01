@@ -33,6 +33,7 @@ ADD_EXECUTABLE(Serialization_Test Serialization_Test.cpp $<TARGET_OBJECTS:WRAPPE
 TARGET_LINK_LIBRARIES(Serialization_Test
                         ${Srch2InstantSearch_LIBRARIES} 
                         ${jsoncpp_LIBRARY}  ${CMAKE_SOURCE_DIR}/thirdparty/event/lib/libevent.a 
+                        ${CMAKE_SOURCE_DIR}/thirdparty/event/lib/libevent_pthreads.a
                         ${MONGO_CLIENT_LIBRARY} ${Boost_LIBRARIES} ${CMAKE_REQUIRED_LIBRARIES}  ${GPERFTOOL_LIBS}
                     )
 LIST(APPEND SHARD_UNIT_TESTS Serialization_Test)
@@ -42,6 +43,7 @@ LIST(APPEND SHARD_UNIT_TESTS Serialization_Test)
 TARGET_LINK_LIBRARIES(TransportInitializationTest 
                         ${Srch2InstantSearch_LIBRARIES} 
                         ${jsoncpp_LIBRARY}  ${CMAKE_SOURCE_DIR}/thirdparty/event/lib/libevent.a 
+                        ${CMAKE_SOURCE_DIR}/thirdparty/event/lib/libevent_pthreads.a
                         ${MONGO_CLIENT_LIBRARY} ${Boost_LIBRARIES} ${CMAKE_REQUIRED_LIBRARIES}  ${GPERFTOOL_LIBS}
                     )
 LIST(APPEND SHARD_UNIT_TESTS TransportInitializationTest)
@@ -50,6 +52,7 @@ ADD_EXECUTABLE(PendingMessagesTest transport/PendingMessagesTest.cpp $<TARGET_OB
 TARGET_LINK_LIBRARIES(PendingMessagesTest
                         ${Srch2InstantSearch_LIBRARIES} 
                         ${jsoncpp_LIBRARY}  ${CMAKE_SOURCE_DIR}/thirdparty/event/lib/libevent.a 
+                        ${CMAKE_SOURCE_DIR}/thirdparty/event/lib/libevent_pthreads.a
                         ${MONGO_CLIENT_LIBRARY} ${Boost_LIBRARIES} ${CMAKE_REQUIRED_LIBRARIES}  ${GPERFTOOL_LIBS}
                     )
 LIST(APPEND SHARD_UNIT_TESTS PendingMessagesTest)
@@ -58,6 +61,7 @@ LIST(APPEND SHARD_UNIT_TESTS PendingMessagesTest)
 TARGET_LINK_LIBRARIES(TMModuleTest
                         ${Srch2InstantSearch_LIBRARIES} 
                         ${jsoncpp_LIBRARY}  ${CMAKE_SOURCE_DIR}/thirdparty/event/lib/libevent.a 
+                        ${CMAKE_SOURCE_DIR}/thirdparty/event/lib/libevent_pthreads.a
                         ${MONGO_CLIENT_LIBRARY} ${Boost_LIBRARIES} ${CMAKE_REQUIRED_LIBRARIES}  ${GPERFTOOL_LIBS}
                     )
 LIST(APPEND SHARD_UNIT_TESTS TMModuleTest)
@@ -66,6 +70,7 @@ LIST(APPEND SHARD_UNIT_TESTS TMModuleTest)
 TARGET_LINK_LIBRARIES(SingleNodeIntraCommunicationTest 
                         ${Srch2InstantSearch_LIBRARIES} 
                         ${jsoncpp_LIBRARY}  ${CMAKE_SOURCE_DIR}/thirdparty/event/lib/libevent.a 
+                        ${CMAKE_SOURCE_DIR}/thirdparty/event/lib/libevent_pthreads.a
                         ${MONGO_CLIENT_LIBRARY} ${Boost_LIBRARIES} ${CMAKE_REQUIRED_LIBRARIES}  ${GPERFTOOL_LIBS}
                     )
 LIST(APPEND SHARD_UNIT_TESTS SingleNodeIntraCommunicationTest)
@@ -75,6 +80,7 @@ ADD_EXECUTABLE(ResourceLockManager_Test ./shard_manager/ResourceLockManager_Test
 TARGET_LINK_LIBRARIES(ResourceLockManager_Test
                         ${Srch2InstantSearch_LIBRARIES} 
                         ${jsoncpp_LIBRARY}  ${CMAKE_SOURCE_DIR}/thirdparty/event/lib/libevent.a 
+                        ${CMAKE_SOURCE_DIR}/thirdparty/event/lib/libevent_pthreads.a
                         ${MONGO_CLIENT_LIBRARY} ${Boost_LIBRARIES} ${CMAKE_REQUIRED_LIBRARIES}  ${GPERFTOOL_LIBS}
                     )
 LIST(APPEND SHARD_UNIT_TESTS ResourceLockManager_Test)
@@ -83,6 +89,7 @@ ADD_EXECUTABLE(Notification_Test ./shard_manager/Notification_Test.cpp $<TARGET_
 TARGET_LINK_LIBRARIES(Notification_Test
                         ${Srch2InstantSearch_LIBRARIES} 
                         ${jsoncpp_LIBRARY}  ${CMAKE_SOURCE_DIR}/thirdparty/event/lib/libevent.a 
+                        ${CMAKE_SOURCE_DIR}/thirdparty/event/lib/libevent_pthreads.a
                         ${MONGO_CLIENT_LIBRARY} ${Boost_LIBRARIES} ${CMAKE_REQUIRED_LIBRARIES}  ${GPERFTOOL_LIBS}
                     )
 LIST(APPEND SHARD_UNIT_TESTS Notification_Test)
@@ -90,7 +97,8 @@ LIST(APPEND SHARD_UNIT_TESTS Notification_Test)
 ADD_EXECUTABLE(Metadata_Test ./shard_manager/Metadata_Test.cpp $<TARGET_OBJECTS:WRAPPER_OBJECTS> $<TARGET_OBJECTS:SHARDING_OBJECTS> $<TARGET_OBJECTS:SERVER_OBJECTS>)
 TARGET_LINK_LIBRARIES(Metadata_Test
                         ${Srch2InstantSearch_LIBRARIES} 
-                        ${jsoncpp_LIBRARY}  ${CMAKE_SOURCE_DIR}/thirdparty/event/lib/libevent.a 
+                        ${jsoncpp_LIBRARY}  ${CMAKE_SOURCE_DIR}/thirdparty/event/lib/libevent.a
+                        ${CMAKE_SOURCE_DIR}/thirdparty/event/lib/libevent_pthreads.a 
                         ${MONGO_CLIENT_LIBRARY} ${Boost_LIBRARIES} ${CMAKE_REQUIRED_LIBRARIES}  ${GPERFTOOL_LIBS}
                     )
 LIST(APPEND SHARD_UNIT_TESTS Metadata_Test)

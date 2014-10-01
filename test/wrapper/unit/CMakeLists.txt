@@ -22,6 +22,7 @@ ADD_EXECUTABLE(ConfigManager_Test ConfigManager_Test.cpp
 TARGET_LINK_LIBRARIES(ConfigManager_Test
                         ${Srch2InstantSearch_LIBRARIES} 
                         ${jsoncpp_LIBRARY}  ${CMAKE_SOURCE_DIR}/thirdparty/event/lib/libevent.a 
+                        ${CMAKE_SOURCE_DIR}/thirdparty/event/lib/libevent_pthreads.a
                         ${Boost_LIBRARIES} ${CMAKE_REQUIRED_LIBRARIES}  ${GPERFTOOL_LIBS}
                     )                    
 ADD_DEPENDENCIES(ConfigManager_Test srch2_core)
@@ -33,6 +34,7 @@ ADD_EXECUTABLE(JSONValueObjectToRecord_Test JSONValueObjectToRecord_Test/JSONVal
 TARGET_LINK_LIBRARIES(JSONValueObjectToRecord_Test
                         ${Srch2InstantSearch_LIBRARIES} 
                         ${jsoncpp_LIBRARY}  ${CMAKE_SOURCE_DIR}/thirdparty/event/lib/libevent.a 
+                        ${CMAKE_SOURCE_DIR}/thirdparty/event/lib/libevent_pthreads.a
                         ${MONGO_CLIENT_LIBRARY} ${Boost_LIBRARIES} ${CMAKE_REQUIRED_LIBRARIES}  ${GPERFTOOL_LIBS}
                     )    
 ADD_DEPENDENCIES(JSONValueObjectToRecord_Test srch2_core)
