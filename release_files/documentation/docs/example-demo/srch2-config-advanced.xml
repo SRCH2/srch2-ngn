@@ -116,10 +116,10 @@
 			 snippet JSON structure similar to and at the same level of the XML tree, as record.
 		    -->
 		    <snippetSize>250</snippetSize>
-		    <fuzzyTagPre value = '<span class="fuzzy">'></fuzzyTagPre>
-		    <fuzzyTagPost value = '</span>'></fuzzyTagPost>
-		    <exactTagPre value = '<span class="exact">' ></exactTagPre>
-		    <exactTagPost value = '</span>'></exactTagPost>
+		    <fuzzyTagPre value = '&lt;span class="fuzzy"&gt;'></fuzzyTagPre>
+		    <fuzzyTagPost value = '&lt;/span&gt;'></fuzzyTagPost>
+		    <exactTagPre value = '&lt;span class="exact"&gt;' ></exactTagPre>
+		    <exactTagPost value = '&lt;/span&gt;'></exactTagPost>
 		</highlighter>
 
 	    </query>

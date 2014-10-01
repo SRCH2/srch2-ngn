@@ -213,7 +213,7 @@ The following are <b>invalid</b> query examples:
 ```
 ###3.3.4. Proximity Search
 
-The engine supports finding words that are within a specified proximity. To use this feature, we need to set the [enablePositionIndex](configuration.mkd#75-enable-positional-index-optional) flag to true in the configuration file.
+The engine supports finding words that are within a specified proximity. To use this feature, we need to set the [enablePositionIndex](configuration.mkd#74-enable-positional-index-optional) flag to true in the configuration file.
 
 To do a proximity search, we use the tilde symbol ("~") at the end of a phrase. For example, the following query searches for records with the keywords "saving" and "ryan" within 1 word (that is, either zero or one word separates them) of each other in a document:
 ```
@@ -270,7 +270,7 @@ The following are valid localParams:
 
  - [defaultSimilarityThreshold](configuration.mkd#83-term-similarity-threshold-optional): a number between 0 and 1. For example, "0.8" is a valid similarity threshold in fuzzy search.    
 
- - [defaultBoostLevel](configuration.mkd#72-field-boosts-optional): a non-negative integer, e.g., 2.
+ - [defaultBoostLevel](configuration.mkd#71-field-boosts-optional): a non-negative integer, e.g., 2.
 
  - [defaultPrefixComplete](configuration.mkd#811-query-term-prefix-type-optional): "PREFIX" or "COMPLETE" (without quotes, case sensitive), indicating whether the term is treated as a prefix or a complete term.
 
@@ -482,7 +482,7 @@ which returns the record with "929" (text) as its primary key value. Note that t
 
 ## 14. Multi-core
 
-The "Cores" tag set in the [configuration file](configuration.mkd#12-cores-optional) allows the user to search on multiple "cores" within the same server. 
+The "Cores" tag set in the [configuration file](configuration.mkd#13-cores-optional) allows the user to search on multiple "cores" within the same server. 
 A query can specify a particular core.  For instance, the following query:
 ```
  http://localhost:8081/example-core/search?q=term
