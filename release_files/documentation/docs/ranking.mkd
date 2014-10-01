@@ -104,11 +104,9 @@ For each record <i>r_i</i>, its phrase frequency is multiplied by its
 <i>score(r_i, Q)</i> to get the final proximity-based score of the
 record with respect to the query.
 
-
-
-
-
-
-
-
-
+Since a phrase-search condition is treated as a filter by the
+SRCH2 engine, to do proximity ranking, we can specify the keywords as a phrase with
+a large slop distance (at most 10000).  For instance, we can use 
+the condition <center>q="class test"~8000</center> to do proximity ranking for the
+two keywords, by only considering those occurrences where the two keywords
+are at most 8000 words apart.
