@@ -202,8 +202,6 @@ public:
 		return this->transport;
 	}
 
-	typedef std::map<const string, CoreInfo_t *> CoreInfoMap_t;
-
     CoreInfo_t * getCoreByName(const string &coreName) const{
     	for(unsigned coreIdx = 0 ; coreIdx < clusterCores.size(); ++coreIdx){
     		if(clusterCores.at(coreIdx)->getName().compare(coreName) == 0){
@@ -212,6 +210,14 @@ public:
     	}
     	return NULL;
     }
+
+    vector<CoreInfo_t *>::iterator coreInfoIterateBegin() {
+    	return clusterCores.begin();
+    }
+    vector<CoreInfo_t *>::iterator coreInfoIterateEnd() {
+    	return clusterCores.end();
+    }
+
 private:
     static string authorizationKey;
 

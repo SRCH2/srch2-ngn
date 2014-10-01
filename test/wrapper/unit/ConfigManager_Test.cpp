@@ -29,6 +29,7 @@ namespace srch2is = srch2::instantsearch;
 namespace srch2http = srch2::httpwrapper;
 
 using srch2http::ConfigManager;
+using srch2http::CoreInfo_t;
 using namespace srch2::util;
 using namespace pugi;
 using srch2http::SearchableAttributeInfoContainer;
@@ -37,22 +38,23 @@ using srch2http::RefiningAttributeInfoContainer;
 
 int main(int argc, char* argv[])
 {
-    string configFile1(string(getenv("srch2_config_file")) + "/conf-SRI-I.xml");
-    string configFile2(string(getenv("srch2_config_file")) + "/conf-SI-RI.xml");
-    string configFile3(string(getenv("srch2_config_file")) + "/conf-invalid-IR.xml");
-    string configFile4(string(getenv("srch2_config_file")) + "/conf-SRI-false.xml");
-    string configFile5(string(getenv("srch2_config_file")) + "/conf-SI-present-R-missing.xml");
-    string configFile6(string(getenv("srch2_config_file")) + "/conf-inconsistent-attribute.xml");
-    string configFile7(string(getenv("srch2_config_file")) + "/conf-unique-searchable.xml");
-    string configFile8(string(getenv("srch2_config_file")) + "/conf-unique-refining.xml");
-    string configFile9(string(getenv("srch2_config_file")) + "/conf-invalid-boostField.xml");
-    string configFile10(string(getenv("srch2_config_file")) + "/conf-invalidRecordBoostField.xml");
-    string configFile11(string(getenv("srch2_config_file")) + "/conf-fieldBasedSearch.xml");
-    string configFile12(string(getenv("srch2_config_file")) + "/conf-fieldBasedSearch-2.xml");
-    string configFile13(string(getenv("srch2_config_file")) + "/conf-fieldBasedSearch-3.xml");
-    string configFile14(string(getenv("srch2_config_file")) + "/conf-fieldBasedSearch-4.xml");
-    string configFile15(string(getenv("srch2_config_file")) + "/conf-responseContent.xml");
-
+	const char * config_dir = getenv("srch2_config_file");
+	ASSERT(config_dir != NULL);
+    string configFile1(string(config_dir) + "/conf-SRI-I.xml");
+    string configFile2(string(config_dir) + "/conf-SI-RI.xml");
+    string configFile3(string(config_dir) + "/conf-invalid-IR.xml");
+    string configFile4(string(config_dir) + "/conf-SRI-false.xml");
+    string configFile5(string(config_dir) + "/conf-SI-present-R-missing.xml");
+    string configFile6(string(config_dir) + "/conf-inconsistent-attribute.xml");
+    string configFile7(string(config_dir) + "/conf-unique-searchable.xml");
+    string configFile8(string(config_dir) + "/conf-unique-refining.xml");
+    string configFile9(string(config_dir) + "/conf-invalid-boostField.xml");
+    string configFile10(string(config_dir) + "/conf-invalidRecordBoostField.xml");
+    string configFile11(string(config_dir) + "/conf-fieldBasedSearch.xml");
+    string configFile12(string(config_dir) + "/conf-fieldBasedSearch-2.xml");
+    string configFile13(string(config_dir) + "/conf-fieldBasedSearch-3.xml");
+    string configFile14(string(config_dir) + "/conf-fieldBasedSearch-4.xml");
+    string configFile15(string(config_dir) + "/conf-responseContent.xml");
     ConfigManager *serverConf1 = new ConfigManager(configFile1);
     ConfigManager *serverConf2 = new ConfigManager(configFile2);
     ConfigManager *serverConf3 = new ConfigManager(configFile3);
@@ -68,7 +70,6 @@ int main(int argc, char* argv[])
     ConfigManager *serverConf13 = new ConfigManager(configFile13);
     ConfigManager *serverConf14 = new ConfigManager(configFile14);
     ConfigManager *serverConf15 = new ConfigManager(configFile15);
-
     ASSERT(serverConf1->loadConfigFile() == true);
     ASSERT(serverConf2->loadConfigFile() == true);
     ASSERT(serverConf3->loadConfigFile() == true);
@@ -87,34 +88,35 @@ int main(int argc, char* argv[])
     const std::string &expr_string = "invalid Expression";
     RankerExpression* rank = new RankerExpression(expr_string);
 
-    ConfigManager::CoreInfoMap_t::iterator it;
+    std::vector<CoreInfo_t *>::iterator it;
 
     for(it = serverConf14->coreInfoIterateBegin(); it != serverConf14->coreInfoIterateEnd(); it++) {
-        ASSERT(it->second->getSupportAttributeBasedSearch() == 1);
+
+        ASSERT((*it)->getSupportAttributeBasedSearch() == 1);
     }
 
 
     for(it = serverConf13->coreInfoIterateBegin(); it != serverConf13->coreInfoIterateEnd(); it++) {
-        ASSERT(it->second->getSupportAttributeBasedSearch() == 1);
+        ASSERT((*it)->getSupportAttributeBasedSearch() == 1);
     }
 
     for(it = serverConf12->coreInfoIterateBegin(); it != serverConf12->coreInfoIterateEnd(); it++) {
-        ASSERT(it->second->getSupportAttributeBasedSearch() == 0);
+        ASSERT((*it)->getSupportAttributeBasedSearch() == 0);
     }
 
     for(it = serverConf11->coreInfoIterateBegin(); it != serverConf11->coreInfoIterateEnd(); it++) {
-        ASSERT(it->second->getSupportAttributeBasedSearch() == 1);
+        ASSERT((*it)->getSupportAttributeBasedSearch() == 1);
     }
 
     for(it = serverConf7->coreInfoIterateBegin(); it != serverConf7->coreInfoIterateEnd(); it++) {
 
-        map<string, SearchableAttributeInfoContainer> ::const_iterator it2 = it->second->getSearchableAttributes()->begin();
+        map<string, SearchableAttributeInfoContainer> ::const_iterator it2 = (*it)->getSearchableAttributes()->begin();
         ASSERT(it2->first == "uniqueSearchableField");
     }
 
     for(it = serverConf5->coreInfoIterateBegin(); it != serverConf5->coreInfoIterateEnd(); it++) {
 
-        map<string, RefiningAttributeInfoContainer> ::const_iterator it2 = it->second->getRefiningAttributes()->begin();
+        map<string, RefiningAttributeInfoContainer> ::const_iterator it2 = (*it)->getRefiningAttributes()->begin();
         ASSERT(it2->first == "id");
         it2++;
         ASSERT(it2->first == "refining1");
@@ -126,7 +128,7 @@ int main(int argc, char* argv[])
 
     for(it = serverConf5->coreInfoIterateBegin(); it != serverConf5->coreInfoIterateEnd(); it++) {
 
-        map<string, SearchableAttributeInfoContainer> ::const_iterator it2 = it->second->getSearchableAttributes()->begin();
+        map<string, SearchableAttributeInfoContainer> ::const_iterator it2 = (*it)->getSearchableAttributes()->begin();
         ASSERT(it2->first == "refining1");
         it2++;
         ASSERT(it2->first == "refining2");
@@ -135,7 +137,7 @@ int main(int argc, char* argv[])
 
     for(it = serverConf6->coreInfoIterateBegin(); it != serverConf6->coreInfoIterateEnd(); it++) {
 
-        map<string, SearchableAttributeInfoContainer> ::const_iterator it2 = it->second->getSearchableAttributes()->begin();
+        map<string, SearchableAttributeInfoContainer> ::const_iterator it2 = (*it)->getSearchableAttributes()->begin();
         ASSERT(it2->first == "director");
         it2++;
         ASSERT(it2->first == "inconsistentField");
@@ -143,6 +145,7 @@ int main(int argc, char* argv[])
         ASSERT(it2->first == "inconsistentField2");
         it2++;
     }
+    return 0;
 }
 
 

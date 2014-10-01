@@ -31,7 +31,7 @@ void initializeQueryResult(unsigned internalRecordId, double physicalDistance,
 	queryResult->physicalDistance = physicalDistance;
 	queryResult->_score = score;
 	queryResult->externalRecordId = externalRecordId;
-	queryResult->attributeBitmaps = attributeBitmaps;
+	queryResult->attributeIdsList.push_back(attributeBitmaps);
 	queryResult->editDistances = editDistances;
 	queryResult->termTypes = termTypes;
 	queryResult->matchingKeywords = matchingKeywords;
@@ -47,9 +47,9 @@ void checkQueryResultContent(QueryResult * obj1, QueryResult * obj2){
 	ASSERT(obj1->physicalDistance == obj2->physicalDistance);
 	ASSERT(obj1->_score == obj2->_score);
 	ASSERT(obj1->externalRecordId == obj2->externalRecordId);
-	ASSERT(obj1->attributeBitmaps.size() == obj2->attributeBitmaps.size());
-	for(unsigned i=0; i<obj1->attributeBitmaps.size(); ++i ){
-		ASSERT(obj1->attributeBitmaps.at(i) == obj2->attributeBitmaps.at(i) );
+	ASSERT(obj1->attributeIdsList.size() == obj2->attributeIdsList.size());
+	for(unsigned i=0; i<obj1->attributeIdsList.size(); ++i ){
+		ASSERT(obj1->attributeIdsList.at(i).size() == obj2->attributeIdsList.at(i).size());
 	}
 	ASSERT(obj1->editDistances.size() == obj2->editDistances.size());
 	for(unsigned i=0; i<obj1->editDistances.size(); ++i ){
@@ -122,7 +122,7 @@ QueryResults * prepareQueryResults(){
     		matchingKeywords.push_back("matching keyword " + ss.str());
     	}
     	TypedValue score;
-    	score.setTypedValue((float)10.4567);
+    	score.setTypedValue((float)10.4567, ATTRIBUTE_TYPE_FLOAT);
     	initializeQueryResult(i , 10.5*i, score , "external record id" + ss.str() ,
     			attributeBitmaps, editDistances,termTypes,matchingKeywords, queryResult);
     	queryResults->impl->sortedFinalResults.push_back(queryResult);

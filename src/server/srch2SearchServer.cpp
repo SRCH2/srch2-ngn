@@ -1087,6 +1087,15 @@ int main(int argc, char** argv) {
 		exit(-1);
 	}
 
+	if(serverConf->getCurrentNodeName().compare("") == 0){
+		Logger::error("error: Node name is not usable.");
+		exit(-1);
+	}
+	if(! serverConf->tryLockNodeName()){
+		Logger::error("error: Node name is not usable. Another instance is running with the same node name.");
+		exit(-1);
+	}
+
 //	LicenseVerifier::testFile(serverConf->getLicenseKeyFileName());
 	string logDir = getFilePath(serverConf->getHTTPServerAccessLogFile());
 	// If the path does't exist, try to create it.

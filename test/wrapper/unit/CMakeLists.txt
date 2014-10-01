@@ -17,7 +17,8 @@ EXEC_PROGRAM( ${CMAKE_CXX_COMPILER}
 SET( jsoncpp_LIBRARY ${CMAKE_SOURCE_DIR}/thirdparty/json/jsoncpp-src/build/libjsoncpp.a)
 
 
-ADD_EXECUTABLE(ConfigManager_Test ConfigManager_Test.cpp $<TARGET_OBJECTS:WRAPPER_OBJECTS> $<TARGET_OBJECTS:SERVER_OBJECTS>)
+ADD_EXECUTABLE(ConfigManager_Test ConfigManager_Test.cpp 
+	$<TARGET_OBJECTS:WRAPPER_OBJECTS> $<TARGET_OBJECTS:SERVER_OBJECTS> $<TARGET_OBJECTS:SHARDING_OBJECTS>)
 TARGET_LINK_LIBRARIES(ConfigManager_Test
                         ${Srch2InstantSearch_LIBRARIES} 
                         ${jsoncpp_LIBRARY}  ${CMAKE_SOURCE_DIR}/thirdparty/event/lib/libevent.a 
@@ -27,7 +28,8 @@ ADD_DEPENDENCIES(ConfigManager_Test srch2_core)
 LIST(APPEND UNIT_TESTS ConfigManager_Test)
 
 
-ADD_EXECUTABLE(JSONValueObjectToRecord_Test JSONValueObjectToRecord_Test/JSONValueObjectToRecord_Test.cpp $<TARGET_OBJECTS:WRAPPER_OBJECTS> $<TARGET_OBJECTS:SERVER_OBJECTS>)
+ADD_EXECUTABLE(JSONValueObjectToRecord_Test JSONValueObjectToRecord_Test/JSONValueObjectToRecord_Test.cpp
+ 							$<TARGET_OBJECTS:WRAPPER_OBJECTS> $<TARGET_OBJECTS:SERVER_OBJECTS> $<TARGET_OBJECTS:SHARDING_OBJECTS>)
 TARGET_LINK_LIBRARIES(JSONValueObjectToRecord_Test
                         ${Srch2InstantSearch_LIBRARIES} 
                         ${jsoncpp_LIBRARY}  ${CMAKE_SOURCE_DIR}/thirdparty/event/lib/libevent.a 
