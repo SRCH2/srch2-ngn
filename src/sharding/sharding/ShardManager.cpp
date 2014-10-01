@@ -78,6 +78,7 @@ ShardManager::ShardManager(ConfigManager * configManager,ResourceMetadataManager
 	this->stateMachine = new ClusterOperationStateMachine();
 	this->joinedFlag = false;
 	this->cancelledFlag = false;
+	this->loadBalancingThread = new pthread_t;
 
 }
 
@@ -87,8 +88,8 @@ void ShardManager::attachToTransportManager(TransportManager * tm){
 }
 
 ShardManager::~ShardManager(){
-	boost::unique_lock<boost::mutex> bouncedNotificationsLock(shardManagerGlobalMutex);
 	setCancelled();
+	delete this->loadBalancingThread;
 }
 
 
@@ -124,6 +125,7 @@ bool ShardManager::isJoined() const{
 }
 
 void ShardManager::setCancelled(){
+	boost::unique_lock<boost::mutex> bouncedNotificationsLock(shardManagerGlobalMutex);
 	this->cancelledFlag = true;
 }
 bool ShardManager::isCancelled() {
@@ -139,6 +141,10 @@ void ShardManager::resetLoadBalancing(){
 }
 bool ShardManager::isLoadBalancing() const{
 	return this->loadBalancingFlag;
+}
+
+pthread_t * ShardManager::getLoadbalancingThread() {
+	return this->loadBalancingThread;
 }
 
 void ShardManager::print(){
@@ -190,13 +196,11 @@ void ShardManager::start(){
 		NewNodeJoinOperation * joinOperation = new NewNodeJoinOperation();
 		stateMachine->registerOperation(joinOperation);
 	}
-	pthread_t loadBalancingThread;
-    if (pthread_create(&loadBalancingThread, NULL, ShardManager::periodicWork , NULL) != 0){
+    if (pthread_create(loadBalancingThread, NULL, ShardManager::periodicWork , NULL) != 0){
         //        Logger::console("Cannot create thread for handling local message");
         perror("Cannot create thread for load balancing.");
         return;
     }
-    pthread_detach(loadBalancingThread);
 }
 
 /*

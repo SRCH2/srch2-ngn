@@ -16,6 +16,12 @@ ResourceMetadataManager::ResourceMetadataManager(){
 	writeview = NULL;
 }
 
+ResourceMetadataManager::~ResourceMetadataManager(){
+	if(writeview != NULL){
+		delete writeview;
+	}
+}
+
 void ResourceMetadataManager::resolve(ConfigManager * confManager, SaveMetadataNotification * saveDataNotification){
 	if(saveDataNotification == NULL){
 		ASSERT(false);

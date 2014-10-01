@@ -153,9 +153,17 @@ public:
 
 };
 
+
 class ConfigManager {
 public:
 
+
+	// map of port type enums to strings to simplify code
+	struct PortNameMap_t {
+	    enum PortType_t portType;
+	    const char *portName;
+	};
+	static PortNameMap_t portNameMap[] ;
 
 	static const char* const OAuthParam;
 
@@ -229,10 +237,12 @@ private:
 	// <config>
 	string licenseKeyFile;
 	string httpServerListeningHostname;
-	string httpServerListeningPortStr;
-	map<enum srch2http::PortType_t, unsigned short int> httpServerListeningPorts;
+	string httpServerListeningDefaultPortStr;
+	unsigned short int httpServerListeningDefaultPort;
 	string srch2Home;
 	unsigned int numberOfThreads;
+	unsigned int numberOfInternalThreads; // for internal use only
+	unsigned int heartBeatTimer;
 
 
 	vector<std::pair<string, unsigned > > wellKnownHost;
@@ -393,6 +403,8 @@ public:
 	unsigned getKeywordPopularityThreshold() const ;
 
 	unsigned int getNumberOfThreads() const;
+	unsigned int getNumberOfInternalThreads() const;
+	unsigned int getHeartBeatTimer() const;
 
 	const std::string& getAttributeStringForMySQLQuery() const;
 
@@ -401,8 +413,7 @@ public:
 	const std::string& getHTTPServerAccessLogFile() const;
 	const Logger::LogLevel& getHTTPServerLogLevel() const;
 	const std::string& getHTTPServerListeningHostname() const;
-	const std::string& getHTTPServerDefaultListeningPort() const;
-	const map<enum srch2http::PortType_t, unsigned short int>& getHTTPServerListeningPorts() const ;
+	unsigned short int getHTTPServerDefaultListeningPort() const;
 
 	bool isRecordBoostAttributeSet(const string &coreName) const;
 
@@ -532,6 +543,19 @@ private:
 	static const char* const listenerWaitTimeString;
 	static const char* const listeningHostStringString;
 	static const char* const listeningPortString;
+	static const char* const searchPortString;
+	static const char* const suggestPortString;
+	static const char* const infoPortString;
+	static const char* const docsPortString;
+	static const char* const updatePortString;
+	static const char* const savePortString;
+	static const char* const exportPortString;
+	static const char* const resetLoggerPortString;
+	static const char* const commitPortString;
+	static const char* const mergePortString;
+	static const char* const searchAllPortString;
+	static const char* const shutdownPortString;
+	static const char* const nodeShutdownPortString;
 	static const char* const locationLatitudeString;
 	static const char* const locationLongitudeString;
 	static const char* const logLevelString;
@@ -539,6 +563,7 @@ private:
 	static const char* const maxMemoryString;
 	static const char* const maxRetryOnFailureString;
 	static const char* const maxSearchThreadsString;
+	static const char* const maxInternalThreadsString;
 	static const char* const mergeEveryMWritesString;
 	static const char* const mergeEveryNSecondsString;
 	static const char* const mergePolicyString;
@@ -588,15 +613,6 @@ private:
 	static const char* const schemaFileString;
 	static const char* const allowedRecordSpecialCharactersString;
 
-	static const char* const searchPortString;
-	static const char* const suggestPortString;
-	static const char* const infoPortString;
-	static const char* const docsPortString;
-	static const char* const updatePortString;
-	static const char* const savePortString;
-	static const char* const exportPortString;
-	static const char* const resetLoggerPortString;
-
 	static const char* const highLightString;
 	static const char* const highLighterString;
 	static const char* const exactTagPre;
@@ -609,6 +625,7 @@ private:
 	static const char* const defaultFuzzyPostTag;
 	static const char* const defaultExactPreTag;
 	static const char* const defaultExactPostTag;
+	static const char* const heartBeatTimerTag;
 
 };
 

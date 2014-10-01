@@ -88,7 +88,8 @@ DPExternalRequestHandler::DPExternalRequestHandler(ConfigManager & configuration
  * 3. Gives ResultAggregator object to PendingRequest framework and it's used to aggregate the
  *       results. Results will be aggregator by another thread since it's not a blocking call.
  */
-void DPExternalRequestHandler::externalSearchCommand(evhttp_request *req , unsigned coreId){
+void DPExternalRequestHandler::externalSearchCommand(boost::shared_ptr<const ClusterResourceMetadata_Readview> clusterReadview,
+		evhttp_request *req , unsigned coreId){
 
 
     struct timespec tstart;
@@ -96,9 +97,6 @@ void DPExternalRequestHandler::externalSearchCommand(evhttp_request *req , unsig
     clock_gettime(CLOCK_REALTIME, &tstart);
     // CoreInfo_t is a view of configurationManager which contains all information for the
     // core that we want to search on, this object is accesses through configurationManager.
-    boost::shared_ptr<const ClusterResourceMetadata_Readview> clusterReadview;
-    ShardManager::getShardManager()->getMetadataManager()->getClusterReadView(clusterReadview);
-
 //    Logger::console("Cluster readview used for search: ");
 //    Logger::console("====================================");
 //    clusterReadview->print();
@@ -195,7 +193,8 @@ void DPExternalRequestHandler::externalSearchCommand(evhttp_request *req , unsig
 }
 
 
-void DPExternalRequestHandler::externalSearchAllCommand(evhttp_request * req){
+void DPExternalRequestHandler::externalSearchAllCommand(boost::shared_ptr<const ClusterResourceMetadata_Readview> clusterReadview,
+		evhttp_request * req){
 	//TODO
 }
 
@@ -206,11 +205,8 @@ void DPExternalRequestHandler::externalSearchAllCommand(evhttp_request * req){
  *    in a non-blocking manner. The status response is taken care of by aggregator in
  *    another thread when these responses come.
  */
-void DPExternalRequestHandler::externalInsertCommand(evhttp_request *req, unsigned coreId){
-
-
-    boost::shared_ptr<const ClusterResourceMetadata_Readview> clusterReadview;
-    ShardManager::getShardManager()->getMetadataManager()->getClusterReadView(clusterReadview);
+void DPExternalRequestHandler::externalInsertCommand(boost::shared_ptr<const ClusterResourceMetadata_Readview> clusterReadview,
+		evhttp_request *req, unsigned coreId){
 
 //    Logger::console("Cluster readview used for insert: ");
 //    Logger::console("====================================");
@@ -380,10 +376,8 @@ void DPExternalRequestHandler::externalInsertCommand(evhttp_request *req, unsign
  *    in a non-blocking manner. The status response is taken care of by aggregator in
  *    another thread when these responses come.
  */
-void DPExternalRequestHandler::externalUpdateCommand(evhttp_request *req, unsigned coreId){
-
-    boost::shared_ptr<const ClusterResourceMetadata_Readview> clusterReadview;
-    ShardManager::getShardManager()->getMetadataManager()->getClusterReadView(clusterReadview);
+void DPExternalRequestHandler::externalUpdateCommand(boost::shared_ptr<const ClusterResourceMetadata_Readview> clusterReadview,
+		evhttp_request *req, unsigned coreId){
 
     const CoreInfo_t *indexDataContainerConf = clusterReadview->getCore(coreId);
     // it must be an update query
@@ -540,7 +534,8 @@ void DPExternalRequestHandler::externalUpdateCommand(evhttp_request *req, unsign
  *    in a non-blocking manner. The status response is taken care of by aggregator in
  *    another thread when these responses come.
  */
-void DPExternalRequestHandler::externalDeleteCommand(evhttp_request *req, unsigned coreId){
+void DPExternalRequestHandler::externalDeleteCommand(boost::shared_ptr<const ClusterResourceMetadata_Readview> clusterReadview,
+		evhttp_request *req, unsigned coreId){
 
 
     // it must be an update query
@@ -552,9 +547,6 @@ void DPExternalRequestHandler::externalDeleteCommand(evhttp_request *req, unsign
                 "{\"error\":\"The request has an invalid or missing argument. See Srch2 API documentation for details.\"}");
         return;
     }
-
-    boost::shared_ptr<const ClusterResourceMetadata_Readview> clusterReadview;
-    ShardManager::getShardManager()->getMetadataManager()->getClusterReadView(clusterReadview);
 
     const CoreInfo_t *indexDataContainerConf = clusterReadview->getCore(coreId);
 
@@ -626,10 +618,8 @@ void DPExternalRequestHandler::externalDeleteCommand(evhttp_request *req, unsign
   * 3. Gives ResultAggregator object to PendingRequest framework and it's used to aggregate the
   *       results. Results will be aggregator by another thread since it's not a blocking call.
   */
-void DPExternalRequestHandler::externalGetInfoCommand(evhttp_request *req, unsigned coreId){
-
-    boost::shared_ptr<const ClusterResourceMetadata_Readview> clusterReadview;
-    ShardManager::getShardManager()->getMetadataManager()->getClusterReadView(clusterReadview);
+void DPExternalRequestHandler::externalGetInfoCommand(boost::shared_ptr<const ClusterResourceMetadata_Readview> clusterReadview,
+		evhttp_request *req, unsigned coreId){
 
     const CoreInfo_t *indexDataContainerConf = clusterReadview->getCore(coreId);
 
@@ -670,10 +660,9 @@ void DPExternalRequestHandler::externalGetInfoCommand(evhttp_request *req, unsig
   * 3. Gives ResultAggregator object to PendingRequest framework and it's used to aggregate the
   *       results. Results will be aggregator by another thread since it's not a blocking call.
   */
-void DPExternalRequestHandler::externalSerializeIndexCommand(evhttp_request *req, unsigned coreId){
+void DPExternalRequestHandler::externalSerializeIndexCommand(boost::shared_ptr<const ClusterResourceMetadata_Readview> clusterReadview,
+		evhttp_request *req, unsigned coreId){
     /* Yes, we are expecting a post request */
-    boost::shared_ptr<const ClusterResourceMetadata_Readview> clusterReadview;
-    ShardManager::getShardManager()->getMetadataManager()->getClusterReadView(clusterReadview);
 
     const CoreInfo_t *indexDataContainerConf = clusterReadview->getCore(coreId);
     switch (req->type) {
@@ -729,11 +718,9 @@ void DPExternalRequestHandler::externalSerializeIndexCommand(evhttp_request *req
   * 3. Gives ResultAggregator object to PendingRequest framework and it's used to aggregate the
   *       results. Results will be aggregator by another thread since it's not a blocking call.
   */
-void DPExternalRequestHandler::externalSerializeRecordsCommand(evhttp_request *req, unsigned coreId){
+void DPExternalRequestHandler::externalSerializeRecordsCommand(boost::shared_ptr<const ClusterResourceMetadata_Readview> clusterReadview,
+		evhttp_request *req, unsigned coreId){
     /* Yes, we are expecting a post request */
-
-    boost::shared_ptr<const ClusterResourceMetadata_Readview> clusterReadview;
-    ShardManager::getShardManager()->getMetadataManager()->getClusterReadView(clusterReadview);
 
     const CoreInfo_t *indexDataContainerConf = clusterReadview->getCore(coreId);
 
@@ -808,10 +795,8 @@ void DPExternalRequestHandler::externalSerializeRecordsCommand(evhttp_request *r
   * 3. Gives ResultAggregator object to PendingRequest framework and it's used to aggregate the
   *       results. Results will be aggregator by another thread since it's not a blocking call.
   */
-void DPExternalRequestHandler::externalResetLogCommand(evhttp_request *req, unsigned coreId){
-
-    boost::shared_ptr<const ClusterResourceMetadata_Readview> clusterReadview;
-    ShardManager::getShardManager()->getMetadataManager()->getClusterReadView(clusterReadview);
+void DPExternalRequestHandler::externalResetLogCommand(boost::shared_ptr<const ClusterResourceMetadata_Readview> clusterReadview,
+		evhttp_request *req, unsigned coreId){
 
     const CoreInfo_t *indexDataContainerConf = clusterReadview->getCore(coreId);
 
@@ -863,10 +848,8 @@ void DPExternalRequestHandler::externalResetLogCommand(evhttp_request *req, unsi
   * 3. Gives ResultAggregator object to PendingRequest framework and it's used to aggregate the
   *       results. Results will be aggregator by another thread since it's not a blocking call.
   */
-void DPExternalRequestHandler::externalCommitCommand(evhttp_request *req, unsigned coreId){
-
-    boost::shared_ptr<const ClusterResourceMetadata_Readview> clusterReadview;
-    ShardManager::getShardManager()->getMetadataManager()->getClusterReadView(clusterReadview);
+void DPExternalRequestHandler::externalCommitCommand(boost::shared_ptr<const ClusterResourceMetadata_Readview> clusterReadview,
+		evhttp_request *req, unsigned coreId){
 
     const CoreInfo_t *indexDataContainerConf = clusterReadview->getCore(coreId);
 
@@ -918,10 +901,8 @@ void DPExternalRequestHandler::externalCommitCommand(evhttp_request *req, unsign
   * 3. Gives ResultAggregator object to PendingRequest framework and it's used to aggregate the
   *       results. Results will be aggregator by another thread since it's not a blocking call.
   */
-void DPExternalRequestHandler::externalMergeCommand(evhttp_request *req, unsigned coreId){
-
-    boost::shared_ptr<const ClusterResourceMetadata_Readview> clusterReadview;
-    ShardManager::getShardManager()->getMetadataManager()->getClusterReadView(clusterReadview);
+void DPExternalRequestHandler::externalMergeCommand(boost::shared_ptr<const ClusterResourceMetadata_Readview> clusterReadview,
+		evhttp_request *req, unsigned coreId){
 
     const CoreInfo_t *indexDataContainerConf = clusterReadview->getCore(coreId);
 

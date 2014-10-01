@@ -125,12 +125,7 @@ const string &CoreInfo_t::getSrch2Home() const {
 const string& CoreInfo_t::getLicenseKeyFileName() const {
 	return configManager->getLicenseKeyFileName();
 }
-const string& CoreInfo_t::getHTTPServerListeningHostname() const{
-	return configManager->getHTTPServerListeningHostname();
-}
-const string& CoreInfo_t::getHTTPServerListeningPort() const {
-	return configManager->getHTTPServerDefaultListeningPort();
-}
+
 const string& CoreInfo_t::getHTTPServerAccessLogFile() const {
 	return configManager->getHTTPServerAccessLogFile();
 }
@@ -219,15 +214,19 @@ void CoreInfo_t::setPort(PortType_t portType, unsigned short portNumber)
     }
 
     switch (portType) {
-    case SearchPort:
-    case SuggestPort:
-    case InfoPort:
-    case DocsPort:
-    case UpdatePort:
-    case SavePort:
-    case ExportPort:
-    case ResetLoggerPort:
-    case ShutdownPort:
+	case SearchPort:
+	case SuggestPort:
+	case InfoPort:
+	case DocsPort:
+	case UpdatePort:
+	case SavePort:
+	case ExportPort:
+	case ResetLoggerPort:
+	case CommitPort:
+	case MergePort:
+	case SearchAllPort:
+	case ShutdownPort:
+	case NodeShutdownPort:
         ports[portType] = portNumber;
         break;
 

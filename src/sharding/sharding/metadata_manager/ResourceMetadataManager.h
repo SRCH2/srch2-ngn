@@ -30,7 +30,7 @@ class ResourceMetadataManager{
 public:
 
 	ResourceMetadataManager();
-
+	~ResourceMetadataManager();
 	void resolve(CommitNotification * commitNotification){
 		if(commitNotification == NULL){
 			ASSERT(false);

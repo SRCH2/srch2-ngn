@@ -133,6 +133,7 @@ public:
 	void setLoadBalancing();
 	void resetLoadBalancing();
 	bool isLoadBalancing() const;
+	pthread_t * getLoadbalancingThread() ;
 
 	void print();
 private:
@@ -157,7 +158,7 @@ private:
 	bool joinedFlag;
 	bool cancelledFlag;
 	bool loadBalancingFlag;
-
+	pthread_t * loadBalancingThread;
 	/*
 	 * IMPORTANT NOTE:
 	 * *** This is not a normal entry point. This entry point to lock manager of

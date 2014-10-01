@@ -125,12 +125,26 @@ const char* const ConfigManager::indexTypeString = "indextype";
 const char* const ConfigManager::listenerWaitTimeString = "listenerwaittime";
 const char* const ConfigManager::listeningHostStringString = "listeninghostname";
 const char* const ConfigManager::listeningPortString = "listeningport";
+const char* const ConfigManager::searchPortString = "searchport";
+const char* const ConfigManager::suggestPortString = "suggestport";
+const char* const ConfigManager::infoPortString = "infoport";
+const char* const ConfigManager::docsPortString = "docsport";
+const char* const ConfigManager::updatePortString = "updateport";
+const char* const ConfigManager::savePortString = "saveport";
+const char* const ConfigManager::exportPortString = "exportport";
+const char* const ConfigManager::resetLoggerPortString = "resetloggerport";
+const char* const ConfigManager::commitPortString = "commitport";
+const char* const ConfigManager::mergePortString = "mergeport";
+const char* const ConfigManager::searchAllPortString = "searchallport";
+const char* const ConfigManager::shutdownPortString = "shutdownport";
+const char* const ConfigManager::nodeShutdownPortString = "nodeshutdownport";
 const char* const ConfigManager::locationLatitudeString = "location_latitude";
 const char* const ConfigManager::locationLongitudeString = "location_longitude";
 const char* const ConfigManager::logLevelString = "loglevel";
 const char* const ConfigManager::maxDocsString = "maxdocs";
 const char* const ConfigManager::maxMemoryString = "maxmemory";
 const char* const ConfigManager::maxSearchThreadsString = "maxsearchthreads";
+const char* const ConfigManager::maxInternalThreadsString = "maxinternalthreads";
 const char* const ConfigManager::mergeEveryMWritesString = "mergeeverymwrites";
 const char* const ConfigManager::mergeEveryNSecondsString = "mergeeverynseconds";
 const char* const ConfigManager::mergePolicyString = "mergepolicy";
@@ -175,15 +189,6 @@ const char* const ConfigManager::singleCoreString = "core";
 const char* const ConfigManager::defaultCoreNameString = "defaultcorename";
 const char *const ConfigManager::allowedRecordSpecialCharactersString = "allowedrecordspecialcharacters";
 
-const char* const ConfigManager::searchPortString = "searchport";
-const char* const ConfigManager::suggestPortString = "suggestport";
-const char* const ConfigManager::infoPortString = "infoport";
-const char* const ConfigManager::docsPortString = "docsport";
-const char* const ConfigManager::updatePortString = "updateport";
-const char* const ConfigManager::savePortString = "saveport";
-const char* const ConfigManager::exportPortString = "exportport";
-const char* const ConfigManager::resetLoggerPortString = "resetloggerport";
-
 const char* const ConfigManager::highLightString = "highlight";
 const char* const ConfigManager::highLighterString = "highlighter";
 const char* const ConfigManager::exactTagPre = "exacttagpre";
@@ -196,6 +201,7 @@ const char* const ConfigManager::defaultFuzzyPreTag = "<b>";
 const char* const ConfigManager::defaultFuzzyPostTag = "</b>";
 const char* const ConfigManager::defaultExactPreTag = "<b>";
 const char* const ConfigManager::defaultExactPostTag = "</b>";
+const char* const ConfigManager::heartBeatTimerTag = "heartbeattimer";
 
 //TODO : not used, to be deleted
 ////Function Definition for verifyConsistency; it checks if the port number of core is different
@@ -221,12 +227,29 @@ const char* const ConfigManager::defaultExactPostTag = "</b>";
 //    }
 //    return true;
 //}
+ConfigManager::PortNameMap_t ConfigManager::portNameMap[] = {
+    { SearchPort, ConfigManager::searchPortString },
+    { SuggestPort, ConfigManager::suggestPortString },
+    { InfoPort, ConfigManager::infoPortString },
+    { DocsPort, ConfigManager::docsPortString },
+    { UpdatePort, ConfigManager::updatePortString },
+    { SavePort, ConfigManager::savePortString },
+    { ExportPort, ConfigManager::exportPortString },
+    { ResetLoggerPort, ConfigManager::resetLoggerPortString },
+    { CommitPort, ConfigManager::commitPortString},
+    { MergePort, ConfigManager::mergePortString},
+    { SearchAllPort, ConfigManager::searchAllPortString},
+	{ ShutdownPort, ConfigManager::shutdownPortString},
+	{ NodeShutdownPort, ConfigManager::nodeShutdownPortString},
+    { EndOfPortType, NULL }
+};
 
 ConfigManager::ConfigManager(const string& configFile)
 {
     this->configFile = configFile;
     defaultCoreName = "__DEFAULTCORE__";
     defaultCoreSetFlag = false;
+    heartBeatTimer = 0;
 }
 
 bool ConfigManager::loadConfigFile(srch2http::ResourceMetadataManager * metadataManager)
@@ -989,23 +1012,6 @@ void ConfigManager::parseCoreInformationTags(const xml_node &parentNode, CoreInf
             return;
         }
     }
-
-    // map of port type enums to strings to simplify code
-    struct portNameMap_t {
-        enum PortType_t portType;
-        const char *portName;
-    };
-    static portNameMap_t portNameMap[] = {
-        { SearchPort, searchPortString },
-        { SuggestPort, suggestPortString },
-        { InfoPort, infoPortString },
-        { DocsPort, docsPortString },
-        { UpdatePort, updatePortString },
-        { SavePort, savePortString },
-        { ExportPort, exportPortString },
-        { ResetLoggerPort, resetLoggerPortString },
-        { EndOfPortType, NULL }
-    };
 
     for (unsigned int i = 0; portNameMap[i].portName != NULL; i++) {
         childNode = parentNode.child(portNameMap[i].portName);
@@ -2127,6 +2133,15 @@ void ConfigManager::parse(const pugi::xml_document& configDoc,
 		}
 	}
 
+
+    xml_node heartBeatTimerNode = configNode.child(heartBeatTimerTag);
+    if ( heartBeatTimerNode && heartBeatTimerNode.text()){
+        string timerInText = string(heartBeatTimerNode.text().get());
+        if ( isOnlyDigits(timerInText)){
+            heartBeatTimer = static_cast<int>(strtol(timerInText.c_str(), NULL, 10));
+        }
+    }
+
     // maxSearchThreads is an optional field
     numberOfThreads = 1; // by default it is 1
     childNode = configNode.child(maxSearchThreadsString);
@@ -2136,6 +2151,20 @@ void ConfigManager::parse(const pugi::xml_document& configDoc,
             numberOfThreads = childNode.text().as_int();
         } else {
             parseError << "maxSearchThreads is not set correctly.\n";
+            configSuccess = false;
+            return;
+        }
+    }
+
+    // maxInternalThreads is an optional field
+    numberOfInternalThreads = 3; // by default it is 3
+    childNode = configNode.child(maxInternalThreadsString);
+    if (childNode && childNode.text()) {
+        string mst = childNode.text().get();
+        if (isValidMaxSearchThreads(mst)) {
+            numberOfInternalThreads = childNode.text().as_int();
+        } else {
+            parseError << "maxInternalThreads is not set correctly.\n";
             configSuccess = false;
             return;
         }
@@ -2182,22 +2211,17 @@ void ConfigManager::parse(const pugi::xml_document& configDoc,
         return;
     }
 
+
     // listeningPort is a required field
     childNode = configNode.child(listeningPortString);
     if (childNode && childNode.text()) { // checks if the config/listeningPort has any text in it or not
-        this->httpServerListeningPortStr = string(childNode.text().get());
-        int value = static_cast<int>(strtol(httpServerListeningPortStr.c_str(),
+        string httpServerListeningDefaultPortStr = string(childNode.text().get());
+        this->httpServerListeningDefaultPort = static_cast<int>(strtol(httpServerListeningDefaultPortStr.c_str(),
                 NULL, 10));
-        if (value <= 0 || value > USHRT_MAX) {
+        if (this->httpServerListeningDefaultPort <= 0 || this->httpServerListeningDefaultPort > USHRT_MAX) {
             parseError << listeningPortString << " must be between 1 and " << USHRT_MAX;
             configSuccess = false;
             return;
-        }
-
-        // TODO : we must change the parsing code to parse all ports ...
-        for(srch2http::PortType_t portType = (srch2http::PortType_t) 0;
-    			portType < srch2http::EndOfPortType; portType = srch2http::incrementPortType(portType)){
-        	httpServerListeningPorts[portType] = value;
         }
     } else {
         parseError << "listeningPort is not set.\n";
@@ -2348,6 +2372,15 @@ float ConfigManager::getDefaultSpatialQueryBoundingBox() const {
 unsigned int ConfigManager::getNumberOfThreads() const
 {
     return numberOfThreads;
+}
+
+
+unsigned int ConfigManager::getNumberOfInternalThreads() const{
+	return numberOfInternalThreads;
+}
+
+unsigned int ConfigManager::getHeartBeatTimer() const{
+	return heartBeatTimer;
 }
 
 const string& ConfigManager::getIndexPath(const string &coreName) const {
@@ -2604,12 +2637,8 @@ const string& ConfigManager::getHTTPServerListeningHostname() const {
     return httpServerListeningHostname;
 }
 
-const string& ConfigManager::getHTTPServerDefaultListeningPort() const {
-    return httpServerListeningPortStr;
-}
-
-const map<enum srch2http::PortType_t, unsigned short int>& ConfigManager::getHTTPServerListeningPorts() const {
-	return httpServerListeningPorts;
+unsigned short int ConfigManager::getHTTPServerDefaultListeningPort() const {
+    return httpServerListeningDefaultPort;
 }
 
 int ConfigManager::getOrdering() const {
@@ -3170,6 +3199,7 @@ uint ConfigManager::removeDir(const string& path)
 string ConfigManager::getCurrentNodeName() const{
 	return this->nodeNameStr;
 }
+
 
 string Transport::getIpAddress(){
 	return this->ipAddress;
