@@ -456,8 +456,8 @@ void InvertedIndex::print_test() const
     }
 }
 /*
- *   This API appends the inverted lists supplied as an input to list of ids that need to
- *   be merged.
+ *   This API appends the inverted lists supplied as an input to a set of inverted list ids
+ *   that need to be merged.
  */
 void InvertedIndex::appendInvertedListIdsForMerge(const vector<unsigned>& invertedListIds ){
 	for (unsigned i = 0; i < invertedListIds.size(); ++i) {
