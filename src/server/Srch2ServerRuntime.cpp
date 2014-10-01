@@ -559,7 +559,7 @@ int Srch2ServerRuntime::bindSocket(const char * hostname, unsigned short port) {
 		 */
 		char hostIpAddr[20];
 		memset(hostIpAddr, 0, sizeof(hostIpAddr));
-		struct hostent * host = gethostbyname(globalHostName);
+		struct hostent * host = gethostbyname(getInstance()->globalHostName.c_str());
 		if (host == NULL) {
 			// nothing much can be done..let us try 0.0.0.0
 			strncpy(hostIpAddr, "0.0.0.0", 7);
@@ -568,7 +568,7 @@ int Srch2ServerRuntime::bindSocket(const char * hostname, unsigned short port) {
 			struct in_addr **addr_list = (struct in_addr **) host->h_addr_list;
 			strcpy(hostIpAddr, inet_ntoa(*addr_list[0]));
 		}
-		conn = evhttp_connection_new( hostIpAddr, globalDefaultPort);
+		conn = evhttp_connection_new( hostIpAddr, getInstance()->globalDefaultPort);
 		evhttp_connection_set_timeout(conn, 1);
 		req = evhttp_request_new(dummyRequestHandler, (void*)NULL);
 		evhttp_make_request(conn, req, EVHTTP_REQ_GET, "/info");
@@ -592,25 +592,26 @@ void Srch2ServerRuntime::killServer(int signal) {
     	event_base_loopbreak(getInstance()->evBasesForInternalRequests[i]);
     }
 
-    for (int i = 0; i < getInstance()->maxExternalThreadCount; i++) {
-#ifdef ANDROID
-    	// Android thread implementation does not have pthread_cancel()
-    	// use pthread_kill instead. We use the SIGUSR2 to replace the SIGTERM signal
-    	pthread_kill(getInstance()->threadsToHandleExternalRequests[i], SIGUSR2);
-#else
-        pthread_cancel(getInstance()->threadsToHandleExternalRequests[i]);
-#endif
-    }
-
-    for (int i = 0; i < getInstance()->maxInternalThreadCount; i++) {
-#ifdef ANDROID
-    	// Android thread implementation does not have pthread_cancel()
-    	// use pthread_kill instead. We use the SIGUSR2 to replace the SIGTERM signal
-    	pthread_kill(getInstance()->threadsToHandleInternalRequests[i], SIGUSR2);
-#else
-        pthread_cancel(getInstance()->threadsToHandleInternalRequests[i]);
-#endif
-    }
+//  Surendra:  This code is not required.
+//    for (int i = 0; i < getInstance()->maxExternalThreadCount; i++) {
+//#ifdef ANDROID
+//    	// Android thread implementation does not have pthread_cancel()
+//    	// use pthread_kill instead. We use the SIGUSR2 to replace the SIGTERM signal
+//    	pthread_kill(getInstance()->threadsToHandleExternalRequests[i], SIGUSR2);
+//#else
+//        pthread_cancel(getInstance()->threadsToHandleExternalRequests[i]);
+//#endif
+//    }
+//
+//    for (int i = 0; i < getInstance()->maxInternalThreadCount; i++) {
+//#ifdef ANDROID
+//    	// Android thread implementation does not have pthread_cancel()
+//    	// use pthread_kill instead. We use the SIGUSR2 to replace the SIGTERM signal
+//    	pthread_kill(getInstance()->threadsToHandleInternalRequests[i], SIGUSR2);
+//#else
+//        pthread_cancel(getInstance()->threadsToHandleInternalRequests[i]);
+//#endif
+//    }
 
     if ( getInstance()->global_heart_beat_thread != NULL ){
 #ifdef ANDROID
