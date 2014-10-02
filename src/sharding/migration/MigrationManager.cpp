@@ -398,7 +398,6 @@ void MigrationService::receiveShard(ClusterShardId shardId, unsigned remoteNode)
 			std::istringstream inputStream(ios::binary);
 			migratedShard->bootStrapShardComponentFromByteStream(inputStream, currentSessionInfo.shardCompName);
 			emptyshard = true;
-			sleep(1);
 			Logger::console("%u/%u Received", 0, componentSize);
 			//Send ACK
 			migrationMgr->sendComponentDoneMsg(currentSessionInfo);
@@ -628,11 +627,11 @@ void MigrationService::sendShard(ClusterShardId shardId, unsigned destinationNod
 		Logger::console("Migrating shard component %s", componentName.c_str());
 		migrationMgr->sendComponentInfoAndWaitForAck(currentSessionInfo);
 
-		if (currentSessionInfo.status != MM_STATE_INFO_ACK_RCVD) {
-			Logger::console("Unable to migrate shard ..destination node did not respond to begin");
-			migrationMgr->notifySHMAndCleanup(sessionKey, MM_STATUS_FAILURE);
-			return;
-		}
+//		if (currentSessionInfo.status != MM_STATE_INFO_ACK_RCVD) {
+//			Logger::console("Unable to migrate shard ..destination node did not respond to begin");
+//			migrationMgr->notifySHMAndCleanup(sessionKey, MM_STATUS_FAILURE);
+//			return;
+//		}
 
 		// read shard from disk and send through.
 		string filename = shard->getIndexer()->getStoredIndexDirectory() + "/" + componentName;
@@ -681,12 +680,13 @@ void MigrationService::sendShard(ClusterShardId shardId, unsigned destinationNod
 		}
 		Logger::console("%u/%u sent", offset, componentSize);
 
-		while (currentSessionInfo.status != MM_STATE_COMPONENT_TRANSFERRED_ACK_RCVD &&
-				currentSessionInfo.status != MM_STATE_SHARD_TRANSFERRED_ACK_RCVD) {
-			//sleep(1);
+		migrationMgr->busyWaitWithTimeOut(currentSessionInfo, MM_STATE_COMPONENT_TRANSFERRED_ACK_RCVD, 15);
+		if (currentSessionInfo.status != MM_STATE_COMPONENT_TRANSFERRED_ACK_RCVD) {
+			Logger::console("Unable to migrate shard ..destination node did not respond");
+			migrationMgr->notifySHMAndCleanup(sessionKey, MM_STATUS_FAILURE);
+			return;
 		}
 		Logger::console("Data received by remote node...continuing");
-
 	}
 
 	currentSessionInfo.endTimeStamp = time(NULL);
@@ -714,12 +714,16 @@ void MigrationManager::doInitialHandShake(MigrationSessionInfo& currentSessionIn
 
 	unsigned destinationNodeId = currentSessionInfo.remoteNode;
 	currentSessionInfo.status = MM_STATE_INIT_ACK_WAIT;
-	int tryCount = 5;
+	//int tryCount = 5;
+	int timewait = 10;
+	time_t beg  = time(NULL);
+	time_t end = beg;
 	do {
 		sendMessage(destinationNodeId, initMessage);
-		--tryCount;
-		sleep(2);
-	} while(currentSessionInfo.status != MM_STATE_INIT_ACK_RCVD && tryCount);
+		if (end - beg > timewait)
+			break;
+		end = time(NULL);
+	} while(currentSessionInfo.status != MM_STATE_INIT_ACK_RCVD);
 	deAllocateMessage(initMessage);
 }
 
@@ -764,7 +768,7 @@ void MigrationManager::sendComponentInfoAndWaitForAck(MigrationSessionInfo& curr
 	sendMessage(destinationNodeId, compInfoMessage);
 	deAllocateMessage(compInfoMessage);
 
-	busyWaitWithTimeOut(currentSessionInfo, MM_STATE_INFO_ACK_RCVD);
+	//busyWaitWithTimeOut(currentSessionInfo, MM_STATE_INFO_ACK_RCVD);
 }
 
 void MigrationManager::sendComponentDoneMsg(MigrationSessionInfo& currentSessionInfo) {
@@ -841,19 +845,22 @@ int MigrationManager::acceptTCPConnection(int tcpSocket , short receivePort) {
 	fcntl(tcpSocket, F_SETFL, O_NONBLOCK);
 	struct sockaddr_in senderAddress;
 	unsigned sizeOfAddr = sizeof(senderAddress);
-	unsigned retryCount = 5;  // TODO: define in header file.
-	while(retryCount) {
+	unsigned timeWaitInSec = 10;  // TODO: define in header file.
+	time_t beg = time(NULL);
+	time_t end = beg;
+	while(end - beg < timeWaitInSec) {
 		tcpReceiveSocket = accept(tcpSocket, (struct sockaddr *) &senderAddress, &sizeOfAddr);
 		if (tcpReceiveSocket == -1) {
-			if (errno == EAGAIN || errno == EWOULDBLOCK) {
-				sleep(1);
-			} else {
+			if (errno != EAGAIN && errno != EWOULDBLOCK) {
 				perror("");
 				return tcpReceiveSocket;
 			}
 		} else if (tcpReceiveSocket > 0) {
 			break;
+		} else {
+			ASSERT(false);  // accept should not return 0
 		}
+		end = time(NULL);
 	}
 
 	/*
@@ -992,9 +999,9 @@ string MigrationManager::initMigrationSession(const ClusterShardId& currentShard
 	return key;
 }
 
-void MigrationManager::busyWaitWithTimeOut(const MigrationSessionInfo& currentSessionInfo, MIGRATION_STATE expectedState) {
+void MigrationManager::busyWaitWithTimeOut(const MigrationSessionInfo& currentSessionInfo,
+		MIGRATION_STATE expectedState, int waittime) {
 	// wait for n seconds without sleep and check for status change.
-	int waittime = 5;
 	time_t prevTime = time(NULL);
 	while(currentSessionInfo.status != expectedState) {
 		time_t timeNow = time(NULL);
