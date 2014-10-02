@@ -250,6 +250,7 @@ private:
 	unsigned int numberOfInternalThreads; // for internal use only
 	unsigned int heartBeatTimer;
 
+	int nodelockFd;
 
 	vector<std::pair<string, unsigned > > wellKnownHost;
 
