@@ -41,6 +41,8 @@ private:
     ServerInterface * serverHandle;
     int listenerWaitTime;
     time_t lastAccessedLogRecordTime;
+    unsigned nextPosition;
+    std::string currentLogFile;
 
     //Storing the table schema information
     std::vector<std::string> fieldNames;

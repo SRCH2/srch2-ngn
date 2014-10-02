@@ -22,6 +22,8 @@ MySQLConnector::MySQLConnector() {
     listenerWaitTime = 1;
     stmt = NULL;
     lastAccessedLogRecordTime = 0;
+    nextPosition = 4;
+    currentLogFile = "";
 }
 
 //Initialize the connector. Establish a connection to the MySQL database.
@@ -217,21 +219,28 @@ bool MySQLConnector::populateFieldName(std::string & tableName) {
 
 //Load the lastSavingIndexTime from the disk
 bool MySQLConnector::loadLastAccessedLogRecordTime() {
-    std::string dataDir, srch2Home;
-
+    std::string dataDir, srch2Home, logName, logFileStr, logPosStr;
+    this->serverHandle->configLookUp("logName", logName);
     this->serverHandle->configLookUp("srch2Home", srch2Home);
     this->serverHandle->configLookUp("dataDir", dataDir);
     std::string path = srch2Home + "/" + dataDir + "/mysql_data/" + "data.bin";
 
     if (checkFileExisted(path.c_str())) {
         ifstream a_file(path.c_str(), ios::in | ios::binary);
-        a_file >> lastAccessedLogRecordTime;
+        a_file >> logFileStr >> logPosStr >> this->lastAccessedLogRecordTime;
         a_file.close();
+
+        this->currentLogFile = logFileStr;
+        this->nextPosition = static_cast<unsigned>(strtoul(logPosStr.c_str(),
+        NULL, 10));
         return true;
     } else {
         Logger::debug("MYSQLCONNECTOR: Warning. Can not find %s."
-                " The connector will use the current time.", path.c_str());
-        lastAccessedLogRecordTime = time(NULL);
+                " The connector will use the default position and file name.",
+                path.c_str());
+        this->currentLogFile = logName + ".000001";
+        this->nextPosition = 4;
+        this->lastAccessedLogRecordTime = time(NULL);
         return false;
     }
 }
@@ -250,7 +259,8 @@ void MySQLConnector::saveLastAccessedLogRecordTime() {
 
     std::string pt = path + "data.bin";
     std::ofstream a_file(pt.c_str(), std::ios::trunc | std::ios::binary);
-    a_file << lastAccessedLogRecordTime;
+    a_file << this->currentLogFile << endl << this->nextPosition << endl
+            << this->lastAccessedLogRecordTime;
     a_file.flush();
     a_file.close();
 }
@@ -260,13 +270,12 @@ void MySQLConnector::saveLastAccessedLogRecordTime() {
  * corresponding requests to the SRCH2 engine
  */
 int MySQLConnector::runListener() {
-    string host, port, user, password, dbName, logName, pk;
+    string host, port, user, password, dbName, pk;
     this->serverHandle->configLookUp("host", host);
     this->serverHandle->configLookUp("port", port);
     this->serverHandle->configLookUp("user", user);
     this->serverHandle->configLookUp("password", password);
     this->serverHandle->configLookUp("dbName", dbName);
-    this->serverHandle->configLookUp("logName", logName);
     this->serverHandle->configLookUp("uniqueKey", pk);
 
     loadLastAccessedLogRecordTime();
@@ -294,7 +303,7 @@ int MySQLConnector::runListener() {
     }
 
     //Initialize the binlog pointer.
-    while (binlog.set_position(logName + ".000001", 4)) {
+    while (binlog.set_position(this->currentLogFile, this->nextPosition)) {
         Logger::error(
                 "MYSQLCONNECTOR: Can't reposition the binary log reader. Please check if the binlog mode is enabled");
         sleep(listenerWaitTime);
@@ -321,6 +330,8 @@ int MySQLConnector::runListener() {
             Logger::debug(
                     "MYSQLCONNECTOR: Event type: Rotate, filename= %s pos= %d",
                     rot->binlog_file.c_str(), rot->binlog_pos);
+            this->currentLogFile = rot->binlog_file;
+            this->nextPosition = rot->binlog_pos;
         }
             break;
         case mysql::WRITE_ROWS_EVENT:
@@ -339,6 +350,12 @@ int MySQLConnector::runListener() {
         }
             break;
         }
+
+        //Update the position
+        if (event->header()->type_code != mysql::ROTATE_EVENT) {
+            this->nextPosition = event->header()->next_position;
+        }
+
         delete event;
     }
 
