@@ -138,7 +138,7 @@ bool MySQLConnector::checkConfigValidity() {
 }
 
 /*
- * Retrieve records from the table records and insert them into the SRCH2 engine.
+ * Retrieve records from the table and insert them into the SRCH2 engine.
  * Query: SELECT * FROM table;
  */
 int MySQLConnector::createNewIndexes() {
@@ -287,9 +287,9 @@ int MySQLConnector::runListener() {
             mysql::system::create_transport(url.str().c_str()));
 
     //Register the handlers to listen the binlog event
-    IncidentHandler incidentHandler;
-    TableIndex tableEventHandler;
-    Applier applier(&tableEventHandler, serverHandle, &fieldNames,
+    MySQLIncidentHandler incidentHandler;
+    MySQLTableIndex tableEventHandler;
+    MySQLApplier applier(&tableEventHandler, serverHandle, &fieldNames,
             lastAccessedLogRecordTime, pk);
 
     binlog.content_handler_pipeline()->push_back(&tableEventHandler);

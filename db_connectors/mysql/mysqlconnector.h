@@ -26,7 +26,7 @@ public:
 
     //Initialize the connector. Establish a connection to the MySQL database.
     virtual int init(ServerInterface *serverHandle);
-    //Retrieve records from the table records and insert them into the SRCH2 engine.
+    //Retrieve records from the table and insert them into the SRCH2 engine.
     virtual int createNewIndexes();
     /*
      * Wait for the updates from the MySQL replication listener, and send

@@ -18,22 +18,22 @@
 using mysql::Binary_log;
 using mysql::system::create_transport;
 
-/****************************TableIndex*******************************/
+/****************************MySQLTableIndex*******************************/
 //Table index populates the table id and table name.
 typedef std::map<uint64_t, mysql::Table_map_event *> Int2event_map;
 
-class TableIndex: public mysql::Content_handler, public Int2event_map {
+class MySQLTableIndex: public mysql::Content_handler, public Int2event_map {
 public:
     mysql::Binary_log_event *process_event(mysql::Table_map_event *tm);
 
-    ~TableIndex();
+    ~MySQLTableIndex();
 };
 
-/************************IncidentHandler******************************/
+/************************MySQLIncidentHandler******************************/
 //This class handles all the incident events like LOST_EVENTS.
-class IncidentHandler: public mysql::Content_handler {
+class MySQLIncidentHandler: public mysql::Content_handler {
 public:
-    IncidentHandler() :
+    MySQLIncidentHandler() :
             mysql::Content_handler() {
     }
 
@@ -42,14 +42,14 @@ public:
 
 /*****************************Applier**********************************/
 //This class handles insert, delete, update events.
-class Applier: public mysql::Content_handler {
+class MySQLApplier: public mysql::Content_handler {
 public:
-    Applier(TableIndex * index, ServerInterface * serverHandle,
+    MySQLApplier(MySQLTableIndex * index, ServerInterface * serverHandle,
             std::vector<std::string> * schemaName, time_t & startTimestamp,
             std::string & pk);
     mysql::Binary_log_event * process_event(mysql::Row_event * rev);
 private:
-    TableIndex * tableIndex;
+    MySQLTableIndex * tableIndex;
     std::vector<std::string> * schemaName;
     ServerInterface * serverHandle;
     time_t startTimestamp;

@@ -3,6 +3,9 @@
  *
  *  Created on: Sep 17, 2014
  *      Author: Chen Liu liu@srch2.com
+ *
+ *  This piece of code is modified from the web site: (mysql-replication-listener example code)
+ *  http://bazaar.launchpad.net/~mysql/mysql-replication-listener/trunk/files/head:/examples/mysql2lucene/
  */
 
 #include "mysqlEventHandler.h"
@@ -11,9 +14,9 @@
 
 using srch2::util::Logger;
 
-/****************************TableIndex*******************************/
+/****************************MySQLTableIndex*******************************/
 //Table index populates the table id and table name.
-mysql::Binary_log_event *TableIndex::process_event(mysql::Table_map_event *tm) {
+mysql::Binary_log_event *MySQLTableIndex::process_event(mysql::Table_map_event *tm) {
     if (find(tm->table_id) == end())
         insert(std::pair<uint64_t, mysql::Table_map_event *>(tm->table_id, tm));
 
@@ -21,16 +24,16 @@ mysql::Binary_log_event *TableIndex::process_event(mysql::Table_map_event *tm) {
     return 0;
 }
 
-TableIndex::~TableIndex() {
+MySQLTableIndex::~MySQLTableIndex() {
     Int2event_map::iterator it = begin();
     do {
         delete it->second;
     } while (++it != end());
 }
 
-/************************IncidentHandler******************************/
+/************************MySQLIncidentHandler******************************/
 //This class handles all the incident events like LOST_EVENTS.
-mysql::Binary_log_event * IncidentHandler::process_event(
+mysql::Binary_log_event * MySQLIncidentHandler::process_event(
         mysql::Incident_event * incident) {
     Logger::debug("MYSQLCONNECTOR: Incident event type: %s\n length: %d,"
             " next pos: %d\n type= %u, message= %s",
@@ -42,9 +45,9 @@ mysql::Binary_log_event * IncidentHandler::process_event(
     return 0;
 }
 
-/*****************************Applier**********************************/
+/*****************************MySQLApplier**********************************/
 //This class handles insert, delete, update events.
-Applier::Applier(TableIndex * index, ServerInterface * serverHandle,
+MySQLApplier::MySQLApplier(MySQLTableIndex * index, ServerInterface * serverHandle,
         std::vector<std::string> * schemaName, time_t & startTimestamp,
         std::string & pk) {
     tableIndex = index;
@@ -54,7 +57,7 @@ Applier::Applier(TableIndex * index, ServerInterface * serverHandle,
     this->pk = pk;
 }
 
-mysql::Binary_log_event * Applier::process_event(mysql::Row_event * rev) {
+mysql::Binary_log_event * MySQLApplier::process_event(mysql::Row_event * rev) {
     std::string tableName;
     this->serverHandle->configLookUp("tableName", tableName);
 
@@ -118,7 +121,7 @@ mysql::Binary_log_event * Applier::process_event(mysql::Row_event * rev) {
     return rev;
 }
 
-void Applier::tableInsert(std::string & table_name,
+void MySQLApplier::tableInsert(std::string & table_name,
         mysql::Row_of_fields &fields) {
     mysql::Row_of_fields::iterator field_it = fields.begin();
     std::vector<std::string>::iterator schema_it = schemaName->begin();
@@ -147,7 +150,7 @@ void Applier::tableInsert(std::string & table_name,
     serverHandle->insertRecord(jsonString);
 }
 
-void Applier::tableDelete(std::string & table_name,
+void MySQLApplier::tableDelete(std::string & table_name,
         mysql::Row_of_fields &fields) {
     mysql::Row_of_fields::iterator field_it = fields.begin();
     std::vector<std::string>::iterator schema_it = schemaName->begin();
@@ -175,7 +178,7 @@ void Applier::tableDelete(std::string & table_name,
     }
 }
 
-void Applier::tableUpdate(std::string & table_name,
+void MySQLApplier::tableUpdate(std::string & table_name,
         mysql::Row_of_fields &old_fields, mysql::Row_of_fields &new_fields) {
     /*
      Find previous entry and delete it.

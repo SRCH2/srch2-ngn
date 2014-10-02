@@ -26,20 +26,20 @@ port = '8087'
 serverHandle = None
 totalFailCount = 0
 binary_path = None
-user = ''
-password = ''
+myUserName = ''
+myPassword = ''
 
 def populateUserPassFromXML(path):
-    global user
-    global password
+    global myUserName
+    global myPassword
 
     tree = ET.parse(path)
     dbKeyValues = list(tree.find('./dbParameters/dbKeyValues').iter('dbKeyValue'))
     for i in dbKeyValues:
         if(i.attrib['key']=='password'):
-            password = i.attrib['value']
+            myPassword = i.attrib['value']
         if(i.attrib['key']=='user'):
-            user = i.attrib['value']
+            myUserName = i.attrib['value']
 
 #Start the SRCH2 engine with mysql config file.
 def startSrch2Engine():
@@ -204,7 +204,7 @@ if __name__ == '__main__':
 
     populateUserPassFromXML('./adapter_mysql/conf.xml')
     try:
-        conn = mysql.connector.connect(host="127.0.0.1",user=user, password=password)
+        conn = mysql.connector.connect(host="127.0.0.1",user=myUserName, password=myPassword)
     except :
         print 'Access denied while connecting to the MySQL database. Set the MySQL user name and password in ./adapter_mysql/my.cnf'
         os._exit(-2)
