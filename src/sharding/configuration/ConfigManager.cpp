@@ -30,7 +30,7 @@
 #include "sharding/sharding/metadata_manager/ResourceMetadataManager.h"
 #include "sharding/sharding/metadata_manager/Cluster.h"
 #include "sharding/sharding/ShardManager.h"
-
+#include "fcntl.h"
 
 using namespace std;
 namespace srch2is = srch2::instantsearch;
@@ -251,6 +251,7 @@ ConfigManager::ConfigManager(const string& configFile)
     defaultCoreName = defaultCore;
     defaultCoreSetFlag = false;
     heartBeatTimer = 0;
+    nodelockFd = -1;
 }
 
 bool ConfigManager::loadConfigFile(srch2http::ResourceMetadataManager * metadataManager)
@@ -3191,26 +3192,40 @@ bool ConfigManager::tryLockNodeName(){
 		nodeDirPath = this->createNodeDir(this->clusterNameStr);
 	}
 	string lockFilePath = nodeDirPath + "/." + this->getCurrentNodeName() + ".lock";
-	ifstream lockFile(lockFilePath.c_str());
-	if(lockFile.good()){
-		lockFile.close();
+
+	struct flock fl;
+	fl.l_type   = F_WRLCK;  /* Type of lock: F_RDLCK, F_WRLCK, F_UNLCK    */
+	fl.l_whence = SEEK_SET; /* SEEK_SET, SEEK_CUR, SEEK_END */
+	fl.l_start  = 0;        /* Offset from l_whence         */
+	fl.l_len    = 0;        /* length, 0 = to EOF           */
+
+	/*
+	 *  Open Lock file in write only mode. If the file is not present then create it.
+	 */
+	nodelockFd = open(lockFilePath.c_str(), O_WRONLY|O_TRUNC|O_CREAT, S_IRWXU);
+	if (nodelockFd == -1) {
 		return false;
-	}else{
-		ofstream newLockFile(lockFilePath.c_str());
-		newLockFile.write("locked", 6);
-		newLockFile.close();
-		return true;
 	}
-	return false;
+
+	/*
+	 * Acquire write lock on the file. If the file is already locked by another process
+	 * then status is -1.
+	 */
+	int status = fcntl(nodelockFd, F_SETLK, &fl);
+	if (status == -1) {
+		return false;
+	}
+	return true;
 }
 void ConfigManager::unlockNodeName(){
-	string nodeDirPath = this->getNodeDir(this->clusterNameStr);
-	if(nodeDirPath.compare("") == 0){
-		return;
-	}
-	string lockFilePath = nodeDirPath + "/." + this->getCurrentNodeName() + ".lock";
-	std::remove(lockFilePath.c_str());
-	return;
+	struct flock fl;
+	fl.l_type   = F_UNLCK;  /* Type of lock: F_RDLCK, F_WRLCK, F_UNLCK    */
+	fl.l_whence = SEEK_SET; /* SEEK_SET, SEEK_CUR, SEEK_END */
+	fl.l_start  = 0;        /* Offset from l_whence         */
+	fl.l_len    = 0;        /* length, 0 = to EOF           */
+	// unlock lock file before exiting
+	fcntl(nodelockFd, F_SETLK, &fl);
+	nodelockFd = -1;
 }
 
 void ConfigManager::renameDir(const string & src, const string & target){

@@ -45,6 +45,7 @@ SyncManager::SyncManager(ConfigManager& cm, TransportManager& tm) :
 	this->nodeIds = 0;
 	this->configUpdatesDone = false;
 	this->uniqueNodeId = 0;
+	this->stopSynchManager = false;
 
 	MulticastDiscoveryConfig multicastdiscoverConf;
 	UnicastDiscoveryConfig unicastdiscoverConf;
@@ -76,7 +77,7 @@ SyncManager::SyncManager(ConfigManager& cm, TransportManager& tm) :
 }
 
 SyncManager::~SyncManager() {
-
+	ASSERT(this->stopSynchManager == true);
 }
 
 void * dispatchMasterMessageHandler(void *arg);
@@ -240,7 +241,7 @@ void SyncManager::run(){
 	 *     Note: the node can change from master to client or vice-versa during cluster
 	 *     life cycle.
 	 */
-	while(1) {
+	while(!stopSynchManager) {
 		if (isCurrentNodeMaster) {
 			messageHandler = new MasterMessageHandler(this);
 			hasMajority = true;
@@ -251,7 +252,7 @@ void SyncManager::run(){
 			 */
 			pthread_t masterCbHandlerThread;
 			pthread_create(&masterCbHandlerThread,  NULL, dispatchMasterMessageHandler, messageHandler);
-			while(1) {
+			while(!stopSynchManager) {
 				sendHeartBeatToAllNodesInCluster();
 				if (!hasMajority) {
 					//stepDown
@@ -262,9 +263,7 @@ void SyncManager::run(){
 				}
 				sleep(pingInterval);
 			}
-#ifndef ANDROID
-			pthread_cancel(masterCbHandlerThread);
-#endif
+			((MasterMessageHandler *)messageHandler)->stopMasterMessageHandler();
 			pthread_join(masterCbHandlerThread, NULL);
 			Logger::console("SM-M%d master stepping down ...", currentNodeId);
 			delete messageHandler;
@@ -274,7 +273,7 @@ void SyncManager::run(){
 			 *   2.1 Client :
 			 *   a) Handle incoming messages at each ping interval.
 			 */
-			while(1) {
+			while(!stopSynchManager) {
 				messageHandler->lookForCallbackMessages(callBackHandler);
 				sleep(pingInterval);
 				if (isCurrentNodeMaster) { // if this node get elected as leader.
@@ -923,7 +922,7 @@ void MasterMessageHandler::lookForCallbackMessages(SMCallBackHandler* /*not used
 
 	boost::shared_ptr<const ClusterResourceMetadata_Readview> clusterReadview;
 
-	while(1) {
+	while(!stopMessageHandler) {
 		_syncMgrObj->localNodesCopyMutex.lock();
 		vector<Node> nodes = _syncMgrObj->localNodesCopy;
 		_syncMgrObj->localNodesCopyMutex.unlock();
