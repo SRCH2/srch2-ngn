@@ -86,6 +86,12 @@ public:
      */
     virtual int createNewIndexes() = 0;
 
+    /*
+     * "saveLastAccessedLogRecordTime" is called when the engine is saving
+     * the indexes. The data connector should also save the timestamp so that
+     * the next time when the engine starts, the connector can ignore the
+     * previous executed log events.
+     */
     virtual void saveLastAccessedLogRecordTime() = 0;
 };
 

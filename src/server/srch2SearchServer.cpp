@@ -584,7 +584,7 @@ void graceful_exit(CoreNameServerMap_t &coreNameServerMap, vector<struct event_b
         iterator->second->indexer->save();
 
         //Call the save function implemented by each database connector.
-        DataConnectorThread::saveConnectorTimeStamp();
+        DataConnectorThread::saveConnectorTimeStamps();
         delete iterator->second;
     }
 

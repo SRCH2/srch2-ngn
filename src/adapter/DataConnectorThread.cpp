@@ -13,14 +13,14 @@
 #include <cstdlib>
 #include "DataConnector.h"
 
-std::vector<DataConnector *> DataConnectorThread::connectors;
+std::map<std::string, DataConnector *> DataConnectorThread::connectors;
 
 //Called by the pthread_create, create the database connector
 void * spawnConnector(void *arg) {
     ConnectorThreadArguments * connThreadArg = (ConnectorThreadArguments *) arg;
     DataConnectorThread::bootStrapConnector(connThreadArg);
 
-    delete connThreadArg->server;
+    delete connThreadArg->serverInterface;
     delete connThreadArg;
 
     return NULL;
@@ -35,11 +35,14 @@ void DataConnectorThread::bootStrapConnector(
     //Get the pointer of the shared library
     std::string libName = connThreadArg->sharedLibraryFullPath;
     getDataConnector(libName, pdlHandle, connector);
-    if (connector->init(connThreadArg->server) == 0) {
+    //Save all the connector pointers into a static vector
+    connectors[connThreadArg->coreName] = connector;
+
+    if (connector->init(connThreadArg->serverInterface) == 0) {
         if (!connThreadArg->createNewIndexFlag) {
             Logger::debug("Create Indices from empty");
             if (connector->createNewIndexes() != 0) {
-                //Exit the database connector if create new indexes failed.
+                //Return if creating new indexes failed.
                 Logger::error("Create Indices Failed.");
                 closeDataConnector(pdlHandle, connector);
                 return;
@@ -49,15 +52,17 @@ void DataConnectorThread::bootStrapConnector(
     }
     //After the listener;
     closeDataConnector(pdlHandle, connector);
+    connectors[connThreadArg->coreName] = NULL;
 }
 
 //Save all connectors timestamp to the disk.
-void DataConnectorThread::saveConnectorTimeStamp() {
-    for (std::vector<DataConnector *>::iterator it = connectors.begin();
-            it != connectors.end(); ++it) {
-        if ((*it) != NULL) {
-            Logger::console("Saving connector timestamp.");
-            (*it)->saveLastAccessedLogRecordTime();
+void DataConnectorThread::saveConnectorTimeStamps() {
+    for (std::map<std::string, DataConnector *>::iterator it =
+            connectors.begin(); it != connectors.end(); ++it) {
+        if (it->second != NULL) {
+            Logger::console("Saving connector timestamp for the core : %s.",
+                    it->first.c_str());
+            it->second->saveLastAccessedLogRecordTime();
         }
     }
 }
@@ -82,7 +87,7 @@ void DataConnectorThread::getDataConnector(std::string & path, void * pdlHandle,
     __extension__
 #endif
     //Get the function "create" in the shared library.
-    create_t* create_dataConnector = (create_t*) dlsym(pdlHandle, "create");
+    create_t* createDataConnector = (create_t*) dlsym(pdlHandle, "create");
 
     const char* dlsym_error = dlerror();
     if (dlsym_error) {
@@ -94,10 +99,7 @@ void DataConnectorThread::getDataConnector(std::string & path, void * pdlHandle,
     }
 
     //Call the "create" function in the shared library.
-    connector = create_dataConnector();
-
-    //Save all the connector pointers into a static vector
-    connectors.push_back(connector);
+    connector = createDataConnector();
 }
 
 //Close the handle of shared library
@@ -112,9 +114,9 @@ void DataConnectorThread::closeDataConnector(void * pdlHandle,
 #ifdef __GNUC__
     __extension__
 #endif
-    destroy_t* destroy_dataConnector = (destroy_t*) dlsym(pdlHandle, "destroy");
+    destroy_t* destroyDataConnector = (destroy_t*) dlsym(pdlHandle, "destroy");
 
-    destroy_dataConnector(connector);
+    destroyDataConnector(connector);
     dlclose(pdlHandle);
 }
 
@@ -129,7 +131,8 @@ void DataConnectorThread::getDataConnectorThread(void * server) {
         delete dbArg;
         delete internal;
     } else {
-        dbArg->server = internal;
+        dbArg->coreName = ((srch2::httpwrapper::Srch2Server*) server)->getCoreName();
+        dbArg->serverInterface = internal;
         dbArg->createNewIndexFlag = checkIndexExistence(server);
 
         srch2::httpwrapper::Srch2Server* srch2Server =

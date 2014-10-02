@@ -1154,7 +1154,7 @@ void HTTPRequestHandler::saveCommand(evhttp_request *req, Srch2Server *server) {
         response[JSON_MESSAGE] = "The indexes have been saved to disk successfully";
 
         //Call the save function implemented by each database connector.
-        DataConnectorThread::saveConnectorTimeStamp();
+        DataConnectorThread::saveConnectorTimeStamps();
 
         bmhelper_evhttp_send_reply(req, HTTP_OK, "OK", global_customized_writer.write(response));
         Logger::info("%s", response[JSON_MESSAGE].asString().c_str());

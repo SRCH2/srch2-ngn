@@ -39,7 +39,7 @@ SQLiteConnector::SQLiteConnector() {
     listenerWaitTime = 1;
     selectStmt = NULL;
     deleteLogStmt = NULL;
-    lastAccessedLogRecordTime = DEFAULT_STRING_VALUE;
+    lastAccessedLogRecordTimeStr = DEFAULT_STRING_VALUE;
 }
 
 //Initialize the connector. Establish a connection to Sqlite.
@@ -270,8 +270,8 @@ int SQLiteConnector::runListener() {
             logRecordTimeChangedFlag = false;
 
             int rc = sqlite3_bind_text(selectStmt, 1,
-                    lastAccessedLogRecordTime.c_str(),
-                    lastAccessedLogRecordTime.size(), SQLITE_STATIC);
+                    lastAccessedLogRecordTimeStr.c_str(),
+                    lastAccessedLogRecordTimeStr.size(), SQLITE_STATIC);
             if (rc != SQLITE_OK) {
                 Logger::error("SQLITECONNECTOR: SQL error %d : %s", rc,
                         sqlite3_errmsg(db));
@@ -296,7 +296,7 @@ int SQLiteConnector::runListener() {
                      */
                     std::string oldId = (char*) sqlite3_column_text(selectStmt,
                             0);
-                    lastAccessedLogRecordTime = (char*) sqlite3_column_text(
+                    lastAccessedLogRecordTimeStr = (char*) sqlite3_column_text(
                             selectStmt, 1);
                     logRecordTimeChangedFlag = true;
                     char* op = (char*) sqlite3_column_text(selectStmt, 2);
@@ -712,10 +712,10 @@ void SQLiteConnector::loadLastAccessedLogRecordTime() {
     path = srch2Home + "/" + path + "/" + "sqlite_data/data.bin";
     if (checkFileExisted(path.c_str())) {
         std::ifstream a_file(path.c_str(), std::ios::in | std::ios::binary);
-        a_file >> lastAccessedLogRecordTime;
+        a_file >> lastAccessedLogRecordTimeStr;
         a_file.close();
     } else {
-        lastAccessedLogRecordTime = "0";
+        lastAccessedLogRecordTimeStr = "0";
     }
 }
 
@@ -736,7 +736,7 @@ void SQLiteConnector::saveLastAccessedLogRecordTime() {
 
     std::string pt = path + "data.bin";
     std::ofstream a_file(pt.c_str(), std::ios::trunc | std::ios::binary);
-    a_file << lastAccessedLogRecordTime;
+    a_file << lastAccessedLogRecordTimeStr;
     a_file.flush();
     a_file.close();
 }
@@ -746,11 +746,11 @@ bool SQLiteConnector::deleteProcessedLog() {
 
     //Bind the lastAccessedLogRecordTime
     int rc = sqlite3_bind_text(deleteLogStmt, 1,
-            lastAccessedLogRecordTime.c_str(), lastAccessedLogRecordTime.size(),
+            lastAccessedLogRecordTimeStr.c_str(), lastAccessedLogRecordTimeStr.size(),
             SQLITE_STATIC);
     if (rc != SQLITE_OK && rc != SQLITE_DONE) {
         Logger::error(
-                "SQLITECONNECTOR: SQL deleteProcessedLog: bind lastAccessedLogRecordTime error %d : %s",
+                "SQLITECONNECTOR: SQL deleteProcessedLog: bind lastAccessedLogRecordTimeStr error %d : %s",
                 rc, sqlite3_errmsg(db));
         return false;
     }

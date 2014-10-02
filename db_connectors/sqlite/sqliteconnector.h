@@ -61,7 +61,15 @@ private:
     std::string PRIMARY_KEY_TYPE;
     std::string PRIMARY_KEY_NAME;
     int listenerWaitTime;
-    std::string lastAccessedLogRecordTime;
+
+    /* For the sqlite, the connector are using this timestamp on the
+     * prepared statement, so we do not need to convert it to type time_t
+     * in the runListener() for each loop. To be consistent with other connectors,
+     * we use"lastAccessedLogRecordTimeStr" instead of "lastAccessedLogRecordTime"
+     * in this connector.
+     */
+    std::string lastAccessedLogRecordTimeStr;
+
     //Parameters for Sqlite
     sqlite3 *db;
     sqlite3_stmt *selectStmt;
