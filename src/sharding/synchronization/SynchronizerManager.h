@@ -103,6 +103,13 @@ public:
 
 	void setNodeIsMaster(bool flag) { isCurrentNodeMaster = flag; }
 
+	/*
+	 *  Stop sync Manager thread.
+	 */
+	void stop() {
+		stopSynchManager = true;
+	}
+
 private:
 	///
 	///  Private member functions start here.
@@ -154,7 +161,7 @@ private:
 	// Node identifier sequence.
 	unsigned uniqueNodeId;
 	std::map<NodeId, struct sockaddr_in>  nodeToAddressMap;
-
+	bool stopSynchManager;
 	boost::mutex localNodesCopyMutex;
 	vector<Node> localNodesCopy;
 	vector<Node> unreachableNodes;
@@ -310,7 +317,7 @@ private:
 
 class MasterMessageHandler : public MessageHandler{
 public:
-	MasterMessageHandler(SyncManager *sm): MessageHandler(sm) { }
+	MasterMessageHandler(SyncManager *sm): MessageHandler(sm) { stopMessageHandler = false; }
 	/*
 	 *   The function should handle main logic of processing
 	 *   messages delivered by TM.
@@ -326,8 +333,11 @@ public:
 
 	virtual void handleMessage(Message *message);
 
+	void stopMasterMessageHandler() { stopMessageHandler = true; }
+
 private:
 
+	bool stopMessageHandler;
 	void updateNodeInCluster(Message *message);
 	void handleNodeFailure(NodeId nodeId);
 	// key = Node id , Value = Latest time when message was received from this node.

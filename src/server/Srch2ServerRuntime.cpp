@@ -222,14 +222,14 @@ void Srch2ServerRuntime::waitForKillSignal(){
 		Logger::console("Thread = <%u> stopped", threadsToHandleInternalRequests[i]);
 	}
 
-	pthread_join(transportManager->getListeningThread(), NULL);
-	Logger::console("Thread = <%u> stopped", transportManager->getListeningThread());
-
+	syncManager->stop();
 	pthread_join(*synchronizerThread, NULL);
 	Logger::console("synch thread stopped.");
 
-	pthread_join(*global_heart_beat_thread, NULL);
-	Logger::console("Hear beat thread stopped.");
+	if (global_heart_beat_thread) {
+		pthread_join(*global_heart_beat_thread, NULL);
+		Logger::console("Hear beat thread stopped.");
+	}
 
 	pthread_join(*(shardManager->getLoadbalancingThread()), NULL);
 	Logger::console("Load balancing thread stopped.");
@@ -249,32 +249,17 @@ void Srch2ServerRuntime::gracefulExit(){
     delete[] threadsToHandleExternalRequests;
     delete[] threadsToHandleInternalRequests;
 
-    /*
-     * THIS IS A HACKY SOLUTION FOR MAC OS!
-     * JIRA: https://srch2inc.atlassian.net/browse/SRCN-473
-     *
-     * The function "event_base_free(evBases[i])" is blocking the engine from
-     *  a proper exit on MacOS
-     *
-     * This function ("event_base_free(evBases[i])") does not deallocate any
-     * of the events that are currently associated with the event_base, or
-     * close any of their sockets, or free any of their pointers.
-     * --http://www.wangafu.net/~nickm/libevent-book/Ref2_eventbase.html
-     */
-#ifndef __MACH__
     for (unsigned int i = 0; i < maxExternalThreadCount; i++) {
         event_base_free(evBasesForExternalRequests[i]);
     }
     for (unsigned int i = 0; i < maxInternalThreadCount; i++) {
         event_base_free(evBasesForInternalRequests[i]);
     }
-#endif
-
 
     AnalyzerContainer::freeAll();
     delete serverConf;
 	delete metadataManager ;
-	ShardManager::deleteShardManager();
+	//ShardManager::deleteShardManager();
 	delete syncManager ;
 	delete transportManager;
     // use global port map to close each file descriptor just once
@@ -367,16 +352,15 @@ int Srch2ServerRuntime::setCallBacksonHTTPServer(evhttp *const http_server,
 	// setup default core callbacks for queries without a core name
 	// only if default core is available.
 	if(serverConf->getDefaultCoreSetFlag() == true) {
-		// prepare arguments to pass to external commands for default core
-		Srch2ServerGateway::CallbackArgs * defaultArgs = new Srch2ServerGateway::CallbackArgs();
-		defaultArgs->dpExternal = dpExternal;
-		defaultArgs->coreId = clusterReadview->getCoreByName(serverConf->getDefaultCoreName())->getCoreId();
-		defaultArgs->runtime = this;
 		// iterate on all operations and map the path (w/o core info)
 		// to a callback function.
 		// we pass DPExternalCoreHandle as the argument of callbacks
 		for (int j = 0; externalCallbacks.coreSpecificPorts[j].path != NULL; j++) {
-
+			// prepare arguments to pass to external commands for default core
+			Srch2ServerGateway::CallbackArgs * defaultArgs = new Srch2ServerGateway::CallbackArgs();
+			defaultArgs->dpExternal = dpExternal;
+			defaultArgs->coreId = clusterReadview->getCoreByName(serverConf->getDefaultCoreName())->getCoreId();
+			defaultArgs->runtime = this;
 			defaultArgs->portType = externalCallbacks.coreSpecificPorts[j].portType;
 
 			evhttp_set_cb(http_server, externalCallbacks.coreSpecificPorts[j].path,
@@ -401,13 +385,12 @@ int Srch2ServerRuntime::setCallBacksonHTTPServer(evhttp *const http_server,
 		string coreName = allCores.at(i)->getName();
 		unsigned coreId = allCores.at(i)->getCoreId();
 
-		// prepare external command argument
-		Srch2ServerGateway::CallbackArgs * args = new Srch2ServerGateway::CallbackArgs();
-		args->dpExternal = dpExternal;
-		args->coreId = coreId;
-		args->runtime = this;
-
 		for(unsigned int j = 0; externalCallbacks.coreSpecificPorts[j].path != NULL; j++) {
+			// prepare external command argument
+			Srch2ServerGateway::CallbackArgs * args = new Srch2ServerGateway::CallbackArgs();
+			args->dpExternal = dpExternal;
+			args->coreId = coreId;
+			args->runtime = this;
 			args->portType = externalCallbacks.coreSpecificPorts[j].portType;
 			string path = string("/") + coreName + string(externalCallbacks.coreSpecificPorts[j].path);
 			evhttp_set_cb(http_server, path.c_str(),
@@ -423,11 +406,10 @@ int Srch2ServerRuntime::setCallBacksonHTTPServer(evhttp *const http_server,
 		}
 	}
 
-	Srch2ServerGateway::CallbackArgs * global_args = new Srch2ServerGateway::CallbackArgs();
-	global_args->dpExternal = dpExternal;
-	global_args->coreId = (unsigned)-1;
-
 	for(int j = 0; externalCallbacks.globalPorts[j].path != NULL; j++){
+		Srch2ServerGateway::CallbackArgs * global_args = new Srch2ServerGateway::CallbackArgs();
+		global_args->dpExternal = dpExternal;
+		global_args->coreId = (unsigned)-1;
 		global_args->portType = externalCallbacks.globalPorts[j].portType;
 		global_args->runtime = this;
 		string path = string(externalCallbacks.globalPorts[j].path);
@@ -532,48 +514,6 @@ int Srch2ServerRuntime::bindSocket(const char * hostname, unsigned short port) {
 }
 
 
-#ifdef __MACH__
-	/*
-	 *  dummy request handler for make_http_request function below.
-	 */
-	void Srch2ServerRuntime::dummyRequestHandler(struct evhttp_request *req, void *state) {
-		if (req == NULL) {
-			Logger::debug("timed out!\n");
-		} else if (req->response_code == 0) {
-			Logger::debug("connection refused!\n");
-		} else if (req->response_code != 200) {
-			Logger::debug("error: %u %s\n", req->response_code, req->response_code_line);
-		} else {
-			Logger::debug("success: %u %s\n", req->response_code, req->response_code_line);
-		}
-	}
-	/*
-	 *  Creates a http request for /info Rest API of srch2 engine.
-	 */
-	void Srch2ServerRuntime::makeHttpRequest(){
-		struct evhttp_connection *conn;
-		struct evhttp_request *req;
-		/*
-		 * evhttp_connection_new does not perform dns lookup and expects numeric ip address
-		 * Hence we should do explicit coversion before calling evhttp_connection_new
-		 */
-		char hostIpAddr[20];
-		memset(hostIpAddr, 0, sizeof(hostIpAddr));
-		struct hostent * host = gethostbyname(getInstance()->globalHostName.c_str());
-		if (host == NULL) {
-			// nothing much can be done..let us try 0.0.0.0
-			strncpy(hostIpAddr, "0.0.0.0", 7);
-		} else {
-			// convert binary ip address to human readable ip address.
-			struct in_addr **addr_list = (struct in_addr **) host->h_addr_list;
-			strcpy(hostIpAddr, inet_ntoa(*addr_list[0]));
-		}
-		conn = evhttp_connection_new( hostIpAddr, getInstance()->globalDefaultPort);
-		evhttp_connection_set_timeout(conn, 1);
-		req = evhttp_request_new(dummyRequestHandler, (void*)NULL);
-		evhttp_make_request(conn, req, EVHTTP_REQ_GET, "/info");
-	}
-#endif
 
 /**
  * Kill the server.  This function can be called from another thread to kill the server
@@ -592,26 +532,6 @@ void Srch2ServerRuntime::killServer(int signal) {
     	event_base_loopbreak(getInstance()->evBasesForInternalRequests[i]);
     }
 
-//  Surendra:  This code is not required.
-//    for (int i = 0; i < getInstance()->maxExternalThreadCount; i++) {
-//#ifdef ANDROID
-//    	// Android thread implementation does not have pthread_cancel()
-//    	// use pthread_kill instead. We use the SIGUSR2 to replace the SIGTERM signal
-//    	pthread_kill(getInstance()->threadsToHandleExternalRequests[i], SIGUSR2);
-//#else
-//        pthread_cancel(getInstance()->threadsToHandleExternalRequests[i]);
-//#endif
-//    }
-//
-//    for (int i = 0; i < getInstance()->maxInternalThreadCount; i++) {
-//#ifdef ANDROID
-//    	// Android thread implementation does not have pthread_cancel()
-//    	// use pthread_kill instead. We use the SIGUSR2 to replace the SIGTERM signal
-//    	pthread_kill(getInstance()->threadsToHandleInternalRequests[i], SIGUSR2);
-//#else
-//        pthread_cancel(getInstance()->threadsToHandleInternalRequests[i]);
-//#endif
-//    }
 
     if ( getInstance()->global_heart_beat_thread != NULL ){
 #ifdef ANDROID
@@ -621,31 +541,15 @@ void Srch2ServerRuntime::killServer(int signal) {
 #endif
     }
 
-    if ( getInstance()->synchronizerThread != NULL ){
-#ifdef ANDROID
-        pthread_kill(*synchronizerThread, SIGUSR2);
-#else
-        pthread_cancel(*getInstance()->synchronizerThread);
-#endif
-    }
-
     getInstance()->shardManager->setCancelled(); // stops the load balancing thread
 
+    // Surendra -May be the code below is not required
 #ifdef ANDROID
     pthread_kill(*(getInstance()->shardManager->getLoadbalancingThread()), SIGUSR2);
 #else
     pthread_cancel(*(getInstance()->shardManager->getLoadbalancingThread()));
 #endif
 
-#ifdef __MACH__
-    /*
-     *  In MacOS, pthread_cancel could not cancel a thread when the thread is executing kevent syscall
-     *  which is a blocking call. In other words, our engine threads are not cancelled while they
-     *  are waiting for http requests. So we send a dummy http request to our own engine from within
-     *  the engine. This request allows the threads to come out of blocking syscall and get killed.
-     */
-    makeHttpRequest();
-#endif
 }
 
 }
