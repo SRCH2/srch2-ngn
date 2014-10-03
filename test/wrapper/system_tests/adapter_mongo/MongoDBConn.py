@@ -17,7 +17,6 @@ class DBConn:
 			self.conn = pymongo.MongoClient('localhost:27017')
 			return 0
 		except :
-			print 'Mongodb is not running!'
 			return -1
 
 	def close(self):

@@ -46,7 +46,7 @@ def createConnection():
 	#Connect to the mongodb
 	conn_status = dbconn.connect()
 	if conn_status == -1 :
-		os._exit(10)
+		os._exit(-1)
 
 
 	conn = dbconn.getConn()
@@ -216,7 +216,7 @@ if __name__ == '__main__':
 		print e
 		mongoDBDropTable()
 		closeConnection()
-		os._exit(1)
+		os._exit(-1)
 	time.sleep(3)
 	mongoDBDropTable()
 	closeConnection()

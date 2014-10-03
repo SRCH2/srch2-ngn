@@ -102,7 +102,6 @@ int ServerInterfaceInternal::updateRecord(const std::string& pk,
         const std::string& jsonString) {
     stringstream debugMsg;
     debugMsg << "UPDATE : ";
-    bool op_success = false;
 
     //Parse JSON Object;
     Json::Value root;
@@ -122,15 +121,10 @@ int ServerInterfaceInternal::updateRecord(const std::string& pk,
         if (ret == srch2is::OP_FAIL) {
             debugMsg << "failed\",\"reason\":\"no record "
                     "with given primary key\"}";
-        } else {
-            op_success = true;
-        }
 
-        if (!op_success) {
             Logger::debug(debugMsg.str().c_str());
-            return false;
+            return -1;
         }
-        op_success = false;
 
         if (server->indexer->getNumberOfDocumentsInIndex()
                 < this->server->indexDataConfig->getDocumentLimit()) {
@@ -143,20 +137,6 @@ int ServerInterfaceInternal::updateRecord(const std::string& pk,
                             root, record);
             record->clear();
             delete record;
-
-            if (response["insert"].asString().compare("success") == 0) {
-                op_success = true;
-            } else {
-                srch2::instantsearch::INDEXWRITE_RETVAL ret =
-                        server->indexer->recoverRecord(pk,
-                                deletedInternalRecordId);
-                if (ret == srch2is::OP_FAIL) {
-                    Logger::error(
-                            "DATABASE_LISTENER: Update error while trying to "
-                                    "resume the deleted old record.");
-                }
-            }
-
         } else {
             debugMsg << "failed\",\"reason\":\"insert: Document limit reached."
                     << endl;
@@ -171,11 +151,7 @@ int ServerInterfaceInternal::updateRecord(const std::string& pk,
         }
     }
     Logger::debug(debugMsg.str().c_str());
-    if (op_success) {
-        return 0;
-    } else {
-        return -1;
-    }
+    return 0;
 }
 
 //Call save index to the disk manually.
