@@ -74,6 +74,8 @@ LogicalPlanNode::LogicalPlanNode(const LogicalPlanNode & node){
 				ASSERT(false);
 				break;
 		}
+	}else{
+		this->regionShape = NULL;
 	}
 	for(unsigned childIdx = 0 ; childIdx < node.children.size(); ++childIdx){
 		if(node.children.at(childIdx)->nodeType == LogicalPlanNodeTypePhrase){
