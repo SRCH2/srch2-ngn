@@ -1,10 +1,11 @@
 #These tests are used for the adapter_mysql
 #Require mysql installed.
-#Test 1: test loading records from the mysql table to create an index.
-#Test 2: When the server is running, update the record in mysql,
-#        then the listener should fetch the results.
-#Test 3: Shut down the engine, and delete the records in mysql.
-#        Then start the engine to test if the engine can fetch the changes.
+#Test 1: test loading index from the mysql table to create the index, engine exits gracefully.
+#Test 2: Start the engine, update the record in mysql, 
+#        then the listener should fetch the results, then engine exits without saving changes.
+#Test 3: During the engine is down, delete the records in mysql.
+#        Then start the engine to test if the engine can fetch the changes. 
+#        Also test if the engine can recover the changes before it crashes.
 
 import sys, urllib2, json, time, subprocess, os, commands, signal,shutil
 
@@ -55,11 +56,17 @@ def startSrch2Engine():
     serverHandle = test_lib.startServer(args)
     test_lib.pingServer(port)
 
-#Shut down the srch2 engine
-def shutdownSrch2Engine():
+#Kill the srch2 engine without saving the index and timestamp
+def killSrch2Engine():
     global serverHandle
     #Shutdown the engine server
     test_lib.kill9Server(serverHandle)
+
+#Shut down the srch2 engine
+def shutdownSrch2Engine():
+	global serverHandle
+	#Shutdown the engine server
+	test_lib.killServer(serverHandle)
 
 #Compare the results with the expected outputs.
 def compareResults(testQueriesPath):
@@ -135,8 +142,7 @@ def checkResult(query, responseJson,resultValue):
         return 0
     return 1
 
-
-#Test 1: test loading index from the mysql table to create the index.
+#Test 1: test loading index from the mysql table to create the index, engine exits gracefully.
 def testCreateIndexes(conn,sqlQueriesPath,testQueriesPath):
     #Create the test table and Insert record into it
     f_sql = open(sqlQueriesPath,'r')
@@ -145,18 +151,21 @@ def testCreateIndexes(conn,sqlQueriesPath,testQueriesPath):
         print line
     conn.commit()
 
-    #Start the engine and wait it fetch the data, 
+    #Start the engine and wait to fetch the data, 
     #the engine will create an index from the mysql table
     startSrch2Engine()
     time.sleep(5)
 
-    #Compare the results with the expecting results
+    #Compare the results with the expected results
     compareResults(testQueriesPath)
+    shutdownSrch2Engine()
+    time.sleep(2)
     print '=============================='
 
-#Test 2: When the server is running, update the record in mysql, 
-#then the listener should fetch the results.
+#Test 2: Start the engine, update the record in mysql, time
+#then the listener should fetch the results, then engine exits without saving changes.
 def testRunListener(conn,sqlQueriesPath,testQueriesPath):
+    startSrch2Engine()
     #Modify the table while the srch2 engine is running.
     f_sql = open(sqlQueriesPath,'r')
     for line in f_sql:
@@ -167,34 +176,34 @@ def testRunListener(conn,sqlQueriesPath,testQueriesPath):
     #Wait for the engine to fetch the changes
     time.sleep(5)
 
-    #Compare the results with the expecting results
+    #Compare the results with the expected results
     compareResults(testQueriesPath)
+    #Kill the engine
+    killSrch2Engine()
     print '=============================='
 
-#Test 3: Shut down the engine, and delete the records in mysql.
-#Then start the engine to test if the engine can fetch the changes
+#Test 3: During the engine is down, delete the records in mysql.
+#Then start the engine to test if the engine can fetch the changes. 
+#Also test if the engine can recover the changes before it crashes.
 def testOfflineLog(conn,sqlQueriesPath,testQueriesPath):
-    #Shutdown the engine
-    shutdownSrch2Engine()
-    time.sleep(3)
-
     #Modify the table while the srch2 engine is not running
     f_sql = open(sqlQueriesPath,'r')
     for line in f_sql:
         conn.cursor().execute(line)
         print line
     conn.commit()
-
+    time.sleep(1)
+    
     #Start the engine and wait it fetch the changes,
     #the engine will get the offline changes.
     startSrch2Engine()
     time.sleep(4)
 
-    #Compare the results with the expecting results
+    #Compare the results with the expected results
     compareResults(testQueriesPath)
 
-    #Shutdown the engine. Finish the test.
-    shutdownSrch2Engine()
+    #Kill the engine. Finish the test.
+    killSrch2Engine()
     print '=============================='
 
 if __name__ == '__main__':
@@ -220,7 +229,7 @@ if __name__ == '__main__':
     testOfflineLog(conn,sys.argv[6],sys.argv[7])
 
     print '=============================='
-    shutdownSrch2Engine()
+    killSrch2Engine()
     time.sleep(3)
 
     #Remove the srch2Test database and tables

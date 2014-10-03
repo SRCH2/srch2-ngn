@@ -145,12 +145,12 @@ def testCreateIndexes(conn,sqlQueriesPath,testQueriesPath):
         print line
     conn.commit()
 
-    #Start the engine and wait it fetch the data, 
+    #Start the engine and wait to fetch the data, 
     #the engine will create an index from the mysql table
     startSrch2Engine()
     time.sleep(5)
 
-    #Compare the results with the expecting results
+    #Compare the results with the expected results
     compareResults(testQueriesPath)
     print '=============================='
 
@@ -167,7 +167,7 @@ def testRunListener(conn,sqlQueriesPath,testQueriesPath):
     #Wait for the engine to fetch the changes
     time.sleep(5)
 
-    #Compare the results with the expecting results
+    #Compare the results with the expected results
     compareResults(testQueriesPath)
     print '=============================='
 
@@ -190,7 +190,7 @@ def testOfflineLog(conn,sqlQueriesPath,testQueriesPath):
     startSrch2Engine()
     time.sleep(4)
 
-    #Compare the results with the expecting results
+    #Compare the results with the expected results
     compareResults(testQueriesPath)
 
     #Shutdown the engine. Finish the test.

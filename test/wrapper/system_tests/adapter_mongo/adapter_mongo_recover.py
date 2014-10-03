@@ -1,10 +1,11 @@
 #These tests are used for the adapter_mongdb
 #Require pymongo and MongoDB running as replication mode
-#Test 1: test loading records from the MongoDB table to create a index.
-#Test 2: test listener, during the server running, update the record in the mongodb, 
-#        the listener will fetch the results.
-#Test 3: test the offline modification, first shut down the engine and delete the records in the mongodb,
-#        then start the engine to test if the engine can fetch the deletion.
+#Test 1: test loading index from the mongodb table to create the index, engine exits gracefully.
+#Test 2: Start the engine, update the record in mongodb, 
+#        then the listener should fetch the results, then engine exits without saving changes.
+#Test 3: During the engine is down, delete the records in mongodb.
+#        Then start the engine to test if the engine can fetch the changes. 
+#        Also test if the engine can recover the changes before it crashes.
 
 import sys, urllib2, json, time, subprocess, os, commands, signal,shutil
 
@@ -33,11 +34,17 @@ def startSrch2Engine():
         serverHandle = test_lib.startServer(args)
         test_lib.pingServer(port)
 
+#Kill the srch2 engine without saving the index and timestamp
+def killSrch2Engine():
+	global serverHandle
+	#Shutdown the engine server
+	test_lib.kill9Server(serverHandle)
+
 #Shut down the srch2 engine
 def shutdownSrch2Engine():
 	global serverHandle
 	#Shutdown the engine server
-	test_lib.kill9Server(serverHandle)
+	test_lib.killServer(serverHandle)
 
 #Create a  connection to the mongodb, link the  handler to the srch2Test table
 def createConnection():
@@ -140,25 +147,28 @@ def checkResult(query, responseJson,resultValue):
         return 0
     return 1
 
-#Test 1: test loading index from the mongodb table to create the index.
+#Test 1: test loading index from the mongodb table to create the index, engine exits gracefully.
 def testCreateIndexes(conn,sqlQueriesPath,testQueriesPath):
 	#Create the test table and Insert record into it
 	f_sql = open(sqlQueriesPath,'r')
 	for line in f_sql:
 		jsonRecord = json.loads(line)
 		handler.insert(jsonRecord)		
-	#Start the engine and wait it fetch the data, 
+	#Start the engine and wait to fetch the data, 
 	#the engine will create an index from the mongodb table
 	startSrch2Engine()
 	time.sleep(5)
 
-	#Compare the results with the expecting results
+	#Compare the results with the expected results
 	compareResults(testQueriesPath)
+	shutdownSrch2Engine()
+	time.sleep(2)
 	print '=============================='
 
-#Test 2: When the server is running, update the record in mongodb, 
-#then the listener should fetch the results.
+#Test 2: Start the engine, update the record in mongodb, time
+#then the listener should fetch the results, then engine exits without saving changes.
 def testRunListener(conn,sqlQueriesPath,testQueriesPath):
+	startSrch2Engine()
 	#Modify the table while the srch2 engine is running.
 	f_sql = open(sqlQueriesPath,'r')
 	for line in f_sql:
@@ -171,17 +181,16 @@ def testRunListener(conn,sqlQueriesPath,testQueriesPath):
 	#Wait for the engine to fetch the changes
 	time.sleep(5)
 
-	#Compare the results with the expecting results
+	#Compare the results with the expected results
 	compareResults(testQueriesPath)
+	#Kill the engine
+	killSrch2Engine()
 	print '=============================='
 
-#Test 3: Shut down the engine, and delete the records in mongodb.
-#Then start the engine to test if the engine can fetch the changes
+#Test 3: During the engine is down, delete the records in mongodb.
+#Then start the engine to test if the engine can fetch the changes. 
+#Also test if the engine can recover the changes before it crashes.
 def testOfflineLog(conn,sqlQueriesPath,testQueriesPath):
-	#Shutdown the engine
-	shutdownSrch2Engine()
-	time.sleep(3)
-
 	#Modify the table while the srch2 engine is not running
 	f_sql = open(sqlQueriesPath,'r')
 	for line in f_sql:
@@ -194,11 +203,11 @@ def testOfflineLog(conn,sqlQueriesPath,testQueriesPath):
 	startSrch2Engine()
 	time.sleep(5)
 
-	#Compare the results with the expecting results
+	#Compare the results with the expected results
 	compareResults(testQueriesPath)
 
 	#Shutdown the engine. Finish the test.
-	shutdownSrch2Engine()
+	killSrch2Engine()
 	print '=============================='
 
 if __name__ == '__main__':

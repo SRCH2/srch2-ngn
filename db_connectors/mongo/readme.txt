@@ -42,6 +42,9 @@ Author: Chen Liu and Chen Li
 5. Run the system test case
 
     shell> cd srch2-ngn/test/wrapper/system_tests
-    shell> python ./adapter_mongo/MongoTest.py ../../../build/src/server/srch2-search-server ./adapter_mongo/queries.txt
+    shell> python ./adapter_mongo/adapter_mongo.py ../../../build/src/server/srch2-search-server \
+    ./adapter_mongo/testCreateIndexes_sql.txt ./adapter_mongo/testCreateIndexes.txt \
+    ./adapter_mongo/testRunListener_sql.txt ./adapter_mongo/testRunListener.txt \
+    ./adapter_mongo/testOfflineLog_sql.txt ./adapter_mongo/testOfflineLog.txt
 
   If everything works, we will see a "Successful" message.
