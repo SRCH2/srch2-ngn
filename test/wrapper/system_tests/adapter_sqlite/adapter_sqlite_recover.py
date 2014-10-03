@@ -39,7 +39,7 @@ def startSrch2Engine():
 def shutdownSrch2Engine():
 	global serverHandle
 	#Shutdown the engine server
-	test_lib.killServer(serverHandle)
+	test_lib.kill9Server(serverHandle)
 
 #Compare the results with the expected outputs.
 def compareResults(testQueriesPath):

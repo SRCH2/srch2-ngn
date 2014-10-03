@@ -400,7 +400,7 @@ void MongoDBConnector::parseOpLogObject(mongo::BSONObj& bobj,
         if(!cursor->more()){
             /*
              * For update event, mongodb uses 2 log events to record it.
-             * For example: update 'director' from 'Jim' to 'Joe', the 2 log
+             * For example: for an update 'director' from 'Jim' to 'Joe', the 2 log
              * events will be:
              * 1.) { "ts" : { "$timestamp" : { "t" : 1412205101, "i" : 1 } },
              * "h" : { "$numberLong" : "-2184731050177232433" }, "v" : 2,
@@ -417,12 +417,12 @@ void MongoDBConnector::parseOpLogObject(mongo::BSONObj& bobj,
              * "id" : 765006 }
              *
              * We only need the 2nd log event, however, the 2nd log event doesn't
-             * have timestamp. So we need both log events. And call cursor->next()
+             * have a timestamp. So we have to access both log events. And call cursor->next()
              * again if there is one more log event.
              *
              * There is one case that the update event is the last one before
              * the engine shuts down. The next time the engine starts, the
-             * connector will only load the 1st one and the 2nd can not be load
+             * connector will only load the 1st one and the 2nd cannot be loaded
              * correctly with Exception: DBClientCursor next() called but
              * more() is false.
              *

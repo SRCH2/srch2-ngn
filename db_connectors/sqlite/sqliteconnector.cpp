@@ -340,7 +340,6 @@ int SQLiteConnector::runListener() {
 
                     Logger::debug("SQLITECONNECTOR: Processing %s ",
                             jsonString.c_str());
-
                     if (strcmp(op, "i") == 0) {
                         serverHandle->insertRecord(jsonString);
                     } else if (strcmp(op, "d") == 0) {
@@ -715,7 +714,9 @@ void SQLiteConnector::loadLastAccessedLogRecordTime() {
         a_file >> lastAccessedLogRecordTimeStr;
         a_file.close();
     } else {
-        lastAccessedLogRecordTimeStr = "0";
+        std::stringstream ss;
+        ss << time(NULL);
+        lastAccessedLogRecordTimeStr = ss.str();
     }
 }
 

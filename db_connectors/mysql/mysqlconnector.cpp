@@ -340,13 +340,9 @@ int MySQLConnector::runListener() {
         case mysql::UPDATE_ROWS_EVENT_V1:
         case mysql::DELETE_ROWS_EVENT:
         case mysql::DELETE_ROWS_EVENT_V1: {
-            //Keep updating the executed log time stamp and periodically
-            //saving into the disk.
-            time_t rowEventTimestamp = event->header()->timestamp;
-            if (rowEventTimestamp - lastAccessedLogRecordTime
-                    >= listenerWaitTime) {
-                lastAccessedLogRecordTime = rowEventTimestamp;
-            }
+            //Keep updating the executed log time stamp
+            if (event->header()->timestamp > lastAccessedLogRecordTime)
+                lastAccessedLogRecordTime = event->header()->timestamp;
         }
             break;
         }

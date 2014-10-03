@@ -60,6 +60,20 @@ def killServer(serverHandle):
             print "no running instance found to kill, moving ahead."
 
 
+def kill9Server(serverHandle):
+    """
+    kills the server by SIGKILL like kill -9
+    """
+    try:
+        serverHandle.send_signal(signal.SIGKILL)
+        print ("server killed with kill -9!")
+    except Exception, err:
+        print "Kill server exception: " + str(err)
+        try:
+            serverHandle.kill()
+        except:
+            print "no running instance found to kill, moving ahead."
+
 def detectPort(configPath):
     wholecontent = open(configPath).read()
     keywords = ['<listeningPort>', '</listeningPort>']

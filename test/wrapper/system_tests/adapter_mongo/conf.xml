@@ -129,7 +129,7 @@
  
            <updateLog>
             <logLevel>3</logLevel>
-            <accessLogFile>./logs/srch2-log.txt</accessLogFile>
+            <accessLogFile>./logs/srch2-log-mongo.txt</accessLogFile>
         </updateLog>
     
 </config>
