@@ -1,0 +1,4 @@
+A||sleep||20
+R||start
+R||stressQuery||./nodeIntensive/1-term-prefix.csv
+R||kill

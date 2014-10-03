@@ -7,7 +7,8 @@
 import commands,sys
 
 if __name__ == '__main__':
-    pid = commands.getstatusoutput('pgrep -f nodeIntensive-noValidation/distributedTestFramework.py')
+    
+    pid = commands.getstatusoutput('pgrep -f distributedTestFramework.py')
     processId = pid[1].split()
     for i in range(len(processId)):
         print processId[i] 

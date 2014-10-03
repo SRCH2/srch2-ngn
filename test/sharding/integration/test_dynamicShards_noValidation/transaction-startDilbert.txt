@@ -1,2 +1,6 @@
 K||start
+-||sleep||5
 L||start
+-||sleep||5
+M||start
+N||start

@@ -1,0 +1,229 @@
+<!--
+    Configuration file for SRCH2 search server. 
+
+    For more information about how to use this configuration file, please
+    visit http://www.srch2.com/downloads.html and select the correct
+    documentation version.
+
+    Please email contact@srch2.com if you have questions.
+
+    This configuration file defines 4 separate cores (data sources) in order to allow testing of
+    basic multi-core functionality.  Core1 uses the movie demo database.  Core2 loads a small sample
+    of the StackOverflow posts database.  Core3 is a fictitious business directoy (or most common
+    test database).  Core4 also loads the movie demo database, however in addition to some
+    configuration setting differences, it uses a different stop words file.
+-->
+ 
+<config>
+    <cluster-name>SRCH2_Cluster</cluster-name>
+    <srch2Home>./</srch2Home>
+        <!-- Make sure to specify the home of your SRCH2 installation.  Example: 
+          <srch2Home>/home/joe/srch2</srch2Home>
+        -->
+    <node-name>node-M</node-name>
+    <ping>
+        <ping-interval>2</ping-interval>
+        <ping-timeout>8</ping-timeout>
+        <retry-count>3</retry-count>
+    </ping>
+    <transport>
+        <port>4003</port>
+        <ipaddress>128.195.185.107</ipaddress>
+    </transport>
+
+    <WellKnownHosts>128.195.185.134, 128.195.185.107</WellKnownHosts>
+    <listeningHostname>128.195.185.107</listeningHostname>
+    <listeningPort>7003</listeningPort>
+
+ 
+    <licenseFile>../../wrapper/conf/srch2_license_key.txt</licenseFile>
+ 
+
+    <!-- moved from <query> which is now per core -->
+    <maxSearchThreads>2</maxSearchThreads>
+        
+    <!-- Testing multiple cores here -->
+    <cores defaultCoreName="stackoverflow">
+        <core name="stackoverflow">
+      
+            <coreId>1</coreId>
+
+            <core-number_of_shards>4</core-number_of_shards>
+            <core-number_of_replicas>2</core-number_of_replicas>
+ 
+            <dataDir>./nodeIntensive/stackoverflow-1</dataDir>
+            <dataSourceType>1</dataSourceType>
+            <dataFile>stackoverflow-data-100.json</dataFile>
+            <indexConfig>
+                <indexType>0</indexType>
+                <supportSwapInEditDistance>true</supportSwapInEditDistance>
+                <!--  <fieldBoost>title^12 tags^16</fieldBoost> -->
+                <fieldBoost>title^30 tags^20</fieldBoost>
+                <recordBoostField>votes_count</recordBoostField>
+                <defaultQueryTermBoost>1</defaultQueryTermBoost>
+                <enablePositionIndex>1</enablePositionIndex> 
+            </indexConfig>
+            
+	    <query>
+	        <rankingalgorithm>
+		    <recordScoreExpression>(idf_score*(log(doc_boost+1)^1.5))/(idf_score+log(doc_boost+1))</recordScoreExpression>
+		</rankingalgorithm>
+		<fuzzyMatchPenalty>0.75</fuzzyMatchPenalty>
+		<queryTermSimilarityThreshold>0.8</queryTermSimilarityThreshold>
+		<prefixMatchPenalty>0.85</prefixMatchPenalty>
+		<cacheSize>65536000</cacheSize>
+		<rows>10</rows>
+		<fieldBasedSearch>0</fieldBasedSearch>
+		<searcherType>0</searcherType>
+
+		<!-- 0: exact match; 1: fuzzy match.-->
+		<queryTermFuzzyType>1</queryTermFuzzyType>
+
+		<!-- 0: prefix match; 1: complete match -->
+		<queryTermPrefixType>1</queryTermPrefixType>
+
+		<queryResponseWriter>
+		    <responseFormat>1</responseFormat>
+		</queryResponseWriter>
+	    </query>
+
+            <KeywordPopularityThreshold>10000</KeywordPopularityThreshold>
+            <getAllResultsMaxResultsThreshold>2000</getAllResultsMaxResultsThreshold>
+            <getAllResultsKAlternative>500</getAllResultsKAlternative>
+            <schema>
+                <fields>
+                    <field name="title"          type="text"    indexed="true"/>
+                    <field name="body"           type="text"    indexed="true"/>
+                    <field name="author_name"    type="text"    indexed="true"/>
+                    <field name="tags"           type="text"    indexed="true"    refining="true"
+                           required="false" multivalued="true"/>
+                    <field name="creation_date"  type="time"    indexed="false"   refining="true" default="01/01/2000"  required="false"/>
+                    <field name="view_count"     type="integer" indexed="false"   refining="true"
+                           default="0"           required="false"/>
+                    <field name="answer_count"   type="integer" indexed="false"   refining="true"
+                           default="0"           required="false"/>
+                    <field name="votes_count"    type="integer" indexed="false"   refining="true"
+                           default="0"           required="false"/>
+                    <field name="id" type="text" required="false" searchable="true" refining="true" />  
+                </fields>
+              
+                <uniqueKey>id</uniqueKey>
+                <facetEnabled>true</facetEnabled>
+                <facetFields>
+                    <facetField name="tags" facetType="categorical"/>
+                </facetFields>
+              
+                <types>
+                    <fieldType name="text_en">
+                      <analyzer>
+                        <filter name="PorterStemFilter" dictionary="" />
+                        <filter name="StopFilter" words="stop-words.txt" />
+                        <filter name="protectedKeyWordsFilter" words="srch2_protected_words.txt" />
+                      </analyzer>
+                    </fieldType>
+                </types>
+            </schema>
+	    <updatehandler>
+	        <maxDocs>15000000</maxDocs>
+		<maxMemory>10000000</maxMemory>
+		<mergePolicy>
+		    <mergeEveryNSeconds>10</mergeEveryNSeconds>
+		    <mergeEveryMWrites>100</mergeEveryMWrites>
+		</mergePolicy>
+		<updateLog>
+		    <logLevel>3</logLevel>
+		    <accessLogFile>srch2-log.txt</accessLogFile>
+		</updateLog>
+	    </updatehandler>
+        </core>
+       <core name="statemedia">
+            <coreId>2</coreId>
+            <core-number_of_shards>4</core-number_of_shards>
+            <core-number_of_replicas>2</core-number_of_replicas>
+            <dataDir>./nodeIntensive/statemedia-1</dataDir>
+            <dataSourceType>1</dataSourceType>
+            <dataFile>statemedia-100k.json</dataFile>
+            <indexConfig>
+                <indexType>0</indexType>
+                <supportSwapInEditDistance>true</supportSwapInEditDistance>
+                <!--  <fieldBoost>title^12 tags^16</fieldBoost> -->
+                <fieldBoost></fieldBoost>
+                <!--<recordBoostField>votes_count</recordBoostField> -->
+                <defaultQueryTermBoost>1</defaultQueryTermBoost>
+                <enablePositionIndex>1</enablePositionIndex> 
+            </indexConfig>
+            
+	    <query>
+	        <rankingalgorithm>
+		    <recordScoreExpression>(idf_score*(log(doc_boost+1)^1.5))/(idf_score+log(doc_boost+1))</recordScoreExpression>
+		</rankingalgorithm>
+		<fuzzyMatchPenalty>0.75</fuzzyMatchPenalty>
+		<queryTermSimilarityThreshold>0.8</queryTermSimilarityThreshold>
+		<prefixMatchPenalty>0.85</prefixMatchPenalty>
+		<cacheSize>65536000</cacheSize>
+		<rows>10</rows>
+		<fieldBasedSearch>0</fieldBasedSearch>
+		<searcherType>0</searcherType>
+
+		<!-- 0: exact match; 1: fuzzy match.-->
+		<queryTermFuzzyType>0</queryTermFuzzyType>
+
+		<!-- 0: prefix match; 1: complete match -->
+		<queryTermPrefixType>1</queryTermPrefixType>
+
+		<queryResponseWriter>
+		    <responseFormat>1</responseFormat>
+		</queryResponseWriter>
+	    </query>
+
+            <KeywordPopularityThreshold>10000</KeywordPopularityThreshold>
+            <getAllResultsMaxResultsThreshold>2000</getAllResultsMaxResultsThreshold>
+            <getAllResultsKAlternative>500</getAllResultsKAlternative>
+            <schema>
+                <fields>
+                      <field name="attr" type="text" indexed="true" />
+                      <field name="relevance" type="float"/>
+                      <field name="index" type="integer" searchable="true" />
+                </fields>
+              
+                <uniqueKey>index</uniqueKey>
+                <facetEnabled>false</facetEnabled>
+           <facetFields>
+            <facetField name="likes" facetType="range" facetStart="0" facetEnd="50" facetGap="10" />
+              <facetField name="model" facetType="categorical" />
+              <facetField name="price" facetType="range" facetStart="0" facetEnd="100" facetGap="10" />
+          </facetFields>
+                <types>
+
+                    <fieldType name="text_en">
+                      <analyzer>
+                        <filter name="PorterStemFilter" dictionary="" />
+                        <filter name="StopFilter" words="stop-words.txt" />
+                        <filter name="protectedKeyWordsFilter" words="srch2_protected_words.txt" />
+                      </analyzer>
+                    </fieldType>
+                </types>
+            </schema>
+	    <updatehandler>
+	        <maxDocs>15000000</maxDocs>
+		<maxMemory>10000000</maxMemory>
+		<mergePolicy>
+		    <mergeEveryNSeconds>10</mergeEveryNSeconds>
+		    <mergeEveryMWrites>100</mergeEveryMWrites>
+		</mergePolicy>
+		<updateLog>
+		    <logLevel>3</logLevel>
+		    <accessLogFile>srch2-log-A.txt</accessLogFile>
+		</updateLog>
+	    </updatehandler>
+        </core>
+
+    </cores>
+
+         <updateLog>
+            <logLevel>3</logLevel>
+            <accessLogFile>srch2-log-M.txt</accessLogFile>
+         </updateLog>
+
+
+</config>

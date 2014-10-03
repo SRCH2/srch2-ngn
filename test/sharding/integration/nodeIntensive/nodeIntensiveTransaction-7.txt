@@ -1,0 +1,27 @@
+#This tests the prefix queries in the 5 nodes present in Dilbert which has only core3, "P" should be changed to any other node for ex. A,B to test sharding 
+P||start
+Q||start
+R||start
+S||start
+T||start
+-||sleep||10
+P||bulkInsertFromBeginning2||./nodeIntensive/st-10k-1.json||200||50
+Q||bulkInsertFromBeginning2||./nodeIntensive/st-10k-2.json||200||50
+R||bulkInsertFromBeginning2||./nodeIntensive/st-10k-3.json||200||50
+S||bulkInsertFromBeginning2||./nodeIntensive/st-10k-4.json||200||50
+T||bulkInsertFromBeginning2||./nodeIntensive/st-10k-5.json||200||50
+-||sleep||10
+P||query2||q=aaaa*||"index":"1" "index":"2" "index":"3" "index":"4" "index":"5"
+P||query2||q=aaaaaa%20AND%201111*||"index":"1" "index":"2" "index":"3" "index":"4" "index":"5"
+P||query2||q=aaaaaa%20AND%20111111%20AND%20zzzz*||"index":"1" "index":"2" "index":"3" "index":"4" "index":"5"
+P||query2||q=cccc*||"index":"11" "index":"12" "index":"13" "index":"14" "index":"15"
+P||query2||q=cccccc%20AND%203333*||"index":"11" "index":"12" "index":"13" "index":"14" "index":"15"
+P||query2||q=cccccc%20AND%20333333%20AND%20xxxx*||"index":"11" "index":"12" "index":"13" "index":"14" "index":"15"
+P||query2||q=eee*||"index":"21" "index":"22" "index":"23" "index":"24" "index":"25"
+P||query2||q=eeeeee%20AND%20555*||"index":"21" "index":"22" "index":"23" "index":"24" "index":"25"
+P||query2||q=eeeeee%20AND%20555555%20AND%20vvvv*||"index":"21" "index":"22" "index":"23" "index":"24" "index":"25"
+P||kill
+Q||kill
+R||kill
+S||kill
+T||kill
