@@ -10,7 +10,7 @@
 #include "../transport/CallbackHandler.h"
 #include "../configuration/ConfigManager.h"
 #include "../configuration/ShardingConstants.h"
-#include "../processor/ProcessorUtil.h"
+#include "server/HTTPJsonResponse.h"
 
 #include <boost/thread/mutex.hpp>
 #include <boost/thread/locks.hpp>

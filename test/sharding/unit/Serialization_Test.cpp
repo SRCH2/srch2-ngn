@@ -155,7 +155,7 @@ void testSerializableCommandStatus(){
 	CommandStatus commandInput1(CommandStatus::DP_INSERT);
 	CommandStatus::ShardResults* shardResult = new CommandStatus::ShardResults("identifier");
 	shardResult->statusValue =  true;
-	shardResult->message = "INSERT True";
+	shardResult->messages.append(Json::Value("INSERT True"));
 	commandInput1.addShardResult(shardResult);
 
 	MessageAllocator * aloc = new MessageAllocator();
@@ -163,18 +163,18 @@ void testSerializableCommandStatus(){
 	const CommandStatus & deserializedCommandInput1 = *(CommandStatus::deserialize(buffer));
 	ASSERT(commandInput1.getCommandCode() == deserializedCommandInput1.getCommandCode());
 	ASSERT(commandInput1.getShardResults().at(0)->statusValue == deserializedCommandInput1.getShardResults().at(0)->statusValue);
-	ASSERT(commandInput1.getShardResults().at(0)->message.compare(deserializedCommandInput1.getShardResults().at(0)->message) == 0);
+	ASSERT(commandInput1.getShardResults().at(0)->messages == deserializedCommandInput1.getShardResults().at(0)->messages);
 
 	CommandStatus commandInput2(CommandStatus::DP_DELETE);
 	CommandStatus::ShardResults* shardResult2 = new CommandStatus::ShardResults("identifier2");
 	shardResult2->statusValue =  true;
-	shardResult2->message = "INSERT True";
+	shardResult->messages.append(Json::Value("INSERT True"));
 	commandInput2.addShardResult(shardResult2);
 	buffer = commandInput2.serialize(aloc);
 	const CommandStatus & deserializedCommandInput2 = *(CommandStatus::deserialize(buffer));
 	ASSERT(commandInput2.getCommandCode() == deserializedCommandInput2.getCommandCode());
 	ASSERT(commandInput2.getShardResults().at(0)->statusValue == deserializedCommandInput2.getShardResults().at(0)->statusValue);
-	ASSERT(commandInput2.getShardResults().at(0)->message.compare(deserializedCommandInput2.getShardResults().at(0)->message) == 0);
+	ASSERT(commandInput2.getShardResults().at(0)->messages == deserializedCommandInput2.getShardResults().at(0)->messages);
 }
 
 void testSerializableCommitCommandInput(){

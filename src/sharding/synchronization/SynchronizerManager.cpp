@@ -103,10 +103,7 @@ void SyncManager::startDiscovery() {
 	clusterWriteView->setCurrentNodeId(currentNodeId);
 
 
-	char nodename[1024];
-	sprintf(nodename, "%d", this->currentNodeId);
-
-	Node node(nodename, transport.getPublisedInterfaceAddress(), transport.getCommunicationPort(), true);
+	Node node(config.getCurrentNodeName(), transport.getPublisedInterfaceAddress(), transport.getCommunicationPort(), true);
 	node.thisIsMe = true;
 	node.setId(this->currentNodeId);
 	node.setMaster(this->currentNodeId == this->masterNodeId);
@@ -153,10 +150,8 @@ void SyncManager::joinExistingCluster(Node& node, bool isDiscoveryPhase) {
 		exit(-1);
 	}
 	if (sendConnectionRequest(&transport, masterNodeId, node, destinationAddress)) {
-		char nodename[1024];
-		sprintf(nodename, "%d", this->masterNodeId);
 		std::string masterIp(inet_ntoa(destinationAddress.sin_addr));
-		Node masterNode(nodename, masterIp, ntohs(destinationAddress.sin_port), false);
+		Node masterNode(config.getCurrentNodeName(), masterIp, ntohs(destinationAddress.sin_port), false);
 		masterNode.setId(this->masterNodeId);
 		masterNode.setMaster(true);
 

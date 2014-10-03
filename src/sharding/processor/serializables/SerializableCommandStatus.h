@@ -7,6 +7,7 @@ using namespace std;
 #include "sharding/configuration/ShardingConstants.h"
 #include "core/util/SerializationHelper.h"
 #include "sharding/transport/MessageAllocator.h"
+#include "server/HTTPJsonResponse.h"
 namespace srch2 {
 namespace httpwrapper {
 
@@ -17,7 +18,9 @@ public:
 
 	struct ShardResults{
 	public:
-		ShardResults(const string & shardIdentifiers):shardIdentifier(shardIdentifiers){}
+		ShardResults(const string & shardIdentifiers):shardIdentifier(shardIdentifiers){
+			this->messages = Json::Value(Json::arrayValue);
+		}
 
 	    /*
 	     * Contains the identifier of the shard ...
@@ -30,23 +33,23 @@ public:
 	    bool statusValue;
 
 	    /*
-	     * Contains the message coming from the shard ...
+	     * Contains the messages/warnings/errors coming from the shard ...
 	     */
-	    string message ;
+	    Json::Value messages;
 
 	    //serializes the object to a byte array and places array into the region
 	    //allocated by given allocator
 	    void* serialize(void * bufferWritePointer){
 	        bufferWritePointer = srch2::util::serializeString(shardIdentifier, bufferWritePointer);
 	        bufferWritePointer = srch2::util::serializeFixedTypes(statusValue, bufferWritePointer);
-	        bufferWritePointer = srch2::util::serializeString(message, bufferWritePointer);
+	        bufferWritePointer = srch2::util::serializeString(global_customized_writer.write(messages), bufferWritePointer);
 	        return bufferWritePointer;
 	    }
 
 	    unsigned getNumberOfBytes() const{
 	        unsigned numberOfBytes = 0;
 	        numberOfBytes += sizeof(unsigned) + shardIdentifier.size();
-	        numberOfBytes += sizeof(unsigned) + message.size();
+	        numberOfBytes += sizeof(unsigned) + global_customized_writer.write(messages).size();
 	        numberOfBytes += sizeof(bool);
 	        return numberOfBytes;
 	    }
@@ -62,7 +65,10 @@ public:
 	        buffer = srch2::util::deserializeString(buffer, shardIdentifier);
 	        ShardResults * newShardResult = new ShardResults(shardIdentifier);
 	        buffer = srch2::util::deserializeFixedTypes(buffer, newShardResult->statusValue);
-	        buffer = srch2::util::deserializeString(buffer, newShardResult->message);
+	        string messagesStr = NULL;
+	        buffer = srch2::util::deserializeString(buffer, messagesStr);
+	        Json::Reader reader;
+	        reader.parse(messagesStr, newShardResult->messages);
 	        // allocate and construct the object
 	        return newShardResult;
 	    }

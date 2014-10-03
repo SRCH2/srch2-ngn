@@ -164,27 +164,26 @@ CommandStatus * DPInternalRequestHandler::internalInsertUpdateCommand(const Node
 		status = new CommandStatus(CommandStatus::DP_UPDATE);
 	}
 
-	std::stringstream log_str;
+	Json::Value allOutputs(Json::arrayValue);
+	allOutputs.resize(shards.size());
 	for(unsigned shardIdx = 0; shardIdx < shards.size(); ++shardIdx){
 		pthread_join(shardInsertUpdateThreads[shardIdx], NULL);
 		ShardInsertUpdateArgs * insertResults = allShardsInsertArguments.at(shardIdx);
 		status->addShardResult(insertResults->shardResults);
-		log_str << insertResults->shardResults->message ;
+		allOutputs[shardIdx] = insertResults->shardResults->messages;
 		delete insertResults;
 	}
 	delete shardInsertUpdateThreads;
 
-    Logger::info("%s", log_str.str().c_str());
+    Logger::info("%s", global_customized_writer.write(allOutputs).c_str());
     return status;
-
 
 }
 
 
 void DPInternalRequestHandler::insertInShard(const Record * record,
-		Srch2Server * server, string & msg, bool & statusValue){
+		Srch2Server * server, Json::Value & messages , bool & statusValue){
     //add the record to the index
-    std::stringstream log_str;
     if ( server->getIndexer()->getNumberOfDocumentsInIndex() < server->getCoreInfo()->getDocumentLimit() )
     {
         // Do NOT delete analyzer because it is thread specific. It will be reused for
@@ -196,47 +195,38 @@ void DPInternalRequestHandler::insertInShard(const Record * record,
         {
         case srch2::instantsearch::OP_SUCCESS:
         {
-            log_str << "{\"rid\":\"" << record->getPrimaryKey() << "\",\"insert\":\"success\"}";
-            Logger::info("%s", log_str.str().c_str());
             statusValue = true;
-            msg = log_str.str();
             return;
         }
         case srch2::instantsearch::OP_FAIL:
         {
-            log_str << "{\"rid\":\"" << record->getPrimaryKey() << "\",\"insert\":\"failed\",\"reason\":\"The record with same primary key already exists\"}";
-            Logger::info("%s", log_str.str().c_str());
+            messages.append(HTTPJsonResponse::getJsonSingleMessage(HTTP_JSON_PK_Exists_Error));
             statusValue = false;
-            msg = log_str.str();
             return;
         }
         };
     }
     else
     {
-        log_str << "{\"rid\":\"" << record->getPrimaryKey() << "\",\"insert\":\"failed\",\"reason\":\"document limit reached. Email support@srch2.com for account upgrade.\"}";
-        Logger::info("%s", log_str.str().c_str());
+        messages.append(HTTPJsonResponse::getJsonSingleMessage(HTTP_JSON_Doc_Limit_Reached_Error));
         statusValue = false;
-        msg = log_str.str();
         return;
     }
 }
 
 void * DPInternalRequestHandler::insertInShardThreadWork(void * args){
 	ShardInsertUpdateArgs * shardArgs = (ShardInsertUpdateArgs *) args;
-	insertInShard(shardArgs->record, shardArgs->server, shardArgs->shardResults->message, shardArgs->shardResults->statusValue);
+	insertInShard(shardArgs->record, shardArgs->server, shardArgs->shardResults->messages, shardArgs->shardResults->statusValue);
 
 	//
 	return NULL;
 }
 
 void DPInternalRequestHandler::updateInShard(const Record * record,
-		Srch2Server * server, string & msg, bool & statusValue){
-    std::stringstream log_str;
+		Srch2Server * server, Json::Value & messages , bool & statusValue){
 	unsigned deletedInternalRecordId;
 	std::string primaryKeyStringValue;
 	primaryKeyStringValue = record->getPrimaryKey();
-	log_str << "{\"rid\":\"" << primaryKeyStringValue << "\",\"update\":\"";
 
 	//delete the record from the index
 	bool recordExisted = false;
@@ -269,26 +259,25 @@ void DPInternalRequestHandler::updateInShard(const Record * record,
 		{
 		case srch2::instantsearch::OP_SUCCESS:
 		{
-			if (recordExisted)
-				log_str << "Existing record updated successfully\"}";
-			else
-				log_str << "New record inserted successfully\"}";
+			if (! recordExisted){
+		        messages.append(HTTPJsonResponse::getJsonSingleMessage(HTTP_JSON_Existing_Record_Update_Info));
+			}
 
-			Logger::info("%s", log_str.str().c_str());
 			statusValue = true;
-			msg = log_str.str();
 			return;
 		}
 		case srch2::instantsearch::OP_FAIL:
 		{
-			log_str << "failed\",\"reason\":\"insert: The record with same primary key already exists\",";
+	        messages.append(HTTPJsonResponse::getJsonSingleMessage(HTTP_JSON_Update_Failed_Error));
+			statusValue = false;
 			break;
 		}
 		};
 	}
 	else
 	{
-		log_str << "failed\",\"reason\":\"insert: Document limit reached. Email support@srch2.com for account upgrade.\",";
+        messages.append(HTTPJsonResponse::getJsonSingleMessage(HTTP_JSON_Update_Failed_Error));
+		statusValue = false;
 	}
 
 	/// reaching here means the insert failed, need to resume the deleted old record
@@ -299,18 +288,15 @@ void DPInternalRequestHandler::updateInShard(const Record * record,
 	{
 	case srch2::instantsearch::OP_FAIL:
 	{
-		log_str << "\"resume\":\"no record with given primary key\"}";
-		Logger::info("%s", log_str.str().c_str());
+        messages.append(HTTPJsonResponse::getJsonSingleMessage(HTTP_JSON_Update_Failed_Error));
 		statusValue = false;
-		msg = log_str.str();
+		Logger::error("%s" , global_customized_writer.write(messages).c_str());
 		return;
 	}
 	default: // OP_SUCCESS.
 	{
-		log_str << "\"resume\":\"success\"}";
-		Logger::info("%s", log_str.str().c_str());
-		statusValue = true;
-		msg = log_str.str();
+        messages.append(HTTPJsonResponse::getJsonSingleMessage(HTTP_JSON_Update_Failed_Error));
+		statusValue = false;
 		return;
 	}
 	};
@@ -320,7 +306,7 @@ void DPInternalRequestHandler::updateInShard(const Record * record,
 void * DPInternalRequestHandler::updateInShardThreadWork(void * args){
 	ShardInsertUpdateArgs * updateArgs = (ShardInsertUpdateArgs  *) args;
 
-	updateInShard(updateArgs->record, updateArgs->server, updateArgs->shardResults->message, updateArgs->shardResults->statusValue);
+	updateInShard(updateArgs->record, updateArgs->server, updateArgs->shardResults->messages, updateArgs->shardResults->statusValue);
 
 	//
 	return NULL;
@@ -362,43 +348,35 @@ CommandStatus * DPInternalRequestHandler::internalDeleteCommand(const NodeTarget
 
     CommandStatus * status = new CommandStatus(CommandStatus::DP_DELETE);
 
-	std::stringstream log_str;
+	Json::Value allOutputs(Json::arrayValue);
+	allOutputs.resize(shards.size());
 	for(unsigned shardIdx = 0; shardIdx < shards.size(); ++shardIdx){
 		pthread_join(shardDeleteThreads[shardIdx], NULL);
 		ShardDeleteArgs * deleteResults = allShardsDeleteArguments.at(shardIdx);
 		status->addShardResult(deleteResults->shardResults);
-		log_str << deleteResults->shardResults->message;
+		allOutputs[shardIdx] = deleteResults->shardResults->messages;
 		delete deleteResults;
 	}
 	delete shardDeleteThreads;
 
-    Logger::info("%s", log_str.str().c_str());
+    Logger::info("%s", global_customized_writer.write(allOutputs).c_str());
     return status;
-
 
 }
 
 
 void DPInternalRequestHandler::deleteInShard(const string primaryKey, unsigned shardingKey,
-		Srch2Server * server, string & msg, bool & statusValue){
-    std::stringstream log_str;
-    log_str << "{\"rid\":\"" << primaryKey << "\",\"delete\":\"";
-
+		Srch2Server * server, Json::Value & messages, bool & statusValue){
     //delete the record from the index
     switch(server->getIndexer()->deleteRecord(primaryKey)){
     case OP_FAIL:
     {
-        log_str << "failed\",\"reason\":\"no record with given primary key\"}";
-        Logger::info("%s", log_str.str().c_str());
-        msg = log_str.str();
+        messages.append(HTTPJsonResponse::getJsonSingleMessage(HTTP_JSON_Delete_Record_Not_Found_Error));
         statusValue = false;
         return;
     }
     default: // OP_SUCCESS.
     {
-        log_str << "success\"}";
-        Logger::info("%s", log_str.str().c_str());
-        msg = log_str.str();
         statusValue = true;
         return;
     }
@@ -408,7 +386,7 @@ void DPInternalRequestHandler::deleteInShard(const string primaryKey, unsigned s
 void * DPInternalRequestHandler::deleteInShardThreadWork(void * args){
 	ShardDeleteArgs * deleteArgs = (ShardDeleteArgs  *) args;
 
-	deleteInShard(deleteArgs->primaryKey,deleteArgs->shardingKey, deleteArgs->server, deleteArgs->shardResults->message, deleteArgs->shardResults->statusValue);
+	deleteInShard(deleteArgs->primaryKey,deleteArgs->shardingKey, deleteArgs->server, deleteArgs->shardResults->messages, deleteArgs->shardResults->statusValue);
 
 	//
 	return NULL;
@@ -471,7 +449,6 @@ void * DPInternalRequestHandler::getInfoInShardThreadWork(void * args){
 	getInfoInShard(infoArgs->server, infoArgs->shardResult->readCount, infoArgs->shardResult->writeCount,
 			infoArgs->shardResult->numberOfDocumentsInIndex,
 			infoArgs->shardResult->lastMergeTimeString, infoArgs->shardResult->docCount);
-
 	//
 	return NULL;
 }
@@ -538,8 +515,9 @@ CommandStatus * DPInternalRequestHandler::internalSerializeCommand(const NodeTar
 
 
 void * DPInternalRequestHandler::serializeIndexInShardThreadWork(void * args){
-	ShardSerializeArgs * serializeRecordsArgs = (ShardSerializeArgs *) args;
-	serializeRecordsArgs->server->getIndexer()->save();
+	ShardSerializeArgs * serializeIndexArgs = (ShardSerializeArgs *) args;
+	serializeIndexArgs->server->getIndexer()->save();
+	serializeIndexArgs->shardResults->statusValue = true;
     //
     return NULL;
 }
@@ -551,6 +529,7 @@ void * DPInternalRequestHandler::serializeRecordsInShardThreadWork(void * args){
         exportedDataFileName = "export_data.json";
     }
     serializeRecordsArgs->server->getIndexer()->exportData(exportedDataFileName);
+    serializeRecordsArgs->shardResults->statusValue = true;
     //
     return NULL;
 }
@@ -698,18 +677,15 @@ void * DPInternalRequestHandler::resetLogInShardThreadWork(void * args){
     if (logFile == NULL) {
         srch2::util::Logger::error("Reopen Log file %s failed.",
         		shardArgs->server->getCoreInfo()->getHTTPServerAccessLogFile().c_str());
-        Logger::info("%s", string("{\"message\":\"The logger file repointing failed. Could not create new logger file\", \"log\":\""
-                + shardArgs->server->getCoreInfo()->getHTTPServerAccessLogFile() + "\"}").c_str());
-        shardArgs->shardResults->message = "{\"message\":\"The logger file repointing failed. Could not create new logger file\", \"log\":\""
-                + shardArgs->server->getCoreInfo()->getHTTPServerAccessLogFile() + "\"}";
+
+        Json::Value errValue = HTTPJsonResponse::getJsonSingleMessage(HTTP_JSON_ResetLogger_Reopen_Failed_Error);
+        errValue[c_logger_file] = shardArgs->server->getCoreInfo()->getHTTPServerAccessLogFile();
+        shardArgs->shardResults->messages.append(errValue);
         shardArgs->shardResults->statusValue = false;
+        Logger::info("%s", global_customized_writer.write(shardArgs->shardResults->messages).c_str());
     } else {
         FILE * oldLogger = srch2::util::Logger::swapLoggerFile(logFile);
         fclose(oldLogger);
-        Logger::info("%s", string("{\"message\":\"The logger file repointing succeeded\", \"log\":\""
-                + shardArgs->server->getCoreInfo()->getHTTPServerAccessLogFile() + "\"}").c_str());
-        shardArgs->shardResults->message = "{\"message\":\"The logger file repointing succeeded\", \"log\":\""
-                + shardArgs->server->getCoreInfo()->getHTTPServerAccessLogFile() + "\"}";
         shardArgs->shardResults->statusValue = true;
     }
 
@@ -721,16 +697,19 @@ void * DPInternalRequestHandler::commitInShardThreadWork(void * args){
 	ShardStatusOnlyArgs * shardArgs = (ShardStatusOnlyArgs * )args;
 
     //commit the index.
-    if ( shardArgs->server->getIndexer()->commit() == srch2::instantsearch::OP_SUCCESS)
+	INDEXWRITE_RETVAL commitReturnValue = shardArgs->server->getIndexer()->commit();
+    if ( commitReturnValue == srch2::instantsearch::OP_SUCCESS)
     {
-        Logger::info("%s", "{\"commit\":\"success\"}");
-        shardArgs->shardResults->message = "{\"commit\":\"success\"}";
         shardArgs->shardResults->statusValue = true;
+    }
+    else if(commitReturnValue == srch2::instantsearch::OP_NOTHING_TO_DO)
+    {
+        Json::Value infoValue = HTTPJsonResponse::getJsonSingleMessage(HTTP_JSON_Commit_Already_Done_Info);
+        shardArgs->shardResults->messages.append(infoValue);
+    	shardArgs->shardResults->statusValue = true;
     }
     else
     {
-        Logger::info("%s", "{\"commit\":\"failed\"}");
-        shardArgs->shardResults->message = "{\"commit\":\"failed\"}";
          shardArgs->shardResults->statusValue = false;
     }
 
@@ -743,16 +722,19 @@ void * DPInternalRequestHandler::mergeInShardThreadWork(void * args){
 	ShardStatusOnlyArgs * shardArgs = (ShardStatusOnlyArgs * )args;
 
     //merge the index.
-    if ( shardArgs->server->getIndexer()->merge() == srch2::instantsearch::OP_SUCCESS)
+	INDEXWRITE_RETVAL mergeReturnValue = shardArgs->server->getIndexer()->merge();
+    if ( mergeReturnValue == srch2::instantsearch::OP_SUCCESS)
     {
-        Logger::info("%s", "{\"merge\":\"success\"}");
-        shardArgs->shardResults->message = "{\"merge\":\"success\"}";
         shardArgs->shardResults->statusValue = true;
+    }
+    else if(mergeReturnValue == srch2::instantsearch::OP_NOTHING_TO_DO)
+    {
+        Json::Value infoValue = HTTPJsonResponse::getJsonSingleMessage(HTTP_JSON_Merge_Already_Done_Info);
+        shardArgs->shardResults->messages.append(infoValue);
+    	shardArgs->shardResults->statusValue = true;
     }
     else
     {
-        Logger::info("%s", "{\"merge\":\"failed\"}");
-        shardArgs->shardResults->message = "{\"merge\":\"failed\"}";
          shardArgs->shardResults->statusValue = false;
     }
 

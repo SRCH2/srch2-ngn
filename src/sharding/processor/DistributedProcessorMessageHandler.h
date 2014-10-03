@@ -242,6 +242,14 @@ private:
 				delete (ResetLogCommand*)reqHandlerArgs->requestObj;
 				delete reqHandlerArgs;
 				return NULL;
+			case MergeCommandMessageType:
+				reqHandlerArgs->requestMessageHandler->resolveMessage((MergeCommand*)reqHandlerArgs->requestObj,
+						reqHandlerArgs->node, reqHandlerArgs->requestMessageId,
+						reqHandlerArgs->target, reqHandlerArgs->type,
+						reqHandlerArgs->clusterReadview);
+				delete (MergeCommand*)reqHandlerArgs->requestObj;
+				delete reqHandlerArgs;
+				return NULL;
 			default:
 				break;
 		}

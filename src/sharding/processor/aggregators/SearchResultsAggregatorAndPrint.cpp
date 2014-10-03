@@ -13,13 +13,6 @@ using namespace srch2is;
 namespace srch2 {
 namespace httpwrapper {
 
-namespace {
-    static const pair<string, string> global_internal_record("srch2_internal_record_123456789", "record");
-    static const pair<string, string> global_internal_snippet("srch2_internal_snippet_123456789", "snippet");
-    static const pair<string, string> internal_data[] = { global_internal_record, global_internal_snippet};
-    static const vector<pair<string, string> > global_internal_skip_tags(internal_data, internal_data+2);
-}
-
 SearchResultsAggregator::SearchResultsAggregator(ConfigManager * configurationManager, evhttp_request *req,
 		boost::shared_ptr<const ClusterResourceMetadata_Readview> clusterReadview, unsigned coreId) :
 		DistributedProcessorAggregator<SearchCommand , SearchCommandResults>(clusterReadview, coreId){

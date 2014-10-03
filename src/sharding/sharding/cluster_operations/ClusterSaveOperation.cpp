@@ -6,7 +6,7 @@
 #include "../atomic_operations/AtomicLockOperation.h"
 #include "../atomic_operations/AtomicMergeOperation.h"
 #include "../atomic_operations/AtomicSaveOperation.h"
-#include "../../processor/ProcessorUtil.h"
+#include "server/HTTPJsonResponse.h"
 
 namespace srch2is = srch2::instantsearch;
 using namespace srch2is;

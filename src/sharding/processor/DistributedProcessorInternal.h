@@ -20,6 +20,8 @@
 #include "serializables/SerializableCommandStatus.h"
 #include "serializables/SerializableGetInfoResults.h"
 
+#include "server/HTTPJsonResponse.h"
+
 using namespace std;
 using namespace srch2::instantsearch;
 
@@ -168,13 +170,13 @@ private:
     	CommandStatus::ShardResults * shardResults;
     };
 
-    static void insertInShard(const Record * record, Srch2Server * server, string & msg, bool & statusValue);
+    static void insertInShard(const Record * record, Srch2Server * server, Json::Value & messages , bool & statusValue);
     static void * insertInShardThreadWork(void *);
-    static void updateInShard(const Record * record, Srch2Server * server, string & msg, bool & statusValue);
+    static void updateInShard(const Record * record, Srch2Server * server, Json::Value & messages , bool & statusValue);
     static void * updateInShardThreadWork(void * args);
 
     static void deleteInShard(const string primaryKey, unsigned shardingKey,
-    		Srch2Server * server, string & msg, bool & statusValue);
+    		Srch2Server * server, Json::Value & messages, bool & statusValue);
     static void * deleteInShardThreadWork(void * args);
 
 //    GetInfoShardResult

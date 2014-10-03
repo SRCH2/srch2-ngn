@@ -4,7 +4,7 @@
 #include "../State.h"
 #include "../notifications/Notification.h"
 #include "../metadata_manager/Shard.h"
-#include "../../processor/ProcessorUtil.h"
+#include "server/HTTPJsonResponse.h"
 
 #include "core/util/Logger.h"
 #include "core/util/Assert.h"

@@ -21,6 +21,7 @@ struct NodeInfo {
 	unsigned nodeId;
 	unsigned ipaddress;
 	unsigned communicationPort;
+	char nodeName[1024];
 };
 
 class MessageBuffer {

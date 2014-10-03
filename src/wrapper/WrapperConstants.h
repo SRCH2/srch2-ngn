@@ -89,6 +89,26 @@ typedef enum {
 	DATA_SOURCE_DATABASE
 } DataSourceType;
 
+
+typedef enum {
+	HTTP_JSON_Parse_Error,
+	HTTP_JSON_All_Shards_Down_Error,
+	HTTP_JSON_Custom_Error,
+	HTTP_JSON_Node_Timeout_Warning,
+	HTTP_JSON_PK_Exists_Error,
+	HTTP_JSON_Doc_Limit_Reached_Error,
+	HTTP_JSON_Existing_Record_Update_Info,
+	HTTP_JSON_Update_Failed_Error,
+	HTTP_JSON_Recover_Failed_Error,
+	HTTP_JSON_Delete_Record_Not_Found_Error,
+	HTTP_JSON_ResetLogger_Reopen_Failed_Error,
+	HTTP_JSON_PK_NOT_PROVIDED,
+	HTTP_JSON_Search_Res_Format_Wrong_Error,
+	HTTP_JSON_Merge_Already_Done_Info,
+	HTTP_JSON_Commit_Already_Done_Info,
+	HTTP_JSON_Cluster_Not_Ready_Error
+} HTTPJsonMessageCode;
+
 }
 
 }

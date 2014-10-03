@@ -208,8 +208,13 @@ void ShardManager::start(){
  */
 void ShardManager::save(evhttp_request *req){
 	if(this->metadataManager->getClusterWriteview() == NULL){
-		 bmhelper_evhttp_send_reply2(req, HTTP_BADREQUEST, "Save failed.",
-		                    "Cluster is not ready to save yet.");
+		//TODO : temp : it must be out of this if
+		boost::shared_ptr<HTTPJsonShardOperationResponse > brokerSideInformationJson =
+				boost::shared_ptr<HTTPJsonShardOperationResponse > (new HTTPJsonShardOperationResponse(req));
+		brokerSideInformationJson->finalizeOK();
+		brokerSideInformationJson->addError(HTTPJsonResponse::getJsonSingleMessage(HTTP_JSON_Cluster_Not_Ready_Error));
+		brokerSideInformationJson->addShardResponse(c_action_save, false, nullJsonValue);
+		return;
 	}
 
 
@@ -221,10 +226,9 @@ void ShardManager::save(evhttp_request *req){
         break;
     }
     default: {
-        bmhelper_evhttp_send_reply2(req, HTTP_BADREQUEST, "INVALID REQUEST",
-                "{\"error\":\"The request has an invalid or missing argument. See Srch2 API documentation for details.\"}");
-        Logger::error(
-                "The request has an invalid or missing argument. See Srch2 API documentation for details");
+		boost::shared_ptr<HTTPJsonShardOperationResponse > brokerSideInformationJson =
+				boost::shared_ptr<HTTPJsonShardOperationResponse > (new HTTPJsonShardOperationResponse(req));
+        brokerSideInformationJson->finalizeInvalid();
         break;
     }
     };

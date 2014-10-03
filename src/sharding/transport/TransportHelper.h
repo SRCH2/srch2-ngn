@@ -70,7 +70,8 @@ void* listenForIncomingConnection(void* arg) {
 		if((newfd = accept(fd, (sockaddr*) &addr, &addrlen)) != -1) {
 			NodeId remoteNodeId;
 			NodeInfo remoteNodeInfo;
-			NodeInfo currentNodeInfo = {currentNode.getId(), 0, currentNode.getPortNumber() };
+			NodeInfo currentNodeInfo = {currentNode.getId(), 0, currentNode.getPortNumber()};
+			memcpy(currentNodeInfo.nodeName, currentNode.getName().c_str(), currentNode.getName().size());
 			if((remoteNodeId = recieveGreeting(newfd, remoteNodeInfo)) == -1) {
 				sendGreeting(newfd, false, currentNodeInfo);
 				close(newfd);
@@ -92,15 +93,13 @@ void* listenForIncomingConnection(void* arg) {
 			Connection *conn = &(transport->getConnectionMap().getConnection(remoteNodeId));
 			transport->registerEventListenerForSocket(newfd, conn);
 
-			char nodename[1024];
-			sprintf(nodename, "%d", remoteNodeId);
 
 			char ipbuf[INET_ADDRSTRLEN+1] = {0};
 			struct in_addr remoteIpAddr;
 			remoteIpAddr.s_addr = remoteNodeInfo.ipaddress;
 			inet_ntop(AF_INET, (const void *)&remoteIpAddr, ipbuf, INET_ADDRSTRLEN+1);
 
-			Node node(nodename, ipbuf, remoteNodeInfo.communicationPort, false);
+			Node node(remoteNodeInfo.nodeName, ipbuf, remoteNodeInfo.communicationPort, false);
 			node.setId(remoteNodeId);
 			string serlializedNode = node.serialize();
 			Message * msg = MessageAllocator().allocateMessage(serlializedNode.size());
@@ -149,6 +148,7 @@ bool sendConnectionRequest(TransportManager *transport, unsigned destinationNode
 		struct in_addr currentAddr;
 		inet_aton(currentNode.getIpAddress().c_str(), &currentAddr);
 		NodeInfo currentNodeInfo = {currentNode.getId(), currentAddr.s_addr, currentNode.getPortNumber()};
+		memcpy(currentNodeInfo.nodeName, currentNode.getName().c_str(), currentNode.getName().size());
 		NodeInfo remoteNodeInfo;
 		trySendingAgain:  // label
 		if (!sendGreeting(fd, true, currentNodeInfo)){

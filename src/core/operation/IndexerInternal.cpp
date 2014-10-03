@@ -229,6 +229,10 @@ void IndexReaderWriter::save(const std::string& directoryName)
 
 INDEXWRITE_RETVAL IndexReaderWriter::merge(bool updateHistogram)
 {
+	if(! this->index->isMergeRequired()){
+		return OP_NOTHING_TO_DO;
+	}
+
     if (this->cache != NULL && this->index->isMergeRequired())
         this->cache->clear();
 

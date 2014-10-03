@@ -1,6 +1,6 @@
 #include "Srch2ServerExternalGateway.h"
 #include "Srch2ServerRuntime.h"
-#include "sharding/processor/ProcessorUtil.h"
+#include "HTTPJsonResponse.h"
 #include "sharding/processor/DistributedProcessorExternal.h"
 #include <exception>
 

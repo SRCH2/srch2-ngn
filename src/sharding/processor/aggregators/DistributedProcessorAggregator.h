@@ -14,7 +14,7 @@
 #include <boost/thread/locks.hpp>
 #include <boost/shared_ptr.hpp>
 #include <boost/serialization/shared_ptr.hpp>
-#include "sharding/processor/ProcessorUtil.h"
+#include "server/HTTPJsonResponse.h"
 
 
 namespace srch2is = srch2::instantsearch;

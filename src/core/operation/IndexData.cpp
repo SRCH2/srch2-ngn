@@ -488,7 +488,7 @@ INDEXWRITE_RETVAL IndexData::_merge(bool updateHistogram){
 //    Logger::debug("Merge begins--------------------------------");
 
     if (!this->mergeRequired)
-        return OP_FAIL;
+        return OP_NOTHING_TO_DO;
     
     // struct timespec tstart;
     // clock_gettime(CLOCK_REALTIME, &tstart);

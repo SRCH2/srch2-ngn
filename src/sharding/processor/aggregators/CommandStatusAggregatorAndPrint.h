@@ -1,7 +1,7 @@
 #ifndef __SHARDING_PROCESSOR_COMMAND_STATUS_AGGREGATOR_AND_PRINT_H_
 #define __SHARDING_PROCESSOR_COMMAND_STATUS_AGGREGATOR_AND_PRINT_H_
 
-#include "sharding/processor/aggregators/DistributedProcessorAggregator.h"
+#include "./DistributedProcessorAggregator.h"
 #include "../serializables/SerializableCommandStatus.h"
 #include "../serializables/SerializableInsertUpdateCommandInput.h"
 #include "../serializables/SerializableDeleteCommandInput.h"
@@ -9,7 +9,7 @@
 #include "../serializables/SerializableResetLogCommandInput.h"
 #include "../serializables/SerializableCommitCommandInput.h"
 #include "../PendingMessages.h"
-#include "sharding/processor/ProcessorUtil.h"
+#include "server/HTTPJsonResponse.h"
 #include <string>
 #include <sstream>
 
@@ -28,22 +28,24 @@ public:
 
     StatusAggregator(ConfigManager * configurationManager, evhttp_request *req,
     		boost::shared_ptr<const ClusterResourceMetadata_Readview> clusterReadview, unsigned coreId, unsigned multiRouteMode = 0):
-    			DistributedProcessorAggregator<RequestWithStatusResponse,CommandStatus>(clusterReadview, coreId){
+    			DistributedProcessorAggregator<RequestWithStatusResponse,CommandStatus>(clusterReadview, coreId),
+    			requestType(RequestWithStatusResponse::messageType()){
         this->configurationManager = configurationManager;
         this->req = req;
         this->multiRouteMode = multiRouteMode; // this is the case where aggregator is shared with multiple callbacks
         this->preProcessCalled = false;
-        this->numberOfFinalizeCallsSoFar = 0;
+        this->numberOfFinalizedCallsSoFar = 0;
     }
 
-    void setMessages(std::stringstream & log_str){
+
+    void setJsonRecordOperationResponse(boost::shared_ptr<HTTPJsonRecordOperationResponse > brokerSideRecordOpInfoJson){
         boost::unique_lock< boost::shared_mutex > lock(_access);
-        this->messages << log_str.str();
+        this->brokerSideRecordOpInfoJson = brokerSideRecordOpInfoJson;
     }
 
-    std::stringstream & getMessages(){
+    void setJsonShardOperationResponse(boost::shared_ptr<HTTPJsonShardOperationResponse > brokerSideShardOpInfoJson){
         boost::unique_lock< boost::shared_mutex > lock(_access);
-        return this->messages;
+        this->brokerSideShardOpInfoJson = brokerSideShardOpInfoJson;
     }
 
     /*
@@ -77,50 +79,28 @@ public:
         if(message == NULL){
             return;
         }
+		boost::unique_lock< boost::shared_mutex > lock(_access);
+		Json::Value timeoutWarning(Json::objectValue);
+		timeoutWarning[c_message] = HTTPJsonResponse::getJsonSingleMessageStr(HTTP_JSON_Node_Timeout_Warning);
+		timeoutWarning['node_name'] = Json::Value(this->getClusterReadview()->getNode(message->getNodeId()).getName());
 
-        const RequestWithStatusResponse * sentRequest = message->getRequestObject();
 
-        if(typeid(const InsertUpdateCommand *) == typeid(sentRequest)){// timeout in insert and update
+		switch (requestType) {
+			case InsertUpdateCommandMessageType:
+			case DeleteCommandMessageType:
+				this->brokerSideRecordOpInfoJson->addWarning(timeoutWarning);
+				break;
+			case SerializeCommandMessageType:
+			case CommitCommandMessageType:
+			case MergeCommandMessageType:
+			case ResetLogCommandMessageType:
+				this->brokerSideShardOpInfoJson->addWarning(timeoutWarning);
+				break;
+			default:
+				ASSERT(false);
+				break;
+		}
 
-            boost::unique_lock< boost::shared_mutex > lock(_access);
-            const InsertUpdateCommand * sentInsetUpdateRequest = (const InsertUpdateCommand *)(sentRequest);
-            messages << "{\"rid\":\"" << sentInsetUpdateRequest->getRecord()->getPrimaryKey()
-                                        << "\",\"" << (sentInsetUpdateRequest->getInsertOrUpdate()?"insert":"update") <<
-                                        "\":\"failed\",\"reason\":\"Node #"<<
-                                        message->getNodeId()<<" timedout.\"}";
-
-        }else if (typeid(const DeleteCommand *) == typeid(sentRequest)){
-
-            boost::unique_lock< boost::shared_mutex > lock(_access);
-            const DeleteCommand * sentDeleteRequest = (const DeleteCommand *)(sentRequest);
-            messages << "{\"rid\":\"" << sentDeleteRequest->getPrimaryKey()
-                            << "\",\"delete\":\"failed\",\"reason\":\"Node #"<<
-                            message->getNodeId() << " timedout.\"}";
-
-        }else if(typeid(const SerializeCommand *) == typeid(sentRequest)){
-
-            boost::unique_lock< boost::shared_mutex > lock(_access);
-            const SerializeCommand * serializeRequest = (const SerializeCommand *)(sentRequest);
-            messages << "{\""<< (serializeRequest->getIndexOrRecord()?"save":"export") << "\":\"failed\",\"reason\":\"Node #" <<
-                    message->getNodeId() << " timedout.\"}";
-
-        }else if(typeid(const ResetLogCommand *) == typeid(sentRequest)){
-
-            boost::unique_lock< boost::shared_mutex > lock(_access);
-            const ResetLogCommand * resetRequest = (const ResetLogCommand *)(sentRequest);
-            messages << "{\"reset_log\":\"failed\",\"reason\":\"Node #" << message->getNodeId()<<" timedout.\"}";
-
-        }else if(typeid(const CommitCommand *) == typeid(sentRequest)){
-
-            boost::unique_lock< boost::shared_mutex > lock(_access);
-            const CommitCommand * resetRequest = (const CommitCommand *)(sentRequest);
-            messages << "{\"commit\":\"failed\",\"reason\":\"Node #" << message->getNodeId()<<" timedout.\"}";
-
-        }else{
-            //TODO : what should we do here?
-            ASSERT(false);
-            return;
-        }
     }
 
     /*
@@ -132,53 +112,82 @@ public:
             return;
         }
         boost::unique_lock< boost::shared_mutex > lock(_access);
-        if(messages.str().compare("") != 0){ // string not empty
-            messages << ",";
-        }
-        messages << "\"node-report\":";
-        if(message->getResponseObject() == NULL){
-            messages << "\"Node #" << message->getNodeId() << " timed out.\"";
-        }else{
-            messages << "{ \"Node-id\":\"" << message->getNodeId() << "\",";
-            vector<CommandStatus::ShardResults *> shardResults = message->getResponseObject()->getShardResults();
-            for(unsigned shardIdx = 0 ; shardIdx < shardResults.size() ; ++shardIdx){
-            	if(shardIdx != 0){
-            		messages << ",";
-            	}
-            	messages << "\"shard(" << shardResults.at(shardIdx)->shardIdentifier << ")\":\"" << shardResults.at(shardIdx)->message << "\"";
-            }
-			messages << "}";
-        }
+
+        this->getClusterReadview()->getNode(message->getNodeId()).getName();
+        const string coreName = this->getClusterReadview()->getCore(this->getCoreId())->getName();
+
+        const RequestWithStatusResponse * sentRequest = message->getRequestObject();
+
+        CommandStatus * cammandStatusResponse = message->getResponseObject();
+
+        vector<CommandStatus::ShardResults *> allRecordShardResults = cammandStatusResponse->getShardResults();
+
+		for(unsigned i = 0 ; i < allRecordShardResults.size(); ++i){
+			CommandStatus::ShardResults * recordShardResult = allRecordShardResults.at(i);
+
+			switch (requestType) {
+				case InsertUpdateCommandMessageType:{
+					const InsertUpdateCommand * sentInsetUpdateRequest = (const InsertUpdateCommand *)(sentRequest);
+
+					Json::Value recordShardResponse =
+							HTTPJsonRecordOperationResponse::getRecordJsonResponse(sentInsetUpdateRequest->getRecord()->getPrimaryKey(),
+							(sentInsetUpdateRequest->getInsertOrUpdate() == InsertUpdateCommand::DP_INSERT?c_action_insert:c_action_update),
+							recordShardResult->statusValue , coreName);
+					HTTPJsonResponse::appendDetails(recordShardResponse, recordShardResult->messages);
+					this->brokerSideRecordOpInfoJson->addRecordShardResponse(recordShardResponse);
+					break;
+				}
+				case DeleteCommandMessageType:{
+		        	const DeleteCommand * sentDeleteRequest = (const DeleteCommand *)(sentRequest);
+					Json::Value recordShardResponse =
+							HTTPJsonRecordOperationResponse::getRecordJsonResponse(sentDeleteRequest->getPrimaryKey(),
+							c_action_delete, recordShardResult->statusValue , coreName);
+					HTTPJsonResponse::appendDetails(recordShardResponse, recordShardResult->messages);
+					this->brokerSideRecordOpInfoJson->addRecordShardResponse(recordShardResponse);
+					break;
+				}
+				case SerializeCommandMessageType:{
+		        	const SerializeCommand * sentSerializeRequest = (const SerializeCommand *)(sentRequest);
+		        	switch (sentSerializeRequest->getIndexOrRecord()) {
+						case SerializeCommand::SERIALIZE_INDEX:
+							this->brokerSideShardOpInfoJson->addShardResponse(c_action_save,
+									recordShardResult->statusValue, recordShardResult->messages);
+							break;
+						case SerializeCommand::SERIALIZE_RECORDS:
+							this->brokerSideShardOpInfoJson->addShardResponse(c_action_export,
+									recordShardResult->statusValue, recordShardResult->messages);
+							break;
+					}
+					break;
+				}
+				case CommitCommandMessageType:{
+					this->brokerSideShardOpInfoJson->addShardResponse(c_action_commit, recordShardResult->statusValue, recordShardResult->messages);
+					break;
+				}
+				case MergeCommandMessageType:{
+					this->brokerSideShardOpInfoJson->addShardResponse(c_action_merge, recordShardResult->statusValue, recordShardResult->messages);
+					break;
+				}
+				case ResetLogCommandMessageType:{
+					this->brokerSideShardOpInfoJson->addShardResponse(c_action_reset_logger, recordShardResult->statusValue, recordShardResult->messages);
+					break;
+				}
+				default:
+					ASSERT(false);
+					break;
+			}
+
+
+		}
 
     }
 
     void callBack(vector<PendingMessage<RequestWithStatusResponse, CommandStatus> * > messagesArg){
 
-        boost::unique_lock< boost::shared_mutex > lock(_access);
         //TODO shard info can be better than just an index
         for(typename vector<PendingMessage<RequestWithStatusResponse, CommandStatus> * >::iterator
                 messageItr = messagesArg.begin(); messageItr != messagesArg.end(); ++messageItr){
-            if(*messageItr == NULL){
-                continue;
-            }
-            PendingMessage<RequestWithStatusResponse, CommandStatus> * message = *messageItr;
-            if(messages.str().compare("") != 0){ // string not empty
-                messages << ",";
-            }
-            messages << "\"node-report\":";
-            if(message->getResponseObject() == NULL){
-                messages << "\"Node #" << message->getNodeId() << " timed out.\"";
-            }else{
-                messages << "{ \"Node-id\":\"" << message->getNodeId() << "\",";
-                vector<CommandStatus::ShardResults *> shardResults = message->getResponseObject()->getShardResults();
-                for(unsigned shardIdx = 0 ; shardIdx < shardResults.size() ; ++shardIdx){
-                	if(shardIdx != 0){
-                		messages << ",";
-                	}
-                	messages << "\"shard(" << shardResults.at(shardIdx)->shardIdentifier << ")\":\"" << shardResults.at(shardIdx)->message << "\"";
-                }
-    			messages << "}";
-            }
+        	callBack(*messageItr);
         }
     }
     /*
@@ -193,19 +202,13 @@ public:
         if(multiRouteMode > 0){
             // we need to make sure finalize is only called once
             boost::unique_lock< boost::shared_mutex > lock(_access);
-            numberOfFinalizeCallsSoFar ++;
-            if(multiRouteMode != numberOfFinalizeCallsSoFar){
+            numberOfFinalizedCallsSoFar ++;
+            if(multiRouteMode != numberOfFinalizedCallsSoFar){
                 return;
             }
             // ready to be finalized because all requests are finalized
         }
         //... code here
-        boost::unique_lock< boost::shared_mutex > lock(_access);
-        Logger::info("%s", messages.str().c_str());
-
-        bmhelper_evhttp_send_reply2(req, HTTP_OK, "OK",
-                "{\"message\":\"The batch was processed successfully\",\"log\":["
-                + messages.str() + "]}\n");
     }
 
 
@@ -218,8 +221,12 @@ private:
     mutable boost::shared_mutex _access;
     unsigned multiRouteMode;
     bool preProcessCalled;
-    unsigned numberOfFinalizeCallsSoFar;
-    std::stringstream messages;
+    unsigned numberOfFinalizedCallsSoFar;
+
+	const ShardingMessageType requestType ;
+
+    boost::shared_ptr<HTTPJsonRecordOperationResponse >brokerSideRecordOpInfoJson;
+    boost::shared_ptr<HTTPJsonShardOperationResponse > brokerSideShardOpInfoJson;
 };
 
 }

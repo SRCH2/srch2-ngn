@@ -1,5 +1,5 @@
 #include "Srch2ServerRuntime.h"
-#include "sharding/processor/ProcessorUtil.h"
+#include "HTTPJsonResponse.h"
 #include "core/analyzer/AnalyzerContainers.h"
 
 namespace srch2

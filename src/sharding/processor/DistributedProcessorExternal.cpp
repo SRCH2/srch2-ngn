@@ -58,7 +58,7 @@
 #include "sharding/processor/aggregators/SearchResultsAggregatorAndPrint.h"
 #include "sharding/processor/aggregators/CommandStatusAggregatorAndPrint.h"
 #include "sharding/processor/aggregators/GetInfoAggregatorAndPrint.h"
-#include "sharding/processor/ProcessorUtil.h"
+#include "server/HTTPJsonResponse.h"
 
 namespace srch2is = srch2::instantsearch;
 using namespace srch2is;
@@ -213,110 +213,105 @@ void DPExternalRequestHandler::externalInsertCommand(boost::shared_ptr<const Clu
 //    clusterReadview->print();
 //    Logger::console("====================================");
 
+	boost::shared_ptr<HTTPJsonRecordOperationResponse > brokerSideInformationJson =
+			boost::shared_ptr<HTTPJsonRecordOperationResponse > (new HTTPJsonRecordOperationResponse(req));
+
     const CoreInfo_t *indexDataContainerConf = clusterReadview->getCore(coreId);
+    const string coreName = indexDataContainerConf->getName();
     // it must be an insert query
     ASSERT(req->type == EVHTTP_REQ_PUT);
     if(req->type != EVHTTP_REQ_PUT){
-        Logger::error(
-                "error: The request has an invalid or missing argument. See Srch2 API documentation for details");
-        bmhelper_evhttp_send_reply2(req, HTTP_BADREQUEST, "INVALID REQUEST",
-                "{\"error\":\"The request has an invalid or missing argument. See Srch2 API documentation for details.\"}");
+        brokerSideInformationJson->finalizeInvalid();
         return;
     }
+
     size_t length = EVBUFFER_LENGTH(req->input_buffer);
 
     if (length == 0) {
-        bmhelper_evhttp_send_reply2(req, HTTP_BADREQUEST, "BAD REQUEST",
-                "{\"message\":\"http body is empty\"}");
-        Logger::warn("http body is empty");
+        brokerSideInformationJson->finalizeError("Http body is empty.");
         return;
     }
 
-    const char *post_data = (char *) EVBUFFER_DATA(req->input_buffer);
-
-    std::stringstream log_str;
 
 
-    vector<Record *> recordsToInsert;
     // Parse example data
     Json::Value root;
     Json::Reader reader;
+    const char *post_data = (char *) EVBUFFER_DATA(req->input_buffer);
     bool parseSuccess = reader.parse(post_data, root, false);
 
     if (parseSuccess == false) {
-        log_str << "JSON object parse error";
-    } else {
-        Schema * storedSchema = Schema::create();
-        RecordSerializerUtil::populateStoredSchema(storedSchema, indexDataContainerConf->getSchema());
-        RecordSerializer recSerializer = RecordSerializer(*storedSchema);
+        brokerSideInformationJson->finalizeError("JSON object parse error");
+        return;
+    }
+
+    Schema * storedSchema = Schema::create();
+    RecordSerializerUtil::populateStoredSchema(storedSchema, indexDataContainerConf->getSchema());
+    RecordSerializer recSerializer = RecordSerializer(*storedSchema);
 
 
-        if(root.type() == Json::arrayValue) { // The input is an array of JSON objects.
-            // Iterates over the sequence elements.
-            for ( int index = 0; index < root.size(); ++index ) {
-
-                /*
-                 * SerializableInsertUpdateCommandInput destructor will deallocate Record objects
-                 */
-                Record *record = new Record(indexDataContainerConf->getSchema());
-
-                Json::Value defaultValueToReturn = Json::Value("");
-                const Json::Value doc = root.get(index,
-                        defaultValueToReturn);
-
-                Json::FastWriter writer;
-                if(JSONRecordParser::_JSONValueObjectToRecord(record, writer.write(doc), doc,
-                        indexDataContainerConf, log_str, recSerializer) == false){
-                    log_str << "{\"rid\":\"" << record->getPrimaryKey() << "\",\"insert\":\"failed\"}";
-                    if (index < root.size() - 1){
-                        log_str << ",";
-                    }
-                    delete record;
-                }else{
-                    // record is ready to insert
-                    recordsToInsert.push_back(record);
-                }
-
-            }
-        } else {  // only one json object needs to be inserted
+    vector<Record *> recordsToInsert;
+    if(root.type() == Json::arrayValue) { // The input is an array of JSON objects.
+        // Iterates over the sequence elements.
+        for ( int index = 0; index < root.size(); ++index ) {
 
             /*
              * SerializableInsertUpdateCommandInput destructor will deallocate Record objects
              */
             Record *record = new Record(indexDataContainerConf->getSchema());
 
-            const Json::Value doc = root;
+            Json::Value defaultValueToReturn = Json::Value("");
+            const Json::Value doc = root.get(index,
+                    defaultValueToReturn);
+
             Json::FastWriter writer;
-            if(JSONRecordParser::_JSONValueObjectToRecord(record, writer.write(root), root,
-                    indexDataContainerConf, log_str, recSerializer) == false){
+            std::stringstream errorStream;
+            if(JSONRecordParser::_JSONValueObjectToRecord(record, writer.write(doc), doc,
+                    indexDataContainerConf, errorStream, recSerializer) == false){
 
-                log_str << "{\"rid\":\"" << record->getPrimaryKey() << "\",\"insert\":\"failed\"}";
+            	Json::Value recordJsonResponse = HTTPJsonRecordOperationResponse::getRecordJsonResponse(record->getPrimaryKey(), c_action_insert, false , coreName);
+            	HTTPJsonRecordOperationResponse::addRecordError(recordJsonResponse, HTTP_JSON_Custom_Error, errorStream.str());
+            	brokerSideInformationJson->addRecordShardResponse(recordJsonResponse);
 
-                Logger::info("%s", log_str.str().c_str());
-
-                bmhelper_evhttp_send_reply2(req, HTTP_OK, "OK",
-                        "{\"message\":\"The batch was processed successfully\",\"log\":["
-                        + log_str.str() + "]}\n");
-                record->clear();
-                delete storedSchema;
                 delete record;
-                return;
+            }else{
+                // record is ready to insert
+                recordsToInsert.push_back(record);
             }
-            // record is ready to insert
-            recordsToInsert.push_back(record);
+
         }
-        delete storedSchema;
+    } else {  // only one json object needs to be inserted
+
+        /*
+         * SerializableInsertUpdateCommandInput destructor will deallocate Record objects
+         */
+        Record *record = new Record(indexDataContainerConf->getSchema());
+
+        const Json::Value doc = root;
+        Json::FastWriter writer;
+        std::stringstream errorStream;
+        if(JSONRecordParser::_JSONValueObjectToRecord(record, writer.write(root), root,
+                indexDataContainerConf, errorStream , recSerializer) == false){
+
+        	Json::Value recordJsonResponse = HTTPJsonRecordOperationResponse::getRecordJsonResponse(record->getPrimaryKey(), c_action_insert, false , coreName);
+        	HTTPJsonRecordOperationResponse::addRecordError(recordJsonResponse, HTTP_JSON_Custom_Error, errorStream.str());
+        	brokerSideInformationJson->addRecordShardResponse(recordJsonResponse);
+
+            record->clear();
+            delete storedSchema;
+            delete record;
+            return;
+        }
+        // record is ready to insert
+        recordsToInsert.push_back(record);
     }
+    delete storedSchema;
 
+
+	brokerSideInformationJson->finalizeOK();
     if(recordsToInsert.size() == 0){
-        Logger::info("%s", log_str.str().c_str());
-
-        bmhelper_evhttp_send_reply2(req, HTTP_OK, "OK",
-                "{\"message\":\"The batch was processed successfully\",\"log\":["
-                + log_str.str() + "]}\n");
         return;
     }
-
 
     /*
      * Result aggregator is responsible of aggregating all response messages from all shards.
@@ -325,8 +320,6 @@ void DPExternalRequestHandler::externalInsertCommand(boost::shared_ptr<const Clu
      */
     boost::shared_ptr<StatusAggregator<InsertUpdateCommand> >
     resultsAggregator(new StatusAggregator<InsertUpdateCommand>(configurationManager,req, clusterReadview, coreId,recordsToInsert.size()));
-    resultsAggregator->setMessages(log_str);
-
 
 	// 1. first find all destination shards.
 	CorePartitioner * partitioner = new CorePartitioner(clusterReadview->getPartitioner(coreId));
@@ -341,12 +334,12 @@ void DPExternalRequestHandler::externalInsertCommand(boost::shared_ptr<const Clu
         partitioner->getAllWriteTargets(partitioner->hashDJB2(insertUpdateInput->getRecord()->getPrimaryKey().c_str()),
         		clusterReadview->getCurrentNodeId(), targets);
         if(targets.size() == 0){
-            bmhelper_evhttp_send_reply2(req, HTTP_BADREQUEST, "Node Failure",
-                    "All nodes are down.");
-        }else{
+        	Json::Value recordJsonResponse =
+        			HTTPJsonRecordOperationResponse::getRecordJsonResponse(insertUpdateInput->getRecord()->getPrimaryKey(), c_action_insert , false , coreName);
+        	HTTPJsonRecordOperationResponse::addRecordError(recordJsonResponse, HTTP_JSON_All_Shards_Down_Error);
+        	brokerSideInformationJson->addRecordShardResponse(recordJsonResponse);
 
-//        	// TODO remove
-//        	NodeTargetShardInfo::printTargets(targets);
+        }else{
 
     		bool routingStatus = dpMessageHandler.broadcast<InsertUpdateCommand, CommandStatus>(insertUpdateInput,
     						true,
@@ -357,14 +350,18 @@ void DPExternalRequestHandler::externalInsertCommand(boost::shared_ptr<const Clu
     						clusterReadview);
 
     		if(! routingStatus){
-    	        bmhelper_evhttp_send_reply2(req, HTTP_BADREQUEST, "Request Failure","");
+    	        brokerSideInformationJson->finalizeError("Internal Server Error.");
+    	        delete partitioner;
+    	        return;
     		}
         }
 
     }
     delete partitioner;
-    // aggregated response will be prepared in CommandStatusAggregatorAndPrint::callBack and printed in
-    // CommandStatusAggregatorAndPrint::finalize
+
+    // pass the Json response to the aggregator
+    resultsAggregator->setJsonRecordOperationResponse(brokerSideInformationJson);
+    return;
 }
 
 
@@ -379,14 +376,15 @@ void DPExternalRequestHandler::externalInsertCommand(boost::shared_ptr<const Clu
 void DPExternalRequestHandler::externalUpdateCommand(boost::shared_ptr<const ClusterResourceMetadata_Readview> clusterReadview,
 		evhttp_request *req, unsigned coreId){
 
+
+	boost::shared_ptr<HTTPJsonRecordOperationResponse > brokerSideInformationJson =
+			boost::shared_ptr<HTTPJsonRecordOperationResponse > (new HTTPJsonRecordOperationResponse(req));
     const CoreInfo_t *indexDataContainerConf = clusterReadview->getCore(coreId);
+    const string coreName = indexDataContainerConf->getName();
     // it must be an update query
     ASSERT(req->type == EVHTTP_REQ_PUT);
     if(req->type != EVHTTP_REQ_PUT){
-        Logger::error(
-                "error: The request has an invalid or missing argument. See Srch2 API documentation for details");
-        bmhelper_evhttp_send_reply2(req, HTTP_BADREQUEST, "INVALID REQUEST",
-                "{\"error\":\"The request has an invalid or missing argument. See Srch2 API documentation for details.\"}");
+        brokerSideInformationJson->finalizeInvalid();
         return;
     }
 
@@ -394,15 +392,11 @@ void DPExternalRequestHandler::externalUpdateCommand(boost::shared_ptr<const Clu
     size_t length = EVBUFFER_LENGTH(req->input_buffer);
 
     if (length == 0) {
-        bmhelper_evhttp_send_reply2(req, HTTP_BADREQUEST, "BAD REQUEST",
-                "{\"message\":\"http body is empty\"}");
-        Logger::warn("http body is empty");
+        brokerSideInformationJson->finalizeError("Http body is empty.");
         return;
     }
 
     const char *post_data = (char *) EVBUFFER_DATA(req->input_buffer);
-
-    std::stringstream log_str;
 
     vector<Record *> recordsToUpdate;
     // Parse example data
@@ -410,80 +404,74 @@ void DPExternalRequestHandler::externalUpdateCommand(boost::shared_ptr<const Clu
     Json::Reader reader;
     bool parseSuccess = reader.parse(post_data, root, false);
 
+
     if (parseSuccess == false) {
-        log_str << "JSON object parse error";
-    } else {
-        evkeyvalq headers;
-        evhttp_parse_query(req->uri, &headers);
-
-        Schema * storedSchema = Schema::create();
-        RecordSerializerUtil::populateStoredSchema(storedSchema, indexDataContainerConf->getSchema());
-        RecordSerializer recSerializer = RecordSerializer(*storedSchema);
-        if (root.type() == Json::arrayValue) {
-            //the record parameter is an array of json objects
-            for(Json::UInt index = 0; index < root.size(); index++) {
-                /*
-                 * SerializableInsertUpdateCommandInput destructor will deallocate Record objects
-                 */
-                Record *record = new Record(indexDataContainerConf->getSchema());
-
-                Json::Value defaultValueToReturn = Json::Value("");
-                const Json::Value doc = root.get(index,
-                        defaultValueToReturn);
-
-                Json::FastWriter writer;
-                bool parseJson = JSONRecordParser::_JSONValueObjectToRecord(record, writer.write(doc), doc,
-                        indexDataContainerConf, log_str, recSerializer);
-                if(parseJson == false) {
-                    log_str << "failed\",\"reason\":\"parse: The record is not in a correct json format\",";
-                    if (index < root.size() - 1){
-                        log_str << ",";
-                    }
-                    delete record;
-                }else{
-                    recordsToUpdate.push_back(record);
-                }
-
-            }
-        } else {
-            /*
-             * the record parameter is a single json object
-             * SerializableInsertUpdateCommandInput destructor will deallocate Record objects
-             */
-            Record *record = new Record(indexDataContainerConf->getSchema());
-            const Json::Value doc = root;
-
-            Json::FastWriter writer;
-            bool parseJson = JSONRecordParser::_JSONValueObjectToRecord(record, writer.write(root), root,
-                    indexDataContainerConf, log_str, recSerializer);
-            if(parseJson == false) {
-                log_str << "failed\",\"reason\":\"parse: The record is not in a correct json format\",";
-                Logger::info("%s", log_str.str().c_str());
-
-                bmhelper_evhttp_send_reply2(req, HTTP_OK, "OK",
-                        "{\"message\":\"The batch was processed successfully\",\"log\":["
-                        + log_str.str() + "]}\n");
-                record->clear();
-                delete storedSchema;
-                delete record;
-                return;
-            }
-            recordsToUpdate.push_back(record);
-
-        }
-
-        delete storedSchema;
-        evhttp_clear_headers(&headers);
+        brokerSideInformationJson->finalizeError("JSON object parse error");
+        return;
     }
 
+	evkeyvalq headers;
+	evhttp_parse_query(req->uri, &headers);
 
+	Schema * storedSchema = Schema::create();
+	RecordSerializerUtil::populateStoredSchema(storedSchema, indexDataContainerConf->getSchema());
+	RecordSerializer recSerializer = RecordSerializer(*storedSchema);
+	if (root.type() == Json::arrayValue) {
+		//the record parameter is an array of json objects
+		for(Json::UInt index = 0; index < root.size(); index++) {
+			/*
+			 * SerializableInsertUpdateCommandInput destructor will deallocate Record objects
+			 */
+			Record *record = new Record(indexDataContainerConf->getSchema());
 
+			Json::Value defaultValueToReturn = Json::Value("");
+			const Json::Value doc = root.get(index,
+					defaultValueToReturn);
+
+			Json::FastWriter writer;
+	        std::stringstream errorStream;
+			bool parseJson = JSONRecordParser::_JSONValueObjectToRecord(record, writer.write(doc), doc,
+					indexDataContainerConf, errorStream, recSerializer);
+			if(parseJson == false) {
+            	Json::Value recordJsonResponse = HTTPJsonRecordOperationResponse::getRecordJsonResponse(record->getPrimaryKey(), c_action_insert, false , coreName);
+            	HTTPJsonRecordOperationResponse::addRecordError(recordJsonResponse, HTTP_JSON_Custom_Error, errorStream.str());
+            	brokerSideInformationJson->addRecordShardResponse(recordJsonResponse);
+				delete record;
+			}else{
+				recordsToUpdate.push_back(record);
+			}
+
+		}
+	} else {
+		/*
+		 * the record parameter is a single json object
+		 * SerializableInsertUpdateCommandInput destructor will deallocate Record objects
+		 */
+		Record *record = new Record(indexDataContainerConf->getSchema());
+		const Json::Value doc = root;
+
+		Json::FastWriter writer;
+        std::stringstream errorStream;
+		bool parseJson = JSONRecordParser::_JSONValueObjectToRecord(record, writer.write(root), root,
+				indexDataContainerConf, errorStream, recSerializer);
+		if(parseJson == false) {
+        	Json::Value recordJsonResponse = HTTPJsonRecordOperationResponse::getRecordJsonResponse(record->getPrimaryKey(), c_action_insert, false , coreName);
+        	HTTPJsonRecordOperationResponse::addRecordError(recordJsonResponse, HTTP_JSON_Custom_Error, errorStream.str());
+        	brokerSideInformationJson->addRecordShardResponse(recordJsonResponse);
+			record->clear();
+			delete storedSchema;
+			delete record;
+			return;
+		}
+		recordsToUpdate.push_back(record);
+
+	}
+
+	delete storedSchema;
+	evhttp_clear_headers(&headers);
+
+	brokerSideInformationJson->finalizeOK();
     if(recordsToUpdate.size() == 0){
-        Logger::info("%s", log_str.str().c_str());
-
-        bmhelper_evhttp_send_reply2(req, HTTP_OK, "OK",
-                "{\"message\":\"The batch was processed successfully\",\"log\":["
-                + log_str.str() + "]}\n");
         return;
     }
 
@@ -491,15 +479,16 @@ void DPExternalRequestHandler::externalUpdateCommand(boost::shared_ptr<const Clu
 
     boost::shared_ptr<StatusAggregator<InsertUpdateCommand> >
     resultsAggregator(new StatusAggregator<InsertUpdateCommand>(configurationManager,req, clusterReadview, coreId, recordsToUpdate.size()));
-    resultsAggregator->setMessages(log_str);
 	CorePartitioner * partitioner = new CorePartitioner(clusterReadview->getPartitioner(coreId));
     for(vector<Record *>::iterator recordItr = recordsToUpdate.begin(); recordItr != recordsToUpdate.end() ; ++recordItr){
         vector<NodeTargetShardInfo> targets;
         partitioner->getAllWriteTargets(partitioner->hashDJB2((*recordItr)->getPrimaryKey().c_str()),
         		clusterReadview->getCurrentNodeId(), targets);
         if(targets.size() == 0){
-            bmhelper_evhttp_send_reply2(req, HTTP_BADREQUEST, "Node Failure",
-                    "All nodes are down.");
+        	Json::Value recordJsonResponse =
+        			HTTPJsonRecordOperationResponse::getRecordJsonResponse((*recordItr)->getPrimaryKey(), c_action_insert , false , coreName);
+        	HTTPJsonRecordOperationResponse::addRecordError(recordJsonResponse, HTTP_JSON_All_Shards_Down_Error);
+        	brokerSideInformationJson->addRecordShardResponse(recordJsonResponse);
         }else{
             time_t timeValue;
             time(&timeValue);
@@ -515,13 +504,16 @@ void DPExternalRequestHandler::externalUpdateCommand(boost::shared_ptr<const Clu
     						clusterReadview);
 
     		if(! routingStatus){
-    	        bmhelper_evhttp_send_reply2(req, HTTP_BADREQUEST, "Request Failure","");
+    	        brokerSideInformationJson->finalizeError("Internal Server Error.");
+    	        delete partitioner;
+    	        return;
     		}
         }
     }
     delete partitioner;
     // aggregated response will be prepared in CommandStatusAggregatorAndPrint::callBack and printed in
     // CommandStatusAggregatorAndPrint::finalize
+    resultsAggregator->setJsonRecordOperationResponse(brokerSideInformationJson);
 
 }
 
@@ -538,17 +530,18 @@ void DPExternalRequestHandler::externalDeleteCommand(boost::shared_ptr<const Clu
 		evhttp_request *req, unsigned coreId){
 
 
+	boost::shared_ptr<HTTPJsonRecordOperationResponse > brokerSideInformationJson =
+			boost::shared_ptr<HTTPJsonRecordOperationResponse > (new HTTPJsonRecordOperationResponse(req));
+
     // it must be an update query
     ASSERT(req->type == EVHTTP_REQ_DELETE);
     if(req->type != EVHTTP_REQ_DELETE){
-        Logger::error(
-                "error: The request has an invalid or missing argument. See Srch2 API documentation for details");
-        bmhelper_evhttp_send_reply2(req, HTTP_BADREQUEST, "INVALID REQUEST",
-                "{\"error\":\"The request has an invalid or missing argument. See Srch2 API documentation for details.\"}");
+        brokerSideInformationJson->finalizeInvalid();
         return;
     }
 
     const CoreInfo_t *indexDataContainerConf = clusterReadview->getCore(coreId);
+    const string coreName = indexDataContainerConf->getName();
 
     evkeyvalq headers;
     evhttp_parse_query(req->uri, &headers);
@@ -573,8 +566,10 @@ void DPExternalRequestHandler::externalDeleteCommand(boost::shared_ptr<const Clu
         partitioner->getAllWriteTargets(partitioner->hashDJB2(primaryKeyStringValue.c_str()),
         		clusterReadview->getCurrentNodeId(), targets);
         if(targets.size() == 0){
-            bmhelper_evhttp_send_reply2(req, HTTP_BADREQUEST, "Node Failure",
-                    "All nodes are down.");
+        	Json::Value recordJsonResponse =
+        			HTTPJsonRecordOperationResponse::getRecordJsonResponse(primaryKeyStringValue, c_action_insert , false , coreName);
+        	HTTPJsonRecordOperationResponse::addRecordError(recordJsonResponse, HTTP_JSON_All_Shards_Down_Error);
+        	brokerSideInformationJson->addRecordShardResponse(recordJsonResponse);
         }else{
             time_t timeValue;
             time(&timeValue);
@@ -590,19 +585,16 @@ void DPExternalRequestHandler::externalDeleteCommand(boost::shared_ptr<const Clu
     						clusterReadview);
 
     		if(! routingStatus){
-    	        bmhelper_evhttp_send_reply2(req, HTTP_BADREQUEST, "Request Failure","");
+    	        brokerSideInformationJson->finalizeError("Internal Server Error.");
+    	        delete partitioner;
     		}
         }
         delete partitioner;
-
-
+        brokerSideInformationJson->finalizeOK();
+        resultsAggregator->setJsonRecordOperationResponse(brokerSideInformationJson);
     }else{
-        std::stringstream log_str;
-        log_str << "{\"rid\":\"NULL\",\"delete\":\"failed\",\"reason\":\"wrong primary key\"}";
-        Logger::info("%s", log_str.str().c_str());
-        bmhelper_evhttp_send_reply2(req, HTTP_OK, "OK",
-                "{\"message\":\"The batch was processed successfully\",\"log\":["
-                + log_str.str() + "]}\n");
+        brokerSideInformationJson->finalizeOK();
+        brokerSideInformationJson->addError(HTTPJsonResponse::getJsonSingleMessageStr(HTTP_JSON_PK_NOT_PROVIDED));
         // Free the objects
         evhttp_clear_headers(&headers);
         return;
@@ -664,6 +656,9 @@ void DPExternalRequestHandler::externalSerializeIndexCommand(boost::shared_ptr<c
 		evhttp_request *req, unsigned coreId){
     /* Yes, we are expecting a post request */
 
+	boost::shared_ptr<HTTPJsonShardOperationResponse > brokerSideInformationJson =
+			boost::shared_ptr<HTTPJsonShardOperationResponse > (new HTTPJsonShardOperationResponse(req));
+
     const CoreInfo_t *indexDataContainerConf = clusterReadview->getCore(coreId);
     switch (req->type) {
     case EVHTTP_REQ_PUT: {
@@ -675,8 +670,10 @@ void DPExternalRequestHandler::externalSerializeIndexCommand(boost::shared_ptr<c
         vector<NodeTargetShardInfo> targets;
         partitioner->getAllTargets(targets);
         if(targets.size() == 0){
-            bmhelper_evhttp_send_reply2(req, HTTP_BADREQUEST, "Node Failure",
-                    "All nodes are down.");
+            brokerSideInformationJson->addError(HTTPJsonResponse::getJsonSingleMessage(HTTP_JSON_All_Shards_Down_Error));
+            brokerSideInformationJson->finalizeOK();
+            delete partitioner;
+            return;
         }else{
             time_t timeValue;
             time(&timeValue);
@@ -693,18 +690,18 @@ void DPExternalRequestHandler::externalSerializeIndexCommand(boost::shared_ptr<c
     						clusterReadview);
 
     		if(! routingStatus){
-    	        bmhelper_evhttp_send_reply2(req, HTTP_BADREQUEST, "Request Failure","");
+    	        brokerSideInformationJson->finalizeError("Internal Server Error.");
+    	        delete partitioner;
+    	        return;
     		}
         }
         delete partitioner;
-
+        resultsAggregator->setJsonShardOperationResponse(brokerSideInformationJson);
+        brokerSideInformationJson->finalizeOK();
         break;
     }
     default: {
-        bmhelper_evhttp_send_reply2(req, HTTP_BADREQUEST, "INVALID REQUEST",
-                "{\"error\":\"The request has an invalid or missing argument. See Srch2 API documentation for details.\"}");
-        Logger::error(
-                "The request has an invalid or missing argument. See Srch2 API documentation for details");
+        brokerSideInformationJson->finalizeInvalid();
         break;
     }
     };
@@ -721,6 +718,9 @@ void DPExternalRequestHandler::externalSerializeIndexCommand(boost::shared_ptr<c
 void DPExternalRequestHandler::externalSerializeRecordsCommand(boost::shared_ptr<const ClusterResourceMetadata_Readview> clusterReadview,
 		evhttp_request *req, unsigned coreId){
     /* Yes, we are expecting a post request */
+
+	boost::shared_ptr<HTTPJsonShardOperationResponse > brokerSideInformationJson =
+			boost::shared_ptr<HTTPJsonShardOperationResponse > (new HTTPJsonShardOperationResponse(req));
 
     const CoreInfo_t *indexDataContainerConf = clusterReadview->getCore(coreId);
 
@@ -741,8 +741,10 @@ void DPExternalRequestHandler::externalSerializeRecordsCommand(boost::shared_ptr
                 vector<NodeTargetShardInfo> targets;
                 partitioner->getAllTargets(targets);
                 if(targets.size() == 0){
-                    bmhelper_evhttp_send_reply2(req, HTTP_BADREQUEST, "Node Failure",
-                            "All nodes are down.");
+                    brokerSideInformationJson->addError(HTTPJsonResponse::getJsonSingleMessage(HTTP_JSON_All_Shards_Down_Error));
+                	brokerSideInformationJson->finalizeOK();
+                    delete partitioner;
+                    return;
                 }else{
                     time_t timeValue;
                     time(&timeValue);
@@ -759,27 +761,25 @@ void DPExternalRequestHandler::externalSerializeRecordsCommand(boost::shared_ptr
             						clusterReadview);
 
             		if(! routingStatus){
-            	        bmhelper_evhttp_send_reply2(req, HTTP_BADREQUEST, "Request Failure","");
+            	        brokerSideInformationJson->finalizeError("Internal Server Error.");
+            	        delete partitioner;
+            	        return;
             		}
                 }
                 delete partitioner;
+                brokerSideInformationJson->finalizeOK();
+                resultsAggregator->setJsonShardOperationResponse(brokerSideInformationJson);
             }else {
-                bmhelper_evhttp_send_reply2(req, HTTP_BADREQUEST, "INVALID REQUEST",
-                        "{\"error\":\"The request has an invalid or missing argument. See Srch2 API documentation for details.\"}");
-                Logger::error(
-                        "The request has an invalid or missing argument. See Srch2 API documentation for details");
+                brokerSideInformationJson->finalizeInvalid();
             }
         } else{
-            bmhelper_evhttp_send_reply2(req, HTTP_OK, "OK",
-                    "{\"message\":\"The indexed data failed to export to disk, The request need to set search-response-format to be 0 or 2\"}\n");
+            brokerSideInformationJson->addError(HTTPJsonResponse::getJsonSingleMessage(HTTP_JSON_Search_Res_Format_Wrong_Error));
+        	brokerSideInformationJson->finalizeOK();
         }
         break;
     }
     default: {
-        bmhelper_evhttp_send_reply2(req, HTTP_BADREQUEST, "INVALID REQUEST",
-                "{\"error\":\"The request has an invalid or missing argument. See Srch2 API documentation for details.\"}");
-        Logger::error(
-                "The request has an invalid or missing argument. See Srch2 API documentation for details");
+        brokerSideInformationJson->finalizeInvalid();
         break;
     }
     };
@@ -798,6 +798,9 @@ void DPExternalRequestHandler::externalSerializeRecordsCommand(boost::shared_ptr
 void DPExternalRequestHandler::externalResetLogCommand(boost::shared_ptr<const ClusterResourceMetadata_Readview> clusterReadview,
 		evhttp_request *req, unsigned coreId){
 
+	boost::shared_ptr<HTTPJsonShardOperationResponse > brokerSideInformationJson =
+			boost::shared_ptr<HTTPJsonShardOperationResponse > (new HTTPJsonShardOperationResponse(req));
+
     const CoreInfo_t *indexDataContainerConf = clusterReadview->getCore(coreId);
 
     switch(req->type) {
@@ -808,8 +811,9 @@ void DPExternalRequestHandler::externalResetLogCommand(boost::shared_ptr<const C
         vector<NodeTargetShardInfo> targets;
         partitioner->getAllTargets(targets);
         if(targets.size() == 0){
-            bmhelper_evhttp_send_reply2(req, HTTP_BADREQUEST, "Node Failure",
-                    "All nodes are down.");
+            brokerSideInformationJson->addError(HTTPJsonResponse::getJsonSingleMessage(HTTP_JSON_All_Shards_Down_Error));
+            delete partitioner;
+            return;
         }else{
             time_t timeValue;
             time(&timeValue);
@@ -825,18 +829,18 @@ void DPExternalRequestHandler::externalResetLogCommand(boost::shared_ptr<const C
     						clusterReadview);
 
     		if(! routingStatus){
-    	        bmhelper_evhttp_send_reply2(req, HTTP_BADREQUEST, "Request Failure","");
+    	        brokerSideInformationJson->finalizeError("Internal Server Error.");
+    	        delete partitioner;
+    	        return;
     		}
         }
         delete partitioner;
-
+        brokerSideInformationJson->finalizeOK();
+        resultsAggregator->setJsonShardOperationResponse(brokerSideInformationJson);
         break;
     }
     default: {
-        bmhelper_evhttp_send_reply2(req, HTTP_BADREQUEST, "INVALID REQUEST",
-                "{\"error\":\"The request has an invalid or missing argument. See Srch2 API documentation for details.\"}");
-        Logger::error(
-                "The request has an invalid or missing argument. See Srch2 API documentation for details");
+        brokerSideInformationJson->finalizeInvalid();
         break;
     }
     };
@@ -851,6 +855,9 @@ void DPExternalRequestHandler::externalResetLogCommand(boost::shared_ptr<const C
 void DPExternalRequestHandler::externalCommitCommand(boost::shared_ptr<const ClusterResourceMetadata_Readview> clusterReadview,
 		evhttp_request *req, unsigned coreId){
 
+	boost::shared_ptr<HTTPJsonShardOperationResponse > brokerSideInformationJson =
+			boost::shared_ptr<HTTPJsonShardOperationResponse > (new HTTPJsonShardOperationResponse(req));
+
     const CoreInfo_t *indexDataContainerConf = clusterReadview->getCore(coreId);
 
     switch(req->type) {
@@ -861,8 +868,9 @@ void DPExternalRequestHandler::externalCommitCommand(boost::shared_ptr<const Clu
         vector<NodeTargetShardInfo> targets;
         partitioner->getAllTargets(targets);
         if(targets.size() == 0){
-            bmhelper_evhttp_send_reply2(req, HTTP_BADREQUEST, "Node Failure",
-                    "All nodes are down.");
+            brokerSideInformationJson->addError(HTTPJsonResponse::getJsonSingleMessage(HTTP_JSON_All_Shards_Down_Error));
+            delete partitioner;
+            return;
         }else{
             time_t timeValue;
             time(&timeValue);
@@ -878,18 +886,18 @@ void DPExternalRequestHandler::externalCommitCommand(boost::shared_ptr<const Clu
     						clusterReadview);
 
     		if(! routingStatus){
-    	        bmhelper_evhttp_send_reply2(req, HTTP_BADREQUEST, "Request Failure","");
+    	        brokerSideInformationJson->finalizeError("Internal Server Error.");
+    	        delete partitioner;
+    	        return;
     		}
         }
         delete partitioner;
-
+        brokerSideInformationJson->finalizeOK();
+        resultsAggregator->setJsonShardOperationResponse(brokerSideInformationJson);
         break;
     }
     default: {
-        bmhelper_evhttp_send_reply2(req, HTTP_BADREQUEST, "INVALID REQUEST",
-                "{\"error\":\"The request has an invalid or missing argument. See Srch2 API documentation for details.\"}");
-        Logger::error(
-                "The request has an invalid or missing argument. See Srch2 API documentation for details");
+        brokerSideInformationJson->finalizeInvalid();
         break;
     }
     };
@@ -904,6 +912,9 @@ void DPExternalRequestHandler::externalCommitCommand(boost::shared_ptr<const Clu
 void DPExternalRequestHandler::externalMergeCommand(boost::shared_ptr<const ClusterResourceMetadata_Readview> clusterReadview,
 		evhttp_request *req, unsigned coreId){
 
+	boost::shared_ptr<HTTPJsonShardOperationResponse > brokerSideInformationJson =
+			boost::shared_ptr<HTTPJsonShardOperationResponse > (new HTTPJsonShardOperationResponse(req));
+
     const CoreInfo_t *indexDataContainerConf = clusterReadview->getCore(coreId);
 
     switch(req->type) {
@@ -914,8 +925,9 @@ void DPExternalRequestHandler::externalMergeCommand(boost::shared_ptr<const Clus
         vector<NodeTargetShardInfo> targets;
         partitioner->getAllTargets(targets);
         if(targets.size() == 0){
-            bmhelper_evhttp_send_reply2(req, HTTP_BADREQUEST, "Node Failure",
-                    "All nodes are down.");
+            brokerSideInformationJson->addError(HTTPJsonResponse::getJsonSingleMessage(HTTP_JSON_All_Shards_Down_Error));
+            delete partitioner;
+            return;
         }else{
             time_t timeValue;
             time(&timeValue);
@@ -931,18 +943,18 @@ void DPExternalRequestHandler::externalMergeCommand(boost::shared_ptr<const Clus
     						clusterReadview);
 
     		if(! routingStatus){
-    	        bmhelper_evhttp_send_reply2(req, HTTP_BADREQUEST, "Request Failure","");
+    	        brokerSideInformationJson->finalizeError("Internal Server Error.");
+    	        delete partitioner;
+    	        return;
     		}
         }
         delete partitioner;
-
+        brokerSideInformationJson->finalizeOK();
+        resultsAggregator->setJsonShardOperationResponse(brokerSideInformationJson);
         break;
     }
     default: {
-        bmhelper_evhttp_send_reply2(req, HTTP_BADREQUEST, "INVALID REQUEST",
-                "{\"error\":\"The request has an invalid or missing argument. See Srch2 API documentation for details.\"}");
-        Logger::error(
-                "The request has an invalid or missing argument. See Srch2 API documentation for details");
+        brokerSideInformationJson->finalizeInvalid();
         break;
     }
     };

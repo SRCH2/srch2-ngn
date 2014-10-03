@@ -73,7 +73,7 @@ bool JSONRecordParser::setRecordPrimaryKey(srch2is::Record *record,
                     primaryKeyStringValue);
         }
     } else {
-        error << "\nFailed to parse JSON - No primary key found.";
+        error << "Failed to parse JSON - No primary key found.";
         return false; // Raise Error
     }
 
@@ -109,7 +109,7 @@ bool JSONRecordParser::setRecordSearchableValue(srch2is::Record *record,
         } else { // error if required or set to default
             if (attributeIter->second.required) { // true means required
                 // ERROR
-                error << "\nRequired field has a null value.";
+                error << "Required field has a null value.";
                 return false;                    // Raise Error
             } else {
                 // passing the default value from config file
@@ -155,7 +155,7 @@ bool JSONRecordParser::setRecordRefiningValue(srch2is::Record *record,
 
             if (attributeStringValues.empty()) {
                 // ERROR
-                error << "\nDATE/TIME field has non recognizable format.";
+                error << "DATE/TIME field has non recognizable format.";
                 return false;                    // Raise Error
             } else {
                 if (std::find(attributeStringValues.begin(),
@@ -163,7 +163,7 @@ bool JSONRecordParser::setRecordRefiningValue(srch2is::Record *record,
                         != attributeStringValues.end()) {
                     if (attributeIter->second.required) {
                         // ERROR
-                        error << "\nDATE/TIME field " << attributeKeyName
+                        error << "DATE/TIME field " << attributeKeyName
                                 << " is marked as required field but does not have any value in input JSON record";
                         return false;                    // Raise Error
                     }
@@ -181,7 +181,7 @@ bool JSONRecordParser::setRecordRefiningValue(srch2is::Record *record,
                                 defaultValue);
                     } else {
                         // ERROR
-                        error << "\nDATE/TIME field " << attributeKeyName
+                        error << "DATE/TIME field " << attributeKeyName
                                 << " has empty value and the default specified in the config file is not a valid value.";
                         return false;                    // Raise Error
                     }
@@ -230,7 +230,7 @@ bool JSONRecordParser::setRecordRefiningValue(srch2is::Record *record,
             } else {
                 if (attributeIter->second.required) {
                     // ERROR
-                    error << "\nRequired refining attribute is null.";
+                    error << "Required refining attribute is null.";
                     return false;                    // Raise Error
                 } else {
                     if (attributeStringValues.empty()) {
@@ -317,7 +317,7 @@ bool JSONRecordParser::setCompactRecordRefiningValue(
             int val = static_cast<int>(strtol(attributeStringValue.c_str(),
                     &pEnd, 10));
             if (*pEnd != '\0') {
-                error << ("\nInvalid value %s of type integer.",
+                error << ("Invalid value %s of type integer.",
                         attributeStringValue.c_str());
                 return false;
             }
@@ -328,7 +328,7 @@ bool JSONRecordParser::setCompactRecordRefiningValue(
             long val = strtol(attributeStringValue.c_str(),
                     &pEnd, 10);
             if (*pEnd != '\0') {
-                error << ("\nInvalid value %s of type long.",
+                error << ("Invalid value %s of type long.",
                         attributeStringValue.c_str());
                 return false;
             }
@@ -339,7 +339,7 @@ bool JSONRecordParser::setCompactRecordRefiningValue(
             float val = static_cast<float>(strtod(attributeStringValue.c_str(),
                     &pEnd));
             if (*pEnd != '\0') {
-                error << ("\nInvalid value %s of type float.",
+                error << ("Invalid value %s of type float.",
                         attributeStringValue.c_str());
                 return false;
             }
@@ -350,7 +350,7 @@ bool JSONRecordParser::setCompactRecordRefiningValue(
             double val = strtod(attributeStringValue.c_str(),
                     &pEnd);
             if (*pEnd != '\0') {
-                error << ("\nInvalid value %s of type double.",
+                error << ("Invalid value %s of type double.",
                         attributeStringValue.c_str());
                 return false;
             }
@@ -358,9 +358,9 @@ bool JSONRecordParser::setCompactRecordRefiningValue(
             break;
         }
         default: {
-            error << ("\nRefining attribute that need to be compacted "
-                    "in memory should be INT | LONG | FLOAT | DOUBLE,"
-                    " no others are accepted.");
+            error << "Refining attribute that need to be compacted " <<
+                    "in memory should be INT | LONG | FLOAT | DOUBLE," <<
+                    " no others are accepted.";
             return false;
             break;
         }
@@ -428,7 +428,7 @@ bool JSONRecordParser::_JSONValueObjectToRecord(srch2is::Record *record, const s
 {
     if (root.type() != Json::objectValue)
     {
-        error << "\nFailed to parse JSON - No primary key found.";
+        error << "Failed to parse JSON - No primary key found.";
         return false;// Raise Error
     }
 

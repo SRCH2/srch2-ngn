@@ -7,7 +7,7 @@
 
 #include "core/util/Logger.h"
 #include "core/util/Assert.h"
-#include "../..//processor/ProcessorUtil.h"
+#include "server/HTTPJsonResponse.h"
 
 namespace srch2is = srch2::instantsearch;
 using namespace srch2is;
