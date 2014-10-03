@@ -55,8 +55,8 @@ void DataConnectorThread::bootStrapConnector(
     connectors[connThreadArg->coreName] = NULL;
 }
 
-//Save all connectors timestamp to the disk.
-void DataConnectorThread::saveConnectorTimeStamps() {
+//Save all connector timestamps to the disk.
+void DataConnectorThread::saveConnectorTimestamps() {
     for (std::map<std::string, DataConnector *>::iterator it =
             connectors.begin(); it != connectors.end(); ++it) {
         if (it->second != NULL) {
