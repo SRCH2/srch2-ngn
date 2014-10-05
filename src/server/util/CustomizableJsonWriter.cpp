@@ -27,14 +27,14 @@ CustomizableJsonWriter::write( const Value &root )const
     return result;
 }
 
-std::string
+std::string 
 CustomizableJsonWriter::write( const Json::Value &root )
 {
     std::string result = this->writeValue( root ) + "\n";
     return result;
 }
 
-// This is a thread-safe write function.
+// This is a thread-safe write function. 
 std::string CustomizableJsonWriter::writeValue( const Value &value )const
 {
     string document_ ("");

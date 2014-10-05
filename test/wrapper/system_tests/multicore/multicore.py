@@ -86,8 +86,12 @@ def testMultipleCores(queriesAndResultsPath, queriesAndResultsPath2, binary_path
 
     print 'starting engine: ' + args[0] + ' ' + args[1]
     serverHandle = test_lib.startServer(args)
+    # sometime it fails, it might be that the multicore need more time to load ? 
+    time.sleep(2)
 
-    test_lib.pingServer(port)
+    if test_lib.pingServer(port) != 0:
+        print 'pingServer failed, here is the args:'
+        print args
     failCount = 0
 
     #######################################

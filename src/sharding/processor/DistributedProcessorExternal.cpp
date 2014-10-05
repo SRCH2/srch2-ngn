@@ -266,7 +266,7 @@ void DPExternalRequestHandler::externalInsertCommand(boost::shared_ptr<const Clu
 
             Json::FastWriter writer;
             std::stringstream errorStream;
-            if(JSONRecordParser::_JSONValueObjectToRecord(record, writer.write(doc), doc,
+            if(JSONRecordParser::_JSONValueObjectToRecord(record, doc,
                     indexDataContainerConf, errorStream, recSerializer) == false){
 
             	Json::Value recordJsonResponse = HTTPJsonRecordOperationResponse::getRecordJsonResponse(record->getPrimaryKey(), c_action_insert, false , coreName);
@@ -290,7 +290,7 @@ void DPExternalRequestHandler::externalInsertCommand(boost::shared_ptr<const Clu
         const Json::Value doc = root;
         Json::FastWriter writer;
         std::stringstream errorStream;
-        if(JSONRecordParser::_JSONValueObjectToRecord(record, writer.write(root), root,
+        if(JSONRecordParser::_JSONValueObjectToRecord(record, root,
                 indexDataContainerConf, errorStream , recSerializer) == false){
 
         	Json::Value recordJsonResponse = HTTPJsonRecordOperationResponse::getRecordJsonResponse(record->getPrimaryKey(), c_action_insert, false , coreName);
@@ -430,7 +430,7 @@ void DPExternalRequestHandler::externalUpdateCommand(boost::shared_ptr<const Clu
 
 			Json::FastWriter writer;
 	        std::stringstream errorStream;
-			bool parseJson = JSONRecordParser::_JSONValueObjectToRecord(record, writer.write(doc), doc,
+			bool parseJson = JSONRecordParser::_JSONValueObjectToRecord(record, doc,
 					indexDataContainerConf, errorStream, recSerializer);
 			if(parseJson == false) {
             	Json::Value recordJsonResponse = HTTPJsonRecordOperationResponse::getRecordJsonResponse(record->getPrimaryKey(), c_action_insert, false , coreName);
@@ -452,7 +452,7 @@ void DPExternalRequestHandler::externalUpdateCommand(boost::shared_ptr<const Clu
 
 		Json::FastWriter writer;
         std::stringstream errorStream;
-		bool parseJson = JSONRecordParser::_JSONValueObjectToRecord(record, writer.write(root), root,
+		bool parseJson = JSONRecordParser::_JSONValueObjectToRecord(record, root,
 				indexDataContainerConf, errorStream, recSerializer);
 		if(parseJson == false) {
         	Json::Value recordJsonResponse = HTTPJsonRecordOperationResponse::getRecordJsonResponse(record->getPrimaryKey(), c_action_insert, false , coreName);
