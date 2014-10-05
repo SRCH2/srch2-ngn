@@ -26,7 +26,7 @@ class ClusterSaveOperation: public OperationState {
 public:
 
 	// initialize class members
-	ClusterSaveOperation(evhttp_request *req);
+	ClusterSaveOperation(boost::shared_ptr<HTTPJsonShardOperationResponse > brokerSideInformationJson);
 	ClusterSaveOperation(unsigned operationId);
 	~ClusterSaveOperation();
 
@@ -103,7 +103,7 @@ public:
 
 private:
 
-	evhttp_request *req;
+	boost::shared_ptr<HTTPJsonShardOperationResponse > brokerSideInformationJson;
 
 	OperationState * lockOperation;
 	OperationState * mergeOperation;

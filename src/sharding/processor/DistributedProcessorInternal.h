@@ -181,25 +181,28 @@ private:
 
 //    GetInfoShardResult
     struct ShardGetInfoArgs{
-    	ShardGetInfoArgs(Srch2Server * server,  string shardIdentifier){
+    	ShardGetInfoArgs(Srch2Server * server,  ShardId * shardId){
     		this->server = server;
-    		shardResult = new GetInfoCommandResults::ShardResults(shardIdentifier);
+    		shardResult = new GetInfoCommandResults::ShardResults(shardId);
     	}
     	Srch2Server * server;
     	GetInfoCommandResults::ShardResults * shardResult ;
     };
-    static void getInfoInShard(Srch2Server * server,unsigned & readCount,
-    		unsigned & writeCount, unsigned & numberOfIndexedDocuments,
-    		std::string & lastMergeTimeString, unsigned & docCount);
+    static void getInfoInShard(Srch2Server * server,GetInfoCommandResults::ShardResults * shardResult);
     static void * getInfoInShardThreadWork(void * args);
 
 
     struct ShardSerializeArgs{
-    	ShardSerializeArgs(const string dataFileName, Srch2Server * server, string shardIdentifier):dataFileName(dataFileName){
+    	ShardSerializeArgs(const string dataFileName, Srch2Server * server,
+    			const string & shardIdentifier,
+    			const string & shardIndexDirectory):
+    				dataFileName(dataFileName),
+    				shardIndexDirectory(shardIndexDirectory){
     		this->server = server;
     		this->shardResults = new CommandStatus::ShardResults(shardIdentifier);
     	}
     	const string dataFileName;
+    	const string shardIndexDirectory;
     	Srch2Server * server;
     	CommandStatus::ShardResults * shardResults;
     };

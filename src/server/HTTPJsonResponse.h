@@ -4,6 +4,7 @@
 #include "./util/CustomizableJsonWriter.h"
 #include "./HTTPJsonResponseConstants.h"
 #include "wrapper/WrapperConstants.h"
+#include "core/operation/IndexHealthInfo.h"
 #include "string"
 #include <event.h>
 #include <evhttp.h>
@@ -12,6 +13,8 @@ using namespace std;
 
 namespace srch2 {
 namespace httpwrapper {
+
+class CoreInfo_t;
 
 /**
  * Create evbuffer. If failed, send 503 response.
@@ -51,6 +54,8 @@ public:
 	HTTPJsonResponse(evhttp_request *req);
 
 	virtual ~HTTPJsonResponse();
+
+	void setResponseAttribute(const char * attributeName, const Json::Value & resAttr);
 
 	void finalizeInvalid();
 
@@ -116,6 +121,27 @@ public:
 
 	// shardMessages is [{"error":"...",...},{"error":"...",...},{"error":"...",...}]
 	void addShardResponse(const char * action, const bool status, const Json::Value & shardMessages);
+
+private:
+
+};
+
+
+class HTTPJsonGetInfoResponse : public HTTPJsonResponse{
+public:
+
+	HTTPJsonGetInfoResponse(evhttp_request *req):HTTPJsonResponse(req){};
+	virtual ~HTTPJsonGetInfoResponse(){};
+
+	virtual Json::Value & getRoot();
+
+	Json::Value & getCoresRoot();
+
+	void addCoreInfo(const CoreInfo_t * coreInfo,
+			const srch2::instantsearch::IndexHealthInfo & info,
+			const vector<std::pair< string , srch2::instantsearch::IndexHealthInfo> > & shardsInfo,
+			const vector<srch2::instantsearch::IndexHealthInfo> & partitionsInfo,
+			const vector<std::pair< string , srch2::instantsearch::IndexHealthInfo> > & nodeShardsInfo);
 
 private:
 

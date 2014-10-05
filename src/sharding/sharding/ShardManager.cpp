@@ -207,10 +207,9 @@ void ShardManager::start(){
  * Saves the cluster metadata and indices ...
  */
 void ShardManager::save(evhttp_request *req){
+	boost::shared_ptr<HTTPJsonShardOperationResponse > brokerSideInformationJson =
+			boost::shared_ptr<HTTPJsonShardOperationResponse > (new HTTPJsonShardOperationResponse(req));
 	if(this->metadataManager->getClusterWriteview() == NULL){
-		//TODO : temp : it must be out of this if
-		boost::shared_ptr<HTTPJsonShardOperationResponse > brokerSideInformationJson =
-				boost::shared_ptr<HTTPJsonShardOperationResponse > (new HTTPJsonShardOperationResponse(req));
 		brokerSideInformationJson->finalizeOK();
 		brokerSideInformationJson->addError(HTTPJsonResponse::getJsonSingleMessage(HTTP_JSON_Cluster_Not_Ready_Error));
 		brokerSideInformationJson->addShardResponse(c_action_save, false, nullJsonValue);
@@ -221,13 +220,11 @@ void ShardManager::save(evhttp_request *req){
     /* Yes, we are expecting a post request */
     switch (req->type) {
     case EVHTTP_REQ_PUT: {
-    	ClusterSaveOperation * saveOperation = new ClusterSaveOperation(req);
+    	ClusterSaveOperation * saveOperation = new ClusterSaveOperation(brokerSideInformationJson);
     	this->stateMachine->registerOperation(saveOperation);
         break;
     }
     default: {
-		boost::shared_ptr<HTTPJsonShardOperationResponse > brokerSideInformationJson =
-				boost::shared_ptr<HTTPJsonShardOperationResponse > (new HTTPJsonShardOperationResponse(req));
         brokerSideInformationJson->finalizeInvalid();
         break;
     }
@@ -258,6 +255,7 @@ void ShardManager::shutdown(evhttp_request *req){
     };
 }
 
+
 void ShardManager::_shutdown(){
 	Logger::console("Shutting down the instance ...");
 	raise(SIGTERM);
@@ -265,6 +263,22 @@ void ShardManager::_shutdown(){
 //	exit(0);
 	//TODO
 }
+
+void ShardManager::nodesInfo(evhttp_request *req){
+	boost::shared_ptr<const ClusterResourceMetadata_Readview> readview;
+	this->getReadview(readview);
+
+	HTTPJsonResponse httpResponse(req);
+
+	httpResponse.setResponseAttribute(c_cluster_name, Json::Value(readview->getClusterName()));
+	Json::Value nodes(Json::arrayValue);
+	this->getNodeInfoJson(nodes);
+	httpResponse.setResponseAttribute(c_nodes, nodes);
+
+	httpResponse.finalizeOK();
+
+}
+
 
 // sends this sharding notification to destination using TM
 bool ShardManager::send(ShardingNotification * notification){
@@ -962,6 +976,27 @@ void ShardManager::bounceNotification(ShardingNotification * notif){
 	notif->swapSrcDest();
 	send(notif);
 	delete notif;
+}
+
+void ShardManager::getNodeInfoJson(Json::Value & nodeInfo){
+
+	if(nodeInfo == nullJsonValue){
+		nodeInfo = Json::Value(Json::arrayValue);
+	}
+	if(nodeInfo.type() != Json::arrayValue){
+		ASSERT(false);
+		return;
+	}
+	boost::shared_ptr<const ClusterResourceMetadata_Readview> readview;
+	this->getReadview(readview);
+	vector<Node> nodes;
+	readview->getAllNodes(nodes);
+	for(unsigned i = 0; i < nodes.size(); ++i){
+		nodeInfo[i] = Json::Value(Json::objectValue);
+		nodeInfo[i][c_node_name] = nodes.at(i).getName();
+		nodeInfo[i][c_node_listening_host_name] = nodes.at(i).getIpAddress();
+	}
+
 }
 
 }

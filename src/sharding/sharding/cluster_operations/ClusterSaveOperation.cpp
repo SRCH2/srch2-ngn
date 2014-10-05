@@ -15,8 +15,8 @@ namespace srch2 {
 namespace httpwrapper {
 
 
-ClusterSaveOperation::ClusterSaveOperation(evhttp_request *req):OperationState(OperationState::getNextOperationId()){
-	this->req = req;
+ClusterSaveOperation::ClusterSaveOperation(boost::shared_ptr<HTTPJsonShardOperationResponse > brokerSideInformationJson):OperationState(OperationState::getNextOperationId()){
+	this->brokerSideInformationJson = brokerSideInformationJson;
 	this->lockOperation = NULL;
 	this->mergeOperation = NULL;
 	this->saveOperation = NULL;
@@ -26,7 +26,7 @@ ClusterSaveOperation::ClusterSaveOperation(evhttp_request *req):OperationState(O
 }
 
 ClusterSaveOperation::ClusterSaveOperation(unsigned operationId):OperationState(operationId){
-	this->req = NULL;
+	this->brokerSideInformationJson.reset();
 	this->lockOperation = NULL;
 	this->mergeOperation = NULL;
 	this->saveOperation = NULL;
@@ -234,8 +234,8 @@ OperationState * ClusterSaveOperation::release(){
  */
 OperationState * ClusterSaveOperation::finalize(){
 	if(printFlag){
-		bmhelper_evhttp_send_reply2(req, HTTP_OK, "OK",
-				"{\"message\":\"The cluster state was saved.\"}\n");
+		this->brokerSideInformationJson->addShardResponse(c_action_save, true, nullJsonValue);
+		this->brokerSideInformationJson->finalizeOK();
 	}
     return NULL;
 }

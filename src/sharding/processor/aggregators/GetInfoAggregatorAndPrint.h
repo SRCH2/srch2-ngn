@@ -17,8 +17,10 @@ namespace httpwrapper {
 
 class GetInfoResponseAggregator : public DistributedProcessorAggregator<GetInfoCommand,GetInfoCommandResults> {
 public:
-    GetInfoResponseAggregator(ConfigManager * configurationManager, evhttp_request *req,
-    		boost::shared_ptr<const ClusterResourceMetadata_Readview> clusterReadview, unsigned coreId);
+    GetInfoResponseAggregator(ConfigManager * configurationManager,
+    		boost::shared_ptr<HTTPJsonGetInfoResponse > brokerSideShardInfo,
+    		boost::shared_ptr<const ClusterResourceMetadata_Readview> clusterReadview,
+    		unsigned coreId);
 
     /*
      * This function is always called by RoutingManager as the first call back function
@@ -32,7 +34,7 @@ public:
             ResponseAggregatorMetadata metadata);
 
 
-    void callBack(PendingMessage<GetInfoCommand, GetInfoCommandResults> * message){};
+    void callBack(PendingMessage<GetInfoCommand, GetInfoCommandResults> * message);
 
     /*
      * The main function responsible of aggregating status (success or failure) results
@@ -49,18 +51,22 @@ public:
      */
     void finalize(ResponseAggregatorMetadata metadata);
 
+
+
+    void aggregateCoreInfo(IndexHealthInfo & aggregatedResult,
+    		vector<IndexHealthInfo> & allPartitionResults,
+    		vector<std::pair<string , IndexHealthInfo > > nodeShardResults);
+
 private:
     ConfigManager * configurationManager;
-    evhttp_request *req;
+	boost::shared_ptr<HTTPJsonGetInfoResponse > brokerSideInformationJson ;
+	GetInfoAggregateCriterion criterion;
+
 
     mutable boost::shared_mutex _access;
-    std::stringstream messages;
-    unsigned readCount;
-    unsigned writeCount;
-    unsigned numberOfDocumentsInIndex;
-    vector<string> lastMergeTimeStrings;
-    vector<string> versionInfoStrings;
-    unsigned docCount;
+
+    vector<std::pair<string, GetInfoCommandResults::ShardResults * > > shardResults;
+
 };
 
 }

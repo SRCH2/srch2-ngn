@@ -50,6 +50,7 @@ public:
 	void start();
 	void save(evhttp_request *req);
 	void shutdown(evhttp_request *req);
+	void nodesInfo(evhttp_request *req);
 
 	void _shutdown();
 
@@ -170,6 +171,8 @@ private:
 	void saveBouncedNotification(ShardingNotification * notif);
 	void bounceNotification(ShardingNotification * notif);
 
+
+	void getNodeInfoJson(Json::Value & nodeInfo);
 
 };
 

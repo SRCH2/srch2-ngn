@@ -20,12 +20,146 @@
 
 #include "operation/IndexerInternal.h"
 #include "util/Logger.h"
+#include <string>
+#include <sstream>
+#include <vector>
+#include <memory>
+#include "util/mypthread.h"
 
 namespace srch2
 {
 namespace instantsearch
 {
     
+void IndexHealthInfo::populateReport(IndexHealthInfo & report, IndexData *index){
+	report.readCount = index->_getReadCount();
+	report.writeCount = index->_getWriteCount();
+    time_t timer = time(NULL);
+    struct std::tm* timenow = gmtime(&timer);
+    report.getString(timenow, report.lastMergeTimeString);
+    report.docCount = index->_getNumberOfDocumentsInIndex();
+	report.isMergeRequired = index->isMergeRequired();
+	report.isBulkLoadDone = index->isBulkLoadDone();
+}
+
+
+unsigned IndexHealthInfo::getNumberOfBytes() const{
+    unsigned numberOfBytes = 0;
+    numberOfBytes += sizeof(readCount) ;
+    numberOfBytes += sizeof(writeCount) ;
+    numberOfBytes += sizeof(docCount) ;
+    numberOfBytes += sizeof(unsigned) + lastMergeTimeString.size() ;
+    numberOfBytes += sizeof(isMergeRequired);
+    numberOfBytes += sizeof(isBulkLoadDone);
+    return numberOfBytes;
+}
+//serializes the object to a byte array and places array into the region
+//allocated by given allocator
+void* IndexHealthInfo::serialize(void * buffer){
+    // copy data
+    buffer = srch2::util::serializeFixedTypes(readCount, buffer);
+    buffer = srch2::util::serializeFixedTypes(writeCount, buffer);
+    buffer = srch2::util::serializeFixedTypes(docCount, buffer);
+    buffer = srch2::util::serializeString(lastMergeTimeString, buffer);
+    buffer = srch2::util::serializeFixedTypes(isMergeRequired, buffer);
+    buffer = srch2::util::serializeFixedTypes(isBulkLoadDone, buffer);
+    return buffer;
+}
+
+IndexHealthInfo::IndexHealthInfo(const IndexHealthInfo & info){
+	this->readCount = info.readCount;
+	this->writeCount = info.writeCount;
+	this->docCount = info.docCount;
+	this->lastMergeTimeString = info.lastMergeTimeString;
+	this->isMergeRequired = info.isMergeRequired;
+	this->isBulkLoadDone = info.isBulkLoadDone;
+}
+
+//given a byte stream recreate the original object
+void * IndexHealthInfo::deserialize(void* buffer){
+    // read data
+    buffer = srch2::util::deserializeFixedTypes(buffer, readCount);
+    buffer = srch2::util::deserializeFixedTypes(buffer, writeCount);
+    buffer = srch2::util::deserializeFixedTypes(buffer, docCount);
+    buffer = srch2::util::deserializeString(buffer, lastMergeTimeString);
+    buffer = srch2::util::deserializeFixedTypes(buffer, isMergeRequired);
+    buffer = srch2::util::deserializeFixedTypes(buffer, isBulkLoadDone);
+    return buffer;
+}
+
+IndexHealthInfo & IndexHealthInfo::operator=(const IndexHealthInfo & info){
+	if(this != &info){
+    	this->readCount = info.readCount;
+    	this->writeCount = info.writeCount;
+    	this->docCount = info.docCount;
+    	this->lastMergeTimeString = info.lastMergeTimeString;
+    	this->isMergeRequired = info.isMergeRequired;
+    	this->isBulkLoadDone = info.isBulkLoadDone;
+	}
+	return *this;
+}
+
+bool IndexHealthInfo::operator==(const IndexHealthInfo & rhs){
+	if(this->readCount != rhs.readCount){
+		return false;
+	}
+	if(this->writeCount != rhs.readCount){
+	    		return false;
+	}
+	if(this->docCount != rhs.readCount){
+	    		return false;
+	}
+	if(this->lastMergeTimeString.compare(rhs.lastMergeTimeString) != 0){
+	    		return false;
+	}
+	if(this->isMergeRequired != rhs.isMergeRequired){
+	    		return false;
+	}
+	if(this->isBulkLoadDone != rhs.isBulkLoadDone){
+	    		return false;
+	}
+	return true;
+}
+
+
+IndexHealthInfo::IndexHealthInfo()
+{
+    //this->notifyWrite();
+	this->readCount = 0;
+	this->writeCount = 0;
+    this->getLatestHealthInfo(0);
+	this->isMergeRequired = false;
+	this->isBulkLoadDone = true;
+}
+
+void IndexHealthInfo::getString(struct std::tm *timenow, string &in)
+{
+    char buffer [80];
+    strftime (buffer,80,"%x %X",timenow);
+    in = string(buffer);
+}
+void IndexHealthInfo::getLatestHealthInfo(unsigned doc_count)
+{
+    time_t timer = time(NULL);
+    struct std::tm* timenow = gmtime(&timer);
+    IndexHealthInfo::getString(timenow, this->lastMergeTimeString);
+    this->docCount = doc_count;
+}
+const std::string IndexHealthInfo::getIndexHealthString() const
+{
+    std::stringstream returnString;
+    //returnString << "\"last_insert\":\"" << lastWriteTimeString << "\"";
+    //returnString << ",\"last_merge\":\"" << lastMergeTimeString << "\"";
+    returnString << "\"last_merge\":\"" << lastMergeTimeString << "\"";
+    returnString << ",\"doc_count\":\"" << docCount << "\"";
+    return returnString.str();
+}
+const void IndexHealthInfo::getIndexHealthStringComponents(std::string & lastMergeTimeString, unsigned & docCount) const
+{
+	lastMergeTimeString = this->lastMergeTimeString;
+	docCount = this->docCount;
+}
+
 INDEXWRITE_RETVAL IndexReaderWriter::commit()
 {    
     pthread_mutex_lock(&lockForWriters);

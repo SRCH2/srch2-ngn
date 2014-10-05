@@ -26,6 +26,9 @@ const Srch2ServerGateway::PortInfo Srch2ServerGateway::coreSpecificPorts[] = {
 
 const Srch2ServerGateway::PortInfo Srch2ServerGateway::globalPorts[] = {
 	{ "/_all/search", srch2http::SearchAllPort, Srch2ServerGateway::cb_globalOperations },
+	{ "/info", srch2http::InfoPort, Srch2ServerGateway::cb_globalOperations},
+	{ "/_nodes/nodeId", srch2http::InfoPort_Nodes, Srch2ServerGateway::cb_globalOperations},
+	{ "/_cluster/stats", srch2http::InfoPort_Cluster_Stats, Srch2ServerGateway::cb_globalOperations},
 	{ "/shutdown", srch2http::ShutdownPort, Srch2ServerGateway::cb_globalOperations },
 	{ "/node_shutdown", srch2http::NodeShutdownPort, Srch2ServerGateway::cb_globalOperations },
 	{ NULL , srch2http::EndOfPortType, NULL }
@@ -129,6 +132,15 @@ void Srch2ServerGateway::cb_globalOperations(struct evhttp_request * req, void *
     	switch (portType){
     	case srch2http::SearchAllPort:
     		dpExternal->externalSearchAllCommand(clusterReadview, req);
+    		break;
+    	case srch2http::InfoPort:
+    		dpExternal->externalGetInfoCommand(clusterReadview, req, (unsigned) -1);
+    		break;
+    	case srch2http::InfoPort_Nodes:
+    		srch2http::ShardManager::getShardManager()->nodesInfo(req);
+    		break;
+    	case srch2http::InfoPort_Cluster_Stats:
+    		dpExternal->externalGetInfoCommand(clusterReadview, req, (unsigned) -1);
     		break;
     	case srch2http::ShutdownPort:
     		srch2http::ShardManager::getShardManager()->shutdown(req);
@@ -234,6 +246,10 @@ bool Srch2ServerGateway::checkOperationPermission(Srch2ServerRuntime * runtime ,
 	ASSERT(coreId != (unsigned) -1);
 	if(coreId == (unsigned) -1){
 		return false;
+	}
+
+	if(portType == InfoPort_Nodes){
+		portType = InfoPort;
 	}
 
 	if (checkAuthorizationKey(runtime, req) == false) {

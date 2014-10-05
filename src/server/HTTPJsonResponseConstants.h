@@ -48,7 +48,6 @@ static const char* c_action_reset_logger = "reset_logger";
 static const char* c_logger_file = "logger_file";
 
 static const char* c_rid = "rid";
-static const char* c_core_name = "core_name";
 static const char* c_reason = "reason";
 static const char* c_detail = "details";
 static const char* c_resume = "resume";
@@ -56,6 +55,34 @@ static const char* c_resume = "resume";
 static const char* c_status = "status";
 static const char* c_failed = "failed";
 static const char* c_success = "success";
+
+static const char* c_core_data_info = "core-data-info";
+static const char* c_cores = "cores";
+static const char* c_core_name = "coreName";
+static const char* c_core_primary_shards = "primaryShards";
+static const char* c_core_replica_shards = "replicas";
+static const char* c_core_total_num_docs = "totalNumberOfDocuments";
+static const char* c_core_cluster_shards = "cluster-shards";
+static const char* c_core_node_shards = "static-shards";
+static const char* c_shard_id = "shardId";
+static const char* c_shard_num_docs = "numberOfDocuments";
+static const char* c_aggregated_stats = "aggregated-stats";
+static const char* c_partitions = "partitions";
+static const char* c_node_shards = "static-shards";
+static const char* c_doc_count = "doc-count";
+static const char* c_write_count = "write-count";
+static const char* c_read_count = "read-count";
+static const char* c_last_merge_time = "last-merge-time";
+static const char* c_merged_needed = "merge-needed";
+static const char* c_commit_done = "commit-done";
+static const char* c_nodes = "nodes";
+static const char* c_nodes_count = "count";
+static const char* c_node_version = "node-version";
+static const char* c_node_location = "node-location";
+static const char* c_node_name = "name";
+static const char* c_node_listening_host_name = "listeningHostName";
+static const char* c_cluster_name = "clusterName";
+static const char* c_cluster_total_number_of_documnets = "totalNumberOfDocumentsInCluster";
 
 
 

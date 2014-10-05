@@ -415,7 +415,7 @@ GetInfoCommandResults * DPInternalRequestHandler::internalGetInfoCommand(const N
     pthread_t * shardGetInfoThreads = new pthread_t[shards.size()];
 	for(unsigned shardIdx = 0; shardIdx < shards.size(); ++shardIdx){
 		const Shard * shard = shards.at(shardIdx);
-		ShardGetInfoArgs * shardGetInfoArgs = new ShardGetInfoArgs(shard->getSrch2Server().get(), shard->getShardIdentifier());
+		ShardGetInfoArgs * shardGetInfoArgs = new ShardGetInfoArgs(shard->getSrch2Server().get(), shard->cloneShardId());
 		allShardsGetInfoArguments.push_back(shardGetInfoArgs);
 		if (pthread_create(&shardGetInfoThreads[shardIdx], NULL, getInfoInShardThreadWork , shardGetInfoArgs) != 0){
 			perror("Cannot create thread for handling local message");
@@ -438,17 +438,12 @@ GetInfoCommandResults * DPInternalRequestHandler::internalGetInfoCommand(const N
 }
 
 
-void DPInternalRequestHandler::getInfoInShard(Srch2Server * server,unsigned & readCount,
-		unsigned & writeCount, unsigned & numberOfIndexedDocuments,
-		std::string & lastMergeTimeString, unsigned & docCount){
-    server->getIndexer()->getIndexHealthThoughArguments(readCount, writeCount,
-    		numberOfIndexedDocuments, lastMergeTimeString ,docCount);
+void DPInternalRequestHandler::getInfoInShard(Srch2Server * server,GetInfoCommandResults::ShardResults * shardResult){
+    server->getIndexer()->getIndexHealthObj(shardResult->healthInfo);
 }
 void * DPInternalRequestHandler::getInfoInShardThreadWork(void * args){
 	ShardGetInfoArgs * infoArgs = (ShardGetInfoArgs *)args;
-	getInfoInShard(infoArgs->server, infoArgs->shardResult->readCount, infoArgs->shardResult->writeCount,
-			infoArgs->shardResult->numberOfDocumentsInIndex,
-			infoArgs->shardResult->lastMergeTimeString, infoArgs->shardResult->docCount);
+	getInfoInShard(infoArgs->server, infoArgs->shardResult);
 	//
 	return NULL;
 }
@@ -479,7 +474,7 @@ CommandStatus * DPInternalRequestHandler::internalSerializeCommand(const NodeTar
 		const Shard * shard = shards.at(shardIdx);
 		ShardSerializeArgs * shardSerializeArgs =
 				new ShardSerializeArgs(serailizeData->getDataFileName(),
-						shard->getSrch2Server().get(), shard->getShardIdentifier());
+						shard->getSrch2Server().get(), shard->getShardIdentifier(), shard->getIndexDirectory());
 		allShardsSerializeArguments.push_back(shardSerializeArgs);
 
 		if(serailizeData->getIndexOrRecord() == SerializeCommand::SERIALIZE_INDEX){ // insert case
@@ -524,9 +519,9 @@ void * DPInternalRequestHandler::serializeIndexInShardThreadWork(void * args){
 
 void * DPInternalRequestHandler::serializeRecordsInShardThreadWork(void * args){
 	ShardSerializeArgs * serializeRecordsArgs = (ShardSerializeArgs *) args;
-    string exportedDataFileName = serializeRecordsArgs->dataFileName;
+    string exportedDataFileName = serializeRecordsArgs->shardIndexDirectory + "/" + serializeRecordsArgs->dataFileName;
     if(srch2::util::checkDirExistence(exportedDataFileName.c_str())){
-        exportedDataFileName = "export_data.json";
+        exportedDataFileName = serializeRecordsArgs->shardIndexDirectory + "/" + string("export_data.json");
     }
     serializeRecordsArgs->server->getIndexer()->exportData(exportedDataFileName);
     serializeRecordsArgs->shardResults->statusValue = true;

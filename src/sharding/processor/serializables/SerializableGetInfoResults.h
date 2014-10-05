@@ -1,6 +1,7 @@
 #ifndef __SHARDING_PROCESSOR_SERIALIZABLE_GETINFO_RESULTS_H_
 #define __SHARDING_PROCESSOR_SERIALIZABLE_GETINFO_RESULTS_H_
 
+#include "core/operation/IndexHealthInfo.h"
 #include "core/util/SerializationHelper.h"
 #include "sharding/transport/MessageAllocator.h"
 
@@ -15,36 +16,55 @@ class GetInfoCommandResults{
 public:
 
 	struct ShardResults{
-		ShardResults(const string shardIdentifier):shardIdentifier(shardIdentifier){};
-		ShardResults(const string shardIdentifier,
+		ShardResults(ShardId * shardId){
+			this->shardId = shardId;
+			this->isClusterShard = this->shardId->isClusterShard();
+		};
+		ShardResults(ShardId * shardId,const IndexHealthInfo & healthInfo){
+			this->shardId = shardId;
+			this->isClusterShard = this->shardId->isClusterShard();
+			this->healthInfo = healthInfo;
+		};
+		~ShardResults(){
+			if(shardId != NULL){
+				delete shardId;
+			}
+		}
+
+
+		/*
+		* NOTE : This constructor is only added for Serialization_Test.cpp
+		* Do not use this constructor.
+		*/
+		ShardResults(ShardId * shardId,
 							unsigned readCount,
 							unsigned writeCount,
-							unsigned numberOfDocumentsInIndex,
 							string lastMergeTimeString,
 							unsigned docCount,
-							string versionInfo):shardIdentifier(shardIdentifier){
-			this->readCount = readCount;
-			this->writeCount = writeCount;
-			this->numberOfDocumentsInIndex = numberOfDocumentsInIndex;
-			this->lastMergeTimeString = lastMergeTimeString;
-			this->docCount = docCount;
+							string versionInfo,
+							bool isMergeRequired,
+							bool isBulkLoadDone){
+			this->shardId = shardId;
+			this->isClusterShard = this->shardId->isClusterShard();
+			this->healthInfo.readCount = readCount;
+			this->healthInfo.writeCount = writeCount;
+			this->healthInfo.docCount = docCount;
+			this->healthInfo.lastMergeTimeString = lastMergeTimeString;
 			this->versionInfo = versionInfo;
+			this->healthInfo.isMergeRequired = isMergeRequired;
+			this->healthInfo.isBulkLoadDone = isBulkLoadDone;
 		};
-		const string shardIdentifier;
-		unsigned readCount;
-		unsigned writeCount;
-		unsigned numberOfDocumentsInIndex;
-		string lastMergeTimeString;
-		unsigned docCount;
-		string versionInfo;
+		bool isClusterShard;
+		ShardId * shardId;
+		// Data shard information
+		IndexHealthInfo healthInfo;
+		std::string versionInfo;
+
 	    unsigned getNumberOfBytes() const{
 	        unsigned numberOfBytes = 0;
-	        numberOfBytes += sizeof(unsigned) + shardIdentifier.size();
-	        numberOfBytes += sizeof(readCount);
-	        numberOfBytes += sizeof(writeCount);
-	        numberOfBytes += sizeof(numberOfDocumentsInIndex);
-	        numberOfBytes += sizeof(docCount);
-	        numberOfBytes += sizeof(unsigned) + lastMergeTimeString.size();
+	        numberOfBytes += sizeof(isClusterShard);
+	        numberOfBytes += shardId->getNumberOfBytes();
+	        numberOfBytes += healthInfo.getNumberOfBytes();
 	        numberOfBytes += sizeof(unsigned) + versionInfo.size();
 	        return numberOfBytes;
 	    }
@@ -52,12 +72,9 @@ public:
 	    //allocated by given allocator
 	    void* serialize(void * buffer){
 	        // copy data
-	        buffer = srch2::util::serializeString(shardIdentifier, buffer);
-	        buffer = srch2::util::serializeFixedTypes(readCount, buffer);
-	        buffer = srch2::util::serializeFixedTypes(writeCount, buffer);
-	        buffer = srch2::util::serializeFixedTypes(numberOfDocumentsInIndex, buffer);
-	        buffer = srch2::util::serializeFixedTypes(docCount, buffer);
-	        buffer = srch2::util::serializeString(lastMergeTimeString, buffer);
+	    	buffer = srch2::util::serializeFixedTypes(isClusterShard, buffer);
+	        buffer = shardId->serialize(buffer);
+	        buffer = healthInfo.serialize(buffer);
 	        buffer = srch2::util::serializeString(versionInfo, buffer);
 	        return buffer;
 	    }
@@ -65,14 +82,18 @@ public:
 	    //given a byte stream recreate the original object
 	    static ShardResults * deserialize(void* buffer){
 	        // read data
-	    	string shardIdentifier;
-	        buffer = srch2::util::deserializeString(buffer, shardIdentifier);
-	        ShardResults * newShardResults = new ShardResults(shardIdentifier);
-	        buffer = srch2::util::deserializeFixedTypes(buffer, newShardResults->readCount);
-	        buffer = srch2::util::deserializeFixedTypes(buffer, newShardResults->writeCount);
-	        buffer = srch2::util::deserializeFixedTypes(buffer, newShardResults->numberOfDocumentsInIndex);
-	        buffer = srch2::util::deserializeFixedTypes(buffer, newShardResults->docCount);
-	        buffer = srch2::util::deserializeString(buffer, newShardResults->lastMergeTimeString);
+	    	bool isClusterShard;
+	    	buffer = srch2::util::deserializeFixedTypes(buffer, isClusterShard);
+	    	ShardId * shardId;
+	    	if(isClusterShard){
+	    		shardId = new ClusterShardId();
+	    	}else{
+	    		shardId = new NodeShardId();
+	    	}
+	    	buffer = shardId->deserialize(buffer);
+	        ShardResults * newShardResults = new ShardResults(shardId);
+	        newShardResults->isClusterShard = isClusterShard;
+	        buffer = newShardResults->healthInfo.deserialize(buffer);
 	        buffer = srch2::util::deserializeString(buffer, newShardResults->versionInfo);
 	        // create object and return it
 	        return newShardResults;

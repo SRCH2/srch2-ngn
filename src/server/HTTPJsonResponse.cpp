@@ -8,6 +8,7 @@
 #include <boost/thread/locks.hpp>
 #include "util/Assert.h"
 #include "util/Logger.h"
+#include "sharding/configuration/CoreInfo.h"
 
 using namespace srch2::instantsearch;
 
@@ -236,6 +237,15 @@ HTTPJsonResponse::~HTTPJsonResponse() {
 	}
 }
 
+void HTTPJsonResponse::setResponseAttribute(const char * attributeName,
+		const Json::Value & resAttr){
+	if(resAttr == nullJsonValue){
+		ASSERT(false);
+		return;
+	}
+	HTTPJsonResponse::getRoot()[attributeName] = resAttr;
+}
+
 void HTTPJsonResponse::finalizeInvalid() {
 	this->getRoot()[JSON_ERROR] = HTTP_INVALID_REQUEST_MESSAGE;
 	this->code = HTTP_BADREQUEST;
@@ -461,6 +471,80 @@ void HTTPJsonShardOperationResponse::addShardResponse(const char * action, const
 Json::Value & HTTPJsonShardOperationResponse::getRoot(){
 	return HTTPJsonResponse::getRoot();
 }
+
+Json::Value & HTTPJsonGetInfoResponse::getRoot(){
+	return HTTPJsonResponse::getRoot();
+}
+
+Json::Value & HTTPJsonGetInfoResponse::getCoresRoot(){
+	if(getRoot().get(c_cores, nullJsonValue) == nullJsonValue){
+		getRoot()[c_cores] = Json::Value(Json::arrayValue);
+	}
+	return getRoot()[c_cores];
+
+}
+
+void HTTPJsonGetInfoResponse::addCoreInfo(const CoreInfo_t * coreInfo,
+		const srch2::instantsearch::IndexHealthInfo & info,
+		const vector<std::pair< string , srch2::instantsearch::IndexHealthInfo> > & primaryShardsInfo,
+		const vector<srch2::instantsearch::IndexHealthInfo> & partitionsInfo,
+		const vector<std::pair< string , srch2::instantsearch::IndexHealthInfo> > & nodeShardsInfo){
+
+
+	getCoresRoot().append(Json::Value(Json::objectValue));
+	Json::Value & coreInfoJsonRoot = getCoresRoot()[getCoresRoot().size() - 1];
+	coreInfoJsonRoot[c_core_name] = coreInfo->getName();
+	coreInfoJsonRoot[c_core_primary_shards] = coreInfo->getNumberOfPrimaryShards();
+	coreInfoJsonRoot[c_core_replica_shards] = coreInfo->getNumberOfReplicas();
+	coreInfoJsonRoot[c_core_total_num_docs] = info.docCount;
+
+	coreInfoJsonRoot[c_core_cluster_shards] = Json::Value(Json::arrayValue);
+	for(unsigned i = 0 ; i < primaryShardsInfo.size(); ++i){
+		Json::Value shardJson(Json::objectValue);
+		shardJson[c_shard_id] = primaryShardsInfo.at(i).first;
+		shardJson[c_shard_num_docs] = primaryShardsInfo.at(i).second.docCount;
+		coreInfoJsonRoot[c_core_cluster_shards].append(shardJson);
+	}
+
+	coreInfoJsonRoot[c_core_node_shards] = Json::Value(Json::arrayValue);
+	for(unsigned i = 0 ; i < nodeShardsInfo.size(); ++i){
+		Json::Value shardJson(Json::objectValue);
+		shardJson[c_shard_id] = nodeShardsInfo.at(i).first;
+		shardJson[c_shard_num_docs] = nodeShardsInfo.at(i).second.docCount;
+		coreInfoJsonRoot[c_core_node_shards].append(shardJson);
+	}
+
+//	getCoreAggregatedRoot(coreName)[c_doc_count] = info.docCount;
+//	getCoreAggregatedRoot(coreName)[c_write_count] = info.writeCount;
+//	getCoreAggregatedRoot(coreName)[c_read_count] = info.readCount;
+//	getCoreAggregatedRoot(coreName)[c_merged_needed] = info.isMergeRequired;
+//	getCoreAggregatedRoot(coreName)[c_commit_done] = info.isBulkLoadDone;
+//
+//
+//	for(unsigned pid = 0  ; pid < partitionsInfo.size(); ++pid){
+//		Json::Value & partitionsRoot = getCorePartitionsRoot(coreName);
+//		Json::Value & pRoot = partitionsRoot[pid];
+//		pRoot[c_doc_count] = partitionsInfo.at(pid).docCount;
+//		pRoot[c_write_count] = partitionsInfo.at(pid).writeCount;
+//		pRoot[c_read_count] = partitionsInfo.at(pid).readCount;
+//		pRoot[c_merged_needed] = partitionsInfo.at(pid).isMergeRequired;
+//		pRoot[c_commit_done] = partitionsInfo.at(pid).isBulkLoadDone;
+//	}
+//
+//
+//	for(unsigned pid = 0  ; pid < nodeShardsInfo.size(); ++pid){
+//		Json::Value & nodeShardsRoot = getCoreNodeShardsRoot(coreName);
+//		Json::Value & pRoot = nodeShardsRoot[nodeShardsInfo.at(pid).first];
+//		pRoot[c_doc_count] = nodeShardsInfo.at(pid).second.docCount;
+//		pRoot[c_write_count] = nodeShardsInfo.at(pid).second.writeCount;
+//		pRoot[c_read_count] = nodeShardsInfo.at(pid).second.readCount;
+//		pRoot[c_merged_needed] = nodeShardsInfo.at(pid).second.isMergeRequired;
+//		pRoot[c_commit_done] = nodeShardsInfo.at(pid).second.isBulkLoadDone;
+//	}
+
+
+}
+
 
 }
 }

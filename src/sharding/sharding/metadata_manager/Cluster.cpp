@@ -70,7 +70,7 @@ const LocalShardContainer * ClusterResourceMetadata_Readview::getLocalShardConta
 	return localShardContainers.find(coreId)->second;
 }
 
-void ClusterResourceMetadata_Readview::getAllCores(vector<const CoreInfo_t *> cores) const{
+void ClusterResourceMetadata_Readview::getAllCores(vector<const CoreInfo_t *> & cores) const{
 	for(map<unsigned, CoreInfo_t *>::const_iterator coreItr = allCores.begin(); coreItr != allCores.end(); ++coreItr){
 		cores.push_back(coreItr->second);
 	}

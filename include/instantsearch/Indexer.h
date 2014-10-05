@@ -41,6 +41,7 @@ class Analyzer;
 class Schema;
 class Record;
 class GlobalCache;
+class IndexHealthInfo;
 
 class IndexMetaData
 {
@@ -133,8 +134,7 @@ public:
     virtual uint32_t getNumberOfDocumentsInIndex() const = 0;
 
     virtual const std::string getIndexHealth() const = 0;
-    virtual void getIndexHealthThoughArguments(unsigned & readCount, unsigned & writeCount, unsigned & numberOfIndexedDocuments
-    		, std::string & lastMergeTimeString, unsigned & docCount) const = 0;
+    virtual void getIndexHealthObj(IndexHealthInfo & report) const = 0;
 
     virtual const srch2::instantsearch::Schema *getSchema() const = 0;
 

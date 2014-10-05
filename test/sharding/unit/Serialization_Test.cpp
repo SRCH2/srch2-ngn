@@ -203,29 +203,31 @@ void testSerializableGetInfoCommandInput(){
 
 void testSerializableGetInfoResults(){
 	GetInfoCommandResults commandInput1;
-	GetInfoCommandResults::ShardResults * shardResults = new GetInfoCommandResults::ShardResults("identifier",10, 20, 30, "yesterday", 40, "version 3.4.1" );
+	GetInfoCommandResults::ShardResults * shardResults = new GetInfoCommandResults::ShardResults(new ClusterShardId(1,2,4),10, 20, "yesterday", 40, "version 3.4.1" , false, true);
 	commandInput1.addShardResults(shardResults);
 	MessageAllocator * aloc = new MessageAllocator();
 	void * buffer = commandInput1.serialize(aloc);
 	const GetInfoCommandResults & deserializedCommandInput1 = *(GetInfoCommandResults::deserialize(buffer));
-	ASSERT(commandInput1.getShardResults().at(0)->readCount == deserializedCommandInput1.getShardResults().at(0)->readCount);
-	ASSERT(commandInput1.getShardResults().at(0)->writeCount == deserializedCommandInput1.getShardResults().at(0)->writeCount);
-	ASSERT(commandInput1.getShardResults().at(0)->docCount == deserializedCommandInput1.getShardResults().at(0)->docCount);
-	ASSERT(commandInput1.getShardResults().at(0)->lastMergeTimeString == deserializedCommandInput1.getShardResults().at(0)->lastMergeTimeString);
-	ASSERT(commandInput1.getShardResults().at(0)->numberOfDocumentsInIndex == deserializedCommandInput1.getShardResults().at(0)->numberOfDocumentsInIndex);
+	ASSERT(commandInput1.getShardResults().at(0)->healthInfo.readCount == deserializedCommandInput1.getShardResults().at(0)->healthInfo.readCount);
+	ASSERT(commandInput1.getShardResults().at(0)->healthInfo.writeCount == deserializedCommandInput1.getShardResults().at(0)->healthInfo.writeCount);
+	ASSERT(commandInput1.getShardResults().at(0)->healthInfo.docCount == deserializedCommandInput1.getShardResults().at(0)->healthInfo.docCount);
+	ASSERT(commandInput1.getShardResults().at(0)->healthInfo.lastMergeTimeString == deserializedCommandInput1.getShardResults().at(0)->healthInfo.lastMergeTimeString);
+	ASSERT(commandInput1.getShardResults().at(0)->healthInfo.isMergeRequired == deserializedCommandInput1.getShardResults().at(0)->healthInfo.isMergeRequired);
+	ASSERT(commandInput1.getShardResults().at(0)->healthInfo.isBulkLoadDone == deserializedCommandInput1.getShardResults().at(0)->healthInfo.isBulkLoadDone);
 	ASSERT(commandInput1.getShardResults().at(0)->versionInfo == deserializedCommandInput1.getShardResults().at(0)->versionInfo);
 
 
 	GetInfoCommandResults commandInput2;
-	GetInfoCommandResults::ShardResults * shardResults2 = new GetInfoCommandResults::ShardResults("identifier2",11, 2, 300, "tomorrow", 4, "version 3.4.2");
+	GetInfoCommandResults::ShardResults * shardResults2 = new GetInfoCommandResults::ShardResults(new ClusterShardId(1,2,4),11, 2, "tomorrow", 4, "version 3.4.2" , false, false);
 	commandInput2.addShardResults(shardResults2);
 	buffer = commandInput2.serialize(aloc);
 	const GetInfoCommandResults & deserializedCommandInput2 = *(GetInfoCommandResults::deserialize(buffer));
-	ASSERT(commandInput2.getShardResults().at(0)->readCount == deserializedCommandInput2.getShardResults().at(0)->readCount);
-	ASSERT(commandInput2.getShardResults().at(0)->writeCount == deserializedCommandInput2.getShardResults().at(0)->writeCount);
-	ASSERT(commandInput2.getShardResults().at(0)->docCount == deserializedCommandInput2.getShardResults().at(0)->docCount);
-	ASSERT(commandInput2.getShardResults().at(0)->lastMergeTimeString == deserializedCommandInput2.getShardResults().at(0)->lastMergeTimeString);
-	ASSERT(commandInput2.getShardResults().at(0)->numberOfDocumentsInIndex == deserializedCommandInput2.getShardResults().at(0)->numberOfDocumentsInIndex);
+	ASSERT(commandInput2.getShardResults().at(0)->healthInfo.readCount == deserializedCommandInput2.getShardResults().at(0)->healthInfo.readCount);
+	ASSERT(commandInput2.getShardResults().at(0)->healthInfo.writeCount == deserializedCommandInput2.getShardResults().at(0)->healthInfo.writeCount);
+	ASSERT(commandInput2.getShardResults().at(0)->healthInfo.docCount == deserializedCommandInput2.getShardResults().at(0)->healthInfo.docCount);
+	ASSERT(commandInput2.getShardResults().at(0)->healthInfo.lastMergeTimeString == deserializedCommandInput2.getShardResults().at(0)->healthInfo.lastMergeTimeString);
+	ASSERT(commandInput2.getShardResults().at(0)->healthInfo.isMergeRequired == deserializedCommandInput2.getShardResults().at(0)->healthInfo.isMergeRequired);
+	ASSERT(commandInput2.getShardResults().at(0)->healthInfo.isBulkLoadDone == deserializedCommandInput2.getShardResults().at(0)->healthInfo.isBulkLoadDone);
 	ASSERT(commandInput2.getShardResults().at(0)->versionInfo == deserializedCommandInput2.getShardResults().at(0)->versionInfo);
 }
 

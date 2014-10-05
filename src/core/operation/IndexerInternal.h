@@ -30,6 +30,7 @@
 #include <vector>
 #include <memory>
 #include "util/mypthread.h"
+#include "IndexHealthInfo.h"
 
 using std::vector;
 using std::string;
@@ -40,57 +41,6 @@ namespace instantsearch
 {
 class CacheManager;
 class GlobalCache;
-
-struct IndexHealthInfo
-{
-    //std::string lastWriteTimeString;
-    std::string lastMergeTimeString;
-    unsigned doc_count;
-
-    IndexHealthInfo()
-    {
-        //this->notifyWrite();
-        this->getLatestHealthInfo(0);
-    }
-
-    void getString(struct std::tm *timenow, string &in)
-    {
-        char buffer [80];
-        strftime (buffer,80,"%x %X",timenow);
-        in = string(buffer);
-    }
-
-    /*void notifyWrite()
-    {
-        time_t timer = time(NULL);
-        struct std::tm* timenow = gmtime(&timer);
-        IndexHealthInfo::getString(timenow, this->lastWriteTimeString);
-    }*/
-
-    void getLatestHealthInfo(unsigned doc_count)
-    {
-        time_t timer = time(NULL);
-        struct std::tm* timenow = gmtime(&timer);
-        IndexHealthInfo::getString(timenow, this->lastMergeTimeString);
-        this->doc_count = doc_count;
-    }
-
-    const std::string getIndexHealthString() const
-    {
-        std::stringstream returnString;
-        //returnString << "\"last_insert\":\"" << lastWriteTimeString << "\"";
-        //returnString << ",\"last_merge\":\"" << lastMergeTimeString << "\"";
-        returnString << "\"last_merge\":\"" << lastMergeTimeString << "\"";
-        returnString << ",\"doc_count\":\"" << doc_count << "\"";
-        return returnString.str();
-    }
-
-    const void getIndexHealthStringComponents(std::string & lastMergeTimeString, unsigned & docCount) const
-    {
-    	lastMergeTimeString = this->lastMergeTimeString;
-    	docCount = this->doc_count;
-    }
-};
 
 class IndexReaderWriter: public Indexer
 {
@@ -200,13 +150,8 @@ public:
         return str.str();
     }
     
-    inline void getIndexHealthThoughArguments(unsigned & readCount, unsigned & writeCount, unsigned & numberOfIndexedDocuments
-    		, std::string & lastMergeTimeString, unsigned & docCount) const
-    {
-    	readCount = this->index->_getReadCount();
-    	writeCount = this->index->_getWriteCount();
-    	numberOfIndexedDocuments = this->index->_getNumberOfDocumentsInIndex();
-    	this->indexHealthInfo.getIndexHealthStringComponents(lastMergeTimeString, docCount);
+    inline void getIndexHealthObj(IndexHealthInfo & report) const{
+    	IndexHealthInfo::populateReport(report, this->index);
     }
 
     inline const bool isCommited() const { return this->index->isBulkLoadDone(); }

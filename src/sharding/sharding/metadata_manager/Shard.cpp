@@ -58,6 +58,13 @@ bool ClusterShardId::isClusterShard() const {
 	return true;
 }
 
+bool ClusterShardId::isReplica(ShardId * shardId) const{
+	if(shardId == NULL || ! shardId->isClusterShard() || coreId != shardId->coreId){
+		return false;
+	}
+	ClusterShardId * cShardId = (ClusterShardId *)shardId;
+	return (partitionId == cShardId->partitionId);
+}
 
 ClusterPID ClusterShardId::getPartitionId() const{
 	ClusterPID pid(coreId, partitionId);
@@ -161,6 +168,10 @@ std::string NodeShardId::_toString() const{
 
 
 bool NodeShardId::isClusterShard() const {
+	return false;
+}
+
+bool NodeShardId::isReplica(ShardId * shardId) const{
 	return false;
 }
 
@@ -298,6 +309,9 @@ const ClusterShardId ClusterShard::getShardId() const {
 string ClusterShard::getShardIdentifier() const {
 	return shardId.toString();
 }
+ShardId * ClusterShard::cloneShardId() const{
+	return new ClusterShardId(this->shardId);
+}
 bool ClusterShard::operator==(const ClusterShard & right) const{
 	return (this->shardId == right.shardId);
 }
@@ -320,6 +334,9 @@ const NodeShardId NodeShard::getShardId() const{
 }
 string NodeShard::getShardIdentifier() const {
 	return shardId._toString();
+}
+ShardId * NodeShard::cloneShardId() const{
+	return new NodeShardId(this->shardId);
 }
 bool NodeShard::operator==(const NodeShard & right) const{
 	return (this->shardId == right.shardId);

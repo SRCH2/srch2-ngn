@@ -35,7 +35,7 @@ public:
 
 	const CorePartitionContianer * getPartitioner(unsigned coreId) const;
 	const LocalShardContainer * getLocalShardContainer(unsigned coreId) const;
-	void getAllCores(vector<const CoreInfo_t *> cores) const;
+	void getAllCores(vector<const CoreInfo_t *> & cores) const;
 	const CoreInfo_t * getCore(unsigned coreId) const;
 	const CoreInfo_t * getCoreByName(const string & coreName) const;
 	void getAllNodes(vector<Node> & nodes) const;

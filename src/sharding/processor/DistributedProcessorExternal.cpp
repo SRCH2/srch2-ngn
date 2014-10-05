@@ -613,20 +613,43 @@ void DPExternalRequestHandler::externalDeleteCommand(boost::shared_ptr<const Clu
 void DPExternalRequestHandler::externalGetInfoCommand(boost::shared_ptr<const ClusterResourceMetadata_Readview> clusterReadview,
 		evhttp_request *req, unsigned coreId){
 
-    const CoreInfo_t *indexDataContainerConf = clusterReadview->getCore(coreId);
 
-    boost::shared_ptr<GetInfoResponseAggregator> resultsAggregator(new GetInfoResponseAggregator(configurationManager,req, clusterReadview, coreId));
-	CorePartitioner * partitioner = new CorePartitioner(clusterReadview->getPartitioner(coreId));
-    vector<NodeTargetShardInfo> targets;
-    partitioner->getAllTargets(targets);
-    if(targets.size() == 0){
-        bmhelper_evhttp_send_reply2(req, HTTP_BADREQUEST, "Node Failure",
-                "All nodes are down.");
+	boost::shared_ptr<HTTPJsonGetInfoResponse > brokerSideInformationJson =
+			boost::shared_ptr<HTTPJsonGetInfoResponse > (new HTTPJsonGetInfoResponse(req));
+
+    vector<unsigned> coreIds;
+    if(coreId == (unsigned) -1){
+    	vector<const CoreInfo_t *> cores;
+    	clusterReadview->getAllCores(cores);
+    	for(unsigned cid = 0 ; cid < cores.size(); cid++){
+    		coreIds.push_back(cores.at(cid)->getCoreId());
+    	}
     }else{
-        time_t timeValue;
-        time(&timeValue);
-        timeValue = timeValue + TIMEOUT_WAIT_TIME;
-		GetInfoCommand * getInfoInput = new GetInfoCommand();
+    	coreIds.push_back(coreId);
+    }
+
+
+	vector<NodeTargetShardInfo> targets;
+    for(unsigned cid = 0; cid < coreIds.size(); ++cid){
+    	unsigned coreId = coreIds.at(cid);
+		const CoreInfo_t *indexDataContainerConf = clusterReadview->getCore(coreId);
+		const string coreName = indexDataContainerConf->getName();
+		CorePartitioner * corePartitioner = new CorePartitioner(clusterReadview->getPartitioner(coreId));
+		corePartitioner->getAllTargets(targets);
+		delete corePartitioner;
+    }
+
+    boost::shared_ptr<GetInfoResponseAggregator> resultsAggregator(
+    		new GetInfoResponseAggregator(configurationManager,brokerSideInformationJson, clusterReadview, coreId));
+	if(targets.size() == 0){
+		brokerSideInformationJson->addError(HTTPJsonResponse::getJsonSingleMessage(HTTP_JSON_All_Shards_Down_Error));
+		brokerSideInformationJson->finalizeOK();
+	}else{
+		brokerSideInformationJson->finalizeOK();
+		time_t timeValue;
+		time(&timeValue);
+		timeValue = timeValue + TIMEOUT_WAIT_TIME;
+		GetInfoCommand * getInfoInput = new GetInfoCommand(GetInfoRequestType_);
 		resultsAggregator->addRequestObj(getInfoInput);
 		bool routingStatus = dpMessageHandler.broadcast<GetInfoCommand, GetInfoCommandResults>(getInfoInput,
 						true,
@@ -637,10 +660,9 @@ void DPExternalRequestHandler::externalGetInfoCommand(boost::shared_ptr<const Cl
 						clusterReadview);
 
 		if(! routingStatus){
-	        bmhelper_evhttp_send_reply2(req, HTTP_BADREQUEST, "Request Failure","");
+			brokerSideInformationJson->finalizeError("Internal Server Error.");
 		}
-    }
-    delete partitioner;
+	}
 
 }
 

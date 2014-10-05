@@ -165,7 +165,8 @@ public:
 					break;
 				}
 				case MergeCommandMessageType:{
-					this->brokerSideShardOpInfoJson->addShardResponse(c_action_merge, recordShardResult->statusValue, recordShardResult->messages);
+//					this->brokerSideShardOpInfoJson->addShardResponse(c_action_merge, recordShardResult->statusValue, recordShardResult->messages);
+					this->brokerSideShardOpInfoJson->addShardResponse(c_action_merge, recordShardResult->statusValue, nullJsonValue);
 					break;
 				}
 				case ResetLogCommandMessageType:{

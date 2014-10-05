@@ -47,7 +47,7 @@ public:
 	virtual ~ShardId(){};
 	virtual std::string toString() const = 0;
 	virtual bool isClusterShard() const = 0 ;
-
+	virtual bool isReplica(ShardId * shardId) const = 0;
     void* serialize(void * buffer) const;
     void * deserialize(void* buffer);
     unsigned getNumberOfBytes() const;
@@ -69,7 +69,7 @@ public:
 	bool isPrimaryShard() const;
 	std::string toString() const;
 	bool isClusterShard() const ;
-
+	bool isReplica(ShardId * shardId) const;
 	ClusterPID getPartitionId() const;
 
 	bool operator==(const ClusterShardId& rhs) const ;
@@ -104,6 +104,7 @@ public:
 	std::string toString() const;
 	std::string _toString() const;
 	bool isClusterShard() const ;
+	bool isReplica(ShardId * shardId) const;
 	bool operator==(const NodeShardId& rhs) const ;
 	bool operator!=(const NodeShardId& rhs) const ;
 	bool operator>(const NodeShardId& rhs) const ;
@@ -133,6 +134,7 @@ public:
 	string getIndexDirectory() const;
 	string getJsonFileCompletePath() const;
 	virtual string getShardIdentifier() const = 0;
+	virtual ShardId * cloneShardId() const = 0;
 	virtual ~Shard(){};
 private:
 	boost::shared_ptr<Srch2Server> srch2Server;
@@ -149,8 +151,8 @@ public:
 			const string & jsonFileCompletePath, double load = 0);
 	const ClusterShardId getShardId() const ;
 	string getShardIdentifier() const ;
+	ShardId * cloneShardId() const;
 	bool operator==(const ClusterShard & right) const;
-
 
 	string toString() const;
 private:
@@ -163,6 +165,7 @@ public:
 			const string & jsonFileCompletePath,double load = 0);
 	const NodeShardId getShardId() const ;
 	string getShardIdentifier() const ;
+	ShardId * cloneShardId() const;
 	bool operator==(const NodeShard & right) const;
 	string toString() const;
 private:

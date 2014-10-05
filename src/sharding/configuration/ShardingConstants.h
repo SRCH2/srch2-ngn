@@ -104,6 +104,8 @@ enum PortType_t {
 	SearchPort = 0,
 	SuggestPort,
 	InfoPort,
+	InfoPort_Nodes,
+	InfoPort_Cluster_Stats,
 	DocsPort,
 	UpdatePort,
 	SavePort,
@@ -194,6 +196,19 @@ enum OperationStateType{
 	OperationStateType_ClusterExecuteOperation,
 	OperationStateType_ClusterJoinOperation
 
+};
+
+
+enum GetInfoRequestType{
+	GetInfoRequestType_
+};
+
+enum GetInfoAggregateCriterion{
+//	GetInfoAggregateCriterion_Node, // {"details" : [{""},{},{}]}
+//	GetInfoAggregateCriterion_Core,
+//	GetInfoAggregateCriterion_Core_Partition,
+	GetInfoAggregateCriterion_Core_Shard
+	// TODO : ...
 };
 
 
