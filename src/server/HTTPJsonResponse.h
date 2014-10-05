@@ -97,7 +97,7 @@ public:
 	static void addRecordError(Json::Value & responseRoot, const HTTPJsonMessageCode code, const string & message = "");
 
 	HTTPJsonRecordOperationResponse(evhttp_request *req):HTTPJsonResponse(req){
-		HTTPJsonResponse::getRoot()[c_items] = Json::Value(Json::arrayValue);
+		jsonResponse[c_items] = Json::Value(Json::arrayValue);
 	};
 	virtual ~HTTPJsonRecordOperationResponse(){};
 

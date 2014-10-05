@@ -826,17 +826,17 @@ void ConfigManager::parseSingleCore(const xml_node &parentNode, CoreInfo_t *core
         return;
     }
 
-    xml_node childNode = parentNode.child(coreIdTag);
-    if(childNode && childNode.text()){
-        string temp = string(childNode.text().get());
-        trimSpacesFromValue(temp, coreIdTag, parseWarnings);
-        coreInfo->setCoreId((uint)atol(temp.c_str()));
-    }else{
-        // TODO: to be deleted in V1
-        Logger::console("!!!!!CoreId is not provided in core %s, engine will use the default value!!!!!", coreInfo->name.c_str());
-        coreInfo->setCoreId(defaultCoreId);
-        defaultCoreId++;
-    }
+//    xml_node childNode = parentNode.child(coreIdTag);
+//    if(childNode && childNode.text()){
+//        string temp = string(childNode.text().get());
+//        trimSpacesFromValue(temp, coreIdTag, parseWarnings);
+//        coreInfo->setCoreId((uint)atol(temp.c_str()));
+//    }else{
+//        // TODO: to be deleted in V1
+//        Logger::console("!!!!!CoreId is not provided in core %s, engine will use the default value!!!!!", coreInfo->name.c_str());
+//        coreInfo->setCoreId(defaultCoreId);
+//        defaultCoreId++;
+//    }
 
     // Solr compatability - dataDir can be an attribute: <core dataDir="core0/data"
     if (parentNode.attribute(dataDirString) && string(parentNode.attribute(dataDirString).value()).compare("") != 0) {
@@ -872,6 +872,7 @@ void ConfigManager::parseMultipleCores(const xml_node &coresNode, bool &configSu
     	    newCore->setSchema(schema);
             if (configSuccess) {
                 clusterCores.push_back(newCore);
+                newCore->setCoreId(clusterCores.size() - 1);
             } else {
                 delete newCore;
                 return;

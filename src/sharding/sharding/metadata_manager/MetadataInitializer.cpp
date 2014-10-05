@@ -151,7 +151,8 @@ void MetadataInitializer::addNewJsonFileShards(Cluster_Writeview * newWriteview)
 			coreItr != jsonFilesToBeUsed.end(); ++coreItr){
 
 		for(unsigned jsonFileIdx = 0; jsonFileIdx < coreItr->second.size(); jsonFileIdx++){
-			NodeShardId shardId(coreItr->first, newWriteview->currentNodeId, nodeShardPartitionIdOffset[coreItr->first]+jsonFileIdx);
+			unsigned newShardPartitionId = coreItr->first * 100 + nodeShardPartitionIdOffset[coreItr->first]+jsonFileIdx;
+			NodeShardId shardId(coreItr->first, newWriteview->currentNodeId, newShardPartitionId);
 			string indexDirectory = configManager->getShardDir(newWriteview->clusterName,
 					newWriteview->cores[coreItr->first]->getName(), &shardId);
 			if(indexDirectory.compare("") == 0){

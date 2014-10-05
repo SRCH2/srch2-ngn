@@ -191,8 +191,7 @@ void CorePartitioner::getAllWriteTargets(unsigned hashKey, NodeId currentNodeId,
 
 	// now add cluster write targets
 	const ClusterPartition * writeClusterPartition = partitionContainer->getClusterPartitionForWrite(hashKey);
-	ASSERT(writeClusterPartition != NULL);
-	if(! writeClusterPartition->isPartitionLocked()){
+	if(writeClusterPartition != NULL && ! writeClusterPartition->isPartitionLocked()){
 
 		vector<NodeId> partitionCoveringNodes;
 		writeClusterPartition->getShardLocations(partitionCoveringNodes);
@@ -214,8 +213,7 @@ void CorePartitioner::getAllWriteTargets(unsigned hashKey, NodeId currentNodeId,
 
 void CorePartitioner::getAllShardIds(vector<ClusterShardId> & allShardIds) const{
 	for(unsigned pid = 0 ; pid < partitionContainer->getTotalNumberOfPartitions() ; ++pid){
-		allShardIds.push_back(ClusterShardId(partitionContainer->getCoreId(), pid, 0)); // primary shard
-		for(unsigned rid = 1; rid <= partitionContainer->getReplicationDegree(); ++rid ){
+		for(unsigned rid = 0; rid <= partitionContainer->getReplicationDegree(); ++rid ){
 			allShardIds.push_back(ClusterShardId(partitionContainer->getCoreId(), pid, rid));
 		}
 	}

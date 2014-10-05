@@ -190,6 +190,9 @@ void CorePartitionContianer::getNodePartitionsForRead(vector<const NodePartition
 }
 
 const ClusterPartition * CorePartitionContianer::getClusterPartitionForWrite(unsigned hashKey) const{
+	if(totalNumberOfPartitions == 0){
+		return NULL;
+	}
 	unsigned partitionId = hashKey % totalNumberOfPartitions;
 	return clusterPartitions.find(partitionId)->second;
 }

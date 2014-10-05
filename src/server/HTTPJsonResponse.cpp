@@ -230,10 +230,10 @@ HTTPJsonResponse::HTTPJsonResponse(evhttp_request* req) :
 HTTPJsonResponse::~HTTPJsonResponse() {
 	if (this->headers != NULL) {
 		bmhelper_evhttp_send_reply2(req, code, reason,
-				global_customized_writer.write(getRoot()), *headers);
+				global_customized_writer.write(HTTPJsonResponse::getRoot()), *headers);
 	} else {
 		bmhelper_evhttp_send_reply2(req, code, reason,
-				global_customized_writer.write(getRoot()));
+				global_customized_writer.write(HTTPJsonResponse::getRoot()));
 	}
 }
 
@@ -247,7 +247,7 @@ void HTTPJsonResponse::setResponseAttribute(const char * attributeName,
 }
 
 void HTTPJsonResponse::finalizeInvalid() {
-	this->getRoot()[JSON_ERROR] = HTTP_INVALID_REQUEST_MESSAGE;
+	HTTPJsonResponse::getRoot()[JSON_ERROR] = HTTP_INVALID_REQUEST_MESSAGE;
 	this->code = HTTP_BADREQUEST;
 	this->reason = "Invalid Request";
 	srch2::util::Logger::error (HTTP_INVALID_REQUEST_MESSAGE);
@@ -255,7 +255,7 @@ void HTTPJsonResponse::finalizeInvalid() {
 
 void HTTPJsonResponse::finalizeError(const string& msg, int code) {
 	if (msg.compare("") != 0) {
-		this->getRoot()[JSON_ERROR] = msg;
+		HTTPJsonResponse::getRoot()[JSON_ERROR] = msg;
 	}
 	this->code = code;
 	switch (this->code) {
@@ -280,7 +280,7 @@ void HTTPJsonResponse::finalizeError(const string& msg, int code) {
 
 void HTTPJsonResponse::finalizeOK(const string& details) {
 	if (details.compare("") != 0) {
-		this->getRoot()[JSON_DETAILS] = details;
+		HTTPJsonResponse::getRoot()[JSON_DETAILS] = details;
 	}
 	this->code = HTTP_OK;
 	this->reason = "OK";
@@ -297,10 +297,10 @@ void HTTPJsonResponse::addWarning(const Json::Value& warningNode) {
 	if (warningNode == nullJsonValue) {
 		return;
 	}
-	if (this->getRoot().get(JSON_WARNING, nullJsonValue) == nullJsonValue) {
-		this->getRoot()[JSON_WARNING] = Json::Value(Json::arrayValue);
+	if (HTTPJsonResponse::getRoot().get(JSON_WARNING, nullJsonValue) == nullJsonValue) {
+		HTTPJsonResponse::getRoot()[JSON_WARNING] = Json::Value(Json::arrayValue);
 	}
-	this->getRoot()[JSON_WARNING].append(warningNode);
+	HTTPJsonResponse::getRoot()[JSON_WARNING].append(warningNode);
 }
 
 void HTTPJsonResponse::addError(const string & error){
@@ -313,20 +313,20 @@ void HTTPJsonResponse::addError(const Json::Value & errorNode){
 	if (errorNode == nullJsonValue) {
 		return;
 	}
-	if (this->getRoot().get(JSON_ERROR, nullJsonValue) == nullJsonValue) {
-		this->getRoot()[JSON_ERROR] = Json::Value(Json::arrayValue);
+	if (HTTPJsonResponse::getRoot().get(JSON_ERROR, nullJsonValue) == nullJsonValue) {
+		HTTPJsonResponse::getRoot()[JSON_ERROR] = Json::Value(Json::arrayValue);
 	}
-	this->getRoot()[JSON_ERROR].append(errorNode);
+	HTTPJsonResponse::getRoot()[JSON_ERROR].append(errorNode);
 }
 
 void HTTPJsonResponse::addMessage(const string& msg) {
 	if (msg.compare("") == 0) {
 		return;
 	}
-	if (this->getRoot().get(JSON_MESSAGE, nullJsonValue) == nullJsonValue) {
-		this->getRoot()[JSON_MESSAGE] = Json::Value(Json::arrayValue);
+	if (HTTPJsonResponse::getRoot().get(JSON_MESSAGE, nullJsonValue) == nullJsonValue) {
+		HTTPJsonResponse::getRoot()[JSON_MESSAGE] = Json::Value(Json::arrayValue);
 	}
-	this->getRoot()[JSON_MESSAGE].append(Json::Value(msg));
+	HTTPJsonResponse::getRoot()[JSON_MESSAGE].append(Json::Value(msg));
 }
 
 void HTTPJsonResponse::setHeaders(evkeyvalq* headers) {
@@ -401,7 +401,7 @@ void HTTPJsonRecordOperationResponse::addRecordShardResponse(Json::Value recordS
 
 	Json::Value & recordRoot = findItemRoot(primaryKey, action);
 
-	Json::Value & root = getRoot();
+	Json::Value & root = HTTPJsonRecordOperationResponse::getRoot();
 
 	if(recordRoot == nullJsonValue){
 		if(newRecordDetails == nullJsonValue){
@@ -427,12 +427,12 @@ void HTTPJsonRecordOperationResponse::addRecordShardResponse(Json::Value recordS
 
 
 Json::Value & HTTPJsonRecordOperationResponse::getRoot(){
-	return HTTPJsonResponse::getRoot()[c_items];
+	return jsonResponse[c_items];
 }
 
 Json::Value & HTTPJsonRecordOperationResponse::findItemRoot(const string & primaryKey, const string & action){
 
-	Json::Value & root = getRoot();
+	Json::Value & root = HTTPJsonRecordOperationResponse::getRoot();
 
 	for(int i = 0 ; i < root.size(); ++i){
 		if(root[i][c_rid].compare(primaryKey) == 0 &&
@@ -477,25 +477,25 @@ Json::Value & HTTPJsonGetInfoResponse::getRoot(){
 }
 
 Json::Value & HTTPJsonGetInfoResponse::getCoresRoot(){
-	if(getRoot().get(c_cores, nullJsonValue) == nullJsonValue){
-		getRoot()[c_cores] = Json::Value(Json::arrayValue);
+	if(HTTPJsonGetInfoResponse::getRoot().get(c_cores, nullJsonValue) == nullJsonValue){
+		HTTPJsonGetInfoResponse::getRoot()[c_cores] = Json::Value(Json::arrayValue);
 	}
-	return getRoot()[c_cores];
+	return HTTPJsonGetInfoResponse::getRoot()[c_cores];
 
 }
 
 Json::Value & HTTPJsonGetInfoResponse::getNodesRoot(){
-	if(getRoot().get(c_nodes, nullJsonValue) == nullJsonValue){
-		getRoot()[c_nodes] = Json::Value(Json::arrayValue);
+	if(HTTPJsonGetInfoResponse::getRoot().get(c_nodes, nullJsonValue) == nullJsonValue){
+		HTTPJsonGetInfoResponse::getRoot()[c_nodes] = Json::Value(Json::arrayValue);
 	}
-	return getRoot()[c_nodes];
+	return HTTPJsonGetInfoResponse::getRoot()[c_nodes];
 }
 
 Json::Value & HTTPJsonGetInfoResponse::getNodeShardsRoot(){
-	if(getRoot().get(c_shards_of_node, nullJsonValue) == nullJsonValue){
-		getRoot()[c_shards_of_node] = Json::Value(Json::arrayValue);
+	if(HTTPJsonGetInfoResponse::getRoot().get(c_shards_of_node, nullJsonValue) == nullJsonValue){
+		HTTPJsonGetInfoResponse::getRoot()[c_shards_of_node] = Json::Value(Json::arrayValue);
 	}
-	return getRoot()[c_shards_of_node];
+	return HTTPJsonGetInfoResponse::getRoot()[c_shards_of_node];
 }
 
 void HTTPJsonGetInfoResponse::addCoreInfo(const CoreInfo_t * coreInfo,
@@ -547,10 +547,10 @@ void HTTPJsonGetInfoResponse::addShardResultGroup(Json::Value & root , bool debu
 void HTTPJsonGetInfoResponse::print(){
 	if (this->headers != NULL) {
 		bmhelper_evhttp_send_reply2(req, code, reason,
-				global_customized_writer.write(getRoot()), *headers);
+				global_customized_writer.write(HTTPJsonResponse::getRoot()), *headers);
 	} else {
 		bmhelper_evhttp_send_reply2(req, code, reason,
-				global_customized_writer.write(getRoot()));
+				global_customized_writer.write(HTTPJsonResponse::getRoot()));
 	}
 }
 
