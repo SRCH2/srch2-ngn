@@ -136,6 +136,9 @@ const char* const ConfigManager::exportPortString = "exportport";
 const char* const ConfigManager::resetLoggerPortString = "resetloggerport";
 const char* const ConfigManager::commitPortString = "commitport";
 const char* const ConfigManager::mergePortString = "mergeport";
+const char* const ConfigManager::clusterStatsPortString = "cluster-stats_port";
+const char* const ConfigManager::nodesStatsPortString = "nodes-stats_port";;
+const char* const ConfigManager::debugStatsPortString = "debug-stats_port";;
 const char* const ConfigManager::searchAllPortString = "searchallport";
 const char* const ConfigManager::shutdownPortString = "shutdownport";
 const char* const ConfigManager::nodeShutdownPortString = "nodeshutdownport";
@@ -204,44 +207,24 @@ const char* const ConfigManager::defaultExactPreTag = "<b>";
 const char* const ConfigManager::defaultExactPostTag = "</b>";
 const char* const ConfigManager::heartBeatTimerTag = "heartbeattimer";
 
-//TODO : not used, to be deleted
-////Function Definition for verifyConsistency; it checks if the port number of core is different
-////from the port number being used by the node for communication with other nodes
-//bool ConfigManager::verifyConsistency()
-//{
-//    Cluster* currentCluster = this->getCluster();
-//    vector<Node>* nodes = currentCluster->getNodes();
-//    Node currentNode;
-//
-//    //The for loop below gets the current node
-//    for(int i = 0; i < nodes->size(); i++){
-//        if(nodes->at(i).thisIsMe == true)
-//    	    currentNode = nodes->at(i);
-//    }
-//
-//    //The for loop below compares the current node's port number with the port number of cores
-//    for(CoreInfoMap_t::iterator it = this->coreInfoIterateBegin(); it != this->coreInfoIterateEnd(); it++){
-//        int num = (uint)atol(it->second->getHTTPServerListeningPort().c_str());
-//        if(num == currentNode.getPortNumber()){
-//    	    return false;
-//        }
-//    }
-//    return true;
-//}
 ConfigManager::PortNameMap_t ConfigManager::portNameMap[] = {
-    { SearchPort, ConfigManager::searchPortString },
-    { SuggestPort, ConfigManager::suggestPortString },
-    { InfoPort, ConfigManager::infoPortString },
-    { DocsPort, ConfigManager::docsPortString },
-    { UpdatePort, ConfigManager::updatePortString },
-    { SavePort, ConfigManager::savePortString },
-    { ExportPort, ConfigManager::exportPortString },
-    { ResetLoggerPort, ConfigManager::resetLoggerPortString },
-    { CommitPort, ConfigManager::commitPortString},
-    { MergePort, ConfigManager::mergePortString},
-    { SearchAllPort, ConfigManager::searchAllPortString},
-	{ ShutdownPort, ConfigManager::shutdownPortString},
-	{ NodeShutdownPort, ConfigManager::nodeShutdownPortString},
+    { SearchPort, ConfigManager::searchPortString , "/search"},
+    { SuggestPort, ConfigManager::suggestPortString , "/suggest"},
+    { InfoPort, ConfigManager::infoPortString , "/info"},
+    { DocsPort, ConfigManager::docsPortString , "/docs"},
+    { UpdatePort, ConfigManager::updatePortString , "/update"},
+    { SavePort, ConfigManager::savePortString , "/save"},
+    { ExportPort, ConfigManager::exportPortString , "/export"},
+    { ResetLoggerPort, ConfigManager::resetLoggerPortString , "/resetLogger"},
+    { CommitPort, ConfigManager::commitPortString, "/commit"},
+    { MergePort, ConfigManager::mergePortString , "/merge"},
+    { GlobalPortsStart , NULL , NULL},
+    { InfoPort_Nodes_NodeID, ConfigManager::nodesStatsPortString , "/_nodes/nodeId"},
+    { InfoPort_Cluster_Stats, ConfigManager::clusterStatsPortString , "/_cluster/stats"},
+    { DebugStatsPort, ConfigManager::debugStatsPortString , "/_debug/stats"},
+    { SearchAllPort, ConfigManager::searchAllPortString, "/search_all"},
+	{ ShutdownPort, ConfigManager::shutdownPortString, "/shutdown"},
+	{ NodeShutdownPort, ConfigManager::nodeShutdownPortString , "node_shutdown"},
     { EndOfPortType, NULL }
 };
 
@@ -1017,7 +1000,10 @@ void ConfigManager::parseCoreInformationTags(const xml_node &parentNode, CoreInf
         }
     }
 
-    for (unsigned int i = 0; portNameMap[i].portName != NULL; i++) {
+    for (unsigned int i = 0; portNameMap[i].portName != NULL || portNameMap[i].portType == GlobalPortsStart; i++) {
+    	if(portNameMap[i].portType == GlobalPortsStart){
+    		continue;
+    	}
         childNode = parentNode.child(portNameMap[i].portName);
         if (childNode && childNode.text()) { // checks if the config/port has any text in it or not
             int portValue = childNode.text().as_int();

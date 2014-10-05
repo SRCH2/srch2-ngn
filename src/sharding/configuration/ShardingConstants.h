@@ -104,8 +104,6 @@ enum PortType_t {
 	SearchPort = 0,
 	SuggestPort,
 	InfoPort,
-	InfoPort_Nodes,
-	InfoPort_Cluster_Stats,
 	DocsPort,
 	UpdatePort,
 	SavePort,
@@ -113,10 +111,14 @@ enum PortType_t {
 	ResetLoggerPort,
 	CommitPort,
 	MergePort,
+	GlobalPortsStart, // used in portNameMap
+	InfoPort_Nodes_NodeID,
+	InfoPort_Cluster_Stats,
+	DebugStatsPort,
     SearchAllPort,
 	ShutdownPort,
 	NodeShutdownPort,
-	EndOfPortType // stop value - not valid (also used to indicate all/default ports)
+	EndOfPortType, // stop value - not valid (also used to indicate all/default ports)
 };
 
 enum CLUSTERSTATE {

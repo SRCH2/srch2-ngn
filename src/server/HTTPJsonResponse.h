@@ -5,6 +5,7 @@
 #include "./HTTPJsonResponseConstants.h"
 #include "wrapper/WrapperConstants.h"
 #include "core/operation/IndexHealthInfo.h"
+#include "sharding/processor/serializables/SerializableGetInfoResults.h"
 #include "string"
 #include <event.h>
 #include <evhttp.h>
@@ -136,12 +137,20 @@ public:
 	virtual Json::Value & getRoot();
 
 	Json::Value & getCoresRoot();
+	Json::Value & getNodesRoot();
+	Json::Value & getNodeShardsRoot();
 
 	void addCoreInfo(const CoreInfo_t * coreInfo,
 			const srch2::instantsearch::IndexHealthInfo & info,
-			const vector<std::pair< string , srch2::instantsearch::IndexHealthInfo> > & shardsInfo,
-			const vector<srch2::instantsearch::IndexHealthInfo> & partitionsInfo,
-			const vector<std::pair< string , srch2::instantsearch::IndexHealthInfo> > & nodeShardsInfo);
+			const vector<std::pair<GetInfoCommandResults::ShardResults * , srch2::instantsearch::IndexHealthInfo > > & shardsInfo,
+			const vector<std::pair<GetInfoCommandResults::ShardResults * , srch2::instantsearch::IndexHealthInfo > > & partitionsInfo,
+			const vector<std::pair<GetInfoCommandResults::ShardResults * , srch2::instantsearch::IndexHealthInfo > > & nodeShardsInfo,
+			bool debugRequest = false);
+
+	void addShardResultGroup(Json::Value & coreInfoJsonRoot , bool debugRequest,
+			const vector<std::pair<GetInfoCommandResults::ShardResults * , srch2::instantsearch::IndexHealthInfo > > & nodeShardsInfo);
+
+	void print();
 
 private:
 

@@ -264,6 +264,9 @@ void ShardManager::_shutdown(){
 	//TODO
 }
 
+
+/// TODO : not needed now, later when we refactor DP, this function will
+///        evolve to the info() request.
 void ShardManager::nodesInfo(evhttp_request *req){
 	boost::shared_ptr<const ClusterResourceMetadata_Readview> readview;
 	this->getReadview(readview);

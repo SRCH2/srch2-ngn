@@ -171,7 +171,7 @@ private:
 	void saveBouncedNotification(ShardingNotification * notif);
 	void bounceNotification(ShardingNotification * notif);
 
-
+public:
 	void getNodeInfoJson(Json::Value & nodeInfo);
 
 };

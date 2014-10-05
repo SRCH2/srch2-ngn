@@ -484,11 +484,26 @@ Json::Value & HTTPJsonGetInfoResponse::getCoresRoot(){
 
 }
 
+Json::Value & HTTPJsonGetInfoResponse::getNodesRoot(){
+	if(getRoot().get(c_nodes, nullJsonValue) == nullJsonValue){
+		getRoot()[c_nodes] = Json::Value(Json::arrayValue);
+	}
+	return getRoot()[c_nodes];
+}
+
+Json::Value & HTTPJsonGetInfoResponse::getNodeShardsRoot(){
+	if(getRoot().get(c_shards_of_node, nullJsonValue) == nullJsonValue){
+		getRoot()[c_shards_of_node] = Json::Value(Json::arrayValue);
+	}
+	return getRoot()[c_shards_of_node];
+}
+
 void HTTPJsonGetInfoResponse::addCoreInfo(const CoreInfo_t * coreInfo,
 		const srch2::instantsearch::IndexHealthInfo & info,
-		const vector<std::pair< string , srch2::instantsearch::IndexHealthInfo> > & primaryShardsInfo,
-		const vector<srch2::instantsearch::IndexHealthInfo> & partitionsInfo,
-		const vector<std::pair< string , srch2::instantsearch::IndexHealthInfo> > & nodeShardsInfo){
+		const vector<std::pair<GetInfoCommandResults::ShardResults * , IndexHealthInfo > > & primaryShardsInfo,
+		const vector<std::pair<GetInfoCommandResults::ShardResults * , IndexHealthInfo > > & partitionsInfo,
+		const vector<std::pair<GetInfoCommandResults::ShardResults * , IndexHealthInfo > > & nodeShardsInfo,
+		bool debugRequest){
 
 
 	getCoresRoot().append(Json::Value(Json::objectValue));
@@ -497,54 +512,47 @@ void HTTPJsonGetInfoResponse::addCoreInfo(const CoreInfo_t * coreInfo,
 	coreInfoJsonRoot[c_core_primary_shards] = coreInfo->getNumberOfPrimaryShards();
 	coreInfoJsonRoot[c_core_replica_shards] = coreInfo->getNumberOfReplicas();
 	coreInfoJsonRoot[c_core_total_num_docs] = info.docCount;
+	if(debugRequest){
+		// Extra information about cores.
+	}
+
 
 	coreInfoJsonRoot[c_core_cluster_shards] = Json::Value(Json::arrayValue);
-	for(unsigned i = 0 ; i < primaryShardsInfo.size(); ++i){
-		Json::Value shardJson(Json::objectValue);
-		shardJson[c_shard_id] = primaryShardsInfo.at(i).first;
-		shardJson[c_shard_num_docs] = primaryShardsInfo.at(i).second.docCount;
-		coreInfoJsonRoot[c_core_cluster_shards].append(shardJson);
-	}
-
+	addShardResultGroup(coreInfoJsonRoot[c_core_cluster_shards], debugRequest, primaryShardsInfo);
 	coreInfoJsonRoot[c_core_node_shards] = Json::Value(Json::arrayValue);
-	for(unsigned i = 0 ; i < nodeShardsInfo.size(); ++i){
-		Json::Value shardJson(Json::objectValue);
-		shardJson[c_shard_id] = nodeShardsInfo.at(i).first;
-		shardJson[c_shard_num_docs] = nodeShardsInfo.at(i).second.docCount;
-		coreInfoJsonRoot[c_core_node_shards].append(shardJson);
+	addShardResultGroup(coreInfoJsonRoot[c_core_node_shards], debugRequest, nodeShardsInfo);
+	if(debugRequest){
+		// Extra information about cores.
+		coreInfoJsonRoot[c_partitions] = Json::Value(Json::arrayValue);
+		addShardResultGroup(coreInfoJsonRoot[c_partitions], debugRequest, partitionsInfo);
 	}
-
-//	getCoreAggregatedRoot(coreName)[c_doc_count] = info.docCount;
-//	getCoreAggregatedRoot(coreName)[c_write_count] = info.writeCount;
-//	getCoreAggregatedRoot(coreName)[c_read_count] = info.readCount;
-//	getCoreAggregatedRoot(coreName)[c_merged_needed] = info.isMergeRequired;
-//	getCoreAggregatedRoot(coreName)[c_commit_done] = info.isBulkLoadDone;
-//
-//
-//	for(unsigned pid = 0  ; pid < partitionsInfo.size(); ++pid){
-//		Json::Value & partitionsRoot = getCorePartitionsRoot(coreName);
-//		Json::Value & pRoot = partitionsRoot[pid];
-//		pRoot[c_doc_count] = partitionsInfo.at(pid).docCount;
-//		pRoot[c_write_count] = partitionsInfo.at(pid).writeCount;
-//		pRoot[c_read_count] = partitionsInfo.at(pid).readCount;
-//		pRoot[c_merged_needed] = partitionsInfo.at(pid).isMergeRequired;
-//		pRoot[c_commit_done] = partitionsInfo.at(pid).isBulkLoadDone;
-//	}
-//
-//
-//	for(unsigned pid = 0  ; pid < nodeShardsInfo.size(); ++pid){
-//		Json::Value & nodeShardsRoot = getCoreNodeShardsRoot(coreName);
-//		Json::Value & pRoot = nodeShardsRoot[nodeShardsInfo.at(pid).first];
-//		pRoot[c_doc_count] = nodeShardsInfo.at(pid).second.docCount;
-//		pRoot[c_write_count] = nodeShardsInfo.at(pid).second.writeCount;
-//		pRoot[c_read_count] = nodeShardsInfo.at(pid).second.readCount;
-//		pRoot[c_merged_needed] = nodeShardsInfo.at(pid).second.isMergeRequired;
-//		pRoot[c_commit_done] = nodeShardsInfo.at(pid).second.isBulkLoadDone;
-//	}
-
-
 }
 
+
+void HTTPJsonGetInfoResponse::addShardResultGroup(Json::Value & root , bool debugRequest,
+		const vector<std::pair<GetInfoCommandResults::ShardResults * , IndexHealthInfo > > & nodeShardsInfo){
+	for(unsigned i = 0 ; i < nodeShardsInfo.size(); ++i){
+		Json::Value shardJson(Json::objectValue);
+		shardJson[c_shard_id] = nodeShardsInfo.at(i).first->shardId->toString();
+		shardJson[c_shard_num_docs] = nodeShardsInfo.at(i).second.docCount;
+		if(debugRequest){
+			shardJson[c_shard_total_num_writes] = nodeShardsInfo.at(i).second.writeCount;
+			shardJson[c_shard_total_num_reads] = nodeShardsInfo.at(i).second.readCount;
+			shardJson[c_shard_last_merg_time] = nodeShardsInfo.at(i).second.lastMergeTimeString;
+		}
+		root.append(shardJson);
+	}
+}
+
+void HTTPJsonGetInfoResponse::print(){
+	if (this->headers != NULL) {
+		bmhelper_evhttp_send_reply2(req, code, reason,
+				global_customized_writer.write(getRoot()), *headers);
+	} else {
+		bmhelper_evhttp_send_reply2(req, code, reason,
+				global_customized_writer.write(getRoot()));
+	}
+}
 
 }
 }

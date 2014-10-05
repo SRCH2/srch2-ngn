@@ -2,6 +2,7 @@
 #include "Srch2ServerRuntime.h"
 #include "HTTPJsonResponse.h"
 #include "sharding/processor/DistributedProcessorExternal.h"
+#include "sharding/configuration/ConfigManager.h"
 #include <exception>
 
 namespace srch2
@@ -9,31 +10,31 @@ namespace srch2
 namespace httpwrapper
 {
 
-const Srch2ServerGateway::PortInfo Srch2ServerGateway::coreSpecificPorts[] = {
-	{ "/search", srch2http::SearchPort, Srch2ServerGateway::cb_coreSpecificOperations },
-	{ "/suggest", srch2http::SuggestPort, Srch2ServerGateway::cb_coreSpecificOperations },
-	{ "/info", srch2http::InfoPort, Srch2ServerGateway::cb_coreSpecificOperations },
-	{ "/docs", srch2http::DocsPort, Srch2ServerGateway::cb_coreSpecificOperations },
-	{ "/update", srch2http::UpdatePort, Srch2ServerGateway::cb_coreSpecificOperations },
-	{ "/save", srch2http::SavePort, Srch2ServerGateway::cb_coreSpecificOperations },
-	{ "/export", srch2http::ExportPort, Srch2ServerGateway::cb_coreSpecificOperations },
-	{ "/resetLogger", srch2http::ResetLoggerPort, Srch2ServerGateway::cb_coreSpecificOperations },
-	{ "/commit" , srch2http::CommitPort, Srch2ServerGateway::cb_coreSpecificOperations},
-	{ "/merge" , srch2http::MergePort, Srch2ServerGateway::cb_coreSpecificOperations},
-	{ NULL, srch2http::EndOfPortType, NULL }
-};
+Srch2ServerGateway::PortInfo * Srch2ServerGateway::coreSpecificPorts = NULL;
+Srch2ServerGateway::PortInfo * Srch2ServerGateway::globalPorts = NULL;
+
+void Srch2ServerGateway::init(ConfigManager * serverConf){
 
 
-const Srch2ServerGateway::PortInfo Srch2ServerGateway::globalPorts[] = {
-	{ "/_all/search", srch2http::SearchAllPort, Srch2ServerGateway::cb_globalOperations },
-	{ "/info", srch2http::InfoPort, Srch2ServerGateway::cb_globalOperations},
-	{ "/_nodes/nodeId", srch2http::InfoPort_Nodes, Srch2ServerGateway::cb_globalOperations},
-	{ "/_cluster/stats", srch2http::InfoPort_Cluster_Stats, Srch2ServerGateway::cb_globalOperations},
-	{ "/shutdown", srch2http::ShutdownPort, Srch2ServerGateway::cb_globalOperations },
-	{ "/node_shutdown", srch2http::NodeShutdownPort, Srch2ServerGateway::cb_globalOperations },
-	{ NULL , srch2http::EndOfPortType, NULL }
-};
+	coreSpecificPorts = new PortInfo[(unsigned)GlobalPortsStart + 1];
+	for (srch2http::PortType_t portType = (srch2http::PortType_t) 0;
+			portType < srch2http::GlobalPortsStart; portType = srch2http::incrementPortType(portType)) {
+		coreSpecificPorts[portType].callback = cb_coreSpecificOperations;
+		coreSpecificPorts[portType].path = serverConf->portNameMap[portType].portPath;
+		coreSpecificPorts[portType].portType = portType;
+	}
+	coreSpecificPorts[(unsigned)GlobalPortsStart] = { NULL , srch2http::EndOfPortType, NULL };
 
+	globalPorts = new PortInfo[((unsigned) EndOfPortType - (unsigned)GlobalPortsStart) + 1];
+	for (srch2http::PortType_t portType = (srch2http::PortType_t)((unsigned)GlobalPortsStart + 1);
+			portType < srch2http::EndOfPortType; portType = srch2http::incrementPortType(portType)) {
+		unsigned portIndex = (unsigned)portType - (unsigned)srch2::httpwrapper::GlobalPortsStart;
+		globalPorts[portIndex].callback = cb_globalOperations;
+		globalPorts[portIndex].path = serverConf->portNameMap[portType].portPath;
+		globalPorts[portIndex].portType = portType;
+	}
+	globalPorts[((unsigned) EndOfPortType - (unsigned)GlobalPortsStart) ] = { NULL , srch2http::EndOfPortType, NULL };
+}
 
 void Srch2ServerGateway::cb_coreSpecificOperations(struct evhttp_request * req, void * arg){
 	if (arg == NULL){
@@ -136,11 +137,10 @@ void Srch2ServerGateway::cb_globalOperations(struct evhttp_request * req, void *
     	case srch2http::InfoPort:
     		dpExternal->externalGetInfoCommand(clusterReadview, req, (unsigned) -1);
     		break;
-    	case srch2http::InfoPort_Nodes:
-    		srch2http::ShardManager::getShardManager()->nodesInfo(req);
-    		break;
+    	case srch2http::InfoPort_Nodes_NodeID:
     	case srch2http::InfoPort_Cluster_Stats:
-    		dpExternal->externalGetInfoCommand(clusterReadview, req, (unsigned) -1);
+    	case srch2http::DebugStatsPort:
+    		dpExternal->externalGetInfoCommand(clusterReadview, req, (unsigned) -1, portType);
     		break;
     	case srch2http::ShutdownPort:
     		srch2http::ShardManager::getShardManager()->shutdown(req);
@@ -248,10 +248,6 @@ bool Srch2ServerGateway::checkOperationPermission(Srch2ServerRuntime * runtime ,
 		return false;
 	}
 
-	if(portType == InfoPort_Nodes){
-		portType = InfoPort;
-	}
-
 	if (checkAuthorizationKey(runtime, req) == false) {
 		cb_wrongauthorizationkey(req, NULL);
 		return false;
@@ -284,7 +280,6 @@ bool Srch2ServerGateway::checkOperationPermission(Srch2ServerRuntime * runtime ,
 				ConfigManager::portNameMap[portType], coreName.c_str(),
 				arrivalPort, configuredPort);
 
-		cb_notfound(req, NULL);
 		return false;
 	}
 	return true;

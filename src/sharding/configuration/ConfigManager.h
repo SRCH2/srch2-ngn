@@ -162,7 +162,9 @@ public:
 	struct PortNameMap_t {
 	    enum PortType_t portType;
 	    const char *portName;
+	    const char * portPath;
 	};
+
 	static PortNameMap_t portNameMap[] ;
 
 	static const char* const OAuthParam;
@@ -566,6 +568,9 @@ private:
 	static const char* const resetLoggerPortString;
 	static const char* const commitPortString;
 	static const char* const mergePortString;
+	static const char* const clusterStatsPortString;
+	static const char* const nodesStatsPortString;
+	static const char* const debugStatsPortString;
 	static const char* const searchAllPortString;
 	static const char* const shutdownPortString;
 	static const char* const nodeShutdownPortString;

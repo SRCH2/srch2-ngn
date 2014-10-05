@@ -20,7 +20,7 @@ public:
     GetInfoResponseAggregator(ConfigManager * configurationManager,
     		boost::shared_ptr<HTTPJsonGetInfoResponse > brokerSideShardInfo,
     		boost::shared_ptr<const ClusterResourceMetadata_Readview> clusterReadview,
-    		unsigned coreId);
+    		unsigned coreId, bool debugRequest = false);
 
     /*
      * This function is always called by RoutingManager as the first call back function
@@ -54,10 +54,13 @@ public:
 
 
     void aggregateCoreInfo(IndexHealthInfo & aggregatedResult,
-    		vector<IndexHealthInfo> & allPartitionResults,
-    		vector<std::pair<string , IndexHealthInfo > > nodeShardResults);
+    		vector<std::pair<GetInfoCommandResults::ShardResults * , IndexHealthInfo > > & allPartitionResults,
+    		vector<std::pair<GetInfoCommandResults::ShardResults * , IndexHealthInfo > > & nodeShardResults);
 
 private:
+
+    bool debugRequest;
+
     ConfigManager * configurationManager;
 	boost::shared_ptr<HTTPJsonGetInfoResponse > brokerSideInformationJson ;
 	GetInfoAggregateCriterion criterion;

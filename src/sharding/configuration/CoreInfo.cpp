@@ -199,12 +199,15 @@ int CoreInfo_t::getAttributeToSort() const
 
 unsigned short CoreInfo_t::getPort(PortType_t portType) const
 {
+
+	if(portType == GlobalPortsStart){
+		return 0;
+	}
     if (static_cast<unsigned int> (portType) >= ports.size()) {
         return 0;
     }
 
-    unsigned short portNumber = ports[portType];
-    return portNumber;
+    return ports[portType];
 }
 
 void CoreInfo_t::setPort(PortType_t portType, unsigned short portNumber)
@@ -213,27 +216,7 @@ void CoreInfo_t::setPort(PortType_t portType, unsigned short portNumber)
         ports.resize(static_cast<unsigned int> (EndOfPortType), 0);
     }
 
-    switch (portType) {
-	case SearchPort:
-	case SuggestPort:
-	case InfoPort:
-	case DocsPort:
-	case UpdatePort:
-	case SavePort:
-	case ExportPort:
-	case ResetLoggerPort:
-	case CommitPort:
-	case MergePort:
-	case SearchAllPort:
-	case ShutdownPort:
-	case NodeShutdownPort:
-        ports[portType] = portNumber;
-        break;
-
-    default:
-        Logger::error("Unrecognized HTTP listening port type: %d", static_cast<int> (portType));
-        break;
-    }
+    ports[portType] = portNumber;
 }
 
 // JUST FOR Wrapper TEST

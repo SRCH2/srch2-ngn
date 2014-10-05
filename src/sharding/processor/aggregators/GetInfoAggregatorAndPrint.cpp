@@ -1,5 +1,6 @@
 #include "GetInfoAggregatorAndPrint.h"
 #include "sharding/processor/PendingMessages.h"
+#include "sharding/sharding/ShardManager.h"
 
 namespace srch2is = srch2::instantsearch;
 using namespace std;
@@ -12,8 +13,9 @@ namespace httpwrapper {
 
 GetInfoResponseAggregator::GetInfoResponseAggregator(ConfigManager * configurationManager,
 		boost::shared_ptr<HTTPJsonGetInfoResponse > brokerSideShardInfo,
-		boost::shared_ptr<const ClusterResourceMetadata_Readview> clusterReadview, unsigned coreId):
+		boost::shared_ptr<const ClusterResourceMetadata_Readview> clusterReadview, unsigned coreId, bool debugRequest):
 		DistributedProcessorAggregator<GetInfoCommand,GetInfoCommandResults>(clusterReadview, coreId){
+	this->debugRequest = debugRequest;
     this->configurationManager = configurationManager;
     this->brokerSideInformationJson = brokerSideShardInfo;
     this->criterion = GetInfoAggregateCriterion_Core_Shard;
@@ -47,11 +49,22 @@ void GetInfoResponseAggregator::callBack(PendingMessage<GetInfoCommand, GetInfoC
 
     const string nodeName = getClusterReadview()->getNode(message->getNodeId()).getName();
 
+	Json::Value nodeShardsJson(Json::objectValue);
+	if(debugRequest){
+		nodeShardsJson[c_node_name] = nodeName;
+		nodeShardsJson[c_nodes_shards] = Json::Value(Json::arrayValue);
+	}
     vector<GetInfoCommandResults::ShardResults *> shardResults = message->getResponseObject()->getShardResults();
     for(unsigned shardIdx = 0 ; shardIdx < shardResults.size(); ++shardIdx){
     	GetInfoCommandResults::ShardResults * shardResult = shardResults.at(shardIdx);
     	this->shardResults.push_back(std::make_pair(nodeName, shardResult));
+    	if(debugRequest){
+    		nodeShardsJson[c_nodes_shards].append(shardResult->shardId->toString());
+    	}
     }
+	if(debugRequest){
+		this->brokerSideInformationJson->getNodeShardsRoot().append(nodeShardsJson);
+	}
 }
 /*
  * The main function responsible of aggregating status (success or failure) results
@@ -91,10 +104,9 @@ void GetInfoResponseAggregator::finalize(ResponseAggregatorMetadata metadata){
 
 			for(unsigned cid = 0 ; cid < allCores.size(); ++cid){ // iterate on cores
 				const CoreInfo_t * core = allCores.at(cid);
-				vector<std::pair<string , IndexHealthInfo > > corePrimaryShardResults;
-				vector<IndexHealthInfo> corePartitionResults;
-				vector<ShardId *> corePartitionShardIds;
-				vector<std::pair<string , IndexHealthInfo > > nodeShardResults;
+				vector<std::pair<GetInfoCommandResults::ShardResults * , IndexHealthInfo > > corePrimaryShardResults;
+				vector<std::pair<GetInfoCommandResults::ShardResults * , IndexHealthInfo > > corePartitionResults;
+				vector<std::pair<GetInfoCommandResults::ShardResults * , IndexHealthInfo > > nodeShardResults;
 				// NOTE : we ignore version id for core aggregation
 				for(unsigned sid = 0 ; sid < shardResults.size(); ++sid){
 					GetInfoCommandResults::ShardResults * shardResult = shardResults.at(sid).second;
@@ -102,27 +114,26 @@ void GetInfoResponseAggregator::finalize(ResponseAggregatorMetadata metadata){
 						continue;
 					}
 					if(! shardResult->shardId->isClusterShard()){
-						nodeShardResults.push_back(std::make_pair( shardResult->shardId->toString() , shardResult->healthInfo) );
+						nodeShardResults.push_back(std::make_pair( shardResult , shardResult->healthInfo) );
 						continue;
 					}
 					bool replicaExists = false;
-					for(unsigned cpId = 0; cpId < corePartitionShardIds.size(); ++cpId){
-						if(corePartitionShardIds.at(cpId)->isReplica(shardResult->shardId)){
+					for(unsigned cpId = 0; cpId < corePrimaryShardResults.size(); ++cpId){
+						if(corePrimaryShardResults.at(cpId).first->shardId->isReplica(shardResult->shardId)){
 							replicaExists = true;
-							corePartitionResults.at(cpId).isMergeRequired =
-									corePartitionResults.at(cpId).isMergeRequired ||
+							corePartitionResults.at(cpId).second.isMergeRequired =
+									corePartitionResults.at(cpId).second.isMergeRequired ||
 									shardResult->healthInfo.isMergeRequired;
-							corePartitionResults.at(cpId).isBulkLoadDone =
-									corePartitionResults.at(cpId).isBulkLoadDone &&
+							corePartitionResults.at(cpId).second.isBulkLoadDone =
+									corePartitionResults.at(cpId).second.isBulkLoadDone &&
 									shardResult->healthInfo.isBulkLoadDone;
-							corePartitionResults.at(cpId).readCount += shardResult->healthInfo.readCount;
+							corePartitionResults.at(cpId).second.readCount += shardResult->healthInfo.readCount;
 							break;
 						}
 					}
 					if(! replicaExists){
-						corePartitionResults.push_back(shardResult->healthInfo);
-						corePartitionShardIds.push_back(shardResult->shardId);
-						corePrimaryShardResults.push_back(std::make_pair(shardResult->shardId->toString(), shardResult->healthInfo));
+						corePartitionResults.push_back(std::make_pair(shardResult, shardResult->healthInfo));
+						corePrimaryShardResults.push_back(std::make_pair(shardResult, shardResult->healthInfo));
 					}
 				}
 				IndexHealthInfo aggregatedCoreInfo;
@@ -130,7 +141,9 @@ void GetInfoResponseAggregator::finalize(ResponseAggregatorMetadata metadata){
 
 				totalNumDocsInCluster += aggregatedCoreInfo.docCount;
 
-				this->brokerSideInformationJson->addCoreInfo(core,aggregatedCoreInfo, corePrimaryShardResults, corePartitionResults, nodeShardResults);
+				this->brokerSideInformationJson->addCoreInfo(core,aggregatedCoreInfo,
+						corePrimaryShardResults, corePartitionResults,
+						nodeShardResults , debugRequest);
 			}
 
 			this->brokerSideInformationJson->setResponseAttribute(c_cluster_total_number_of_documnets, Json::Value(totalNumDocsInCluster));
@@ -139,6 +152,12 @@ void GetInfoResponseAggregator::finalize(ResponseAggregatorMetadata metadata){
 			getClusterReadview()->getAllNodes(allNodes);
 			nodesJson[c_nodes_count] = Json::Value((unsigned)allNodes.size());
 			this->brokerSideInformationJson->setResponseAttribute(c_nodes, nodesJson);
+			if(debugRequest){
+				// Extra information only exposed in debugRequest.
+				this->brokerSideInformationJson->getNodesRoot()[c_detail] = Json::Value(Json::arrayValue);
+				ShardManager::getShardManager()->getNodeInfoJson(this->
+						brokerSideInformationJson->getNodesRoot()[c_detail]);
+			}
 			break;
 
 		}
@@ -149,10 +168,10 @@ void GetInfoResponseAggregator::finalize(ResponseAggregatorMetadata metadata){
 }
 
 void GetInfoResponseAggregator::aggregateCoreInfo(IndexHealthInfo & aggregatedResult,
-		vector<IndexHealthInfo> & allPartitionResults,
-		vector<std::pair<string , IndexHealthInfo > > nodeShardResults){
+		vector<std::pair<GetInfoCommandResults::ShardResults * , IndexHealthInfo > > & allPartitionResults,
+		vector<std::pair<GetInfoCommandResults::ShardResults * , IndexHealthInfo > > & nodeShardResults){
 	for(unsigned i = 0 ; i < allPartitionResults.size(); ++i){
-		IndexHealthInfo & pInfo = allPartitionResults.at(i);
+		IndexHealthInfo & pInfo = allPartitionResults.at(i).second;
 
 		aggregatedResult.docCount += pInfo.docCount;
 		aggregatedResult.writeCount += pInfo.writeCount;

@@ -98,7 +98,7 @@ public:
 	 * 	  results. Results will be aggregator by another thread since it's not a blocking call.
 	 */
 	void externalGetInfoCommand(boost::shared_ptr<const ClusterResourceMetadata_Readview> clusterReadview,
-			evhttp_request *req, unsigned coreId);
+			evhttp_request *req, unsigned coreId, PortType_t portType = srch2http::InfoPort);
 
 	/*
 	 * 1. Receives a save request from a client (not from another shard)

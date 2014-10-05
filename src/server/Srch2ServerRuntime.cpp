@@ -31,6 +31,9 @@ int Srch2ServerRuntime::initializeHttpServerMetadata() {
 		const CoreInfo_t * coreInfo = coresItr->second;
 		for (srch2http::PortType_t portType = (srch2http::PortType_t) 0;
 				portType < srch2http::EndOfPortType; portType = srch2http::incrementPortType(portType)) {
+			if(srch2http::GlobalPortsStart == portType){
+				continue;
+			}
 			port = coreInfo->getPort(portType);
 			if(port > 0){
 				ports.insert(port);
@@ -169,6 +172,7 @@ int Srch2ServerRuntime::openExternalChannels(){
 	boost::shared_ptr<const srch2::httpwrapper::ClusterResourceMetadata_Readview> clusterReadview;
 	srch2::httpwrapper::ShardManager::getReadview(clusterReadview);
 
+	Srch2ServerGateway::init(serverConf);
 	// bound http_server and evbase and core objects together
 	for(int j=0; j < evServersForExternalRequests.size(); ++j) {
 		setCallBacksonHTTPServer(evServersForExternalRequests[j], clusterReadview);
@@ -349,6 +353,23 @@ int Srch2ServerRuntime::startListeningToRequest(evhttp *const http_server) {
 int Srch2ServerRuntime::setCallBacksonHTTPServer(evhttp *const http_server,
 		boost::shared_ptr<const srch2::httpwrapper::ClusterResourceMetadata_Readview> & clusterReadview) {
 
+	/// default callback : not found
+	evhttp_set_gencb(http_server, Srch2ServerGateway::cb_notfound, NULL);
+
+	for(int j = 0; externalCallbacks.globalPorts[j].path != NULL; j++){
+		Srch2ServerGateway::CallbackArgs * global_args = new Srch2ServerGateway::CallbackArgs();
+		global_args->dpExternal = dpExternal;
+		global_args->coreId = (unsigned)-1;
+		global_args->portType = externalCallbacks.globalPorts[j].portType;
+		global_args->runtime = this;
+		string path = string(externalCallbacks.globalPorts[j].path);
+		evhttp_set_cb(http_server, path.c_str(), externalCallbacks.globalPorts[j].callback, global_args);
+		// just for print
+		unsigned short port = clusterReadview->getCoreByName(serverConf->getDefaultCoreName())->
+				getPort(externalCallbacks.globalPorts[j].portType);
+		if (port < 1) port = globalDefaultPort;
+		Logger::debug("Routing port %d route %s for all cores.", port, externalCallbacks.globalPorts[j].path);
+	}
 	// setup default core callbacks for queries without a core name
 	// only if default core is available.
 	if(serverConf->getDefaultCoreSetFlag() == true) {
@@ -374,8 +395,6 @@ int Srch2ServerRuntime::setCallBacksonHTTPServer(evhttp *const http_server,
 		}
 	}
 
-	/// default callback : not found
-	evhttp_set_gencb(http_server, Srch2ServerGateway::cb_notfound, NULL);
 
 	// for every core, for every OTHER port that core uses, do accept
 	// NOTE : CoreInfoMap is a typedef of std::map<const string, CoreInfo_t *>
@@ -404,16 +423,6 @@ int Srch2ServerRuntime::setCallBacksonHTTPServer(evhttp *const http_server,
 			Logger::debug("Adding port %d route %s to core %s",
 					port, path.c_str(), coreName.c_str());
 		}
-	}
-
-	for(int j = 0; externalCallbacks.globalPorts[j].path != NULL; j++){
-		Srch2ServerGateway::CallbackArgs * global_args = new Srch2ServerGateway::CallbackArgs();
-		global_args->dpExternal = dpExternal;
-		global_args->coreId = (unsigned)-1;
-		global_args->portType = externalCallbacks.globalPorts[j].portType;
-		global_args->runtime = this;
-		string path = string(externalCallbacks.globalPorts[j].path);
-		evhttp_set_cb(http_server, path.c_str(), externalCallbacks.globalPorts[j].callback, global_args);
 	}
 
 	return 0;

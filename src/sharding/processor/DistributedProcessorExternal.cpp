@@ -611,8 +611,31 @@ void DPExternalRequestHandler::externalDeleteCommand(boost::shared_ptr<const Clu
   *       results. Results will be aggregator by another thread since it's not a blocking call.
   */
 void DPExternalRequestHandler::externalGetInfoCommand(boost::shared_ptr<const ClusterResourceMetadata_Readview> clusterReadview,
-		evhttp_request *req, unsigned coreId){
+		evhttp_request *req, unsigned coreId, PortType_t portType){
 
+
+	bool debugRequest = false;
+	switch (portType) {
+		case InfoPort_Nodes_NodeID:
+		{
+			HTTPJsonResponse httpResponse(req);
+			httpResponse.setResponseAttribute(c_cluster_name, Json::Value(clusterReadview->getClusterName()));
+			Json::Value nodes(Json::arrayValue);
+			ShardManager::getShardManager()->getNodeInfoJson(nodes);
+			httpResponse.setResponseAttribute(c_nodes, nodes);
+			httpResponse.finalizeOK();
+			return;
+		}
+		case DebugStatsPort:
+			debugRequest = true;
+			break;
+		case InfoPort:
+		case InfoPort_Cluster_Stats:
+			break;
+		default:
+			ASSERT(false);
+			break;
+	}
 
 	boost::shared_ptr<HTTPJsonGetInfoResponse > brokerSideInformationJson =
 			boost::shared_ptr<HTTPJsonGetInfoResponse > (new HTTPJsonGetInfoResponse(req));
@@ -640,7 +663,7 @@ void DPExternalRequestHandler::externalGetInfoCommand(boost::shared_ptr<const Cl
     }
 
     boost::shared_ptr<GetInfoResponseAggregator> resultsAggregator(
-    		new GetInfoResponseAggregator(configurationManager,brokerSideInformationJson, clusterReadview, coreId));
+    		new GetInfoResponseAggregator(configurationManager,brokerSideInformationJson, clusterReadview, coreId, debugRequest));
 	if(targets.size() == 0){
 		brokerSideInformationJson->addError(HTTPJsonResponse::getJsonSingleMessage(HTTP_JSON_All_Shards_Down_Error));
 		brokerSideInformationJson->finalizeOK();

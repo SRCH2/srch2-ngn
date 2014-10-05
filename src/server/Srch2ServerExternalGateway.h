@@ -44,9 +44,11 @@ public:
 		void (*callback)(struct evhttp_request *, void *);
 	};
 
-	static const PortInfo coreSpecificPorts[];
-	static const PortInfo globalPorts[];
+	static PortInfo * coreSpecificPorts;
+	static PortInfo * globalPorts;
 
+
+	static void init(ConfigManager * serverConf);
 
 	// callback functions
 	static void cb_coreSpecificOperations(struct evhttp_request *, void *);
