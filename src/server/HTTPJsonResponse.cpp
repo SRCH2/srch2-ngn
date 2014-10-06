@@ -503,6 +503,7 @@ void HTTPJsonGetInfoResponse::addCoreInfo(const CoreInfo_t * coreInfo,
 		const vector<std::pair<GetInfoCommandResults::ShardResults * , IndexHealthInfo > > & primaryShardsInfo,
 		const vector<std::pair<GetInfoCommandResults::ShardResults * , IndexHealthInfo > > & partitionsInfo,
 		const vector<std::pair<GetInfoCommandResults::ShardResults * , IndexHealthInfo > > & nodeShardsInfo,
+		const vector<std::pair<GetInfoCommandResults::ShardResults * , IndexHealthInfo > > & allShardResults,
 		bool debugRequest){
 
 
@@ -525,6 +526,9 @@ void HTTPJsonGetInfoResponse::addCoreInfo(const CoreInfo_t * coreInfo,
 		// Extra information about cores.
 		coreInfoJsonRoot[c_partitions] = Json::Value(Json::arrayValue);
 		addShardResultGroup(coreInfoJsonRoot[c_partitions], debugRequest, partitionsInfo);
+		coreInfoJsonRoot[c_all_cluster_shards] = Json::Value(Json::arrayValue);
+		addShardResultGroup(coreInfoJsonRoot[c_all_cluster_shards], debugRequest, allShardResults);
+
 	}
 }
 

@@ -107,6 +107,7 @@ void GetInfoResponseAggregator::finalize(ResponseAggregatorMetadata metadata){
 				vector<std::pair<GetInfoCommandResults::ShardResults * , IndexHealthInfo > > corePrimaryShardResults;
 				vector<std::pair<GetInfoCommandResults::ShardResults * , IndexHealthInfo > > corePartitionResults;
 				vector<std::pair<GetInfoCommandResults::ShardResults * , IndexHealthInfo > > nodeShardResults;
+				vector<std::pair<GetInfoCommandResults::ShardResults * , IndexHealthInfo > > allShardResults;
 				// NOTE : we ignore version id for core aggregation
 				for(unsigned sid = 0 ; sid < shardResults.size(); ++sid){
 					GetInfoCommandResults::ShardResults * shardResult = shardResults.at(sid).second;
@@ -117,6 +118,8 @@ void GetInfoResponseAggregator::finalize(ResponseAggregatorMetadata metadata){
 						nodeShardResults.push_back(std::make_pair( shardResult , shardResult->healthInfo) );
 						continue;
 					}
+					allShardResults.push_back(std::make_pair(shardResult , shardResult->healthInfo));
+
 					bool replicaExists = false;
 					for(unsigned cpId = 0; cpId < corePrimaryShardResults.size(); ++cpId){
 						if(corePrimaryShardResults.at(cpId).first->shardId->isReplica(shardResult->shardId)){
@@ -143,7 +146,7 @@ void GetInfoResponseAggregator::finalize(ResponseAggregatorMetadata metadata){
 
 				this->brokerSideInformationJson->addCoreInfo(core,aggregatedCoreInfo,
 						corePrimaryShardResults, corePartitionResults,
-						nodeShardResults , debugRequest);
+						nodeShardResults , allShardResults, debugRequest);
 			}
 
 			this->brokerSideInformationJson->setResponseAttribute(c_cluster_total_number_of_documnets, Json::Value(totalNumDocsInCluster));

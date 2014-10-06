@@ -145,6 +145,7 @@ public:
 			const vector<std::pair<GetInfoCommandResults::ShardResults * , srch2::instantsearch::IndexHealthInfo > > & shardsInfo,
 			const vector<std::pair<GetInfoCommandResults::ShardResults * , srch2::instantsearch::IndexHealthInfo > > & partitionsInfo,
 			const vector<std::pair<GetInfoCommandResults::ShardResults * , srch2::instantsearch::IndexHealthInfo > > & nodeShardsInfo,
+			const vector<std::pair<GetInfoCommandResults::ShardResults * , srch2::instantsearch::IndexHealthInfo > > & allShardResults,
 			bool debugRequest = false);
 
 	void addShardResultGroup(Json::Value & coreInfoJsonRoot , bool debugRequest,
