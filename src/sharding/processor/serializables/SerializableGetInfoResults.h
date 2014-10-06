@@ -63,7 +63,11 @@ public:
 	    unsigned getNumberOfBytes() const{
 	        unsigned numberOfBytes = 0;
 	        numberOfBytes += sizeof(isClusterShard);
-	        numberOfBytes += shardId->getNumberOfBytes();
+            if(this->isClusterShard){
+                numberOfBytes += ((ClusterShardId *)shardId)->getNumberOfBytes();
+            }else{
+                numberOfBytes += ((NodeShardId *)shardId)->getNumberOfBytes();
+            }
 	        numberOfBytes += healthInfo.getNumberOfBytes();
 	        numberOfBytes += sizeof(unsigned) + versionInfo.size();
 	        return numberOfBytes;
