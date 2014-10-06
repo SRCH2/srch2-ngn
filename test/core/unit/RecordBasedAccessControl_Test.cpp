@@ -185,7 +185,8 @@ void testSerialization(string directoryName){
 			updateHistogramEveryPMerges, updateHistogramEveryQWrites,
 			directoryName);
 
-	Indexer *indexer2 = Indexer::load(indexMetaData);
+	Indexer *indexer2 = Indexer::create(indexMetaData);
+	indexer2->bootStrapFromDisk();
 
 	QueryEvaluatorRuntimeParametersContainer runtimeParameters;
 	QueryEvaluator * queryEvaluator = new QueryEvaluator(indexer2, &runtimeParameters);
@@ -237,7 +238,7 @@ void init(string directoryName){
 			updateHistogramEveryPMerges, updateHistogramEveryQWrites,
 			directoryName);
 
-	indexer = Indexer::create(indexMetaData, analyzer, schema);
+	indexer = Indexer::create(indexMetaData, schema);
 }
 
 int main(int argc, char *argv[])

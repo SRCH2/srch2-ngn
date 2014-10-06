@@ -10,7 +10,8 @@ IF(ENABLE_PROFILER)
     set(GPERFTOOL_LIBS ${CMAKE_SOURCE_DIR}/thirdparty/gperftools/lib/libprofiler.a ${CMAKE_SOURCE_DIR}/thirdparty/libunwind/lib/libunwind.a)
 ENDIF()
 
-SET(UNIT_TEST_LIBS ${Srch2InstantSearch_LIBRARIES} ${Boost_LIBRARIES} ${CMAKE_REQUIRED_LIBRARIES} ${GPERFTOOL_LIBS})
+SET( jsoncpp_LIBRARY ${CMAKE_SOURCE_DIR}/thirdparty/json/jsoncpp-src/build/libjsoncpp.a)
+SET(UNIT_TEST_LIBS ${Srch2InstantSearch_LIBRARIES} ${Boost_LIBRARIES} ${CMAKE_REQUIRED_LIBRARIES} ${jsoncpp_LIBRARY} ${GPERFTOOL_LIBS})
 	
 ADD_EXECUTABLE(Logger_Test Logger_Test.cpp)
 TARGET_LINK_LIBRARIES(Logger_Test ${UNIT_TEST_LIBS})

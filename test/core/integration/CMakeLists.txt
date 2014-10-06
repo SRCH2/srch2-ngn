@@ -9,10 +9,11 @@ set(GPERFTOOL_LIBS "")
 IF(ENABLE_PROFILER)
     set(GPERFTOOL_LIBS ${CMAKE_SOURCE_DIR}/thirdparty/gperftools/lib/libprofiler.a ${CMAKE_SOURCE_DIR}/thirdparty/libunwind/lib/libunwind.a)
 ENDIF()
+SET( jsoncpp_LIBRARY ${CMAKE_SOURCE_DIR}/thirdparty/json/jsoncpp-src/build/libjsoncpp.a)
 
 SET(IndexIntegration_Source  ${CMAKE_SOURCE_DIR}/test/core/integration/IntegrationTestHelper.h)
 SET(MapSearchTest_Source  ${CMAKE_SOURCE_DIR}/test/core/integration/MapSearchTestHelper.h)
-SET(INTEGRATION_TEST_LIBS ${Srch2InstantSearch_LIBRARIES} ${Boost_LIBRARIES} ${CMAKE_REQUIRED_LIBRARIES} ${GPERFTOOL_LIBS})
+SET(INTEGRATION_TEST_LIBS ${Srch2InstantSearch_LIBRARIES} ${Boost_LIBRARIES} ${CMAKE_REQUIRED_LIBRARIES} ${jsoncpp_LIBRARY} ${GPERFTOOL_LIBS})
 
 ADD_EXECUTABLE(BuildIndexesForIntegrationTest BuildIndexesForIntegrationTest.cpp ${IndexIntegration_Source} )
 TARGET_LINK_LIBRARIES(BuildIndexesForIntegrationTest ${INTEGRATION_TEST_LIBS})
