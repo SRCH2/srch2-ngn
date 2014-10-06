@@ -388,26 +388,27 @@ def test(transactionFile):
         if(operation[0]=='numberOfRecordsInCore'):
              coreIndex = int(value[2])
              expectedValue = int(value[3])
-             command = "curl -XGET 'http://" + nodes[nodeId[0]].ipAddress + ":" + nodes[nodeId[0]].portNo + "/_cluster/stats'"
-             status, output = commands.getstatusoutput(command)
-             jsonOutput = json.load(output)
+             response = urllib2.urlopen('http://' + nodes[nodeId[0]].ipAddress + ":" + nodes[nodeId[0]].portNo + '/_cluster/stats')
+             jsonData = response.read()
+             jsonOutput = json.loads(jsonData)
              numberOfRecords = jsonOutput["cores"][coreIndex]["totalNumberOfDocuments"]
              assert (int(numberOfRecords) == expectedValue), "wrong number of records in the core"
         
         if(operation[0]=='nodeCount'):
              expectedValue = value[2].split()
-             command = "curl -XGET 'http://" + nodes[nodeId[0]].ipAddress + ":" + nodes[nodeId[0]].portNo + "/_cluster/stats'"
-             status, output = commands.getstatusoutput(command)
-             jsonOutput = json.load(output)
+             print 'http://' + nodes[nodeId[0]].ipAddress + ":" + str(nodes[nodeId[0]].portNo) + '/_cluster/stats' 
+             response = urllib2.urlopen('http://' + nodes[nodeId[0]].ipAddress + ":" + nodes[nodeId[0]].portNo + '/_cluster/stats')
+             jsonData = response.read()             
+             jsonOutput = json.loads(jsonData)
              numberOfNodes = str(jsonOutput["nodes"]["count"])
              assert (str(expectedValue[0]) == str(numberOfNodes)), "wrong number of nodes"       
          
         if(operation[0] == 'numberOfRecordsInShards'):
              coreIndex = int(value[2])
              expectedValue = int(value[3])
-             command = "curl -XGET 'http://" + nodes[nodeId[0]].ipAddress + ":" + nodes[nodeId[0]].portNo + "/_cluster/stats'"
-             status, output = commands.getstatusoutput(command)
-             jsonOutput = json.load(output)
+             response = urllib2.urlopen('http://' + nodes[nodeId[0]].ipAddress + ":" + nodes[nodeId[0]].portNo + '/_cluster/stats')
+             jsonData = response.read()
+             jsonOutput = json.loads(output)
              numOfPrimaryShards = 2
              totalDoc = 0
              # we assume 0 is the index of stackoverflow core

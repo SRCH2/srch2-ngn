@@ -32,7 +32,7 @@
         <ipaddress>128.195.185.134</ipaddress>
     </transport>
 
-    <WellKnownHosts>128.195.185.134, 128.195.185.107</WellKnownHosts>
+    <WellKnownHosts>128.195.185.134:54000, 128.195.185.107:55000</WellKnownHosts>
     <listeningHostname>128.195.185.134</listeningHostname>
     <listeningPort>7001</listeningPort>
 
@@ -47,8 +47,6 @@
     <cores defaultCoreName="stackoverflow">
         <core name="stackoverflow">
       
-            <coreId>1</coreId>
-
             <core-number_of_shards>4</core-number_of_shards>
             <core-number_of_replicas>2</core-number_of_replicas>
  
@@ -103,7 +101,7 @@
                            default="0"           required="false"/>
                     <field name="answer_count"   type="integer" indexed="false"   refining="true"
                            default="0"           required="false"/>
-                    <field name="votes_count"    type="integer" indexed="false"   refining="true"
+                    <field name="votes_count"    type="float" indexed="false"   refining="true"
                            default="0"           required="false"/>
                     <field name="id" type="text" required="false" searchable="true" refining="true" />  
                 </fields>
@@ -138,7 +136,6 @@
 	    </updatehandler>
         </core>
        <core name="statemedia">
-            <coreId>2</coreId>
             <core-number_of_shards>4</core-number_of_shards>
             <core-number_of_replicas>2</core-number_of_replicas>
             <dataDir>./nodeIntensive/statemedia-1</dataDir>
@@ -184,7 +181,7 @@
                 <fields>
                       <field name="attr" type="text" indexed="true" />
                       <field name="relevance" type="float"/>
-                      <field name="index" type="integer" searchable="true" />
+                      <field name="index" type="text" searchable="true" />
                 </fields>
               
                 <uniqueKey>index</uniqueKey>

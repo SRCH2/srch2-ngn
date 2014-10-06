@@ -20,6 +20,7 @@ R||start
 S||start
 T||start
 -||sleep||10
+#Use different number of records for statemedia
 A||bulkInsertFromBeginning||./nodeIntensive/stackoverflow-10k-1.json||200||50
 A||bulkInsertFromBeginning2||./nodeIntensive/st-10k-1.json||200||50
 B||bulkInsertFromBeginning||./nodeIntensive/stackoverflow-10k-2.json||200||50

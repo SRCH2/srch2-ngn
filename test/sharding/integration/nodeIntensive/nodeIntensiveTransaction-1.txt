@@ -19,7 +19,7 @@ Q||start
 R||start
 S||start
 T||start
-#-||nodeCount||10
+A||nodeCount||20
 A||kill
 B||kill
 C||kill
@@ -40,4 +40,3 @@ Q||kill
 R||kill
 S||kill
 T||kill
-
