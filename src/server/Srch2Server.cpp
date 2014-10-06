@@ -112,7 +112,7 @@ void Srch2Server::createAndBootStrapIndexer(const string & directoryPath)
 
 
 	                //check file size in KB
-	                unsigned fileSize = getFileSize(indexDataConfig->getDataFilePath().c_str());
+	                unsigned fileSize = getFileSize(getDataFilePath().c_str());
 	                //Logger::console("The size of the data file is %lu KB", fileSize/(1024));
 
 	                struct statvfs *buff;
