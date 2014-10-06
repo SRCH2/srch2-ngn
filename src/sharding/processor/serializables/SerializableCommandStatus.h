@@ -65,7 +65,7 @@ public:
 	        buffer = srch2::util::deserializeString(buffer, shardIdentifier);
 	        ShardResults * newShardResult = new ShardResults(shardIdentifier);
 	        buffer = srch2::util::deserializeFixedTypes(buffer, newShardResult->statusValue);
-	        string messagesStr = NULL;
+	        string messagesStr ;
 	        buffer = srch2::util::deserializeString(buffer, messagesStr);
 	        Json::Reader reader;
 	        reader.parse(messagesStr, newShardResult->messages);

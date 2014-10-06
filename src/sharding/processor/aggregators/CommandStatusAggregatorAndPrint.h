@@ -82,7 +82,7 @@ public:
 		boost::unique_lock< boost::shared_mutex > lock(_access);
 		Json::Value timeoutWarning(Json::objectValue);
 		timeoutWarning[c_message] = HTTPJsonResponse::getJsonSingleMessageStr(HTTP_JSON_Node_Timeout_Warning);
-		timeoutWarning['node_name'] = Json::Value(this->getClusterReadview()->getNode(message->getNodeId()).getName());
+		timeoutWarning[c_node_name2] = Json::Value(this->getClusterReadview()->getNode(message->getNodeId()).getName());
 
 
 		switch (requestType) {
@@ -111,6 +111,12 @@ public:
         if(message == NULL){
             return;
         }
+
+        if(message->getResponseObject() == NULL){
+        	processTimeout(message, ResponseAggregatorMetadata());
+        	return;
+        }
+
         boost::unique_lock< boost::shared_mutex > lock(_access);
 
         this->getClusterReadview()->getNode(message->getNodeId()).getName();
