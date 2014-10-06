@@ -31,7 +31,7 @@
         <ipaddress>128.195.185.107</ipaddress>
     </transport>
 
-    <WellKnownHosts>128.195.185.134, 128.195.185.107</WellKnownHosts>
+    <WellKnownHosts>128.195.185.134:54000, 128.195.185.107:55000</WellKnownHosts>
     <listeningHostname>128.195.185.107</listeningHostname>
     <listeningPort>7008</listeningPort>
 
