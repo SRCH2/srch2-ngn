@@ -26,6 +26,12 @@ public:
             const Json::Value &root,const CoreInfo_t *indexDataContainerConf, 
             std::stringstream &error,
             RecordSerializer& compactRecSerializer);
+    static bool _extractResourceAndRoleIds(vector<string> &roleIds, string &resourcePrimaryKeyID,
+    		const Json::Value &root, const CoreInfo_t *indexDataContainerConf, std::stringstream &error);
+    static bool _extractRoleIds(vector<string> &roleIds, const Json::Value &root,
+    		const CoreInfo_t *indexDataContainerConf, std::stringstream &error);
+    static bool getAclInfoFromJSON(vector<string> &roleIds, string &primaryKeyID,
+    		const string& inputLine, const CoreInfo_t *indexDataContainerConf, std::stringstream &error);
     static srch2is::Schema* createAndPopulateSchema(
             const CoreInfo_t *indexDataContainerConf);
 private:
@@ -63,6 +69,9 @@ public:
 public:
 	static unsigned createNewIndexFromFile(srch2is::Indexer *indexer, Schema * storedAttrSchema,
 			const CoreInfo_t *indexDataContainerConf, const string & dataFilePath);
+
+    static void addAccessControlsFromFile(srch2is::Indexer *indexer,
+                const CoreInfo_t *indexDataContainerConf, srch2is::Indexer *roleCoreIndexer);
 };
 
 }

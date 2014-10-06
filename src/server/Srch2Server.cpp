@@ -4,6 +4,7 @@
 #include "Srch2Server.h"
 #include "util/RecordSerializerUtil.h"
 #include <sys/stat.h>
+#include "operation/AttributeAccessControl.h"
 #include <sys/statvfs.h>
 
 namespace srch2
@@ -106,7 +107,7 @@ void Srch2Server::createAndBootStrapIndexer(const string & directoryPath)
 	    switch(getCoreInfo()->getDataSourceType())
 	    {
 	    case srch2http::DATA_SOURCE_JSON_FILE:
-	        {
+	    {
 	        	unsigned indexedCounter = 0;
 	        	if(getDataFilePath().compare("") != 0){
 
@@ -148,15 +149,25 @@ void Srch2Server::createAndBootStrapIndexer(const string & directoryPath)
 				 *  if number of indexed record is > 0.
 				 */
 				getIndexer()->commit();
-				if (indexedCounter > 0) {
-					getIndexer()->save();
-				Logger::console("Indexes saved.");
-				}
+	            // Load ACL list from disk
+	            indexer->getAttributeAcl().bulkLoadAclJSON(indexDataConfig->getAttibutesAclFile());
+	            /*
+	             *  if the roleCore is null it means that this core doesn't have any access control
+	             *  so we can save it now.
+	             *  otherwise first we should read the data for acl and we will save this core after that.
+	             */
+	            if (indexedCounter > 0 && this->roleCore == NULL) {
+	                indexer->save();
+	                Logger::console("Indexes saved.");
+	            }
 				break;
 		}
 	    default:
-	        {
+	    {
 		    indexer->commit();
+            // Load ACL list from disk
+            indexer->getAttributeAcl().bulkLoadAclJSON(indexDataConfig->getAttibutesAclFile());
+
 		    Logger::console("Creating new empty index");
 		}
 	    };

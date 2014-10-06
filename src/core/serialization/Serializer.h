@@ -103,7 +103,7 @@ public:
             ifs.close();
             Logger::error(
                     "Invalid index file. Either index files are built with a previous version"
-                            "of engine or copied from a different machine/architecture.");
+                            " of the engine or copied from a different machine/architecture.");
             throw ex;
         }
         ifs.close();

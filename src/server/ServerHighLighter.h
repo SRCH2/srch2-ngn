@@ -50,6 +50,7 @@ private:
     std::map<string, vector<unsigned> *> prefixToCompleteStore;
     //TODO: temp for V0 ..rempve in V1
     std::map<string, PhraseInfo> PhraseKeyWordsInfoMap;
+    string aclRoleValue;
 };
 
 } /* namespace httpwrapper */

@@ -20,8 +20,8 @@ INCLUDE_DIRECTORIES(.
     ${CMAKE_SOURCE_DIR}/src/wrapper
     ${CMAKE_SOURCE_DIR}/src/server
     ${CMAKE_SOURCE_DIR}/src/sharding
+    ${CMAKE_SOURCE_DIR}/thirdparty/json/jsoncpp-src/include
 )
-
 
 #CHENLI: generating a shared library if needed.
 IF (BUILD_STATIC OR BUILD_SERVER OR ANDROID_SERVER)

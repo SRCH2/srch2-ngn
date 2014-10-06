@@ -163,6 +163,12 @@ public:
     bool setRefiningAttributeValue(const unsigned attributeId,
                     const std::string &attributeValue);
 
+    void addRoleId(const std::string &roleId);
+
+    std::vector<std::string>* getRoleIds() const;
+
+    bool hasRoleIds() const;
+
     /**
      * Returns the value of the attribute corresponding to the attributeId.
      */

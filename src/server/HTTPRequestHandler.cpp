@@ -31,6 +31,7 @@
 #include "util/RecordSerializer.h"
 #include "util/RecordSerializerUtil.h"
 
+
 #define SEARCH_TYPE_OF_RANGE_QUERY_WITHOUT_KEYWORDS 2
 
 namespace srch2is = srch2::instantsearch;
@@ -179,7 +180,7 @@ boost::shared_ptr<Json::Value> HTTPRequestHandler::printResults(evhttp_request *
         const CoreInfo_t *indexDataConfig,
         const QueryResults *queryResults, const Query *query,
         const Indexer *indexer, const unsigned start, const unsigned end,
-        const unsigned retrievedResults, const string & message,
+        const unsigned retrievedResults, const string& aclRoleId, const string & message,
         const unsigned ts1, struct timespec &tstart, struct timespec &tend ,
         const vector<RecordSnippet>& recordSnippets, unsigned hlTime, bool onlyFacets) {
 
@@ -220,7 +221,7 @@ boost::shared_ptr<Json::Value> HTTPRequestHandler::printResults(evhttp_request *
                     //This case executes when all the attributes are to be returned. However we let the user
                     //override if field list parameter is given in query
                     genRecordJsonString(indexer, inMemoryData, queryResults->getRecordId(i),
-                            sbuffer, attributesToReturnFromQueryPtr);
+                            sbuffer, attributesToReturnFromQueryPtr, aclRoleId);
                     // The class CustomizableJsonWriter allows us to
                     // attach the data string to the JSON tree without parsing it.
                     (*root)["results"][counter][global_internal_record.first] = sbuffer;
@@ -236,7 +237,7 @@ boost::shared_ptr<Json::Value> HTTPRequestHandler::printResults(evhttp_request *
                 	}
 
                 	genRecordJsonString(indexer, inMemoryData, queryResults->getRecordId(i),
-                	                            sbuffer, attrToReturn);
+                	                            sbuffer, attrToReturn, aclRoleId);
 
                 	// The class CustomizableJsonWriter allows us to
                 	// attach the data string to the JSON tree without parsing it.
@@ -246,7 +247,7 @@ boost::shared_ptr<Json::Value> HTTPRequestHandler::printResults(evhttp_request *
                     string stringBuffer;
                     if(attributesToReturnFromQuery.size() > 0){
                         genRecordJsonString(indexer, inMemoryData, queryResults->getRecordId(i),
-                                stringBuffer, attributesToReturnFromQueryPtr);
+                                stringBuffer, attributesToReturnFromQueryPtr, aclRoleId);
                         (*root)["results"][counter][global_internal_record.first] = stringBuffer;
                     }
 
@@ -293,7 +294,7 @@ boost::shared_ptr<Json::Value> HTTPRequestHandler::printResults(evhttp_request *
                     //This case executes when all the attributes are to be returned. However we let the user
                     //override if field list parameter is given in query
                     genRecordJsonString(indexer, inMemoryData, queryResults->getRecordId(i),
-                                                sbuffer, attributesToReturnFromQueryPtr);
+                                                sbuffer, attributesToReturnFromQueryPtr, aclRoleId);
 
                     // The class CustomizableJsonWriter allows us to
                     // attach the data string to the JSON tree without parsing it.
@@ -311,7 +312,7 @@ boost::shared_ptr<Json::Value> HTTPRequestHandler::printResults(evhttp_request *
                     }
 
                     genRecordJsonString(indexer, inMemoryData, queryResults->getRecordId(i),
-                                                sbuffer, attrToReturn);
+                                                sbuffer, attrToReturn, aclRoleId);
 
                 	// The class CustomizableJsonWriter allows us to
                 	// attach the data string to the JSON tree without parsing it.
@@ -321,7 +322,7 @@ boost::shared_ptr<Json::Value> HTTPRequestHandler::printResults(evhttp_request *
                     string stringBuffer;
                     if(attributesToReturnFromQuery.size() > 0){
                         genRecordJsonString(indexer, inMemoryData, queryResults->getRecordId(i),
-                                stringBuffer, attributesToReturnFromQueryPtr);
+                                stringBuffer, attributesToReturnFromQueryPtr, aclRoleId);
                         (*root)["results"][counter][global_internal_record.first] = stringBuffer;
                     }
                 }
@@ -475,6 +476,7 @@ boost::shared_ptr<Json::Value> HTTPRequestHandler::printOneResultRetrievedById(e
         const CoreInfo_t *indexDataConfig,
         const QueryResults *queryResults,
         const srch2is::Indexer *indexer,
+        const string & aclRoleId,
         const string & message,
         const unsigned ts1,
         struct timespec &tstart, struct timespec &tend){
@@ -514,7 +516,7 @@ boost::shared_ptr<Json::Value> HTTPRequestHandler::printOneResultRetrievedById(e
             //This case executes when all the attributes are to be returned. However we let the user
             //override if field list parameter is given in query
             genRecordJsonString(indexer, inMemoryData, queryResults->getRecordId(i),
-                    sbuffer, attributesToReturnFromQueryPtr);
+                    sbuffer, attributesToReturnFromQueryPtr, aclRoleId);
 
             (*root)["results"][counter][global_internal_record.first] = sbuffer;
         } else if (indexDataConfig->getSearchResponseFormat() == RESPONSE_WITH_SELECTED_ATTR){
@@ -529,7 +531,7 @@ boost::shared_ptr<Json::Value> HTTPRequestHandler::printOneResultRetrievedById(e
                 attrToReturn = attributesToReturnFromQueryPtr;
             }
             genRecordJsonString(indexer, inMemoryData, queryResults->getRecordId(i),
-                                        sbuffer, attrToReturn);
+                                        sbuffer, attrToReturn, aclRoleId);
 
             // The class CustomizableJsonWriter allows us to
             // attach the data string to the JSON tree without parsing it.
@@ -539,7 +541,7 @@ boost::shared_ptr<Json::Value> HTTPRequestHandler::printOneResultRetrievedById(e
             string stringBuffer;
             if(attributesToReturnFromQuery.size() > 0){
                 genRecordJsonString(indexer, inMemoryData, queryResults->getRecordId(i),
-                        stringBuffer, attributesToReturnFromQueryPtr);
+                        stringBuffer, attributesToReturnFromQueryPtr, aclRoleId);
                 (*root)["results"][counter][global_internal_record.first] = stringBuffer;
             }
         }
@@ -564,15 +566,51 @@ boost::shared_ptr<Json::Value> HTTPRequestHandler::printOneResultRetrievedById(e
 }
 
 void HTTPRequestHandler::genRecordJsonString(const srch2is::Indexer *indexer, StoredRecordBuffer buffer,
-		const string& extrnalRecordId, string& sbuffer){
+		const string& extrnalRecordId, string& sbuffer, const string& aclRoleId){
 	genRecordJsonString(indexer, buffer, extrnalRecordId,
-	                    		 sbuffer, NULL);
+	                    		 sbuffer, NULL, aclRoleId);
 }
 void HTTPRequestHandler::genRecordJsonString(const srch2is::Indexer *indexer, StoredRecordBuffer buffer,
-		const string& externalRecordId, string& sbuffer, const vector<string>* attrToReturn){
+		const string& externalRecordId, string& sbuffer, const vector<string>* attrToReturn,
+		const string& aclRoleId){
+
+	vector<string>  accessibleAttrsList;
+	// perform access control check on fields to be returned to a user.
+	if (attrToReturn == NULL) {
+		// attributes to return are not specified. Hence, Go over the fields in the schema and check
+		// whether they are accessible for a given role id.
+
+		const Schema *schema = indexer->getSchema();
+		std::map<std::string, unsigned>::const_iterator iter =
+				schema->getSearchableAttribute().begin();
+		// 1. Searchable fields in schema
+		for ( ; iter != schema->getSearchableAttribute().end(); iter++) {
+			if (indexer->getAttributeAcl().isSearchableFieldAccessibleForRole(aclRoleId, iter->first)) {
+				accessibleAttrsList.push_back(iter->first);
+			}
+		}
+		// 2. Refining fields in schema
+		iter = schema->getRefiningAttributes()->begin();
+		for ( ; iter != schema->getRefiningAttributes()->end(); iter++) {
+			if (indexer->getAttributeAcl().isRefiningFieldAccessibleForRole(aclRoleId, iter->first)) {
+				accessibleAttrsList.push_back(iter->first);
+			}
+		}
+
+	} else {
+		// if attributes to returned are specified then verify whether these attributes are accessible
+		for (unsigned i = 0; i < attrToReturn->size(); ++i) {
+			const string & fieldName = attrToReturn->operator[](i);
+			if (indexer->getAttributeAcl().isRefiningFieldAccessibleForRole(aclRoleId, fieldName) ||
+			    indexer->getAttributeAcl().isSearchableFieldAccessibleForRole(aclRoleId, fieldName)) {
+				accessibleAttrsList.push_back(fieldName);
+			}
+		}
+	}
 	Schema * storedSchema = Schema::create();
 	RecordSerializerUtil::populateStoredSchema(storedSchema, indexer->getSchema());
-	RecordSerializerUtil::convertCompactToJSONString(storedSchema, buffer, externalRecordId, sbuffer, attrToReturn);
+	RecordSerializerUtil::convertCompactToJSONString(storedSchema, buffer, externalRecordId, sbuffer,
+			&accessibleAttrsList);
 	delete storedSchema;
 }
 
@@ -691,16 +729,58 @@ void HTTPRequestHandler::writeCommand(evhttp_request *req,
                     const Json::Value doc = root.get(index,
                                                 defaultValueToReturn);
 
-                    Json::Value each_response = 
+                    vector<string> roleIds;
+                    // check if there is roleId in the query or not
+					std::stringstream log_str;
+                    if( JSONRecordParser::_extractRoleIds(roleIds, doc, server->indexDataConfig, log_str) ){
+                    	if(server->roleCore != NULL){
+                    		// add role ids to the record object
+                    		 addRoleIdsToRecord(roleIds, server, req, record, log_str);
+                    	}else{
+                    		Logger::error(
+                    				"error: %s does not have any role core.",server->getCoreInfo()->getName().c_str());
+                    		response[JSON_MESSAGE] = "error:" + server->getCoreInfo()->getName() + " does not have any role core.";
+                    		response[JSON_LOG] = log_str.str();
+                    		bmhelper_evhttp_send_reply(req, HTTP_BADREQUEST, "INVALID REQUEST",
+                    				global_customized_writer.write(response));
+                    		return;
+                    	}
+                    }
+                    Json::Value each_response =
                         IndexWriteUtil::_insertCommand(server->getIndexer(),
                             server->getCoreInfo(), doc, record );
+
+
+                    each_response["acl_log"] = log_str.str();
                     insert_responses[index] = each_response;
+
                     record->clear();
                 }
             } else {  // only one json object needs to be inserted
                 const Json::Value doc = root;
-                insert_responses.append(IndexWriteUtil::_insertCommand(server->getIndexer(),
-                        server->getCoreInfo(), doc, record));
+                vector<string> roleIds;
+				std::stringstream log_str;
+                // check if there is roleId in the query or not
+                if( JSONRecordParser::_extractRoleIds(roleIds, doc, server->indexDataConfig, log_str) ){
+                	if(server->roleCore != NULL){
+                		// add role ids to the record object
+                		addRoleIdsToRecord(roleIds, server, req, record, log_str);
+
+                	}else{
+                		Logger::error(
+                				"error: %s does not have any role core.",server->getCoreInfo()->getName().c_str());
+                		response[JSON_MESSAGE] = "error:" + server->getCoreInfo()->getName() + " does not have any role core.";
+                		response[JSON_LOG] = log_str.str();
+                		bmhelper_evhttp_send_reply(req, HTTP_BADREQUEST, "INVALID REQUEST",
+                				global_customized_writer.write(response));
+                		return;
+                	}
+                }
+
+                Json::Value each_response = IndexWriteUtil::_insertCommand(server->getIndexer(),
+                		server->getCoreInfo(), doc, record);
+                each_response["acl_log"] = log_str.str();
+                insert_responses.append(each_response);
                 record->clear();
             }
             delete record;
@@ -715,8 +795,13 @@ void HTTPRequestHandler::writeCommand(evhttp_request *req,
         evkeyvalq headers;
         evhttp_parse_query(req->uri, &headers);
 
+        // if this core is a role core we should delete this record's id from the permissionMap of the resource cores
+        for(unsigned i = 0 ; i < server->resourceCores.size() ; ++i ){
+        	IndexWriteUtil::_deleteRoleRecord(server->resourceCores[i]->indexer, server->indexDataConfig->getPrimaryKey(), headers);
+        }
+
         Json::Value deleteResponse = IndexWriteUtil::_deleteCommand_QueryURI(server->getIndexer(),
-                server->getCoreInfo(), headers);
+        		server->getCoreInfo(), headers);
         response[JSON_MESSAGE] = "The delete was processed successfully";
         response[JSON_LOG] = wrap_with_json_array(deleteResponse);
 
@@ -737,6 +822,186 @@ void HTTPRequestHandler::writeCommand(evhttp_request *req,
         bmhelper_evhttp_send_reply(req, HTTP_BADREQUEST, "BAD REQUEST", global_customized_writer.write(response));
     }
 
+}
+
+// This function first checks if all the role ids exist, then adds them to the record object
+void HTTPRequestHandler::addRoleIdsToRecord(vector<string> &roleIds, Srch2Server* server, evhttp_request *req, Record* record, std::stringstream &log_str){
+	vector<string> removedIds;
+	for(vector<string>::iterator i = roleIds.begin() ; i != roleIds.end() ; ){
+		INDEXLOOKUP_RETVAL returnValue = server->roleCore->indexer->lookupRecord(*i);
+		if(returnValue == LU_ABSENT_OR_TO_BE_DELETED){
+			// there is no record in role core with this id
+			// we should remove this id from roleIds
+			removedIds.push_back(*i);
+			i = roleIds.erase(i);
+		}else{
+			// there is a record in role core with this id
+			// we should add this id to the record's roleids
+			record->addRoleId(*i);
+			++i;
+		}
+
+	}
+	string removedRoleIds = "";
+	for(unsigned i = 0 ; i < removedIds.size() ; ++i){
+		removedRoleIds = removedRoleIds + ", " + removedIds[i];
+	}
+
+	if(removedIds.size() != 0){
+		log_str << "Warning: No record in " + server->roleCore->getCoreInfo()->getName() + " with these primary keys: [" << removedRoleIds << "]";
+	}
+}
+
+// this function gets the acl command and does the appropriate operations
+// the acl command could be add, append or delete
+void HTTPRequestHandler::aclEditRolesOfRecord(evhttp_request *req, Srch2Server *server, srch2::instantsearch::RecordAclCommandType commandType){
+
+	Json::Value response(Json::objectValue);
+	bool isSuccess = true;
+	Json::Value edit_responses(Json::arrayValue);
+
+	if(server->roleCore != NULL){ // this core has a role core
+
+		size_t length = EVBUFFER_LENGTH(req->input_buffer);
+
+		if (length == 0) {
+			isSuccess = false;
+			response[JSON_MESSAGE] = "http body is empty";
+			Logger::warn("http body is empty");
+		}
+
+		const char *post_data = (char *) EVBUFFER_DATA(req->input_buffer);
+
+		// Parse example data
+		Json::Value root;
+		Json::Reader reader;
+		bool parseSuccess = reader.parse(post_data, root, false);
+
+		if (parseSuccess == false) {
+			isSuccess = false;
+			response[JSON_MESSAGE] = "JSON object parsing error";
+			Logger::warn("JSON object parse error");
+		}else{
+			if(root.type() == Json::arrayValue) { // The input is an array of JSON objects.
+				vector<string> roleIds;
+				vector<string> removedIds;
+				string removedRoleIds = "";
+				for ( int index = 0; index < root.size(); ++index ) {
+					Json::Value defaultValueToReturn = Json::Value("");
+					const Json::Value doc = root.get(index,
+							defaultValueToReturn);
+					string primaryKeyID;
+					std::stringstream log_str;
+					// extract all the role ids from the query
+					if( JSONRecordParser::_extractResourceAndRoleIds(roleIds, primaryKeyID, doc, server->indexDataConfig, log_str) ){
+						// check that the role core should have all the records with these role ids
+						for(vector<string>::iterator i = roleIds.begin() ; i != roleIds.end() ; ){
+							INDEXLOOKUP_RETVAL returnValue = server->roleCore->indexer->lookupRecord(*i);
+							if(returnValue == LU_ABSENT_OR_TO_BE_DELETED){
+								// there is no record in role core with this id
+								// we should remove this id from roleIds
+								removedIds.push_back(*i);
+								i = roleIds.erase(i);
+							}else{
+								++i;
+							}
+						}
+
+						for(unsigned i = 0 ; i < removedIds.size() ; ++i){
+							removedRoleIds = removedRoleIds + ", " + removedIds[i];
+						}
+
+						if(removedIds.size() != 0){
+							log_str << "Warning: No record in " + server->roleCore->getCoreInfo()->getName() + " with these primary keys: [" << removedRoleIds << "]";
+						}
+
+						if(roleIds.size() != 0){
+							log_str << global_customized_writer.write(IndexWriteUtil::_aclEditRoles(server->indexer, primaryKeyID, roleIds, commandType));
+						}
+					}
+
+					roleIds.clear();
+					removedIds.clear();
+					removedRoleIds = "";
+					edit_responses[index] = log_str.str();
+				}
+			}else{ // The input is only one JSON object.
+				const Json::Value doc = root;
+				vector<string> roleIds;
+				vector<string> removedIds;
+				string removedRoleIds = "";
+				string primaryKeyID;
+				std::stringstream log_str;
+				// extract all the role ids from the query
+				if( JSONRecordParser::_extractResourceAndRoleIds(roleIds, primaryKeyID, doc, server->indexDataConfig, log_str) ){
+					// check that the role core should have all the records with these role ids
+					for(vector<string>::iterator i = roleIds.begin() ; i != roleIds.end() ; ){
+						INDEXLOOKUP_RETVAL returnValue = server->roleCore->indexer->lookupRecord(*i);
+						if(returnValue == LU_ABSENT_OR_TO_BE_DELETED){
+							// there is no record in role core with this id
+							// we should remove this id from roleIds
+							removedIds.push_back(*i);
+							i = roleIds.erase(i);
+						}else{
+							++i;
+						}
+					}
+
+					for(unsigned i = 0 ; i < removedIds.size() ; ++i){
+						removedRoleIds = removedRoleIds + ", " + removedIds[i];
+					}
+
+					if(removedIds.size() != 0){
+						log_str << "Warning: No record in " + server->roleCore->getCoreInfo()->getName() + " with these primary keys: [" << removedRoleIds << "]";
+					}
+
+					if(roleIds.size() != 0){
+						log_str << global_customized_writer.write(IndexWriteUtil::_aclEditRoles(server->indexer, primaryKeyID, roleIds, commandType));
+					}
+				}
+				edit_responses.append(log_str.str());
+			}
+		}
+
+	}else{
+		Logger::error(
+				"error: %s does not have any role core.",server->getCoreInfo()->getName().c_str());
+		response[JSON_MESSAGE] = "error:" + server->getCoreInfo()->getName() + " does not have any role core.";
+		bmhelper_evhttp_send_reply(req, HTTP_BADREQUEST, "INVALID REQUEST",
+				global_customized_writer.write(response));
+		return;
+	}
+
+	response[JSON_LOG] = edit_responses;
+    if (isSuccess){
+        bmhelper_evhttp_send_reply(req, HTTP_OK, "OK", global_customized_writer.write(response));
+    } else {
+        bmhelper_evhttp_send_reply(req, HTTP_BADREQUEST, "BAD REQUEST", global_customized_writer.write(response));
+    }
+}
+
+// overwrites role ids in a record's access list
+// example : Suppose we have a resource core called "product" with a primary key attribute called "pid then the query is like:
+// curl "http://localhost:8081/product/aclRecordRoleAdd" -i -X PUT -d '{“pid”: “1234", “roleId”: ["33", "45"]}'
+//
+void HTTPRequestHandler::aclAddRolesToRecord(evhttp_request *req, Srch2Server *server){
+	aclEditRolesOfRecord(req, server, srch2::instantsearch::AddRoles);
+}
+
+// add role ids to a record
+// example : Suppose we have a resource core called "product" with a primary key attribute called "pid then the query is like:
+// curl "http://localhost:8081/product/aclRecordRoleAppend" -i -X PUT -d '{“pid”: “1234", “roleId”: ["33", "45"]}'
+//
+void HTTPRequestHandler::aclAppendRolesToRecord(evhttp_request *req, Srch2Server *server){
+	aclEditRolesOfRecord(req, server, srch2::instantsearch::AppendRoles);
+}
+
+// delete role ids from a records access list
+// example : Suppose we have a resource core called "product" with a primary key attribute called "pid then the query is like:
+// curl "http://localhost:8081/product/aclRecordRoleDelete" -i -X PUT -d '{“pid”: “1234", “roleId”: ["33", "45"]}'
+//
+void HTTPRequestHandler::aclDeleteRolesFromRecord(evhttp_request *req, Srch2Server *server){
+	aclEditRolesOfRecord(req, server, srch2::instantsearch::DeleteRoles);
 }
 
 void HTTPRequestHandler::updateCommand(evhttp_request *req,
@@ -1014,6 +1279,141 @@ void decodeAmpersand(const char *uri, unsigned len, string& decodeUri) {
 	}
 }
 
+/*
+ *   Wrapper layer API to handle ACL operations such as insert, delete, and append.
+ *   example url :
+ *   http://<ip>:<port>/aclAttributeRoleAppend -X PUT -d { "attributes": "f1,f2", "roleId": "r1"}
+ *   http://<ip>:<port>/aclAttributeRoleAdd -X PUT -d { "attributes": "f1,f2", "roleId": "r2"}
+ *   http://<ip>:<port>/aclAttributeRoleDelete -X PUT -d { "attributes": "f2", "roleId": "r2"}
+ */
+void HTTPRequestHandler::attributeAclModify(evhttp_request *req, Srch2Server *server) {
+	Json::Value response(Json::objectValue);
+	switch (req->type) {
+	    case EVHTTP_REQ_PUT: {
+	        size_t length = EVBUFFER_LENGTH(req->input_buffer);
+
+	        if (length == 0) {
+	            bmhelper_evhttp_send_reply(req, HTTP_BADREQUEST, "BAD REQUEST",
+	                    "{\"message\":\"http body is empty\"}");
+	            Logger::warn("http body is empty");
+	            break;
+	        }
+
+	        // Identify the type of access control request.
+	        // req->uri should be "/aclAttributeRoleDelete" or "/aclAttributeRoleAppend"
+	        // or "/aclAttributeRoleAdd" for default core
+	        // Otherwise it should be /corename/aclAttributeRoleDelete etc.
+	        string uriString = req->uri;
+	        string apiName;
+	        AclActionType action;
+	        string corename = server->getCoreInfo()->getName();
+	        if (corename == ConfigManager::defaultCore) {
+	        	corename.clear();
+	        } else {
+	        	corename = "/" + corename;
+	        }
+	        if (uriString == corename + "/aclAttributeRoleAdd") {
+	        	action = ACL_ADD;
+	        	apiName = "aclAttributeRoleAdd";
+	        }
+	        else if (uriString == corename + "/aclAttributeRoleDelete") {
+	        	apiName = "aclAttributeRoleDelete";
+	        	action = ACL_DELETE;
+	        }
+	        else if (uriString == corename + "/aclAttributeRoleAppend") {
+	        	apiName = "aclAttributeRoleAppend";
+	        	action = ACL_APPEND;
+	        }
+	        else {
+	        	stringstream log_str;
+	        	log_str << "Error: Invalid access control HTTP request ='" << uriString << "'";
+	        	response[JSON_LOG] = log_str.str();
+	        	response[JSON_MESSAGE] = "The request was NOT processed successfully";
+	        	bmhelper_evhttp_send_reply(req, HTTP_BADREQUEST, "INVALID DATA",
+	        			global_customized_writer.write(response));
+	        	Logger::info("%s", global_customized_writer.write(response).c_str());
+	        	return;
+	        }
+	        // get input JSON
+	        const char *post_data = (char *) EVBUFFER_DATA(req->input_buffer);
+
+	        std::stringstream log_str;
+	        Json::Value root;
+	        Json::Reader reader;
+	        bool parseSuccess = reader.parse(post_data, root, false);
+	        bool error = false;
+        	Json::Value aclAttributeResponses(Json::arrayValue);
+	        if (parseSuccess == false) {
+	            log_str << "API : "<< apiName << ", Error: JSON object parse error";
+	            response[JSON_LOG] = log_str.str();
+	            response[JSON_MESSAGE] = "The request was NOT processed successfully";
+	            bmhelper_evhttp_send_reply(req, HTTP_BADREQUEST, "INVALID DATA",
+	            		global_customized_writer.write(response));
+	            Logger::info("%s", global_customized_writer.write(response).c_str());
+	            return;
+	        } else {
+	        	const AttributeAccessControl& attrAcl = server->indexer->getAttributeAcl();
+	        	if (root.type() == Json::arrayValue) {
+	        		aclAttributeResponses.resize(root.size());
+	        		//the record parameter is an array of json objects
+	        		for(Json::UInt index = 0; index < root.size(); index++) {
+	        			Json::Value defaultValueToReturn = Json::Value("");
+	        			const Json::Value doc = root.get(index,
+	        					defaultValueToReturn);
+
+	        			bool  status = attrAcl.processSingleJSONAttributeAcl(doc, action, apiName,
+	        					aclAttributeResponses[index]);
+	        			if (status == false) {
+	        				error = true;
+	        				break;
+	        			} else {
+	        				// if the response is empty then add success message.
+	        				if (aclAttributeResponses[index].asString().size() == 0){
+	        					stringstream ss;
+	        					ss << "API : " << apiName << ", Success";
+	        					aclAttributeResponses[index] = ss.str();
+	        				}
+	        			}
+	        		}
+	        	} else {
+	        		aclAttributeResponses.resize(1);
+	        		// the record parameter is a single json object
+	        		const Json::Value doc = root;
+	        		bool  status = attrAcl.processSingleJSONAttributeAcl(doc, action, apiName,
+	        				aclAttributeResponses[0]);
+	        		if (status == false) {
+	        			error = true;
+	        		} else {
+	        			// if the response is empty then add success message.
+	        			if (aclAttributeResponses[0].asString().size() == 0){
+	        				stringstream ss;
+	        				ss << "API : " << apiName << ", Success";
+	        				aclAttributeResponses[0] = ss.str();
+	        			}
+	        		}
+	        	}
+	        }
+
+	        if (!error) {
+	        	response[JSON_LOG] = aclAttributeResponses;
+	        	response[JSON_MESSAGE] = "The batch was processed successfully";
+	        	bmhelper_evhttp_send_reply(req, HTTP_OK, "OK",
+	        			global_customized_writer.write(response));
+	        } else {
+	        	response[JSON_LOG] = aclAttributeResponses;
+	        	response[JSON_MESSAGE] = "The request was NOT processed successfully";
+	        	bmhelper_evhttp_send_reply(req, HTTP_BADREQUEST, "INVALID DATA",
+	        			global_customized_writer.write(response));
+	        }
+	        Logger::info("%s", global_customized_writer.write(response).c_str());
+	        break;
+	    }
+	    default:
+	    	response_to_invalid_request(req, response);
+
+	}
+}
+
 void HTTPRequestHandler::searchCommand(evhttp_request *req,
         Srch2Server *server) {
     evkeyvalq headers;
@@ -1038,6 +1438,10 @@ boost::shared_ptr<Json::Value> HTTPRequestHandler::doSearchOneCore(evhttp_reques
 
     boost::shared_ptr<Json::Value> root;
     ParsedParameterContainer paramContainer;
+
+    if(server->roleCore != NULL){
+    	paramContainer.hasRoleCore = true;
+    }
 
 //    string decodedUri;
 //    decodeAmpersand(req->uri, strlen(req->uri), decodedUri);
@@ -1068,7 +1472,8 @@ boost::shared_ptr<Json::Value> HTTPRequestHandler::doSearchOneCore(evhttp_reques
     const CoreInfo_t *indexDataContainerConf = server->getCoreInfo();
     //2. validate the query
     QueryValidator qv(*(server->getIndexer()->getSchema()),
-            *(server->getCoreInfo()), &paramContainer);
+            *(server->getCoreInfo()), &paramContainer,
+            server->getIndexer()->getAttributeAcl());
 
     bool valid = qv.validate();
 
@@ -1081,7 +1486,7 @@ boost::shared_ptr<Json::Value> HTTPRequestHandler::doSearchOneCore(evhttp_reques
     QueryRewriter qr(server->getCoreInfo(),
             *(server->getIndexer()->getSchema()),
             *(AnalyzerFactory::getCurrentThreadAnalyzer(indexDataContainerConf)),
-            &paramContainer);
+            &paramContainer, server->indexer->getAttributeAcl());
     LogicalPlan logicalPlan;
     if(qr.rewrite(logicalPlan) == false){
         // if the query is not valid, print the error message to the response
@@ -1144,7 +1549,7 @@ boost::shared_ptr<Json::Value> HTTPRequestHandler::doSearchOneCore(evhttp_reques
                 indexDataContainerConf, finalResults, logicalPlan.getExactQuery(),
                 server->getIndexer(), logicalPlan.getOffset(),
                 finalResults->getNumberOfResults(),
-                finalResults->getNumberOfResults(),
+                finalResults->getNumberOfResults(), paramContainer.roleId,
                 paramContainer.getMessageString(), ts1, tstart, tend, highlightInfo, hlTime,
                 paramContainer.onlyFacets);
 
@@ -1162,7 +1567,7 @@ boost::shared_ptr<Json::Value> HTTPRequestHandler::doSearchOneCore(evhttp_reques
                     indexDataContainerConf, finalResults,
                     logicalPlan.getExactQuery(), server->getIndexer(),
                     logicalPlan.getOffset(), finalResults->getNumberOfResults(),
-                    finalResults->getNumberOfResults(),
+                    finalResults->getNumberOfResults(), paramContainer.roleId,
                     paramContainer.getMessageString(), ts1, tstart, tend , highlightInfo, hlTime,
                     paramContainer.onlyFacets);
         } else { // Case where you have return 10,20, but we got only 0,25 results and so return 10,20
@@ -1171,7 +1576,7 @@ boost::shared_ptr<Json::Value> HTTPRequestHandler::doSearchOneCore(evhttp_reques
                     logicalPlan.getExactQuery(), server->getIndexer(),
                     logicalPlan.getOffset(),
                     logicalPlan.getOffset() + logicalPlan.getNumberOfResultsToRetrieve(),
-                    finalResults->getNumberOfResults(),
+                    finalResults->getNumberOfResults(), paramContainer.roleId,
                     paramContainer.getMessageString(), ts1, tstart, tend, highlightInfo, hlTime,
                     paramContainer.onlyFacets);
         }
@@ -1184,6 +1589,7 @@ boost::shared_ptr<Json::Value> HTTPRequestHandler::doSearchOneCore(evhttp_reques
                 indexDataContainerConf,
                 finalResults ,
                 server->getIndexer() ,
+                paramContainer.roleId,
                 paramContainer.getMessageString() ,
                 ts1, tstart , tend);
         break;

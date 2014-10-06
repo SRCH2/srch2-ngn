@@ -46,7 +46,12 @@ class HTTPRequestHandler
         static void exportCommand(evhttp_request *req, Srch2Server *server);
         static void resetLoggerCommand(evhttp_request *req, Srch2Server *server);
         static void lookupCommand(evhttp_request *req, Srch2Server *server);
-		static void handleException(evhttp_request *req);
+        static void handleException(evhttp_request *req);
+        static void attributeAclModify(evhttp_request *req, Srch2Server *server);
+        static void aclAddRolesToRecord(evhttp_request *req, Srch2Server *server);
+        static void aclAppendRolesToRecord(evhttp_request *req, Srch2Server *server);
+        static void aclDeleteRolesFromRecord(evhttp_request *req, Srch2Server *server);
+
 
 	private:
 
@@ -62,6 +67,7 @@ class HTTPRequestHandler
 				const unsigned offset,
 				const unsigned nextK,
 				const unsigned retrievedResults,
+				const string & aclRoleId,
 				const string & message,
 				const unsigned ts1,
 				struct timespec &tstart, struct timespec &tend,
@@ -74,6 +80,7 @@ class HTTPRequestHandler
 				const CoreInfo_t *indexDataConfig,
 				const QueryResults *queryResults,
 				const srch2is::Indexer *indexer,
+				const string & aclRoleId,
 				const string & message,
 				const unsigned ts1,
 				struct timespec &tstart, struct timespec &tend);
@@ -86,12 +93,15 @@ class HTTPRequestHandler
 				struct timespec &tstart, struct timespec &tend);
 		static void cleanAndAppendToBuffer(const string& in, string& out);
 		static void genRecordJsonString(const srch2is::Indexer *indexer, StoredRecordBuffer buffer,
-				const string& externalId, string& sbuffer);
+				const string& externalId, string& sbuffer, const string& aclRoleId);
 		static void genRecordJsonString(const srch2is::Indexer *indexer, StoredRecordBuffer buffer,
-				const string& externalId, string& sbuffer,const vector<string>* attrToReturn);
+				const string& externalId, string& sbuffer,const vector<string>* attrToReturn, const string& aclRoleId);
 		static void genSnippetJSONString(unsigned recIdx, unsigned start,
 				const vector<RecordSnippet>& recordSnippets, string& sbuffer,
 				const QueryResults *queryResults);
+		// this function first, checks that all the role ids exist then it add them to record object
+		static void addRoleIdsToRecord(vector<string> &roleIds, Srch2Server* server, evhttp_request *req, Record* record, std::stringstream &log_str);
+		static void aclEditRolesOfRecord(evhttp_request *req, Srch2Server *server, srch2::instantsearch::RecordAclCommandType commandType);
 
 };
 

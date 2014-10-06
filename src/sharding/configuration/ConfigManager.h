@@ -67,6 +67,7 @@ struct CoreConfigParseState_t {
 	vector<bool> searchableAttributesRequiredFlagVector;
 	vector<string> searchableAttributesDefaultVector;
 	vector<bool> searchableAttributesIsMultiValued;
+	vector<bool> searchableAttributesAclFlags;
 	vector<bool> searchableAttributesHighlight;
 
 	CoreConfigParseState_t() : hasLatitude(false), hasLongitude(false) {};
@@ -162,9 +163,8 @@ public:
 	struct PortNameMap_t {
 	    enum PortType_t portType;
 	    const char *portName;
-	    const char * portPath;
+	    const char *portPath;
 	};
-
 	static PortNameMap_t portNameMap[] ;
 
 	static const char* const OAuthParam;
@@ -339,6 +339,10 @@ protected:
 
 	void parseMultipleCores(const xml_node &coresNode, bool &configSuccess, std::stringstream &parseError, std::stringstream &parseWarnings);
 
+    void parseSingleAccessControl(const xml_node &parentNode, bool &configSuccess, std::stringstream &parseError, std::stringstream &parseWarnings);
+
+    void parseAccessControls(const xml_node &accessControlsNode, bool &configSuccess, std::stringstream &parseError, std::stringstream &parseWarnings);
+
 	// parse all data source settings (can handle multiple cores or default/no core)
 	void parseAllCoreTags(const xml_node &configNode, bool &configSuccess, std::stringstream &parseError, std::stringstream &parseWarnings);
 
@@ -356,15 +360,18 @@ protected:
 			std::stringstream &parseError, bool &configSuccess, CoreInfo_t *coreInfo);
 
 	bool setFieldFlagsFromFile(const xml_node &field, bool &isMultiValued,
-			bool &isSearchable, bool &isRefining, bool &isHighlightEnabled,
+			bool &isSearchable, bool &isRefining, bool &isHighlightEnabled, bool & isAclEnabled,
 			std::stringstream &parseError, bool &configSuccess, CoreInfo_t *coreInfo);
 
-	bool setCoreParseStateVector(bool isSearchable, bool isRefining, bool isMultiValued, bool isHighlightEnabled, CoreConfigParseState_t *coreParseState, CoreInfo_t *coreInfo, std::stringstream &parseError, const xml_node &field);
+	bool setCoreParseStateVector(bool isSearchable, bool isRefining, bool isMultiValued, bool isHighlightEnabled,
+			bool isAclEnabled, CoreConfigParseState_t *coreParseState, CoreInfo_t *coreInfo, std::stringstream &parseError, const xml_node &field);
 
 	bool setRefiningStateVectors(const xml_node &field, bool isMultiValued, bool isRefining,
 			vector<string> &RefiningFieldsVector, vector<srch2::instantsearch::FilterType> &RefiningFieldTypesVector,
 			vector<bool> &RefiningAttributesRequiredFlagVector, vector<string> &RefiningAttributesDefaultVector,
-			vector<bool> &RefiningAttributesIsMultiValued, std::stringstream &parseError, CoreInfo_t *coreInfo);
+			vector<bool> &RefiningAttributesIsMultiValued,
+			vector<bool> &refiningAttributesAclEnabledFlags, bool isAclEnabled,
+			std::stringstream &parseError, CoreInfo_t *coreInfo);
 
 	void parseFacetFields(const xml_node &schemaNode, CoreInfo_t *coreInfo, std::stringstream &parseError);
 
@@ -477,6 +484,14 @@ public:
     static string getAuthorizationKey();
 	static void setAuthorizationKey(string &key);
 
+    static const char* getRoleId(){
+    	return aclRoleId;
+    }
+
+    static const char* getResourceId(){
+    	return aclResourceId;
+    }
+
 private:
 
 	// configuration file tag and attribute names for ConfigManager
@@ -536,6 +551,7 @@ private:
 	static const char* const enableCharOffsetIndexString;
 	static const char* const expandString;
 	static const char* const facetEnabledString;
+	static const char* const attributeAclFileString;
 	static const char* const facetEndString;
 	static const char* const facetFieldString;
 	static const char* const facetFieldsString;
@@ -552,6 +568,7 @@ private:
 	static const char* const hostString;
 	static const char* const indexConfigString;
 	static const char* const indexedString;
+	static const char* const aclString;
 	static const char* const multiValuedString;
 	static const char* const indexTypeString;
 //	static const char* const licenseFileString;
@@ -568,6 +585,12 @@ private:
 	static const char* const resetLoggerPortString;
 	static const char* const commitPortString;
 	static const char* const mergePortString;
+	static const char* const aclAttrRoleAddPortString;
+	static const char* const aclAttrRoleDeletePortString;
+	static const char* const aclAttrRoleAppendPortString;
+	static const char* const aclRecorddRoleAddPortString;
+	static const char* const aclRecordRoleAppendPortString;
+	static const char* const aclRecordRoleDeletePortString;
 	static const char* const clusterStatsPortString;
 	static const char* const nodesStatsPortString;
 	static const char* const debugStatsPortString;
@@ -639,14 +662,21 @@ private:
 	static const char* const fuzzyTagPost;
 	static const char* const snippetSize;
 
+    static const char* const multipleAccessControlString;
+    static const char* const resourceCore;
+    static const char* const roleCore;
+    static const char* const accessControlDataFile;
+    static const char* const aclRoleId;
+    static const char* const aclResourceId;
+
 	static const char* const defaultFuzzyPreTag;
 	static const char* const defaultFuzzyPostTag;
 	static const char* const defaultExactPreTag;
 	static const char* const defaultExactPostTag;
 
-	static const char* const defaultCore;
 	static const char* const heartBeatTimerTag;
-
+public:
+	static const char* const defaultCore;
 };
 
 

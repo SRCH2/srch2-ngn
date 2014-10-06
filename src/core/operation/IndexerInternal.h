@@ -84,6 +84,14 @@ public:
      */
     INDEXWRITE_RETVAL addRecord(const Record *record, Analyzer *analyzer);
 
+    // Edits the records access list base on the command type
+    INDEXWRITE_RETVAL aclModifyRoles(const std::string &resourcePrimaryKeyID, vector<string> &roleIds, RecordAclCommandType commandType);
+
+    // Deletes the role id from the permission map
+    // we use this function for deleting a record from a role core
+    // then we need to delete this record from the permission map of the resource cores of this core
+    INDEXWRITE_RETVAL deleteRoleRecord(const std::string &rolePrimaryKeyID);
+
     /**
      * Deletes all the records.
      */
@@ -116,6 +124,9 @@ public:
         return this->index->getInMemoryData(internalRecordId);
     }
 
+    const AttributeAccessControl & getAttributeAcl() const {
+    	return *(this->index->attributeAcl);
+    }
     void exportData(const string &exportedDataFileName);
 
     void save();

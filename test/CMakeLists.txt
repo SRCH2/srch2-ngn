@@ -145,6 +145,9 @@ SET_TESTS_PROPERTIES(Lookup_Test PROPERTIES ENVIRONMENT "index_dir=${INTEGRATION
 ADD_TEST(ThreadSafetyReadWriteGeo_Test ${CMAKE_CURRENT_BINARY_DIR}/core/integration/ThreadSafetyReadWriteGeo_Test "--verbose")
 SET_TESTS_PROPERTIES(ThreadSafetyReadWriteGeo_Test PROPERTIES ENVIRONMENT "index_dir=${INTEGRATION_TEST_INDEX_DIR}threadsafetyreadwritegeo_test/")
 	  
+ADD_TEST(RecordBasedAccessControl_Test ${CMAKE_CURRENT_BINARY_DIR}/core/unit/RecordBasedAccessControl_Test "--verbose")
+SET_TESTS_PROPERTIES(RecordBasedAccessControl_Test PROPERTIES ENVIRONMENT "index_dir=${INTEGRATION_TEST_INDEX_DIR}recordbasedaccesscontrol_test/")
+	  
 ADD_TEST(ULEB128_Test ${CMAKE_CURRENT_BINARY_DIR}/core/unit/ULEB128_Test "--verbose")
 
 ADD_TEST(PhraseSearch_Test ${CMAKE_CURRENT_BINARY_DIR}/core/unit/PhraseSearch_Test "--verbose")

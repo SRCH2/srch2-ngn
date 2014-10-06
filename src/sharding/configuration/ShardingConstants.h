@@ -111,6 +111,12 @@ enum PortType_t {
 	ResetLoggerPort,
 	CommitPort,
 	MergePort,
+    AttributeAclAdd,
+    AttributeAclAppend,
+    AttributeAclDelete,
+    RecordAclAdd,
+    RecordAclAppend,
+    RecordAclDelete,
 	GlobalPortsStart, // used in portNameMap
 	InfoPort_Nodes_NodeID,
 	InfoPort_Cluster_Stats,

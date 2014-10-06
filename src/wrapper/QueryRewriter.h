@@ -29,7 +29,7 @@
 #include "analyzer/SimpleAnalyzer.h"
 #include "src/sharding/configuration/ConfigManager.h"
 #include "instantsearch/LogicalPlan.h"
-
+#include "operation/AttributeAccessControl.h"
 using srch2::instantsearch::Analyzer;
 using srch2::instantsearch::Schema;
 
@@ -42,7 +42,9 @@ namespace httpwrapper{
 class QueryRewriter
 {
 public:
-	QueryRewriter(const CoreInfo_t *indexDataConfig,const Schema & schema, const Analyzer & analyzer ,ParsedParameterContainer * paramContainer);
+	QueryRewriter(const CoreInfo_t *indexDataConfig,const Schema & schema,
+			const Analyzer & analyzer ,ParsedParameterContainer * paramContainer,
+			const AttributeAccessControl & attrAcl);
 
 	bool rewrite(LogicalPlan & logicalPlan);
 
@@ -51,6 +53,7 @@ private:
 	const Analyzer & analyzer ;
 	ParsedParameterContainer * paramContainer;
 	const CoreInfo_t *indexDataConfig;
+	const AttributeAccessControl&  attributeAcl;
 
 	void prepareKeywordInfo();
 	bool applyAnalyzer();
@@ -67,6 +70,8 @@ private:
 	void createExactAndFuzzyQueriesForTopK(LogicalPlan & plan);
 	void createExactAndFuzzyQueriesForGetAllTResults(LogicalPlan & plan) ;
 	void createPostProcessingPlan(LogicalPlan & plan) ;
+	void getFieldFiltersBasedOnAcl(vector<unsigned>& fieldFiltersList,
+			ATTRIBUTES_OP& attributeOperation, vector<unsigned> *allowedAttributesForRole);
 	void addGeoToParseTree();
 };
 

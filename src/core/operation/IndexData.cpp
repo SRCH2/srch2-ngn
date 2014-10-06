@@ -73,11 +73,15 @@ IndexData::IndexData(const string &directoryName,
 
     this->trie = new Trie_Internal();
 
+    this->permissionMap = new PermissionMap();
+
     this->forwardIndex = new ForwardIndex(this->schemaInternal);
 
     this->invertedIndex =new InvertedIndex(this->forwardIndex);
 
     this->quadTree = new QuadTree();
+
+    this->attributeAcl = new AttributeAccessControl(this->schemaInternal);
 
     this->readCounter = new ReadCounter();
     this->writeCounter = new WriteCounter();
@@ -114,6 +118,16 @@ void IndexData::_bootStrapFromDisk()
 
     	serializer.load(*(this->quadTree), directoryName + "/" + IndexConfig::quadTreeFileName);
 
+    	string recordAclFileName = directoryName + "/" + IndexConfig::permissionMapFileName;
+    	if (::access(recordAclFileName.c_str(), F_OK) != -1) {
+    		serializer.load(*(this->permissionMap), recordAclFileName);
+    	}
+
+    	string attrAclFileName = directoryName + "/" + IndexConfig::AccessControlFile;
+    	if (::access(attrAclFileName.c_str(), F_OK) != -1) {
+    		serializer.load(*(this->attributeAcl), attrAclFileName);
+    	}
+
     	this->loadCounts(directoryName + "/" + IndexConfig::indexCountsFileName);
     	this->flagBulkLoadDone = true;
     }catch(exception& ex){
@@ -124,31 +138,35 @@ void IndexData::_bootStrapFromDisk()
     this->mergeRequired = true;
 }
 
-void IndexData::_bootStrapComponentFromByteSteam(std::istream& inputByteStream, const string& component) {
+void IndexData::_bootStrapComponentFromByteSteam(std::istream& inputByteStream, const string& componentName) {
 
-	string componentName = component;
-	std::transform(componentName.begin(), componentName.end(), componentName.begin(), ::toupper);
 	try{
-		if (componentName == "CL1.IDX") {
+		if (componentName == IndexConfig::trieFileName) {
 			this->_deSerializeTrie(inputByteStream);
 		}
-		else if (componentName == "CL2.IDX") {
+		else if (componentName == IndexConfig::invertedIndexFileName) {
 			this->_deSerializeInvertedIndex(inputByteStream);
 		}
-		else if (componentName == "CL3.IDX") {
+		else if (componentName == IndexConfig::forwardIndexFileName) {
 			this->_deSerializeForwardIndex(inputByteStream);
 		}
-		else if (componentName == "CL4.IDX") {
+		else if (componentName == IndexConfig::quadTreeFileName) {
 			this->_deSerializeLocationIndex(inputByteStream);
 		}
-		else if (componentName == "SCHEMA.IDX") {
+		else if (componentName == IndexConfig::schemaFileName) {
 			this->_deSerializeSchema(inputByteStream);
 		}
-		else if (componentName == "ANALYZER.IDX") {
+		else if (componentName == IndexConfig::analyzerFileName) {
 			//this->_deSerializeAnalyzer(inputByteStream);
 		}
-		else if (componentName == "COUNTS.IDX") {
+		else if (componentName ==  IndexConfig::indexCountsFileName) {
 			this->_deSerializeIndexCounts(inputByteStream);
+		}
+		else if (componentName == IndexConfig::permissionMapFileName) {
+			this->_deSerializeRecordAclPermissions(inputByteStream);
+		}
+		else if (componentName == IndexConfig::AccessControlFile) {
+			this->_deSerializeAttributeAclPermissions(inputByteStream);
 		}
     }catch (boost::archive::archive_exception& ex) {
     	cout << ex.what() << endl;
@@ -175,6 +193,67 @@ bool isSortedAlphabetically(const KeywordIdKeywordStringInvertedListIdTriple& ke
 		++iter;
 	}
 	return true;
+}
+
+INDEXWRITE_RETVAL IndexData::_aclEditRecordAccessList(const std::string& resourcePrimaryKeyID,
+		vector<string> &roleIds, RecordAclCommandType commandType) {
+
+	shared_ptr<vectorview<ForwardListPtr> >  forwardListDirectoryReadView;
+	this->forwardIndex->getForwardListDirectory_ReadView(forwardListDirectoryReadView);
+	RoleAccessList* accessList = this->forwardIndex->getRecordAccessList(forwardListDirectoryReadView, resourcePrimaryKeyID);
+
+	switch (commandType){
+	case AddRoles:
+		if(accessList != NULL){
+			this->permissionMap->deleteResourceFromRoles(resourcePrimaryKeyID, accessList->getRoles());
+			this->permissionMap->appendResourceToRoles(resourcePrimaryKeyID, roleIds);
+			accessList->clearRoles();
+			this->forwardIndex->appendRoleToResource(forwardListDirectoryReadView, resourcePrimaryKeyID, roleIds);
+			return OP_SUCCESS;
+		}
+		break;
+	case AppendRoles:
+		// 1- append these role ids to the access list of the record
+		// 2- add the id of this record to vector of resource ids for this role id in the permission map
+		if(this->forwardIndex->appendRoleToResource(forwardListDirectoryReadView, resourcePrimaryKeyID, roleIds)){
+			this->permissionMap->appendResourceToRoles(resourcePrimaryKeyID, roleIds);
+			return OP_SUCCESS;
+		}
+		break;
+	case DeleteRoles:
+		// 1- Delete these role ids from the access list of the record
+		// 2- delete the id of this record from the vector of resource ids for this role id in the permission map
+		if(this->forwardIndex->deleteRoleFromResource(forwardListDirectoryReadView, resourcePrimaryKeyID, roleIds)){
+			this->permissionMap->deleteResourceFromRoles(resourcePrimaryKeyID, roleIds);
+			return OP_SUCCESS;
+		}
+		break;
+	default:
+		ASSERT(false);
+		break;
+	};
+
+	return OP_FAIL;
+}
+
+INDEXWRITE_RETVAL IndexData::_aclRoleRecordDelete(const std::string& rolePrimaryKeyID){
+
+	// 1- get the resource ids for this role record
+	vector<string>* resourceIds = this->permissionMap->getResourceIdsForRole(rolePrimaryKeyID);
+
+	if( resourceIds != NULL){
+
+		shared_ptr<vectorview<ForwardListPtr> >  forwardListDirectoryReadView;
+		this->forwardIndex->getForwardListDirectory_ReadView(forwardListDirectoryReadView);
+
+		for(unsigned i = 0 ; i < resourceIds->size() ; ++i ){
+			// 2- delete this role record id from the access list of these resource records
+			this->forwardIndex->deleteRoleFromResource(forwardListDirectoryReadView, resourceIds->at(i), rolePrimaryKeyID);
+		}
+		// 3- delete this role id from the permission map
+		this->permissionMap->deleteRole(rolePrimaryKeyID);
+	}
+	return OP_SUCCESS;
 }
 
 /// Add a record
@@ -749,6 +828,32 @@ void IndexData::_deSerializeIndexCounts(std::istream& inputStream) {
 	//this->flagBulkLoadDone = true;
 }
 
+void IndexData::_deSerializeRecordAclPermissions(std::istream& inputStream) {
+	boost::archive::binary_iarchive ia(inputStream);
+	IndexVersion storedIndexVersion;
+	ia >> storedIndexVersion;
+	if (storedIndexVersion != IndexVersion::currentVersion){
+		// throw invalid index file exception
+		Logger::error("Invalid serialized shard. Either shard was built with a previous version"
+				"of engine or migrated from a different machine/architecture.");
+		throw exception();
+	}
+	ia >> *(this->permissionMap);
+
+}
+void IndexData::_deSerializeAttributeAclPermissions(std::istream& inputStream) {
+	boost::archive::binary_iarchive ia(inputStream);
+	IndexVersion storedIndexVersion;
+	ia >> storedIndexVersion;
+	if (storedIndexVersion != IndexVersion::currentVersion){
+		// throw invalid index file exception
+		Logger::error("Invalid serialized shard. Either shard was built with a previous version"
+				"of engine or migrated from a different machine/architecture.");
+		throw exception();
+	}
+	ia >> *(this->attributeAcl);
+}
+
 void IndexData::_serialize(std::ostream& outputStream) const{
 	boost::archive::binary_oarchive oa(outputStream);
 	//1. Index Version
@@ -848,6 +953,21 @@ void IndexData::_save(const string &directoryName) const
     } catch (exception &ex) {
         Logger::error("Error writing index counts file: %s/%s", directoryName.c_str(), IndexConfig::indexCountsFileName);
     }
+
+    try {
+    	serializer.save(*this->permissionMap,
+    			directoryName + "/" + IndexConfig::permissionMapFileName);
+    } catch (exception &ex) {
+    	Logger::error("Error writing permissionMap file: %s/%s",
+    			directoryName.c_str(), IndexConfig::permissionMapFileName);
+    }
+
+    try{
+    	serializer.save(*(this->attributeAcl), directoryName + "/" + IndexConfig::AccessControlFile);
+    } catch (exception &ex) {
+    	Logger::error("Error saving access control file: %s/%s", directoryName.c_str(),
+    			IndexConfig::AccessControlFile);
+    }
 }
 
 void IndexData::printNumberOfBytes() const
@@ -910,9 +1030,43 @@ IndexData::~IndexData()
     delete this->readCounter;
     delete this->writeCounter;
     delete this->rankerExpression;
+    delete this->permissionMap;
+    delete this->attributeAcl;
 }
 
 
+// Adds resource id to some of the role ids.
+// for each role id if it exists in the permission map it will add this resource id to its vector
+// otherwise it adds new record to the map with this role id and then adds this resource id to it.
+void PermissionMap::appendResourceToRoles(const string &resourceId, vector<string> &roleIds){
+	for(unsigned i = 0 ; i < roleIds.size() ; i++){
+		map<string, vector<string> >::iterator it = permissionMap.find(roleIds[i]);
+		if( it == permissionMap.end()){
+			vector<string> resources;
+			resources.push_back(resourceId);
+			permissionMap.insert(std::pair<string,vector<string> >(roleIds[i],resources));
+		}else{
+			vector<string>::iterator rIt = std::find(it->second.begin(),it->second.end(),resourceId);
+			if(rIt == it->second.end()){
+				it->second.push_back(resourceId);
+			}
+		}
+	}
+}
+
+// Deletes resource id from the role ids.
+void PermissionMap::deleteResourceFromRoles(const string &resourceId, vector<string> &roleIds){
+	for(unsigned i = 0 ; i < roleIds.size() ; i++){
+		map<string, vector<string> >::iterator it = permissionMap.find(roleIds[i]);
+		if( it != this->permissionMap.end()){
+			vector<string>::iterator resourceIt = std::find(it->second.begin(),it->second.end(),resourceId);
+			if( resourceIt != it->second.end()){
+				*resourceIt = *(it->second.end() - 1);
+				it->second.pop_back();
+			}
+		}
+	}
+}
 
 
 }}

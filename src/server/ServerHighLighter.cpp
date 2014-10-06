@@ -90,6 +90,12 @@ void ServerHighLighter::genSnippetsForSingleRecord(const QueryResults *qr, unsig
         for (unsigned i = 0 ; i < highlightAttributes.size(); ++i) {
     		AttributeSnippet attrSnippet;
         	unsigned id = highlightAttributes[i].first;
+        	// check whether the searchable attribute is accessible for current role-id.
+        	// snippet is generated for accessible searchable attributes only.
+        	bool isFieldAccessible = server->indexer->getAttributeAcl().isSearchableFieldAccessibleForRole(
+        			aclRoleValue, highlightAttributes[i].second);
+        	if (!isFieldAccessible)
+        		continue;  // ignore unaccessible attributes. Do not generate snippet.
         	unsigned lenOffset = compactRecDeserializer->getSearchableOffset(id);
         	const char *attrdata = buffer.start.get() + *((unsigned *)(buffer.start.get() + lenOffset));
         	unsigned len = *(((unsigned *)(buffer.start.get() + lenOffset)) + 1) -
@@ -124,11 +130,7 @@ ServerHighLighter::ServerHighLighter(QueryResults * queryResults,Srch2Server *se
 	server->getCoreInfo()->getFuzzyHighLightMarkerPost(post);
 	hconf.highlightMarkers.push_back(make_pair(pre, post));
 	server->getCoreInfo()->getHighLightSnippetSize(hconf.snippetSize);
-
-	if (!isEnabledWordPositionIndex(server->getIndexer()->getSchema()->getPositionIndexType())){
-		// we do not need phrase information because position index is not enabled.
-		//param.PhraseKeyWordsInfoMap.clear();
-	}
+	this->aclRoleValue = param.roleId;
 	/*
 	 *  We have two ways of generating snippets.
 	 *  1. Using term offsets stored in the forward index.
@@ -149,7 +151,6 @@ ServerHighLighter::ServerHighLighter(QueryResults * queryResults,Srch2Server *se
 //		this->highlightAlgorithms  = new AnalyzerBasedAlgorithm(currentAnalyzer,
 //				 param.PhraseKeyWordsInfoMap, hconf);
 //	}
-
 	if (isEnabledCharPositionIndex(server->getIndexer()->getSchema()->getPositionIndexType())) {
 		this->highlightAlgorithms  = new TermOffsetAlgorithm(server->getIndexer(),
 				PhraseKeyWordsInfoMap, hconf);

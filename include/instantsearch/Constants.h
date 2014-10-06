@@ -70,7 +70,8 @@ typedef enum {
 // Enum values to indicate conjunction or disjunction operation among a data record attributes.
 typedef enum {
 	ATTRIBUTES_OP_AND,
-	ATTRIBUTES_OP_OR
+	ATTRIBUTES_OP_OR,
+	ATTRIBUTES_OP_NAND
 } ATTRIBUTES_OP;
 
 /// Faceted search filter
@@ -90,6 +91,13 @@ typedef enum {
     OP_SUCCESS,
     OP_NOTHING_TO_DO
 } INDEXWRITE_RETVAL;
+
+// Type of the acl query command
+typedef enum{
+	AddRoles,
+	AppendRoles,
+	DeleteRoles
+}RecordAclCommandType;
 
 /// Query constants
 // TODO : change getAllResults in the code to FindAllResults

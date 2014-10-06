@@ -46,8 +46,9 @@ namespace httpwrapper {
 
 QueryRewriter::QueryRewriter(const CoreInfo_t *config,
         const Schema & schema, const Analyzer & analyzer,
-        ParsedParameterContainer * paramContainer) :
-        schema(schema), analyzer(analyzer) {
+        ParsedParameterContainer * paramContainer,
+        const AttributeAccessControl & attrAcl) :
+        schema(schema), analyzer(analyzer), attributeAcl(attrAcl) {
     this->paramContainer = paramContainer;
     indexDataConfig = config;
 }
@@ -235,7 +236,14 @@ void QueryRewriter::prepareFieldFilters() {
     	}
         return;
     }
-    if(paramContainer->hasParameterInQuery(FieldFilter) ){
+    boost::shared_ptr<vector<unsigned> > allowedAttributesSharedPtr;
+    // Fetch list of attributes accessible by this role-id
+    attributeAcl.fetchSearchableAttrsAcl(paramContainer->roleId, allowedAttributesSharedPtr);
+    vector<unsigned> *allowedAttributesForRole = allowedAttributesSharedPtr.get();
+
+	const vector<unsigned>& schemaNonAclAttrsList = schema.getNonAclSearchableAttrIdsList();
+
+    if(paramContainer->hasParameterInQuery(FieldFilter ) ){
         // some filters are provided in query so these two vectors are the same size as keywords vector
 
     	ParseTreeNode * leafNode;
@@ -245,42 +253,178 @@ void QueryRewriter::prepareFieldFilters() {
 
             srch2is::BooleanOperation op = leafNode->termIntermediateStructure->fieldFilterOp;
 
-            vector<unsigned> attributeFilter;
             if (leafNode->termIntermediateStructure->fieldFilter.size() == 0) {
-            	leafNode->termIntermediateStructure->fieldFilterAttrOperation = ATTRIBUTES_OP_OR;
-                // TODO : get it from configuration file
+            	// filtering attributes are not specified for this term. Get them from ACL map
+            	getFieldFiltersBasedOnAcl(leafNode->termIntermediateStructure->fieldFilterList,
+            			leafNode->termIntermediateStructure->fieldFilterAttrOperation,
+            			allowedAttributesForRole);
             } else {
-                bool shouldApplyAnd = true;
+            	vector<unsigned> attributeFilter;
+            	// flag is used to indicate whether the wildcard "*" was found in attributes list in
+            	// attribute based search.
+                bool hasWildCard = false;
                 for (std::vector<std::string>::iterator field = leafNode->termIntermediateStructure->fieldFilter.begin();
                         field != leafNode->termIntermediateStructure->fieldFilter.end(); ++field) {
 
                     if (field->compare("*") == 0) { // all fields
-                        //filter = 0x7fffffff;
                     	attributeFilter.clear();
-                        shouldApplyAnd = false;
+                    	hasWildCard = true;
                         break;
                     }
                     unsigned id = schema.getSearchableAttributeId(*field);
-                    attributeFilter.push_back(id);
+                    // if a user has specified a filtering attribute, then check whether it is present
+                    // in allowed attributes list for this role-id OR it is present in non-acl attributes
+                    // list. If found then use this attribute for filtering. If not found then this
+                    // attribute is unaccessible for current search and should not be used for filtering
+                    // Note: The unaccessible attributes are just ignored without considering the
+                    //  filtering operation (AND or OR). Another alternative option could be to return
+                    // no result for when one the filtering attribute is unaccessible and filtering
+                    // operation is (AND). This option is not chosen.
+                    if ((allowedAttributesForRole &&
+                    	find(allowedAttributesForRole->begin(), allowedAttributesForRole->end(), id)
+                    		!= allowedAttributesForRole->end()) ||
+                    	find (schemaNonAclAttrsList.begin(), schemaNonAclAttrsList.end(), id)
+                    		!= schemaNonAclAttrsList.end())  {
+                    	attributeFilter.push_back(id);
+                    }
                 }
-                if (op == srch2is::BooleanOperatorAND && shouldApplyAnd) {
-                	leafNode->termIntermediateStructure->fieldFilterAttrOperation = ATTRIBUTES_OP_AND;
+                if (!hasWildCard) {
+
+                	if (attributeFilter.size() == 0) {
+                		// if attributeFilter size is 0 , it indicates that all the attributes specified
+                		// in the attribute based search were NOT accessible by a given acl role-id. We
+                		// set the operation as NAND to indicate that the term should not match in any of
+                		// the attributes of a record. See ForwardIndex.cpp isValidTermHits().
+                		leafNode->termIntermediateStructure->fieldFilterAttrOperation = ATTRIBUTES_OP_NAND;
+                	} else if (op == srch2is::BooleanOperatorAND) {
+                		// if attributeFilter size is > 0. Then use user specified operands AND or OR
+                		leafNode->termIntermediateStructure->fieldFilterAttrOperation = ATTRIBUTES_OP_AND;
+                	} else {
+                		leafNode->termIntermediateStructure->fieldFilterAttrOperation = ATTRIBUTES_OP_OR;
+                	}
+                	leafNode->termIntermediateStructure->fieldFilterList = attributeFilter;
                 } else {
-                	leafNode->termIntermediateStructure->fieldFilterAttrOperation = ATTRIBUTES_OP_OR;
+                	// if wildcard is used then get filtering attributes from ACL map
+                	getFieldFiltersBasedOnAcl(leafNode->termIntermediateStructure->fieldFilterList,
+                	            			leafNode->termIntermediateStructure->fieldFilterAttrOperation,
+                	            			allowedAttributesForRole);
                 }
             }
-            leafNode->termIntermediateStructure->fieldFilterList = attributeFilter;
-
     	}
 
     }else{
+    	// filtering attributes are not specified for any term. Get them from ACL map
     	ParseTreeNode * leafNode;
     	ParseTreeLeafNodeIterator termIterator(paramContainer->parseTreeRoot);
     	while(termIterator.hasMore()){
     		leafNode = termIterator.getNext();
-    		leafNode->termIntermediateStructure->fieldFilterAttrOperation = ATTRIBUTES_OP_OR;
+    		getFieldFiltersBasedOnAcl(leafNode->termIntermediateStructure->fieldFilterList,
+    				leafNode->termIntermediateStructure->fieldFilterAttrOperation, allowedAttributesForRole);
     	}
     }
+
+}
+
+/*
+ *   This function decides the filter attributes for the current role-id and operation
+ *   to be performed among those attributes (AND, OR , NAND). This API is called when a user has
+ *   not specified any attributes in a query. First get three sets
+ *
+ *   set1 : set of non-acl attributes ( accessible by all)
+ *   set2 : set of acl attributes (access only to specific role-id based on acl definition)
+ *   set3 : set of attributes allowed for this role-id.
+ *
+ *   allowed attributes set (A) : set1 union set3
+ *   not-allowed attributes (NA) set: set2 - set3
+ *
+ *   if  len(A) > len(NA) then filter attributes are (A) with OR operation
+ *   (i.e. keyword should match in any one attribute)
+ *
+ *   otherwise filter attributes are (NA) with NAND operation.(i.e. keyword should NOT be present
+ *   in only these attribute)
+ *
+ *   The decision to use smaller length set is for optimization so that forward index has to scan
+ *   smaller filter list.
+ *
+ *   e.g
+ *   sample schema in config file.
+ *   <fields name = f1 .....acl=true >
+ *   <fields name = f2 .....acl=true >
+ *   <fields name = f3 .....acl=false >
+ *   <fields name = f4 .....acl=false >
+ *
+ *   set1 (non-acl attributes) = [f3 , f4]
+ *   set2 (acl attributes) = [f1 , f2]
+ *   set3 = [ f2, f3 ]  for role-id = 100  (fetched from attributes ACL map)
+ *
+ *   allowed attributes set (A) : set1 union set3 : [ f2 f3 f4 ]
+ *   not-allowed attributes (NA) set: set2 - set3 : [ f1 ]
+ *
+ *   and len(NA) = 1  < len(A) = 3
+ *
+ *   so the filtering attributes for forward index is (NA) i.e. [f1]
+ *   and the filtering attributes operation is NAND. i.e. do NOT match in [f1]
+ *
+ *   If the record's term hit is only on [f1] attribute then the record will not be returned.
+ *   See ForwardIndex.cpp : isValidRecordTermHit() for more detail.
+ */
+void QueryRewriter::getFieldFiltersBasedOnAcl(vector<unsigned>& parseNodeFieldFilter,
+		ATTRIBUTES_OP& parseNodeFieldFilterOperaton, vector<unsigned> *allowedAttributesForRole) {
+
+	const vector<unsigned>& schemaAclAttrsList = schema.getAclSearchableAttrIdsList();
+	const vector<unsigned>& schemaNonAclAttrsList = schema.getNonAclSearchableAttrIdsList();
+
+	vector<unsigned>  accessibleAttrsList;
+	vector<unsigned>  unAccessibleAttrsList;
+	if (allowedAttributesForRole != NULL && allowedAttributesForRole->size() > 0) {
+
+		accessibleAttrsList.reserve(schemaNonAclAttrsList.size() + allowedAttributesForRole->size());
+		set_union(schemaNonAclAttrsList.begin(), schemaNonAclAttrsList.end(),
+				allowedAttributesForRole->begin(), allowedAttributesForRole->end(),
+				back_inserter(accessibleAttrsList));
+
+		unAccessibleAttrsList.reserve(schemaAclAttrsList.size());
+		set_difference(schemaAclAttrsList.begin(), schemaAclAttrsList.end(),
+				allowedAttributesForRole->begin(), allowedAttributesForRole->end(),
+				back_inserter(unAccessibleAttrsList));
+	} else {
+		// when no role is specified or role is not found in acl map then
+		// attributes marked as non-acl (public) are accessible
+		// and attributes marked as acl (private) are not accessible.
+		accessibleAttrsList = schemaNonAclAttrsList;
+		unAccessibleAttrsList = schemaAclAttrsList;
+	}
+
+	if (accessibleAttrsList.size() == 0) {
+		// if all the fields are acl controlled. Then set parseNodeFieldFilter empty
+		// and set operation as NAND to indicate that the term should not be found in any of the
+		// attributes of the record.
+		parseNodeFieldFilter.clear();
+		parseNodeFieldFilterOperaton = ATTRIBUTES_OP_NAND;
+		return;
+	}
+	if (unAccessibleAttrsList.size() == 0) {
+		// if all the fields are NOT acl controlled. Then set parseNodeFieldFilter empty
+		// and set operation as OR to indicate that the term can be found in any of the
+		// attributes of the record.
+		parseNodeFieldFilter.clear();
+		parseNodeFieldFilterOperaton = ATTRIBUTES_OP_OR;
+		return;
+	}
+
+	// both accessible and unaccessible list cannot be 0 because there are always non-zero fields
+	// in schema.
+	ASSERT(accessibleAttrsList.size() != 0 && unAccessibleAttrsList.size() != 0);
+
+	if (accessibleAttrsList.size() > unAccessibleAttrsList.size()) {
+		parseNodeFieldFilter.assign(
+				unAccessibleAttrsList.begin(), unAccessibleAttrsList.end());
+		parseNodeFieldFilterOperaton = ATTRIBUTES_OP_NAND;
+	} else {
+		parseNodeFieldFilter.assign(
+				accessibleAttrsList.begin(), accessibleAttrsList.end());
+		parseNodeFieldFilterOperaton = ATTRIBUTES_OP_OR;
+	}
 
 }
 
@@ -932,6 +1076,12 @@ void QueryRewriter::createPostProcessingPlan(LogicalPlan & plan) {
 				paramContainer->facetQueryContainer;
 
 		plan.getPostProcessingInfo()->setFacetInfo(container);
+	}
+
+	//4. if there is a role id set the role id for access control
+	if(paramContainer->hasParameterInQuery(AccessControl)){ // there is access control
+		if(paramContainer->hasRoleCore)
+			plan.getPostProcessingInfo()->setRoleId(paramContainer->roleId);
 	}
 
 }

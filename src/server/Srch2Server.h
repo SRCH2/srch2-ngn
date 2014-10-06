@@ -39,23 +39,13 @@ namespace httpwrapper
 class Srch2Server
 {
 public:
-    /* Fields used only for stats */
-//    time_t stat_starttime;          /* Server start time */
-//    long long stat_numcommands;     /* Number of processed commands */
-//    long long stat_numconnections;  /* Number of connections received */
-//    long long stat_expiredkeys;     /* Number of expired keys */
-//    long long stat_evictedkeys;     /* Number of evicted keys (maxmemory) */
-//    long long stat_keyspace_hits;   /* Number of successful lookups of keys */
-//    long long stat_keyspace_misses; /* Number of failed lookups of keys */
-//    size_t stat_peak_memory;        /* Max used memory record */
-//    long long stat_fork_time;       /* Time needed to perform latets fork() */
-//    long long stat_rejected_conn;   /* Clients rejected because of maxclients */
 
     Srch2Server(const CoreInfo_t * indexDataConfig, const string & directoryPath, const string & jsonFilePath):
     	directoryPath(directoryPath),jsonFilePath(jsonFilePath)
     {
         this->indexer = NULL;
         this->indexDataConfig = indexDataConfig;
+        this->roleCore = NULL;
     }
 
     void save() {
@@ -71,6 +61,26 @@ public:
     	this->indexer->serialize(outputStream);
     }
 
+    void initAccessControls(){
+        if (!checkIndexExistence(indexDataConfig)){
+        	switch (indexDataConfig->getDataSourceType()) {
+        	case srch2http::DATA_SOURCE_JSON_FILE: {
+        		Logger::console("%s: Adding access controls from JSON file...",this->indexDataConfig->getName().c_str());
+
+        		DaemonDataSource::addAccessControlsFromFile(indexer, indexDataConfig, this->roleCore->indexer);
+
+        		indexer->save();
+        		Logger::console("Indexes saved.");
+
+        		break;
+        	}
+        	default: {
+
+        		break;
+        	}
+        	};
+        }
+    }
 
     // Check if index files already exist.
     bool checkIndexExistence(const string & directoryPath);
@@ -108,6 +118,8 @@ public:
     Indexer *indexer;
     const CoreInfo_t * indexDataConfig;
     unsigned serverId;
+    Srch2Server* roleCore;
+    vector<Srch2Server*> resourceCores;
 
     const string directoryPath;
     const string jsonFilePath;

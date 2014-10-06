@@ -138,6 +138,7 @@ ResultsPostProcessingInfo::ResultsPostProcessingInfo(){
 	sortEvaluator = NULL;
 	filterQueryEvaluator = NULL;
 	phraseSearchInfoContainer = NULL;
+	roleId = "";
 }
 ResultsPostProcessingInfo::~ResultsPostProcessingInfo(){
 	if(facetInfo != NULL){
@@ -181,6 +182,14 @@ PhraseSearchInfoContainer * ResultsPostProcessingInfo::getPhraseSearchInfoContai
 	return this->phraseSearchInfoContainer;
 }
 
+void ResultsPostProcessingInfo::setRoleId(string & roleId){
+	this->roleId = roleId;
+}
+
+string* ResultsPostProcessingInfo::getRoleId(){
+	return &(this->roleId);
+}
+
 string ResultsPostProcessingInfo::toString(){
 	stringstream ss;
 	if(facetInfo != NULL){
@@ -195,6 +204,7 @@ string ResultsPostProcessingInfo::toString(){
 	if(phraseSearchInfoContainer != NULL){
 		ss << phraseSearchInfoContainer->toString().c_str();
 	}
+	ss << roleId.c_str() << endl;
 	return ss.str();
 }
 

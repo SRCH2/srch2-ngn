@@ -736,6 +736,13 @@ void * DPInternalRequestHandler::mergeInShardThreadWork(void * args){
 	//
 	return NULL;
 }
+//void * DPInternalRequestHandler::aclAttributeModifyShardThreadWork(void * args){
+//
+//}
+//
+//void * DPInternalRequestHandler::aclRecordModifyShardThreadWork(void * args){
+//
+//}
 
 }
 }

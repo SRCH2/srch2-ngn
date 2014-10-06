@@ -105,6 +105,7 @@ const char* const ConfigManager::enablePositionIndexString = "enablepositioninde
 const char* const ConfigManager::enableCharOffsetIndexString = "enablecharoffsetindex";
 const char* const ConfigManager::expandString = "expand";
 const char* const ConfigManager::facetEnabledString = "facetenabled";
+const char* const ConfigManager::attributeAclFileString = "attributeaclfile";
 const char* const ConfigManager::facetEndString = "facetend";
 const char* const ConfigManager::facetFieldString = "facetfield";
 const char* const ConfigManager::facetFieldsString = "facetfields";
@@ -121,6 +122,7 @@ const char* const ConfigManager::fuzzyMatchPenaltyString = "fuzzymatchpenalty";
 const char* const ConfigManager::indexConfigString = "indexconfig";
 const char* const ConfigManager::indexedString = "indexed";
 const char* const ConfigManager::multiValuedString = "multivalued";
+const char* const ConfigManager::aclString = "acl";
 const char* const ConfigManager::indexTypeString = "indextype";
 //const char* const ConfigManager::licenseFileString = "licensefile";
 const char* const ConfigManager::listenerWaitTimeString = "listenerwaittime";
@@ -136,9 +138,15 @@ const char* const ConfigManager::exportPortString = "exportport";
 const char* const ConfigManager::resetLoggerPortString = "resetloggerport";
 const char* const ConfigManager::commitPortString = "commitport";
 const char* const ConfigManager::mergePortString = "mergeport";
+const char* const ConfigManager::aclAttrRoleAddPortString = "AclAttributeAddRolePort";
+const char* const ConfigManager::aclAttrRoleDeletePortString = "AclAttributeDeleteRolePort";
+const char* const ConfigManager::aclAttrRoleAppendPortString = "AclAttributeReplaceRolePort";
+const char* const ConfigManager::aclRecorddRoleAddPortString = "AclRecordAddRolePort";
+const char* const ConfigManager::aclRecordRoleAppendPortString = "AclRecordReplaceRolePort";
+const char* const ConfigManager::aclRecordRoleDeletePortString = "AclRecordDeleteRolePort";
 const char* const ConfigManager::clusterStatsPortString = "cluster-stats_port";
-const char* const ConfigManager::nodesStatsPortString = "nodes-stats_port";;
-const char* const ConfigManager::debugStatsPortString = "debug-stats_port";;
+const char* const ConfigManager::nodesStatsPortString = "nodes-stats_port";
+const char* const ConfigManager::debugStatsPortString = "debug-stats_port";
 const char* const ConfigManager::searchAllPortString = "searchallport";
 const char* const ConfigManager::shutdownPortString = "shutdownport";
 const char* const ConfigManager::nodeShutdownPortString = "nodeshutdownport";
@@ -200,6 +208,13 @@ const char* const ConfigManager::exactTagPost = "exacttagpost";
 const char* const ConfigManager::fuzzyTagPre = "fuzzytagpre";
 const char* const ConfigManager::fuzzyTagPost = "fuzzytagpost";
 const char* const ConfigManager::snippetSize = "snippetsize";
+const char* const ConfigManager::multipleAccessControlString = "access-controls";
+const char* const ConfigManager::resourceCore = "resourcecore";
+const char* const ConfigManager::roleCore = "rolecore";
+const char* const ConfigManager::accessControlDataFile = "acldatafile";
+const char* const ConfigManager::aclRoleId = "roleId";
+const char* const ConfigManager::aclResourceId = "resourceId";
+
 
 const char* const ConfigManager::defaultFuzzyPreTag = "<b>";
 const char* const ConfigManager::defaultFuzzyPostTag = "</b>";
@@ -218,6 +233,12 @@ ConfigManager::PortNameMap_t ConfigManager::portNameMap[] = {
     { ResetLoggerPort, ConfigManager::resetLoggerPortString , "/resetLogger"},
     { CommitPort, ConfigManager::commitPortString, "/commit"},
     { MergePort, ConfigManager::mergePortString , "/merge"},
+	{ AttributeAclAdd, ConfigManager::aclAttrRoleAddPortString, "/aclAttributeRoleAdd" },
+	{ AttributeAclDelete, ConfigManager::aclAttrRoleDeletePortString,  "/aclAttributeRoleDelete" },
+	{ AttributeAclAppend, ConfigManager::aclAttrRoleAppendPortString, "/aclAttributeRoleAppend" },
+	{ RecordAclAdd, ConfigManager::aclRecorddRoleAddPortString, "/aclRecordRoleAdd"},
+	{ RecordAclAppend, ConfigManager::aclRecordRoleAppendPortString, "/aclRecordRoleAppend"},
+	{ RecordAclDelete, ConfigManager::aclRecordRoleDeletePortString, "/aclRecordRoleDelete"},
     { GlobalPortsStart , NULL , NULL},
     { InfoPort_Nodes_NodeID, ConfigManager::nodesStatsPortString , "/_nodes/nodeId"},
     { InfoPort_Cluster_Stats, ConfigManager::clusterStatsPortString , "/_cluster/stats"},
@@ -807,6 +828,64 @@ void ConfigManager::parseQuery(CoreConfigParseState_t *coreParseState , const xm
     }
 }
 
+
+// parse single access control in the config file here is an example:
+/*
+   <access-control>
+        <resourceCore> Product</resourceCore>
+        <roleCore> Company </roleCore>
+        <aclDataFile>data.json</aclDataFile>
+   </access-control>
+ */
+void ConfigManager::parseSingleAccessControl(const xml_node &parentNode,
+		bool &configSuccess, std::stringstream &parseError,
+		std::stringstream &parseWarnings){
+	// 1- extract the resource core name-->  <resourceCore> Product </resourceCore>
+	xml_node resourceCoreNode = parentNode.child(resourceCore);
+	// 2- extract the role core name.-->   <roleCore> Company </roleCore>
+	xml_node roleCoreNode = parentNode.child(roleCore);
+	// both resourceCore and roleCore are requiered
+	if(resourceCoreNode && resourceCoreNode.text()){
+		if(roleCoreNode && roleCoreNode.text()){
+			string resourceCoreName = string(resourceCoreNode.text().get());
+			string roleCoreName = string(roleCoreNode.text().get());
+			// first we need to check if these cores exist
+			CoreInfoMap_t::iterator resourceIt = coreInfoMap.find(resourceCoreName);
+			if(resourceIt == coreInfoMap.end()){
+				parseError << resourceCoreName
+				<< " core does not exist\n";
+				configSuccess = false;
+				return;
+			}
+			CoreInfoMap_t::iterator roleIt = coreInfoMap.find(roleCoreName);
+			if(roleIt == coreInfoMap.end()){
+				parseError << roleCoreName
+						<< " core does not exist\n";
+				configSuccess = false;
+				return;
+			}
+			AccessControlInfo* newAccessControlInfo = new AccessControlInfo(resourceCoreName, roleCoreName);
+			// 3- extract the name of the data file for bulk load -->    <aclDataFile> data.json </aclDataFile>
+			xml_node dataFileNode = parentNode.child(accessControlDataFile);
+			if(dataFileNode && dataFileNode.text()){
+				newAccessControlInfo->aclDataFileName = srch2Home + string("")
+                            + (*resourceIt).second->getName() + string("/") + string(dataFileNode.text().get());
+			}
+			(*resourceIt).second->setAccessControlInfo(newAccessControlInfo);
+		}else{
+			parseError
+			<< " access-control roleCore is not set\n";
+			configSuccess = false;
+			return;
+		}
+	}else{
+		parseError
+		<< " access-control resourceCore is not set\n";
+		configSuccess = false;
+		return;
+	}
+}
+
 /*
  * Only called by parseMultipleCores().  This function is specific to parsing the <core> node defining
  * a single core (data source).  However, it doesn't do much itself.  It relies on parseDataFieldSettings() to
@@ -826,17 +905,17 @@ void ConfigManager::parseSingleCore(const xml_node &parentNode, CoreInfo_t *core
         return;
     }
 
-//    xml_node childNode = parentNode.child(coreIdTag);
-//    if(childNode && childNode.text()){
-//        string temp = string(childNode.text().get());
-//        trimSpacesFromValue(temp, coreIdTag, parseWarnings);
-//        coreInfo->setCoreId((uint)atol(temp.c_str()));
-//    }else{
-//        // TODO: to be deleted in V1
-//        Logger::console("!!!!!CoreId is not provided in core %s, engine will use the default value!!!!!", coreInfo->name.c_str());
-//        coreInfo->setCoreId(defaultCoreId);
-//        defaultCoreId++;
-//    }
+    xml_node childNode = parentNode.child(coreIdTag);
+    if(childNode && childNode.text()){
+        string temp = string(childNode.text().get());
+        trimSpacesFromValue(temp, coreIdTag, parseWarnings);
+        coreInfo->setCoreId((uint)atol(temp.c_str()));
+    }else{
+        // TODO: to be deleted in V1
+        Logger::console("!!!!!CoreId is not provided in core %s, engine will use the default value!!!!!", coreInfo->name.c_str());
+        coreInfo->setCoreId(defaultCoreId);
+        defaultCoreId++;
+    }
 
     // Solr compatability - dataDir can be an attribute: <core dataDir="core0/data"
     if (parentNode.attribute(dataDirString) && string(parentNode.attribute(dataDirString).value()).compare("") != 0) {
@@ -872,7 +951,6 @@ void ConfigManager::parseMultipleCores(const xml_node &coresNode, bool &configSu
     	    newCore->setSchema(schema);
             if (configSuccess) {
                 clusterCores.push_back(newCore);
-                newCore->setCoreId(clusterCores.size() - 1);
             } else {
                 delete newCore;
                 return;
@@ -880,6 +958,22 @@ void ConfigManager::parseMultipleCores(const xml_node &coresNode, bool &configSu
         }
     }
 }
+
+void ConfigManager::parseAccessControls(const xml_node &accessControlsNode,
+        bool &configSuccess, std::stringstream &parseError,
+        std::stringstream &parseWarnings){
+	if(accessControlsNode){
+		// parse zero or more access-control settings
+		for ( xml_node accessControlNode = accessControlsNode.first_child(); accessControlNode;
+				accessControlNode = accessControlNode.next_sibling()){
+			parseSingleAccessControl(accessControlNode, configSuccess, parseError, parseWarnings);
+			if (configSuccess == false){
+				return;
+			}
+		}
+	}
+}
+
 
 /*
  * parentNode is either <config> or <core>.  parseDataFieldSettings() is responsible for loading the settings
@@ -1001,10 +1095,7 @@ void ConfigManager::parseCoreInformationTags(const xml_node &parentNode, CoreInf
         }
     }
 
-    for (unsigned int i = 0; portNameMap[i].portName != NULL || portNameMap[i].portType == GlobalPortsStart; i++) {
-    	if(portNameMap[i].portType == GlobalPortsStart){
-    		continue;
-    	}
+    for (unsigned int i = 0; portNameMap[i].portName != NULL; i++) {
         childNode = parentNode.child(portNameMap[i].portName);
         if (childNode && childNode.text()) { // checks if the config/port has any text in it or not
             int portValue = childNode.text().as_int();
@@ -1112,7 +1203,8 @@ void ConfigManager::parseCoreInformationTags(const xml_node &parentNode, CoreInf
                                                  coreParseState.searchableAttributesRequiredFlagVector[i] ,
                                                  coreParseState.searchableAttributesDefaultVector[i] ,
                                                  0 , 1 , coreParseState.searchableAttributesIsMultiValued[i],
-                                                 coreParseState.searchableAttributesHighlight[i]);
+                                                 coreParseState.searchableAttributesHighlight[i],
+                                                 coreParseState.searchableAttributesAclFlags[i]);
         } else {
             coreInfo->searchableAttributesInfo[coreParseState.searchableFieldsVector[i]] =
                 SearchableAttributeInfoContainer(coreParseState.searchableFieldsVector[i] ,
@@ -1121,7 +1213,8 @@ void ConfigManager::parseCoreInformationTags(const xml_node &parentNode, CoreInf
                                                  coreParseState.searchableAttributesDefaultVector[i] ,
                                                  0 , boostsMap[coreParseState.searchableFieldsVector[i]] ,
                                                  coreParseState.searchableAttributesIsMultiValued[i],
-                                                 coreParseState.searchableAttributesHighlight[i]);
+                                                 coreParseState.searchableAttributesHighlight[i],
+                                                 coreParseState.searchableAttributesAclFlags[i]);
         }
     }
 
@@ -1189,9 +1282,19 @@ void ConfigManager::parseAllCoreTags(const xml_node &configNode,
             return;
         }
     }
+
+    // <access-controls>
+    childNode = configNode.child(multipleAccessControlString);
+    if(childNode){
+    	parseAccessControls(childNode, configSuccess, parseError, parseWarnings);
+    	if (configSuccess == false){
+    		return;
+    	}
+    }
 }
 
-bool ConfigManager::setCoreParseStateVector(bool isSearchable, bool isRefining, bool isMultiValued, bool isHighlightEnabled, CoreConfigParseState_t *coreParseState, CoreInfo_t *coreInfo, std::stringstream &parseError, const xml_node &field){
+bool ConfigManager::setCoreParseStateVector(bool isSearchable, bool isRefining, bool isMultiValued,
+		bool isHighlightEnabled,  bool isAclEnabled, CoreConfigParseState_t *coreParseState, CoreInfo_t *coreInfo, std::stringstream &parseError, const xml_node &field){
 	string temporaryString = "";
 	if(isSearchable){ // it is a searchable field
 		coreParseState->searchableFieldsVector.push_back(string(field.attribute(nameString).value()));
@@ -1219,6 +1322,8 @@ bool ConfigManager::setCoreParseStateVector(bool isSearchable, bool isRefining, 
 			coreParseState->searchableAttributesRequiredFlagVector.push_back(false);
 		}
 		coreParseState->searchableAttributesIsMultiValued.push_back(isMultiValued);
+		coreParseState->searchableAttributesAclFlags.push_back(
+		                        isAclEnabled);
 	}
 	return true;
 }
@@ -1229,6 +1334,8 @@ bool ConfigManager::setRefiningStateVectors(const xml_node &field, bool isMultiV
 		vector<bool> &RefiningAttributesRequiredFlagVector,
 		vector<string> &RefiningAttributesDefaultVector,
 		vector<bool> &RefiningAttributesIsMultiValued,
+        vector<bool> &refiningAttributesAclEnabledFlags,
+        bool isAclEnabled,
 		std::stringstream &parseError, CoreInfo_t *coreInfo){
 
 	string temporaryString = "";
@@ -1291,6 +1398,7 @@ bool ConfigManager::setRefiningStateVectors(const xml_node &field, bool isMultiV
 		}
 
 		RefiningAttributesIsMultiValued.push_back(isMultiValued);
+        refiningAttributesAclEnabledFlags.push_back(isAclEnabled);
 	}
 
 	return true;
@@ -1514,6 +1622,7 @@ void ConfigManager::parseSchema(const xml_node &schemaNode, CoreConfigParseState
 	    vector<bool> RefiningAttributesRequiredFlagVector;
 	    vector<string> RefiningAttributesDefaultVector;
 	    vector<bool> RefiningAttributesIsMultiValued;
+	    vector<bool> refiningAttributesAclEnabledFlags;
 
 	    /*
 	     * <field>  in config.xml file
@@ -1530,7 +1639,9 @@ void ConfigManager::parseSchema(const xml_node &schemaNode, CoreConfigParseState
 	            	bool isSearchable = false;
 	            	bool isRefining = false;
 	                bool isHighlightEnabled = false;
-	                if(!setFieldFlagsFromFile(field, isMultiValued, isSearchable, isRefining, isHighlightEnabled, parseError, configSuccess, coreInfo)){
+	                bool isAclEnabled = false;
+	                if(!setFieldFlagsFromFile(field, isMultiValued, isSearchable, isRefining, isHighlightEnabled,
+	                		isAclEnabled, parseError, configSuccess, coreInfo)){
 	                	configSuccess = false;
 	                	return;
 	                }
@@ -1560,6 +1671,7 @@ void ConfigManager::parseSchema(const xml_node &schemaNode, CoreConfigParseState
 	                		coreParseState->searchableAttributesRequiredFlagVector.push_back(true);
 	                		coreParseState->searchableAttributesHighlight.push_back(isHighlightEnabled);
 	                		coreParseState->searchableAttributesIsMultiValued.push_back(isMultiValued);
+	                        coreParseState->searchableAttributesAclFlags.push_back(isAclEnabled);
 	                	}
 
 	                	if(isRefining){
@@ -1568,6 +1680,7 @@ void ConfigManager::parseSchema(const xml_node &schemaNode, CoreConfigParseState
 	                		RefiningAttributesDefaultVector.push_back("");
 	                		RefiningAttributesRequiredFlagVector.push_back(true);
 	                		RefiningAttributesIsMultiValued.push_back(isMultiValued);
+	                		refiningAttributesAclEnabledFlags.push_back(isAclEnabled);
 	                	}
 	                	continue;
 	                }
@@ -1597,14 +1710,16 @@ void ConfigManager::parseSchema(const xml_node &schemaNode, CoreConfigParseState
 	                		isRefining = true;
 	                	}
 
-	                	if(!setCoreParseStateVector( isSearchable,  isRefining,  isMultiValued,  isHighlightEnabled,  coreParseState,  coreInfo,  parseError, field)){
+	                	if(!setCoreParseStateVector( isSearchable,  isRefining,  isMultiValued,  isHighlightEnabled, isAclEnabled,
+	                			coreParseState,  coreInfo,  parseError, field)){
 	                		configSuccess = false;
 	                		return;
 	                	}
 
 	                	if(!setRefiningStateVectors(field, isMultiValued, isRefining, RefiningFieldsVector,
 	                			RefiningFieldTypesVector, RefiningAttributesRequiredFlagVector, RefiningAttributesDefaultVector,
-	                			RefiningAttributesIsMultiValued, parseError, coreInfo)){
+	                			RefiningAttributesIsMultiValued,
+	                			refiningAttributesAclEnabledFlags, isAclEnabled, parseError, coreInfo)){
 	                		configSuccess = false;
 	                		return;
 	                	}
@@ -1640,8 +1755,18 @@ void ConfigManager::parseSchema(const xml_node &schemaNode, CoreConfigParseState
 	                                                   RefiningFieldTypesVector[iter] ,
 	                                                   RefiningAttributesDefaultVector[iter] ,
 	                                                   RefiningAttributesRequiredFlagVector[iter],
-	                                                   RefiningAttributesIsMultiValued[iter]);
+	                                                   RefiningAttributesIsMultiValued[iter],
+	                                                   refiningAttributesAclEnabledFlags[iter]);
 	            }
+	        }
+
+	        /*
+	         * <attributeAclFile> in config.xml file
+	         */
+	        xml_node aclFileNode = schemaNode.child(attributeAclFileString);
+	        if (aclFileNode && aclFileNode.text()) {
+	        	string tempString = aclFileNode.text().get();
+	        	coreInfo->attrAclFilePath = boost::filesystem::path(getSrch2Home() + tempString).normalize().string();
 	        }
 
 	        /*
@@ -1775,6 +1900,7 @@ bool ConfigManager::setSearchableAndRefining(const xml_node &field,
 
 bool ConfigManager::setFieldFlagsFromFile(const xml_node &field, bool &isMultiValued,
 		bool &isSearchable, bool &isRefining, bool &isHighlightEnabled,
+		bool& isAclEnabled,
 		std::stringstream &parseError, bool &configSuccess, CoreInfo_t *coreInfo){
 	string temporaryString = "";
 	if(string(field.attribute(multiValuedString).value()).compare("") != 0){
@@ -1796,6 +1922,15 @@ bool ConfigManager::setFieldFlagsFromFile(const xml_node &field, bool &isMultiVa
         	if(!setSearchableAndRefining(field,  isSearchable,  isRefining,  parseError,  configSuccess, coreInfo)){
         		configSuccess = false;
         		return false;
+        	}
+        }
+
+        if (string(field.attribute(aclString).value()).compare("") != 0) {
+        	temporaryString = string(field.attribute(aclString).value());
+        	if (isValidBool(temporaryString)) {
+        		if (field.attribute(aclString).as_bool()) {
+        			isAclEnabled = true;
+        		}
         	}
         }
 

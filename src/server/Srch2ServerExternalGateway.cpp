@@ -96,6 +96,20 @@ void Srch2ServerGateway::cb_coreSpecificOperations(struct evhttp_request * req, 
     	case srch2http::MergePort:
     		dpExternal->externalMergeCommand(clusterReadview, req, coreId);
     		break;
+    	case srch2http::AttributeAclAdd:
+    	case srch2http::AttributeAclDelete:
+    	case srch2http::AttributeAclAppend:
+    		//dpExternal->externalAclAttributeModifyCommand(clusterReadview, req, coreId);
+    		break;
+    	case srch2http::RecordAclAdd:
+    		//dpExternal->externalAclRecordAddRolesCommand(clusterReadview, req, coreId);
+    		break;
+    	case srch2http::RecordAclAppend:
+    		//dpExternal->externalAclRecordAppendRolesCommand(clusterReadview, req, coreId);
+    		break;
+    	case srch2http::RecordAclDelete:
+    		//dpExternal->externalAclRecordDeleteRolesCommand(clusterReadview, req, coreId);
+    		break;
     	default:
     		cb_notfound(req, NULL);
     		break;

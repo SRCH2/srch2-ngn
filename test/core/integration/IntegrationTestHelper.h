@@ -113,8 +113,8 @@ void buildIndex(string indexDir)
     		mergeEveryNSeconds, mergeEveryMWrites,
     		updateHistogramEveryPMerges, updateHistogramEveryQWrites,
     		indexDir);
-    Indexer *indexer = Indexer::create(indexMetaData,  schema);
     
+    Indexer *indexer = Indexer::create(indexMetaData,  schema);
     Record *record = new Record(schema);
 
     std::string line;
@@ -203,8 +203,8 @@ void buildFactualIndex(string indexDir, unsigned docsToIndex)
     		mergeEveryNSeconds, mergeEveryMWrites,
     		updateHistogramEveryPMerges, updateHistogramEveryQWrites,
     		indexDir);
+
     Indexer *indexer = Indexer::create(indexMetaData,  schema);
-    
     Record *record = new Record(schema);
 
     std::string line;
@@ -400,7 +400,7 @@ void parseFuzzyQueryWithEdSet(const Analyzer *analyzer, Query *query, const stri
     srch2is::TermType termType = TERM_TYPE_COMPLETE;
     for (unsigned i = 0; i < queryKeywords.size(); ++i){
         //cout << "(" << queryKeywords[i] << ")("<< getNormalizedThreshold(queryKeywords[i].size()) << ")\t";
-        
+
         Term *term;
         if(i == (queryKeywords.size()-1)){
             termType = TERM_TYPE_PREFIX;
@@ -737,7 +737,7 @@ void getGetAllResultsQueryResults(const Analyzer *analyzer, QueryEvaluator *quer
     QueryEvaluatorInternal * queryEvaluatorInternal = queryEvaluator->impl;
     Query *query = new Query(srch2::instantsearch::SearchTypeGetAllResultsQuery);
     parseExactPrefixQuery(analyzer, query, queryString, attributeIdToFilter, attrOps);
-    
+
     ResultsPostProcessorPlan * plan = NULL;
     plan = new ResultsPostProcessorPlan();
     srch2::httpwrapper::SortFilterEvaluator * eval =
@@ -882,6 +882,30 @@ bool ping(const Analyzer *analyzer, QueryEvaluator *queryEvaluator, string query
     return returnvalue;
 }
 
+
+bool ping_WithACL(const Analyzer *analyzer, QueryEvaluator *queryEvaluator, string queryString,
+		unsigned numberofHits , const vector<unsigned> &recordIDs,
+		ATTRIBUTES_OP attrOps, string roleId)
+{
+	vector<unsigned> attributeIdToFilter;
+    Query *query = new Query(srch2::instantsearch::SearchTypeTopKQuery);
+    parseFuzzyPrefixQuery(analyzer, query, queryString, attributeIdToFilter, attrOps);
+    int resultCount = 10;
+
+    //cout << "[" << queryString << "]" << endl;
+
+    // for each keyword in the user input, add a term to the query
+    QueryResults *queryResults = new QueryResults(new QueryResultFactory(),queryEvaluator, query);
+
+    LogicalPlan * logicalPlan = prepareLogicalPlanForACLTests(query , NULL, 0, resultCount, false, srch2::instantsearch::SearchTypeTopKQuery, roleId);
+    queryEvaluator->search(logicalPlan , queryResults);
+    bool returnvalue =  checkResults(queryResults, numberofHits, recordIDs);
+    //printResults(queryResults);
+    queryResults->printStats();
+    delete queryResults;
+    delete query;
+    return returnvalue;
+}
 
 bool ping_WithGeo(const Analyzer *analyzer, QueryEvaluator *queryEvaluator, string queryString, float lat, float lng, float radius, unsigned numberofHits , const vector<unsigned> &recordIDs, vector<unsigned> attributeIdToFilter, ATTRIBUTES_OP attrOps)
 {

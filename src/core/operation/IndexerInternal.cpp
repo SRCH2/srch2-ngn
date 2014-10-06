@@ -201,6 +201,39 @@ INDEXWRITE_RETVAL IndexReaderWriter::addRecord(const Record *record, Analyzer* a
     return returnValue;
 }
 
+INDEXWRITE_RETVAL IndexReaderWriter::aclModifyRoles(const std::string &resourcePrimaryKeyID, vector<string> &roleIds, RecordAclCommandType commandType)
+{
+	pthread_mutex_lock(&lockForWriters);
+
+	INDEXWRITE_RETVAL returnValue = this->index->_aclEditRecordAccessList(resourcePrimaryKeyID, roleIds, commandType);
+
+	// By editing the access list of a record the result of a search could change
+	// So we need to clear the cache.
+	if(returnValue == OP_SUCCESS){
+	    if (this->cache != NULL)
+	        this->cache->clear();
+	    this->needToSaveIndexes = true;
+	}
+
+	pthread_mutex_unlock(&lockForWriters);
+	return returnValue;
+}
+
+INDEXWRITE_RETVAL IndexReaderWriter::deleteRoleRecord(const std::string &rolePrimaryKeyID){
+	pthread_mutex_lock(&lockForWriters);
+
+	INDEXWRITE_RETVAL returnValue = this->index->_aclRoleRecordDelete(rolePrimaryKeyID);
+
+	if(returnValue == OP_SUCCESS){
+		if (this->cache != NULL)
+			this->cache->clear();
+		this->needToSaveIndexes = true;
+	}
+
+	pthread_mutex_unlock(&lockForWriters);
+	return returnValue;
+}
+
 INDEXWRITE_RETVAL IndexReaderWriter::deleteRecord(const std::string &primaryKeyID)
 {
     pthread_mutex_lock(&lockForWriters);

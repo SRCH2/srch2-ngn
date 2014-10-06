@@ -183,6 +183,19 @@ public:
             const bool supportSwapInEditDistance) = 0;
     virtual bool getSupportSwapInEditDistance() const = 0;
 
+    virtual void setPositionIndexType(PositionIndexType positionIndexType) = 0;
+
+    virtual void setAclSearchableAttrIdsList(const std::vector<unsigned>& aclEnabledFieldIds) = 0;
+    virtual void setNonAclSearchableAttrIdsList(const std::vector<unsigned>& nonAclEnabledFieldIds) = 0;
+    virtual void setAclRefiningAttrIdsList(const std::vector<unsigned>& aclEnabledFieldIds) = 0;
+    virtual void setNonAclRefiningAttrIdsList(const std::vector<unsigned>& nonAclEnabledFieldIds) = 0;
+
+    virtual const std::vector<unsigned>& getAclSearchableAttrIdsList() const = 0;
+    virtual const std::vector<unsigned>& getNonAclSearchableAttrIdsList() const = 0;
+    virtual const std::vector<unsigned>& getAclRefiningAttrIdsList() const = 0;
+    virtual const std::vector<unsigned>& getNonAclRefiningAttrIdsList() const = 0;
+
+    virtual bool isValidAttribute(const std::string& attributeName) const = 0;
     /**
      * Writes the schema to a folder specified in schema::create(...) function.
      * After commit(), no more changes can be added.
