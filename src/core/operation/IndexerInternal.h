@@ -79,7 +79,6 @@ struct IndexHealthInfo
     {
         std::stringstream returnString;
         //returnString << "\"last_insert\":\"" << lastWriteTimeString << "\"";
-        //returnString << ",\"last_merge\":\"" << lastMergeTimeString << "\"";
         returnString << "\"last_merge\":\"" << lastMergeTimeString << "\"";
         returnString << ",\"doc_count\":\"" << doc_count << "\"";
         return returnString.str();

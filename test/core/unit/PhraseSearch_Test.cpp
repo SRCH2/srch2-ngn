@@ -66,6 +66,7 @@ int main(int argc, char **argv)
 
 void exactMatchTest1()
 {
+    vector<unsigned> listOfSlops;
     vector<vector<unsigned> > plv;
     vector<unsigned> l1;
     l1.push_back(2);l1.push_back(5);l1.push_back(7);l1.push_back(11);l1.push_back(77);
@@ -86,7 +87,7 @@ void exactMatchTest1()
     {
     	kpp.push_back(i);
     }
-    bool result = ps->exactMatch(plv, kpp, mvp, true);
+    bool result = ps->exactMatch(plv, kpp, mvp, listOfSlops, true);
     ASSERT(result);
 
 }
@@ -96,6 +97,7 @@ void exactMatchTest1()
  */
 void exactMatchTest2()
 {
+    vector<unsigned> listOfSlops;
     vector<vector<unsigned> > plv;
     vector<unsigned> l1;
     l1.push_back(2);l1.push_back(5);l1.push_back(7);l1.push_back(11);l1.push_back(15);l1.push_back(77);
@@ -119,7 +121,7 @@ void exactMatchTest2()
     {
     	kpp.push_back(i);
     }
-    bool result = ps->exactMatch(plv, kpp, mvp, true);
+    bool result = ps->exactMatch(plv, kpp, mvp, listOfSlops, true);
     ASSERT(result);
 
 }
@@ -181,36 +183,37 @@ bool buildPositionIndexes(const char * testFIle, map<std::string, std::vector<un
 
 bool callExactMatch(vector<string>& inpKeywords, map<std::string, std::vector<unsigned> >& piMap)
 {
-		vector<vector<unsigned> > positionListVector;
-		vector<unsigned> kpp;
-		typedef map<std::string, std::vector<unsigned> >::iterator piMapIter;
-		for (unsigned j =0; j < inpKeywords.size(); ++j)
-		{
-			string& tkn =  inpKeywords[j];
-			piMapIter iter =  piMap.find((tkn));
-			if (iter == piMap.end())
-			{
-				cout << "not found" << endl;
-				return false;
-			}
-			positionListVector.push_back(iter->second);
-			kpp.push_back(j);
-		}
-	    vector<vector<unsigned> > matchedPositions;
-		bool match = ps->exactMatch(positionListVector, kpp, matchedPositions, true);
-		if (match)
-		{
-			for (unsigned i=0; i < matchedPositions.size(); ++i)
-				cout << matchedPositions[0][i] << " ";
+    vector<vector<unsigned> > positionListVector;
+    vector<unsigned> kpp;
+    typedef map<std::string, std::vector<unsigned> >::iterator piMapIter;
+    for (unsigned j =0; j < inpKeywords.size(); ++j)
+    {
+        string& tkn =  inpKeywords[j];
+        piMapIter iter =  piMap.find((tkn));
+        if (iter == piMap.end())
+        {
+            cout << "not found" << endl;
+            return false;
+        }
+        positionListVector.push_back(iter->second);
+        kpp.push_back(j);
+    }
+    vector<vector<unsigned> > matchedPositions;
+    vector<unsigned> listOfSlops;
+    bool match = ps->exactMatch(positionListVector, kpp, matchedPositions, listOfSlops, true);
+    if (match)
+    {
+        for (unsigned i=0; i < matchedPositions.size(); ++i)
+            cout << matchedPositions[0][i] << " ";
 
-			cout << endl;
-			return true;
-		}
-		else
-		{
-			cout << "not found" << endl;
-			return false;
-		}
+        cout << endl;
+        return true;
+    }
+    else
+    {
+        cout << "not found" << endl;
+        return false;
+    }
 }
 
 void proximityTest(map<std::string, std::vector<unsigned> >& piMap) {
@@ -273,7 +276,8 @@ bool callProximityMatch(const vector<string>& query,unsigned slop, const vector<
 	{
 		kpp.push_back(j);
 	}
-	bool match = ps->proximityMatch(positionListVector, kpp, slop, matchedPositions, true);
+	vector<unsigned> listOfSlops;
+	bool match = ps->proximityMatch(positionListVector, kpp, slop, matchedPositions, listOfSlops, true);
 	if (match)
 	{
 		cout << "match found at position - " << endl;

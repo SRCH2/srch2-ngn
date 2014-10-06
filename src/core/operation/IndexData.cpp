@@ -422,7 +422,39 @@ INDEXWRITE_RETVAL IndexData::_deleteRecord(
 			this->forwardIndex->deleteRecord(externalRecordId) ?
 					OP_SUCCESS : OP_FAIL;
 
+
 	if (success == OP_SUCCESS) {
+		ForwardList * fwdList = this->forwardIndex->getForwardList_ForCommit(internalRecordId);
+		if (fwdList) {
+			unsigned keywordsCount = fwdList->getNumberOfKeywords();
+			const unsigned * listofKeywordIds = fwdList->getKeywordIds();
+			// Loop over the keyword-ids for the current forward list and get
+			// the inverted-list-ids from the trie.
+			TrieNodePath trieNodePath;
+			trieNodePath.path = new vector<TrieNode *>();
+			vector<unsigned> invertedListIdsToMerge;
+			for (unsigned i = 0; i < keywordsCount; ++i) {
+				unsigned keywordId = *(listofKeywordIds + i);
+				// get the TrieNode path of the current keyword in write view based on its id.
+				this->trie->getKeywordCorrespondingPathToTrieNode_WriteView(keywordId, &trieNodePath);
+				if (trieNodePath.path->size() == 0) {
+					// should not happen.
+					ASSERT(false);
+					continue;
+				}
+				TrieNode * leafNode = trieNodePath.path->back();
+				if(leafNode && leafNode->isTerminalNode()) {
+					invertedListIdsToMerge.push_back(leafNode->invertedListOffset);
+				} else {
+					// should not happen.
+					ASSERT(false);
+				}
+				trieNodePath.path->clear();
+			}
+			delete trieNodePath.path;
+			this->invertedIndex->appendInvertedListIdsForMerge(invertedListIdsToMerge);
+		}
+
 		this->mergeRequired = true; // need to tell the merge thread to merge
 		this->writeCounter->decDocsCounter();
 		this->writeCounter->incWritesCounter();

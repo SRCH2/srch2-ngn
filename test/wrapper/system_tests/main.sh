@@ -214,6 +214,10 @@ test_case "lot of attributes" "python ./attributes/attributes.py $SRCH2_ENGINE"
 
 sleep 3
 
+test_case "positional ranking in phrase search" "python ./positionalRanking_phraseSearch/positionalRanking.py $SRCH2_ENGINE ./positionalRanking_phraseSearch/queries.txt"
+
+sleep 3
+
 test_case "synonyms" "python ./synonyms/synonyms.py $SRCH2_ENGINE" 
 
 sleep 3
@@ -301,11 +305,11 @@ sleep 3
 
 test_case "sort filter" "python ./sort_filter/sort_filter.py $SRCH2_ENGINE ./sort_filter/queriesAndResults.txt ./sort_filter/facetResults.txt" 
 
-sleep 3
+sleep 4
 
 test_case "filter query" "python ./filter_query/filter_query.py $SRCH2_ENGINE ./filter_query/queriesAndResults.txt ./filter_query/facetResults.txt"
 
-sleep 3
+sleep 4
 
 test_case "test_solr_compatible_query_syntax" "python ./test_solr_compatible_query_syntax/test_solr_compatible_query_syntax.py $SRCH2_ENGINE \
     ./test_solr_compatible_query_syntax/queriesAndResults.txt ./test_solr_compatible_query_syntax/facetResults.txt"
@@ -396,6 +400,8 @@ test_case "test field list parameter in query" "python ./test_fieldList_inQuery/
 sleep 3
 
 test_case "validate json response" "python ./json_response/json_response_format_test.py $SRCH2_ENGINE"
+
+sleep 3
 
 test_case "test Chinese" "python ./chinese/chinese_analyzer.py $SRCH2_ENGINE"
 
