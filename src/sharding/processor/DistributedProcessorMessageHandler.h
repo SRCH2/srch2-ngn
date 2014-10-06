@@ -145,7 +145,7 @@ public:
         }
 
 		if(serializedRequestObj != NULL){
-			transportManager.getMessageAllocator()->deallocateBody((char*)serializedRequestObj, serializedSize);
+			transportManager.getMessageAllocator()->deallocateByBodyPointer((char*)serializedRequestObj, serializedSize);
 		}
         return true;
     }
