@@ -16,7 +16,8 @@ using srch2::util::Logger;
 
 /****************************MySQLTableIndex*******************************/
 //Table index populates the table id and table name.
-mysql::Binary_log_event *MySQLTableIndex::process_event(mysql::Table_map_event *tm) {
+mysql::Binary_log_event *MySQLTableIndex::process_event(
+        mysql::Table_map_event *tm) {
     if (find(tm->table_id) == end())
         insert(std::pair<uint64_t, mysql::Table_map_event *>(tm->table_id, tm));
 
@@ -47,9 +48,9 @@ mysql::Binary_log_event * MySQLIncidentHandler::process_event(
 
 /*****************************MySQLApplier**********************************/
 //This class handles insert, delete, update events.
-MySQLApplier::MySQLApplier(MySQLTableIndex * index, ServerInterface * serverHandle,
-        std::vector<std::string> * schemaName, time_t & startTimestamp,
-        std::string & pk) {
+MySQLApplier::MySQLApplier(MySQLTableIndex * index,
+        ServerInterface * serverHandle, std::vector<std::string> * schemaName,
+        time_t & startTimestamp, std::string & pk) {
     tableIndex = index;
     this->serverHandle = serverHandle;
     this->schemaName = schemaName;
@@ -58,8 +59,8 @@ MySQLApplier::MySQLApplier(MySQLTableIndex * index, ServerInterface * serverHand
 }
 
 mysql::Binary_log_event * MySQLApplier::process_event(mysql::Row_event * rev) {
-    std::string tableName;
-    this->serverHandle->configLookUp("tableName", tableName);
+    std::string expectedTableName, lowerTableName;
+    this->serverHandle->configLookUp("tableName", expectedTableName);
 
     time_t ts = rev->header()->timestamp;
 
@@ -79,10 +80,21 @@ mysql::Binary_log_event * MySQLApplier::process_event(mysql::Row_event * rev) {
         return rev;
     }
 
+    /*
+     * Transform expectedTableName and this row event table name to lower case,
+     * because on MAC, mysql table name is case insensitive.
+     */
+    lowerTableName = ti_it->second->table_name;
+    std::transform(expectedTableName.begin(), expectedTableName.end(),
+            expectedTableName.begin(), ::tolower);
+    std::transform(lowerTableName.begin(), lowerTableName.end(),
+            lowerTableName.begin(), ::tolower);
+
     //Ignore all other tables
-    if (tableName.compare(ti_it->second->table_name) != 0) {
+    if (expectedTableName.compare(lowerTableName) != 0) {
         return rev;
     }
+
     /*
      * Each row event contains multiple rows and fields. The Row_iterator
      * allows us to iterate one row at a time.
