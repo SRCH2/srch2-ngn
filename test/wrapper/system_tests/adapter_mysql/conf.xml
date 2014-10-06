@@ -97,18 +97,22 @@
 			<dataSourceType>2</dataSourceType>
 			<dbParameters>
 				<dbSharedLibraryPath>../../../db_connectors/build/</dbSharedLibraryPath>
-				<dbSharedLibraryName>libsqliteConnector</dbSharedLibraryName>
+				<dbSharedLibraryName>libmysqlConnector</dbSharedLibraryName>
 				<dbKeyValues>
-					<dbKeyValue key="db" value="srch2Test.db" />
-					<dbKeyValue key="dbPath" value="./adapter_sqlite/" />
+					<dbKeyValue key="host" value="127.0.0.1" />
+					<dbKeyValue key="port" value="3306" />
+					<dbKeyValue key="dbName" value="srch2Test" />
+					<dbKeyValue key="password" value="" />
+					<dbKeyValue key="user" value="root" />
 					<dbKeyValue key="tableName" value="COMPANY" />
+					<dbKeyValue key="logName" value="mysql-bin" />
 					<dbKeyValue key="listenerWaitTime" value="3" />
 				</dbKeyValues>
 			</dbParameters>
 
 			<updateLog>
 				<logLevel>3</logLevel>
-				<accessLogFile>./logs/srch2-log-sqlite.txt</accessLogFile>
+				<accessLogFile>./logs/srch2-log-mysql.txt</accessLogFile>
 			</updateLog>
 									
 </config>

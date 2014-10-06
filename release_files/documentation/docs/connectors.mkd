@@ -2,10 +2,20 @@
 
 ##1. Overview
 
-The SRCH2 engine provides connectors for [MongoDB](http://www.mongodb.org/) and [SQLite](http://www.sqlite.org/).  Notice that
-a SRCH2 instance can have multiple data sources ("cores" as described in [here](configuration.mkd#12-cores-optional)).
-Each core can be a JSON file, a MongoDB table, or a SQLite table.  Each SRCH2 connector for a database builds indexes for the records in the table, 
-and periodically checks data updates to incrementally maintain the indexes.
+The SRCH2 engine provides connectors for
+[MongoDB](http://www.mongodb.org/) and
+[SQLite](http://www.sqlite.org/).  Notice that a SRCH2 instance can
+have multiple data sources ("cores" as described in
+[here](configuration.mkd#12-cores-optional)). Each core can be a JSON
+file, a MongoDB table, or a SQLite table.  Each SRCH2 connector for a
+database builds indexes for the records in the table,  and
+periodically checks data updates to incrementally maintain the
+indexes.
+
+A connector for a data source can make sure all the record operations
+(insert/delete/update) at the source are sent to the
+SRCH2 engine so that the engine can find the latest results at the
+source.
 
 ##2. Search in MongoDB
 
@@ -93,7 +103,7 @@ Change the parameters if needed.  Make sure that you have also set the "srch2Hom
 Go to the install folder of SRCH2 and run the following:
 
 ```
-shell> ./bin/srch2-engine --config-file=./example-demo/srch2-config-mongo.xml
+ /home/joe/srch2/example-demo> ../bin/srch2-engine --config-file=./srch2-config-mongo.xml
 ```
 
 The engine will use a MongoDB connector to read the data from the MongoDB table, build indexes, and wait for queries. It also starts a thread that periodically pulls latest changes from MongoDB (as specified by the "listenerWaitTime" parameter) and add these changes to its indexes.  
@@ -194,12 +204,14 @@ sqlite> .import company-data.csv COMPANY
 To check if the data has been loaded, run following command:
 ```
 sqlite> SELECT * FROM COMPANY;
-1, 'Paul',32, 'California',20000.0
-2, 'Allen',25, 'Texas',15000.0
-3, 'Teddy',23, 'Norway',20000.0
-4, 'Mark',25, 'Rich-Mond ',65000.0
-5, 'David',27, 'Texas',85000.0
-6, 'Kim',22, 'South-Hall',45000.0
+
+| ID | NAME  | AGE | ADDRESS    | SALARY |
+|  1 | Paul  |  32 | California |  20000 |
+|  2 | Allen |  25 | Texas      |  15000 |
+|  3 | Teddy |  23 | Norway     |  20000 |
+|  4 | Mark  |  25 | Rich-Mond  |  65000 |
+|  5 | David |  27 | Texas      |  85000 |
+|  6 | Kim   |  22 | South-Hall |  45000 |
 ```
 As shown above, there should be six records in the "COMPANY" table.
 
@@ -229,7 +241,7 @@ called "libsqliteConnector" for SQLite, which is included in the package.  Chang
 Go to the install folder of SRCH2 and run the following:
 
 ```
-shell> ./bin/srch2-engine --config-file=./example-demo/srch2-config-sqlite.xml
+ /home/joe/srch2/example-demo> ../bin/srch2-engine --config-file=./srch2-config-sqlite.xml
 ```
 
 The engine should read the data from the SQLite instance, build indexes, and wait for queries. It also starts a thread that periodically pulls latest changes from SQLite (as specified by the "listenerWaitTime" parameter) and add these changes to its search indexes.
@@ -284,4 +296,213 @@ shell> curl "http://localhost:8081/search?q=Kim"
 ```
 The SRCH2 engine should not return the record that we just deleted.
 
-Besides MongoDB and SQLite, we are developing connectors for other database sources.
+##4. Search in MySQL
+
+This section describes how to use SRCH2 to do text search on
+[MySQL](http://www.mysql.com/).  The following figure illustrates how
+a SRCH2 connector interacts with a MySQL table.  In the configuration
+file of SRCH2, a user specifies a MySQL data source with information
+such as host name, port number, and table name.  The SRCH2 engine will
+load the MySQL connector (as a shared library called
+"libmysqlConnector"), which will read the records from the table, and
+insert the records into the SRCH2 engine.  In addition, the connector
+is using [MySQL Replication
+Listener](https://launchpad.net/mysql-replication-listener) to
+retrieve information about the changes (insert, delete, and update)
+from the binlog.  It will send these changes to the SRCH2 engine to
+change the indexes.
+
+<span ><center><img style="float: center" width="60%" src="../images/mysql-connector.png" /></center></span>
+
+###4.1. Setup MySQL
+
+####4.1.1. Follow the instructions at [here](http://dev.mysql.com/doc/refman/5.7/en/installing.html) to install MySQL:
+
+For Ubuntu:
+```
+shell> sudo apt-get install mysql-server
+```
+For MAC OS, please follow the instructions at [here](http://dev.mysql.com/doc/refman/5.5/en/macosx-installation-pkg.html).
+
+Notice that the [MySQL Replication
+Listener](https://launchpad.net/mysql-replication-listener) works with
+a MySQL server running with the [Binary
+Log](http://dev.mysql.com/doc/refman/5.0/en/binary-log.html) mode
+enabled. The MySQL host specified in the configuration file should be
+the primary of the replica set.
+
+
+####4.1.2. To enable [BinaryLog](http://dev.mysql.com/doc/refman/5.0/en/binary-log.html) (needed only once):
+
+For MAC OS, if the file <tt>/etc/my.cnf</tt> does not exist, run the following commands:
+```
+shell> cd /usr/local/mysql/support-files/
+shell> sudo cp my-huge.cnf /etc/my.cnf
+```
+For both platforms, find the following lines in the [my.cnf](http://dev.mysql.com/doc/refman/5.1/en/option-files.html) file.
+```
+#server-id               = 1
+#log_bin                 = /var/log/mysql/mysql-bin.log
+```
+Change them to:
+
+```
+server-id               = 1
+log_bin                 = /var/log/mysql/mysql-bin.log
+binlog-format	        = ROW
+```
+
+
+####4.1.3. Stop/start the mysql service:
+
+For Ubuntu:
+```
+shell> sudo /etc/init.d/mysql stop
+shell> sudo /etc/init.d/mysql start
+```
+For MAC OS:
+```
+shell> sudo /usr/local/mysql/support-files/mysql.server stop 
+shell> sudo /usr/local/mysql/support-files/mysql.server start
+```
+####4.1.4.Reset the row-based binlog:
+```
+shell> mysql -u root -p
+mysql> reset master;
+```
+
+Check binlog status:
+```
+mysql> show variables like 'binlog_format';
+mysql> show master status;
+mysql> show binlog events;
+```
+These commands will show the status of the binlog.
+
+###4.2. Populate MySQL
+
+Download a <a href=../example-demo/company-data.csv>sample data file</a> with company information to a local folder. Run the following MySQL command to insert those records into a table called "COMPANY" in a database called "demo".
+
+```
+shell> mysql -u root -p
+mysql> CREATE DATABASE IF NOT EXISTS demo;
+mysql> USE demo;
+mysql> CREATE TABLE COMPANY(
+   ID INT PRIMARY KEY NOT NULL,
+   NAME TEXT NOT NULL,
+   AGE INT NOT NULL,
+   ADDRESS CHAR(50),
+   SALARY REAL
+);
+mysql> exit;
+shell> mv company-data.csv COMPANY.csv
+shell> mysqlimport -u root -p --fields-terminated-by=',' --local demo COMPANY.csv
+```
+To check if the data has been loaded, run following command:
+```
+shell> mysql -u root -p
+mysql> USE demo;
+mysql> SELECT * FROM COMPANY;
+
+| ID | NAME  | AGE | ADDRESS    | SALARY |
+|  1 | Paul  |  32 | California |  20000 |
+|  2 | Allen |  25 | Texas      |  15000 |
+|  3 | Teddy |  23 | Norway     |  20000 |
+|  4 | Mark  |  25 | Rich-Mond  |  65000 |
+|  5 | David |  27 | Texas      |  85000 |
+|  6 | Kim   |  22 | South-Hall |  45000 |
+
+```
+As shown above, there should be six records in the "COMPANY" table.
+
+###4.3. Configure SRCH2
+
+Download a sample <a href="../example-demo/srch2-config-mysql.xml">configuration file</a> for the SRCH2 engine.  Find the following lines inside the <i>config</i> element to specify information about this MySQL data source:
+ 
+```
+    <dataSourceType>2</dataSourceType>
+    <dbParameters>
+        <dbSharedLibraryPath>db_connectors/</dbSharedLibraryPath>
+        <dbSharedLibraryName>libmysqlConnector</dbSharedLibraryName>
+        <dbKeyValues>
+            <dbKeyValue key="host" value="127.0.0.1" />
+            <dbKeyValue key="port" value="3306" />
+            <dbKeyValue key="dbName" value="demo" />
+            <dbKeyValue key="user" value="root" />
+            <dbKeyValue key="password" value="" />
+            <dbKeyValue key="tableName" value="COMPANY" />
+            <dbKeyValue key="logName" value="mysql-bin" />
+            <dbKeyValue key="listenerWaitTime" value="3" />
+        </dbKeyValues>
+    </dbParameters>
+```
+
+These parameters are similar to those used in the MongoDB connector.  Notice that the engine requires a shared library
+called "libmysqlConnector" for MySQL, which is included in the package.  Change the parameters if needed.  Make sure that you have also set the "srch2Home" variable in the SRCH2 configuration file. All other paths mentioned in the configuration file are relative to the "srch2Home" folder.
+
+###4.4. Start SRCH2 Engine
+
+Go to the install folder of SRCH2 and run the following:
+
+```
+ /home/joe/srch2/example-demo> ../bin/srch2-engine --config-file=./srch2-config-mysql.xml
+```
+
+The engine will use a MySQL connector to read the data from the MySQL
+database, build indexes, and wait for queries. It also starts a thread
+that listens to the latest changes from the database by using MySQL
+Replication Listener and add these changes to its indexes. 
+
+###4.5. Search
+
+In a terminal, run the following command:
+
+```
+shell> curl "http://localhost:8081/search?q=paul"
+```
+You should see a record with the keyword "Paul".
+
+###4.6. Insert a Record
+
+In the MySQL shell, run the following command to insert a new record.
+```
+shell> mysql -u root -p
+mysql> USE demo;
+mysql> INSERT INTO COMPANY (ID,NAME,AGE,ADDRESS,SALARY) VALUES (7, 'Joe', 20, 'Nevada', 15000.00 );
+```
+
+Wait for about 4 seconds for the SRCH2 server to save the change. Do the search query:
+```
+shell> curl "http://localhost:8081/search?q=joe"
+```
+The search engine should return this newly inserted record. 
+
+###4.7. Update a Record
+
+We want to update Kim's address from "South-Hall" to "Texas" by running the following command:
+```
+mysql> UPDATE COMPANY SET ADDRESS = 'Texas' WHERE ID = 6;
+```
+
+Wait for about 4 seconds for the SRCH2 server to save the change, then do the search query:
+```
+shell> curl "http://localhost:8081/search?q=kim"
+```
+The SRCH2 engine should be able to return this updated record, with "Texas" as the <i>ADDRESS</i> value.
+
+###4.8. Delete a Record
+
+Run the following command in the MySQL shell to delete the updated record:
+```
+mysql> DELETE FROM COMPANY WHERE ID = 6;
+```
+
+Again, wait for about 4 seconds for the SRCH2 server to save the change, then do the above search query:
+
+```
+shell> curl "http://localhost:8081/search?q=Kim"
+```
+The SRCH2 engine should not return the deleted record.
+
+Besides MongoDB, SQLite, and MySQL, we are developing connectors for
+other data sources.

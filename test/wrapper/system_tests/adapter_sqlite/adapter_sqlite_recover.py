@@ -1,10 +1,11 @@
 #These tests are used for the adapter_sqlite
 #Require sqlite3 installed.
-#Test 1: test loading records from the sqlite table to create an index.
-#Test 2: When the server is running, update the record in sqlite,
-#        then the listener should fetch the results.
-#Test 3: Shut down the engine, and delete the records in sqlite.
-#        Then start the engine to test if the engine can fetch the changes.
+#Test 1: test loading index from the sqlite table to create the index, engine exits gracefully.
+#Test 2: Start the engine, update the record in sqlite, 
+#        then the listener should fetch the results, then engine exits without saving changes.
+#Test 3: During the engine is down, delete the records in sqlite.
+#        Then start the engine to test if the engine can fetch the changes. 
+#        Also test if the engine can recover the changes before it crashes.
 
 import sys, urllib2, json, time, subprocess, os, commands, signal,shutil
 
@@ -34,6 +35,12 @@ def startSrch2Engine():
         print 'starting engine: ' + args[0] + ' ' + args[1]
         serverHandle = test_lib.startServer(args)
         test_lib.pingServer(port)
+
+#Kill the srch2 engine without saving the index and timestamp
+def killSrch2Engine():
+	global serverHandle
+	#Shutdown the engine server
+	test_lib.kill9Server(serverHandle)
 
 #Shut down the srch2 engine
 def shutdownSrch2Engine():
@@ -117,7 +124,7 @@ def checkResult(query, responseJson,resultValue):
     return 1
 
 
-#Test 1: test loading index from the sqlite table to create the index.
+#Test 1: test loading index from the sqlite table to create the index, engine exits gracefully.
 def testCreateIndexes(conn,sqlQueriesPath,testQueriesPath):
 	#Create the test table and Insert record into it
 	f_sql = open(sqlQueriesPath,'r')
@@ -133,11 +140,14 @@ def testCreateIndexes(conn,sqlQueriesPath,testQueriesPath):
 
 	#Compare the results with the expected results
 	compareResults(testQueriesPath)
+	shutdownSrch2Engine()
+	time.sleep(2)
 	print '=============================='
 
-#Test 2: When the server is running, update the record in sqlite, 
-#then the listener should fetch the results.
+#Test 2: Start the engine, update the record in sqlite, time
+#then the listener should fetch the results, then engine exits without saving changes.
 def testRunListener(conn,sqlQueriesPath,testQueriesPath):
+	startSrch2Engine()
 	#Modify the table while the srch2 engine is running.
 	f_sql = open(sqlQueriesPath,'r')
 	for line in f_sql:
@@ -146,19 +156,18 @@ def testRunListener(conn,sqlQueriesPath,testQueriesPath):
 	conn.commit()
 
 	#Wait for the engine to fetch the changes
-	time.sleep(5)
+	time.sleep(6)
 
 	#Compare the results with the expected results
 	compareResults(testQueriesPath)
+	#Kill the engine
+	killSrch2Engine()
 	print '=============================='
 
-#Test 3: Shut down the engine, and delete the records in sqlite.
-#Then start the engine to test if the engine can fetch the changes
+#Test 3: During the engine is down, delete the records in sqlite.
+#Then start the engine to test if the engine can fetch the changes. 
+#Also test if the engine can recover the changes before it crashes.
 def testOfflineLog(conn,sqlQueriesPath,testQueriesPath):
-	#Shutdown the engine
-	shutdownSrch2Engine()
-	time.sleep(3)
-
 	#Modify the table while the srch2 engine is not running
 	f_sql = open(sqlQueriesPath,'r')
 	for line in f_sql:
@@ -175,7 +184,7 @@ def testOfflineLog(conn,sqlQueriesPath,testQueriesPath):
 	compareResults(testQueriesPath)
 
 	#Shutdown the engine. Finish the test.
-	shutdownSrch2Engine()
+	killSrch2Engine()
 	print '=============================='
 
 if __name__ == '__main__':

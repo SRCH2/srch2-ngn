@@ -1,31 +1,29 @@
-#These tests are used for the adapter_sqlite
-#Require sqlite3 installed.
-#Test 1: test loading records from the sqlite table to create an index.
-#Test 2: When the server is running, update the record in sqlite,
-#        then the listener should fetch the results.
-#Test 3: Shut down the engine, and delete the records in sqlite.
-#        Then start the engine to test if the engine can fetch the changes.
+#These tests are used for the adapter_mongdb
+#Require pymongo and MongoDB running as replication mode
+#Test 1: test loading records from the MongoDB table to create a index.
+#Test 2: test listener, during the server running, update the record in the mongodb, 
+#        the listener will fetch the results.
+#Test 3: test the offline modification, first shut down the engine and delete the records in the mongodb,
+#        then start the engine to test if the engine can fetch the deletion.
 
 import sys, urllib2, json, time, subprocess, os, commands, signal,shutil
 
-try:
-	import sqlite3
-except ImportError:
-	os._exit(-1)
-
-sys.path.insert(0,'srch2lib')
+sys.path.insert(0, 'srch2lib')
 import test_lib
 
-port = '8087'
-serverHandle = None
-totalFailCount = 0
-binary_path = None
+import MongoDBConn
 
-#Start the SRCH2 engine with sqlite config file.
+port = '8087'
+dbconn = MongoDBConn.DBConn();
+conn = None
+handler = None
+totalFailCount = 0
+
+#Start the SRCH2 engine with mongodb config file.
 def startSrch2Engine():
 	global serverHandle
 	#Start the engine server
-        args = [binary_path , '--config-file=adapter_sqlite/conf.xml']
+        args = [binary_path , '--config-file=adapter_mongo/conf.xml']
 
         if test_lib.confirmPortAvailable(port) == False:
                 print 'Port' + str(port) + ' already in use -aborting '
@@ -41,29 +39,30 @@ def shutdownSrch2Engine():
 	#Shutdown the engine server
 	test_lib.killServer(serverHandle)
 
-#Compare the results with the expected outputs.
-def compareResults(testQueriesPath):
-	f_test = open(testQueriesPath,'r')
-	failCount = 0
-	global totalFailCount
+#Create a  connection to the mongodb, link the  handler to the srch2Test table
+def createConnection():
+	global handler
+	global conn
+	#Connect to the mongodb
+	conn_status = dbconn.connect()
+	if conn_status == -1 :
+		os._exit(-1)
 
-        for line in f_test:
-                #Get the query keyword and result from the input file
-                value = line.split('||')
-                queryValue = value[0].split()
-                resultValue = value[1].split()
 
-                #Construct the query
-                query = prepareQuery(queryValue)
+	conn = dbconn.getConn()
 
-                #Execute the query
-                response = urllib2.urlopen(query).read()
-                response_json = json.loads(response)
+	#Link the handler	
+	mongoDBDropTable()	#Drop table if exist
 
-                #Check the result
-                failCount += checkResult(query, response_json['results'],resultValue)
+	handler = conn.srch2Test.movies
 
-        totalFailCount += failCount
+#Close the connection from the mongodb
+def closeConnection():
+	dbconn.close()
+
+def mongoDBDropTable():
+	global conn
+	conn.drop_database("srch2Test")
 
 #prepare the query based on the valid syntax
 def prepareQuery(queryKeywords):
@@ -79,9 +78,34 @@ def prepareQuery(queryKeywords):
 
         return query
 
+#Compare the results with the expected outputs.
+def compareResults(testQueriesPath):
+	f_test = open(testQueriesPath,'r')
+	failCount = 0
+	global totalFailCount
+
+        for line in f_test:
+                #Get the query keyword and result from the input file
+                value = line.split('||')
+		queryValue = value[0].rstrip('\n').split()
+		resultValue = []
+		if(len(value) != 1):
+			resultValue = value[1].rstrip('\n').split('\n')
+                
+                #Construct the query
+                query = prepareQuery(queryValue)
+
+                #Execute the query
+                response = urllib2.urlopen(query).read()
+                response_json = json.loads(response)
+
+                #Check the result
+                failCount += checkResult(query, response_json['results'],resultValue)
+
+        totalFailCount += failCount
 
 #Function of checking the results
-#Compare the record 'ID' part with the result value
+#Compare the record 'director' part with the result value
 def checkResult(query, responseJson,resultValue):
 #    for key, value in responseJson:
 #        print key, value
@@ -89,13 +113,13 @@ def checkResult(query, responseJson,resultValue):
     if  len(responseJson) == len(resultValue):
         for i in range(0, len(resultValue)):
             #print response_json['results'][i]['record']['id']
-            if responseJson[i]['record']['ID'] !=  resultValue[i]:
+            if responseJson[i]['record']['director'] !=  resultValue[i]:
                 isPass=0
                 print query+' test failed'
                 print 'query results||given results'
                 print 'number of results:'+str(len(responseJson))+'||'+str(len(resultValue))
                 for i in range(0, len(responseJson)):
-                    print responseJson[i]['record']['ID']+'||'+resultValue[i]
+                    print responseJson[i]['record']['director']+'||'+resultValue[i]
                 break
     else:
         isPass=0
@@ -105,29 +129,26 @@ def checkResult(query, responseJson,resultValue):
         maxLen = max(len(responseJson),len(resultValue))
         for i in range(0, maxLen):
             if i >= len(resultValue):
-             print responseJson[i]['record']['ID']+'||'
+             print responseJson[i]['record']['director']+'||'
             elif i >= len(responseJson):
              print '  '+'||'+resultValue[i]
             else:
-             print responseJson[i]['record']['ID']+'||'+resultValue[i]
+             print responseJson[i]['record']['director']+'||'+resultValue[i]
 
     if isPass == 1:
         print  query+' test pass'
         return 0
     return 1
 
-
-#Test 1: test loading index from the sqlite table to create the index.
+#Test 1: test loading index from the mongodb table to create the index.
 def testCreateIndexes(conn,sqlQueriesPath,testQueriesPath):
 	#Create the test table and Insert record into it
 	f_sql = open(sqlQueriesPath,'r')
 	for line in f_sql:
-		conn.cursor().execute(line)
-		print line
-	conn.commit()
-
+		jsonRecord = json.loads(line)
+		handler.insert(jsonRecord)		
 	#Start the engine and wait to fetch the data, 
-	#the engine will create an index from the Sqlite table
+	#the engine will create an index from the mongodb table
 	startSrch2Engine()
 	time.sleep(5)
 
@@ -135,16 +156,18 @@ def testCreateIndexes(conn,sqlQueriesPath,testQueriesPath):
 	compareResults(testQueriesPath)
 	print '=============================='
 
-#Test 2: When the server is running, update the record in sqlite, 
+#Test 2: When the server is running, update the record in mongodb, 
 #then the listener should fetch the results.
 def testRunListener(conn,sqlQueriesPath,testQueriesPath):
 	#Modify the table while the srch2 engine is running.
 	f_sql = open(sqlQueriesPath,'r')
 	for line in f_sql:
-		conn.cursor().execute(line)
-		print line
-	conn.commit()
-
+		value = line.split('||')
+                record_id = json.loads(value[0])
+                record_op = json.loads(value[1])
+		print 'Updating Record ID: ' + str(record_id) + ' with OP: ' + str(record_op)
+		handler.update(record_id,record_op,multi=True)
+		
 	#Wait for the engine to fetch the changes
 	time.sleep(5)
 
@@ -152,7 +175,7 @@ def testRunListener(conn,sqlQueriesPath,testQueriesPath):
 	compareResults(testQueriesPath)
 	print '=============================='
 
-#Test 3: Shut down the engine, and delete the records in sqlite.
+#Test 3: Shut down the engine, and delete the records in mongodb.
 #Then start the engine to test if the engine can fetch the changes
 def testOfflineLog(conn,sqlQueriesPath,testQueriesPath):
 	#Shutdown the engine
@@ -162,9 +185,9 @@ def testOfflineLog(conn,sqlQueriesPath,testQueriesPath):
 	#Modify the table while the srch2 engine is not running
 	f_sql = open(sqlQueriesPath,'r')
 	for line in f_sql:
-		conn.cursor().execute(line)
-		print line
-	conn.commit()
+		jsonRecord = json.loads(line)
+		print 'Deleting record : ' + str(jsonRecord)
+		handler.remove(jsonRecord)
 
 	#Start the engine and wait it fetch the changes,
 	#the engine will get the offline changes.
@@ -181,22 +204,23 @@ def testOfflineLog(conn,sqlQueriesPath,testQueriesPath):
 if __name__ == '__main__':
 	if(os.path.exists("data")):
 		shutil.rmtree("data")
-	if(os.path.exists("./adapter_sqlite/srch2Test.db")):
-		os.remove("./adapter_sqlite/srch2Test.db")
-	conn = sqlite3.connect('./adapter_sqlite/srch2Test.db')
+	createConnection()
 	#Start the test cases
 	binary_path = sys.argv[1]
-	testCreateIndexes(conn,sys.argv[2],sys.argv[3])
-	testRunListener(conn,sys.argv[4],sys.argv[5])
-	testOfflineLog(conn,sys.argv[6],sys.argv[7])
 
-	#Do not need to drop the table, remove the db file after the exit.
-	print '=============================='
+	try:
+		testCreateIndexes(conn,sys.argv[2],sys.argv[3])
+		testRunListener(conn,sys.argv[4],sys.argv[5])
+		testOfflineLog(conn,sys.argv[6],sys.argv[7])
+	except Exception as e:
+		print e
+		mongoDBDropTable()
+		closeConnection()
+		os._exit(-1)
 	time.sleep(3)
-	conn.close()
+	mongoDBDropTable()
+	closeConnection()
 
 	if(os.path.exists("data")):
 		shutil.rmtree("data")
-	if(os.path.exists("./adapter_sqlite/srch2Test.db")):
-		os.remove("./adapter_sqlite/srch2Test.db")
 	os._exit(totalFailCount)

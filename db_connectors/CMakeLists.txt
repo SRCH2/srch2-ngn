@@ -130,3 +130,61 @@ ELSE()
     TARGET_LINK_LIBRARIES(sqliteConnector ${jsoncpp_LIBRARY} ${CMAKE_REQUIRED_LIBRARIES} sqlite3)
 ENDIF()
 
+
+#
+#  3.  MySQL connector 
+#
+
+IF(NOT ANDROID)
+    FILE(GLOB_RECURSE MYSQL_CONNECTOR_SRC RELATIVE ${CMAKE_CURRENT_SOURCE_DIR} "mysql/*.cpp" "util/*.cpp" "../src/core/util/Logger.cpp")
+
+    IF(MAC_OS)
+        SET (CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -stdlib=libstdc++")	
+        
+        #The MySQL default installation path on MAC is different from the path on Linux 
+        INCLUDE_DIRECTORIES(
+            ${CMAKE_SOURCE_DIR}/mysql/
+            ${CMAKE_SOURCE_DIR}/../src/adapter/
+            ${CMAKE_SOURCE_DIR}/../thirdparty/json/jsoncpp-src/include
+            ${CMAKE_SOURCE_DIR}/util/
+            ${CMAKE_SOURCE_DIR}/../thirdparty/mysql-connector-c++/mysql-replication-listener/include
+            ${CMAKE_SOURCE_DIR}/../thirdparty/mysql-connector-c++/mysql-connector-c++/build/include
+            /usr/local/mysql/include/
+    )
+    ELSE() 
+        INCLUDE_DIRECTORIES(
+            ${CMAKE_SOURCE_DIR}/mysql/
+            ${CMAKE_SOURCE_DIR}/../src/adapter/
+            ${CMAKE_SOURCE_DIR}/../thirdparty/json/jsoncpp-src/include
+            ${CMAKE_SOURCE_DIR}/util/
+            ${CMAKE_SOURCE_DIR}/../thirdparty/mysql-connector-c++/mysql-replication-listener/include
+            ${CMAKE_SOURCE_DIR}/../thirdparty/mysql-connector-c++/mysql-connector-c++/build/include
+            /usr/include/mysql/
+        )
+    ENDIF()
+
+    SET( jsoncpp_LIBRARY ${CMAKE_SOURCE_DIR}/../thirdparty/json/jsoncpp-src/build/libjsoncpp.a)
+
+    #MYSQL_CONNECTOR_LIBRARY and MYSQL_LISTENER_LIBRARY have to be both .a (static libs) or .so (or dynamic libs). We choose to use .a
+    SET(MYSQL_LISTENER_LIBRARY ${CMAKE_SOURCE_DIR}/../thirdparty/mysql-connector-c++/mysql-replication-listener/build/lib/libreplication.a)
+    SET(MYSQL_CONNECTOR_LIBRARY ${CMAKE_SOURCE_DIR}/../thirdparty/mysql-connector-c++/mysql-connector-c++/build/lib/libmysqlcppconn-static.a)
+
+    ADD_LIBRARY(mysqlConnector SHARED ${MYSQL_CONNECTOR_SRC} )
+
+    set(MYSQL_VERSION_MAJOR 1)
+    set(MYSQL_VERSION_MINOR 0)
+    set(MYSQL_VERSION_PATCH 0)
+    set(MYSQL_VERSION_STRING ${MYSQL_VERSION_MAJOR}.${MYSQL_VERSION_MINOR}.${MYSQL_VERSION_PATCH})
+
+    set_target_properties(mysqlConnector PROPERTIES VERSION ${MYSQL_VERSION_STRING}
+                                          SOVERSION ${MYSQL_VERSION_MAJOR})
+
+    SET_TARGET_PROPERTIES(mysqlConnector PROPERTIES COMPILE_FLAGS -fPIC)
+
+    IF(MAC_OS)
+        TARGET_LINK_LIBRARIES(mysqlConnector  ${MYSQL_LISTENER_LIBRARY} /usr/local/mysql/lib/libmysqlclient.a  ${MYSQL_CONNECTOR_LIBRARY} ${jsoncpp_LIBRARY} )
+    ELSE()
+        TARGET_LINK_LIBRARIES(mysqlConnector  ${MYSQL_LISTENER_LIBRARY} mysqlclient  ${MYSQL_CONNECTOR_LIBRARY} ${jsoncpp_LIBRARY} )
+    ENDIF()
+
+ENDIF()

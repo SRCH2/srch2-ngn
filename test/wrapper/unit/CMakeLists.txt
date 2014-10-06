@@ -4,6 +4,7 @@ INCLUDE_DIRECTORIES(
 	${CMAKE_SOURCE_DIR}/src/wrapper/
 	${CMAKE_SOURCE_DIR}/src/core/
 	${CMAKE_SOURCE_DIR}/src/server/
+	${CMAKE_SOURCE_DIR}/src/adapter/
     ${Boost_INCLUDE_DIRS}
     ${CMAKE_SOURCE_DIR}
     ${CMAKE_SOURCE_DIR}/thirdparty/event/include
@@ -17,7 +18,7 @@ EXEC_PROGRAM( ${CMAKE_CXX_COMPILER}
 SET( jsoncpp_LIBRARY ${CMAKE_SOURCE_DIR}/thirdparty/json/jsoncpp-src/build/libjsoncpp.a)
 
 
-ADD_EXECUTABLE(ConfigManager_Test ConfigManager_Test.cpp $<TARGET_OBJECTS:WRAPPER_OBJECTS> $<TARGET_OBJECTS:SERVER_OBJECTS>)
+ADD_EXECUTABLE(ConfigManager_Test ConfigManager_Test.cpp $<TARGET_OBJECTS:WRAPPER_OBJECTS> $<TARGET_OBJECTS:SERVER_OBJECTS> $<TARGET_OBJECTS:ADAPTER_OBJECTS>)
 TARGET_LINK_LIBRARIES(ConfigManager_Test
                         ${Srch2InstantSearch_LIBRARIES} 
                         ${jsoncpp_LIBRARY}  ${CMAKE_SOURCE_DIR}/thirdparty/event/lib/libevent.a 
@@ -27,11 +28,11 @@ ADD_DEPENDENCIES(ConfigManager_Test srch2_core)
 LIST(APPEND UNIT_TESTS ConfigManager_Test)
 
 
-ADD_EXECUTABLE(JSONValueObjectToRecord_Test JSONValueObjectToRecord_Test/JSONValueObjectToRecord_Test.cpp $<TARGET_OBJECTS:WRAPPER_OBJECTS> $<TARGET_OBJECTS:SERVER_OBJECTS>)
+ADD_EXECUTABLE(JSONValueObjectToRecord_Test JSONValueObjectToRecord_Test/JSONValueObjectToRecord_Test.cpp $<TARGET_OBJECTS:WRAPPER_OBJECTS> $<TARGET_OBJECTS:SERVER_OBJECTS> $<TARGET_OBJECTS:ADAPTER_OBJECTS>)
 TARGET_LINK_LIBRARIES(JSONValueObjectToRecord_Test
                         ${Srch2InstantSearch_LIBRARIES} 
                         ${jsoncpp_LIBRARY}  ${CMAKE_SOURCE_DIR}/thirdparty/event/lib/libevent.a 
-                        ${MONGO_CLIENT_LIBRARY} ${Boost_LIBRARIES} ${CMAKE_REQUIRED_LIBRARIES}  ${GPERFTOOL_LIBS}
+                        ${Boost_LIBRARIES} ${CMAKE_REQUIRED_LIBRARIES}  ${GPERFTOOL_LIBS}
                     )    
 ADD_DEPENDENCIES(JSONValueObjectToRecord_Test srch2_core)
 LIST(APPEND UNIT_TESTS JSONValueObjectToRecord_Test)

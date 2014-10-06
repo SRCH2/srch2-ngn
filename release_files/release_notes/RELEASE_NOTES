@@ -6,3 +6,5 @@
 
  * Improved Access Control.
 
+ * Added MySQL connector.  See documentation at connectors/#4-search-in-mysql
+

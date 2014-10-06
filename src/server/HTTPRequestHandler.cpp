@@ -30,7 +30,7 @@
 #include "ServerHighLighter.h"
 #include "util/RecordSerializer.h"
 #include "util/RecordSerializerUtil.h"
-
+#include "DataConnectorThread.h"
 
 #define SEARCH_TYPE_OF_RANGE_QUERY_WITHOUT_KEYWORDS 2
 
@@ -1152,6 +1152,9 @@ void HTTPRequestHandler::saveCommand(evhttp_request *req, Srch2Server *server) {
     case EVHTTP_REQ_PUT: {
         response[JSON_LOG] = wrap_with_json_array( IndexWriteUtil::_saveCommand(server->indexer));
         response[JSON_MESSAGE] = "The indexes have been saved to disk successfully";
+
+        //Call the save function implemented by each database connector.
+        DataConnectorThread::saveConnectorTimestamps();
 
         bmhelper_evhttp_send_reply(req, HTTP_OK, "OK", global_customized_writer.write(response));
         Logger::info("%s", response[JSON_MESSAGE].asString().c_str());

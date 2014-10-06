@@ -45,22 +45,24 @@ int ServerInterfaceInternal::insertRecord(const std::string& jsonString) {
     } else {
         srch2is::Record *record = new srch2is::Record(
                 this->server->indexer->getSchema());
-        Json::Value response = srch2::httpwrapper::IndexWriteUtil::_insertCommand(
-                this->server->indexer, this->server->indexDataConfig, root,
-                record);
+        Json::Value response =
+                srch2::httpwrapper::IndexWriteUtil::_insertCommand(
+                        this->server->indexer, this->server->indexDataConfig,
+                        root, record);
         debugMsg << writer.write(response);
         record->clear();
         delete record;
-    }
 
-    Logger::debug(debugMsg.str().c_str());
-    return 0;
+        Logger::debug(debugMsg.str().c_str());
+        return response["insert"].asString().compare("success");
+    }
 }
 
 //Called by the connector, accepts record pkey and delete from the index
 int ServerInterfaceInternal::deleteRecord(const std::string& primaryKey) {
     stringstream debugMsg;
     debugMsg << "DELETE : ";
+    bool op_success = false;
 
     Json::FastWriter writer;
     if (primaryKey.size()) {
@@ -75,6 +77,7 @@ int ServerInterfaceInternal::deleteRecord(const std::string& primaryKey) {
         default: // OP_SUCCESS.
         {
             debugMsg << "success\"}";
+            op_success = true;
         }
         };
     } else {
@@ -83,7 +86,11 @@ int ServerInterfaceInternal::deleteRecord(const std::string& primaryKey) {
     }
 
     Logger::debug(debugMsg.str().c_str());
-    return 0;
+    if (op_success) {
+        return 0;
+    } else {
+        return -1;
+    }
 }
 
 /*
@@ -101,8 +108,8 @@ int ServerInterfaceInternal::updateRecord(const std::string& pk,
     Json::Reader reader;
     bool parseSuccess = reader.parse(jsonString, root, false);
     if (parseSuccess == false) {
-        Logger::error("UPDATE : JSON object parse error %s",
-                jsonString.c_str());
+        Logger::error("DATABASE_LISTENER: JSON object parse error %s "
+                "while updating the record.", jsonString.c_str());
         return -1;
     }
 
@@ -114,26 +121,33 @@ int ServerInterfaceInternal::updateRecord(const std::string& pk,
         if (ret == srch2is::OP_FAIL) {
             debugMsg << "failed\",\"reason\":\"no record "
                     "with given primary key\"}";
-        } else
-            Logger::debug("DATABASE_LISTENER:UPDATE: deleted record ");
+
+            Logger::debug(debugMsg.str().c_str());
+            return -1;
+        }
 
         if (server->indexer->getNumberOfDocumentsInIndex()
                 < this->server->indexDataConfig->getDocumentLimit()) {
 
             srch2is::Record *record = new srch2is::Record(
                     server->indexer->getSchema());
-            Json::Value response = srch2::httpwrapper::IndexWriteUtil::_insertCommand(server->indexer,
-                    this->server->indexDataConfig, root, record);
+            Json::Value response =
+                    srch2::httpwrapper::IndexWriteUtil::_insertCommand(
+                            server->indexer, this->server->indexDataConfig,
+                            root, record);
             record->clear();
             delete record;
-            Logger::debug("DATABASE_LISTENER:UPDATE: inserted record ");
         } else {
             debugMsg << "failed\",\"reason\":\"insert: Document limit reached."
                     << endl;
-            /// reaching here means the insert failed,
+            // reaching here means the insert failed,
             //  need to resume the deleted old record
             srch2::instantsearch::INDEXWRITE_RETVAL ret =
                     server->indexer->recoverRecord(pk, deletedInternalRecordId);
+            if (ret == srch2is::OP_FAIL) {
+                Logger::error("DATABASE_LISTENER: Update error while trying to "
+                        "resume the deleted old record.");
+            }
         }
     }
     Logger::debug(debugMsg.str().c_str());

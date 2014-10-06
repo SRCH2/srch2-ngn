@@ -9,12 +9,12 @@
 		<srch2Home>/home/joe/srch2</srch2Home> -->
 
 	<listeningHostname>0.0.0.0</listeningHostname>
-	<listeningPort>8087</listeningPort>
+	<listeningPort>8081</listeningPort>
 
 
 	<maxSearchThreads>2</maxSearchThreads>
 
-			<dataDir>./data/</dataDir>
+			<dataDir>./mysql/</dataDir>
 			<schema>
 				<fields>
 					<field name="SALARY" type="text" indexed="true" />
@@ -30,8 +30,8 @@
 				<types>
 					<fieldType name="text_standard">
 						<analyzer>
-							<filter name="PorterStemFilter" dictionary="" />
-							<filter name="StopFilter" words="" />
+							<filter name="PorterStemFilter" dictionary="srch2_stemmer_words.txt" />
+							<filter name="StopFilter" words="stop-words.txt" />
 						</analyzer>
 					</fieldType>
 				</types>
@@ -87,7 +87,7 @@
 				<maxMemory>10000000</maxMemory>
 
 				<mergePolicy>
-					<mergeEveryNSeconds>3</mergeEveryNSeconds>
+					<mergeEveryNSeconds>10</mergeEveryNSeconds>
 					<mergeEveryMWrites>10</mergeEveryMWrites>
 				</mergePolicy>
 
@@ -96,19 +96,23 @@
 			<!-- DB settings Required if dataSourceType = 2 -->
 			<dataSourceType>2</dataSourceType>
 			<dbParameters>
-				<dbSharedLibraryPath>../../../db_connectors/build/</dbSharedLibraryPath>
-				<dbSharedLibraryName>libsqliteConnector</dbSharedLibraryName>
+				<dbSharedLibraryPath>db_connectors</dbSharedLibraryPath>
+				<dbSharedLibraryName>libmysqlConnector</dbSharedLibraryName>
 				<dbKeyValues>
-					<dbKeyValue key="db" value="srch2Test.db" />
-					<dbKeyValue key="dbPath" value="./adapter_sqlite/" />
+					<dbKeyValue key="host" value="127.0.0.1" />
+					<dbKeyValue key="port" value="3306" />
+					<dbKeyValue key="dbName" value="demo" />
+					<dbKeyValue key="password" value="" />
+					<dbKeyValue key="user" value="root" />
 					<dbKeyValue key="tableName" value="COMPANY" />
+					<dbKeyValue key="logName" value="mysql-bin" />
 					<dbKeyValue key="listenerWaitTime" value="3" />
 				</dbKeyValues>
 			</dbParameters>
 
 			<updateLog>
 				<logLevel>3</logLevel>
-				<accessLogFile>./logs/srch2-log-sqlite.txt</accessLogFile>
+				<accessLogFile>./logs/srch2-log-mysql.txt</accessLogFile>
 			</updateLog>
 									
 </config>

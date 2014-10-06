@@ -9,14 +9,16 @@
 #define __DATACONNECTORTHREAD_H__
 
 #include <string>
+#include <map>
 #include "DataConnector.h"
 #include "ServerInterfaceInternal.h"
 
 //Arguments passed to the thread
 struct ConnectorThreadArguments {
-    ServerInterface* server;
+    ServerInterface* serverInterface;
     bool createNewIndexFlag;
     std::string sharedLibraryFullPath;
+    std::string coreName;
 };
 
 //Called by the pthread_create, create the database connector
@@ -28,8 +30,14 @@ public:
     static void getDataConnectorThread(void * server);
     //The main function run by the thread, get connector and start listener.
     static void bootStrapConnector(ConnectorThreadArguments * connThreadArg);
+    static void saveConnectorTimestamps();
 private:
     static bool checkIndexExistence(void * server);
+    static void getDataConnector(std::string & path, void * pdlHandle,
+            DataConnector *& connector);
+    static void closeDataConnector(void * pdlHandle,
+            DataConnector *& connector);
+    static std::map<std::string, DataConnector *> connectors;
 };
 
 #endif /* __DATACONNECTORTHREAD_H__ */
