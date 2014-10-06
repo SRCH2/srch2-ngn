@@ -88,6 +88,7 @@ static const char* c_nodes_count = "count";
 static const char* c_node_version = "node-version";
 static const char* c_node_location = "node-location";
 static const char* c_node_name = "name";
+static const char* c_node_name2 = "node-name";
 static const char* c_node_listening_host_name = "listeningHostName";
 static const char* c_cluster_name = "clusterName";
 static const char* c_cluster_total_number_of_documnets = "totalNumberOfDocumentsInCluster";

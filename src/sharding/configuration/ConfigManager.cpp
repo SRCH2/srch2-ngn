@@ -74,7 +74,7 @@ const char* const ConfigManager::nodeDataDirTag = "datadir";
 const char* const ConfigManager::primaryShardTag = "core-number_of_shards";
 const char* const ConfigManager::replicaShardTag = "core-number_of_replicas";
 const char* const ConfigManager::clusterNameTag = "cluster-name";
-const int ConfigManager::DefaultNumberOfPrimaryShards = 5;
+const int ConfigManager::DefaultNumberOfPrimaryShards = 0;
 const int ConfigManager::DefaultNumberOfReplicas = 1;
 const char* const ConfigManager::DefaultClusterName = "SRCH2Cluster";
 const char* const ConfigManager::pingNodeTag = "ping";
@@ -1038,41 +1038,44 @@ void ConfigManager::parseCoreInformationTags(const xml_node &parentNode, CoreInf
         Logger::warn("Duplicate definition of \"%s\".  The engine will use the first value %d", replicaShardTag,  coreInfo->numberOfReplicas);
     }
 
-    xml_node childNode = parentNode.child(dataDirString);
-    if (childNode && childNode.text()) {
-        coreInfo->dataDir = string(childNode.text().get());
-        coreInfo->indexPath = srch2Home + coreInfo->dataDir;
-    }
+//    xml_node childNode = parentNode.child(dataDirString);
+//    if (childNode && childNode.text()) {
+//        coreInfo->dataDir = string(childNode.text().get());
+//        coreInfo->indexPath = srch2Home + coreInfo->dataDir;
+//    }
+//
+//    if (coreInfo->dataDir.length() == 0) {
+//    	Logger::warn("Core %s has null dataDir",coreInfo->name.c_str());
+//    }
 
-    if (coreInfo->dataDir.length() == 0) {
-    	Logger::warn("Core %s has null dataDir",coreInfo->name.c_str());
-    }
+//    xml_node childNode = parentNode.child(dataSourceTypeString);
+//    if (childNode && childNode.text()) {
+//        int dataSourceValue = childNode.text().as_int(DATA_SOURCE_JSON_FILE);
+//        switch(dataSourceValue) {
+//        case 0:
+//            coreInfo->dataSourceType = DATA_SOURCE_NOT_SPECIFIED;
+//            break;
+//        case 1:
+//            coreInfo->dataSourceType = DATA_SOURCE_JSON_FILE;
+//            break;
+//        case 2:
+//            coreInfo->dataSourceType = DATA_SOURCE_DATABASE;
+//            break;
+//        default:
+//            // if user forgets to specify this option, we will assume data source is JSON file
+//            coreInfo->dataSourceType = DATA_SOURCE_JSON_FILE;
+//            break;
+//        }
+//    } else {
+//        coreInfo->dataSourceType = DATA_SOURCE_JSON_FILE;
+//    }
 
-    childNode = parentNode.child(dataSourceTypeString);
-    if (childNode && childNode.text()) {
-        int dataSourceValue = childNode.text().as_int(DATA_SOURCE_JSON_FILE);
-        switch(dataSourceValue) {
-        case 0:
-            coreInfo->dataSourceType = DATA_SOURCE_NOT_SPECIFIED;
-            break;
-        case 1:
-            coreInfo->dataSourceType = DATA_SOURCE_JSON_FILE;
-            break;
-        case 2:
-            coreInfo->dataSourceType = DATA_SOURCE_DATABASE;
-            break;
-        default:
-            // if user forgets to specify this option, we will assume data source is JSON file
-            coreInfo->dataSourceType = DATA_SOURCE_JSON_FILE;
-            break;
-        }
-    } else {
-        coreInfo->dataSourceType = DATA_SOURCE_JSON_FILE;
-    }
+    // TODO : Temporary fix
+    coreInfo->dataSourceType = DATA_SOURCE_JSON_FILE;
 
     if (coreInfo->dataSourceType == DATA_SOURCE_JSON_FILE) {
         // dataFile is a required field only if JSON file is specified as data source.
-        childNode = parentNode.child(dataFileString);
+        xml_node childNode = parentNode.child(dataFileString);
         if (childNode && childNode.text()) { // checks if the config/dataFile has any text in it or not
             temporaryString = string(childNode.text().get());
             trimSpacesFromValue(temporaryString, dataFileString, parseWarnings);
@@ -1087,7 +1090,7 @@ void ConfigManager::parseCoreInformationTags(const xml_node &parentNode, CoreInf
             	coreInfo->dataFilePath = srch2Home + string("") +
             			coreInfo->getName() + string("/") + temporaryString;
             }
-        } else {
+        } else if(coreInfo->numberOfPrimaryShards == 0){
             Logger::error("%s core path to the data file is not set. You should set it as <dataFile>path/to/data/file</dataFile> in the config file.",
             		(coreInfo->name.compare("") != 0 ? coreInfo->name.c_str() : defaultCore));
             configSuccess = false;
@@ -1095,8 +1098,11 @@ void ConfigManager::parseCoreInformationTags(const xml_node &parentNode, CoreInf
         }
     }
 
-    for (unsigned int i = 0; portNameMap[i].portName != NULL; i++) {
-        childNode = parentNode.child(portNameMap[i].portName);
+    for (unsigned int i = 0; portNameMap[i].portName != NULL || portNameMap[i].portType == GlobalPortsStart; i++) {
+    	if(portNameMap[i].portType == GlobalPortsStart){
+    		continue;
+    	}
+        xml_node childNode = parentNode.child(portNameMap[i].portName);
         if (childNode && childNode.text()) { // checks if the config/port has any text in it or not
             int portValue = childNode.text().as_int();
             if (portValue <= 0 || portValue > USHRT_MAX) {
@@ -1113,7 +1119,7 @@ void ConfigManager::parseCoreInformationTags(const xml_node &parentNode, CoreInf
      * populate uniqueKey before DATA_SOURCE_DATABASE, so that we can add
      * the uniqueKey into the database config map.
      */
-    childNode = parentNode.child(schemaString).child(uniqueKeyString);
+    xml_node childNode = parentNode.child(schemaString).child(uniqueKeyString);
     if (childNode && childNode.text()) {
         coreInfo->primaryKey = string(childNode.text().get());
     } else {

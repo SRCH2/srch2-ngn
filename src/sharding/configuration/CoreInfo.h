@@ -157,6 +157,9 @@ public:
 		for(vector<string>::const_iterator pathItr = dataFilePaths.begin(); pathItr != dataFilePaths.end(); ++pathItr){
 			paths.push_back(*pathItr);
 		}
+		if(getDataFilePath().compare("") != 0){
+			paths.push_back(getDataFilePath());
+		}
 	}
 	void setJsonFilePaths(const string & path){ dataFilePaths.push_back(path); }
 
