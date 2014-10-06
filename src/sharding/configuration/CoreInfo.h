@@ -36,6 +36,7 @@ public:
 		boost = 1;
 		isMultiValued = false;
 		highlight = false;
+		isAclEnabled = false;
 	}
 	SearchableAttributeInfoContainer(const string & name,
 			srch2::instantsearch::FilterType type,
@@ -44,7 +45,8 @@ public:
 			const unsigned offset,
 			const unsigned boost,
 			const bool isMultiValued,
-			bool highlight = false){
+			bool highlight = false,
+			bool isAclEnabled = false){
 		this->attributeName = name;
 		this->attributeType = type;
 		this->required = required;
@@ -53,6 +55,7 @@ public:
 		this->boost = boost;
 		this->isMultiValued = isMultiValued;
 		this->highlight = highlight;
+		this->isAclEnabled = isAclEnabled;
 	}
 	// NO GETTER OR SETTERS ARE IMPLEMENTED FOR THESE MEMBERS
 	// BECAUSE THIS CLASS IS MEANT TO BE A VERY SIMPLE CONTAINER WHICH ONLY CONTAINS THE
@@ -65,6 +68,7 @@ public:
 	unsigned boost;
 	bool isMultiValued;
 	bool highlight;
+	bool isAclEnabled;
 };
 
 class RefiningAttributeInfoContainer {
@@ -76,17 +80,20 @@ public:
 		defaultValue = "";
 		required = false;
 		isMultiValued = false;
+		isAclEnabled = false;
 	}
 	RefiningAttributeInfoContainer(const string & name,
 			srch2::instantsearch::FilterType type,
 			const string & defaultValue,
 			const bool required,
-			const bool isMultiValued){
+			const bool isMultiValued,
+			const bool isAclEnabled){
 		this->attributeName = name;
 		this->attributeType = type;
 		this->defaultValue = defaultValue;
 		this->required = required;
 		this->isMultiValued = isMultiValued;
+		this->isAclEnabled = isAclEnabled;
 	}
 	// NO GETTER OR SETTERS ARE IMPLEMENTED FOR THESE MEMBERS
 	// BECAUSE THIS CLASS IS MEANT TO BE A VERY SIMPLE CONTAINER WHICH ONLY CONTAINS THE
@@ -96,7 +103,20 @@ public:
 	string defaultValue;
 	bool required;
 	bool isMultiValued;
+	bool isAclEnabled;
 };
+
+class AccessControlInfo{
+public:
+	string resourceCoreName;
+	string roleCoreName;
+	string aclDataFileName;
+	AccessControlInfo(string &resourceCoreName, string &roleCoreName){
+		this->resourceCoreName = resourceCoreName;
+		this->roleCoreName = roleCoreName;
+	};
+};
+
 // definitions for data source(s) (srch2Server objects within one HTTP server)
 class CoreInfo_t {
 
@@ -119,7 +139,7 @@ public:
 
 	ClusterShardId getPrimaryShardId(unsigned partitionId) const;
 
-	CoreInfo_t(class ConfigManager *manager) : configManager(manager) {
+	CoreInfo_t(class ConfigManager *manager) : configManager(manager),  accessControlInfo(NULL)  {
 		schema = NULL;
 	};
 
@@ -195,6 +215,7 @@ public:
 	bool getSupportSwapInEditDistance() const
 	{ return supportSwapInEditDistance; }
 	bool getSupportAttributeBasedSearch() const { return supportAttributeBasedSearch; }
+	void setSupportAttributeBasedSearch(bool flag) { supportAttributeBasedSearch = flag; }
 	unsigned getQueryTermBoost() const { return queryTermBoost; }
 	int getOrdering() const ;
 
@@ -276,6 +297,17 @@ public:
 	unsigned short getPort(PortType_t portType) const;
 	void setPort(PortType_t portType, unsigned short portNumber);
 
+    AccessControlInfo* getAccessControlInfo() const{
+    	return this->accessControlInfo;
+    }
+
+    void setAccessControlInfo(AccessControlInfo* accessControlInfo){
+    	this->accessControlInfo = accessControlInfo;
+    }
+
+    const std::string& getAttibutesAclFile() const {
+    	return attrAclFilePath;
+    }
 
 	void setSchema(srch2::instantsearch::Schema* schema) {
 		this->schema = schema;
@@ -401,6 +433,7 @@ protected:
 	bool synonymKeepOrigFlag;
 	std::string stopFilterFilePath;
 	std::string protectedWordsFilePath;
+	std::string attrAclFilePath;
 
 	// characters to specially treat as part of words, and not as a delimiter
 	std::string allowedRecordTokenizerCharacters;
@@ -425,7 +458,7 @@ protected:
 
 	// array of local HTTP ports (if any) index by port type enum
 	vector<unsigned short> ports;
-
+	AccessControlInfo* accessControlInfo;
 	srch2::instantsearch::Schema *schema;
 };
 

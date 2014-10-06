@@ -79,7 +79,7 @@ protected:
 
 	// HTTP reply properties
 	int code;
-    char *reason;
+    const char *reason;
     Json::Value jsonResponse;
     evkeyvalq * headers;
 

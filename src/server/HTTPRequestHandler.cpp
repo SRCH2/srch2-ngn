@@ -732,7 +732,7 @@ void HTTPRequestHandler::writeCommand(evhttp_request *req,
                     vector<string> roleIds;
                     // check if there is roleId in the query or not
 					std::stringstream log_str;
-                    if( JSONRecordParser::_extractRoleIds(roleIds, doc, server->indexDataConfig, log_str) ){
+                    if( JSONRecordParser::_extractRoleIds(roleIds, doc, server->getCoreInfo(), log_str) ){
                     	if(server->roleCore != NULL){
                     		// add role ids to the record object
                     		 addRoleIdsToRecord(roleIds, server, req, record, log_str);
@@ -761,8 +761,8 @@ void HTTPRequestHandler::writeCommand(evhttp_request *req,
                 vector<string> roleIds;
 				std::stringstream log_str;
                 // check if there is roleId in the query or not
-                if( JSONRecordParser::_extractRoleIds(roleIds, doc, server->indexDataConfig, log_str) ){
-                	if(server->roleCore != NULL){
+                if( JSONRecordParser::_extractRoleIds(roleIds, doc, server->getCoreInfo(), log_str) ){
+                	if(server->getRoleCore() != NULL){
                 		// add role ids to the record object
                 		addRoleIdsToRecord(roleIds, server, req, record, log_str);
 
@@ -797,7 +797,7 @@ void HTTPRequestHandler::writeCommand(evhttp_request *req,
 
         // if this core is a role core we should delete this record's id from the permissionMap of the resource cores
         for(unsigned i = 0 ; i < server->resourceCores.size() ; ++i ){
-        	IndexWriteUtil::_deleteRoleRecord(server->resourceCores[i]->indexer, server->indexDataConfig->getPrimaryKey(), headers);
+        	IndexWriteUtil::_deleteRoleRecord(server->resourceCores[i]->getIndexer(), server->getCoreInfo()->getPrimaryKey(), headers);
         }
 
         Json::Value deleteResponse = IndexWriteUtil::_deleteCommand_QueryURI(server->getIndexer(),
@@ -828,7 +828,7 @@ void HTTPRequestHandler::writeCommand(evhttp_request *req,
 void HTTPRequestHandler::addRoleIdsToRecord(vector<string> &roleIds, Srch2Server* server, evhttp_request *req, Record* record, std::stringstream &log_str){
 	vector<string> removedIds;
 	for(vector<string>::iterator i = roleIds.begin() ; i != roleIds.end() ; ){
-		INDEXLOOKUP_RETVAL returnValue = server->roleCore->indexer->lookupRecord(*i);
+		INDEXLOOKUP_RETVAL returnValue = server->roleCore->getIndexer()->lookupRecord(*i);
 		if(returnValue == LU_ABSENT_OR_TO_BE_DELETED){
 			// there is no record in role core with this id
 			// we should remove this id from roleIds
@@ -893,10 +893,10 @@ void HTTPRequestHandler::aclEditRolesOfRecord(evhttp_request *req, Srch2Server *
 					string primaryKeyID;
 					std::stringstream log_str;
 					// extract all the role ids from the query
-					if( JSONRecordParser::_extractResourceAndRoleIds(roleIds, primaryKeyID, doc, server->indexDataConfig, log_str) ){
+					if( JSONRecordParser::_extractResourceAndRoleIds(roleIds, primaryKeyID, doc, server->getCoreInfo(), log_str) ){
 						// check that the role core should have all the records with these role ids
 						for(vector<string>::iterator i = roleIds.begin() ; i != roleIds.end() ; ){
-							INDEXLOOKUP_RETVAL returnValue = server->roleCore->indexer->lookupRecord(*i);
+							INDEXLOOKUP_RETVAL returnValue = server->roleCore->getIndexer()->lookupRecord(*i);
 							if(returnValue == LU_ABSENT_OR_TO_BE_DELETED){
 								// there is no record in role core with this id
 								// we should remove this id from roleIds
@@ -916,7 +916,7 @@ void HTTPRequestHandler::aclEditRolesOfRecord(evhttp_request *req, Srch2Server *
 						}
 
 						if(roleIds.size() != 0){
-							log_str << global_customized_writer.write(IndexWriteUtil::_aclEditRoles(server->indexer, primaryKeyID, roleIds, commandType));
+							log_str << global_customized_writer.write(IndexWriteUtil::_aclEditRoles(server->getIndexer(), primaryKeyID, roleIds, commandType));
 						}
 					}
 
@@ -933,10 +933,10 @@ void HTTPRequestHandler::aclEditRolesOfRecord(evhttp_request *req, Srch2Server *
 				string primaryKeyID;
 				std::stringstream log_str;
 				// extract all the role ids from the query
-				if( JSONRecordParser::_extractResourceAndRoleIds(roleIds, primaryKeyID, doc, server->indexDataConfig, log_str) ){
+				if( JSONRecordParser::_extractResourceAndRoleIds(roleIds, primaryKeyID, doc, server->getCoreInfo(), log_str) ){
 					// check that the role core should have all the records with these role ids
 					for(vector<string>::iterator i = roleIds.begin() ; i != roleIds.end() ; ){
-						INDEXLOOKUP_RETVAL returnValue = server->roleCore->indexer->lookupRecord(*i);
+						INDEXLOOKUP_RETVAL returnValue = server->roleCore->getIndexer()->lookupRecord(*i);
 						if(returnValue == LU_ABSENT_OR_TO_BE_DELETED){
 							// there is no record in role core with this id
 							// we should remove this id from roleIds
@@ -956,7 +956,7 @@ void HTTPRequestHandler::aclEditRolesOfRecord(evhttp_request *req, Srch2Server *
 					}
 
 					if(roleIds.size() != 0){
-						log_str << global_customized_writer.write(IndexWriteUtil::_aclEditRoles(server->indexer, primaryKeyID, roleIds, commandType));
+						log_str << global_customized_writer.write(IndexWriteUtil::_aclEditRoles(server->getIndexer(), primaryKeyID, roleIds, commandType));
 					}
 				}
 				edit_responses.append(log_str.str());
@@ -1352,7 +1352,7 @@ void HTTPRequestHandler::attributeAclModify(evhttp_request *req, Srch2Server *se
 	            Logger::info("%s", global_customized_writer.write(response).c_str());
 	            return;
 	        } else {
-	        	const AttributeAccessControl& attrAcl = server->indexer->getAttributeAcl();
+	        	const AttributeAccessControl& attrAcl = server->getIndexer()->getAttributeAcl();
 	        	if (root.type() == Json::arrayValue) {
 	        		aclAttributeResponses.resize(root.size());
 	        		//the record parameter is an array of json objects
@@ -1486,7 +1486,7 @@ boost::shared_ptr<Json::Value> HTTPRequestHandler::doSearchOneCore(evhttp_reques
     QueryRewriter qr(server->getCoreInfo(),
             *(server->getIndexer()->getSchema()),
             *(AnalyzerFactory::getCurrentThreadAnalyzer(indexDataContainerConf)),
-            &paramContainer, server->indexer->getAttributeAcl());
+            &paramContainer, server->getIndexer()->getAttributeAcl());
     LogicalPlan logicalPlan;
     if(qr.rewrite(logicalPlan) == false){
         // if the query is not valid, print the error message to the response

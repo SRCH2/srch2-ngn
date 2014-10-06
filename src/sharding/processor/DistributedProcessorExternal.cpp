@@ -125,7 +125,8 @@ void DPExternalRequestHandler::externalSearchCommand(boost::shared_ptr<const Clu
     }
     //2. validate the query
     QueryValidator qv(*(indexDataContainerConf->getSchema()),
-            *(indexDataContainerConf), resultAggregator->getParamContainer());
+            *(indexDataContainerConf), resultAggregator->getParamContainer(),
+            *attributeAcl);
 
     bool valid = qv.validate();
     if (!valid) {
@@ -139,7 +140,8 @@ void DPExternalRequestHandler::externalSearchCommand(boost::shared_ptr<const Clu
     QueryRewriter qr(indexDataContainerConf,
             *(indexDataContainerConf->getSchema()),
             *(AnalyzerFactory::getCurrentThreadAnalyzer(indexDataContainerConf)),
-            resultAggregator->getParamContainer());
+            resultAggregator->getParamContainer(),
+            *attributeAcl);
 
     if(qr.rewrite(resultAggregator->getLogicalPlan()) == false){
         // if the query is not valid, print the error message to the response

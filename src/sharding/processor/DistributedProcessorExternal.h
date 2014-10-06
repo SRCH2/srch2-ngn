@@ -9,6 +9,7 @@
 #include <event.h>
 #include <evhttp.h>
 #include <event2/http.h>
+#include "operation/AttributeAccessControl.h"
 
 #include <vector>
 /*
@@ -137,6 +138,7 @@ public:
 private:
 	ConfigManager * configurationManager;
 	DPMessageHandler dpMessageHandler;
+	AttributeAccessControl* attributeAcl;
 };
 
 }

@@ -23,7 +23,8 @@ void Srch2ServerGateway::init(ConfigManager * serverConf){
 		coreSpecificPorts[portType].path = serverConf->portNameMap[portType].portPath;
 		coreSpecificPorts[portType].portType = portType;
 	}
-	coreSpecificPorts[(unsigned)GlobalPortsStart] = { NULL , srch2http::EndOfPortType, NULL };
+	PortInfo endPortInfo = { NULL , srch2http::EndOfPortType, NULL };
+	coreSpecificPorts[(unsigned)GlobalPortsStart] = endPortInfo;
 
 	globalPorts = new PortInfo[(unsigned) EndOfPortType - (unsigned)GlobalPortsStart];
 	for (srch2http::PortType_t portType = (srch2http::PortType_t)((unsigned)GlobalPortsStart + 1);
@@ -33,7 +34,7 @@ void Srch2ServerGateway::init(ConfigManager * serverConf){
 		globalPorts[portIndex].path = serverConf->portNameMap[portType].portPath;
 		globalPorts[portIndex].portType = portType;
 	}
-	globalPorts[((unsigned) EndOfPortType - (unsigned)GlobalPortsStart) - 1 ] = { NULL , srch2http::EndOfPortType, NULL };
+	globalPorts[((unsigned) EndOfPortType - (unsigned)GlobalPortsStart) - 1 ] = endPortInfo;
 }
 
 void Srch2ServerGateway::cb_coreSpecificOperations(struct evhttp_request * req, void * arg){

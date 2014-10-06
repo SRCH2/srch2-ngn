@@ -62,7 +62,7 @@ public:
     }
 
     void initAccessControls(){
-        if (!checkIndexExistence(indexDataConfig)){
+        if (!checkIndexExistence(directoryPath)){
         	switch (indexDataConfig->getDataSourceType()) {
         	case srch2http::DATA_SOURCE_JSON_FILE: {
         		Logger::console("%s: Adding access controls from JSON file...",this->indexDataConfig->getName().c_str());
@@ -109,17 +109,21 @@ public:
     Indexer * getIndexer();
     const CoreInfo_t * getCoreInfo();
 
+    Srch2Server* getRoleCore() {
+    	return roleCore;
+    }
     string getDataFilePath(){
         return jsonFilePath;
     }
+
     virtual ~Srch2Server(){}
+    vector<Srch2Server*> resourceCores;
+    Srch2Server* roleCore;
 
  private:
     Indexer *indexer;
     const CoreInfo_t * indexDataConfig;
     unsigned serverId;
-    Srch2Server* roleCore;
-    vector<Srch2Server*> resourceCores;
 
     const string directoryPath;
     const string jsonFilePath;

@@ -841,49 +841,49 @@ void ConfigManager::parseSingleAccessControl(const xml_node &parentNode,
 		bool &configSuccess, std::stringstream &parseError,
 		std::stringstream &parseWarnings){
 	// 1- extract the resource core name-->  <resourceCore> Product </resourceCore>
-	xml_node resourceCoreNode = parentNode.child(resourceCore);
-	// 2- extract the role core name.-->   <roleCore> Company </roleCore>
-	xml_node roleCoreNode = parentNode.child(roleCore);
-	// both resourceCore and roleCore are requiered
-	if(resourceCoreNode && resourceCoreNode.text()){
-		if(roleCoreNode && roleCoreNode.text()){
-			string resourceCoreName = string(resourceCoreNode.text().get());
-			string roleCoreName = string(roleCoreNode.text().get());
-			// first we need to check if these cores exist
-			CoreInfoMap_t::iterator resourceIt = coreInfoMap.find(resourceCoreName);
-			if(resourceIt == coreInfoMap.end()){
-				parseError << resourceCoreName
-				<< " core does not exist\n";
-				configSuccess = false;
-				return;
-			}
-			CoreInfoMap_t::iterator roleIt = coreInfoMap.find(roleCoreName);
-			if(roleIt == coreInfoMap.end()){
-				parseError << roleCoreName
-						<< " core does not exist\n";
-				configSuccess = false;
-				return;
-			}
-			AccessControlInfo* newAccessControlInfo = new AccessControlInfo(resourceCoreName, roleCoreName);
-			// 3- extract the name of the data file for bulk load -->    <aclDataFile> data.json </aclDataFile>
-			xml_node dataFileNode = parentNode.child(accessControlDataFile);
-			if(dataFileNode && dataFileNode.text()){
-				newAccessControlInfo->aclDataFileName = srch2Home + string("")
-                            + (*resourceIt).second->getName() + string("/") + string(dataFileNode.text().get());
-			}
-			(*resourceIt).second->setAccessControlInfo(newAccessControlInfo);
-		}else{
-			parseError
-			<< " access-control roleCore is not set\n";
-			configSuccess = false;
-			return;
-		}
-	}else{
-		parseError
-		<< " access-control resourceCore is not set\n";
-		configSuccess = false;
-		return;
-	}
+//	xml_node resourceCoreNode = parentNode.child(resourceCore);
+//	// 2- extract the role core name.-->   <roleCore> Company </roleCore>
+//	xml_node roleCoreNode = parentNode.child(roleCore);
+//	// both resourceCore and roleCore are requiered
+//	if(resourceCoreNode && resourceCoreNode.text()){
+//		if(roleCoreNode && roleCoreNode.text()){
+//			string resourceCoreName = string(resourceCoreNode.text().get());
+//			string roleCoreName = string(roleCoreNode.text().get());
+//			// first we need to check if these cores exist
+//			CoreInfoMap_t::iterator resourceIt = coreInfoMap.find(resourceCoreName);
+//			if(resourceIt == coreInfoMap.end()){
+//				parseError << resourceCoreName
+//				<< " core does not exist\n";
+//				configSuccess = false;
+//				return;
+//			}
+//			CoreInfoMap_t::iterator roleIt = coreInfoMap.find(roleCoreName);
+//			if(roleIt == coreInfoMap.end()){
+//				parseError << roleCoreName
+//						<< " core does not exist\n";
+//				configSuccess = false;
+//				return;
+//			}
+//			AccessControlInfo* newAccessControlInfo = new AccessControlInfo(resourceCoreName, roleCoreName);
+//			// 3- extract the name of the data file for bulk load -->    <aclDataFile> data.json </aclDataFile>
+//			xml_node dataFileNode = parentNode.child(accessControlDataFile);
+//			if(dataFileNode && dataFileNode.text()){
+//				newAccessControlInfo->aclDataFileName = srch2Home + string("")
+//                            + (*resourceIt).second->getName() + string("/") + string(dataFileNode.text().get());
+//			}
+//			(*resourceIt).second->setAccessControlInfo(newAccessControlInfo);
+//		}else{
+//			parseError
+//			<< " access-control roleCore is not set\n";
+//			configSuccess = false;
+//			return;
+//		}
+//	}else{
+//		parseError
+//		<< " access-control resourceCore is not set\n";
+//		configSuccess = false;
+//		return;
+//	}
 }
 
 /*

@@ -39,7 +39,7 @@
 #include <map>
 #include <memory>
 #include <exception>
-
+#include "AttributeAccessControl.h"
 #include <boost/thread/mutex.hpp>
 #include <boost/thread/shared_mutex.hpp>
 #include <boost/thread/locks.hpp>

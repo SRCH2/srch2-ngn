@@ -92,7 +92,7 @@ void ServerHighLighter::genSnippetsForSingleRecord(const QueryResults *qr, unsig
         	unsigned id = highlightAttributes[i].first;
         	// check whether the searchable attribute is accessible for current role-id.
         	// snippet is generated for accessible searchable attributes only.
-        	bool isFieldAccessible = server->indexer->getAttributeAcl().isSearchableFieldAccessibleForRole(
+        	bool isFieldAccessible = server->getIndexer()->getAttributeAcl().isSearchableFieldAccessibleForRole(
         			aclRoleValue, highlightAttributes[i].second);
         	if (!isFieldAccessible)
         		continue;  // ignore unaccessible attributes. Do not generate snippet.
