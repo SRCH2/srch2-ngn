@@ -73,7 +73,11 @@ public:
 	    void* serialize(void * buffer){
 	        // copy data
 	    	buffer = srch2::util::serializeFixedTypes(isClusterShard, buffer);
-	        buffer = shardId->serialize(buffer);
+	    	if(this->isClusterShard){
+				buffer = ((ClusterShardId *)shardId)->serialize(buffer);
+	    	}else{
+				buffer = ((NodeShardId *)shardId)->serialize(buffer);
+	    	}
 	        buffer = healthInfo.serialize(buffer);
 	        buffer = srch2::util::serializeString(versionInfo, buffer);
 	        return buffer;
@@ -87,10 +91,11 @@ public:
 	    	ShardId * shardId;
 	    	if(isClusterShard){
 	    		shardId = new ClusterShardId();
+				buffer = ((ClusterShardId *)shardId)->deserialize(buffer);
 	    	}else{
 	    		shardId = new NodeShardId();
+				buffer = ((NodeShardId *)shardId)->deserialize(buffer);
 	    	}
-	    	buffer = shardId->deserialize(buffer);
 	        ShardResults * newShardResults = new ShardResults(shardId);
 	        newShardResults->isClusterShard = isClusterShard;
 	        buffer = newShardResults->healthInfo.deserialize(buffer);
