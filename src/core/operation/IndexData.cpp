@@ -195,6 +195,17 @@ bool isSortedAlphabetically(const KeywordIdKeywordStringInvertedListIdTriple& ke
 	return true;
 }
 
+// Get the read views of different indexes so that we can use the same, consistent
+// read view for each of them during the lifecycle of a search process.
+void IndexData::getReadView(IndexReadStateSharedPtr_Token &readToken)
+{
+    this->trie->getTrieRootNode_ReadView(readToken.trieRootNodeSharedPtr);
+    this->quadTree->getQuadTreeRootNode_ReadView(readToken.quadTreeRootNodeSharedPtr);
+    this->forwardIndex->getForwardListDirectory_ReadView(readToken.forwardIndexReadViewSharedPtr);
+    this->invertedIndex->getInvertedIndexDirectory_ReadView(readToken.invertedIndexReadViewSharedPtr);
+    this->readCounter->increment();
+}
+
 INDEXWRITE_RETVAL IndexData::_aclEditRecordAccessList(const std::string& resourcePrimaryKeyID,
 		vector<string> &roleIds, RecordAclCommandType commandType) {
 

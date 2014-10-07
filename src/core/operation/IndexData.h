@@ -322,12 +322,7 @@ public:
 
     virtual ~IndexData();
 
-    void getReadView(IndexReadStateSharedPtr_Token &readToken)
-    {
-        this->trie->getTrieRootNode_ReadView(readToken.trieRootNodeSharedPtr);
-        this->quadTree->getQuadTreeRootNode_ReadView(readToken.quadTreeRootNodeSharedPtr);
-        this->readCounter->increment();
-    }
+    void getReadView(IndexReadStateSharedPtr_Token &readToken);
 
     // add a record
     INDEXWRITE_RETVAL _addRecord(const Record *record, Analyzer *analyzer);
