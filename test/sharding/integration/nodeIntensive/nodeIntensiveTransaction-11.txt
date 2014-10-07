@@ -10,8 +10,8 @@ A||update||{"id":"3","author_name":"Capt Sariputra","body":"<p>Anyone know how t
 B||delete||10001||"rid":"10001","delete":"success"
 B||insert||{"id":"999999","author_name":"Omega","body":"<pre><code>g.DrawImage</code></pre><p>To.. yeah, draw an image in my picturebox. Is it possible to give it an opacity attribute? I have been looking at the other versions of DrawImage but couldn&#39t find such thing!</p>","creation_date":"04/01/2011","id":"999999","tags":["vb.net","winforms","visual-studio"],"title":".DrawImage with opacity?","answer_count":"2","view_count":"1635","votes_count":"0"}||{"rid":"999999","insert":"success"}
 A||time||20
-B||info||"docs_in_index":"10101"
-A||info||"docs_in_index":"10101"
+B||numberOfRecordsInCore||10101
+A||numberOfRecordsInCore||10101
 B||save||"save":"success"
 A||save||"save":"success"
 A||kill

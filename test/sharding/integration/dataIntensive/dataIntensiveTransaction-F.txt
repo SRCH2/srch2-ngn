@@ -14,9 +14,12 @@ C||bulkInsertFromBeginning||./dataIntensive/stackoverflow-1M-C.json||1||50
 B||kill
 -||sleep||10
 C||kill
-D||info||"docs_in_index":"150"
-E||info||"docs_in_index":"150"
-F||info||"docs_in_index":"150"
+D||numberOfRecordsInCore||0||150
+E||numberOfRecordsInCore||0||150
+F||numberOfRecordsInCore||0||150
+D||numberOfRecordsInShards||0||450
+E||numberOfRecordsInShards||0||450
+F||numberOfRecordsInShards||0||450
 D||kill
 E||kill
 F||kill

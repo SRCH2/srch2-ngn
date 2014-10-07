@@ -14,11 +14,11 @@ H||start
 D||bulkInsertFromBeginning||./nodeIntensive/stackoverflow-10k-4.json||200||50
 E||bulkInsertFromBeginning||./nodeIntensive/stackoverflow-10k-5.json||200||50
 #merge
-F||numberOfRecordsInShards||0||40000
-G||numberOfRecordsInShards||0||40000
-H||numberOfRecordsInShards||0||40000
-D||numberOfRecordsInShards||0||40000
-E||numberOfRecordsInShards||0||40000
+F||numberOfRecordsInShards||0||120000
+G||numberOfRecordsInShards||0||120000
+H||numberOfRecordsInShards||0||120000
+D||numberOfRecordsInShards||0||120000
+E||numberOfRecordsInShards||0||120000
 F||bulkInsertFromBeginning||./nodeIntensive/stackoverflow-10k-6.json||200||50
 G||bulkInsertFromBeginning||./nodeIntensive/stackoverflow-10k-7.json||200||50
 C||kill
@@ -27,5 +27,5 @@ P||start
 Q||start
 -||sleep||10
 #merge
-F||numberOfRecordsInShards||0||60000
-P||numberOfRecordsInShards||0||60000
+F||numberOfRecordsInShards||0||180000
+P||numberOfRecordsInShards||0||180000

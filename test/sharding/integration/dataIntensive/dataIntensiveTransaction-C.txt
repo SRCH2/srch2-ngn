@@ -16,9 +16,12 @@ C||kill
 D||bulkInsertFromBeginning||./dataIntensive/stackoverflow-1M-D.json||1||50
 E||bulkInsertFromBeginning||./dataIntensive/stackoverflow-1M-E.json||1||50
 F||bulkInsertFromBeginning||./dataIntensive/stackoverflow-1M-F.json||1||50
-D||info||"docs_in_index":"300"
-E||info||"docs_in_index":"300"
-F||info||"docs_in_index":"300"
+D||numberOfRecordsInCore||0||300
+E||numberOfRecordsInCore||0||300
+F||numberOfRecordsInCore||0||300
+D||numberOfRecordsInShards||0||900
+E||numberOfRecordsInShards||0||900
+F||numberOfRecordsInShards||0||900
 D||kill
 E||kill
 F||kill

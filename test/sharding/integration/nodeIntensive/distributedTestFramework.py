@@ -52,7 +52,7 @@ def checkQueryResult(resultValue, output):
         assert flag > -1, "incorrect query result"
 
 
-def pingServer(ipAddr, port, query = 'q=march', timeout = 15):
+def pingServer(ipAddr, port, query = 'q=march', timeout = 60):
 
     info = 'curl -s \"http://' + ipAddr +':' + str(port) + '/search?' + query + '\" | grep -q results'
     #print "Pinging with: " + info
@@ -136,6 +136,7 @@ def startEngine(nodeId, transactionFile):
         #print str(nodes[nodeId].pid) + "---------------------------"
         pingServer(nodes[nodeId].ipAddress, nodes[nodeId].portNo)
         return
+    print binary_path + ' --config=' + nodes[nodeId].conf
     stdin, stdout, stderr = sshClient[nodes[nodeId].Id].exec_command('cd ' + integrationTestDir + '; echo $$;exec '+binary_path+' --config='+ nodes[nodeId].conf + ' > ' + integrationTestDir + '/dashboardFiles/'+transactionFile[0:-4] + '-dashboard-' + nodes[nodeId].Id + '.txt')
     #stdin, stdout, stderr = sshClient[nodes[nodeId].Id].exec_command('cd gitrepo/srch2-ngn/test/sharding/integration;mkdir temporaryCheck');
     nodes[nodeId].pid = stdout.readline()
@@ -144,7 +145,7 @@ def startEngine(nodeId, transactionFile):
 #        print "port not available, so exiting"
 #        os._exit()
     pingServer(nodes[nodeId].ipAddress, nodes[nodeId].portNo)
-
+    #time.sleep(5)
 
 #Kills the engine by sending kill signal
 def killEngine(nodeId):
@@ -388,7 +389,7 @@ def test(transactionFile):
         if(operation[0]=='numberOfRecordsInCore'):
              coreIndex = int(value[2])
              expectedValue = int(value[3])
-             response = urllib2.urlopen('http://' + nodes[nodeId[0]].ipAddress + ":" + nodes[nodeId[0]].portNo + '/_cluster/stats')
+             response = urllib2.urlopen('http://' + nodes[nodeId[0]].ipAddress + ":" + nodes[nodeId[0]].portNo + '/_debug/stats')
              jsonData = response.read()
              jsonOutput = json.loads(jsonData)
              numberOfRecords = jsonOutput["cores"][coreIndex]["totalNumberOfDocuments"]
@@ -396,8 +397,7 @@ def test(transactionFile):
         
         if(operation[0]=='nodeCount'):
              expectedValue = value[2].split()
-             print 'http://' + nodes[nodeId[0]].ipAddress + ":" + str(nodes[nodeId[0]].portNo) + '/_cluster/stats' 
-             response = urllib2.urlopen('http://' + nodes[nodeId[0]].ipAddress + ":" + nodes[nodeId[0]].portNo + '/_cluster/stats')
+             response = urllib2.urlopen('http://' + nodes[nodeId[0]].ipAddress + ":" + nodes[nodeId[0]].portNo + '/_debug/stats')
              jsonData = response.read()             
              jsonOutput = json.loads(jsonData)
              numberOfNodes = str(jsonOutput["nodes"]["count"])
@@ -406,14 +406,14 @@ def test(transactionFile):
         if(operation[0] == 'numberOfRecordsInShards'):
              coreIndex = int(value[2])
              expectedValue = int(value[3])
-             response = urllib2.urlopen('http://' + nodes[nodeId[0]].ipAddress + ":" + nodes[nodeId[0]].portNo + '/_cluster/stats')
+             response = urllib2.urlopen('http://' + nodes[nodeId[0]].ipAddress + ":" + nodes[nodeId[0]].portNo + '/_debug/stats')
              jsonData = response.read()
              jsonOutput = json.loads(output)
              numOfPrimaryShards = 2
              totalDoc = 0
              # we assume 0 is the index of stackoverflow core
              for i in range(0, numOfPrimaryShards):
-                 totalDoc = totalDoc + jsonOutput["cores"][coreIndex]["shards"][i]["numberOfDocuments"]
+                 totalDoc = totalDoc + jsonOutput["cores"][coreIndex]["all-cluster-shards"][i]["numberOfDocuments"]
 
              assert (totalDoc == int(expectedValue)), "total number of document in shards are wrong"
         
