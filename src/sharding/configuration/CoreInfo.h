@@ -248,6 +248,10 @@ public:
 	const string& getRecordAllowedSpecialCharacters() const
 	{ return allowedRecordTokenizerCharacters; }
 
+	AnalyzerType getAnalyzerType() const {	return analyzerType;};
+
+	const string& getChineseDictionaryPath() const { return chineseDictionaryFilePath;	}
+
 	uint32_t getDocumentLimit() const;
 	uint64_t getMemoryLimit() const;
 
@@ -437,6 +441,8 @@ protected:
 	std::string stopFilterFilePath;
 	std::string protectedWordsFilePath;
 	std::string attrAclFilePath;
+    AnalyzerType analyzerType;
+    std::string chineseDictionaryFilePath;
 
 	// characters to specially treat as part of words, and not as a delimiter
 	std::string allowedRecordTokenizerCharacters;

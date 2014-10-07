@@ -1804,6 +1804,8 @@ void ConfigManager::parseSchema(const xml_node &schemaNode, CoreConfigParseState
 	        coreInfo->synonymFilterFilePath = "";
 	        coreInfo->protectedWordsFilePath = "";
 	        coreInfo->synonymKeepOrigFlag = true;
+	        coreInfo->analyzerType = STANDARD_ANALYZER;
+	        coreInfo->chineseDictionaryFilePath = "";
 
 	        childNode = schemaNode.child(typesString);
 

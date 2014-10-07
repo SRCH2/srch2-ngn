@@ -25,26 +25,26 @@ namespace httpwrapper {
 // we do not use synonym filter.
 Analyzer* AnalyzerFactory::createAnalyzer(const CoreInfo_t* config, bool isSearcherThread) {
 
-	// This flag shows if we need to stem or not. (StemmerNormalizerType is an enum)
-	StemmerNormalizerFlagType stemmerFlag;
-	// gets the stem flag and set the stemType
-	if (config->getStemmerFlag()) {
-		stemmerFlag = srch2is::ENABLE_STEMMER_NORMALIZER;
-	} else {
-		stemmerFlag = srch2is::DISABLE_STEMMER_NORMALIZER;
-	}
-	// This flag shows if we need to keep the origin word or not.
-        SynonymKeepOriginFlag synonymKeepOriginFlag;
-	if (config->getSynonymKeepOrigFlag()) {
-		synonymKeepOriginFlag = srch2is::SYNONYM_KEEP_ORIGIN;
-	} else {
-		synonymKeepOriginFlag = srch2is::SYNONYM_DONOT_KEEP_ORIGIN;
-	}
+    // This flag shows if we need to stem or not. (StemmerNormalizerType is an enum)
+    StemmerNormalizerFlagType stemmerFlag;
+    // gets the stem flag and set the stemType
+    if (config->getStemmerFlag()) {
+        stemmerFlag = srch2is::ENABLE_STEMMER_NORMALIZER;
+    } else {
+        stemmerFlag = srch2is::DISABLE_STEMMER_NORMALIZER;
+    }
+    // This flag shows if we need to keep the origin word or not.
+    SynonymKeepOriginFlag synonymKeepOriginFlag;
+    if (config->getSynonymKeepOrigFlag()) {
+        synonymKeepOriginFlag = srch2is::SYNONYM_KEEP_ORIGIN;
+    } else {
+        synonymKeepOriginFlag = srch2is::SYNONYM_DONOT_KEEP_ORIGIN;
+    }
 
-	// append the stemmer file to the install directory
-	std::string stemmerFilePath = config->getStemmerFile();
-        StemmerContainer *stemmer = NULL;
-	if (stemmerFlag == ENABLE_STEMMER_NORMALIZER) {
+    // append the stemmer file to the install directory
+    std::string stemmerFilePath = config->getStemmerFile();
+    StemmerContainer *stemmer = NULL;
+    if (stemmerFlag == ENABLE_STEMMER_NORMALIZER) {
             struct stat stResult;
             if (stat(stemmerFilePath.c_str(), &stResult) == 0) {
                 stemmer = StemmerContainer::getInstance(stemmerFilePath);
@@ -53,59 +53,78 @@ Analyzer* AnalyzerFactory::createAnalyzer(const CoreInfo_t* config, bool isSearc
                 Logger::error("The stemmer file %s is not valid. Please provide a valid file path." ,
                               stemmerFilePath.c_str());
             }
-	}
+    }
 
-	// gets the path of stopFilter
-	std::string stopWordFilePath = config->getStopFilePath();
-	if (stopWordFilePath.compare("") != 0) {
+    // gets the path of stopFilter
+    std::string stopWordFilePath = config->getStopFilePath();
+    if (stopWordFilePath.compare("") != 0) {
             struct stat stResult;
             if (stat(stopWordFilePath.c_str(), &stResult) != 0) {
                 Logger::error("The stop word file %s is not valid. Please provide a valid file path.",
                               stopWordFilePath.c_str());
             }
-	}
-	StopWordContainer *stopWords = StopWordContainer::getInstance(stopWordFilePath);
+    }
+    StopWordContainer *stopWords = StopWordContainer::getInstance(stopWordFilePath);
 
-	// gets the path of stopFilter
+    // gets the path of stopFilter
+    SynonymContainer *synonyms = NULL;
+    if (!isSearcherThread) {
+        // Do not use synonym filter during search.
+        std::string synonymFilePath = config->getSynonymFilePath();
+        if (synonymFilePath.compare("") != 0) {
+            struct stat stResult;
+            if (stat(synonymFilePath.c_str(), &stResult) != 0) {
+                Logger::error("The synonym file %s is not valid. Please provide a valid file path.",
+                        synonymFilePath.c_str());
+            }
+        }
+        synonyms = SynonymContainer::getInstance(synonymFilePath,
+                synonymKeepOriginFlag);
+    }
 
-	SynonymContainer *synonyms = NULL;
-	if (!isSearcherThread) {
-		// Do not use synonym filter during search.
-		std::string synonymFilePath = config->getSynonymFilePath();
-		if (synonymFilePath.compare("") != 0) {
-			struct stat stResult;
-			if (stat(synonymFilePath.c_str(), &stResult) != 0) {
-				Logger::error("The synonym file %s is not valid. Please provide a valid file path.",
-						synonymFilePath.c_str());
-			}
-		}
-		synonyms = SynonymContainer::getInstance(synonymFilePath,
-				synonymKeepOriginFlag);
-	}
-
-	std::string protectedWordFilePath = config->getProtectedWordsFilePath();
-	if (protectedWordFilePath.compare("") != 0) {
+    std::string protectedWordFilePath = config->getProtectedWordsFilePath();
+    if (protectedWordFilePath.compare("") != 0) {
             struct stat stResult;
             if (stat(protectedWordFilePath.c_str(), &stResult) != 0) {
                 Logger::error("The protected word file %s is not valid. Please provide a valid file path.",
                               protectedWordFilePath.c_str());
             }
-	}
-	ProtectedWordsContainer *protectedWords = ProtectedWordsContainer::getInstance(protectedWordFilePath);
+    }
+    ProtectedWordsContainer *protectedWords = ProtectedWordsContainer::getInstance(protectedWordFilePath);
 
-	// Create an analyzer
-	return new Analyzer(stemmer, stopWords, protectedWords, synonyms,
-                            config->getRecordAllowedSpecialCharacters());
+    AnalyzerType analyzerType = config->getAnalyzerType(); 
+    std::string chineseDictFilePath = config->getChineseDictionaryPath();
+    ChineseDictionaryContainer* chineseDictionaryContainer = NULL;
+    if (analyzerType == CHINESE_ANALYZER){
+        if (chineseDictFilePath.compare("") == 0){
+            // If the user specifies to use the Chinese analyzer, but didn't provide the dictionary path
+            // we will use the StandardAnalyzer instead.
+            analyzerType = STANDARD_ANALYZER;
+        } else {
+            struct stat stResult;
+            if (stat(chineseDictFilePath.c_str(), &stResult) != 0) {
+                analyzerType = STANDARD_ANALYZER;
+                Logger::error("The dictionary file %s is not valid. Please provide a valid file path.",
+                              chineseDictFilePath.c_str());
+            } else {
+                chineseDictionaryContainer = ChineseDictionaryContainer::getInstance(chineseDictFilePath);
+            }
+        }
+    }
+    // Create an analyzer
+    return new Analyzer(stemmer, stopWords, protectedWords, synonyms,
+                            config->getRecordAllowedSpecialCharacters(),
+                            analyzerType, chineseDictionaryContainer);
 }
 
 Analyzer* AnalyzerFactory::getCurrentThreadAnalyzer(const CoreInfo_t* config) {
 
-	static boost::thread_specific_ptr<Analyzer> _ts_analyzer_object;
-	if (_ts_analyzer_object.get() == NULL)
-	{
-		Logger::debug("Create Analyzer object for thread = %d ",  pthread_self());
-		_ts_analyzer_object.reset(AnalyzerFactory::createAnalyzer(config, true));
-	}
+    static boost::thread_specific_ptr<Analyzer> _ts_analyzer_object;
+    if (_ts_analyzer_object.get() == NULL)
+    {
+        Logger::debug("Create Analyzer object for thread = %d ",  pthread_self());
+        _ts_analyzer_object.reset(AnalyzerFactory::createAnalyzer(config, true));
+    }
 
         /*
           TODO: This will fail if different types of analyzers are needed.  createAnalyzer() currently
@@ -113,35 +132,35 @@ Analyzer* AnalyzerFactory::getCurrentThreadAnalyzer(const CoreInfo_t* config) {
           * ChineseAnalyzer, as would happen if there are both English language and Chinese data sources
           * loaded in different cores, a previously created Analyzer of the wrong type could be returned.
           */
-	Analyzer* analyzer = _ts_analyzer_object.get();
+    Analyzer* analyzer = _ts_analyzer_object.get();
 
-	// clear the initial states of the filters in the analyzer, e.g.,
-	// for those filters that have an internal buffer to keep tokens.
-	// Such an internal buffer can have leftover tokens from
-	// the previous query (possibly an invalid query)
-	analyzer->clearFilterStates();
+    // clear the initial states of the filters in the analyzer, e.g.,
+    // for those filters that have an internal buffer to keep tokens.
+    // Such an internal buffer can have leftover tokens from
+    // the previous query (possibly an invalid query)
+    analyzer->clearFilterStates();
 
-	return analyzer;
+    return analyzer;
 }
 
 Analyzer* AnalyzerFactory::getCurrentThreadAnalyzerWithSynonyms(const CoreInfo_t* config) {
 
-	static boost::thread_specific_ptr<Analyzer> _tsAnalyzerObjectWithSynonyms;
-	if (_tsAnalyzerObjectWithSynonyms.get() == NULL)
-	{
-		Logger::debug("Create Analyzer object for thread = %d ",  pthread_self());
-		_tsAnalyzerObjectWithSynonyms.reset(AnalyzerFactory::createAnalyzer(config, false));
-	}
+    static boost::thread_specific_ptr<Analyzer> _tsAnalyzerObjectWithSynonyms;
+    if (_tsAnalyzerObjectWithSynonyms.get() == NULL)
+    {
+        Logger::debug("Create Analyzer object for thread = %d ",  pthread_self());
+        _tsAnalyzerObjectWithSynonyms.reset(AnalyzerFactory::createAnalyzer(config, false));
+    }
 
-	Analyzer* analyzer = _tsAnalyzerObjectWithSynonyms.get();
+    Analyzer* analyzer = _tsAnalyzerObjectWithSynonyms.get();
 
-	// clear the initial states of the filters in the analyzer, e.g.,
-	// for those filters that have an internal buffer to keep tokens.
-	// Such an internal buffer can have leftover tokens from
-	// the previous query (possibly an invalid query)
-	analyzer->clearFilterStates();
+    // clear the initial states of the filters in the analyzer, e.g.,
+    // for those filters that have an internal buffer to keep tokens.
+    // Such an internal buffer can have leftover tokens from
+    // the previous query (possibly an invalid query)
+    analyzer->clearFilterStates();
 
-	return analyzer;
+    return analyzer;
 }
 
 void AnalyzerHelper::initializeAnalyzerResource (const CoreInfo_t* conf)
@@ -153,9 +172,9 @@ void AnalyzerHelper::initializeAnalyzerResource (const CoreInfo_t* conf)
     if (conf->getSynonymFilePath().compare("") != 0) {
         SynonymKeepOriginFlag synonymKeepOriginFlag;
         if (conf->getSynonymKeepOrigFlag()) {
-        	synonymKeepOriginFlag = srch2is::SYNONYM_KEEP_ORIGIN;
+            synonymKeepOriginFlag = srch2is::SYNONYM_KEEP_ORIGIN;
         } else {
-        	synonymKeepOriginFlag = srch2is::SYNONYM_DONOT_KEEP_ORIGIN;
+            synonymKeepOriginFlag = srch2is::SYNONYM_DONOT_KEEP_ORIGIN;
         }
         SynonymContainer::getInstance(conf->getSynonymFilePath(), synonymKeepOriginFlag)->init();
     }
@@ -165,61 +184,67 @@ void AnalyzerHelper::initializeAnalyzerResource (const CoreInfo_t* conf)
     if (conf->getStopFilePath().compare("") != 0) {
         StopWordContainer::getInstance(conf->getStopFilePath())->init();
     }
+    if (conf->getChineseDictionaryPath().compare("") != 0){
+        ChineseDictionaryContainer::getInstance(conf->getChineseDictionaryPath())->init();
+    }
 }
 
 void AnalyzerHelper::loadAnalyzerResource(const CoreInfo_t* conf) {
-	try{
-		const std::string& directoryName = conf->getIndexPath();
-		std::ifstream ifs((directoryName + "/" + string(IndexConfig::analyzerFileName)).c_str(), std::ios::binary);
-		if (ifs.good())
-		{
-			boost::archive::binary_iarchive ia(ifs);
+    try{
+        const std::string& directoryName = conf->getIndexPath();
+        std::ifstream ifs((directoryName + "/" + string(IndexConfig::analyzerFileName)).c_str(), std::ios::binary);
+        if (ifs.good())
+        {
+            boost::archive::binary_iarchive ia(ifs);
 
-			SynonymKeepOriginFlag synonymKeepOriginFlag;
-			if (conf->getSynonymKeepOrigFlag()) {
-				synonymKeepOriginFlag = srch2is::SYNONYM_KEEP_ORIGIN;
-			} else {
-				synonymKeepOriginFlag = srch2is::SYNONYM_DONOT_KEEP_ORIGIN;
-			}
-			SynonymContainer::getInstance(conf->getSynonymFilePath(), synonymKeepOriginFlag)->loadSynonymContainer(ia);
-			StemmerContainer::getInstance(conf->getStemmerFile())->loadStemmerContainer(ia);
-			StopWordContainer::getInstance(conf->getStopFilePath())->loadStopWordContainer(ia);
-			ifs.close();
-		}else {
-			ifs.close();
-			initializeAnalyzerResource(conf);
-			saveAnalyzerResource(conf);
-		}
+            SynonymKeepOriginFlag synonymKeepOriginFlag;
+            if (conf->getSynonymKeepOrigFlag()) {
+                synonymKeepOriginFlag = srch2is::SYNONYM_KEEP_ORIGIN;
+            } else {
+                synonymKeepOriginFlag = srch2is::SYNONYM_DONOT_KEEP_ORIGIN;
+            }
+            SynonymContainer::getInstance(conf->getSynonymFilePath(), synonymKeepOriginFlag)->loadSynonymContainer(ia);
+            StemmerContainer::getInstance(conf->getStemmerFile())->loadStemmerContainer(ia);
+            StopWordContainer::getInstance(conf->getStopFilePath())->loadStopWordContainer(ia);
+            ChineseDictionaryContainer::getInstance(conf->getChineseDictionaryPath())->loadDictionaryContainer(ia);
+            ifs.close();
+        }else {
+            ifs.close();
+            initializeAnalyzerResource(conf);
+            saveAnalyzerResource(conf);
+        }
                 // TODO - Move init() to getInstance() when we refactor this code
-		ProtectedWordsContainer::getInstance(conf->getProtectedWordsFilePath())->init();
-	}catch (std::exception& ex){
-		Logger::error("Error while loading Analyzer resource files");
-		Logger::error(ex.what());
-	}
+        ProtectedWordsContainer::getInstance(conf->getProtectedWordsFilePath())->init();
+    }catch (std::exception& ex){
+        Logger::error("Error while loading Analyzer resource files");
+        Logger::error(ex.what());
+    }
 }
 
 void AnalyzerHelper::saveAnalyzerResource(const CoreInfo_t* conf) {
-	try{
-		const std::string& directoryName = conf->getIndexPath();
-		std::ofstream ofs((directoryName + "/" + string(IndexConfig::analyzerFileName)).c_str(), std::ios::binary);
-		if (ofs.good()) {
-			boost::archive::binary_oarchive oa(ofs);
+    try{
+        const std::string& directoryName = conf->getIndexPath();
+        std::ofstream ofs((directoryName + "/" + string(IndexConfig::analyzerFileName)).c_str(), std::ios::binary);
+        if (ofs.good()) {
+            boost::archive::binary_oarchive oa(ofs);
 
-                        SynonymKeepOriginFlag synonymKeepOriginFlag;
-                        if (conf->getSynonymKeepOrigFlag()) {
-                            synonymKeepOriginFlag = srch2is::SYNONYM_KEEP_ORIGIN;
-                        } else {
-                            synonymKeepOriginFlag = srch2is::SYNONYM_DONOT_KEEP_ORIGIN;
-                        }
-			SynonymContainer::getInstance(conf->getSynonymFilePath(), synonymKeepOriginFlag)->saveSynonymContainer(oa);
-			StemmerContainer::getInstance(conf->getStemmerFile())->saveStemmerContainer(oa);
-			StopWordContainer::getInstance(conf->getStopFilePath())->saveStopWordContainer(oa);
-		}
-		ofs.close();
-	}catch(std::exception& ex){
-		Logger::error("Error while saving Analyzer resource");
-		Logger::error(ex.what());
-	}
+            SynonymKeepOriginFlag synonymKeepOriginFlag;
+            if (conf->getSynonymKeepOrigFlag()) {
+                synonymKeepOriginFlag = srch2is::SYNONYM_KEEP_ORIGIN;
+            } else {
+                synonymKeepOriginFlag = srch2is::SYNONYM_DONOT_KEEP_ORIGIN;
+            }
+            SynonymContainer::getInstance(conf->getSynonymFilePath(), synonymKeepOriginFlag)->saveSynonymContainer(oa);
+            StemmerContainer::getInstance(conf->getStemmerFile())->saveStemmerContainer(oa);
+            StopWordContainer::getInstance(conf->getStopFilePath())->saveStopWordContainer(oa);
+            ChineseDictionaryContainer::getInstance(conf->getChineseDictionaryPath())
+                ->saveDictionaryContainer(oa);
+        }
+        ofs.close();
+    }catch(std::exception& ex){
+        Logger::error("Error while saving Analyzer resource");
+        Logger::error(ex.what());
+    }
 }
 
 } // namesoace wrapper

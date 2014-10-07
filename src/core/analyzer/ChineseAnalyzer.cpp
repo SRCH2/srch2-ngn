@@ -10,31 +10,25 @@
 namespace srch2{
 namespace instantsearch{
 
-ChineseAnalyzer::ChineseAnalyzer(const std::string &chineseDictionaryFile,
+ChineseAnalyzer::ChineseAnalyzer(const ChineseDictionaryContainer* chineseDictionaryContainer,
                                  const StopWordContainer *stopWords,
                                  const ProtectedWordsContainer *protectedWords,
                                  const SynonymContainer *synonyms,
                                  const std::string &delimiters)
     : AnalyzerInternal(NULL/*stemmer*/, stopWords, protectedWords, synonyms, delimiters),
-      mDictFilePath(chineseDictionaryFile)
+      mChineseDictionaryContainer(chineseDictionaryContainer)
 {
 	this->tokenStream = NULL;
     this->analyzerType = CHINESE_ANALYZER;
 }
 
-ChineseAnalyzer::ChineseAnalyzer(const ChineseAnalyzer &analyzer)
-    : AnalyzerInternal(analyzer), mDictFilePath(analyzer.mDictFilePath)
-{
-    this->analyzerType = CHINESE_ANALYZER;
-}
-  
 AnalyzerType ChineseAnalyzer::getAnalyzerType() const
 {
     return CHINESE_ANALYZER;
 }
 
 TokenStream* ChineseAnalyzer::createOperatorFlow(){
-    TokenStream *tokenStream = new ChineseTokenizer(mDictFilePath);
+    TokenStream *tokenStream = new ChineseTokenizer(mChineseDictionaryContainer);
     tokenStream = new LowerCaseFilter(tokenStream);
 
     if (this->stopWords != NULL) {
