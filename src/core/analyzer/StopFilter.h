@@ -34,8 +34,6 @@ public:
      * */
     bool processToken();
 
-    virtual void clearState() {};
-
     virtual ~StopFilter();
 
 private:

@@ -377,6 +377,19 @@ protected:
 
 	void parseSchemaType(const xml_node &childNode, CoreInfo_t *coreInfo, std::stringstream &parseWarnings);
 
+    void setUpStemmer(CoreInfo_t *coreInfo, const xml_node &field, std::stringstream &parseWarnings);
+
+    void setUpChineseDictionary(CoreInfo_t * coreInfo, string &dictionaryPath, std::stringstream &parseWarnings);
+
+
+    void setUpStopword(CoreInfo_t *coreInfo, const xml_node &field, std::stringstream &parseWarnings);
+    void setUpProtectedWord(CoreInfo_t *coreInfo, const xml_node &field, std::stringstream &parseWarnings);
+    void setUpSynonym(CoreInfo_t *coreInfo, const xml_node &field, std::stringstream &parseWarnings);
+    void setUpRecordSpecialCharacters(CoreInfo_t *coreInfo, const xml_node &field);
+    void setUpEnglishAnalyzer(CoreInfo_t * coreInfo, const xml_node &childNodeTemp, std::stringstream &parseWarnings);
+    void setUpChineseAnalyzer(CoreInfo_t * coreInfo, string& dictionaryPath, const xml_node &childNodeTemp, std::stringstream &parseWarnings);
+
+
 	void parseUpdateHandler(const xml_node &updateHandlerNode, CoreInfo_t *coreInfo, bool &configSuccess, std::stringstream &parseError, std::stringstream &parseWarnings);
 
 public:
@@ -612,6 +625,7 @@ private:
 	static const char* const nameString;
 	static const char* const portString;
 	static const char* const porterStemFilterString;
+	static const char* const tokenizerFilterString;
 	static const char* const prefixMatchPenaltyString;
 	static const char* const queryString;
 	static const char* const queryResponseWriterString;
@@ -637,6 +651,7 @@ private:
 	static const char* const synonymFilterString;
 	static const char* const synonymsString;
 	static const char* const textEnString;
+	static const char* const textZhString;
 	static const char* const typeString;
 	static const char* const typesString;
 	static const char* const uniqueKeyString;
