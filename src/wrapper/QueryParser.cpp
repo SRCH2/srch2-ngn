@@ -69,6 +69,7 @@ const char* const QueryParser::facetRangeField = "facet.range";
 const char* const QueryParser::highlightSwitch = "hl";
 // access control
 const char* const QueryParser::roleIdParamName = "roleId";
+const char* const QueryParser::attrAclFlag = "attributeAcl";
 
 //searchType
 const char* const QueryParser::searchType = "searchType";
@@ -237,6 +238,7 @@ bool QueryParser::parse() {
         this->extractSearchType();
         this->highlightParser();
         this->accessControlParser();
+        this->attributeAclFlagParser();
         if (this->container->hasParameterInQuery(
                 GetAllResultsSearchType)) {
             this->getAllResultsParser();
@@ -448,6 +450,40 @@ void QueryParser::accessControlParser(){
 
 	} else {
 		Logger::debug("acl-id parameter not specified");
+		// if this core has a roleCore it is necessary to specify roleId in
+		// the query otherwise all the records are private.
+		if(this->container->hasRoleCore){
+			this->isParsedError = true;
+			this->container->messages.push_back(
+					make_pair(MessageError,
+							"roleId parameter not specified"));
+		}
+	}
+}
+
+/*
+ *  check to see if a flag to turn off attribute acl exists in parameters.
+ *  sample query
+ *  1. search?q=attr1:keyword&attributeAcl=off  : attribute ACL is OFF only during the search.
+ *  2. search?q=attr1:keyword&attributeAcl=on   : (Default) attribute ACL is ON during the search.
+ */
+void QueryParser::attributeAclFlagParser(){
+	/*
+	 *   check to see if "acl-id" for access control exists in parameters.
+	 */
+	const char * attrAclFlagTemp = evhttp_find_header(&headers,
+			QueryParser::attrAclFlag);
+	if (attrAclFlagTemp){ // if acl-id parameter exists.
+		Logger::debug("acl-id parameter found");
+		string attrAclFlag;
+		decodeString(attrAclFlagTemp, attrAclFlag);
+		if (boost::iequals("off", attrAclFlag)) {
+			this->container->attrAclOn = false;
+		} else {
+			this->container->attrAclOn = true;
+		}
+	} else {
+		this->container->attrAclOn = true;
 	}
 }
 

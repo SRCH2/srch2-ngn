@@ -348,6 +348,7 @@ public:
         qfContainer= NULL;
         isHighlightOn=true;
         hasRoleCore = false;
+        attrAclOn = true;
     }
 
     ~ParsedParameterContainer() {
@@ -376,6 +377,10 @@ public:
     bool isHighlightOn;
     std::string roleId;  // if acl-id is given in the query, we will return results that has this id in their access list.
     bool hasRoleCore;
+    // attrAclOn flag is populated from the search query. If it "false", then it means that we ignore
+    // attribute ACL during the search process, but still do attribute ACL when generating the JSON results.
+    // If it is "true", then attribute ACL is ON for searching as well as generating the results.
+    bool attrAclOn;
 
     // This object contains the boolean structure of terms. For example for query
     // q= (A AND B)OR(C AND D)

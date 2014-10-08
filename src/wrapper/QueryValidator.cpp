@@ -152,8 +152,18 @@ bool QueryValidator::validateExistenceOfAttributesInQueryFieldBoost() {
         		paramContainer->qfContainer->boosts.begin();
         		boostIter != paramContainer->qfContainer->boosts.end(); ++boostIter) {
 
-        	if (!attributeAcl.isSearchableFieldAccessibleForRole(paramContainer->roleId,
-        			boostIter->attribute)){
+        	bool validField = false;
+        	if (paramContainer->attrAclOn) {
+        		// if the attribute acl switch is ON then check attribute ACL for validity
+        		// of this field.
+        		validField = attributeAcl.isSearchableFieldAccessibleForRole(paramContainer->roleId,
+        		        			boostIter->attribute);
+        	} else {
+        		// if the attribute acl switch is OFF then check whether the field is searchable
+        		validField =  searchableAttributes.count(boostIter->attribute) > 0 ? true : false;
+        	}
+
+        	if (!validField){
         		// field does not exist in accessible searchable attributes
         		// write a warning and remove it
         		paramContainer->messages.push_back(
@@ -217,7 +227,19 @@ bool QueryValidator::validateExistenceOfAttributesInSortFiler() {
     for (std::vector<std::string>::iterator field =
             sortQueryContainer->evaluator->field.begin();
             field != sortQueryContainer->evaluator->field.end(); ++field) {
-        if (!attributeAcl.isRefiningFieldAccessibleForRole(paramContainer->roleId, *field)) {
+
+    	bool validField = false;
+    	if (paramContainer->attrAclOn) {
+    		// if the attribute acl switch is ON then check attribute ACL for validity
+    		// of this field.
+    		validField = attributeAcl.isRefiningFieldAccessibleForRole(paramContainer->roleId,
+    				*field);
+    	} else {
+    		// if the attribute acl switch is OFF then check whether the field is refining
+    		validField =  schema.getRefiningAttributes()->count(*field) > 0 ? true : false;
+    	}
+
+        if (!validField) {
         	// field does not exist in accessible refining list.
             paramContainer->messages.push_back(
                     std::make_pair(MessageWarning,
@@ -269,7 +291,18 @@ bool QueryValidator::validateExistenceOfAttributesInFacetFiler() {
 
         //1. Validate the existence of attributes and also
         //   check whether the attribute is accessible for current role.
-        if (!attributeAcl.isRefiningFieldAccessibleForRole(paramContainer->roleId, *field)) {
+    	bool validField = false;
+    	if (paramContainer->attrAclOn) {
+    		// if the attribute acl switch is ON then check attribute ACL for validity
+    		// of this field.
+    		validField = attributeAcl.isRefiningFieldAccessibleForRole(paramContainer->roleId,
+    				*field);
+    	} else {
+    		// if the attribute acl switch is OFF then check whether the field is refining
+    		validField =  schema.getRefiningAttributes()->count(*field) > 0 ? true : false;
+    	}
+
+        if (!validField) {
             //Facet will be not be calculated for this field.
         	paramContainer->messages.push_back(
         			std::make_pair(MessageWarning,
@@ -444,7 +477,8 @@ bool QueryValidator::validateExistenceOfAttributesInFacetFiler() {
 bool QueryValidator::validateFilterQuery(){
     if(paramContainer->hasParameterInQuery(FilterQueryEvaluatorFlag)){
         FilterQueryContainer * filterQueryContainer = paramContainer->filterQueryContainer;
-        if (! filterQueryContainer->evaluator->validate(schema, paramContainer->roleId, attributeAcl)){
+        if (! filterQueryContainer->evaluator->validate(schema, paramContainer->roleId,
+        		attributeAcl, paramContainer->attrAclOn)){
             paramContainer->parametersInQuery.erase(
                     remove(
                             paramContainer->parametersInQuery.begin(),

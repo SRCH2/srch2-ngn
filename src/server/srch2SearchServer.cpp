@@ -53,6 +53,7 @@ void parseProgramArguments(int argc, char** argv,
 /*
  * Returns 1 if everything is all right and we can continue.
  */
+
 int parseConfigFilePath(int argc, char** argv, string & srch2_config_file){
 	if (argc > 1) {
 		if (strcmp(argv[1], "--version") == 0) {
@@ -70,7 +71,6 @@ int parseConfigFilePath(int argc, char** argv, string & srch2_config_file){
 		cout << description << endl;
 		return 0;
 	}
-
 
 	srch2_config_file = "";
 	if (vm_command_line_args.count("config-file")) {
@@ -160,7 +160,6 @@ int main(int argc, char** argv) {
 	 * Setup the Logger.
 	 */
 	initializeLogger(runtime->getConfigManager());
-
 
 	/*****************
 	 * Loading the data and initializing the metadata.

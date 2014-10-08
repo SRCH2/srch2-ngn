@@ -163,4 +163,7 @@
           </fieldType>
        </types>
     </schema>
+    <access-control>
+        <attribute-acl  datafile="./attributesAcl/acl-worldbank.txt" />
+    </access-control>
 </config>

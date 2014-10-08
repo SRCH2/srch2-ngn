@@ -61,27 +61,6 @@ public:
     	this->indexer->serialize(outputStream);
     }
 
-    void initAccessControls(){
-        if (!checkIndexExistence(directoryPath)){
-        	switch (indexDataConfig->getDataSourceType()) {
-        	case srch2http::DATA_SOURCE_JSON_FILE: {
-        		Logger::console("%s: Adding access controls from JSON file...",this->indexDataConfig->getName().c_str());
-
-        		DaemonDataSource::addAccessControlsFromFile(indexer, indexDataConfig, this->roleCore->indexer);
-
-        		indexer->save();
-        		Logger::console("Indexes saved.");
-
-        		break;
-        	}
-        	default: {
-
-        		break;
-        	}
-        	};
-        }
-    }
-
     // Check if index files already exist.
     bool checkIndexExistence(const string & directoryPath);
 

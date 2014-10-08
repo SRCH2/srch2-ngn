@@ -163,7 +163,7 @@ public:
     bool setRefiningAttributeValue(const unsigned attributeId,
                     const std::string &attributeValue);
 
-    void addRoleId(const std::string &roleId);
+    void setRoleIds(const std::vector<std::string> &roleId);
 
     std::vector<std::string>* getRoleIds() const;
 

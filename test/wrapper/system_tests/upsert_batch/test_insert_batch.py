@@ -46,11 +46,11 @@ class InsertTester:
     #fire a single query
     def fireQuery(self, query):
         # Method 1 using urllib2.urlopen
-        #queryCommand = 'http://localhost:8087/search?q=' + query
+        #queryCommand = 'http://127.0.0.1:8087/search?q=' + query
         #urllib2.urlopen(queryCommand)
         #print 'fired query ' + query
         # Method 2 using curl
-        curlCommand = 'curl -s http://localhost:' + str(port) + '/search?q=' + query
+        curlCommand = 'curl -s http://127.0.0.1:' + str(port) + '/search?q=' + query
         os.popen(curlCommand)
 
 def verify_insert_response(expectedResponse, actualOutput):
@@ -89,7 +89,7 @@ if __name__ == '__main__':
     tester.pingServer()
 
     # test 1, insert a record that already exists
-    command1 = 'curl "http://localhost:' + str(port) + '/docs" -i -X PUT -d ' + '\'{"id":"101","post_type_id":"2","parent_id":"6272262","accepted_answer_id":"NULL","creation_date":"06/07/2011","score":"3","view_count":"0","body":"february monday","owner_user_id":"356674","last_editor_user_id":"NULL","last_editor_display_name":"NULL","last_edit_date":"NULL","last_activity_date":"06/07/2011","community_owned_date":"NULL","closed_date":"NULL","title":"NULL","tags":"NULL","answer_count":"NULL","comment_count":"NULL","favorite_count":"NULL"}\'';
+    command1 = 'curl "http://127.0.0.1:' + str(port) + '/docs" -i -X PUT -d ' + '\'{"id":"101","post_type_id":"2","parent_id":"6272262","accepted_answer_id":"NULL","creation_date":"06/07/2011","score":"3","view_count":"0","body":"february monday","owner_user_id":"356674","last_editor_user_id":"NULL","last_editor_display_name":"NULL","last_edit_date":"NULL","last_activity_date":"06/07/2011","community_owned_date":"NULL","closed_date":"NULL","title":"NULL","tags":"NULL","answer_count":"NULL","comment_count":"NULL","favorite_count":"NULL"}\'';
     status1, output1 = commands.getstatusoutput(command1)
 
     #print 'output1 --- ' + str(output1) + "\n-----------------";
@@ -98,7 +98,7 @@ if __name__ == '__main__':
     assert verify_insert_response(expect, output1), 'Error, rid 101 is not updated correctly!'
 
     # test 2, insert a record that doesn't exist
-    command3 = 'curl "http://localhost:' + str(port) + '/docs" -i -X PUT -d ' + '\'{"id":"111","post_type_id":"2","parent_id":"6272262","accepted_answer_id":"NULL","creation_date":"06/07/2011","score":"3","view_count":"0","body":"december","owner_user_id":"356674","last_editor_user_id":"NULL","last_editor_display_name":"NULL","last_edit_date":"NULL","last_activity_date":"06/07/2011","community_owned_date":"NULL","closed_date":"NULL","title":"NULL","tags":"NULL","answer_count":"NULL","comment_count":"NULL","favorite_count":"NULL"}\'';
+    command3 = 'curl "http://127.0.0.1:' + str(port) + '/docs" -i -X PUT -d ' + '\'{"id":"111","post_type_id":"2","parent_id":"6272262","accepted_answer_id":"NULL","creation_date":"06/07/2011","score":"3","view_count":"0","body":"december","owner_user_id":"356674","last_editor_user_id":"NULL","last_editor_display_name":"NULL","last_edit_date":"NULL","last_activity_date":"06/07/2011","community_owned_date":"NULL","closed_date":"NULL","title":"NULL","tags":"NULL","answer_count":"NULL","comment_count":"NULL","favorite_count":"NULL"}\'';
 
     status3, output3 = commands.getstatusoutput(command3)
     #print 'output3 -----' + output3 + '\n-----------------'
@@ -106,7 +106,7 @@ if __name__ == '__main__':
     assert verify_insert_response(expect, output3), 'Error, rid 111 is not updated correctly!'
 
     time.sleep(1.5)
-    command4 = 'curl -i http://localhost:' + str(port) + '/search?q=december'
+    command4 = 'curl -i http://127.0.0.1:' + str(port) + '/search?q=december'
     status4, output4 = commands.getstatusoutput(command4)
     #print 'output4 -----' + output4 + '\n----------------'
     expect = '"id":"111"'
@@ -114,7 +114,7 @@ if __name__ == '__main__':
 
 
     # test 3, upsert multiple records, some exsit some don't
-    command5 = 'curl "http://localhost:' + str(port) + '/docs" -i -X PUT -d ' + '\'[{"id":"102","post_type_id":"2","parent_id":"6271537","accepted_answer_id":"NULL","creation_date":"06/07/2011","score":"0","view_count":"0","body":"march wonderful","owner_user_id":"274589","last_editor_user_id":"NULL","last_editor_display_name":"NULL","last_edit_date":"NULL","last_activity_date":"06/07/2011","community_owned_date":"NULL","closed_date":"NULL","title":"NULL","tags":"NULL","answer_count":"NULL","comment_count":"NULL","favorite_count":"NULL"},{"id":"103","post_type_id":"2","parent_id":"6272327","accepted_answer_id":"NULL","creation_date":"06/07/2011","score":"6","view_count":"0","body":"april wonderful","owner_user_id":"597122","last_editor_user_id":"NULL","last_editor_display_name":"NULL","last_edit_date":"NULL","last_activity_date":"06/07/2011","community_owned_date":"NULL","closed_date":"NULL","title":"NULL","tags":"NULL","answer_count":"NULL","comment_count":"2","favorite_count":"NULL"},{"id":"115","post_type_id":"2","parent_id":"6272162","accepted_answer_id":"NULL","creation_date":"06/07/2011","score":"0","view_count":"0","body":"june wonderful","owner_user_id":"430087","last_editor_user_id":"NULL","last_editor_display_name":"NULL","last_edit_date":"NULL","last_activity_date":"06/07/2011","community_owned_date":"NULL","closed_date":"NULL","title":"NULL","tags":"NULL","answer_count":"NULL","comment_count":"NULL","favorite_count":"NULL"},{"id":"116","post_type_id":"2","parent_id":"6272210","accepted_answer_id":"NULL","creation_date":"06/07/2011","score":"1","view_count":"0","body":"july wonderful","owner_user_id":"113716","last_editor_user_id":"NULL","last_editor_display_name":"NULL","last_edit_date":"NULL","last_activity_date":"06/07/2011","community_owned_date":"NULL","closed_date":"NULL","title":"NULL","tags":"NULL","answer_count":"NULL","comment_count":"NULL","favorite_count":"NULL"}]\''
+    command5 = 'curl "http://127.0.0.1:' + str(port) + '/docs" -i -X PUT -d ' + '\'[{"id":"102","post_type_id":"2","parent_id":"6271537","accepted_answer_id":"NULL","creation_date":"06/07/2011","score":"0","view_count":"0","body":"march wonderful","owner_user_id":"274589","last_editor_user_id":"NULL","last_editor_display_name":"NULL","last_edit_date":"NULL","last_activity_date":"06/07/2011","community_owned_date":"NULL","closed_date":"NULL","title":"NULL","tags":"NULL","answer_count":"NULL","comment_count":"NULL","favorite_count":"NULL"},{"id":"103","post_type_id":"2","parent_id":"6272327","accepted_answer_id":"NULL","creation_date":"06/07/2011","score":"6","view_count":"0","body":"april wonderful","owner_user_id":"597122","last_editor_user_id":"NULL","last_editor_display_name":"NULL","last_edit_date":"NULL","last_activity_date":"06/07/2011","community_owned_date":"NULL","closed_date":"NULL","title":"NULL","tags":"NULL","answer_count":"NULL","comment_count":"2","favorite_count":"NULL"},{"id":"115","post_type_id":"2","parent_id":"6272162","accepted_answer_id":"NULL","creation_date":"06/07/2011","score":"0","view_count":"0","body":"june wonderful","owner_user_id":"430087","last_editor_user_id":"NULL","last_editor_display_name":"NULL","last_edit_date":"NULL","last_activity_date":"06/07/2011","community_owned_date":"NULL","closed_date":"NULL","title":"NULL","tags":"NULL","answer_count":"NULL","comment_count":"NULL","favorite_count":"NULL"},{"id":"116","post_type_id":"2","parent_id":"6272210","accepted_answer_id":"NULL","creation_date":"06/07/2011","score":"1","view_count":"0","body":"july wonderful","owner_user_id":"113716","last_editor_user_id":"NULL","last_editor_display_name":"NULL","last_edit_date":"NULL","last_activity_date":"06/07/2011","community_owned_date":"NULL","closed_date":"NULL","title":"NULL","tags":"NULL","answer_count":"NULL","comment_count":"NULL","favorite_count":"NULL"}]\''
 
     status5, output5 = commands.getstatusoutput(command5)
     #print 'output5 -----' + output5 + '\n-----------------'
@@ -129,7 +129,7 @@ if __name__ == '__main__':
 
 
     time.sleep(1.5)
-    command6 = 'curl -i http://localhost:' + str(port) + '/search?q=wonderful'
+    command6 = 'curl -i http://127.0.0.1:' + str(port) + '/search?q=wonderful'
     status6, output6 = commands.getstatusoutput(command6)
     #print 'output4 -----' + output4 + '\n----------------'
     expect = '"id":"115"'

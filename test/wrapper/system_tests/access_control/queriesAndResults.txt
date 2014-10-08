@@ -10,13 +10,13 @@ S||core1 spider 1001||906 907 908 910
 S||core1 test 1001||906 907 908 910
 S||core1 test 1002||901 906 907
 S||core1 test 1003||901 906 907
-C||core1||aclRecordRoleAdd||{"resourceId": "906", "roleId":["1010", "1011"]}
+C||core1||aclRecordRoleReplace||{"resourceId": "906", "roleId":["1010", "1011"]}
 S||core1 test 1001||907 908 910
 S||core1 test 1002||901 907
 S||core1 test 1003||901 907
 S||core1 test 1010||905 906 908
 S||core1 test 1011||905 906 909
-C||core1||aclRecordRoleAdd||{"resourceId": "909", "roleId":["1008"]}
+C||core1||aclRecordRoleReplace||{"resourceId": "909", "roleId":["1008"]}
 S||core1 test 1011||905 906
 S||core1 spider 1012||905 910
 S||core1 special 1003||
