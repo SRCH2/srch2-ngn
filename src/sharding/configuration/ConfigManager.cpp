@@ -31,6 +31,7 @@
 #include "sharding/sharding/metadata_manager/Cluster.h"
 #include "sharding/sharding/ShardManager.h"
 #include "fcntl.h"
+#include <boost/system/error_code.hpp>
 
 using namespace std;
 namespace srch2is = srch2::instantsearch;
@@ -3263,40 +3264,55 @@ const string& ConfigManager::getDatabaseSharedLibraryPath(const string &coreName
 string ConfigManager::createSRCH2Home()
 {
 	boost::filesystem::path dir = this->getSrch2Home();
-	boost::filesystem::create_directory(dir);
+    boost::system::error_code ec;
+	if(! boost::filesystem::create_directory(dir,ec)){
+	    srch2::util::Logger::error("Error in opening srch2Home directory. Error : %s", ec.message().c_str());
+	}
 	return this->getSrch2Home();
 }
 
 string ConfigManager::createClusterDir(const string& clusterName)
 {
-	string path = this->getSrch2Home() +clusterName;
+    boost::filesystem::path path = this->getSrch2Home() +clusterName;
 	createSRCH2Home();
-	boost::filesystem::create_directory(path);
-	return path;
+	boost::system::error_code ec;
+	if ( ! boost::filesystem::create_directory(path,ec) ) {
+        srch2::util::Logger::error("Error in opening srch2Home directory. Error : %s", ec.message().c_str());
+	}
+	return path.string();
 }
 
 string ConfigManager::createNodeDir(const string& clusterName)
 {
-	string path = this->getSrch2Home() + clusterName + "/" + this->getCurrentNodeName();
+    boost::filesystem::path path = this->getSrch2Home() + clusterName + "/" + this->getCurrentNodeName();
 	createClusterDir(clusterName);
-	boost::filesystem::create_directory(path);
-	return path;
+    boost::system::error_code ec;
+	if( ! boost::filesystem::create_directory(path, ec)){
+        srch2::util::Logger::error("Error in opening srch2Home directory. Error : %s", ec.message().c_str());
+	}
+	return path.string();
 }
 
 string ConfigManager::createCoreDir(const string& clusterName, const string& coreName)
 {
-	string path = this->getSrch2Home() + clusterName + "/" + this->getCurrentNodeName() + "/" + coreName;
+    boost::filesystem::path  path = this->getSrch2Home() + clusterName + "/" + this->getCurrentNodeName() + "/" + coreName;
 	createNodeDir(clusterName);
-	boost::filesystem::create_directory(path);
-	return path;
+    boost::system::error_code ec;
+	if( ! boost::filesystem::create_directory(path,ec)){
+        srch2::util::Logger::error("Error in opening srch2Home directory. Error : %s", ec.message().c_str());
+	}
+	return path.string();
 }
 
 string ConfigManager::createShardDir(const string& clusterName, const string& coreName, const ShardId * shardId)
 {
-	string path = this->getSrch2Home() + clusterName + "/" + this->getCurrentNodeName() + "/" + coreName + "/" + shardId->toString();
+    boost::filesystem::path path = this->getSrch2Home() + clusterName + "/" + this->getCurrentNodeName() + "/" + coreName + "/" + shardId->toString();
 	createCoreDir(clusterName, coreName);
-	boost::filesystem::create_directory(path);
-	return path;
+    boost::system::error_code ec;
+	if( ! boost::filesystem::create_directory(path,ec)){
+        srch2::util::Logger::error("Error in opening srch2Home directory. Error : %s", ec.message().c_str());
+	}
+	return path.string();
 }
 
 string ConfigManager::getClusterName() {
@@ -3305,49 +3321,64 @@ string ConfigManager::getClusterName() {
 
 string ConfigManager::getSRCH2HomeDir()
 {
-	string path = this->getSrch2Home();
-	if(boost::filesystem::is_directory(path))
-		return path;
-	else
+    boost::filesystem::path path = this->getSrch2Home();
+    boost::system::error_code ec;
+	if(boost::filesystem::is_directory(path,ec))
+		return path.string();
+	else{
+        srch2::util::Logger::error("Error in opening srch2Home directory. Error : %s", ec.message().c_str());
 		return "";
+	}
 }
 
 string ConfigManager::getClusterDir(const string& clusterName)
 {
-	string path = this->getSRCH2HomeDir() + clusterName;
-	if(boost::filesystem::is_directory(path))
-		return path;
-	else
+    boost::filesystem::path path = this->getSRCH2HomeDir() + clusterName;
+    boost::system::error_code ec;
+	if(boost::filesystem::is_directory(path,ec))
+		return path.string();
+	else{
+        srch2::util::Logger::error("Error in opening srch2Home directory. Error : %s", ec.message().c_str());
 		return "";
+	}
 
 }
 
 string ConfigManager::getNodeDir(const string& clusterName)
 {
-	string path = getClusterDir(clusterName) + "/" + this->getCurrentNodeName();
-	if(boost::filesystem::is_directory(path))
-		return path;
-	else
-		return "";
+    boost::filesystem::path path = getClusterDir(clusterName) + "/" + this->getCurrentNodeName();
+    boost::system::error_code ec;
+	if(boost::filesystem::is_directory(path,ec))
+		return path.string();
+	else{
+        srch2::util::Logger::error("Error in opening srch2Home directory. Error : %s", ec.message().c_str());
+        return "";
+	}
 
 }
 
 string ConfigManager::getCoreDir(const string& clusterName, const string& coreName)
 {
-	string path = getNodeDir(clusterName) + "/" + coreName;
-	if(boost::filesystem::is_directory(path))
-		return path;
-	else
-		return "";
+    boost::filesystem::path path = getNodeDir(clusterName) + "/" + coreName;
+    boost::system::error_code ec;
+	if(boost::filesystem::is_directory(path,ec))
+		return path.string();
+	else{
+        srch2::util::Logger::error("Error in opening srch2Home directory. Error : %s", ec.message().c_str());
+	    return "";
+	}
 }
 
 string ConfigManager::getShardDir(const string& clusterName, const string& coreName, const ShardId * shardId)
 {
-	string path = getCoreDir(clusterName, coreName) + "/" + shardId->toString();
-	if(boost::filesystem::is_directory(path))
-		return path;
-	else
+    boost::filesystem::path path = getCoreDir(clusterName, coreName) + "/" + shardId->toString();
+    boost::system::error_code ec;
+	if(boost::filesystem::is_directory(path,ec))
+		return path.string();
+	else{
+        srch2::util::Logger::error("Error in opening srch2Home directory. Error : %s", ec.message().c_str());
 		return "";
+	}
 }
 
 
@@ -3396,12 +3427,15 @@ void ConfigManager::unlockNodeName(){
 void ConfigManager::renameDir(const string & src, const string & target){
 	boost::filesystem::path dirSrc = src;
 	boost::filesystem::path dirTrg = target;
-	boost::filesystem::rename(dirSrc, dirTrg);
+    boost::system::error_code ec;
+	boost::filesystem::rename(dirSrc, dirTrg, ec) ;
 }
 
-uint ConfigManager::removeDir(const string& path)
+uint ConfigManager::removeDir(const string& p)
 {
-	uint numberOfFilesDeleted = boost::filesystem::remove_all(path);
+    boost::filesystem::path path = p;
+    boost::system::error_code ec;
+	uint numberOfFilesDeleted = boost::filesystem::remove_all(path,ec);
 	return numberOfFilesDeleted;
 }
 
