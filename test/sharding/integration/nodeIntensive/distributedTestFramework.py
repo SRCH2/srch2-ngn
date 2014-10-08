@@ -275,19 +275,25 @@ def test(transactionFile):
         if(operation[0] == 'query'):
              queryValue = value[2]
              resultValue = value[3].split()
+             numberOfResultsFound=(value[4]).split()
              query='http://' + nodes[nodeId[0]].ipAddress + ':' + nodes[nodeId[0]].portNo + '/search?' 
              qq = 'curl "'+ query + queryValue + '"'
              status, output = commands.getstatusoutput(qq)
              print output
+             flag = str(output).find(numberOfResultsFound[0]);
+             assert flag > -1, "Wrong number of results returned"
              checkQueryResult(resultValue, output)
 
         if(operation[0] == 'query2'):
              queryValue = value[2]
              resultValue = value[3].split()
+             numberOfResultsFound=(value[4]).split()
              query='http://' + nodes[nodeId[0]].ipAddress + ':' + nodes[nodeId[0]].portNo + '/statemedia/search?'
              qq = 'curl "'+ query + queryValue + '"'
              status, output = commands.getstatusoutput(qq)
              print output
+             flag = str(output).find(numberOfResultsFound[0]);
+             assert flag > -1, "Wrong number of results returned"
              checkQueryResult(resultValue, output)
 
         if(operation[0] == 'insert'):

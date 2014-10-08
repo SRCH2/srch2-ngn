@@ -4,7 +4,7 @@ sys.path.insert(0, 'srch2lib')
 import test_lib
 
 
-nodesInfoRelFilePath = "./nodeIntensive-noValidation/nodeAddress.txt"
+nodesInfoRelFilePath = "./nodeIntensive/nodeAddress.txt"
 
 srch2ngnGitRepoDir = ""
 integrationTestDir = ""
@@ -23,12 +23,13 @@ coreName = ""
 #The node class holds node specific information like port number, ip Address, path of config file and process id
 
 class node:
-    def __init__(self, nodeId, portNum, conf, ipAddr):
+    def __init__(self, nodeId, portNum, conf, ipAddr, proc):
         self.portNo = portNum
         self.Id = nodeId
         self.conf = conf
         self.ipAddress = ipAddr
         self.pid = ""
+        self.proc = ""
 
 def confirmPortAvailable(ipAddress,port) :
     query = 'http://'+ipAddress+':' + str(port) + '/info'
@@ -51,7 +52,7 @@ def checkQueryResult(resultValue, output):
         assert flag > -1, "incorrect query result"
 
 
-def pingServer(ipAddr, port, query = 'q=march', timeout = 15):
+def pingServer(ipAddr, port, query = 'q=march', timeout = 60):
 
     info = 'curl -s \"http://' + ipAddr +':' + str(port) + '/search?' + query + '\" | grep -q results'
     #print "Pinging with: " + info
@@ -121,35 +122,55 @@ def parseNodes(nodesPath):
         tempConf = value[3].split()
         conf= integrationTestDir + tempConf[0]
         print conf
-        nodes[nodeId[0]] = node(nodeId[0], portNum[0], conf, ipAddr[0])
+        nodes[nodeId[0]] = node(nodeId[0], portNum[0], conf, ipAddr[0], "")
 
 #Starts the engine on the corresponding machine. Note that before this function is called, SSH connection has already been set up.
 def startEngine(nodeId, transactionFile):
     binary_path = testBinaryDir + testBinaryFileName
     if(nodes[nodeId].ipAddress == myIpAddress):
         out = open(integrationTestDir + '/dashboardFiles/' + transactionFile[0:-4] + '-dashboard-'+nodes[nodeId].Id+ '.txt','w')
-        temp = subprocess.Popen([binary_path,'--config='+nodes[nodeId].conf],stdout=out)      
+        temp = subprocess.Popen([binary_path, '--config='+nodes[nodeId].conf], stdout=out) 
+        nodes[nodeId].proc = temp
+        #os.system(binary_path + " --config=" + nodes[nodeId].conf + ' > ' + integrationTestDir + '/dashboardFiles/' + transactionFile[0:-4] + '-dashboard-'+nodes[nodeId].Id+ '.txt')      
         nodes[nodeId].pid = temp.pid
-#        print str(nodes[nodeId].pid) + "---------------------------"
-        pingServer(nodes[nodeId].ipAddress, nodes[nodeId].portNo)
+        #print str(nodes[nodeId].pid) + "---------------------------"
+        #pingServer(nodes[nodeId].ipAddress, nodes[nodeId].portNo)
         return
-    stdin, stdout, stderr = sshClient[nodes[nodeId].Id].exec_command('cd ' + integrationTestDir + '; echo $$;exec '+binary_path+' --config='+ nodes[nodeId].conf + ' > ' + integrationTestDir + '/dashboardFiles/'+transactionFile[0:-4] + '-dashboard-' + nodes[nodeId].Id + '.txt &')
+    print binary_path + ' --config=' + nodes[nodeId].conf
+    stdin, stdout, stderr = sshClient[nodes[nodeId].Id].exec_command('cd ' + integrationTestDir + '; echo $$;exec '+binary_path+' --config='+ nodes[nodeId].conf + ' > ' + integrationTestDir + '/dashboardFiles/'+transactionFile[0:-4] + '-dashboard-' + nodes[nodeId].Id + '.txt')
     #stdin, stdout, stderr = sshClient[nodes[nodeId].Id].exec_command('cd gitrepo/srch2-ngn/test/sharding/integration;mkdir temporaryCheck');
     nodes[nodeId].pid = stdout.readline()
-    print str(stdout.readline())
+    #print str(stdout.readline())
 #    if(confirmPortAvailable(nodes[nodeId].ipAddress, nodes[nodeId].portNo) == false):
 #        print "port not available, so exiting"
 #        os._exit()
     pingServer(nodes[nodeId].ipAddress, nodes[nodeId].portNo)
-
+    #time.sleep(5)
 
 #Kills the engine by sending kill signal
 def killEngine(nodeId):
+    fin = open("crashReports.txt","a")
     if(nodes[nodeId].ipAddress == myIpAddress):
-        print "process to be deleted " + str(nodes[nodeId].pid)
-        os.system('kill -9 ' + str(nodes[nodeId].pid))
+        print "process to be deleted " + str(nodes[nodeId].pid) + " " + str(nodes[nodeId].Id)
+        err = -1
+        #nodes[nodeId].proc.kill()
+        #nodes[nodeId].proc.wait()
+        err = os.system('kill -9 ' + str(nodes[nodeId].pid))
+        err2 = os.system('rm -rf SRCH2_Cluster/node-' + nodes[nodeId].Id)
+        nodes[nodeId].proc.wait()
+        print "responseCode is " + str(err) 
+        if (err != 0):
+            errorMessage = "Error in killing node " + str(nodes[nodeId].Id) + " in transaction file " + sys.argv[2] + "\n"
+            fin.write(errorMessage)  
         return
-    stdin, stdout, stderr = sshClient[nodes[nodeId].Id].exec_command('kill -9 ' + nodes[nodeId].pid)
+    print "process to be deleted " + str(nodes[nodeId].pid) + " " + str(nodes[nodeId].Id)
+    stdin, stdout, stderr = sshClient[nodes[nodeId].Id].exec_command('kill -9 ' + nodes[nodeId].pid)    
+    responseCode = stderr.readlines()
+    stdin, stdout, stderr = sshClient[nodes[nodeId].Id].exec_command('cd ' + integrationTestDir + ';rm -rf SRCH2_Cluster/node-' + nodes[nodeId].Id)
+    print "responseCode is " + str(responseCode)
+    if(responseCode != []):
+        errorMessage = "Error in killing node " + str(nodes[nodeId].Id) + " in transaction file " + sys.argv[2] + "\n"
+        fin.write(errorMessage)
 
 #Opens the file containing record, forms json arrays and does bulk insert.
 def bulkInsert(inputFile, k, num, ipAddress, portNo, operation):
@@ -254,19 +275,25 @@ def test(transactionFile):
         if(operation[0] == 'query'):
              queryValue = value[2]
              resultValue = value[3].split()
+             numberOfResultsFound=(value[4]).split()
              query='http://' + nodes[nodeId[0]].ipAddress + ':' + nodes[nodeId[0]].portNo + '/search?' 
              qq = 'curl "'+ query + queryValue + '"'
              status, output = commands.getstatusoutput(qq)
              print output
+             flag = str(output).find(numberOfResultsFound[0]);
+             assert flag > -1, "Wrong number of results returned"
              checkQueryResult(resultValue, output)
 
         if(operation[0] == 'query2'):
              queryValue = value[2]
              resultValue = value[3].split()
+             numberOfResultsFound=(value[4]).split()
              query='http://' + nodes[nodeId[0]].ipAddress + ':' + nodes[nodeId[0]].portNo + '/statemedia/search?'
              qq = 'curl "'+ query + queryValue + '"'
              status, output = commands.getstatusoutput(qq)
              print output
+             flag = str(output).find(numberOfResultsFound[0]);
+             assert flag > -1, "Wrong number of results returned"
              checkQueryResult(resultValue, output)
 
         if(operation[0] == 'insert'):
@@ -276,7 +303,9 @@ def test(transactionFile):
              command = 'curl "http://' + nodes[nodeId[0]].ipAddress + ':' + nodes[nodeId[0]].portNo + '/docs" -i -X PUT -d ' + '\''+insertValue+'\'';
              status, output = commands.getstatusoutput(command)
              print output
+             print expectedValue[0]
              flag = str(output).find(expectedValue[0])
+             print flag
              assert flag > -1, 'Error, rid <no.> is not inserted'
 
         if(operation[0] == 'bulkInsert'):
@@ -360,10 +389,43 @@ def test(transactionFile):
         if(operation[0] == 'sleep'):
              inputTime = value[2]
              time.sleep(int(inputTime))
+        
         if(operation[0]=='stressQuery'):
              inputFile = value[2].split()
-             sendQuery(inputFile, nodes[nodeId[0]].ipAddress, nodes[nodeId[0]].portNo)  
-            
+             sendQuery(inputFile, nodes[nodeId[0]].ipAddress, nodes[nodeId[0]].portNo) 
+        
+        if(operation[0]=='numberOfRecordsInCore'):
+             coreIndex = int(value[2])
+             expectedValue = int(value[3])
+             response = urllib2.urlopen('http://' + nodes[nodeId[0]].ipAddress + ":" + nodes[nodeId[0]].portNo + '/_debug/stats')
+             jsonData = response.read()
+             jsonOutput = json.loads(jsonData)
+             numberOfRecords = jsonOutput["cores"][coreIndex]["totalNumberOfDocuments"]
+             assert (int(numberOfRecords) == expectedValue), "wrong number of records in the core"
+        
+        if(operation[0]=='nodeCount'):
+             expectedValue = value[2].split()
+             response = urllib2.urlopen('http://' + nodes[nodeId[0]].ipAddress + ":" + nodes[nodeId[0]].portNo + '/_debug/stats')
+             jsonData = response.read()             
+             jsonOutput = json.loads(jsonData)
+             numberOfNodes = str(jsonOutput["nodes"]["count"])
+             assert (str(expectedValue[0]) == str(numberOfNodes)), "wrong number of nodes"       
+         
+        if(operation[0] == 'numberOfRecordsInShards'):
+             coreIndex = int(value[2])
+             expectedValue = int(value[3])
+             response = urllib2.urlopen('http://' + nodes[nodeId[0]].ipAddress + ":" + nodes[nodeId[0]].portNo + '/_debug/stats')
+             jsonData = response.read()
+             jsonOutput = json.loads(output)
+             numOfPrimaryShards = 2
+             totalDoc = 0
+             # we assume 0 is the index of stackoverflow core
+             for i in range(0, numOfPrimaryShards):
+                 totalDoc = totalDoc + jsonOutput["cores"][coreIndex]["all-cluster-shards"][i]["numberOfDocuments"]
+
+             assert (totalDoc == int(expectedValue)), "total number of document in shards are wrong"
+        
+ 
 if __name__ == '__main__':
 
     confFilePath = sys.argv[1]

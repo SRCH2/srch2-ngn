@@ -10,15 +10,15 @@ C||bulkInsertFromBeginning2||./nodeIntensive/st-10k-3.json||200||50
 D||bulkInsertFromBeginning2||./nodeIntensive/st-10k-4.json||200||50
 E||bulkInsertFromBeginning2||./nodeIntensive/st-10k-5.json||200||50
 A||sleep||10
-A||query2||q=aaaa*||"index":"1" "index":"2" "index":"3" "index":"4" "index":"5"
-A||query2||q=aaaaaa%20AND%201111*||"index":"1" "index":"2" "index":"3" "index":"4" "index":"5"
-A||query2||q=aaaaaa%20AND%20111111%20AND%20zzzz*||"index":"1" "index":"2" "index":"3" "index":"4" "index":"5"
-A||query2||q=cccc*||"index":"11" "index":"12" "index":"13" "index":"14" "index":"15"
-A||query2||q=cccccc%20AND%203333*||"index":"11" "index":"12" "index":"13" "index":"14" "index":"15"
-A||query2||q=cccccc%20AND%20333333%20AND%20xxxx*||"index":"11" "index":"12" "index":"13" "index":"14" "index":"15"
-A||query2||q=eee*||"index":"21" "index":"22" "index":"23" "index":"24" "index":"25"
-A||query2||q=eeeeee%20AND%20555*||"index":"21" "index":"22" "index":"23" "index":"24" "index":"25"
-A||query2||q=eeeeee%20AND%20555555%20AND%20vvvv*||"index":"21" "index":"22" "index":"23" "index":"24" "index":"25"
+A||query2||q=aaaa*||"index":"1" "index":"2" "index":"3" "index":"4" "index":"5"||"results_found":5
+A||query2||q=aaaaaa%20AND%201111*||"index":"1" "index":"2" "index":"3" "index":"4" "index":"5"||"results_found":5
+A||query2||q=aaaaaa%20AND%20111111%20AND%20zzzz*||"index":"1" "index":"2" "index":"3" "index":"4" "index":"5"||"results_found":5
+A||query2||q=cccc*||"index":"11" "index":"12" "index":"13" "index":"14" "index":"15"||"results_found":15
+A||query2||q=cccccc%20AND%203333*||"index":"11" "index":"12" "index":"13" "index":"14" "index":"15"||"results_found":5
+A||query2||q=cccccc%20AND%20333333%20AND%20xxxx*||"index":"11" "index":"12" "index":"13" "index":"14" "index":"15"||"results_found":5
+A||query2||q=eee*||"index":"21" "index":"22" "index":"23" "index":"24" "index":"25"||"results_found":5
+A||query2||q=eeeeee%20AND%20555*||"index":"21" "index":"22" "index":"23" "index":"24" "index":"25"||"results_found":5
+A||query2||q=eeeeee%20AND%20555555%20AND%20vvvv*||"index":"21" "index":"22" "index":"23" "index":"24" "index":"25"||"results_found":5
 A||kill
 B||kill
 C||kill

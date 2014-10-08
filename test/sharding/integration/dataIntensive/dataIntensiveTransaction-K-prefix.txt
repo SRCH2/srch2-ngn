@@ -1,6 +1,10 @@
 #This tests the prefix query
 A||start
 D||start
+B||start
+C||start
+E||start
+F||start
 -||sleep||10
 A||bulkInsert||./dataIntensive/stackoverflow-1M-A.json||2||50
 D||query||q=aaaa*||"id":"1" "id":"2" "id":"3" "id":"4" "id":"5"
@@ -12,5 +16,36 @@ D||query||q=cccccc%20AND%20333333%20AND%20xxxx*||"id":"11" "id":"12" "id":"13" "
 D||query||q=eee*||"id":"21" "id":"22" "id":"23" "id":"24" "id":"25"
 D||query||q=eeeeee%20AND%20555*||"id":"21" "id":"22" "id":"23" "id":"24" "id":"25"
 D||query||q=eeeeee%20AND%20555555%20AND%20vvvv*||"id":"21" "id":"22" "id":"23" "id":"24" "id":"25"
+B||query||q=aaaa*||"id":"1" "id":"2" "id":"3" "id":"4" "id":"5"
+B||query||q=aaaaaa%20AND%201111*||"id":"1" "id":"2" "id":"3" "id":"4" "id":"5"
+B||query||q=aaaaaa%20AND%20111111%20AND%20zzzz*||"id":"1" "id":"2" "id":"3" "id":"4" "id":"5"
+B||query||q=cccc*||"id":"11" "id":"12" "id":"13" "id":"14" "id":"15"
+B||query||q=cccccc%20AND%203333*||"id":"11" "id":"12" "id":"13" "id":"14" "id":"15"
+B||query||q=cccccc%20AND%20333333%20AND%20xxxx*||"id":"11" "id":"12" "id":"13" "id":"14" "id":"15"
+B||query||q=eee*||"id":"21" "id":"22" "id":"23" "id":"24" "id":"25"
+B||query||q=eeeeee%20AND%20555*||"id":"21" "id":"22" "id":"23" "id":"24" "id":"25"
+B||query||q=eeeeee%20AND%20555555%20AND%20vvvv*||"id":"21" "id":"22" "id":"23" "id":"24" "id":"25"
+C||query||q=aaaa*||"id":"1" "id":"2" "id":"3" "id":"4" "id":"5"
+C||query||q=aaaaaa%20AND%201111*||"id":"1" "id":"2" "id":"3" "id":"4" "id":"5"
+C||query||q=aaaaaa%20AND%20111111%20AND%20zzzz*||"id":"1" "id":"2" "id":"3" "id":"4" "id":"5"
+C||query||q=cccc*||"id":"11" "id":"12" "id":"13" "id":"14" "id":"15"
+C||query||q=cccccc%20AND%203333*||"id":"11" "id":"12" "id":"13" "id":"14" "id":"15"
+C||query||q=cccccc%20AND%20333333%20AND%20xxxx*||"id":"11" "id":"12" "id":"13" "id":"14" "id":"15"
+C||query||q=eee*||"id":"21" "id":"22" "id":"23" "id":"24" "id":"25"
+C||query||q=eeeeee%20AND%20555*||"id":"21" "id":"22" "id":"23" "id":"24" "id":"25"
+C||query||q=eeeeee%20AND%20555555%20AND%20vvvv*||"id":"21" "id":"22" "id":"23" "id":"24" "id":"25"
+E||query||q=aaaa*||"id":"1" "id":"2" "id":"3" "id":"4" "id":"5"
+E||query||q=aaaaaa%20AND%201111*||"id":"1" "id":"2" "id":"3" "id":"4" "id":"5"
+E||query||q=aaaaaa%20AND%20111111%20AND%20zzzz*||"id":"1" "id":"2" "id":"3" "id":"4" "id":"5"
+E||query||q=cccc*||"id":"11" "id":"12" "id":"13" "id":"14" "id":"15"
+E||query||q=cccccc%20AND%203333*||"id":"11" "id":"12" "id":"13" "id":"14" "id":"15"
+E||query||q=cccccc%20AND%20333333%20AND%20xxxx*||"id":"11" "id":"12" "id":"13" "id":"14" "id":"15"
+E||query||q=eee*||"id":"21" "id":"22" "id":"23" "id":"24" "id":"25"
+E||query||q=eeeeee%20AND%20555*||"id":"21" "id":"22" "id":"23" "id":"24" "id":"25"
+E||query||q=eeeeee%20AND%20555555%20AND%20vvvv*||"id":"21" "id":"22" "id":"23" "id":"24" "id":"25"
 A||kill
+B||kill
+C||kill
 D||kill
+E||kill
+F||kill

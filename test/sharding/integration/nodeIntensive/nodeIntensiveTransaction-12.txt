@@ -9,7 +9,7 @@ B||bulkInsertFromBeginning||./nodeIntensive/stackoverflow-10k-2.json||2||50
 A||update||{"id":"3","author_name":"Capt Sariputra","body":"<p>Anyone know how to do so? Something like <a href=&quot;http://apartemenpavilion.com/images/flash/news.swf&quot; rel=&quot;nofollow&quot;>http://apartemenpavilion.com/images/flash/news.swf</a></p><p>I used fireworks and what I got is something like <a href=&quot;http://apartemenpavilion.com/images/flash/newsimage/player_white.swf&quot; rel=&quot;nofollow&quot;>http://apartemenpavilion.com/images/flash/newsimage/player_white.swf</a> Looks like fireworks can&#39t make simpler slide show.</p>","creation_date":"05/12/2011","id":"5975464","tags":["flash","slideshow","fireworks"],"title":"How to Create Swf Slide Show","answer_count":"2","view_count":"1247","votes_count":"1"}||"action":"update","rid":"3","status":true
 B||insert||{"id":"999999","author_name":"Omega","body":"<pre><code>g.DrawImage</code></pre><p>To.. yeah, draw an image in my picturebox. Is it possible to give it an opacity attribute? I have been looking at the other versions of DrawImage but couldn&#39t find such thing!</p>","creation_date":"04/01/2011","id":"999999","tags":["vb.net","winforms","visual-studio"],"title":".DrawImage with opacity?","answer_count":"2","view_count":"1635","votes_count":"0"}||"rid":"999999","status":true
 B||queryID||999999||"id":"999999"||"results_found":1
-B||query||q=10001%20OR%20999999||"id":"10001" "id":"999999"
+B||query||q=10001%20OR%20999999||"id":"10001" "id":"999999"||"results_found":2
 A||kill
 B||kill
 
