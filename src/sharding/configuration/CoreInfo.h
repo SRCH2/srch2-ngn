@@ -322,6 +322,15 @@ public:
 	const srch2::instantsearch::Schema* getSchema() const {
 		return this->schema;
 	};
+
+    const std::string* getRecordAclFile() const{
+    	return &recordAclFilePath;
+    }
+
+    bool getHasRecordAcl() const{
+    	return hasRecordAcl;
+    }
+
 //	// used for test.
 //	CoreInfo_t(unsigned coreId, const string name, unsigned numberOfPartitions, unsigned replicaNumber){
 //		schema = NULL;
@@ -467,8 +476,12 @@ protected:
 
 	// array of local HTTP ports (if any) index by port type enum
 	vector<unsigned short> ports;
-	AccessControlInfo* accessControlInfo;
 	srch2::instantsearch::Schema *schema;
+
+    // keep the access control info for this core
+    AccessControlInfo* accessControlInfo;
+    bool hasRecordAcl;
+    string recordAclFilePath;
 };
 
 }

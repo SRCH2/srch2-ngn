@@ -733,7 +733,7 @@ void HTTPRequestHandler::writeCommand(evhttp_request *req,
                     // check if there is roleId in the query or not
 					std::stringstream log_str;
                     if( JSONRecordParser::_extractRoleIds(roleIds, doc, server->getCoreInfo(), log_str) ){
-                    	if(server->getIndexer()->getHasRecordAcl()){
+                    	if(server->getCoreInfo()->getHasRecordAcl()){
                     		// add role ids to the record object
                     		record->setRoleIds(roleIds);
                     	}else{
@@ -762,7 +762,7 @@ void HTTPRequestHandler::writeCommand(evhttp_request *req,
 				std::stringstream log_str;
                 // check if there is roleId in the query or not
                 if( JSONRecordParser::_extractRoleIds(roleIds, doc, server->getCoreInfo(), log_str) ){
-                	if(server->indexDataConfig->getHasRecordAcl()){
+                	if(server->getCoreInfo()->getHasRecordAcl()){
                 		// add role ids to the record object
                 		record->setRoleIds(roleIds);
 
@@ -827,7 +827,7 @@ void HTTPRequestHandler::aclModifyRolesForRecord(evhttp_request *req, Srch2Serve
 	bool isSuccess = true;
 	Json::Value edit_responses(Json::arrayValue);
 
-	if(server->indexDataConfig->getHasRecordAcl()){ // this core has record Acl
+	if(server->getCoreInfo()->getHasRecordAcl()){ // this core has record Acl
 
 		size_t length = EVBUFFER_LENGTH(req->input_buffer);
 
@@ -858,9 +858,9 @@ void HTTPRequestHandler::aclModifyRolesForRecord(evhttp_request *req, Srch2Serve
 					string primaryKeyID;
 					std::stringstream log_str;
 					// extract all the role ids from the query
-					if( JSONRecordParser::_extractResourceAndRoleIds(roleIds, primaryKeyID, doc, server->indexDataConfig, log_str) ){
+					if( JSONRecordParser::_extractResourceAndRoleIds(roleIds, primaryKeyID, doc, server->getCoreInfo(), log_str) ){
 						if(roleIds.size() != 0){
-							log_str << global_customized_writer.write(IndexWriteUtil::_aclRecordModifyRoles(server->indexer, primaryKeyID, roleIds, commandType));
+							log_str << global_customized_writer.write(IndexWriteUtil::_aclRecordModifyRoles(server->getIndexer(), primaryKeyID, roleIds, commandType));
 						}
 					}
 
@@ -873,9 +873,9 @@ void HTTPRequestHandler::aclModifyRolesForRecord(evhttp_request *req, Srch2Serve
 				string primaryKeyID;
 				std::stringstream log_str;
 				// extract all the role ids from the query
-				if( JSONRecordParser::_extractResourceAndRoleIds(roleIds, primaryKeyID, doc, server->indexDataConfig, log_str) ){
+				if( JSONRecordParser::_extractResourceAndRoleIds(roleIds, primaryKeyID, doc, server->getCoreInfo(), log_str) ){
 					if(roleIds.size() != 0){
-						log_str << global_customized_writer.write(IndexWriteUtil::_aclRecordModifyRoles(server->indexer, primaryKeyID, roleIds, commandType));
+						log_str << global_customized_writer.write(IndexWriteUtil::_aclRecordModifyRoles(server->getIndexer(), primaryKeyID, roleIds, commandType));
 					}
 				}
 				edit_responses.append(log_str.str());
@@ -909,7 +909,7 @@ void HTTPRequestHandler::aclModifyRecordsForRole(evhttp_request *req, Srch2Serve
 	bool isSuccess = true;
 	Json::Value responseOfAction(Json::arrayValue);
 
-	if(server->indexDataConfig->getHasRecordAcl()){ // this resource core has a role core
+	if(server->getCoreInfo()->getHasRecordAcl()){ // this resource core has a role core
 
 		size_t length = EVBUFFER_LENGTH(req->input_buffer);
 
@@ -1504,7 +1504,7 @@ boost::shared_ptr<Json::Value> HTTPRequestHandler::doSearchOneCore(evhttp_reques
     boost::shared_ptr<Json::Value> root;
     ParsedParameterContainer paramContainer;
 
-    if(server->indexDataConfig->getHasRecordAcl()){
+    if(server->getCoreInfo()->getHasRecordAcl()){
     	paramContainer.hasRoleCore = true;
     }
 

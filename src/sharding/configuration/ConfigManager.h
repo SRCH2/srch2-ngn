@@ -677,12 +677,11 @@ private:
 	static const char* const fuzzyTagPost;
 	static const char* const snippetSize;
 
-    static const char* const multipleAccessControlString;
-    static const char* const resourceCore;
-    static const char* const roleCore;
-    static const char* const accessControlDataFile;
-    static const char* const aclRoleId;
-    static const char* const aclResourceId;
+	static const char* const accessControlString;
+	static const char* const recordAclString;
+	static const char* const attributeAclString;
+	static const char* const aclRoleId;
+	static const char* const aclResourceId;
 
 	static const char* const defaultFuzzyPreTag;
 	static const char* const defaultFuzzyPostTag;
