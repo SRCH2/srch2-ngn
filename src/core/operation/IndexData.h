@@ -209,7 +209,7 @@ class PermissionMap{
 public:
 	// Adds resource id to some of the role ids.
 	// for each role id if it exists in the permission map it will add this resource id to its vector
-	// otherwise it adds new record to the map with this role id and then adds this resource id to it.
+	// otherwise it adds new entry to the map with this role id and then adds this resource id to it.
 	void appendResourceToRoles(const string &resourceId, vector<string> &roleIds);
 
 	// Deletes resource id from the role ids.

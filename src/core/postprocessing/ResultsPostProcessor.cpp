@@ -233,6 +233,8 @@ void * ResultsPostProcessingInfo::serializeForNetwork(void * buffer){
 		buffer = phraseSearchInfoContainer->serializeForNetwork(buffer);
 	}
 
+	buffer = srch2::util::serializeString(this->roleId, buffer);
+
 	return buffer;
 }
 
@@ -267,6 +269,9 @@ void * ResultsPostProcessingInfo::deserializeForNetwork(ResultsPostProcessingInf
 		info.phraseSearchInfoContainer = new PhraseSearchInfoContainer();
 		buffer = PhraseSearchInfoContainer::deserializeForNetwork(*(info.phraseSearchInfoContainer), buffer);
 	}
+
+	buffer = srch2::util::deserializeString(buffer, info.roleId);
+
 	return buffer;
 
 }
@@ -291,6 +296,8 @@ unsigned ResultsPostProcessingInfo::getNumberOfBytesForSerializationForNetwork()
 	if(phraseSearchInfoContainer != NULL){
 		numberOfBytes += phraseSearchInfoContainer->getNumberOfBytesForSerializationForNetwork();
 	}
+
+	numberOfBytes += sizeof(unsigned) + roleId.size();
 	return numberOfBytes;
 }
 
