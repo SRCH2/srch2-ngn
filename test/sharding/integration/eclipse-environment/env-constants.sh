@@ -12,7 +12,6 @@ export LOG_FILE_PREFIX="srch2-log"
 export DATA_SOURCE="/home/jamshid/srch2/sharding-demo/data/"
 export DATA_CORE_NAME="statemedia"
 export DATA_FILE_PREFIX="statemedia-1000"
-export SRCH2_HOME="srch2-home"
 
 
 # config file constants
@@ -31,7 +30,8 @@ export BINARY_NAME="src/server/srch2-search-server"
 
 # environment installation variables
 
-export ROOT="/home/jamshid/srch2/sharding-demo/"
+export SRCH2_HOME="/home/jamshid/srch2/sharding-demo/srch2-home/"
+export ROOT=$SRCH2_HOME
 #export ROOT="hello"
 export ENV_LOG_ROOT="env-logs"
 export ENV_DATA_ROOT="env-data"

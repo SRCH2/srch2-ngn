@@ -2,9 +2,14 @@
 # Constants
 . ./env-constants.sh
 
+_ROOT()
+{
+   echo $SRCH2_HOME
+}
+
 _ENV_LOG_ROOT()
 {
-   echo $ROOT/$ENV_LOG_ROOT
+   echo $( _ROOT)/$ENV_LOG_ROOT
 }
 
 _ENV_PULL_LOG()
@@ -19,12 +24,12 @@ _ENV_MAKE_LOG()
 
 _ENV_DATA_ROOT()
 {
-   echo $ROOT/$ENV_DATA_ROOT
+   echo $( _ROOT)/$ENV_DATA_ROOT
 }
 
 _ENV_BIN()
 {
-   echo $ROOT/$ENV_BIN
+   echo $( _ROOT)/$ENV_BIN
 }
 
 _ENV_CLEAR()
@@ -34,7 +39,12 @@ _ENV_CLEAR()
 
 _SRCH2_HOME()
 {
-   echo $ROOT/$SRCH2_HOME
+   echo $SRCH2_HOME
+}
+
+_CLUSTER_NAME()
+{
+   echo $(_ROOT)/$CLUSTER_NAME
 }
 
 _DATA_DIR()
