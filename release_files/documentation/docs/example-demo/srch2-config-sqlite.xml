@@ -32,10 +32,10 @@
     </fields>
     <uniqueKey>ID</uniqueKey>
     <types>
-        <fieldType name="text_en">
+        <fieldType name="text_standard">
             <analyzer>
-                <filter name="PorterStemFilter" dictionary="" />
-                <filter name="StopFilter" words="" />
+                <filter name="PorterStemFilter" dictionary="srch2_stemmer_words.txt" />
+                <filter name="StopFilter" words="stop-words.txt" />
             </analyzer>
         </fieldType>
     </types>
@@ -84,11 +84,6 @@
             <mergeEveryMWrites>10</mergeEveryMWrites>
         </mergePolicy>
 
-        <updateLog>
-            <logLevel>4</logLevel>
-            <accessLogFile>./logs/srch2-log-sqlite.txt</accessLogFile>
-        </updateLog>
-
     </updatehandler>
 
     <!-- DB settings Required if dataSourceType = 2 -->
@@ -103,4 +98,9 @@
             <dbKeyValue key="listenerWaitTime" value="3" />
         </dbKeyValues>
     </dbParameters>
+
+    <updateLog>
+        <logLevel>4</logLevel>
+        <accessLogFile>./logs/srch2-log-sqlite.txt</accessLogFile>
+    </updateLog>
 </config>

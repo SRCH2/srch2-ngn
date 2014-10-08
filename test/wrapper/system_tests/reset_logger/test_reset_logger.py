@@ -29,7 +29,7 @@ class logTester():
         #urllib2.urlopen(queryCommand)
         #print 'fired query ' + query
         # Method 2 using curl
-        curlCommand = 'curl -s http://localhost:' + str(port) + '/search?q=' + query
+        curlCommand = 'curl -s http://127.0.0.1:' + str(port) + '/search?q=' + query
         os.popen(curlCommand)
 
 

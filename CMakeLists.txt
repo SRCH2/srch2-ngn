@@ -71,7 +71,7 @@ SET(BUILD_SERVER ON CACHE BOOL
     "Build the Srch2Server executable. Defaults to ON")
 SET(BUILD_RELEASE ON CACHE BOOL "Build Release. Default ON")
 SET(BUILD_TEST ON CACHE BOOL "Build tests. Default ON")
-SET(BUILD_UTILITY OFF CACHE BOOL "Build utilities. Default OFF")
+SET(BUILD_UTILITY ON CACHE BOOL "Build utilities. Default ON")
 #SET(CMAKE_CXX_FLAGS_RELEASE "") 
 
 SET(ANDROID_SERVER OFF CACHE BOOL "Build srch2-server for android. Default OFF")
@@ -83,7 +83,7 @@ IF(ANDROID)
        SET(BUILD_JNI ON)
     ENDIF()
     SET(BUILD_TEST OFF)
-    SET(BUILD_UTILITY OFF)
+    SET(BUILD_UTILITY ON)
 ENDIF()
 
 

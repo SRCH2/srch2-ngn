@@ -70,7 +70,7 @@ Here the title field indexed = false, searchable = false, and refining attribute
                 </facetFields>
               
                 <types>
-                    <fieldType name="text_en">
+                    <fieldType name="text_standard">
                         <analyzer>
                             <filter name="PorterStemFilter" dictionary="" />
                             <filter name="StopFilter" words="stop-words.txt" />

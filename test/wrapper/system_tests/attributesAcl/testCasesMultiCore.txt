@@ -22,7 +22,7 @@ S||author_name:nightcracker&roleId=spiderman||5206508||stackoverflow
 S||impagency:india&roleId=spiderman||||worldbank
 
 # case7:  Add role-id for spiderman
-C||aclAttributeRoleAdd||{ "attributes" : ["impagency"] , "roleId" :  ["spiderman"] }||worldbank
+C||aclAttributeRoleReplace||{ "attributes" : ["impagency"] , "roleId" :  ["spiderman"] }||worldbank
 
 #case 8. acl-role-id=spiderman is provided, keyword should match any non-acl attributes or attributes allowed for this role-id
 S||impagency:india&roleId=spiderman||52b213b38594d8a2be17c961 52b213b38594d8a2be17c925||worldbank

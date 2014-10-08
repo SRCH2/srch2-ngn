@@ -63,10 +63,12 @@ CoreInfo_t::CoreInfo_t(const CoreInfo_t &src) {
     synonymKeepOrigFlag = src.synonymKeepOrigFlag;
     stopFilterFilePath = src.stopFilterFilePath;
     protectedWordsFilePath = src.protectedWordsFilePath;
-
+    analyzerType = src.analyzerType;
+    chineseDictionaryFilePath = src.chineseDictionaryFilePath;
     allowedRecordTokenizerCharacters = src.allowedRecordTokenizerCharacters;
-
     ports = src.ports;
+
+
 }
 
 ClusterShardId CoreInfo_t::getPrimaryShardId(unsigned partitionId) const{

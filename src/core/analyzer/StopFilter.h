@@ -23,28 +23,28 @@ class StopWordContainer;
 
 class StopFilter: public TokenFilter {
 public:
-	/*
-	 * Constructor of stop words.
-	 * Set sharedToken and create the dictionary list
-	 */
-	StopFilter(TokenStream *tokenStream, const StopWordContainer *stopWordsContainer);
+    /*
+     * Constructor of stop words.
+     * Set sharedToken and create the dictionary list
+     */
+    StopFilter(TokenStream *tokenStream, const StopWordContainer *stopWordsContainer);
 
-	/*
-	 * IncrementToken() is a virtual function of class TokenOperator. Here we have to implement it. It goes on all tokens.
-	 * */
-	bool processToken();
+    /*
+     * IncrementToken() is a virtual function of class TokenOperator. Here we have to implement it. It goes on all tokens.
+     * */
+    bool processToken();
 
-	virtual ~StopFilter();
+    virtual ~StopFilter();
 
 private:
 
-	const StopWordContainer *stopWordsContainer;
+    const StopWordContainer *stopWordsContainer;
 
-	/*
-	 *  input: a token
-	 *  Checks if the token is a stop word or not
-	 */
-	bool isStopWord(const std::string &token) const;
+    /*
+     *  input: a token
+     *  Checks if the token is a stop word or not
+     */
+    bool isStopWord(const std::string &token) const;
 
 
 };

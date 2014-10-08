@@ -85,7 +85,7 @@ public:
     INDEXWRITE_RETVAL addRecord(const Record *record, Analyzer *analyzer);
 
     // Edits the records access list base on the command type
-    INDEXWRITE_RETVAL aclModifyRoles(const std::string &resourcePrimaryKeyID, vector<string> &roleIds, RecordAclCommandType commandType);
+    INDEXWRITE_RETVAL aclRecordModifyRoles(const std::string &resourcePrimaryKeyID, vector<string> &roleIds, RecordAclCommandType commandType);
 
     // Deletes the role id from the permission map
     // we use this function for deleting a record from a role core

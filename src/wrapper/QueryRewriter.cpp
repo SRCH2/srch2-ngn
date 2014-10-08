@@ -236,10 +236,13 @@ void QueryRewriter::prepareFieldFilters() {
     	}
         return;
     }
-    boost::shared_ptr<vector<unsigned> > allowedAttributesSharedPtr;
-    // Fetch list of attributes accessible by this role-id
-    attributeAcl.fetchSearchableAttrsAcl(paramContainer->roleId, allowedAttributesSharedPtr);
-    vector<unsigned> *allowedAttributesForRole = allowedAttributesSharedPtr.get();
+    vector<unsigned> *allowedAttributesForRole = NULL;
+    if (paramContainer->attrAclOn) {
+    	boost::shared_ptr<vector<unsigned> > allowedAttributesSharedPtr;
+    	// Fetch list of attributes accessible by this role-id
+    	attributeAcl.fetchSearchableAttrsAcl(paramContainer->roleId, allowedAttributesSharedPtr);
+    	allowedAttributesForRole = allowedAttributesSharedPtr.get();
+    }
 
 	const vector<unsigned>& schemaNonAclAttrsList = schema.getNonAclSearchableAttrIdsList();
 
@@ -254,10 +257,14 @@ void QueryRewriter::prepareFieldFilters() {
             srch2is::BooleanOperation op = leafNode->termIntermediateStructure->fieldFilterOp;
 
             if (leafNode->termIntermediateStructure->fieldFilter.size() == 0) {
-            	// filtering attributes are not specified for this term. Get them from ACL map
-            	getFieldFiltersBasedOnAcl(leafNode->termIntermediateStructure->fieldFilterList,
-            			leafNode->termIntermediateStructure->fieldFilterAttrOperation,
-            			allowedAttributesForRole);
+            	if (paramContainer->attrAclOn) {
+            		// filtering attributes are not specified for this term. Get them from ACL map
+            		getFieldFiltersBasedOnAcl(leafNode->termIntermediateStructure->fieldFilterList,
+            				leafNode->termIntermediateStructure->fieldFilterAttrOperation,
+            				allowedAttributesForRole);
+            	} else {
+            		leafNode->termIntermediateStructure->fieldFilterAttrOperation = ATTRIBUTES_OP_OR;
+            	}
             } else {
             	vector<unsigned> attributeFilter;
             	// flag is used to indicate whether the wildcard "*" was found in attributes list in
@@ -272,7 +279,9 @@ void QueryRewriter::prepareFieldFilters() {
                         break;
                     }
                     unsigned id = schema.getSearchableAttributeId(*field);
-                    // if a user has specified a filtering attribute, then check whether it is present
+                    // if a user has specified a filtering attribute, then first check whether the
+                    // attribute acl is OFF or ON. If attribute acl is OFF then add this field to
+                    // attribute filter vector. If attribute acl is ON the check whether it is present
                     // in allowed attributes list for this role-id OR it is present in non-acl attributes
                     // list. If found then use this attribute for filtering. If not found then this
                     // attribute is unaccessible for current search and should not be used for filtering
@@ -280,7 +289,8 @@ void QueryRewriter::prepareFieldFilters() {
                     //  filtering operation (AND or OR). Another alternative option could be to return
                     // no result for when one the filtering attribute is unaccessible and filtering
                     // operation is (AND). This option is not chosen.
-                    if ((allowedAttributesForRole &&
+                    if ( !paramContainer->attrAclOn ||
+                    	(allowedAttributesForRole &&
                     	find(allowedAttributesForRole->begin(), allowedAttributesForRole->end(), id)
                     		!= allowedAttributesForRole->end()) ||
                     	find (schemaNonAclAttrsList.begin(), schemaNonAclAttrsList.end(), id)
@@ -305,9 +315,14 @@ void QueryRewriter::prepareFieldFilters() {
                 	leafNode->termIntermediateStructure->fieldFilterList = attributeFilter;
                 } else {
                 	// if wildcard is used then get filtering attributes from ACL map
-                	getFieldFiltersBasedOnAcl(leafNode->termIntermediateStructure->fieldFilterList,
-                	            			leafNode->termIntermediateStructure->fieldFilterAttrOperation,
-                	            			allowedAttributesForRole);
+                	if (paramContainer->attrAclOn) {
+                		getFieldFiltersBasedOnAcl(leafNode->termIntermediateStructure->fieldFilterList,
+                				leafNode->termIntermediateStructure->fieldFilterAttrOperation,
+                				allowedAttributesForRole);
+                	}else {
+                		leafNode->termIntermediateStructure->fieldFilterList.clear();
+                		leafNode->termIntermediateStructure->fieldFilterAttrOperation = ATTRIBUTES_OP_OR;
+                	}
                 }
             }
     	}
@@ -318,8 +333,13 @@ void QueryRewriter::prepareFieldFilters() {
     	ParseTreeLeafNodeIterator termIterator(paramContainer->parseTreeRoot);
     	while(termIterator.hasMore()){
     		leafNode = termIterator.getNext();
-    		getFieldFiltersBasedOnAcl(leafNode->termIntermediateStructure->fieldFilterList,
-    				leafNode->termIntermediateStructure->fieldFilterAttrOperation, allowedAttributesForRole);
+    		if (paramContainer->attrAclOn) {
+    			getFieldFiltersBasedOnAcl(leafNode->termIntermediateStructure->fieldFilterList,
+    					leafNode->termIntermediateStructure->fieldFilterAttrOperation, allowedAttributesForRole);
+    		} else {
+    			leafNode->termIntermediateStructure->fieldFilterList.clear();
+    			leafNode->termIntermediateStructure->fieldFilterAttrOperation = ATTRIBUTES_OP_OR;
+    		}
     	}
     }
 

@@ -248,6 +248,10 @@ public:
 	const string& getRecordAllowedSpecialCharacters() const
 	{ return allowedRecordTokenizerCharacters; }
 
+	AnalyzerType getAnalyzerType() const {	return analyzerType;};
+
+	const string& getChineseDictionaryPath() const { return chineseDictionaryFilePath;	}
+
 	uint32_t getDocumentLimit() const;
 	uint64_t getMemoryLimit() const;
 
@@ -318,6 +322,15 @@ public:
 	const srch2::instantsearch::Schema* getSchema() const {
 		return this->schema;
 	};
+
+    const std::string* getRecordAclFile() const{
+    	return &recordAclFilePath;
+    }
+
+    bool getHasRecordAcl() const{
+    	return hasRecordAcl;
+    }
+
 //	// used for test.
 //	CoreInfo_t(unsigned coreId, const string name, unsigned numberOfPartitions, unsigned replicaNumber){
 //		schema = NULL;
@@ -437,6 +450,8 @@ protected:
 	std::string stopFilterFilePath;
 	std::string protectedWordsFilePath;
 	std::string attrAclFilePath;
+    AnalyzerType analyzerType;
+    std::string chineseDictionaryFilePath;
 
 	// characters to specially treat as part of words, and not as a delimiter
 	std::string allowedRecordTokenizerCharacters;
@@ -461,8 +476,12 @@ protected:
 
 	// array of local HTTP ports (if any) index by port type enum
 	vector<unsigned short> ports;
-	AccessControlInfo* accessControlInfo;
 	srch2::instantsearch::Schema *schema;
+
+    // keep the access control info for this core
+    AccessControlInfo* accessControlInfo;
+    bool hasRecordAcl;
+    string recordAclFilePath;
 };
 
 }

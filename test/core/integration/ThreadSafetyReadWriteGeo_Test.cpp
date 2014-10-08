@@ -240,9 +240,9 @@ void* reader_MultiReaderMultipleWriter(void *arg)
 {
 	Indexer * indexer = (Indexer *) arg;
     testRead1(indexer);
-    sleep(5);
+    sleep(6);
     testRead2(indexer);
-    sleep(11);
+    sleep(12);
     testRead1(indexer);
     return NULL;
 }
@@ -433,7 +433,7 @@ void testMultipleReadersMultipleWriters(){
         p[i].id = i;
         p[i].nproc = n;
         p[i].indexer = indexer;
-        pthread_create(&threadReaders1[i], &pthread_custom_attr, reader_MultiReaderOneWriter, (void *)indexer);
+        pthread_create(&threadReaders1[i], &pthread_custom_attr, reader_MultiReaderMultipleWriter, (void *)indexer);
         //pthread_create(&threadReaders2[i], &pthread_custom_attr, reader, (void *)(p+i));
     }
 

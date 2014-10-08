@@ -41,7 +41,7 @@ std::string CustomizableJsonWriter::writeValue( const Value &value )const
     switch ( value.type() )
     {
         case nullValue:
-            document_ += "null";
+            //document_ += "null";
             break;
         case intValue:
             document_ += valueToString( value.asInt() );

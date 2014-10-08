@@ -124,6 +124,8 @@ void DPExternalRequestHandler::externalSearchCommand(boost::shared_ptr<const Clu
         return;
     }
     //2. validate the query
+    //TODO : Temporary fix until ACL is fixed.
+    attributeAcl = new AttributeAccessControl((SchemaInternal *)indexDataContainerConf->getSchema());
     QueryValidator qv(*(indexDataContainerConf->getSchema()),
             *(indexDataContainerConf), resultAggregator->getParamContainer(),
             *attributeAcl);

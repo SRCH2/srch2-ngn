@@ -10,7 +10,7 @@ pages:
     - [ranking.mkd, Ranking]
     - [geo.mkd, Geo]
     - [acl.mkd, ACL]
-    - [databases.mkd, Databases]
+    - [connectors.mkd, Connectors]
 
 theme_dir : './srch2-theme'
 

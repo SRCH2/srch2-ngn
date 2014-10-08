@@ -275,8 +275,8 @@ bool Record::setRefiningAttributeValue(const unsigned attributeId,
     return true;
 }
 
-void Record::addRoleId(const std::string &roleId){
-	impl->roleIds.push_back(roleId);
+void Record::setRoleIds(const std::vector<std::string> &roleId){
+	impl->roleIds = roleId;
 }
 
 std::vector<std::string>* Record::getRoleIds() const{

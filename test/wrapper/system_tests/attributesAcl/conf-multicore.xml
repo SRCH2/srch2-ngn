@@ -72,7 +72,6 @@
                         <field name="impagency" type="text" searchable="true" acl="true" />
                         <field name="dacommamt" type="long" refining="true" acl="true"/>
                     </fields>
-                    <attributeAclFile>./acl-worldbank.txt</attributeAclFile>
 
                     <uniqueKey>_id</uniqueKey>
 
@@ -84,7 +83,7 @@
                     </facetFields>
 
                     <types>
-                        <fieldType name="text_en">
+                        <fieldType name="text_standard">
                             <analyzer>
                                 <filter name="PorterStemFilter" dictionary="" />
                                 <filter name="StopFilter" words="stop-words.txt" />
@@ -104,6 +103,9 @@
                         <accessLogFile>./logs/srch2-log-worldbank.txt</accessLogFile>
                     </updateLog>
                 </updatehandler>
+                <access-control>
+                    <attribute-acl datafile="./acl-worldbank.txt"/>
+                </access-control>
             </core>
 
             <core name="stackoverflow">
@@ -161,7 +163,6 @@
                         <field name="votes_count"    type="float" indexed="false"   refining="true"
                             default="0"           required="false" acl="true"/>
                     </fields>
-                    <attributeAclFile>./acl-stackoverflow.txt</attributeAclFile>
 
                     <uniqueKey>id</uniqueKey>
                     <facetEnabled>true</facetEnabled>
@@ -170,7 +171,7 @@
                     </facetFields>
 
                     <types>
-                        <fieldType name="text_en">
+                        <fieldType name="text_standard">
                             <analyzer>
                                 <filter name="PorterStemFilter" dictionary="" />
                                 <filter name="StopFilter" words="stop-words.txt" />
@@ -191,6 +192,9 @@
                         <accessLogFile>./logs/srch2-log-so.txt</accessLogFile>
                     </updateLog>
                 </updatehandler>
+                <access-control>
+                    <attribute-acl datafile="./acl-stackoverflow.txt"/>
+                </access-control>
             </core>
     </cores>
 </config>
