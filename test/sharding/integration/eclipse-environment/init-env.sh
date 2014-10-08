@@ -2,6 +2,15 @@
 . ./env-constants.sh
 . ./env-util.sh
 
+#if [ -d "$ROOT"]; then
+#   cd $ROOT
+#   ROOT=$( pwd )
+#else
+#   echo "Root ($ROOT) does not exist."
+#   exit 1
+#fi
+cd $ROOT
+ROOT=$( pwd )
 #Making directory structure and initializing env files
 mkdir $(_ENV_LOG_ROOT)
 touch $(_ENV_PULL_LOG)
@@ -26,7 +35,7 @@ do
 done
 
 
-echo "cp -r $( _SRCH2_HOME ) $(_ENV_DATA_ROOT)/.$SRCH2_HOME-backup"
-echo "rm -r $( _SRCH2_HOME );cp -r $(_ENV_DATA_ROOT)/.$SRCH_HOME-backup $( _SRCH2_HOME )" > $(_ENV_CLEAR)
+cp -r $( _SRCH2_HOME ) $(_ENV_DATA_ROOT)/.$SRCH2_HOME-backup
+echo "rm -r $( _SRCH2_HOME );cp -r $(_ENV_DATA_ROOT)/.$SRCH2_HOME-backup $( _SRCH2_HOME )" > $(_ENV_CLEAR)
 
 echo "Testing environment is ready to use."
