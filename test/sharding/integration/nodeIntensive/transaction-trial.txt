@@ -2,3 +2,6 @@
 A||start
 B||start
 A||nodeCount||2
+P||start
+Q||start
+P||nodeCount||2

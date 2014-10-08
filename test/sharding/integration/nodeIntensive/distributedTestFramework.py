@@ -134,7 +134,7 @@ def startEngine(nodeId, transactionFile):
         #os.system(binary_path + " --config=" + nodes[nodeId].conf + ' > ' + integrationTestDir + '/dashboardFiles/' + transactionFile[0:-4] + '-dashboard-'+nodes[nodeId].Id+ '.txt')      
         nodes[nodeId].pid = temp.pid
         #print str(nodes[nodeId].pid) + "---------------------------"
-        pingServer(nodes[nodeId].ipAddress, nodes[nodeId].portNo)
+        #pingServer(nodes[nodeId].ipAddress, nodes[nodeId].portNo)
         return
     print binary_path + ' --config=' + nodes[nodeId].conf
     stdin, stdout, stderr = sshClient[nodes[nodeId].Id].exec_command('cd ' + integrationTestDir + '; echo $$;exec '+binary_path+' --config='+ nodes[nodeId].conf + ' > ' + integrationTestDir + '/dashboardFiles/'+transactionFile[0:-4] + '-dashboard-' + nodes[nodeId].Id + '.txt')
@@ -297,7 +297,9 @@ def test(transactionFile):
              command = 'curl "http://' + nodes[nodeId[0]].ipAddress + ':' + nodes[nodeId[0]].portNo + '/docs" -i -X PUT -d ' + '\''+insertValue+'\'';
              status, output = commands.getstatusoutput(command)
              print output
+             print expectedValue[0]
              flag = str(output).find(expectedValue[0])
+             print flag
              assert flag > -1, 'Error, rid <no.> is not inserted'
 
         if(operation[0] == 'bulkInsert'):
@@ -335,7 +337,7 @@ def test(transactionFile):
              status, output = commands.getstatusoutput(commandDelete)
              flag = str(output).find(expectedValue[0]);
              print output
-             #assert flag > -1, 'Error file could not be deleted'
+             assert flag > -1, 'Error file could not be deleted'
         if(operation[0] == 'update'):
              inputValue=value[2]
              expectedValue=value[3]
