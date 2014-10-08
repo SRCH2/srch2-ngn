@@ -134,7 +134,7 @@ def startEngine(nodeId, transactionFile):
         #os.system(binary_path + " --config=" + nodes[nodeId].conf + ' > ' + integrationTestDir + '/dashboardFiles/' + transactionFile[0:-4] + '-dashboard-'+nodes[nodeId].Id+ '.txt')      
         nodes[nodeId].pid = temp.pid
         #print str(nodes[nodeId].pid) + "---------------------------"
-        #pingServer(nodes[nodeId].ipAddress, nodes[nodeId].portNo)
+        pingServer(nodes[nodeId].ipAddress, nodes[nodeId].portNo)
         return
     print binary_path + ' --config=' + nodes[nodeId].conf
     stdin, stdout, stderr = sshClient[nodes[nodeId].Id].exec_command('cd ' + integrationTestDir + '; echo $$;exec '+binary_path+' --config='+ nodes[nodeId].conf + ' > ' + integrationTestDir + '/dashboardFiles/'+transactionFile[0:-4] + '-dashboard-' + nodes[nodeId].Id + '.txt')
@@ -425,6 +425,12 @@ def test(transactionFile):
 
              assert (totalDoc == int(expectedValue)), "total number of document in shards are wrong"
         
+        if(operation[0] == 'merge'):
+             command = 'curl -i "http://' + nodes[nodeId[0]].ipAddress + ':' + nodes[nodeId[0]].portNo + '/merge" -i -X PUT ';
+             status, output = commands.getstatusoutput(command)
+             print output
+
+              
  
 if __name__ == '__main__':
 
