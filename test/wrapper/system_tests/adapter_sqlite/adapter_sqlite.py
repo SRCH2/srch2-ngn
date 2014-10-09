@@ -81,7 +81,7 @@ def prepareQuery(queryKeywords):
 
 
 #Function of checking the results
-#Compare the record 'director' part with the result value
+#Compare the record 'ID' part with the result value
 def checkResult(query, responseJson,resultValue):
 #    for key, value in responseJson:
 #        print key, value
@@ -126,12 +126,12 @@ def testCreateIndexes(conn,sqlQueriesPath,testQueriesPath):
 		print line
 	conn.commit()
 
-	#Start the engine and wait it fetch the data, 
+	#Start the engine and wait to fetch the data, 
 	#the engine will create an index from the Sqlite table
 	startSrch2Engine()
 	time.sleep(5)
 
-	#Compare the results with the expecting results
+	#Compare the results with the expected results
 	compareResults(testQueriesPath)
 	print '=============================='
 
@@ -148,7 +148,7 @@ def testRunListener(conn,sqlQueriesPath,testQueriesPath):
 	#Wait for the engine to fetch the changes
 	time.sleep(5)
 
-	#Compare the results with the expecting results
+	#Compare the results with the expected results
 	compareResults(testQueriesPath)
 	print '=============================='
 
@@ -157,6 +157,7 @@ def testRunListener(conn,sqlQueriesPath,testQueriesPath):
 def testOfflineLog(conn,sqlQueriesPath,testQueriesPath):
 	#Shutdown the engine
 	shutdownSrch2Engine()
+	time.sleep(3)
 
 	#Modify the table while the srch2 engine is not running
 	f_sql = open(sqlQueriesPath,'r')
@@ -170,7 +171,7 @@ def testOfflineLog(conn,sqlQueriesPath,testQueriesPath):
 	startSrch2Engine()
 	time.sleep(5)
 
-	#Compare the results with the expecting results
+	#Compare the results with the expected results
 	compareResults(testQueriesPath)
 
 	#Shutdown the engine. Finish the test.
@@ -191,7 +192,7 @@ if __name__ == '__main__':
 
 	#Do not need to drop the table, remove the db file after the exit.
 	print '=============================='
-	shutdownSrch2Engine()
+	time.sleep(3)
 	conn.close()
 
 	if(os.path.exists("data")):

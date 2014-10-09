@@ -103,7 +103,7 @@
         <maxMemory>10000000</maxMemory>
         
         <mergePolicy>
-          <mergeEveryNSeconds>10</mergeEveryNSeconds>
+          <mergeEveryNSeconds>3</mergeEveryNSeconds>
           <mergeEveryMWrites>10</mergeEveryMWrites>
         </mergePolicy>
          
@@ -128,8 +128,8 @@
     </dbParameters>
  
            <updateLog>
-            <logLevel>4</logLevel>
-            <accessLogFile>./logs/srch2-log.txt</accessLogFile>
+            <logLevel>3</logLevel>
+            <accessLogFile>./logs/srch2-log-mongo.txt</accessLogFile>
         </updateLog>
     
 </config>

@@ -30,7 +30,7 @@
 #include "ServerHighLighter.h"
 #include "util/RecordSerializer.h"
 #include "util/RecordSerializerUtil.h"
-
+#include "DataConnectorThread.h"
 
 #define SEARCH_TYPE_OF_RANGE_QUERY_WITHOUT_KEYWORDS 2
 
@@ -892,6 +892,7 @@ void HTTPRequestHandler::aclModifyRolesForRecord(evhttp_request *req, Srch2Serve
 	}
 
 	response[JSON_LOG] = edit_responses;
+	Logger::info("%s", global_customized_writer.write(edit_responses).c_str());
     if (isSuccess){
         bmhelper_evhttp_send_reply(req, HTTP_OK, "OK", global_customized_writer.write(response));
     } else {
@@ -1155,6 +1156,10 @@ void HTTPRequestHandler::saveCommand(evhttp_request *req, Srch2Server *server) {
     case EVHTTP_REQ_PUT: {
         response[JSON_LOG] = wrap_with_json_array( IndexWriteUtil::_saveCommand(server->getIndexer()));
         response[JSON_MESSAGE] = "The indexes have been saved to disk successfully";
+
+        //TODO : commented out in merge, must be taken care of when we bring in adaptors
+//        //Call the save function implemented by each database connector.
+//        DataConnectorThread::saveConnectorTimestamps();
 
         bmhelper_evhttp_send_reply(req, HTTP_OK, "OK", global_customized_writer.write(response));
         Logger::info("%s", response[JSON_MESSAGE].asString().c_str());

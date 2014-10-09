@@ -87,7 +87,7 @@
 				<maxMemory>10000000</maxMemory>
 
 				<mergePolicy>
-					<mergeEveryNSeconds>10</mergeEveryNSeconds>
+					<mergeEveryNSeconds>3</mergeEveryNSeconds>
 					<mergeEveryMWrites>10</mergeEveryMWrites>
 				</mergePolicy>
 
@@ -107,7 +107,7 @@
 			</dbParameters>
 
 			<updateLog>
-				<logLevel>4</logLevel>
+				<logLevel>3</logLevel>
 				<accessLogFile>./logs/srch2-log-sqlite.txt</accessLogFile>
 			</updateLog>
 									

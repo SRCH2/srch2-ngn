@@ -27,19 +27,20 @@ public:
 
     //Load the table records and insert into the engine
     virtual int createNewIndexes();
+
+    //Save the lastAccessedLogRecordTime to the disk
+    virtual void saveLastAccessedLogRecordTime();
 private:
     ServerInterface *serverHandle;
     mongo::DBClientBase* oplogConnection;
     mongo::ScopedDbConnection * mongoConnector;
+    time_t lastAccessedLogRecordTime;
 
     //Connect to the mongodb
     bool connectToDB();
 
     //Load the last time last oplog record accessed
-    bool getLastAccessedLogRecordTime(time_t& t);
-
-    //Save the time last oplog record accessed
-    void setLastAccessedLogRecordTime(const time_t t);
+    bool loadLastAccessedLogRecordTime();
 
     //Parse the record into json format and do the corresponding operation
     void parseOpLogObject(mongo::BSONObj& bobj, std::string filterNamespace,
@@ -47,6 +48,9 @@ private:
 
     //Check config validity. e.g. if contains port, dbname, etc.
     bool checkConfigValidity();
+
+
+
 }
 ;
 

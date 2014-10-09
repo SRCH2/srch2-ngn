@@ -214,6 +214,10 @@ test_case "lot of attributes" "python ./attributes/attributes.py $SRCH2_ENGINE"
 
 sleep 3
 
+test_case "positional ranking in phrase search" "python ./positionalRanking_phraseSearch/positionalRanking.py $SRCH2_ENGINE ./positionalRanking_phraseSearch/queries.txt"
+
+sleep 3
+
 test_case "synonyms" "python ./synonyms/synonyms.py $SRCH2_ENGINE" 
 
 sleep 3
@@ -301,11 +305,11 @@ sleep 3
 
 test_case "sort filter" "python ./sort_filter/sort_filter.py $SRCH2_ENGINE ./sort_filter/queriesAndResults.txt ./sort_filter/facetResults.txt" 
 
-sleep 3
+sleep 4
 
 test_case "filter query" "python ./filter_query/filter_query.py $SRCH2_ENGINE ./filter_query/queriesAndResults.txt ./filter_query/facetResults.txt"
 
-sleep 3
+sleep 4
 
 test_case "test_solr_compatible_query_syntax" "python ./test_solr_compatible_query_syntax/test_solr_compatible_query_syntax.py $SRCH2_ENGINE \
     ./test_solr_compatible_query_syntax/queriesAndResults.txt ./test_solr_compatible_query_syntax/facetResults.txt"
@@ -397,11 +401,25 @@ sleep 3
 
 test_case "validate json response" "python ./json_response/json_response_format_test.py $SRCH2_ENGINE"
 
+sleep 3
+
 test_case "test Chinese" "python ./chinese/chinese_analyzer.py $SRCH2_ENGINE"
 
+sleep 3
 
-rm -rf data/sqlite_data
-rm -rf ./adapter_sqlite/srch2Test.db
+test_case "adapter_mysql" "python ./adapter_mysql/adapter_mysql.py $SRCH2_ENGINE \
+    ./adapter_sqlite/testCreateIndexes_sql.txt ./adapter_sqlite/testCreateIndexes.txt \
+    ./adapter_sqlite/testRunListener_sql.txt ./adapter_sqlite/testRunListener.txt \
+    ./adapter_sqlite/testOfflineLog_sql.txt ./adapter_sqlite/testOfflineLog.txt" \
+    255 "-- SKIPPED: Cannot connect to the MySQL. Check if MySQL is installed."
+
+sleep 3
+
+test_case "adapter_mysql_recover" "python ./adapter_mysql/adapter_mysql_recover.py $SRCH2_ENGINE \
+    ./adapter_sqlite/testCreateIndexes_sql.txt ./adapter_sqlite/testCreateIndexes.txt \
+    ./adapter_sqlite/testRunListener_sql.txt ./adapter_sqlite/testRunListener.txt \
+    ./adapter_sqlite/testOfflineLog_sql.txt ./adapter_sqlite/testOfflineLog.txt" \
+    255 "-- SKIPPED: Cannot connect to the MySQL. Check if MySQL is installed."
 
 sleep 3
 
@@ -410,8 +428,14 @@ test_case "adapter_sqlite" "python ./adapter_sqlite/adapter_sqlite.py $SRCH2_ENG
     ./adapter_sqlite/testRunListener_sql.txt ./adapter_sqlite/testRunListener.txt \
     ./adapter_sqlite/testOfflineLog_sql.txt ./adapter_sqlite/testOfflineLog.txt" \
     255 "-- SKIPPED: Cannot connect to the Sqlite. Check if sqlite3 is installed."
-rm -rf data/sqlite_data
-rm -rf ./adapter_sqlite/srch2Test.db
+
+sleep 3
+
+test_case "adapter_sqlite_recover" "python ./adapter_sqlite/adapter_sqlite_recover.py $SRCH2_ENGINE \
+    ./adapter_sqlite/testCreateIndexes_sql.txt ./adapter_sqlite/testCreateIndexes.txt \
+    ./adapter_sqlite/testRunListener_sql.txt ./adapter_sqlite/testRunListener.txt \
+    ./adapter_sqlite/testOfflineLog_sql.txt ./adapter_sqlite/testOfflineLog.txt" \
+    255 "-- SKIPPED: Cannot connect to the Sqlite. Check if sqlite3 is installed."
 
 # The following cases may not run on Mac, so we put them to the end
 
@@ -423,10 +447,21 @@ fi
 
 sleep 3
 
-test_case "adapter_mongo" "python ./adapter_mongo/MongoTest.py $SRCH2_ENGINE \
-    ./adapter_mongo/queries.txt" 10 "-- SKIPPED: Cannot connect to the MongoDB. \
+test_case "adapter_mongo" "python ./adapter_mongo/adapter_mongo.py $SRCH2_ENGINE \
+    ./adapter_mongo/testCreateIndexes_sql.txt ./adapter_mongo/testCreateIndexes.txt \
+    ./adapter_mongo/testRunListener_sql.txt ./adapter_mongo/testRunListener.txt \
+    ./adapter_mongo/testOfflineLog_sql.txt ./adapter_mongo/testOfflineLog.txt" \
+    255 "-- SKIPPED: Cannot connect to the MongoDB. \
     Check instructions in the file db_connectors/mongo/readme.txt. "
-rm -rf data/mongodb_data
+
+sleep 3
+
+test_case "adapter_mongo_recover" "python ./adapter_mongo/adapter_mongo_recover.py  $SRCH2_ENGINE \
+    ./adapter_mongo/testCreateIndexes_sql.txt ./adapter_mongo/testCreateIndexes.txt \
+    ./adapter_mongo/testRunListener_sql.txt ./adapter_mongo/testRunListener.txt \
+    ./adapter_mongo/testOfflineLog_sql.txt ./adapter_mongo/testOfflineLog.txt" \
+    255 "-- SKIPPED: Cannot connect to the MongoDB. \
+    Check instructions in the file db_connectors/mongo/readme.txt. "
 
 # server is a little slow to exit for reset_logger, causing the server in statemedia's first test (write_correctness)
 # to fail to bind the port, hanging the test script, so wait just a sec here
@@ -450,8 +485,6 @@ fi
 # won't run and tests_used_for_statemedia/update_endpoint_test
 #echo "-- IGNORING FAILURE: $test_id" >> ${output}
 rm -rf data/ *.idx
-
-
 
 # clear the output directory. First make sure that we are in correct directory
 if [ "$(pwd)" = "$SYSTEM_TEST_DIR" ]; then

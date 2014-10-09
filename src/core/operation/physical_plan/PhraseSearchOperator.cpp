@@ -78,10 +78,18 @@ PhysicalPlanRecordItem * PhraseSearchOperator::getNext(const PhysicalPlanExecuti
         if (false == isValid){ // ignore this record if it's already deleted
         	continue;
         }
-        if (matchPhrase(forwardListPtr, this->phraseSearchInfo)){
+        vector<unsigned> listOfSlopDistances;
+        if (matchPhrase(forwardListPtr, this->phraseSearchInfo, listOfSlopDistances)){
         	vector<TermType>& recordMatchingTermTypes = nextRecord->getTermTypesRef();
         	for (unsigned i = 0; i < recordMatchingTermTypes.size(); ++i) {
         		recordMatchingTermTypes[i] = TERM_TYPE_PHRASE;
+        	}
+        	//We check length of listOfSlops for defensive programming.
+        	//Record's runtime score is set.
+        	if(listOfSlopDistances.size() > 0){
+        	    float sloppyFrequency = params.ranker->computeSloppyFrequency(listOfSlopDistances);
+        	    float positionalScore = params.ranker->computePositionalScore(nextRecord->getRecordRuntimeScore(), sloppyFrequency);
+        	    nextRecord->setRecordRuntimeScore(positionalScore);
         	}
         	return nextRecord;
         }
@@ -129,7 +137,9 @@ bool PhraseSearchOperator::verifyByRandomAccess(PhysicalPlanRandomAccessVerifica
     if (false == isValid){ // ignore this record if it's already deleted
     	false;
     }
-    if (matchPhrase(forwardListPtr, this->phraseSearchInfo)){
+
+    vector<unsigned> listOfSlops;
+    if (matchPhrase(forwardListPtr, this->phraseSearchInfo, listOfSlops)){
     	vector<TermType> recordMatchingTermTypes = parameters.recordToVerify->getTermTypesRef();
     	for (unsigned i = 0; i < recordMatchingTermTypes.size(); ++i) {
     		recordMatchingTermTypes[i] = TERM_TYPE_PHRASE;
@@ -150,7 +160,7 @@ PhraseSearchOperator::PhraseSearchOperator(const PhraseInfo& phraseSearchInfo) {
 }
 
 // match phrase on attributes. do OR or AND logic depending upon the 32 bit of attributeBitMap
-bool PhraseSearchOperator::matchPhrase(const ForwardList* forwardListPtr, const PhraseInfo& phraseInfo) {
+bool PhraseSearchOperator::matchPhrase(const ForwardList* forwardListPtr, const PhraseInfo& phraseInfo, vector<unsigned>& listOfSlopDistances) {
 
     vector<unsigned> keywordsOffsetinForwardList;
     vector<vector<unsigned> > keywordsAttrIdsInForwardList;
@@ -238,10 +248,10 @@ bool PhraseSearchOperator::matchPhrase(const ForwardList* forwardListPtr, const 
 
         if (slop > 0){
             result = this->phraseSearcher->proximityMatch(positionListVector, phraseOffsetRef, slop,
-            		matchedPositions, true);  // true means we stop at first match
+            		matchedPositions, listOfSlopDistances, false);  // true means we stop at first match, false means we continue
         } else {
             result = this->phraseSearcher->exactMatch(positionListVector, phraseOffsetRef,
-            		matchedPositions, true);  // true means we stop at first match
+            		matchedPositions, listOfSlopDistances, false);  // true means we stop at first match, false means we continue
         }
         // AND operation and we didn't find result so we should break
         if (attrOp == ATTRIBUTES_OP_AND && result == false)
@@ -259,6 +269,7 @@ bool PhraseSearchOperator::matchPhrase(const ForwardList* forwardListPtr, const 
 
     return result;
 }
+
 // The cost of open of a child is considered only once in the cost computation
 // of parent open function.
 PhysicalPlanCost PhraseSearchOptimizationOperator::getCostOfOpen(const PhysicalPlanExecutionParameters & params) {

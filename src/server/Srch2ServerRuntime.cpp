@@ -1,6 +1,8 @@
 #include "Srch2ServerRuntime.h"
 #include "HTTPJsonResponse.h"
 #include "core/analyzer/AnalyzerContainers.h"
+#include <event2/event-config.h>
+#include <event2/thread.h>
 
 namespace srch2
 {
@@ -241,6 +243,10 @@ void Srch2ServerRuntime::waitForKillSignal(){
 
 void Srch2ServerRuntime::gracefulExit(){
 
+
+//    TODO : left from merge, must be fixed when we bring in adaptors
+//    //Call the save function implemented by each database connector.
+//    DataConnectorThread::saveConnectorTimestamps();
 
     if (synchronizerThread != NULL){
         delete synchronizerThread;
