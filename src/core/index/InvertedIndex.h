@@ -49,6 +49,8 @@ using std::ofstream;
 using srch2::util::Logger;
 using namespace half_float;
 
+#define MAX_MERGE_WORKERS 5
+
 namespace srch2
 {
 namespace instantsearch
@@ -182,10 +184,33 @@ public:
 
     void sortAndMergeBeforeCommit(const unsigned keywordId, const ForwardIndex *forwardIndex, bool needToSortEachInvertedList);
 
-    void sortAndMerge(const unsigned keywordId, const ForwardIndex *forwardIndex);
+    void sortAndMerge(const unsigned keywordId, ForwardIndex *forwardIndex,
+    		shared_ptr<vectorview<ForwardListPtr> >& fwdIdxReadView,
+    		vector<InvertedListIdAndScore>& invertedListElements,
+    		unsigned totalNumberOfDocuments,
+    		RankerExpression *rankerExpression);
 };
 
 typedef InvertedListContainer* InvertedListContainerPtr;
+
+struct MergeWorkerThreadsArgs {
+	void* index;
+	pthread_cond_t waitConditionVar;
+	unsigned workerId;
+	bool isDataReady;
+};
+
+struct MergeWorkerSharedQueue {
+	unsigned *data;
+	unsigned dataLen;
+	unsigned cursor;
+	boost::mutex _lock;
+	MergeWorkerSharedQueue() {
+		data = NULL;
+		cursor = 0;
+		dataLen = 0;
+	}
+};
 
 class InvertedIndex
 {
@@ -245,7 +270,12 @@ public:
 	// When we load the inverted index from disk, we do NOT need to sort each inverted list since it's already sorted,
     // i.e., needToSortEachInvertedList = false.
     void finalCommit(bool needToSortEachInvertedList = true);
-    void merge();
+    void merge(RankerExpression *rankerExpression,  unsigned totalNumberOfDocuments);
+    void parallelMerge();
+    unsigned workerMergeTask(RankerExpression *rankerExpression,  unsigned totalNumberOfDocuments);
+
+    MergeWorkerThreadsArgs mergeWorkerThreadsArgs[MAX_MERGE_WORKERS];
+    MergeWorkerSharedQueue  mergeWorkersSharedQueue;
 
     void setForwardIndex(ForwardIndex *forwardIndex) {
         this->forwardIndex = forwardIndex;

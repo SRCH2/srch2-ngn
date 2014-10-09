@@ -304,6 +304,48 @@ pthread_t IndexReaderWriter::createAndStartMergeThreadLoop() {
 	return mergerThread;
 }
 
+/*
+ *    Entry point of inverted list merge worker threads. Each worker thread waits for notification
+ *    from the master merge thread when the merge lists are ready for processing.
+ */
+void * dispatchMergeWorkerThread(void *arg) {
+	MergeWorkerThreadsArgs *info = (MergeWorkerThreadsArgs *) arg;
+	IndexData * index = (IndexData *)info->index;
+	pthread_mutex_t perThreadMutex;
+	pthread_mutex_init(&perThreadMutex, NULL);
+	pthread_mutex_lock(&perThreadMutex);
+	while(1) {
+		pthread_cond_wait(&info->waitConditionVar, &perThreadMutex);
+		if (info->isDataReady == true) {
+			//Logger::console("Worker %d : Starting Merge of Inverted Lists", info->workerId);
+			unsigned processedCount  = index->invertedIndex->workerMergeTask( index->rankerExpression,
+						index->_getNumberOfDocumentsInIndex());
+			info->isDataReady = false;
+			//Logger::console("Worker %d : Done with merge, processed %d list ", info->workerId, processedCount);
+		} else {
+			//Logger::console("Worker %d : Spurious Wake ", info->workerId);
+			info->isDataReady = false;
+		}
+	}
+	pthread_mutex_unlock(&perThreadMutex);
+	pthread_mutex_destroy(&perThreadMutex);
+	return NULL;
+}
+/*
+ *    The API creates inverted list merge worker threads and initialize them.
+ */
+void IndexReaderWriter::createAndStartMergeWorkerThreads() {
+	for (unsigned i = 0; i < MAX_MERGE_WORKERS; ++i) {
+		this->index->invertedIndex->mergeWorkerThreadsArgs[i].index = this->index;
+		this->index->invertedIndex->mergeWorkerThreadsArgs[i].isDataReady = false;
+		this->index->invertedIndex->mergeWorkerThreadsArgs[i].workerId = i;
+		pthread_cond_init(&this->index->invertedIndex->mergeWorkerThreadsArgs[i].waitConditionVar, NULL);
+		pthread_create(&mergerWorkerThreads[i], NULL,
+				dispatchMergeWorkerThread, &this->index->invertedIndex->mergeWorkerThreadsArgs[i]);
+		Logger::console("created merge worker thread %d", i);
+	}
+}
+
 //http://publib.boulder.ibm.com/infocenter/iseries/v5r4/index.jsp?topic=%2Fapis%2Fusers_77.htm
 void IndexReaderWriter::startMergeThreadLoop()
 {
@@ -327,6 +369,9 @@ void IndexReaderWriter::startMergeThreadLoop()
     }
     pthread_mutex_unlock(&lockForWriters);
     mergeThreadStarted = true;
+
+    createAndStartMergeWorkerThreads();
+
     /*
      *  Initialize condition variable for the first time before loop starts.
      */
