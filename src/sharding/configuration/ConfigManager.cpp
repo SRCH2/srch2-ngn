@@ -1245,6 +1245,7 @@ void ConfigManager::parseAllCoreTags(const xml_node &configNode,
 		CoreInfo_t * defaultCoreInfo = new CoreInfo_t(this);
 		defaultCoreInfo->name = getDefaultCoreName();
 		clusterCores.push_back(defaultCoreInfo);
+		this->defaultCoreSetFlag = true;
         parseCoreInformationTags(configNode, defaultCoreInfo, configSuccess, parseError, parseWarnings);
 	    srch2is::Schema *schema = JSONRecordParser::createAndPopulateSchema(defaultCoreInfo);
 	    defaultCoreInfo->setSchema(schema);
@@ -2313,22 +2314,6 @@ void ConfigManager::parse(const pugi::xml_document& configDoc,
 			Logger::console("Authorization Key is invalid string, so it will not be used by the engine! ");
 		}
 	}
-
-    //check if data source or dataDir exists at the top level,
-    //if it exists then it is a single core configuration file with no core tags.
-    xml_node topDataFileNode = configNode.child(dataFileString);
-    xml_node topDataDirNode = configNode.child(dataDirString);
-    if (topDataFileNode || topDataDirNode) {
-        // create a default core for settings outside of <cores>
-        if (getCoreByName(getDefaultCoreName()) == NULL) {
-            CoreInfo_t * defaultCoreInfo = new CoreInfo_t(this);
-            defaultCoreInfo->name = getDefaultCoreName();
-            clusterCores.push_back(defaultCoreInfo);
-        } else {
-        	CoreInfo_t * defaultCoreInfo = getCoreByName(getDefaultCoreName());
-        }
-    }
-
 
     xml_node heartBeatTimerNode = configNode.child(heartBeatTimerTag);
     if ( heartBeatTimerNode && heartBeatTimerNode.text()){
