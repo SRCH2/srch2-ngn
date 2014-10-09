@@ -278,6 +278,7 @@ def test(transactionFile):
              numberOfResultsFound=(value[4]).split()
              query='http://' + nodes[nodeId[0]].ipAddress + ':' + nodes[nodeId[0]].portNo + '/search?' 
              qq = 'curl "'+ query + queryValue + '"'
+             print "query is " + qq 
              status, output = commands.getstatusoutput(qq)
              print output
              flag = str(output).find(numberOfResultsFound[0]);

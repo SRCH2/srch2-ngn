@@ -50,7 +50,7 @@
             <core-number_of_replicas>2</core-number_of_replicas>
  
             <dataDir>./nodeIntensive/stackoverflow-1</dataDir>
-            <dataSourceType>1</dataSourceType>
+            <dataSourceType>0</dataSourceType>
   <!--          <dataFile>stackoverflow-data-100.json</dataFile>    -->
             <indexConfig>
                 <indexType>0</indexType>
