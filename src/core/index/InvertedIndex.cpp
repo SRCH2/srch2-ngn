@@ -373,6 +373,13 @@ unsigned  InvertedIndex::workerMergeTask( RankerExpression *rankerExpression,
 	unsigned totalListProcessed = 0;
 	shared_ptr<vectorview<ForwardListPtr> > forwardListDirectoryReadView;
 	forwardIndex->getForwardListDirectory_ReadView(forwardListDirectoryReadView);
+	// get inverted list writeView
+	vectorview<InvertedListContainerPtr>* &writeView = this->invertedIndexVector->getWriteView();
+	// get keywordIds writeView
+	vectorview<unsigned>* &keywordIdsWriteView = this->keywordIds->getWriteView();
+	// this vector is used as a placeholder for sorting during the sortAndMerge.
+	vector<InvertedListIdAndScore> invertedListElements;
+
 	while (true){
 		unsigned cursor ;
 
@@ -390,14 +397,6 @@ unsigned  InvertedIndex::workerMergeTask( RankerExpression *rankerExpression,
 		}
 
 		++totalListProcessed;
-
-		// get inverted list writeView
-		vectorview<InvertedListContainerPtr>* &writeView = this->invertedIndexVector->getWriteView();
-		// get keywordIds writeView
-		vectorview<unsigned>* &keywordIdsWriteView = this->keywordIds->getWriteView();
-		// this vector is used as a placeholder for sorting during the sortAndMerge.
-		vector<InvertedListIdAndScore> invertedListElements;
-
 		unsigned invertedListId = *(mergeWorkersSharedQueue.data + cursor);
 		ASSERT(invertedListId < writeView->size());
 		if (invertedListId < writeView->size()) {
