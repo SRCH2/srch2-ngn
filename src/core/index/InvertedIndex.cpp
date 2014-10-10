@@ -176,6 +176,8 @@ InvertedIndex::InvertedIndex(ForwardIndex *forwardIndex)
     this->keywordIds = NULL;
     this->forwardIndex = forwardIndex;
     this->commited_WriteView = false;
+    pthread_mutex_init(&dispatcherdummyMutex, NULL);
+    pthread_cond_init(&dispatcherConditionVar, NULL);
 }
 
 InvertedIndex::~InvertedIndex()
@@ -437,21 +439,24 @@ void InvertedIndex::parallelMerge()
 
     // Notify each worker that queue is ready.
     for (unsigned i = 0; i < MAX_MERGE_WORKERS; ++i) {
-       	mergeWorkerThreadsArgs[i].isDataReady = true;
-    	pthread_cond_signal(&mergeWorkerThreadsArgs[i].waitConditionVar);
+    	mergeWorkersArgs[i].isDataReady = true;
+    	pthread_cond_signal(&mergeWorkersArgs[i].waitConditionVar);
     }
 
     // wait for all workers to finish
     bool allDone;
+    pthread_mutex_lock(&dispatcherdummyMutex);
     do{
+    	pthread_cond_wait(&dispatcherConditionVar, &dispatcherdummyMutex);
     	allDone = true;
     	for (unsigned i = 0; i < MAX_MERGE_WORKERS; ++i) {
-    		if (mergeWorkerThreadsArgs[i].isDataReady == true) {
+    		if (mergeWorkersArgs[i].isDataReady == true) {
     			allDone = false;
     			break;
     		}
     	}
     }while(!allDone);
+    pthread_mutex_unlock(&dispatcherdummyMutex);
 
     // reset workers queue
     mergeWorkersSharedQueue.data = NULL;

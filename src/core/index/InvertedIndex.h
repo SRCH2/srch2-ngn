@@ -49,6 +49,7 @@ using std::ofstream;
 using srch2::util::Logger;
 using namespace half_float;
 
+// the number of threads dedicated for merging inverted lists in parallel
 #define MAX_MERGE_WORKERS 5
 
 namespace srch2
@@ -194,16 +195,16 @@ public:
 typedef InvertedListContainer* InvertedListContainerPtr;
 
 struct MergeWorkerThreadsArgs {
-	void* index;
+	void* index;        // IndexData pointer used by workers.
 	pthread_cond_t waitConditionVar;
 	unsigned workerId;
 	bool isDataReady;
 };
-
+// Queue which holds data for merge workers.
 struct MergeWorkerSharedQueue {
-	unsigned *data;
-	unsigned dataLen;
-	unsigned cursor;
+	unsigned *data;     // Array which holds all the inverted list Ids
+	unsigned dataLen;   // max size of the array.
+	unsigned cursor;    // max value of the array index processed by threads
 	boost::mutex _lock;
 	MergeWorkerSharedQueue() {
 		data = NULL;
@@ -274,8 +275,14 @@ public:
     void parallelMerge();
     unsigned workerMergeTask(RankerExpression *rankerExpression,  unsigned totalNumberOfDocuments);
 
-    MergeWorkerThreadsArgs mergeWorkerThreadsArgs[MAX_MERGE_WORKERS];
+    MergeWorkerThreadsArgs mergeWorkersArgs[MAX_MERGE_WORKERS];
     MergeWorkerSharedQueue  mergeWorkersSharedQueue;
+    // condition variable on which main merge thread waits for workers to finish.
+	pthread_cond_t dispatcherConditionVar;
+	// Only main merge thread uses the dispatcherConditionVar but we still need to have a corresponding
+	// mutex because pthread_cond_wait needs a mutex to be acquired and passed in as a parameter.
+	// http://pubs.opengroup.org/onlinepubs/7908799/xsh/pthread_cond_wait.html
+	pthread_mutex_t dispatcherdummyMutex;
 
     void setForwardIndex(ForwardIndex *forwardIndex) {
         this->forwardIndex = forwardIndex;

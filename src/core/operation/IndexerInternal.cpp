@@ -321,6 +321,7 @@ void * dispatchMergeWorkerThread(void *arg) {
 			unsigned processedCount  = index->invertedIndex->workerMergeTask( index->rankerExpression,
 						index->_getNumberOfDocumentsInIndex());
 			info->isDataReady = false;
+			pthread_cond_signal(&index->invertedIndex->dispatcherConditionVar);
 			//Logger::console("Worker %d : Done with merge, processed %d list ", info->workerId, processedCount);
 		} else {
 			//Logger::console("Worker %d : Spurious Wake ", info->workerId);
@@ -336,12 +337,12 @@ void * dispatchMergeWorkerThread(void *arg) {
  */
 void IndexReaderWriter::createAndStartMergeWorkerThreads() {
 	for (unsigned i = 0; i < MAX_MERGE_WORKERS; ++i) {
-		this->index->invertedIndex->mergeWorkerThreadsArgs[i].index = this->index;
-		this->index->invertedIndex->mergeWorkerThreadsArgs[i].isDataReady = false;
-		this->index->invertedIndex->mergeWorkerThreadsArgs[i].workerId = i;
-		pthread_cond_init(&this->index->invertedIndex->mergeWorkerThreadsArgs[i].waitConditionVar, NULL);
+		this->index->invertedIndex->mergeWorkersArgs[i].index = this->index;
+		this->index->invertedIndex->mergeWorkersArgs[i].isDataReady = false;
+		this->index->invertedIndex->mergeWorkersArgs[i].workerId = i;
+		pthread_cond_init(&this->index->invertedIndex->mergeWorkersArgs[i].waitConditionVar, NULL);
 		pthread_create(&mergerWorkerThreads[i], NULL,
-				dispatchMergeWorkerThread, &this->index->invertedIndex->mergeWorkerThreadsArgs[i]);
+				dispatchMergeWorkerThread, &this->index->invertedIndex->mergeWorkersArgs[i]);
 		Logger::console("created merge worker thread %d", i);
 	}
 }
