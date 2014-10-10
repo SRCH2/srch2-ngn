@@ -540,7 +540,6 @@ private:
 	static const char* const pingIntervalTag;
 	static const char* const pingTimeoutTag;
 	static const char* const retryCountTag;
-	static const char* const coreIdTag;
 	static const char* const accessLogFileString;
 	static const char* const authorizationKeyTag;
 	static const char* const analyzerString;
