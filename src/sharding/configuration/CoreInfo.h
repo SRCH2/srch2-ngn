@@ -341,6 +341,14 @@ public:
 //		this->numberOfReplicas = replicaNumber;
 //	}
 
+    void setAttributeAclCoreId(unsigned attributeAclCoreId) {
+    	this->attributeAclCoreId =  attributeAclCoreId;
+    }
+
+    unsigned getAttributeAclCoreId(unsigned attributeAclCoreId) {
+    	return this->attributeAclCoreId;
+    }
+
 protected:
 
 	vector<string> dataFilePaths;
@@ -482,6 +490,7 @@ protected:
     AccessControlInfo* accessControlInfo;
     bool hasRecordAcl;
     string recordAclFilePath;
+    unsigned attributeAclCoreId;
 };
 
 }

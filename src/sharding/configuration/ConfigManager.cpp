@@ -83,7 +83,7 @@ const char* const ConfigManager::pingIntervalTag = "ping-interval";
 const char* const ConfigManager:: pingTimeoutTag= "ping-timeout";
 const char* const ConfigManager::retryCountTag = "retry-count";
 const char* const ConfigManager::coreIdTag = "coreid";
-static unsigned defaultCoreId;
+static unsigned defaultCoreId = 0;
 const char* const ConfigManager::accessLogFileString = "accesslogfile";
 const char* const ConfigManager::analyzerString = "analyzer";
 const char* const ConfigManager::cacheSizeString = "cachesize";
@@ -286,8 +286,56 @@ bool ConfigManager::loadConfigFile(srch2http::ResourceMetadataManager * metadata
     Logger::debug("WARNINGS while reading the configuration file:");
     Logger::debug("%s\n", parseWarnings.str().c_str());
 
+
+    for(unsigned coreIdx = 0 ; coreIdx < clusterCores.size() ; ++coreIdx){
+    	CoreInfo_t * coreInfo = clusterCores[coreIdx];
+    	if(coreInfo != NULL){
+
+#ifdef ACL_AS_SRCH2_SERVER
+    		// If acl is stored as Srch2Server
+    		CoreInfo_t *newAclCore = new srch2http::CoreInfo_t(this);
+    		newAclCore->primaryKey = "roleId";
+    		newAclCore->indexType = 0;
+    		SearchableAttributeInfoContainer container;
+    		container.attributeName = "attributes";
+    		container.attributeType = ATTRIBUTE_TYPE_TEXT;
+    		container.isMultiValued = true;
+    		container.isAclEnabled = false;
+    		newAclCore->searchableAttributesInfo[container.attributeName] = container;
+    		newAclCore->refiningAttributesInfo.clear();
+    		Schema *schema = JSONRecordParser::createAndPopulateSchema(newAclCore);
+    		newAclCore->setSchema(schema);
+#else
+    		// if we want to keep the map.
+    		CoreInfo_t *newAclCore = new srch2http::CoreInfo_t(*coreInfo);
+    		newAclCore->setSchema((Schema*)coreInfo->getSchema());
+#endif
+
+    		newAclCore->name = "acl" + coreInfo->getName();
+    		newAclCore->setCoreId(defaultCoreId++);
+
+    		newAclCore->numberOfPrimaryShards = 20;  // 20 partition
+    		newAclCore->numberOfReplicas = 2;        // 1 primary + 1 replica
+
+    		// as of now. only distributed data structure is srch2Server.
+    		//newAclCore->setDistributedDataStructureId = ACL;
+
+    		// setup relation between real core and acl core.
+    		coreInfo->setAttributeAclCoreId(newAclCore->getCoreId());
+
+    		clusterAclCores.push_back(newAclCore);
+    	} else {
+    		clusterAclCores.push_back(NULL);
+    	}
+    }
+
+    // merge actual cores list and acl cores list.
+    vector<CoreInfo_t *> allCores;
+    allCores.insert(allCores.end(), clusterCores.begin(), clusterCores.end());
+    allCores.insert(allCores.end(), clusterAclCores.begin(), clusterAclCores.end());
+
     if(metadataManager != NULL){
-		metadataManager->setWriteview(new Cluster_Writeview(0, clusterNameStr, clusterCores));
+		metadataManager->setWriteview(new Cluster_Writeview(0, clusterNameStr, allCores));
     }
 
     if (!configSuccess) {
@@ -852,17 +900,16 @@ void ConfigManager::parseSingleCore(const xml_node &parentNode, CoreInfo_t *core
         return;
     }
 
-    xml_node childNode = parentNode.child(coreIdTag);
-    if(childNode && childNode.text()){
-        string temp = string(childNode.text().get());
-        trimSpacesFromValue(temp, coreIdTag, parseWarnings);
-        coreInfo->setCoreId((uint)atol(temp.c_str()));
-    }else{
+//    xml_node childNode = parentNode.child(coreIdTag);
+//    if(childNode && childNode.text()){
+//        string temp = string(childNode.text().get());
+//        trimSpacesFromValue(temp, coreIdTag, parseWarnings);
+//        coreInfo->setCoreId((uint)atol(temp.c_str()));
+//    }else{
         // TODO: to be deleted in V1
-        Logger::console("!!!!!CoreId is not provided in core %s, engine will use the default value!!!!!", coreInfo->name.c_str());
-        coreInfo->setCoreId(defaultCoreId);
-        defaultCoreId++;
-    }
+//        Logger::console("!!!!!CoreId is not provided in core %s, engine will use the default value!!!!!", coreInfo->name.c_str());
+    coreInfo->setCoreId(defaultCoreId++);
+//    }
 
     // Solr compatability - dataDir can be an attribute: <core dataDir="core0/data"
     if (parentNode.attribute(dataDirString) && string(parentNode.attribute(dataDirString).value()).compare("") != 0) {
@@ -879,7 +926,7 @@ void ConfigManager::parseSingleCore(const xml_node &parentNode, CoreInfo_t *core
 // only called by parseDataConfiguration()
 void ConfigManager::parseMultipleCores(const xml_node &coresNode, bool &configSuccess, std::stringstream &parseError, std::stringstream &parseWarnings)
 {
-	defaultCoreId = 0;
+	//defaultCoreId = 0;
     if (coresNode) {
 
         // <cores defaultCoreName = "foo">
@@ -1244,6 +1291,7 @@ void ConfigManager::parseAllCoreTags(const xml_node &configNode,
         // create a default core for coreInfo outside of <cores>
 		CoreInfo_t * defaultCoreInfo = new CoreInfo_t(this);
 		defaultCoreInfo->name = getDefaultCoreName();
+		defaultCoreInfo->coreId = defaultCoreId++;
 		clusterCores.push_back(defaultCoreInfo);
 		this->defaultCoreSetFlag = true;
         parseCoreInformationTags(configNode, defaultCoreInfo, configSuccess, parseError, parseWarnings);
