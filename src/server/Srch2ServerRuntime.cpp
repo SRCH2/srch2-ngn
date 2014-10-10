@@ -410,6 +410,9 @@ int Srch2ServerRuntime::setCallBacksonHTTPServer(evhttp *const http_server,
 		string coreName = allCores.at(i)->getName();
 		unsigned coreId = allCores.at(i)->getCoreId();
 
+		if (allCores.at(i)->isAclCore())
+			continue;
+
 		for(unsigned int j = 0; externalCallbacks.coreSpecificPorts[j].path != NULL; j++) {
 			// prepare external command argument
 			Srch2ServerGateway::CallbackArgs * args = new Srch2ServerGateway::CallbackArgs();

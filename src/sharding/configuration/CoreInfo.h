@@ -141,6 +141,7 @@ public:
 
 	CoreInfo_t(class ConfigManager *manager) : configManager(manager),  accessControlInfo(NULL)  {
 		schema = NULL;
+		aclCoreFlag = false;
 	};
 
 	CoreInfo_t(const CoreInfo_t &src);
@@ -349,6 +350,10 @@ public:
     	return this->attributeAclCoreId;
     }
 
+    bool isAclCore() const{
+    	return aclCoreFlag;
+    }
+
 protected:
 
 	vector<string> dataFilePaths;
@@ -491,6 +496,7 @@ protected:
     bool hasRecordAcl;
     string recordAclFilePath;
     unsigned attributeAclCoreId;
+    bool aclCoreFlag;
 };
 
 }

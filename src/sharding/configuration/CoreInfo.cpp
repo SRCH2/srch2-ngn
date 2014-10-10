@@ -67,7 +67,7 @@ CoreInfo_t::CoreInfo_t(const CoreInfo_t &src) {
     chineseDictionaryFilePath = src.chineseDictionaryFilePath;
     allowedRecordTokenizerCharacters = src.allowedRecordTokenizerCharacters;
     ports = src.ports;
-
+    aclCoreFlag = src.aclCoreFlag;
 
 }
 

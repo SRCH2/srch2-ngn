@@ -291,27 +291,11 @@ bool ConfigManager::loadConfigFile(srch2http::ResourceMetadataManager * metadata
     	CoreInfo_t * coreInfo = clusterCores[coreIdx];
     	if(coreInfo != NULL){
 
-#ifdef ACL_AS_SRCH2_SERVER
-    		// If acl is stored as Srch2Server
-    		CoreInfo_t *newAclCore = new srch2http::CoreInfo_t(this);
-    		newAclCore->primaryKey = "roleId";
-    		newAclCore->indexType = 0;
-    		SearchableAttributeInfoContainer container;
-    		container.attributeName = "attributes";
-    		container.attributeType = ATTRIBUTE_TYPE_TEXT;
-    		container.isMultiValued = true;
-    		container.isAclEnabled = false;
-    		newAclCore->searchableAttributesInfo[container.attributeName] = container;
-    		newAclCore->refiningAttributesInfo.clear();
-    		Schema *schema = JSONRecordParser::createAndPopulateSchema(newAclCore);
-    		newAclCore->setSchema(schema);
-#else
-    		// if we want to keep the map.
     		CoreInfo_t *newAclCore = new srch2http::CoreInfo_t(*coreInfo);
     		newAclCore->setSchema((Schema*)coreInfo->getSchema());
-#endif
 
     		newAclCore->name = "acl" + coreInfo->getName();
+    		newAclCore->aclCoreFlag = true;
     		newAclCore->setCoreId(defaultCoreId++);
 
     		newAclCore->numberOfPrimaryShards = 20;  // 20 partition
