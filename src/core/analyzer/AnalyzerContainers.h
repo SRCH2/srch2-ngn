@@ -112,6 +112,9 @@ public:
     void init();
     bool isProtected(const string& val) const;
     static ProtectedWordsContainer *getInstance(const std::string &filePath);
+    void loadProtectedWordsContainer(boost::archive::binary_iarchive& ia);
+    void saveProtectedWordsContainer(boost::archive::binary_oarchive& oa);
+
 
 private:
     set<string> protectedWords;
