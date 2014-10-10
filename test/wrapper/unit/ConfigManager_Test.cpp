@@ -59,7 +59,7 @@ int main(int argc, char* argv[])
     string configFile15(string(config_dir) + "/conf-responseContent.xml");
     string configFile16(string(config_dir) + "/conf-singleCore.xml");
     string configFile17(string(config_dir) + "/conf-responseContent.xml");
-    string configFile18(string(config_dir) + "/conf-sqlLite.xml");
+//    string configFile18(string(config_dir) + "/conf-sqlLite.xml");//TODO disabled for shardign for now
 
     ConfigManager *serverConf1 = new ConfigManager(configFile1);
     ConfigManager *serverConf2 = new ConfigManager(configFile2);
@@ -78,7 +78,7 @@ int main(int argc, char* argv[])
     ConfigManager *serverConf15 = new ConfigManager(configFile15);
     ConfigManager *serverConf16 = new ConfigManager(configFile16);
     ConfigManager *serverConf17 = new ConfigManager(configFile17);
-    ConfigManager *serverConf18 = new ConfigManager(configFile18);
+//    ConfigManager *serverConf18 = new ConfigManager(configFile18); //TODO disabled for shardign for now
 
 
     ASSERT(serverConf1->loadConfigFile() == true);
@@ -100,7 +100,7 @@ int main(int argc, char* argv[])
 
     //This config file is single core with no core tags and dataFile at top, but it
     //has dataDir at the top level.
-    ASSERT(serverConf18->loadConfigFile() == true);
+//    ASSERT(serverConf18->loadConfigFile() == true); //TODO disabled for shardign for now
 
     //This checks if the log file path and log level are correctly set in the config file where log
     //tag has been moved out of core

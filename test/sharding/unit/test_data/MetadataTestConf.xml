@@ -383,6 +383,7 @@
 	   -->
 	   <field name="category" type="text" indexed="true" highlight="true" />
 	   <field name="name" type="text" indexed="true" highlight="true" />
+           <field name="relevance" type="float" refining="true" highlight="true" />
 	 </fields>
 	 
 	 <!--
@@ -404,32 +405,10 @@
 	  		- values are false (disabled) and true (enabled)
 	  		- By default it is disabled.
 	  -->
-	  <facetEnabled>true</facetEnabled>
-	  
-	  <facetFields>
-		  <!--
-		  		Facet fields
-		  		Required if facet is enabled.
-		  		
-		  		name: The name of the field which is used for this facet.
-		  		facetType: Facet type which is Categorical or Range. Enter "cateorical" or "range"
-		  		facetStart: The start point of making range facets. REQUIRED for range facets. The value will 
-		  		be ignored for categorical facets.
-		  		facetEnd: The end point of making range facets. REQUIRED for range facets. The value will 
-		  		be ignored for categorical facets.
-		  	    facetGap: The gap used for making range facets. REQUIRED for range facets. The value will 
-		  		be ignored for categorical facets.	  		
-		  		Note:
-		  		- All facetFields must be declared in fields tag as well (with indexed="false")
-		  -->
-	  	  <facetField name="likes" facetType="range" facetStart="0" facetEnd="50" facetGap="10" />
-		  <facetField name="model" facetType="categorical" />
-		  <facetField name="price" facetType="range" facetStart="0" facetEnd="100" facetGap="10" />
-	  </facetFields>
 	  
 	  
 	  <types>
-	    <fieldType name="text_en">
+	    <fieldType name="text_standard">
 		<analyzer>
 		    <!--
 		        Stemmer

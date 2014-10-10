@@ -158,7 +158,7 @@ void testFreshClusterInit(ConfigManager * serverConf , ResourceMetadataManager *
 	// 3. we must have four local cluster shards
 	ASSERT(metadataManager->getClusterWriteview()->localClusterDataShards.size() == 4);
 	// 4. we must have 2 local shards both local
-	ASSERT(metadataManager->getClusterWriteview()->localNodeDataShards.size() == 2);
+	ASSERT(metadataManager->getClusterWriteview()->localNodeDataShards.size() == 3);
 
 }
 
@@ -236,7 +236,7 @@ void testNode1FirstArrival(NodeId currentNodeId, ResourceMetadataManager * metad
 	// 3. we must have four local cluster shards
 	ASSERT(metadataManager->getClusterWriteview()->localClusterDataShards.size() == 4);
 	// 4. we must have 2 local shards
-	ASSERT(metadataManager->getClusterWriteview()->localNodeDataShards.size() == 2);
+	ASSERT(metadataManager->getClusterWriteview()->localNodeDataShards.size() == 3);
 
 
 }
@@ -295,7 +295,7 @@ void testNode1LoadBalancing(NodeId currentNodeId, ResourceMetadataManager * meta
 			ASSERT(false);
 		}
 	}
-	ASSERT(writeview->localNodeDataShards.size() == 2);
+	ASSERT(writeview->localNodeDataShards.size() == 3);
 
 }
 
@@ -332,7 +332,7 @@ void testNode2FirstArrival(NodeId currentNodeId, ResourceMetadataManager * metad
 	// 3. we must have four local cluster shards
 	ASSERT(metadataManager->getClusterWriteview()->localClusterDataShards.size() == 4);
 	// 4. we must have 2 local shards
-	ASSERT(metadataManager->getClusterWriteview()->localNodeDataShards.size() == 2);
+	ASSERT(metadataManager->getClusterWriteview()->localNodeDataShards.size() == 3);
 }
 
 void validateRestart(ConfigManager * serverConf, ResourceMetadataManager * metadataManager,
@@ -396,7 +396,7 @@ void validateRestart(ConfigManager * serverConf, ResourceMetadataManager * metad
 	ASSERT(metadataManager->getClusterWriteview()->localClusterDataShards.size() == 4);
 
 	// 4. we must have 2 local shards both local
-	ASSERT(metadataManager->getClusterWriteview()->localNodeDataShards.size() == 2);
+	ASSERT(metadataManager->getClusterWriteview()->localNodeDataShards.size() == 3);
 }
 
 
@@ -484,7 +484,7 @@ void testNode1Reclaim(NodeId currentNodeId, ResourceMetadataManager * metadataMa
 	// 3. we must have four local cluster shards
 	ASSERT(metadataManager->getClusterWriteview()->localClusterDataShards.size() == 4);
 	// 4. we must have 2 local shards
-	ASSERT(metadataManager->getClusterWriteview()->localNodeDataShards.size() == 2);
+	ASSERT(metadataManager->getClusterWriteview()->localNodeDataShards.size() == 3);
 
 
 }
@@ -546,7 +546,7 @@ void testNode2LoadBalancing(NodeId currentNodeId, ResourceMetadataManager * meta
 			ASSERT(false);
 		}
 	}
-	ASSERT(writeview->localNodeDataShards.size() == 2);
+	ASSERT(writeview->localNodeDataShards.size() == 3);
 
 }
 
@@ -606,7 +606,7 @@ void testNode1Failure(ResourceMetadataManager * metadataManager){
 
 	// 4. we must have 4 local cluster shards and two local node shards
 	ASSERT(writeview->localClusterDataShards.size() == 4);
-	ASSERT(writeview->localNodeDataShards.size() == 2);
+	ASSERT(writeview->localNodeDataShards.size() == 3);
 
 }
 
@@ -648,7 +648,7 @@ void testNode2Reclaim(NodeId currentNodeId, ResourceMetadataManager * metadataMa
 	// 3. we must have four local cluster shards
 	ASSERT(metadataManager->getClusterWriteview()->localClusterDataShards.size() == 4);
 	// 4. we must have 2 local shards
-	ASSERT(metadataManager->getClusterWriteview()->localNodeDataShards.size() == 2);
+	ASSERT(metadataManager->getClusterWriteview()->localNodeDataShards.size() == 3);
 }
 
 void restart(const string & confPath, ConfigManager * & serverConf, ResourceMetadataManager * metadataManager){
