@@ -41,6 +41,10 @@ namespace srch2 {
                                unsigned editDistance, unsigned termLength, 
                                bool isPrefixMatch, float prefixMatchPenalty, float termSimilarityBoost);
 
+        static float getIdf(unsigned totalDocumentsCount, unsigned termHitDocumentsCount) {
+        	return 1 + log (totalDocumentsCount / ((float)(termHitDocumentsCount)+1) );
+        }
+
         static double computeScoreforGeo(Point &recordPosition, Shape &queryShape);
 
         virtual float aggregateBoostedTermRuntimeScore(float oldRecordScore, 

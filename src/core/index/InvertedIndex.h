@@ -194,19 +194,19 @@ public:
 
 typedef InvertedListContainer* InvertedListContainerPtr;
 
-struct MergeWorkerThreadsArgs {
+struct MergeWorkersThreadArgs {
 	void* index;        // IndexData pointer used by workers.
 	pthread_cond_t waitConditionVar;
 	unsigned workerId;
 	bool isDataReady;
 };
 // Queue which holds data for merge workers.
-struct MergeWorkerSharedQueue {
+struct MergeWorkersSharedQueue {
 	unsigned *data;     // Array which holds all the inverted list Ids
 	unsigned dataLen;   // max size of the array.
 	unsigned cursor;    // max value of the array index processed by threads
 	boost::mutex _lock;
-	MergeWorkerSharedQueue() {
+	MergeWorkersSharedQueue() {
 		data = NULL;
 		cursor = 0;
 		dataLen = 0;
@@ -275,8 +275,8 @@ public:
     void parallelMerge();
     unsigned workerMergeTask(RankerExpression *rankerExpression,  unsigned totalNumberOfDocuments);
 
-    MergeWorkerThreadsArgs mergeWorkersArgs[MAX_MERGE_WORKERS];
-    MergeWorkerSharedQueue  mergeWorkersSharedQueue;
+    MergeWorkersThreadArgs mergeWorkersArgs[MAX_MERGE_WORKERS];
+    MergeWorkersSharedQueue  mergeWorkersSharedQueue;
     // condition variable on which main merge thread waits for workers to finish.
 	pthread_cond_t dispatcherConditionVar;
 	// Only main merge thread uses the dispatcherConditionVar but we still need to have a corresponding

@@ -112,7 +112,7 @@ void InvertedListContainer::sortAndMerge(const unsigned keywordId, ForwardIndex 
 
         //float tf = forwardList->getTermFrequency(); TODO
         float tf = 1;
-        float idf = 1 + log (totalNumberOfDocuments / ((float)(writeViewListSize)+1) );
+        float idf = Ranker::getIdf(totalNumberOfDocuments, writeViewListSize);
         //vector<unsigned> attributeIds;
         unsigned keywordOffset =  forwardList->getKeywordOffset(keywordId);
         float sumOfFieldBoosts = forwardList->getKeywordRecordStaticScore(keywordOffset);
@@ -250,13 +250,13 @@ float InvertedIndex::getIdf(const unsigned totalNumberOfDocuments, const unsigne
     float idf = 0.0;
     if ( this->commited_WriteView == false) {
         ASSERT(keywordId < this->invertedListSizeDirectory.size());
-        idf = 1 + log (totalNumberOfDocuments / ((float)(this->invertedListSizeDirectory.at(keywordId)+1)));
+        idf = Ranker::getIdf(totalNumberOfDocuments, this->invertedListSizeDirectory.at(keywordId));
     } else {
         vectorview<InvertedListContainerPtr>* &writeView = this->invertedIndexVector->getWriteView();
 
         ASSERT(keywordId < writeView->size());
 
-        idf = 1 + log (totalNumberOfDocuments / ((float)(writeView->getElement(keywordId)->getWriteViewSize())+1) );
+        idf = Ranker::getIdf(totalNumberOfDocuments, writeView->getElement(keywordId)->getWriteViewSize());
     }
     return idf;
 }

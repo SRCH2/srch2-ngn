@@ -309,7 +309,7 @@ pthread_t IndexReaderWriter::createAndStartMergeThreadLoop() {
  *    from the master merge thread when the merge lists are ready for processing.
  */
 void * dispatchMergeWorkerThread(void *arg) {
-	MergeWorkerThreadsArgs *info = (MergeWorkerThreadsArgs *) arg;
+	MergeWorkersThreadArgs *info = (MergeWorkersThreadArgs *) arg;
 	IndexData * index = (IndexData *)info->index;
 	pthread_mutex_t perThreadMutex;
 	pthread_mutex_init(&perThreadMutex, NULL);
