@@ -13,3 +13,4 @@ A||insert||{"body": "bbbbbb 222222 yyyyyy  You should leave the  tableView:cellF
 A||merge
 A||query||q="aaa*%20OR%20bbb*"||"id":"1" "id":"2" "id":"3" "id":"6" "id":"7" "id":"8"||"results_found":6
 A||query||q="%22aaaaaa%20111111%22"||"id":"1" "id":"2" "id":"3"||"results_found":3
+A||kill
