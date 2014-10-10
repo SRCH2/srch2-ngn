@@ -29,11 +29,11 @@
     </ping>
     <transport>
         <port>4002</port>
-        <ipaddress>128.195.185.134</ipaddress>
+        <ipaddress>127.0.0.1</ipaddress>
     </transport>
 
-    <WellKnownHosts>128.195.185.134:54000, 128.195.185.107:55000</WellKnownHosts>
-    <listeningHostname>128.195.185.134</listeningHostname>
+    <WellKnownHosts>127.0.0.1:54000</WellKnownHosts>
+    <listeningHostname>127.0.0.1</listeningHostname>
     <listeningPort>7002</listeningPort>
 
  

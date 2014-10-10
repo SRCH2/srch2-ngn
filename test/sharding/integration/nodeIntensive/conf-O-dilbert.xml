@@ -27,13 +27,13 @@
         <retry-count>3</retry-count>
     </ping>
     <transport>
-        <port>4005</port>
-        <ipaddress>128.195.185.107</ipaddress>
+        <port>4015</port>
+        <ipaddress>127.0.0.1</ipaddress>
     </transport>
 
-    <WellKnownHosts>128.195.185.134:54000, 128.195.185.107:55000</WellKnownHosts>
-    <listeningHostname>128.195.185.107</listeningHostname>
-    <listeningPort>7005</listeningPort>
+    <WellKnownHosts>127.0.0.1:54000</WellKnownHosts>
+    <listeningHostname>127.0.0.1</listeningHostname>
+    <listeningPort>7015</listeningPort>
 
  
     <licenseFile>../../wrapper/conf/srch2_license_key.txt</licenseFile>
