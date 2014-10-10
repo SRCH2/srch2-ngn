@@ -112,7 +112,7 @@ void InvertedListContainer::sortAndMerge(const unsigned keywordId, ForwardIndex 
 
         //float tf = forwardList->getTermFrequency(); TODO
         float tf = 1;
-        float idf = Ranker::getIdf(totalNumberOfDocuments, writeViewListSize);
+        float idf = Ranker::computeIdf(totalNumberOfDocuments, writeViewListSize);
         //vector<unsigned> attributeIds;
         unsigned keywordOffset =  forwardList->getKeywordOffset(keywordId);
         float sumOfFieldBoosts = forwardList->getKeywordRecordStaticScore(keywordOffset);
@@ -250,13 +250,13 @@ float InvertedIndex::getIdf(const unsigned totalNumberOfDocuments, const unsigne
     float idf = 0.0;
     if ( this->commited_WriteView == false) {
         ASSERT(keywordId < this->invertedListSizeDirectory.size());
-        idf = Ranker::getIdf(totalNumberOfDocuments, this->invertedListSizeDirectory.at(keywordId));
+        idf = Ranker::computeIdf(totalNumberOfDocuments, this->invertedListSizeDirectory.at(keywordId));
     } else {
         vectorview<InvertedListContainerPtr>* &writeView = this->invertedIndexVector->getWriteView();
 
         ASSERT(keywordId < writeView->size());
 
-        idf = Ranker::getIdf(totalNumberOfDocuments, writeView->getElement(keywordId)->getWriteViewSize());
+        idf = Ranker::computeIdf(totalNumberOfDocuments, writeView->getElement(keywordId)->getWriteViewSize());
     }
     return idf;
 }
@@ -371,6 +371,8 @@ void InvertedIndex::merge(RankerExpression *rankerExpression, unsigned totalNumb
 unsigned  InvertedIndex::workerMergeTask( RankerExpression *rankerExpression,
 		unsigned totalNumberOfDocuments) {
 	unsigned totalListProcessed = 0;
+	shared_ptr<vectorview<ForwardListPtr> > forwardListDirectoryReadView;
+	forwardIndex->getForwardListDirectory_ReadView(forwardListDirectoryReadView);
 	while (true){
 		unsigned cursor ;
 
@@ -393,10 +395,6 @@ unsigned  InvertedIndex::workerMergeTask( RankerExpression *rankerExpression,
 		vectorview<InvertedListContainerPtr>* &writeView = this->invertedIndexVector->getWriteView();
 		// get keywordIds writeView
 		vectorview<unsigned>* &keywordIdsWriteView = this->keywordIds->getWriteView();
-
-		shared_ptr<vectorview<ForwardListPtr> > forwardListDirectoryReadView;
-		forwardIndex->getForwardListDirectory_ReadView(forwardListDirectoryReadView);
-
 		// this vector is used as a placeholder for sorting during the sortAndMerge.
 		vector<InvertedListIdAndScore> invertedListElements;
 

@@ -41,7 +41,7 @@ namespace srch2 {
                                unsigned editDistance, unsigned termLength, 
                                bool isPrefixMatch, float prefixMatchPenalty, float termSimilarityBoost);
 
-        static float getIdf(unsigned totalDocumentsCount, unsigned termHitDocumentsCount) {
+        static float computeIdf(unsigned totalDocumentsCount, unsigned termHitDocumentsCount) {
         	return 1 + log (totalDocumentsCount / ((float)(termHitDocumentsCount)+1) );
         }
 
