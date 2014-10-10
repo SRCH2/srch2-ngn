@@ -189,7 +189,7 @@ public:
     		shared_ptr<vectorview<ForwardListPtr> >& fwdIdxReadView,
     		vector<InvertedListIdAndScore>& invertedListElements,
     		unsigned totalNumberOfDocuments,
-    		RankerExpression *rankerExpression);
+    		RankerExpression *rankerExpression, const Schema *schema);
 };
 
 typedef InvertedListContainer* InvertedListContainerPtr;
@@ -271,9 +271,10 @@ public:
 	// When we load the inverted index from disk, we do NOT need to sort each inverted list since it's already sorted,
     // i.e., needToSortEachInvertedList = false.
     void finalCommit(bool needToSortEachInvertedList = true);
-    void merge(RankerExpression *rankerExpression,  unsigned totalNumberOfDocuments);
+    void merge(RankerExpression *rankerExpression,  unsigned totalNumberOfDocuments, const Schema *schema);
     void parallelMerge();
-    unsigned workerMergeTask(RankerExpression *rankerExpression,  unsigned totalNumberOfDocuments);
+    unsigned workerMergeTask(RankerExpression *rankerExpression,  unsigned totalNumberOfDocuments,
+    		const Schema *schema);
 
     MergeWorkersThreadArgs mergeWorkersArgs[MAX_MERGE_WORKERS];
     MergeWorkersSharedQueue  mergeWorkersSharedQueue;

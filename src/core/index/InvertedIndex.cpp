@@ -77,7 +77,7 @@ void InvertedListContainer::sortAndMerge(const unsigned keywordId, ForwardIndex 
 		shared_ptr<vectorview<ForwardListPtr> >& forwardListDirectoryReadView,
 	    vector<InvertedListIdAndScore>& invertedListElements,
         unsigned totalNumberOfDocuments,
-		RankerExpression *rankerExpression)
+		RankerExpression *rankerExpression, const Schema *schema)
 {
 
     shared_ptr<vectorview<unsigned> > readView;
@@ -113,19 +113,19 @@ void InvertedListContainer::sortAndMerge(const unsigned keywordId, ForwardIndex 
         //float tf = forwardList->getTermFrequency(); TODO
         float tf = 1;
         float idf = Ranker::computeIdf(totalNumberOfDocuments, writeViewListSize);
-        //vector<unsigned> attributeIds;
+        vector<unsigned> attributeIds;
         unsigned keywordOffset =  forwardList->getKeywordOffset(keywordId);
-        float sumOfFieldBoosts = forwardList->getKeywordRecordStaticScore(keywordOffset);
-        //forwardList->getKeywordAttributeIdsList(keywordOffset, attributeIds);
-        //for (unsigned i =0 ; i < attributeIds.size(); ++i) {
-        //	sumOfFieldBoosts += schema->getBoostOfSearchableAttribute(attributeIds[i]);
-        //}
-        //sumOfFieldBoosts = 1.0 + (sumOfFieldBoosts / schema->getBoostSumOfSearchableAttributes());
+        forwardList->getKeywordAttributeIdsList(keywordOffset, attributeIds);
+        float sumOfFieldBoosts = 0.0;
+        for (unsigned i =0 ; i < attributeIds.size(); ++i) {
+        	sumOfFieldBoosts += schema->getBoostOfSearchableAttribute(attributeIds[i]);
+        }
+        sumOfFieldBoosts = 1.0 + (sumOfFieldBoosts / schema->getBoostSumOfSearchableAttributes());
         float recordBoost = forwardList->getRecordBoost();
         unsigned recordLength = forwardList->getNumberOfKeywords();
         float textRelevance =  Ranker::computeRecordTfIdfScore(tf, idf, sumOfFieldBoosts);
         float score = rankerExpression->applyExpression(recordLength, recordBoost, textRelevance);
-
+        ((ForwardList*)forwardList)->setKeywordRecordStaticScore(keywordOffset, score);
         // add this new <recordId, score> pair to the vector
         InvertedListIdAndScore iliasEntry = {recordId, score};
         invertedListElements.push_back(iliasEntry);
@@ -139,9 +139,6 @@ void InvertedListContainer::sortAndMerge(const unsigned keywordId, ForwardIndex 
     std::sort(invertedListElements.begin() + validRecordCountFromReadView,
               invertedListElements.end(),
               InvertedListContainer::InvertedListElementGreaterThan());
-//    cout << "readViewListSize = " << readViewListSize << ", writeViewListSize" << writeViewListSize
-//         << ", validRecordCountFromReadView = " << validRecordCountFromReadView
-//         << ", validRecordCountFromWriteView " << validRecordCountFromWriteView << endl;
 
     // if the read view and the write view are the same, it means we have added a new keyword with a new COWvector.
     // In this case, instead of calling "merge()", we call "commit()" to let this COWvector commit.
@@ -346,7 +343,8 @@ void InvertedIndex::finalCommit(bool needToSortEachInvertedList)
     this->invertedListSizeDirectory.clear();
 }
 
-void InvertedIndex::merge(RankerExpression *rankerExpression, unsigned totalNumberOfDocuments)
+void InvertedIndex::merge(RankerExpression *rankerExpression, unsigned totalNumberOfDocuments,
+		const Schema *schema)
 {
     this->invertedIndexVector->merge();
     this->keywordIds->merge();
@@ -362,14 +360,14 @@ void InvertedIndex::merge(RankerExpression *rankerExpression, unsigned totalNumb
     	ASSERT(*iter < writeView->size());
     	writeView->at(*iter)->sortAndMerge(keywordIdsWriteView->getElement(*iter),
     			this->forwardIndex, forwardListDirectoryReadView, invertedListElements,
-    			totalNumberOfDocuments, rankerExpression);
+    			totalNumberOfDocuments, rankerExpression, schema);
     	invertedListElements.clear();
     }
     this->invertedListSetToMerge.clear();
 }
 
 unsigned  InvertedIndex::workerMergeTask( RankerExpression *rankerExpression,
-		unsigned totalNumberOfDocuments) {
+		unsigned totalNumberOfDocuments, const Schema *schema) {
 	unsigned totalListProcessed = 0;
 	shared_ptr<vectorview<ForwardListPtr> > forwardListDirectoryReadView;
 	forwardIndex->getForwardListDirectory_ReadView(forwardListDirectoryReadView);
@@ -402,7 +400,7 @@ unsigned  InvertedIndex::workerMergeTask( RankerExpression *rankerExpression,
 		if (invertedListId < writeView->size()) {
 			writeView->at(invertedListId)->sortAndMerge(keywordIdsWriteView->getElement(invertedListId),
 					this->forwardIndex,forwardListDirectoryReadView, invertedListElements,
-					totalNumberOfDocuments, rankerExpression);
+					totalNumberOfDocuments, rankerExpression, schema);
 			invertedListElements.clear();
 		} else {
 			Logger::info("Invalid list Id = %d for merge", invertedListId);
@@ -500,7 +498,7 @@ void InvertedIndex::addRecord(ForwardList* forwardList, Trie * trie,
             // now we should update the trie by this score
             trie->updateMaximumScoreOfLeafNodesForKeyword_WriteView(keywordId , (half)score);
             // and update the scores in forward index
-            //forwardList->setKeywordRecordStaticScore(counter, score);
+            forwardList->setKeywordRecordStaticScore(counter, score);
         }
     }
 }

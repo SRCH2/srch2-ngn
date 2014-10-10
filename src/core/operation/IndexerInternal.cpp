@@ -319,7 +319,7 @@ void * dispatchMergeWorkerThread(void *arg) {
 		if (info->isDataReady == true) {
 			//Logger::console("Worker %d : Starting Merge of Inverted Lists", info->workerId);
 			unsigned processedCount  = index->invertedIndex->workerMergeTask( index->rankerExpression,
-						index->_getNumberOfDocumentsInIndex());
+						index->_getNumberOfDocumentsInIndex(), index->schemaInternal);
 			info->isDataReady = false;
 			pthread_cond_signal(&index->invertedIndex->dispatcherConditionVar);
 			//Logger::console("Worker %d : Done with merge, processed %d list ", info->workerId, processedCount);

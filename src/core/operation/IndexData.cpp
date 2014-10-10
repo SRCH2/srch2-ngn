@@ -690,7 +690,8 @@ INDEXWRITE_RETVAL IndexData::_merge(bool updateHistogram) {
 	}
 
 	if (MAX_MERGE_WORKERS <= 1) {
-		this->invertedIndex->merge( this->rankerExpression, this->writeCounter->getNumberOfDocuments());
+		this->invertedIndex->merge( this->rankerExpression,
+				this->writeCounter->getNumberOfDocuments(), this->schemaInternal);
 	} else {
 		this->invertedIndex->parallelMerge();
 	}
@@ -877,7 +878,8 @@ void IndexData::_save(const string &directoryName) const {
 	}
 
 	if (this->invertedIndex->mergeRequired())
-		this->invertedIndex->merge(this->rankerExpression, this->writeCounter->getNumberOfDocuments());
+		this->invertedIndex->merge(this->rankerExpression,
+				this->writeCounter->getNumberOfDocuments(), this->schemaInternal);
 	try {
 		serializer.save(*this->invertedIndex,
 				directoryName + "/" + IndexConfig::invertedIndexFileName);
