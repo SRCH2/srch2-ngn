@@ -1,0 +1,4 @@
+#Trying to mimic real world scenarios, add sufficient delay
+A||stressQuery||./dataIntensive/1-term-prefix.csv
+B||stressQuery||./dataIntensive/2-term-prefix-30k.csv
+C||stressQuery||./dataIntensive/3-term-prefix.csv

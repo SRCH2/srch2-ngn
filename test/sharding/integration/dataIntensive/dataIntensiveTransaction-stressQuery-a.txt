@@ -1,0 +1,24 @@
+#After bulk insert, stress query is done from current thread and another thread which is executed from another transaction file. Make sure to disable killServers() from test.py, because we dont want an engine to be killed while it is being queried.
+A||start
+B||start
+C||start
+D||start
+E||start
+F||start
+-||sleep||10
+A||bulkInsertFromBeginning||./dataIntensive/stackoverflow-1M-A.json||1||50
+B||bulkInsertFromBeginning||./dataIntensive/stackoverflow-1M-B.json||1||50
+C||bulkInsertFromBeginning||./dataIntensive/stackoverflow-1M-C.json||1||50
+D||bulkInsertFromBeginning||./dataIntensive/stackoverflow-1M-D.json||1||50
+E||bulkInsertFromBeginning||./dataIntensive/stackoverflow-1M-E.json||1||50
+F||bulkInsertFromBeginning||./dataIntensive/stackoverflow-1M-F.json||1||50
+A||numberOfRecordsInCore||0||300
+B||numberOfRecordsInCore||0||300
+C||numberOfRecordsInCore||0||300
+D||numberOfRecordsInCore||0||300
+E||numberOfRecordsInCore||0||300
+F||numberOfRecordsInCore||0||300
+A||stressQuery||./dataIntensive/1-term-prefix.csv
+D||stressQuery||./dataIntensive/1-term-prefix.csv
+A||kill
+D||kill
