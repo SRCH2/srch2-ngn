@@ -3239,9 +3239,11 @@ string ConfigManager::createSRCH2Home()
 {
 	boost::filesystem::path dir = this->getSrch2Home();
     boost::system::error_code ec;
-	if(! boost::filesystem::create_directory(dir,ec)){
-	    srch2::util::Logger::error("Error in opening srch2Home directory. Error : %s", ec.message().c_str());
-	}
+    if (!boost::filesystem::exists(dir)) {
+    	if(! boost::filesystem::create_directory(dir,ec)){
+    		srch2::util::Logger::error("Error in creating directory = %s . Error : %s", dir.c_str(), ec.message().c_str());
+    	}
+    }
 	return this->getSrch2Home();
 }
 
@@ -3250,9 +3252,11 @@ string ConfigManager::createClusterDir(const string& clusterName)
     boost::filesystem::path path = this->getSrch2Home() +clusterName;
 	createSRCH2Home();
 	boost::system::error_code ec;
-	if ( ! boost::filesystem::create_directory(path,ec) ) {
-        srch2::util::Logger::error("Error in opening srch2Home directory. Error : %s", ec.message().c_str());
-	}
+    if (!boost::filesystem::exists(path)) {
+    	if ( ! boost::filesystem::create_directory(path,ec) ) {
+    		srch2::util::Logger::error("Error in creating directory = %s. Error : %s", path.c_str(), ec.message().c_str());
+    	}
+    }
 	return path.string();
 }
 
@@ -3261,9 +3265,11 @@ string ConfigManager::createNodeDir(const string& clusterName)
     boost::filesystem::path path = this->getSrch2Home() + clusterName + "/" + this->getCurrentNodeName();
 	createClusterDir(clusterName);
     boost::system::error_code ec;
-	if( ! boost::filesystem::create_directory(path, ec)){
-        srch2::util::Logger::error("Error in opening srch2Home directory. Error : %s", ec.message().c_str());
-	}
+    if (!boost::filesystem::exists(path)) {
+    	if( ! boost::filesystem::create_directory(path, ec)){
+    		srch2::util::Logger::error("Error in creating directory = %s. Error : %s", path.c_str(), ec.message().c_str());
+    	}
+    }
 	return path.string();
 }
 
@@ -3272,9 +3278,11 @@ string ConfigManager::createCoreDir(const string& clusterName, const string& cor
     boost::filesystem::path  path = this->getSrch2Home() + clusterName + "/" + this->getCurrentNodeName() + "/" + coreName;
 	createNodeDir(clusterName);
     boost::system::error_code ec;
-	if( ! boost::filesystem::create_directory(path,ec)){
-        srch2::util::Logger::error("Error in opening srch2Home directory. Error : %s", ec.message().c_str());
-	}
+    if (!boost::filesystem::exists(path)) {
+    	if( ! boost::filesystem::create_directory(path,ec)){
+    		srch2::util::Logger::error("Error in creating directory = %s. Error : %s", path.c_str(), ec.message().c_str());
+    	}
+    }
 	return path.string();
 }
 
@@ -3283,9 +3291,11 @@ string ConfigManager::createShardDir(const string& clusterName, const string& co
     boost::filesystem::path path = this->getSrch2Home() + clusterName + "/" + this->getCurrentNodeName() + "/" + coreName + "/" + shardId->toString();
 	createCoreDir(clusterName, coreName);
     boost::system::error_code ec;
-	if( ! boost::filesystem::create_directory(path,ec)){
-        srch2::util::Logger::error("Error in opening srch2Home directory. Error : %s", ec.message().c_str());
-	}
+    if (!boost::filesystem::exists(path)) {
+    	if( ! boost::filesystem::create_directory(path,ec)){
+    		srch2::util::Logger::error("Error in creating directory = %s. Error : %s", path.c_str(), ec.message().c_str());
+    	}
+    }
 	return path.string();
 }
 
@@ -3300,8 +3310,7 @@ string ConfigManager::getSRCH2HomeDir()
 	if(boost::filesystem::is_directory(path,ec))
 		return path.string();
 	else{
-        srch2::util::Logger::error("Error in opening srch2Home directory. Error : %s", ec.message().c_str());
-		return "";
+		return createSRCH2Home();
 	}
 }
 
@@ -3312,8 +3321,7 @@ string ConfigManager::getClusterDir(const string& clusterName)
 	if(boost::filesystem::is_directory(path,ec))
 		return path.string();
 	else{
-        srch2::util::Logger::error("Error in opening srch2Home directory. Error : %s", ec.message().c_str());
-		return "";
+		return createClusterDir(clusterName);
 	}
 
 }
@@ -3325,8 +3333,7 @@ string ConfigManager::getNodeDir(const string& clusterName)
 	if(boost::filesystem::is_directory(path,ec))
 		return path.string();
 	else{
-        srch2::util::Logger::error("Error in opening srch2Home directory. Error : %s", ec.message().c_str());
-        return "";
+		return createNodeDir(clusterName);
 	}
 
 }
@@ -3338,8 +3345,7 @@ string ConfigManager::getCoreDir(const string& clusterName, const string& coreNa
 	if(boost::filesystem::is_directory(path,ec))
 		return path.string();
 	else{
-        srch2::util::Logger::error("Error in opening srch2Home directory. Error : %s", ec.message().c_str());
-	    return "";
+		return createCoreDir(clusterName, coreName);
 	}
 }
 
@@ -3350,8 +3356,7 @@ string ConfigManager::getShardDir(const string& clusterName, const string& coreN
 	if(boost::filesystem::is_directory(path,ec))
 		return path.string();
 	else{
-        srch2::util::Logger::error("Error in opening srch2Home directory. Error : %s", ec.message().c_str());
-		return "";
+		return createShardDir(clusterName, coreName, shardId);
 	}
 }
 

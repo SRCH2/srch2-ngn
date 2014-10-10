@@ -3,6 +3,8 @@
     Configuration file for SRCH2 search server. Please email
     contact@srch2.com if you have questions.
     In this documment, "attribute" and "field" are used interchangeably.
+    Calvin's ip address is 128.195.185.134
+    Dilbert's ip address is 128.195.185.107
 -->
  
 <config>
@@ -22,33 +24,26 @@
             "/usr/share/srch2/data/sample-data.json"
             In this config file it should be as "data/sample-data.json"
     -->
-    <cluster-name>SRCH2 Cluster</cluster-name>
+    <!-- <srch2Home>./</srch2Home>-->
+    <cluster-name>SRCH2_Cluster</cluster-name>
+    <srch2Home>./</srch2Home>
+    <node-name>node-S</node-name>
 
-    <srch2Home>./test-data</srch2Home>
- 
-    <discovery>
+    <ping>
         <ping-interval>2</ping-interval>
         <ping-timeout>8</ping-timeout>
-        <retry-count>10</retry-count>
-    </discovery>    
-    
-    <node>
-        <listeningHostname>128.195.185.134 </listeningHostname>
-        <internalCommunicationPort> 10000 </internalCommunicationPort>
-        <this-is-me> false </this-is-me>
-        <node-name> queen </node-name>
-        <node-master> true </node-master>
-        <node-data> true </node-data>
-        <srch2Home> ./ </srch2Home>
-        <dataDir> ./data/2n-insertA-queryB/queen </dataDir>
+        <retry-count>3</retry-count>
+    </ping> 
 
-    </node>
-    <node>
-        <this-is-me> true </this-is-me>
-        <listeningHostname> 128.195.185.107 </listeningHostname>
-        <node-name> frozen </node-name>
-        <internalCommunicationPort> 10001 </internalCommunicationPort>
-   </node> 
+    <transport>
+        <port>4009</port>
+        <ipaddress>128.195.185.107</ipaddress>
+    </transport>
+    
+    <WellKnownHosts>128.195.185.134, 128.195.185.107</WellKnownHosts>
+    <listeningHostname>128.195.185.107</listeningHostname>
+    <listeningPort>7009</listeningPort>
+    
     <!--
         License Key File
         Required
@@ -56,22 +51,21 @@
         Email contact@srch2.com to get a key file.  
         Make sure to set the variable to the SRCH2 license key file.
     -->
-    <licenseFile>../../../wrapper/conf/srch2_license_key.txt</licenseFile>
- 
+    <licenseFile>../../wrapper/conf/srch2_license_key.txt</licenseFile> 
+   
+   
     <!--
         Hostname and Port Number
         Required
          
         Hostname and port number of the server. Make sure the port is open.
     -->
-    <listeningHostname>128.195.185.107</listeningHostname>
-    <listeningPort>10003</listeningPort>
-    	
+
         <cores defaultCoreName="core1">
         <core name="core1">
         <coreId>1</coreId>
-        <core-number_of_shards>4</core-number_of_shards> 
-	<core-number_of_replicas>1</core-number_of_replicas>
+        <core-number_of_shards>4</core-number_of_shards>
+        <core-number_of_replicas>2</core-number_of_replicas>
 
     <!--
         Index Directoy Path
@@ -80,7 +74,7 @@
         The file path to the folder where we store serialized index files.
         REQUIRED, when "index-load-or-create" is set to 1.
     -->
-    <dataDir>./indexes/</dataDir>
+    <dataDir>./data/2n-insertA-queryB/</dataDir>
      
     <!--
         Data File
@@ -89,7 +83,7 @@
         Path for a data file to be loaded. The file must be in the json format.
         REQUIRED, when "index-load-or-create" is set to 0.
     -->
-    <dataFile>empty-data.json</dataFile>
+    <dataFile>./input-data/empty-data.json</dataFile>
      
     <!--
 	Maximum Number of Threads
@@ -152,7 +146,9 @@
             Defaults to 1
         -->
         <defaultQueryTermBoost>1</defaultQueryTermBoost>
-         
+        <enablePositionIndex>1</enablePositionIndex>
+        <enableCharOffsetIndex>1</enableCharOffsetIndex>
+
     </indexConfig>
   
   
@@ -325,8 +321,8 @@
             The number of write operations after which newly inserted/deleted records are merged into the indexes.
         -->
         <mergePolicy>
-          <mergeEveryNSeconds>1</mergeEveryNSeconds>
-          <mergeEveryMWrites>1</mergeEveryMWrites>
+          <mergeEveryNSeconds>10</mergeEveryNSeconds>
+          <mergeEveryMWrites>100</mergeEveryMWrites>
         </mergePolicy>
          
          
@@ -350,7 +346,7 @@
                  
                 Path to Access Log File
             -->
-            <accessLogFile>./logs/log.txt</accessLogFile>
+            <accessLogFile>./logs-19/log.txt</accessLogFile>
         </updateLog>
      
     </updatehandler>
@@ -389,9 +385,10 @@
 		    here and indexed="false" it will be also used for sort,filtering and facet.
 		    - 
 	   -->
-	   <field name="category" type="text" indexed="true" />
-	   <field name="name" type="text" indexed="true" />
-	 </fields>
+           <field name="category" type="text" indexed="true" highlight="true" />
+           <field name="name" type="text" indexed="true" highlight="true" />
+	 
+       </fields>
 	 
 	 <!--
 		Primary Key
@@ -475,7 +472,7 @@
 	 </types>
 	</schema>
       </core>
-   </cores>
+    </cores>
 </config>
  
 

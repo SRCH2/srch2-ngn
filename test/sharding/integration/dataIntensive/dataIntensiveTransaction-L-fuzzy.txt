@@ -1,0 +1,16 @@
+#This tests the fuzzy query
+A||start
+D||start
+-||sleep||10
+A||bulkInsert||./dataIntensive/stackoverflow-1M-A.json||2||50
+D||query||q=aaabaa~||"id":"1" "id":"2" "id":"3" "id":"4" "id":"5"
+D||query||q=aaabaa~%20AND%2011112*~||"id":"1" "id":"2" "id":"3" "id":"4" "id":"5"
+D||query||q=aaabaa~%20AND%20112111~%20AND%20zzzzy*~||"id":"1" "id":"2" "id":"3" "id":"4" "id":"5"
+D||query||q=ccccdc~||"id":"11" "id":"12" "id":"13" "id":"14" "id":"15"
+D||query||q=cccdcc~%20AND%2033433*~||"id":"11" "id":"12" "id":"13" "id":"14" "id":"15"
+D||query||q=cccccc%20AND%20333633~%20AND%20xxxxx*~||"id":"11" "id":"12" "id":"13" "id":"14" "id":"15"
+D||query||q=eeefee~||"id":"21" "id":"22" "id":"23" "id":"24" "id":"25"
+D||query||q=eeeese~%20AND%2055552*~*||"id":"21" "id":"22" "id":"23" "id":"24" "id":"25"
+D||query||q=eeewee~%20AND%20555525~%20AND%20vvvvr*~||"id":"21" "id":"22" "id":"23" "id":"24" "id":"25"
+D||kill
+A||kill

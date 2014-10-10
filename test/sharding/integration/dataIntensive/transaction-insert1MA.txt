@@ -1,0 +1,2 @@
+A||start
+A||bulkInsertFromBeginning||./dataIntensive/stackoverflow-1M-A.json||2||50

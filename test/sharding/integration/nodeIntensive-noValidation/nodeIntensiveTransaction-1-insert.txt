@@ -1,0 +1,11 @@
+#This transaction file will be run in parallel to the transaction file which performs start/kill.
+A||bulkInsertFromBeginning||./nodeIntensive/stackoverflow-10k-1.json||200||50
+B||bulkInsertFromBeginning||./nodeIntensive/stackoverflow-10k-2.json||200||50
+C||bulkInsertFromBeginning||./nodeIntensive/stackoverflow-10k-3.json||200||50
+D||bulkInsertFromBeginning||./nodeIntensive/stackoverflow-10k-4.json||200||50
+E||bulkInsertFromBeginning||./nodeIntensive/stackoverflow-10k-5.json||200||50
+K||bulkInsertFromBeginning||./nodeIntensive/stackoverflow-10k-11.json||200||50
+L||bulkInsertFromBeginning||./nodeIntensive/stackoverflow-10k-12.json||200||50
+M||bulkInsertFromBeginning||./nodeIntensive/stackoverflow-10k-13.json||200||50
+N||bulkInsertFromBeginning||./nodeIntensive/stackoverflow-10k-14.json||200||50
+O||bulkInsertFromBeginning||./nodeIntensive/stackoverflow-10k-15.json||200||50

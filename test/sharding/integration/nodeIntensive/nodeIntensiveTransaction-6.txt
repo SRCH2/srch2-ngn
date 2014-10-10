@@ -1,0 +1,22 @@
+#This tests insertion of documents in 5 nodes which has only statemedia core
+P||start
+Q||start
+R||start
+S||start
+T||start
+P||bulkInsertFromBeginning2||./nodeIntensive/st-10k-1.json||200||50
+Q||bulkInsertFromBeginning2||./nodeIntensive/st-10k-2.json||200||50
+R||bulkInsertFromBeginning2||./nodeIntensive/st-10k-3.json||200||50
+S||bulkInsertFromBeginning2||./nodeIntensive/st-10k-4.json||200||50
+T||bulkInsertFromBeginning2||./nodeIntensive/st-10k-5.json||200||50
+-||sleep||10
+P||numberOfRecordsInShards||1||150000
+Q||numberOfRecordsInShards||1||150000
+R||numberOfRecordsInShards||1||150000
+S||numberOfRecordsInShards||1||150000
+T||numberOfRecordsInShards||1||150000
+P||kill
+Q||kill
+R||kill
+S||kill
+T||kill

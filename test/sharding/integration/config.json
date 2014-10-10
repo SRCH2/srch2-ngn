@@ -1,0 +1,6 @@
+{ 
+"srch2ngnGitRepoDir" : "../../../",
+"integrationTestDir" : "/test/sharding/integration/",
+"testBinaryDir"      : "/build/src/server/",
+"testBinaryFileName" : "srch2-search-server"
+}
