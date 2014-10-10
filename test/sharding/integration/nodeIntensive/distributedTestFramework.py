@@ -51,6 +51,38 @@ def checkQueryResult(resultValue, output):
         flag = str(output).find(result)      
         assert flag > -1, "incorrect query result"
 
+def checkOrder(query, responseJson, resultValue):
+    
+    isPass=1
+    if  len(responseJson) == len(resultValue):
+        for i in range(0, len(resultValue)):
+            #print responseJson['results'][i]['record']['id']
+            if responseJson[i]['record']['id'] !=  resultValue[i]:
+                isPass=0
+                print query+' test failed'
+                print 'query results||given results'
+                print 'number of results:'+str(len(responseJson))+'||'+str(len(resultValue))
+                for i in range(0, len(responseJson)):
+                    print responseJson[i]['record']['id']+'||'+resultValue[i]
+                break
+    else:
+        isPass=0
+        print query+' test failed'
+        print 'query results||given results'
+        print 'number of results:'+str(len(responseJson))+'||'+str(len(resultValue))
+        maxLen = max(len(responseJson),len(resultValue))
+        for i in range(0, maxLen):
+            if i >= len(resultValue):
+             print responseJson[i]['record']['id']+'||'
+            elif i >= len(responseJson):
+             print '  '+'||'+resultValue[i]
+            else:
+             print responseJson[i]['record']['id']+'||'+resultValue[i]
+
+    if isPass == 1:
+        print  query+' test pass'
+        return 0
+    return 1
 
 def pingServer(ipAddr, port, query = 'q=march', timeout = 60):
 
@@ -417,11 +449,12 @@ def test(transactionFile):
              expectedValue = int(value[3])
              response = urllib2.urlopen('http://' + nodes[nodeId[0]].ipAddress + ":" + nodes[nodeId[0]].portNo + '/_debug/stats')
              jsonData = response.read()
-             jsonOutput = json.loads(output)
-             numOfPrimaryShards = 2
+             jsonOutput = json.loads(jsonData)
+             #print jsonOutput
+             numOfShards = 4
              totalDoc = 0
              # we assume 0 is the index of stackoverflow core
-             for i in range(0, numOfPrimaryShards):
+             for i in range(0, numOfShards):
                  totalDoc = totalDoc + jsonOutput["cores"][coreIndex]["all-cluster-shards"][i]["numberOfDocuments"]
 
              assert (totalDoc == int(expectedValue)), "total number of document in shards are wrong"
@@ -431,7 +464,15 @@ def test(transactionFile):
              status, output = commands.getstatusoutput(command)
              print output
 
-              
+        if(operation[0] == 'checkOrder'):
+             expectedValue = value[3].split()
+             queryValue = value[2]
+             query='http://' + nodes[nodeId[0]].ipAddress + ':' + nodes[nodeId[0]].portNo + '/search?'
+             response = urllib2.urlopen(query+queryValue)
+             jsonData = response.read()
+             jsonOutput = json.loads(jsonData)
+             #print jsonOutput['results']
+             checkOrder(query+queryValue, jsonOutput['results'], expectedValue)           
  
 if __name__ == '__main__':
 
