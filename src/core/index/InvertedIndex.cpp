@@ -118,8 +118,6 @@ void InvertedListContainer::sortAndMerge(const unsigned keywordId, ForwardIndex 
         if (!valid)
             continue;
 
-        //float tf = forwardList->getTermFrequency(); TODO
-        float tf = 1;
         float idf = Ranker::computeIdf(totalNumberOfDocuments, writeViewListSize);
         unsigned recordLength = forwardList->getNumberOfKeywords();
         vector<unsigned> attributeIds;
@@ -153,6 +151,7 @@ void InvertedListContainer::sortAndMerge(const unsigned keywordId, ForwardIndex 
         }
         sumOfFieldBoosts = 1.0 + (sumOfFieldBoosts / schema->getBoostSumOfSearchableAttributes());
         float recordBoost = forwardList->getRecordBoost();
+        float tf = forwardList->getTermFrequency(keywordOffset, attributeIds);
         float textRelevance =  Ranker::computeRecordTfIdfScore(tf, idf, sumOfFieldBoosts);
         float score = rankerExpression->applyExpression(recordLength, recordBoost, textRelevance);
         ((ForwardList*)forwardList)->setKeywordRecordStaticScore(keywordOffset, score);
@@ -348,7 +347,7 @@ void InvertedIndex::commit( ForwardList *forwardList,
             //unsigned numberOfOccurancesOfGivenKeywordInRecord = forwardList->getNumberOfPositionHitsForAllKeywords(schema);
             //sumOfOccurancesOfAllKeywordsInRecord += numberOfOccurancesOfGivenKeywordInRecord;
 
-            unsigned tf = 1; // TODO: get the right TF value from the positional index
+            float tf = forwardList->getTermFrequency(counter);
             float sumOfFieldBoost = forwardList->getKeywordRecordStaticScore(counter);
             float recordLength = forwardList->getNumberOfKeywords();
             float score = this->computeRecordStaticScore(rankerExpression, recordBoost, recordLength, tf, idf, sumOfFieldBoost);
@@ -517,7 +516,7 @@ void InvertedIndex::addRecord(ForwardList* forwardList, Trie * trie,
             //unsigned numberOfOccurancesOfGivenKeywordInRecord = forwardList->getNumberOfPositionHitsForAllKeywords(schema);
             //sumOfOccurancesOfAllKeywordsInRecord += numberOfOccurancesOfGivenKeywordInRecord;
 
-            unsigned tf = 1; ///TODO
+            unsigned tf = forwardList->getTermFrequency(counter);
             float sumOfFieldBoost = forwardList->getKeywordRecordStaticScore(counter);
             float recordLength = forwardList->getNumberOfKeywords();
 

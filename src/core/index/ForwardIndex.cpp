@@ -999,6 +999,19 @@ float ForwardList::getTermFrequency(unsigned keywordOffset,
 	}
 	return sqrtf(totalHitCout);
 }
+
+/*
+ *   Returns term frequency (TF) calculated as square root of all
+ *   term occurrences in all attributes.
+ */
+float ForwardList::getTermFrequency(unsigned keywordOffset) const{
+	ASSERT(keywordOffset < this->getNumberOfKeywords());
+	if (keywordOffset >= this->getNumberOfKeywords())
+		return 0.0;
+	vector<unsigned> attributeIdsList;
+	this->getKeywordAttributeIdsList(keywordOffset, attributeIdsList);
+	return getTermFrequency(keywordOffset, attributeIdsList);
+}
 /// Added for stemmer
 bool ForwardList::haveWordInRangeWithStemmer(const SchemaInternal* schema,
         const unsigned minId, const unsigned maxId,

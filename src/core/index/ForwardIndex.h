@@ -387,6 +387,7 @@ public:
     unsigned getKeywordOffset(unsigned keywordId) const;
     unsigned getKeywordOffsetByLinearScan(unsigned keywordId) const;
     float getTermFrequency(unsigned keywordId, const vector<unsigned>& attributeIdsList) const;
+    float getTermFrequency(unsigned keywordOffset) const;
 
     bool getWordsInRange(const SchemaInternal* schema, const unsigned minId,
             const unsigned maxId,
