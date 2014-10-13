@@ -968,6 +968,19 @@ unsigned ForwardList::getKeywordOffset(unsigned keywordId) const {
     return vectorIterator - vectorBegin;
 }
 
+unsigned ForwardList::getKeywordOffsetByLinearScan(unsigned keywordId) const {
+	const unsigned* vectorBegin = this->getKeywordIds();
+	const unsigned* vectorEnd = vectorBegin + this->getNumberOfKeywords();
+	const unsigned* vectorIter = vectorBegin;
+	while (vectorIter != vectorEnd) {
+		if (*vectorIter == keywordId) {
+			break;
+		}
+		++vectorIter;
+	}
+	return vectorIter - vectorBegin;
+}
+
 /// Added for stemmer
 bool ForwardList::haveWordInRangeWithStemmer(const SchemaInternal* schema,
         const unsigned minId, const unsigned maxId,

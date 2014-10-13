@@ -385,6 +385,7 @@ public:
             float &termRecordStaticScore) const;
 
     unsigned getKeywordOffset(unsigned keywordId) const;
+    unsigned getKeywordOffsetByLinearScan(unsigned keywordId) const;
 
     bool getWordsInRange(const SchemaInternal* schema, const unsigned minId,
             const unsigned maxId,

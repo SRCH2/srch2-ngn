@@ -92,6 +92,14 @@ void InvertedListContainer::sortAndMerge(const unsigned keywordId, ForwardIndex 
     Logger::debug("SortnMerge: | %d | %d ", readViewListSize, writeViewListSize);
     ASSERT(readViewListSize <= writeViewListSize);
 
+    bool isNewInvertedList = false;
+    /*
+     * if the readview and writeview are same. Then the keyword and this inverted list are new.
+     */
+    if (readView.get() == writeView) {
+    	isNewInvertedList = true;
+    }
+
     if (invertedListElements.capacity() < writeViewListSize)
     	invertedListElements.reserve(writeViewListSize);
 
@@ -113,8 +121,30 @@ void InvertedListContainer::sortAndMerge(const unsigned keywordId, ForwardIndex 
         //float tf = forwardList->getTermFrequency(); TODO
         float tf = 1;
         float idf = Ranker::computeIdf(totalNumberOfDocuments, writeViewListSize);
+        unsigned recordLength = forwardList->getNumberOfKeywords();
         vector<unsigned> attributeIds;
+
+        /*
+         * Find the keyword offset using binary search on keyword ids. If the record is an
+         * existing record then the keyword MUST be found and the keyword offset MUST be less than
+         * the number of keywords in the record. For a newly added record (which is being merged
+         * in the current merge cycle), it is possible that the keyword is not found by the
+         * binary search because keyword ids may not be sorted yet. In such a case, do linear scan
+         * of keyword ids to find the keyword offset.
+         */
         unsigned keywordOffset =  forwardList->getKeywordOffset(keywordId);
+        if (keywordOffset >= recordLength){
+        	if (!isNewInvertedList){
+        		/*
+        		 * if readview and writeview are not the same then ASSERT that the record is in
+        		 * a write view. (i.e. it a new record in the inverted list)
+        		 */
+        		ASSERT(i >= readViewListSize);
+        	}
+        	// scan the keyword-id list and get keyword offset.
+        	keywordOffset = forwardList->getKeywordOffsetByLinearScan(keywordId);
+        	ASSERT(keywordOffset < recordLength);
+        }
         forwardList->getKeywordAttributeIdsList(keywordOffset, attributeIds);
         float sumOfFieldBoosts = 0.0;
         for (unsigned i =0 ; i < attributeIds.size(); ++i) {
@@ -122,15 +152,19 @@ void InvertedListContainer::sortAndMerge(const unsigned keywordId, ForwardIndex 
         }
         sumOfFieldBoosts = 1.0 + (sumOfFieldBoosts / schema->getBoostSumOfSearchableAttributes());
         float recordBoost = forwardList->getRecordBoost();
-        unsigned recordLength = forwardList->getNumberOfKeywords();
         float textRelevance =  Ranker::computeRecordTfIdfScore(tf, idf, sumOfFieldBoosts);
         float score = rankerExpression->applyExpression(recordLength, recordBoost, textRelevance);
         ((ForwardList*)forwardList)->setKeywordRecordStaticScore(keywordOffset, score);
         // add this new <recordId, score> pair to the vector
         InvertedListIdAndScore iliasEntry = {recordId, score};
         invertedListElements.push_back(iliasEntry);
-        if (i < readViewListSize)
+        if (!isNewInvertedList && i < readViewListSize) {
+        	/*
+        	 * increment this counter only if the readview and the writeview are different. If they
+        	 * are same then this is a new inverted list and all records are in write view.
+        	 */
            validRecordCountFromReadView ++; // count the # of valid records
+        }
         else
            validRecordCountFromWriteView ++;
     }
