@@ -42,8 +42,11 @@ The "text_relevance" is calculated as:
 
 <center> text_relevance(<i>r</i>, <i>t_i</i>) = tf(<i>r</i>, <i>t_i</i>) * idf(<i>t_i</i>) * sumOfFieldBoosts(<i>r</i>, <i>t_i</i>).</center>
 
-The value "tf(<i>r</i>, <i>t_i</i>)" is calculated as:
+
+If [positional ranking](configuration.mkd#74-enable-positional-index-optional) is
+enabled, the value "tf(<i>r</i>, <i>t_i</i>)" is calculated as:
  <center> tf(<i>r</i>, <i>t_i</i>) = sqrt(# of times <i>t_i</i> appears in <i>r</i>).</center>
+Otherwise, its value is 1.
 
 The value "idf(<i>t_i</i>)" is the inverted document frequency calculated as follows:
 
