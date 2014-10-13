@@ -280,10 +280,10 @@ public:
     MergeWorkersSharedQueue  mergeWorkersSharedQueue;
     // condition variable on which main merge thread waits for workers to finish.
 	pthread_cond_t dispatcherConditionVar;
-	// Only main merge thread uses the dispatcherConditionVar but we still need to have a corresponding
-	// mutex because pthread_cond_wait needs a mutex to be acquired and passed in as a parameter.
-	// http://pubs.opengroup.org/onlinepubs/7908799/xsh/pthread_cond_wait.html
-	pthread_mutex_t dispatcherdummyMutex;
+	// main merge thread uses this lock to coordinate with workers thread. When the main thread is
+	// waiting on condition then this lock is released. Workers acquire this lock to signal the
+	// condition. This is necessary to avoid loss of condition signal.
+	pthread_mutex_t dispatcherMutex;
 
     void setForwardIndex(ForwardIndex *forwardIndex) {
         this->forwardIndex = forwardIndex;

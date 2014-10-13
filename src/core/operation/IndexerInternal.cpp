@@ -321,7 +321,9 @@ void * dispatchMergeWorkerThread(void *arg) {
 			unsigned processedCount  = index->invertedIndex->workerMergeTask( index->rankerExpression,
 						index->_getNumberOfDocumentsInIndex(), index->schemaInternal);
 			info->isDataReady = false;
+			pthread_mutex_lock(&index->invertedIndex->dispatcherMutex);
 			pthread_cond_signal(&index->invertedIndex->dispatcherConditionVar);
+			pthread_mutex_unlock(&index->invertedIndex->dispatcherMutex);
 			//Logger::console("Worker %d : Done with merge, processed %d list ", info->workerId, processedCount);
 		} else {
 			//Logger::console("Worker %d : Spurious Wake ", info->workerId);

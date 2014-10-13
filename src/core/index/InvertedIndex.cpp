@@ -108,8 +108,8 @@ void InvertedListContainer::sortAndMerge(const unsigned keywordId, ForwardIndex 
     unsigned validRecordCountFromReadView = 0; // count # of records that are not deleted
     unsigned validRecordCountFromWriteView = 0; // count # of records that are not deleted
 
-    for (unsigned invListIndx = 0; invListIndx < writeView->size(); invListIndx++) {
-        unsigned recordId = writeView->getElement(invListIndx);
+    for (unsigned invListIter = 0; invListIter < writeView->size(); invListIter++) {
+        unsigned recordId = writeView->getElement(invListIter);
 
         bool valid = false;
         const ForwardList* forwardList = forwardIndex->getForwardList(forwardListDirectoryReadView,
@@ -129,17 +129,18 @@ void InvertedListContainer::sortAndMerge(const unsigned keywordId, ForwardIndex 
          * existing record then the keyword MUST be found and the keyword offset MUST be less than
          * the number of keywords in the record. For a newly added record (which is being merged
          * in the current merge cycle), it is possible that the keyword is not found by the
-         * binary search because keyword ids may not be sorted yet. In such a case, do linear scan
-         * of keyword ids to find the keyword offset.
+         * binary search because keyword ids may not be sorted yet since the record has a keyword
+         * with a temporary, large ID that needs to be re-assigned later. In such a case, do
+         * linear scan of keyword ids to find the keyword offset.
          */
         unsigned keywordOffset =  forwardList->getKeywordOffset(keywordId);
         if (keywordOffset >= recordLength){
         	if (!isNewInvertedList){
         		/*
         		 * if readview and writeview are not the same then ASSERT that the record is in
-        		 * a write view. (i.e. it a new record in the inverted list)
+        		 * a write view. (i.e. it is a new record appended to the end of the inverted list)
         		 */
-        		ASSERT(invListIndx >= readViewListSize);
+        		ASSERT(invListIter >= readViewListSize);
         	}
         	// scan the keyword-id list and get keyword offset.
         	keywordOffset = forwardList->getKeywordOffsetByLinearScan(keywordId);
@@ -158,7 +159,7 @@ void InvertedListContainer::sortAndMerge(const unsigned keywordId, ForwardIndex 
         // add this new <recordId, score> pair to the vector
         InvertedListIdAndScore iliasEntry = {recordId, score};
         invertedListElements.push_back(iliasEntry);
-        if (!isNewInvertedList && invListIndx < readViewListSize) {
+        if (!isNewInvertedList && invListIter < readViewListSize) {
         	/*
         	 * increment this counter only if the readview and the writeview are different. If they
         	 * are same then this is a new inverted list and all records are in write view.
@@ -474,9 +475,9 @@ void InvertedIndex::parallelMerge()
 
     // wait for all workers to finish
     bool allDone;
-    pthread_mutex_lock(&dispatcherdummyMutex);
+    pthread_mutex_lock(&dispatcherMutex);
     do{
-    	pthread_cond_wait(&dispatcherConditionVar, &dispatcherdummyMutex);
+    	pthread_cond_wait(&dispatcherConditionVar, &dispatcherMutex);
     	allDone = true;
     	for (unsigned i = 0; i < MAX_MERGE_WORKERS; ++i) {
     		if (mergeWorkersArgs[i].isDataReady == true) {
@@ -485,7 +486,7 @@ void InvertedIndex::parallelMerge()
     		}
     	}
     }while(!allDone);
-    pthread_mutex_unlock(&dispatcherdummyMutex);
+    pthread_mutex_unlock(&dispatcherMutex);
 
     // reset workers queue
     mergeWorkersSharedQueue.data = NULL;
