@@ -280,7 +280,7 @@ public:
     MergeWorkersSharedQueue  mergeWorkersSharedQueue;
     // condition variable on which main merge thread waits for workers to finish.
 	pthread_cond_t dispatcherConditionVar;
-	// main merge thread uses this lock to coordinate with workers thread. When the main thread is
+	// main merge thread uses this lock to coordinate with worker threads. When the main thread is
 	// waiting on condition then this lock is released. Workers acquire this lock to signal the
 	// condition. This is necessary to avoid loss of condition signal.
 	pthread_mutex_t dispatcherMutex;

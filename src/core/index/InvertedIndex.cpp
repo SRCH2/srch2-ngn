@@ -208,7 +208,7 @@ InvertedIndex::InvertedIndex(ForwardIndex *forwardIndex)
     this->keywordIds = NULL;
     this->forwardIndex = forwardIndex;
     this->commited_WriteView = false;
-    pthread_mutex_init(&dispatcherdummyMutex, NULL);
+    pthread_mutex_init(&dispatcherMutex, NULL);
     pthread_cond_init(&dispatcherConditionVar, NULL);
 }
 

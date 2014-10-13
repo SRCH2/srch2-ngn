@@ -321,6 +321,12 @@ void * dispatchMergeWorkerThread(void *arg) {
 			unsigned processedCount  = index->invertedIndex->workerMergeTask( index->rankerExpression,
 						index->_getNumberOfDocumentsInIndex(), index->schemaInternal);
 			info->isDataReady = false;
+			// acquire the lock to make sure that main merge thread is waiting for this condition.
+			// When the main thread is waiting on the condition then this lock is in unlocked state
+			// and can be acquired.
+			// if the lock is ignored then the condition signal sent by this thread could be
+			// lost because main thread may be processing condition signal of the other thread.
+
 			pthread_mutex_lock(&index->invertedIndex->dispatcherMutex);
 			pthread_cond_signal(&index->invertedIndex->dispatcherConditionVar);
 			pthread_mutex_unlock(&index->invertedIndex->dispatcherMutex);
