@@ -108,8 +108,8 @@ void InvertedListContainer::sortAndMerge(const unsigned keywordId, ForwardIndex 
     unsigned validRecordCountFromReadView = 0; // count # of records that are not deleted
     unsigned validRecordCountFromWriteView = 0; // count # of records that are not deleted
 
-    for (unsigned i = 0; i < writeView->size(); i++) {
-        unsigned recordId = writeView->getElement(i);
+    for (unsigned invListIndx = 0; invListIndx < writeView->size(); invListIndx++) {
+        unsigned recordId = writeView->getElement(invListIndx);
 
         bool valid = false;
         const ForwardList* forwardList = forwardIndex->getForwardList(forwardListDirectoryReadView,
@@ -139,7 +139,7 @@ void InvertedListContainer::sortAndMerge(const unsigned keywordId, ForwardIndex 
         		 * if readview and writeview are not the same then ASSERT that the record is in
         		 * a write view. (i.e. it a new record in the inverted list)
         		 */
-        		ASSERT(i >= readViewListSize);
+        		ASSERT(invListIndx >= readViewListSize);
         	}
         	// scan the keyword-id list and get keyword offset.
         	keywordOffset = forwardList->getKeywordOffsetByLinearScan(keywordId);
@@ -158,7 +158,7 @@ void InvertedListContainer::sortAndMerge(const unsigned keywordId, ForwardIndex 
         // add this new <recordId, score> pair to the vector
         InvertedListIdAndScore iliasEntry = {recordId, score};
         invertedListElements.push_back(iliasEntry);
-        if (!isNewInvertedList && i < readViewListSize) {
+        if (!isNewInvertedList && invListIndx < readViewListSize) {
         	/*
         	 * increment this counter only if the readview and the writeview are different. If they
         	 * are same then this is a new inverted list and all records are in write view.
