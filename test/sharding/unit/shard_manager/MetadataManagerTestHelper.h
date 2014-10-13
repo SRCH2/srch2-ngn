@@ -55,7 +55,7 @@ MetadataChange * createMetadataChange(const MetadataChangeTestCaseCode caseCode)
 		vector<ClusterShardId> localClusterShardIds;
 		vector<NodeShardId> localNodeShardIds;
 		localNodeShardIds.push_back(NodeShardId(0, 0, 6));
-		localNodeShardIds.push_back(NodeShardId(1, 0, 3));
+		localNodeShardIds.push_back(NodeShardId(0, 0, 3));
 		return new NodeAddChange(newNodeId, localClusterShardIds, localNodeShardIds);
 	}
 	case MetadataChangeTestCaseCode_ShardAssignChange0:
@@ -150,7 +150,7 @@ void testFreshClusterInit(ConfigManager * serverConf , ResourceMetadataManager *
     NodeShardIterator nShardItr(metadataManager->getClusterWriteview());
 	nShardItr.beginNodeShardsIteration();
 	while(nShardItr.getNextNodeShard(nodeShardId, isLocal)){
-		ASSERT(nodeShardId.coreId == 1); // core id in this test is 1
+		ASSERT(nodeShardId.coreId == 0); // core id in this test is 0
 		ASSERT(nodeShardId.partitionId > 3); // we have 4 partitions
 		ASSERT(nodeShardId.nodeId == currentNode->getId());
 		ASSERT(isLocal);
@@ -170,8 +170,8 @@ void testNode1FirstArrival(NodeId currentNodeId, ResourceMetadataManager * metad
 	newNode->setId(1);
 	// this node has 2 node shards : (1,1,16) , (1,1,17)
 	vector<NodeShardId> nodeShards;
-	nodeShards.push_back(NodeShardId(1,1,16));
-	nodeShards.push_back(NodeShardId(1,1,17));
+	nodeShards.push_back(NodeShardId(0,1,16));
+	nodeShards.push_back(NodeShardId(0,1,17));
 	vector<ClusterShardId> clusterShards;
 	NodeAddChange * nodeAddChange = new NodeAddChange(newNode->getId(), clusterShards, nodeShards);
 
@@ -221,11 +221,11 @@ void testNode1FirstArrival(NodeId currentNodeId, ResourceMetadataManager * metad
 	nShardItr.beginNodeShardsIteration();
 	while(nShardItr.getNextNodeShard(nodeShardId, isLocal)){
 		if(nodeShardId.nodeId == currentNodeId){
-			ASSERT(nodeShardId.coreId == 1); // core id in this test is 1
+			ASSERT(nodeShardId.coreId == 0); // core id in this test is 0
 			ASSERT(nodeShardId.partitionId > 3); // we have 4 partitions
 			ASSERT(isLocal);
 		}else if(nodeShardId.nodeId == 1){
-			ASSERT(nodeShardId.coreId == 1); // core id in this test is 1
+			ASSERT(nodeShardId.coreId == 0); // core id in this test is 0
 			ASSERT(nodeShardId.partitionId == 16 || nodeShardId.partitionId == 17); // we have 4 partitions
 			ASSERT(! isLocal);
 		}else{
@@ -245,13 +245,13 @@ void testNode1LoadBalancing(NodeId currentNodeId, ResourceMetadataManager * meta
 	Cluster_Writeview * writeview = metadataManager->getClusterWriteview();
 	//  current node has 4 cluster shards,
 	//  we must assign 4 cluster shards to the second node
-	ShardAssignChange * assignChange = new ShardAssignChange(ClusterShardId(1,0,1), 1, 0);
+	ShardAssignChange * assignChange = new ShardAssignChange(ClusterShardId(0,0,1), 1, 0);
 	assignChange->doChange(writeview);
-	assignChange = new ShardAssignChange(ClusterShardId(1,1,1), 1, 0);
+	assignChange = new ShardAssignChange(ClusterShardId(0,1,1), 1, 0);
 	assignChange->doChange(writeview);
-	assignChange = new ShardAssignChange(ClusterShardId(1,2,1), 1, 0);
+	assignChange = new ShardAssignChange(ClusterShardId(0,2,1), 1, 0);
 	assignChange->doChange(writeview);
-	assignChange = new ShardAssignChange(ClusterShardId(1,3,1), 1, 0);
+	assignChange = new ShardAssignChange(ClusterShardId(0,3,1), 1, 0);
 	assignChange->doChange(writeview);
 
 	// validate
@@ -352,18 +352,18 @@ void validateRestart(ConfigManager * serverConf, ResourceMetadataManager * metad
 			ASSERT(nodeState[nodeId] == NodeStatus_Ready);
 			ASSERT(state == SHARDSTATE_READY);
 			ASSERT(id.replicaId == 0);
-			ASSERT(id.coreId == 1);
+			ASSERT(id.coreId == 0);
 			ASSERT(isLocal);
 		}else if(nodeId == 1 || nodeId == 2){
 			ASSERT(nodeState[nodeId] == NodeStatus_Ready);
 			ASSERT(id.replicaId == nodeId); // we give all same number replicas to one node in this test
-			ASSERT(id.coreId == 1);
+			ASSERT(id.coreId == 0);
 			ASSERT(! isLocal);
 			break;
 
 		}else if (nodeId == (unsigned)-1){
 			ASSERT(state == SHARDSTATE_PENDING || state == SHARDSTATE_UNASSIGNED);
-			ASSERT(id.coreId == 1);
+			ASSERT(id.coreId == 0);
 			ASSERT(! isLocal);
 		}else{
 			ASSERT(false);
@@ -378,17 +378,17 @@ void validateRestart(ConfigManager * serverConf, ResourceMetadataManager * metad
 		if(nodeState[2] == NodeStatus_Ready){
 			if(nodeShardId.nodeId == writeview->currentNodeId){
 				ASSERT(isLocal);
-				ASSERT(nodeShardId.coreId == 1); // core id in this test is 1
+				ASSERT(nodeShardId.coreId == 0); // core id in this test is 0
 				ASSERT(nodeShardId.partitionId > 3); // we have 4 partitions
 			}else{
 				ASSERT(nodeShardId.nodeId == 2);
-				ASSERT(nodeShardId.coreId == 1); // core id in this test is 1
+				ASSERT(nodeShardId.coreId == 0); // core id in this test is 0
 				ASSERT(nodeShardId.partitionId > 15); // we have 4 partitions
 			}
 		}else{
 			ASSERT(nodeShardId.nodeId == writeview->currentNodeId);
 			ASSERT(isLocal);
-			ASSERT(nodeShardId.coreId == 1); // core id in this test is 1
+			ASSERT(nodeShardId.coreId == 0); // core id in this test is 0
 			ASSERT(nodeShardId.partitionId > 3); // we have 4 partitions
 		}
 	}
@@ -408,14 +408,14 @@ void testNode1Reclaim(NodeId currentNodeId, ResourceMetadataManager * metadataMa
 	newNode->setId(1);
 	// this node has 2 node shards : (1,2,16) , (1,2,17)
 	vector<NodeShardId> nodeShards;
-	nodeShards.push_back(NodeShardId(1,1,16));
-	nodeShards.push_back(NodeShardId(1,1,17));
+	nodeShards.push_back(NodeShardId(0,1,16));
+	nodeShards.push_back(NodeShardId(0,1,17));
 	// this node has 4 cluster shards (1,0,1), (1,1,1), (1,2,1) , (1,3,1)
 	vector<ClusterShardId> clusterShards;
-	clusterShards.push_back(ClusterShardId(1,0,1));
-	clusterShards.push_back(ClusterShardId(1,1,1));
-	clusterShards.push_back(ClusterShardId(1,2,1));
-	clusterShards.push_back(ClusterShardId(1,3,1));
+	clusterShards.push_back(ClusterShardId(0,0,1));
+	clusterShards.push_back(ClusterShardId(0,1,1));
+	clusterShards.push_back(ClusterShardId(0,2,1));
+	clusterShards.push_back(ClusterShardId(0,3,1));
 	NodeAddChange * nodeAddChange = new NodeAddChange(newNode->getId(), clusterShards, nodeShards);
 
 	// SM comes first
@@ -469,11 +469,11 @@ void testNode1Reclaim(NodeId currentNodeId, ResourceMetadataManager * metadataMa
     nShardItr.beginNodeShardsIteration();
 	while(nShardItr.getNextNodeShard(nodeShardId, isLocal)){
 		if(nodeShardId.nodeId == currentNodeId){
-			ASSERT(nodeShardId.coreId == 1); // core id in this test is 1
+			ASSERT(nodeShardId.coreId == 0); // core id in this test is 0
 			ASSERT(nodeShardId.partitionId > 3); // we have 4 partitions
 			ASSERT(isLocal);
 		}else if(nodeShardId.nodeId == 1){
-			ASSERT(nodeShardId.coreId == 1); // core id in this test is 1
+			ASSERT(nodeShardId.coreId == 0); // core id in this test is 0
 			ASSERT(nodeShardId.partitionId == 16 || nodeShardId.partitionId == 17); // we have 4 partitions
 			ASSERT(! isLocal);
 		}else{
@@ -494,13 +494,13 @@ void testNode2LoadBalancing(NodeId currentNodeId, ResourceMetadataManager * meta
 	//  current node has 4 cluster shards,
 	//  we must assign 4 cluster shards to the second node
 	ShardAssignChange * assignChange = NULL;
-	assignChange = new ShardAssignChange(ClusterShardId(1,0,2), 2, 0);
+	assignChange = new ShardAssignChange(ClusterShardId(0,0,2), 2, 0);
 	assignChange->doChange(writeview);
-	assignChange = new ShardAssignChange(ClusterShardId(1,1,2), 2, 0);
+	assignChange = new ShardAssignChange(ClusterShardId(0,1,2), 2, 0);
 	assignChange->doChange(writeview);
-	assignChange = new ShardAssignChange(ClusterShardId(1,2,2), 2, 0);
+	assignChange = new ShardAssignChange(ClusterShardId(0,2,2), 2, 0);
 	assignChange->doChange(writeview);
-	assignChange = new ShardAssignChange(ClusterShardId(1,3,2), 2, 0);
+	assignChange = new ShardAssignChange(ClusterShardId(0,3,2), 2, 0);
 	assignChange->doChange(writeview);
 
 	// validate
@@ -619,10 +619,10 @@ void testNode2Reclaim(NodeId currentNodeId, ResourceMetadataManager * metadataMa
 	// this node has no node shards
 	vector<NodeShardId> nodeShards;
 	vector<ClusterShardId> clusterShards;
-	clusterShards.push_back(ClusterShardId(1,0,2));
-	clusterShards.push_back(ClusterShardId(1,1,2));
-	clusterShards.push_back(ClusterShardId(1,2,2));
-	clusterShards.push_back(ClusterShardId(1,3,2));
+	clusterShards.push_back(ClusterShardId(0,0,2));
+	clusterShards.push_back(ClusterShardId(0,1,2));
+	clusterShards.push_back(ClusterShardId(0,2,2));
+	clusterShards.push_back(ClusterShardId(0,3,2));
 	NodeAddChange * nodeAddChange = new NodeAddChange(newNode->getId(), clusterShards, nodeShards);
 
 	nodeAddChange->doChange(writeview);

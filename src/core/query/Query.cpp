@@ -219,7 +219,7 @@ struct Query::Impl
         if(impl.range == NULL){
         	this->range = NULL;
         }else{
-        	switch (this->range->getShapeType()) {
+        	switch (impl.range->getShapeType()) {
 				case Shape::TypeRectangle:
 					this->range = new Rectangle(*((Rectangle *)impl.range));
 					break;

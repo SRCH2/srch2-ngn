@@ -65,10 +65,10 @@ LogicalPlanNode::LogicalPlanNode(const LogicalPlanNode & node){
 		ASSERT(node.nodeType == LogicalPlanNodeTypeGeo);
 		switch (node.regionShape->getShapeType()) {
 			case Shape::TypeRectangle:
-				this->regionShape = new Rectangle(*(Rectangle *)(this->regionShape));
+				this->regionShape = new Rectangle(*(Rectangle *)(node.regionShape));
 				break;
 			case Shape::TypeCircle:
-				this->regionShape = new Circle(*(Circle *)(this->regionShape));
+				this->regionShape = new Circle(*(Circle *)(node.regionShape));
 				break;
 			default :
 				ASSERT(false);
