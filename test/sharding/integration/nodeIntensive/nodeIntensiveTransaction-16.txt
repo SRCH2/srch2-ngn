@@ -11,25 +11,25 @@ C||nodeCount||3
 A||merge
 A||query||q=%22aaaaaa%20111111%22&fq=votes_count:2||"id":"1"||"results_found":1
 #Tests range filter query
-A||query||q=%22aaaaaa%20111111%22&fq=votes_count:%5B2%20TO%204%5D||"id":"2" "id":"3"||"results_found":2
+A||query||q=%22aaaaaa%20111111%22&fq=votes_count:%5B2%20TO%204%5D||"id":"1" "id":"3"||"results_found":2
 A||query||q=aaaaaa&fq=votes_count:2||"id":"1"||"results_found":1
 #Tests boolean filter query
-A||query||q=aaaaaa&fq=boolexp$20votes_count:2||"id":"1"||"results_found":1
-A||query||q=aaaaaa&fq=boolexp$%20votes_count%3E3%20$||"id":"3"||"results_found":1
+A||query||q=aaaaaa&fq=boolexp%24votes_count%3A2%24||"id":"1"||"results_found":1
+A||query||q=aaaaaa&fq=boolexp%24votes_count%3E3%24||"id":"3"||"results_found":1
 B||query||q=%22aaaaaa%20111111%22&fq=votes_count:2||"id":"1"||"results_found":1
 #Tests range filter query
-B||query||q=%22aaaaaa%20111111%22&fq=votes_count:%5B2%20TO%204%5D||"id":"2" "id":"3"||"results_found":2
+B||query||q=%22aaaaaa%20111111%22&fq=votes_count:%5B2%20TO%204%5D||"id":"1" "id":"3"||"results_found":2
 B||query||q=aaaaaa&fq=votes_count:2||"id":"1"||"results_found":1
 #Tests boolean filter query
 B||query||q=aaaaaa&fq=boolexp$20votes_count:2||"id":"1"||"results_found":1
-B||query||q=aaaaaa&fq=boolexp$%20votes_count%3E3%20$||"id":"3"||"results_found":1
+B||query||q=aaaaaa&fq=boolexp%24votes_count%3E3%24||"id":"3"||"results_found":1
 C||query||q=%22aaaaaa%20111111%22&fq=votes_count:2||"id":"1"||"results_found":1
 #Tests range filter query
-C||query||q=%22aaaaaa%20111111%22&fq=votes_count:%5B2%20TO%204%5D||"id":"2" "id":"3"||"results_found":2
+C||query||q=%22aaaaaa%20111111%22&fq=votes_count:%5B2%20TO%204%5D||"id":"1" "id":"3"||"results_found":2
 C||query||q=aaaaaa&fq=votes_count:2||"id":"1"||"results_found":1
 #Tests boolean filter query
-C||query||q=aaaaaa&fq=boolexp$20votes_count:2||"id":"1"||"results_found":1
-C||query||q=aaaaaa&fq=boolexp$%20votes_count%3E3%20$||"id":"3"||"results_found":1
+C||query||q=aaaaaa&fq=boolexp24votes_count%3A2%24||"id":"1"||"results_found":1
+C||query||q=aaaaaa&fq=boolexp%24votes_count%3E3%24||"id":"3"||"results_found":1
 A||kill
 B||kill
 C||kill
