@@ -311,11 +311,9 @@ pthread_t IndexReaderWriter::createAndStartMergeThreadLoop() {
 void * dispatchMergeWorkerThread(void *arg) {
 	MergeWorkersThreadArgs *info = (MergeWorkersThreadArgs *) arg;
 	IndexData * index = (IndexData *)info->index;
-	pthread_mutex_t perThreadMutex;
-	pthread_mutex_init(&perThreadMutex, NULL);
-	pthread_mutex_lock(&perThreadMutex);
+	pthread_mutex_lock(&info->perThreadMutex);
 	while(1) {
-		pthread_cond_wait(&info->waitConditionVar, &perThreadMutex);
+		pthread_cond_wait(&info->waitConditionVar, &info->perThreadMutex);
 		if (info->stopExecuting)
 			break;
 		if (info->isDataReady == true) {
@@ -338,8 +336,8 @@ void * dispatchMergeWorkerThread(void *arg) {
 			info->isDataReady = false;
 		}
 	}
-	pthread_mutex_unlock(&perThreadMutex);
-	pthread_mutex_destroy(&perThreadMutex);
+	pthread_mutex_unlock(&info->perThreadMutex);
+	pthread_mutex_destroy(&info->perThreadMutex);
 	return NULL;
 }
 /*
@@ -352,15 +350,16 @@ void IndexReaderWriter::createAndStartMergeWorkerThreads() {
 	unsigned mergeWorkersCount = this->index->invertedIndex->mergeWorkersCount;
 	mergerWorkerThreads = new pthread_t[mergeWorkersCount];
 	this->index->invertedIndex->mergeWorkersArgs = new MergeWorkersThreadArgs[mergeWorkersCount];
-
-	for (unsigned i = 0; i < this->index->invertedIndex->mergeWorkersCount; ++i) {
-		this->index->invertedIndex->mergeWorkersArgs[i].index = this->index;
-		this->index->invertedIndex->mergeWorkersArgs[i].isDataReady = false;
-		this->index->invertedIndex->mergeWorkersArgs[i].stopExecuting = false;
-		this->index->invertedIndex->mergeWorkersArgs[i].workerId = i;
-		pthread_cond_init(&this->index->invertedIndex->mergeWorkersArgs[i].waitConditionVar, NULL);
+	MergeWorkersThreadArgs *mergeWorkersArgs = this->index->invertedIndex->mergeWorkersArgs;
+	for (unsigned i = 0; i < mergeWorkersCount; ++i) {
+		mergeWorkersArgs[i].index = this->index;
+		mergeWorkersArgs[i].isDataReady = false;
+		mergeWorkersArgs[i].stopExecuting = false;
+		mergeWorkersArgs[i].workerId = i;
+		pthread_mutex_init(&mergeWorkersArgs[i].perThreadMutex, NULL);
+		pthread_cond_init(&mergeWorkersArgs[i].waitConditionVar, NULL);
 		pthread_create(&mergerWorkerThreads[i], NULL,
-				dispatchMergeWorkerThread, &this->index->invertedIndex->mergeWorkersArgs[i]);
+				dispatchMergeWorkerThread, &mergeWorkersArgs[i]);
 		Logger::console("created merge worker thread %d", i);
 	}
 }
@@ -426,12 +425,16 @@ void IndexReaderWriter::startMergeThreadLoop()
     pthread_cond_destroy(&countThresholdConditionVariable);
 
     // signal all worker threads to stop
-    for (unsigned i = 0; i < this->index->invertedIndex->mergeWorkersCount; ++i) {
-    	this->index->invertedIndex->mergeWorkersArgs[i].stopExecuting = true;
-    	pthread_cond_signal(&this->index->invertedIndex->mergeWorkersArgs[i].waitConditionVar);
+    unsigned mergeWorkersCount = this->index->invertedIndex->mergeWorkersCount;
+	MergeWorkersThreadArgs *mergeWorkersArgs = this->index->invertedIndex->mergeWorkersArgs;
+    for (unsigned i = 0; i < mergeWorkersCount; ++i) {
+    	pthread_mutex_lock(&mergeWorkersArgs[i].perThreadMutex);
+    	mergeWorkersArgs[i].stopExecuting = true;
+    	pthread_cond_signal(&mergeWorkersArgs[i].waitConditionVar);
+    	pthread_mutex_unlock(&mergeWorkersArgs[i].perThreadMutex);
     }
     // make sure all worker threads are stopped.
-    for (unsigned i = 0; i < this->index->invertedIndex->mergeWorkersCount; ++i) {
+    for (unsigned i = 0; i < mergeWorkersCount; ++i) {
     	pthread_join(mergerWorkerThreads[i], NULL);
     }
     // free allocate memory

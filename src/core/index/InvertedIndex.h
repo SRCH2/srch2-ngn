@@ -194,6 +194,18 @@ typedef InvertedListContainer* InvertedListContainerPtr;
 
 struct MergeWorkersThreadArgs {
 	void* index;        // IndexData pointer used by workers.
+
+	/*
+	 * Usage and purpose of perThreadMutex
+	 *
+	 * 1. Worker locks this mutex when running (awake) and releases it when waiting
+	 *    for the condition/signal (sleeping).
+	 * 2. The main merge thread MUST acquire this mutex before sending the signal
+	 *    to the worker in order to guarantee that the worker is indeed sleeping.
+	 *    The main merge thread MUST release this mutex immediately after sending the signal.
+	 */
+	pthread_mutex_t perThreadMutex;
+
 	pthread_cond_t waitConditionVar;  // condition variable to wake up worker thread.
 	unsigned workerId;   // worker Id
 	bool isDataReady;    // flag when set true indicates inverted list queue is ready.
