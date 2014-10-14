@@ -272,16 +272,16 @@ PhysicalPlanRecordItem * FacetOperator::getNext(const PhysicalPlanExecutionParam
     PhysicalPlanRecordItem *resultIter;
     // loop to find the next valid record (i.e., not deleted)
     while (true) {
-      resultIter = this->getPhysicalPlanOptimizationNode()->getChildAt(0)->getExecutableNode()->getNext(params);
-      if(resultIter == NULL){
-	return NULL;
-      }
-      // extract all facet related refining attribute values from this record
-      // by accessing the forward index only once.
-      bool isValid = false;
-      forwardList = forwardIndex->getForwardList(readView, resultIter->getRecordId() , isValid);
-      if (isValid) // found a valid one; otherwise, continue
-	break;
+        resultIter = this->getPhysicalPlanOptimizationNode()->getChildAt(0)->getExecutableNode()->getNext(params);
+        if(resultIter == NULL){
+            return NULL;
+        }
+        // extract all facet related refining attribute values from this record
+        // by accessing the forward index only once.
+        bool isValid = false;
+        forwardList = forwardIndex->getForwardList(readView, resultIter->getRecordId() , isValid);
+        if (isValid) // found a valid one; otherwise, continue
+            break;
     }
 
 	StoredRecordBuffer refiningAttributesData =

@@ -475,7 +475,7 @@ void * LogicalPlan::serializeForNetwork(void * buffer){
  *  docIdForRetrieveByIdSearchType | isNULL | isNULL | isNULL | isNULL | \
  *   [exactQuery] | [fuzzyQuery] | [postProcessingInfo] | [tree] |
  */
-void * LogicalPlan::deserializeForNetwork(LogicalPlan & logicalPlan , void * buffer){
+void * LogicalPlan::deserializeForNetwork(LogicalPlan & logicalPlan , void * buffer, const Schema * schema){
 
 	buffer = srch2::util::deserializeFixedTypes(buffer, logicalPlan.offset);
 	buffer = srch2::util::deserializeFixedTypes(buffer, logicalPlan.numberOfResultsToRetrieve);
@@ -507,7 +507,7 @@ void * LogicalPlan::deserializeForNetwork(LogicalPlan & logicalPlan , void * buf
 	// NOTE: postProcessingPlan is not serialized because it's not used anymore and it must be deleted
 	if(isPostProcessingInfoNotNull){
 		logicalPlan.postProcessingInfo = new ResultsPostProcessingInfo();
-		buffer = ResultsPostProcessingInfo::deserializeForNetwork(*logicalPlan.postProcessingInfo, buffer);
+		buffer = ResultsPostProcessingInfo::deserializeForNetwork(*logicalPlan.postProcessingInfo, buffer, schema);
 	}else{
 		logicalPlan.postProcessingInfo = NULL;
 	}

@@ -272,7 +272,7 @@ public:
 	 * Serialization scheme :
 	 * | isNULL | isNULL | isNULL | isNULL | facetInfo | sortEvaluator | filterQueryEvaluator | phraseSearchInfoContainer |
 	 */
-	static void * deserializeForNetwork(ResultsPostProcessingInfo & info, void * buffer);
+	static void * deserializeForNetwork(ResultsPostProcessingInfo & info, void * buffer, const Schema * schema);
 
 	/*
 	 * Serialization scheme :

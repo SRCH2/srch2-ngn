@@ -316,7 +316,7 @@ public:
 	 *   [exactQuery] | [fuzzyQuery] | [postProcessingInfo] | [tree] |
 	 */
 	void * serializeForNetwork(void * buffer);
-	static void * deserializeForNetwork(LogicalPlan & logicalPlan , void * buffer);
+	static void * deserializeForNetwork(LogicalPlan & logicalPlan , void * buffer, const Schema * schema);
 	unsigned getNumberOfBytesForSerializationForNetwork();
 };
 
