@@ -240,7 +240,7 @@ private:
 	pthread_t mergerThread;  // stores thread identifier.
 	pthread_attr_t mergeThreadAttributes;  // store thread attributes
 
-	pthread_t mergerWorkerThreads[MAX_MERGE_WORKERS];  // stores worker thread identifier.
+	pthread_t *mergerWorkerThreads;  // stores worker thread identifier.
 
     volatile unsigned writesCounterForMerge;
     bool needToSaveIndexes;

@@ -983,31 +983,43 @@ unsigned ForwardList::getKeywordOffsetByLinearScan(unsigned keywordId) const {
 
 /*
  *   Returns term frequency (TF) calculated as square root of all
- *   term occurrences in all attributes.
+ *   term occurrences in all attributes. If keyword is not found
+ *   return 0.0. If position index is not enabled return 1.0.
  */
 float ForwardList::getTermFrequency(unsigned keywordOffset,
 		const vector<unsigned>& attributeIdsList) const{
 	ASSERT(keywordOffset < this->getNumberOfKeywords());
 	if (keywordOffset >= this->getNumberOfKeywords())
 		return 0.0;
+
+	// check whether position index is present or not
+	if (this->positionIndexSize == 0) {
+		return 1.0;
+	}
 	vector<unsigned> positionList;
-	unsigned totalHitCout = 0;
+	unsigned totalHitCount = 0;
 	for (unsigned i = 0; i < attributeIdsList.size(); ++i) {
 		this->getKeyWordPostionsInRecordField(keywordOffset, attributeIdsList[i], positionList);
-		totalHitCout += positionList.size();
+		totalHitCount += positionList.size();
 		positionList.clear();
 	}
-	return sqrtf(totalHitCout);
+	return sqrtf(totalHitCount);
 }
 
 /*
  *   Returns term frequency (TF) calculated as square root of all
- *   term occurrences in all attributes.
+ *   term occurrences in all attributes. If keyword is not found
+ *   return 0.0. If position index is not enabled return 1.0.
  */
 float ForwardList::getTermFrequency(unsigned keywordOffset) const{
 	ASSERT(keywordOffset < this->getNumberOfKeywords());
 	if (keywordOffset >= this->getNumberOfKeywords())
 		return 0.0;
+
+	// check whether position index is present or not
+	if (this->positionIndexSize == 0) {
+		return 1.0;
+	}
 	vector<unsigned> attributeIdsList;
 	this->getKeywordAttributeIdsList(keywordOffset, attributeIdsList);
 	return getTermFrequency(keywordOffset, attributeIdsList);

@@ -209,6 +209,7 @@ InvertedIndex::InvertedIndex(ForwardIndex *forwardIndex)
     this->commited_WriteView = false;
     pthread_mutex_init(&dispatcherMutex, NULL);
     pthread_cond_init(&dispatcherConditionVar, NULL);
+    MAX_MERGE_WORKERS = 0;
 }
 
 InvertedIndex::~InvertedIndex()

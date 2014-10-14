@@ -689,7 +689,7 @@ INDEXWRITE_RETVAL IndexData::_merge(bool updateHistogram) {
 		this->forwardIndex->freeSpaceOfDeletedRecords();
 	}
 
-	if (MAX_MERGE_WORKERS <= 1) {
+	if (this->invertedIndex->MAX_MERGE_WORKERS <= 1) {
 		this->invertedIndex->merge( this->rankerExpression,
 				this->writeCounter->getNumberOfDocuments(), this->schemaInternal);
 	} else {

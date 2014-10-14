@@ -49,8 +49,6 @@ using std::ofstream;
 using srch2::util::Logger;
 using namespace half_float;
 
-// the number of threads dedicated for merging inverted lists in parallel
-#define MAX_MERGE_WORKERS 5
 
 namespace srch2
 {
@@ -199,6 +197,7 @@ struct MergeWorkersThreadArgs {
 	pthread_cond_t waitConditionVar;
 	unsigned workerId;
 	bool isDataReady;
+	bool stopExecuting;
 };
 // Queue which holds data for merge workers.
 struct MergeWorkersSharedQueue {
@@ -275,8 +274,8 @@ public:
     void parallelMerge();
     unsigned workerMergeTask(RankerExpression *rankerExpression,  unsigned totalNumberOfDocuments,
     		const Schema *schema);
-
-    MergeWorkersThreadArgs mergeWorkersArgs[MAX_MERGE_WORKERS];
+    // Array of per thread arguments. It will be allocated and freed by the main merge thread at runtime.
+    MergeWorkersThreadArgs *mergeWorkersArgs;
     MergeWorkersSharedQueue  mergeWorkersSharedQueue;
     // condition variable on which main merge thread waits for workers to finish.
 	pthread_cond_t dispatcherConditionVar;
@@ -284,7 +283,8 @@ public:
 	// waiting on condition then this lock is released. Workers acquire this lock to signal the
 	// condition. This is necessary to avoid loss of condition signal.
 	pthread_mutex_t dispatcherMutex;
-
+	// the number of threads dedicated for merging inverted lists in parallel.
+	unsigned int MAX_MERGE_WORKERS;
     void setForwardIndex(ForwardIndex *forwardIndex) {
         this->forwardIndex = forwardIndex;
     }
