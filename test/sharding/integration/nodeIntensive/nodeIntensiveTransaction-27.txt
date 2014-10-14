@@ -1,0 +1,27 @@
+#This tests data migration
+A||start
+-||sleep||5
+B||start
+-||sleep||5
+C||start
+-||sleep||5
+D||start
+-||sleep||5
+E||start
+-||sleep||5
+A||bulkInsertFromBeginning||./nodeIntensive/stackoverflow-2k-1.json||200||10
+B||bulkInsertFromBeginning||./nodeIntensive/stackoverflow-2k-2.json||200||10
+A||kill
+-||sleep||5
+B||kill
+-||sleep||5
+C||bulkInsertFromBeginning||./nodeIntensive/stackoverflow-2k-3.json||200||10
+D||bulkInsertFromBeginning||./nodeIntensive/stackoverflow-2k-4.json||200||10
+-||sleep||5
+C||kill
+-||sleep||5
+E||bulkInsertFromBeginning||./nodeIntensive/stackoverflow-2k-5.json||200||10
+-||sleep||5
+E||merge
+E||numberOfRecordsInCore||0||10000
+D||numberOfRecordsInCore||0||10000

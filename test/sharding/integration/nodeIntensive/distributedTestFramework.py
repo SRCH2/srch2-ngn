@@ -223,7 +223,7 @@ def bulkInsert(inputFile, k, num, ipAddress, portNo, operation):
                 data.append(jsonrec[:-1])
             else:
                 data.append(val[0])
-            if (i%50 == 0 ):
+            if (i%num == 0 ):
                 break;
 
         dd =  "["+','.join(data) +"]"
