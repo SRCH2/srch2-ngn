@@ -77,7 +77,7 @@ public:
      *      call geoParser();
      */
 
-    bool parse();
+    bool parse(const Schema * schema);
 
     // this parser function is used for suggestions. There are only two parameters for /suggest?
     // example: /suggest?k=can~0.6&rows=5
@@ -292,7 +292,7 @@ private:
      * example: 'fq=price:[10 TO 100] AND popularity:[* TO 100] AND Title:algorithm'
      *
      */
-    bool filterQueryParameterParser();
+    bool filterQueryParameterParser(const Schema * schema);
 
     /*
      * it looks to see if there is any post processing dynamic boosting

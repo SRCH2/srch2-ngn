@@ -1520,7 +1520,7 @@ boost::shared_ptr<Json::Value> HTTPRequestHandler::doSearchOneCore(evhttp_reques
     // simple example for query is : q={boost=2}name:foo~0.5 AND bar^3*&fq=name:"John"
     //1. first create query parser to parse the url
     QueryParser qp(*headers, &paramContainer);
-    bool isSyntaxValid = qp.parse();
+    bool isSyntaxValid = qp.parse(NULL);
     if (!isSyntaxValid) {
         // if the query is not valid print the error message to the response
         errorStream << paramContainer.getMessageString();

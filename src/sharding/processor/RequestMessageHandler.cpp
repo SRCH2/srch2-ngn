@@ -34,7 +34,7 @@ bool RequestMessageHandler::resolveMessage(Message * msg, NodeId node){
 	switch(msg->getType()){
     case SearchCommandMessageType: // -> for LogicalPlan object
     {
-    	SearchCommand * searchCommand = SearchCommand::deserialize(buffer);
+    	SearchCommand * searchCommand = SearchCommand::deserialize(buffer, clusterReadview->getCore(target.getCoreId())->getSchema());
         resultFlag = resolveMessage(searchCommand, node, msg->getMessageId(), target, msg->getType(), clusterReadview);
         delete searchCommand;
         break;
