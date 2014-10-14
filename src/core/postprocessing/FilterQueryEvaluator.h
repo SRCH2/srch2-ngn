@@ -100,7 +100,7 @@ public:
     	this->attributeName = expr.attributeName;
     	this->attributeValueLower = expr.attributeValueLower;
     	this->attributeValueUpper = expr.attributeValueUpper;
-    	this->attributeName = expr.negative;
+    	this->negative = expr.negative;
     	this->messages = new std::vector<std::pair<MessageType, string> > ();
     }
 
