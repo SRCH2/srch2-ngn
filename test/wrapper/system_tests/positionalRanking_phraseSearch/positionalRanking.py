@@ -27,16 +27,15 @@ def checkResult(query, responseJson,resultValue, scores):
     isPass=1
     if  len(responseJson) == len(resultValue):
         for i in range(0, len(resultValue)):
-            score =  round(float(responseJson[i]['score']),2) 
-            if (resultValue[i] != responseJson[i]['record']['id'] or (score != float(scores[i]))):
+            #score =  round(float(responseJson[i]['score']),2) 
+            if (resultValue[i] != responseJson[i]['record']['id']):
                 isPass=0
-                print "score is of the record is " + str(responseJson[i]['score'])
                 print query+' test failed'
                 print 'query results||given results'
                 print 'number of results:'+str(len(responseJson))+'||'+str(len(resultValue))
                 for i in range(0, len(responseJson)):
                     print str(responseJson[i]['record']['id'])+'||'+str(resultValue[i])
-                    print "score: " + str(responseJson[i]['score'])
+                    print "score: " + str(responseJson[i]['score']) + '||' + str(scores[i])
                 break
     else:
         isPass=0
