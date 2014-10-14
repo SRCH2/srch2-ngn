@@ -347,13 +347,13 @@ void * dispatchMergeWorkerThread(void *arg) {
  */
 void IndexReaderWriter::createAndStartMergeWorkerThreads() {
 
-	this->index->invertedIndex->MAX_MERGE_WORKERS = 5;  // ToDo: make configurable later.
+	this->index->invertedIndex->mergeWorkersCount = 5;  // ToDo: make configurable later.
 
-	unsigned totalWorkers = this->index->invertedIndex->MAX_MERGE_WORKERS;
-	mergerWorkerThreads = new pthread_t[totalWorkers];
-	this->index->invertedIndex->mergeWorkersArgs = new MergeWorkersThreadArgs[totalWorkers];
+	unsigned mergeWorkersCount = this->index->invertedIndex->mergeWorkersCount;
+	mergerWorkerThreads = new pthread_t[mergeWorkersCount];
+	this->index->invertedIndex->mergeWorkersArgs = new MergeWorkersThreadArgs[mergeWorkersCount];
 
-	for (unsigned i = 0; i < this->index->invertedIndex->MAX_MERGE_WORKERS; ++i) {
+	for (unsigned i = 0; i < this->index->invertedIndex->mergeWorkersCount; ++i) {
 		this->index->invertedIndex->mergeWorkersArgs[i].index = this->index;
 		this->index->invertedIndex->mergeWorkersArgs[i].isDataReady = false;
 		this->index->invertedIndex->mergeWorkersArgs[i].stopExecuting = false;
@@ -426,12 +426,12 @@ void IndexReaderWriter::startMergeThreadLoop()
     pthread_cond_destroy(&countThresholdConditionVariable);
 
     // signal all worker threads to stop
-    for (unsigned i = 0; i < this->index->invertedIndex->MAX_MERGE_WORKERS; ++i) {
+    for (unsigned i = 0; i < this->index->invertedIndex->mergeWorkersCount; ++i) {
     	this->index->invertedIndex->mergeWorkersArgs[i].stopExecuting = true;
     	pthread_cond_signal(&this->index->invertedIndex->mergeWorkersArgs[i].waitConditionVar);
     }
     // make sure all worker threads are stopped.
-    for (unsigned i = 0; i < this->index->invertedIndex->MAX_MERGE_WORKERS; ++i) {
+    for (unsigned i = 0; i < this->index->invertedIndex->mergeWorkersCount; ++i) {
     	pthread_join(mergerWorkerThreads[i], NULL);
     }
     // free allocate memory

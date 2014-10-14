@@ -194,10 +194,10 @@ typedef InvertedListContainer* InvertedListContainerPtr;
 
 struct MergeWorkersThreadArgs {
 	void* index;        // IndexData pointer used by workers.
-	pthread_cond_t waitConditionVar;
-	unsigned workerId;
-	bool isDataReady;
-	bool stopExecuting;
+	pthread_cond_t waitConditionVar;  // condition variable to wake up worker thread.
+	unsigned workerId;   // worker Id
+	bool isDataReady;    // flag when set true indicates inverted list queue is ready.
+	bool stopExecuting;  // flag when set true stops the worker threads.
 };
 // Queue which holds data for merge workers.
 struct MergeWorkersSharedQueue {
@@ -284,7 +284,7 @@ public:
 	// condition. This is necessary to avoid loss of condition signal.
 	pthread_mutex_t dispatcherMutex;
 	// the number of threads dedicated for merging inverted lists in parallel.
-	unsigned int MAX_MERGE_WORKERS;
+	unsigned int mergeWorkersCount;
     void setForwardIndex(ForwardIndex *forwardIndex) {
         this->forwardIndex = forwardIndex;
     }
