@@ -264,7 +264,7 @@ rm -fr SRCH2Cluster
 test_case "phrase search with boolean expression" "python ./phraseSearch/phrase_search.py $SRCH2_ENGINE ./phraseSearch/booleanQueries.txt" 
 
 
-#TODO: failed, jamshid https://srch2inc.atlassian.net/browse/SRCN-499
+#passed, jamshid, https://srch2inc.atlassian.net/browse/SRCN-499
 sleep 3
 rm -fr SRCH2Cluster
 test_case "multi valued attribute" "python ./test_multi_valued_attributes/test_multi_valued_attributes.py '--srch2' $SRCH2_ENGINE '--qryNrslt' \
@@ -325,38 +325,38 @@ sleep 3
 rm -fr SRCH2Cluster
 test_case "fuzzy_Attribute_Based_Search_Geo" "python ./fuzzy_attribute_based_search_geo/fuzzy_Attribute_Based_Search_Geo.py $SRCH2_ENGINE ./fuzzy_attribute_based_search_geo/queriesAndResults.txt"
 
-#TODO: failed, jamshid https://srch2inc.atlassian.net/browse/SRCN-500
+#passed,, jamshid https://srch2inc.atlassian.net/browse/SRCN-500
 sleep 3
 rm -fr SRCH2Cluster
 test_case "faceted search" "python ./faceted_search/faceted_search.py '--srch' $SRCH2_ENGINE '--qryNrslt' ./faceted_search/queriesAndResults.txt '--frslt' ./faceted_search/facetResults.txt"
 
-#TODO: failed, 
+#TODO: failed, Jamshid, https://srch2inc.atlassian.net/browse/SRCN-513
 sleep 3
 rm -fr SRCH2Cluster
 test_case "sort filter" "python ./sort_filter/sort_filter.py $SRCH2_ENGINE ./sort_filter/queriesAndResults.txt ./sort_filter/facetResults.txt" 
 
-#TODO: failed, jamshid https://srch2inc.atlassian.net/browse/SRCN-501
+#passed, jamshid https://srch2inc.atlassian.net/browse/SRCN-501
 sleep 4
 rm -fr SRCH2Cluster
 test_case "filter query" "python ./filter_query/filter_query.py $SRCH2_ENGINE ./filter_query/queriesAndResults.txt ./filter_query/facetResults.txt"
 
-#TODO: failed
+#TODO: failed, jamshid, https://srch2inc.atlassian.net/browse/SRCN-510
 sleep 4
 rm -fr SRCH2Cluster
 test_case "test_solr_compatible_query_syntax" "python ./test_solr_compatible_query_syntax/test_solr_compatible_query_syntax.py $SRCH2_ENGINE \
     ./test_solr_compatible_query_syntax/queriesAndResults.txt ./test_solr_compatible_query_syntax/facetResults.txt"
 
-#TODO: failed
+#TODO: failed, https://srch2inc.atlassian.net/browse/SRCN-514
 sleep 3
 rm -fr SRCH2Cluster
 test_case "test_search_by_id" "python ./test_search_by_id/test_search_by_id.py $SRCH2_ENGINE" 
 
-#TODO: failed
+#passed
 sleep 3
 rm -fr SRCH2Cluster
 test_case "date and time implementation" "python ./date_time_new_features_test/date_time_new_features_test.py $SRCH2_ENGINE ./date_time_new_features_test/queriesAndResults.txt" 
 
-#TODO: failed
+#passed
 sleep 3
 rm -fr SRCH2Cluster
 test_case "geo" "python ./geo/geo.py $SRCH2_ENGINE ./geo/queriesAndResults.txt" 
