@@ -25,9 +25,9 @@ the [JSON](http://json.org/) format.
 - Stemming and stop words
 - Phrase search (e.g., "new york")
 - Rich data types (e.g., text, int, float, and date)
-- Chinese tokenization
 - Attribute-based search
-- Sorting (e.g., "price < 20")
+- Filtering (e.g., "price < 20")
+- Sorting
 - Geo search
 - Server-side highlighting
 - Query logging
@@ -35,6 +35,7 @@ the [JSON](http://json.org/) format.
 - Real-time updates
 - Multi-threaded
 - Multiple languages
+- Chinese tokenization
 - Multiple data sources
 - RESTful API
 - Support of control messages (e.g., system status and index serialization)
@@ -44,10 +45,10 @@ the [JSON](http://json.org/) format.
 - Connectors to MySQL, SQLite, MongoDB, with connectors for other data sources coming soon
 
 ##What's new in SRCH2 4.4.2
-####Features:
+####Features
 - Added support of Chinese language with a [Chinese tokenizer](./configuration/#116-analyzer).
 
-####Improvements:
+####Improvements
 - Removed  the requirement to specify "roleCore" for the record-based acl in the config file.
 - Changed API aclRecordRoleAdd to aclRecordRoleReplace.
 - Changed API aclAttributeRoleAdd to aclAttributeRoleReplace.

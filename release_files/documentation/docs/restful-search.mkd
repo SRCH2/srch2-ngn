@@ -572,7 +572,9 @@ For example, the following is a sample response from two cores:
 ```
 ## 15. Access Control
 
-When an [attribute based access control](../configuration/#113-attribute-access-control-optional) or [record based access control]()) is enabled in the config file, the role-id can be specified using <code>roleId</code> parameter. For example.
+When [record-based access control](acl.mkd#2-record-based-acl) or 
+[attribute-based access control](acl.mkd#3-attribute-based-acl) 
+is enabled in the config file, the role-id can be specified using <code>roleId</code> parameter. For example.
 ```
 curl "http://localhost:8087/search?q=project_name:food&roleId=spiderman
 ```
