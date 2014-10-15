@@ -6,9 +6,29 @@
 -->
  
 <config>
-
+    <!--
+        SRCH2 Home directory 
+        Required
+         
+        This directory is going to be your srch2 home's directory.
+        All other paths HAVE to be reletive to this path.
+        For Example:
+            To have "/usr/share/srch2/" as srch2 home directory, you should have the following line
+            <srch2Home>/usr/share/srch2/</srch2Home>
+             
+        All other paths in this conif file have to be relative to this path.
+        For Example:
+            If your data file is inside srch2 home directory, having the following absolute path
+            "/usr/share/srch2/data/sample-data.json"
+            In this config file it should be as "data/sample-data.json"
+    -->
     <srch2Home>./</srch2Home>
-    <authorization-key>blackberry</authorization-key> 
+  
+    <transport>
+        <port>4002</port>
+        <ipaddress>127.0.0.1</ipaddress>
+    </transport>
+
     <!--
         License Key File
         Required
@@ -25,7 +45,7 @@
         Hostname and port number of the server. Make sure the port is open.
     -->
     <listeningHostname>127.0.0.1</listeningHostname>
-    <listeningPort>8087</listeningPort>
+    <listeningPort>8089</listeningPort>
  
     <!--
         Index Directoy Path
@@ -34,7 +54,7 @@
         The file path to the folder where we store serialized index files.
         REQUIRED, when "index-load-or-create" is set to 1.
     -->
-    <dataDir>./data/authorization/</dataDir>
+    <dataDir>./data/exact_m1/</dataDir>
      
     <!--
         Data File
@@ -43,8 +63,9 @@
         Path for a data file to be loaded. The file must be in the json format.
         REQUIRED, when "index-load-or-create" is set to 0.
     -->
-    <dataFile>./authorization/data.json</dataFile>
-     
+    <dataFile>./exact_m1/empty.json</dataFile>
+    <node-name>node-B</node-name>
+ 
     <!--
 	Maximum Number of Threads
 	Optional
@@ -64,14 +85,14 @@
                 0: Text Index
                 1: Geo+Text Index
         -->
-        <indexType>0</indexType>
+        <indexType>1</indexType>
         
 		<!--
             0: don't support swap operation in edit distance
             1: support swap operation in edit distance
             default value is true
         -->
-        <supportSwapInEditDistance>false</supportSwapInEditDistance> 
+        <supportSwapInEditDistance>false</supportSwapInEditDistance>  
          
         <!--
             Boost Values
@@ -85,7 +106,7 @@
                 - fields are sparated by one space
                 - if you do not provide any value for a field, it will be considered as 1
         -->
-        <fieldBoost></fieldBoost>
+        <fieldBoost>category^2 name^1</fieldBoost>
          
          
         <!-- 
@@ -109,9 +130,6 @@
          
     </indexConfig>
   
-  
-  
-  
     <query>
         <!-- 
             Ranking Algorithm
@@ -130,7 +148,7 @@
             Query Term Fuzzy Penalty
             Optional
              
-            Defaults to 1
+            Defaults to 0.5
         -->
         <fuzzyMatchPenalty>0.5</fuzzyMatchPenalty>
          
@@ -199,7 +217,7 @@
              
             0: exact match
             1: fuzzy match
-            Defaults to 0
+            Defaults to 
         -->
         <queryTermFuzzyType>0</queryTermFuzzyType>
          
@@ -243,9 +261,9 @@
                 It is REQUIRED to set fields_to_return if search-response-format=2
                 These are attributes returned to the user.
                 For Example:
-                    <responseContent type="2">lat,lng</responseContent>
+                    
             -->
-            <responseContent type="0"></responseContent>
+           <responseContent type="0"></responseContent>
              
         </queryResponseWriter>
     </query>
@@ -282,7 +300,7 @@
           <mergeEveryNSeconds>10</mergeEveryNSeconds>
           <mergeEveryMWrites>100</mergeEveryMWrites>
         </mergePolicy>
-              
+                       
     </updatehandler>
 
 	<schema>
@@ -322,6 +340,9 @@
            <field name="relevance" type="float" refining="true" highlight="true" />
 	   <field name="category" type="text" indexed="true" />
 	   <field name="name" type="text" indexed="true" />
+	<field name="lng" type="location_longitude" indexed="false"  />
+	   <field name="lat" type="location_latitude" indexed="false"   />
+	    
 	 </fields>
 	 
 	 <!--
@@ -343,7 +364,7 @@
 	  		- values are false (disabled) and true (enabled)
 	  		- By default it is disabled.
 	  -->
-	  <facetEnabled>true</facetEnabled>
+	  <facetEnabled>false</facetEnabled>
 	  
 	  <facetFields>
 		  <!--
@@ -426,7 +447,7 @@
                  
                 Path to Access Log File
             -->
-            <accessLogFile>./data/authorization/log.txt</accessLogFile>
+            <accessLogFile>./data/exact_m1/log.txt</accessLogFile>
     </updateLog>
 	
 </config>

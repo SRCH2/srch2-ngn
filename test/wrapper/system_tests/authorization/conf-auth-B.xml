@@ -9,6 +9,12 @@
 
     <srch2Home>./</srch2Home>
     <authorization-key>blackberry</authorization-key> 
+
+    <transport>
+        <port>4002</port>
+        <ipaddress>127.0.0.1</ipaddress>
+    </transport>
+
     <!--
         License Key File
         Required
@@ -25,7 +31,7 @@
         Hostname and port number of the server. Make sure the port is open.
     -->
     <listeningHostname>127.0.0.1</listeningHostname>
-    <listeningPort>8087</listeningPort>
+    <listeningPort>8089</listeningPort>
  
     <!--
         Index Directoy Path
@@ -43,7 +49,7 @@
         Path for a data file to be loaded. The file must be in the json format.
         REQUIRED, when "index-load-or-create" is set to 0.
     -->
-    <dataFile>./authorization/data.json</dataFile>
+    <dataFile>./authorization/empty.json</dataFile>
      
     <!--
 	Maximum Number of Threads
@@ -54,7 +60,8 @@
     -->
     <maxSearchThreads>2</maxSearchThreads>
      
-         
+    <node-name>node-B</node-name>
+     
     <indexConfig>
          
         <!--

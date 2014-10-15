@@ -1,6 +1,19 @@
 #this test is used for exact A1
 #using: python exact_A1.py queriesAndResults.txt
 
+# this system test is added to test the physical plan execution cache.
+# the logic is like this:
+# suppose we have two queries q1 and q2 :
+# q1 = "terminator AND movie"
+# q2 = "terminator AND movie AND trailer"
+# if we run q2 alone, or if we run q1 first and then q2,
+# we should get a correct list of results for both cases.
+# the later case is the one which uses the cached entry from q1.
+# if you look at queriesAndResults.txt you'll see some lines like :
+# @CLEAR CACHE
+# this script, when it reaches to these lines, if sleeps for enough time 
+# so that merge happens and cache becomes empty.
+
 import sys, urllib2, json, time, subprocess, os, commands, signal
 
 sys.path.insert(0, 'srch2lib')
@@ -55,7 +68,7 @@ def prepareQuery(queryKeywords):
     # keywords section
     for i in range(0, len(queryKeywords)):
         if i == (len(queryKeywords)-1):
-            query=query+queryKeywords[i]+'*' # last keyword prefix
+            query=query+queryKeywords[i] # last keyword prefix
         else:
             query=query+queryKeywords[i]+'%20AND%20'
     
@@ -68,12 +81,12 @@ def prepareQuery(queryKeywords):
     
 
 
-def testExactA1(queriesAndResultsPath, binary_path):
-    #Start the engine server (node A)
-    args = [ binary_path, '--config-file=./exact_a1/conf.xml' ]
+def testCacheA1(queriesAndResultsPath, binary_path):
+    #Start the engine server (nodeA)
+    args = [ binary_path, '--config-file=./cache_a1/conf.xml' ]
 
     if test_lib.confirmPortAvailable(portA) == False:
-        print 'PortA ' + str(portA) + ' already in use - aborting'
+        print 'Port ' + str(portA) + ' already in use - aborting'
         return -1
 
     print 'starting engine: ' + args[0] + ' ' + args[1]
@@ -81,28 +94,32 @@ def testExactA1(queriesAndResultsPath, binary_path):
 
     test_lib.pingServer(portA)
 
-    #Start the engine server (node B)
-    args = [ binary_path, '--config-file=./exact_a1/conf-B.xml' ]
+    args = [ binary_path, '--config-file=./cache_a1/conf-B.xml' ]
 
     if test_lib.confirmPortAvailable(portB) == False:
-        print 'PortB ' + str(portB) + ' already in use - aborting'
+        print 'Port ' + str(portB) + ' already in use - aborting'
         return -1
 
     print 'starting engine: ' + args[0] + ' ' + args[1]
     serverHandle2 = test_lib.startServer(args)
 
     test_lib.pingServer(portB)
+
     time.sleep(5)
+
     #construct the query
     failCount = 0
     f_in = open(queriesAndResultsPath, 'r')
     for line in f_in:
+        if '@' == line[0]:
+           time.sleep(5)
+           continue
         #get the query keyword and results
         value=line.split('||')
         queryValue=value[0].split()
         resultValue=(value[1]).split()
         #construct the query
-        query='http://127.0.0.1:' + portB + '/search?'
+        query='http://localhost:' + portB + '/search?'
         query = query + prepareQuery(queryValue) 
         #print query
         #do the query
@@ -122,5 +139,5 @@ if __name__ == '__main__':
     #each line like "trust||01c90b4effb2353742080000" ---- query||record_ids(results)
     binary_path = sys.argv[1]
     queriesAndResultsPath = sys.argv[2]
-    exitCode = testExactA1(queriesAndResultsPath, binary_path)
+    exitCode = testCacheA1(queriesAndResultsPath, binary_path)
     os._exit(exitCode)

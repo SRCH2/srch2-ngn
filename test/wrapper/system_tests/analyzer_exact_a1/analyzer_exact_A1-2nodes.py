@@ -17,7 +17,7 @@ def checkResult(query, responseJson,resultValue):
     if  len(responseJson) == len(resultValue):
         for i in range(0, len(resultValue)):
             #print response_json['results'][i]['record']['id']
-            if (resultValue.count(responseJson[i]['record']['id']) != 1):
+            if (resultValue.count(responseJson[i]['record']['id']) != 1): 
                 isPass=0
                 print query+' test failed'
                 print 'query results||given results'
@@ -55,7 +55,7 @@ def prepareQuery(queryKeywords):
     # keywords section
     for i in range(0, len(queryKeywords)):
         if i == (len(queryKeywords)-1):
-            query=query+queryKeywords[i]+'*' # last keyword prefix
+            query=query+queryKeywords[i] # last keyword prefix
         else:
             query=query+queryKeywords[i]+'%20AND%20'
     
@@ -69,11 +69,11 @@ def prepareQuery(queryKeywords):
 
 
 def testExactA1(queriesAndResultsPath, binary_path):
-    #Start the engine server (node A)
-    args = [ binary_path, '--config-file=./exact_a1/conf.xml' ]
+    #Start the engine server (nodeA)
+    args = [ binary_path, '--config-file=./analyzer_exact_a1/conf.xml' ]
 
     if test_lib.confirmPortAvailable(portA) == False:
-        print 'PortA ' + str(portA) + ' already in use - aborting'
+        print 'Port ' + str(portA) + ' already in use - aborting'
         return -1
 
     print 'starting engine: ' + args[0] + ' ' + args[1]
@@ -81,18 +81,18 @@ def testExactA1(queriesAndResultsPath, binary_path):
 
     test_lib.pingServer(portA)
 
-    #Start the engine server (node B)
-    args = [ binary_path, '--config-file=./exact_a1/conf-B.xml' ]
+    #Start the engine server (nodeB)
+    args = [ binary_path, '--config-file=./analyzer_exact_a1/conf-B.xml' ]
 
     if test_lib.confirmPortAvailable(portB) == False:
-        print 'PortB ' + str(portB) + ' already in use - aborting'
+        print 'Port ' + str(portB) + ' already in use - aborting'
         return -1
 
     print 'starting engine: ' + args[0] + ' ' + args[1]
     serverHandle2 = test_lib.startServer(args)
-
     test_lib.pingServer(portB)
     time.sleep(5)
+
     #construct the query
     failCount = 0
     f_in = open(queriesAndResultsPath, 'r')
@@ -102,7 +102,7 @@ def testExactA1(queriesAndResultsPath, binary_path):
         queryValue=value[0].split()
         resultValue=(value[1]).split()
         #construct the query
-        query='http://127.0.0.1:' + portB + '/search?'
+        query='http://localhost:' + portB + '/search?'
         query = query + prepareQuery(queryValue) 
         #print query
         #do the query
