@@ -25,6 +25,8 @@ void HistogramManager::annotate(LogicalPlan * logicalPlan){
 	 * 2. Estimated number of results for each internal node of LogicalPlan.
 	 */
 
+    freeStatsOfLogicalPlanTree(logicalPlan->getTree());
+
 	allocateLogicalPlanNodeAnnotations(logicalPlan->getTree());
 
 	// TODO : Jamshid change the name of it ...
@@ -85,6 +87,19 @@ void HistogramManager::markTermToForceSuggestionPhysicalOperator(LogicalPlanNode
     }
 }
 
+
+void HistogramManager::freeStatsOfLogicalPlanTree(LogicalPlanNode * node) {
+    if(node == NULL){
+        return;
+    }
+    if(node->stats){
+        delete node->stats;
+        node->stats = NULL;
+    }
+    for(vector<LogicalPlanNode * >::iterator child = node->children.begin(); child != node->children.end() ; ++child){
+        freeStatsOfLogicalPlanTree(*child);
+    }
+}
 // traverses the tree (by recursive calling) and allocates the annotation object for each node
 void HistogramManager::allocateLogicalPlanNodeAnnotations(LogicalPlanNode * node){
 	if(node == NULL){
