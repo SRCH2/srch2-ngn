@@ -180,6 +180,7 @@ int MySQLConnector::createNewIndexes() {
             Logger::info("MYSQLCONNECTOR: Total indexed %d / %d records. ",
                     indexedRecordsCount, totalRecordsCount);
             stmt->close();/* free the object inside  */
+            this->lastAccessedLogRecordTime = time(NULL);
             return 0;
         } catch (sql::SQLException &e) {
             Logger::error(
@@ -235,12 +236,15 @@ bool MySQLConnector::loadLastAccessedLogRecordTime() {
         NULL, 10));
         return true;
     } else {
-        Logger::debug("MYSQLCONNECTOR: Warning. Can not find %s."
-                " The connector will use the default position and file name.",
-                path.c_str());
+        if (this->lastAccessedLogRecordTime == 0) {
+            Logger::error("MYSQLCONNECTOR: Can not find %s. The data may be"
+                    "inconsistent. Please rebuild the indexes.", path.c_str());
+            this->lastAccessedLogRecordTime = time(NULL);
+        }
+        Logger::debug("MYSQLCONNECTOR: The connector will use the "
+                "default position and file name.");
         this->currentLogFile = logName + ".000001";
         this->nextPosition = 4;
-        this->lastAccessedLogRecordTime = time(NULL);
         return false;
     }
 }
