@@ -385,6 +385,9 @@ public:
             float &termRecordStaticScore) const;
 
     unsigned getKeywordOffset(unsigned keywordId) const;
+    unsigned getKeywordOffsetByLinearScan(unsigned keywordId) const;
+    float getTermFrequency(unsigned keywordId, const vector<unsigned>& attributeIdsList) const;
+    float getTermFrequency(unsigned keywordOffset) const;
 
     bool getWordsInRange(const SchemaInternal* schema, const unsigned minId,
             const unsigned maxId,
@@ -427,7 +430,7 @@ public:
     //void mapOldIdsToNewIds();
 
     // Position Indexes APIs
-    void getKeyWordPostionsInRecordField(unsigned keywordId, unsigned attributeId,
+    void getKeyWordPostionsInRecordField(unsigned keywordOffset, unsigned attributeId,
     		vector<unsigned>& positionList) const;
     void fetchDataFromVLBArray(unsigned keyOffset, unsigned attributeId,
     		vector<unsigned>& pl, const uint8_t * piPtr) const;
