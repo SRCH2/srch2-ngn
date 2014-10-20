@@ -43,7 +43,12 @@
         </facetFields>
         
         <types>
-		<fieldType name="text_chinese" dictionary="../../../srch2_data/srch2_dictionary_zh_cn.bin"> </fieldType>
+		<fieldType name="text_chinese" dictionary="../../../srch2_data/srch2_dictionary_zh_cn.bin"> 
+			<analyzer>
+                    		<filter name="StopFilter" words="../../../srch2_data/srch2_stop_words_zh_cn.txt" />
+                    		<filter name="protectedKeyWordsFilter" words="../../../srch2_data/srch2_protected_words.txt" />
+                	</analyzer> 
+		</fieldType>
         </types>
 
 
