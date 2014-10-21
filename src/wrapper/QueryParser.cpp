@@ -470,7 +470,7 @@ void QueryParser::attributeAclFlagParser(){
 			this->container->attrAclOn = true;
 		}
 	} else {
-		this->container->attrAclOn = false;
+		this->container->attrAclOn = true;
 	}
 }
 
