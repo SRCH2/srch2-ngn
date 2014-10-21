@@ -241,10 +241,10 @@ void testSerializableInsertUpdateCommandInput(){
     record1->setPrimaryKey("primary key 1");
     record1->setSearchableAttributeValue(0, "the data for primary key 1");
 
-	InsertUpdateCommand commandInput1(record1, InsertUpdateCommand::DP_INSERT);
+	WriteCommandNotification commandInput1(record1, WriteCommandNotification::DP_INSERT);
 	MessageAllocator * aloc = new MessageAllocator();
 	void * buffer = commandInput1.serialize(aloc);
-	const InsertUpdateCommand & deserializedCommandInput1 = *(InsertUpdateCommand::deserialize(buffer, schema));
+	const WriteCommandNotification & deserializedCommandInput1 = *(WriteCommandNotification::deserialize(buffer, schema));
 	ASSERT(commandInput1.getInsertOrUpdate() == deserializedCommandInput1.getInsertOrUpdate());
 	ASSERT(commandInput1.getRecord()->getPrimaryKey() == deserializedCommandInput1.getRecord()->getPrimaryKey());
 	string originalValue, deserializedValue;
@@ -264,10 +264,10 @@ void testSerializableInsertUpdateCommandInput(){
     record2->setSearchableAttributeValue(1, "the body for primary key 1");
 
 
-	InsertUpdateCommand commandInput2(record2, InsertUpdateCommand::DP_UPDATE);
+	WriteCommandNotification commandInput2(record2, WriteCommandNotification::DP_UPDATE);
 	MessageAllocator * aloc2 = new MessageAllocator();
 	void * buffer2 = commandInput2.serialize(aloc2);
-	const InsertUpdateCommand & deserializedCommandInput2 = *(InsertUpdateCommand::deserialize(buffer2, schema2));
+	const WriteCommandNotification & deserializedCommandInput2 = *(WriteCommandNotification::deserialize(buffer2, schema2));
 	ASSERT(commandInput2.getInsertOrUpdate() == deserializedCommandInput2.getInsertOrUpdate());
 	ASSERT(commandInput2.getRecord()->getPrimaryKey() == deserializedCommandInput2.getRecord()->getPrimaryKey());
 	commandInput2.getRecord()->getSearchableAttributeValue(0,originalValue);

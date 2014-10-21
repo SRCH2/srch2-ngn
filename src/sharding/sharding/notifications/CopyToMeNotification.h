@@ -3,6 +3,7 @@
 
 #include "Notification.h"
 #include "../metadata_manager/Shard.h"
+#include "sharding/transport/Message.h"
 
 namespace srch2is = srch2::instantsearch;
 using namespace srch2is;
@@ -21,6 +22,7 @@ public:
     }
 	CopyToMeNotification(){};
 
+	static bool resolveMessage(Message * msg, NodeId sendeNode);
 
 	void * serialize(void * buffer) const{
 		buffer = ShardingNotification::serialize(buffer);

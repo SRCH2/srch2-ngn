@@ -1,0 +1,155 @@
+#include "ShardCopyOperation.h"
+
+#include "core/util/SerializationHelper.h"
+#include "core/util/Assert.h"
+#include "../../../configuration/ShardingConstants.h"
+#include "../../metadata_manager/ResourceLocks.h"
+#include "../../metadata_manager/Cluster_Writeview.h"
+#include "../../ShardManager.h"
+#include "server/Srch2Server.h"
+#include "sharding/migration/MigrationManager.h"
+namespace srch2is = srch2::instantsearch;
+using namespace srch2is;
+using namespace std;
+namespace srch2 {
+namespace httpwrapper {
+
+ShardCopyOperation::ShardCopyOperation(const ClusterShardId & unassignedShard,
+		NodeId srcNodeId, const ClusterShardId & shardToReplicate,
+		ConsumerInterface * consumer):unassignedShardId(unassignedShard),replicaShardId(shardToReplicate),srcNodeId(srcNodeId){
+	this->currentOpId = NodeOperationId(ShardManager::getCurrentNodeId());
+	this->releasingMode = false;
+	ASSERT(this->consumer != NULL);
+	this->consumer = consumer;
+	ProducerInterface::connectDeletePathToParent(consumer);
+	this->locker = NULL;
+	this->releaser = NULL;
+	this->copyToMeNotif = NULL;
+	this->committer = NULL;
+	this->finalizedFlag = false;
+	this->successFlag = true;
+	this->currentAction = "";
+}
+
+ShardCopyOperation::~ShardCopyOperation(){
+	if(this->locker != NULL){
+		delete this->locker;
+	}
+	if(this->releaser != NULL){
+		delete this->releaser;
+	}
+	if(this->copyToMeNotif != NULL){
+		delete this->copyToMeNotif;
+	}
+	if(this->committer != NULL){
+		delete this->committer;
+	}
+}
+
+void ShardCopyOperation::produce(){
+	lock();
+}
+
+void ShardCopyOperation::lock(){ // ** start **
+	this->locker = new AtomicLock(replicaShardId, unassignedShardId, currentOpId, this);
+	// locker calls all methods of LockResultCallbackInterface from us
+	this->releaser = new AtomicRelease(replicaShardId, unassignedShardId, currentOpId, this);
+	// releaser calls all methods of BooleanCallbackInterface from us
+	this->currentAction = "lock";
+	this->locker->produce();
+}
+// for lock
+void ShardCopyOperation::consume(bool granted){
+	if(currentAction.compare("lock") == 0){
+		if(granted){
+			transfer();
+		}else{
+			this->successFlag = false;
+			release();
+		}
+	}else if(currentAction.compare("release") == 0){
+		if(! granted){
+			this->successFlag = false;
+		}
+		finalize();
+	}else if(currentAction.compare("commit") == 0){
+		if(! granted){
+			this->successFlag = false;
+		}
+		release();
+	}
+}
+// ** if (granted)
+void ShardCopyOperation::transfer(){ // : requires receiving a call to our callback registered in state-machine to get MM messages
+	// transfer data by ordering MM
+	// 1. register this transaction in shard manager to receive MM notification
+	ShardManager::getShardManager()->registerMMSessionListener(currentOpId.operationId, this);
+	// 2. send copyToMe notification to the srcNode to start transferring the data
+	this->copyToMeNotif = new CopyToMeNotification(replicaShardId, unassignedShardId);
+
+	// NOTE : this is deallocated by the state machine
+	ConcurrentNotifOperation * copyer = new ConcurrentNotifOperation(copyToMeNotif, NULLType, srcNodeId , this, false);
+	ShardManager::getShardManager()->getStateMachine()->registerOperation(copyer);
+}
+
+void ShardCopyOperation::end(map<NodeId, ShardingNotification * > & replies){
+	if(replies < 1){
+		this->successFlag = false;
+		release();
+	}
+}
+// if returns true, operation must stop and return null to state_machine
+bool ShardCopyOperation::shouldAbort(const NodeId & failedNode){
+	if(failedNode == srcNodeId){
+		this->successFlag = false;
+		release();
+		return true;
+	}
+	return false;
+}
+
+// for transfer
+void ShardCopyOperation::receiveStatus(const ShardMigrationStatus & status){
+	// failed or succeed?
+	if(status == MM_STATUS_FAILURE){
+		this->successFlag = false;
+		release();
+	}else if(status == MM_STATUS_SUCCESS){
+		Cluster_Writeview * writeview = ShardManager::getWriteview();
+
+		string indexDirectory = ShardManager::getShardManager()->getConfigManager()->getShardDir(writeview->clusterName,
+				writeview->cores[unassignedShardId.coreId]->getName(), &unassignedShardId);
+		if(indexDirectory.compare("") == 0){
+			indexDirectory = ShardManager::getShardManager()->getConfigManager()->createShardDir(writeview->clusterName,
+					writeview->cores[unassignedShardId.coreId]->getName(), &unassignedShardId);
+		}
+
+		physicalShard = LocalPhysicalShard(status.shard, indexDirectory, "");
+		commit();
+	}
+}
+void ShardCopyOperation::commit(){
+	// start metadata commit
+	// prepare the shard change
+	ShardAssignChange * shardAssignChange = new ShardAssignChange(unassignedShardId, ShardManager::getCurrentNodeId(), 0);
+	shardAssignChange->setPhysicalShard(physicalShard);
+	this->committer = new AtomicMetadataCommit(shardAssignChange,  vector<NodeId>(), this);
+	currentAction = "commit";
+	this->committer->produce();
+}
+// ** end if
+void ShardCopyOperation::release(){
+	// release the locks
+	ASSERT(! this->releasingMode);
+	this->releasingMode = true;
+	currentAction = "release";
+	this->releaser->produce();
+}
+
+void ShardCopyOperation::finalize(){ // ** return **
+	this->finalizedFlag = true;
+	this->consumer->consume(this->successFlag);
+}
+
+}
+}

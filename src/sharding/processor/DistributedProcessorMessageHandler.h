@@ -195,11 +195,11 @@ private:
 				delete reqHandlerArgs;
 				return NULL;
 			case InsertUpdateCommandMessageType:
-				reqHandlerArgs->requestMessageHandler->resolveMessage((InsertUpdateCommand*)reqHandlerArgs->requestObj,
+				reqHandlerArgs->requestMessageHandler->resolveMessage((WriteCommandNotification*)reqHandlerArgs->requestObj,
 						reqHandlerArgs->node, reqHandlerArgs->requestMessageId,
 						reqHandlerArgs->target, reqHandlerArgs->type,
 						reqHandlerArgs->clusterReadview);
-				delete (InsertUpdateCommand*)reqHandlerArgs->requestObj;
+				delete (WriteCommandNotification*)reqHandlerArgs->requestObj;
 				delete reqHandlerArgs;
 				return NULL;
 			case DeleteCommandMessageType:

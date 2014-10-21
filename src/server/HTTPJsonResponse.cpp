@@ -118,6 +118,9 @@ Json::Value HTTPJsonResponse::getJsonSingleMessage(const HTTPJsonMessageCode cod
 	case HTTP_JSON_Node_Timeout_Warning:
 		msgValue[c_warning] = getJsonSingleMessageStr(code);
 		break;
+	case HTTP_JSON_Merge_Parameter_Not_Recognized:
+		msgValue[c_error] = getJsonSingleMessageStr(code);
+		break;
 	default:
 		ASSERT(false);
 		break;
@@ -157,6 +160,8 @@ const string HTTPJsonResponse::getJsonSingleMessageStr(const HTTPJsonMessageCode
 		return "Commit is finished. No need to commit anymore.";
 	case HTTP_JSON_Cluster_Not_Ready_Error:
 		return "Cluster is not ready to accept this request now, please try again later.";
+	case HTTP_JSON_Merge_Parameter_Not_Recognized:
+		return "Parameter not recognized.";
 	default:
 		ASSERT(false);
 		return "Unknown error.";

@@ -109,6 +109,8 @@ void DPExternalRequestHandler::externalSearchCommand(boost::shared_ptr<const Clu
 
     clock_gettime(CLOCK_REALTIME, &(resultAggregator->getStartTimer()));
 
+    // NOTE: this is where we connect to the URI object coming
+    // from web
     evkeyvalq headers;
     evhttp_parse_query(req->uri, &headers);
 
@@ -210,6 +212,11 @@ void DPExternalRequestHandler::externalSearchAllCommand(boost::shared_ptr<const 
  *    another thread when these responses come.
  */
 void DPExternalRequestHandler::externalInsertCommand(boost::shared_ptr<const ClusterResourceMetadata_Readview> clusterReadview,
+		evhttp_request *req, unsigned coreId){
+	ExternalInsertUpdateCommandHttp::insert(clusterReadview, req, coreId);
+}
+
+void DPExternalRequestHandler::_externalInsertCommand(boost::shared_ptr<const ClusterResourceMetadata_Readview> clusterReadview,
 		evhttp_request *req, unsigned coreId){
 
 //    Logger::console("Cluster readview used for insert: ");
@@ -321,8 +328,8 @@ void DPExternalRequestHandler::externalInsertCommand(boost::shared_ptr<const Clu
      * The reason that aggregator is wrapped in shared pointer is that we use a separate pending request for each
      * insert in a batch insert, so we want the aggregator to be deleted after all of them are resolved.
      */
-    boost::shared_ptr<StatusAggregator<InsertUpdateCommand> >
-    resultsAggregator(new StatusAggregator<InsertUpdateCommand>(configurationManager,req, clusterReadview, coreId,recordsToInsert.size()));
+    boost::shared_ptr<StatusAggregator<WriteCommandNotification> >
+    resultsAggregator(new StatusAggregator<WriteCommandNotification>(configurationManager,req, clusterReadview, coreId,recordsToInsert.size()));
     // pass the Json response to the aggregator
     resultsAggregator->setJsonRecordOperationResponse(brokerSideInformationJson);
 	// 1. first find all destination shards.
@@ -332,7 +339,7 @@ void DPExternalRequestHandler::externalInsertCommand(boost::shared_ptr<const Clu
         time_t timeValue;
         time(&timeValue);
         timeValue = timeValue + TIMEOUT_WAIT_TIME;
-        InsertUpdateCommand  * insertUpdateInput = new InsertUpdateCommand(*recordItr,InsertUpdateCommand::DP_INSERT);
+        WriteCommandNotification  * insertUpdateInput = new WriteCommandNotification(*recordItr,WriteCommandNotification::DP_INSERT);
         resultsAggregator->addRequestObj(insertUpdateInput);
         vector<NodeTargetShardInfo> targets;
         partitioner->getAllWriteTargets(partitioner->hashDJB2(insertUpdateInput->getRecord()->getPrimaryKey().c_str()),
@@ -345,7 +352,7 @@ void DPExternalRequestHandler::externalInsertCommand(boost::shared_ptr<const Clu
 
         }else{
 
-    		bool routingStatus = dpMessageHandler.broadcast<InsertUpdateCommand, CommandStatus>(insertUpdateInput,
+    		bool routingStatus = dpMessageHandler.broadcast<WriteCommandNotification, CommandStatus>(insertUpdateInput,
     						true,
     						true,
     						resultsAggregator,
@@ -479,8 +486,8 @@ void DPExternalRequestHandler::externalUpdateCommand(boost::shared_ptr<const Clu
 
 
 
-    boost::shared_ptr<StatusAggregator<InsertUpdateCommand> >
-    resultsAggregator(new StatusAggregator<InsertUpdateCommand>(configurationManager,req, clusterReadview, coreId, recordsToUpdate.size()));
+    boost::shared_ptr<StatusAggregator<WriteCommandNotification> >
+    resultsAggregator(new StatusAggregator<WriteCommandNotification>(configurationManager,req, clusterReadview, coreId, recordsToUpdate.size()));
     resultsAggregator->setJsonRecordOperationResponse(brokerSideInformationJson);
 	CorePartitioner * partitioner = new CorePartitioner(clusterReadview->getPartitioner(coreId));
     for(vector<Record *>::iterator recordItr = recordsToUpdate.begin(); recordItr != recordsToUpdate.end() ; ++recordItr){
@@ -496,9 +503,9 @@ void DPExternalRequestHandler::externalUpdateCommand(boost::shared_ptr<const Clu
             time_t timeValue;
             time(&timeValue);
             timeValue = timeValue + TIMEOUT_WAIT_TIME;
-			InsertUpdateCommand  * insertUpdateInput = new InsertUpdateCommand(*recordItr,InsertUpdateCommand::DP_UPDATE);
+			WriteCommandNotification  * insertUpdateInput = new WriteCommandNotification(*recordItr,WriteCommandNotification::DP_UPDATE);
 			resultsAggregator->addRequestObj(insertUpdateInput);
-    		bool routingStatus = dpMessageHandler.broadcast<InsertUpdateCommand, CommandStatus>(insertUpdateInput,
+    		bool routingStatus = dpMessageHandler.broadcast<WriteCommandNotification, CommandStatus>(insertUpdateInput,
     						true,
     						true,
     						resultsAggregator,
@@ -691,210 +698,6 @@ void DPExternalRequestHandler::externalGetInfoCommand(boost::shared_ptr<const Cl
 
 }
 
-
-
-/*
-  * 1. Receives a save request from a client (not from another shard)
-  * 2. broadcasts this request to DPInternalRequestHandler objects of other shards
-  * 3. Gives ResultAggregator object to PendingRequest framework and it's used to aggregate the
-  *       results. Results will be aggregator by another thread since it's not a blocking call.
-  */
-void DPExternalRequestHandler::externalSerializeIndexCommand(boost::shared_ptr<const ClusterResourceMetadata_Readview> clusterReadview,
-		evhttp_request *req, unsigned coreId){
-    /* Yes, we are expecting a post request */
-
-	boost::shared_ptr<HTTPJsonShardOperationResponse > brokerSideInformationJson =
-			boost::shared_ptr<HTTPJsonShardOperationResponse > (new HTTPJsonShardOperationResponse(req));
-
-    const CoreInfo_t *indexDataContainerConf = clusterReadview->getCore(coreId);
-    switch (req->type) {
-    case EVHTTP_REQ_PUT: {
-        boost::shared_ptr<StatusAggregator<SerializeCommand> >
-        resultsAggregator(new StatusAggregator<SerializeCommand>(configurationManager,req, clusterReadview, coreId));
-
-        resultsAggregator->setJsonShardOperationResponse(brokerSideInformationJson);
-        brokerSideInformationJson->finalizeOK();
-
-    	CorePartitioner * partitioner = new CorePartitioner(clusterReadview->getPartitioner(coreId));
-        vector<NodeTargetShardInfo> targets;
-        partitioner->getAllTargets(targets);
-        if(targets.size() == 0){
-            brokerSideInformationJson->addError(HTTPJsonResponse::getJsonSingleMessage(HTTP_JSON_All_Shards_Down_Error));
-            brokerSideInformationJson->finalizeOK();
-            delete partitioner;
-            return;
-        }else{
-            time_t timeValue;
-            time(&timeValue);
-            timeValue = timeValue + TIMEOUT_WAIT_TIME;
-			SerializeCommand * serializeInput =
-					new SerializeCommand(SerializeCommand::SERIALIZE_INDEX);
-			resultsAggregator->addRequestObj(serializeInput);
-    		bool routingStatus = dpMessageHandler.broadcast<SerializeCommand, CommandStatus>(serializeInput,
-    						true,
-    						true,
-    						resultsAggregator,
-    						timeValue,
-    						targets,
-    						clusterReadview);
-
-    		if(! routingStatus){
-    	        brokerSideInformationJson->finalizeError("Internal Server Error.");
-    	        delete partitioner;
-    	        return;
-    		}
-        }
-        delete partitioner;
-        break;
-    }
-    default: {
-        brokerSideInformationJson->finalizeInvalid();
-        break;
-    }
-    };
-}
-
-
-
-/*
-  * 1. Receives a export request from a client (not from another shard)
-  * 2. broadcasts this request to DPInternalRequestHandler objects of other shards
-  * 3. Gives ResultAggregator object to PendingRequest framework and it's used to aggregate the
-  *       results. Results will be aggregator by another thread since it's not a blocking call.
-  */
-void DPExternalRequestHandler::externalSerializeRecordsCommand(boost::shared_ptr<const ClusterResourceMetadata_Readview> clusterReadview,
-		evhttp_request *req, unsigned coreId){
-    /* Yes, we are expecting a post request */
-
-	boost::shared_ptr<HTTPJsonShardOperationResponse > brokerSideInformationJson =
-			boost::shared_ptr<HTTPJsonShardOperationResponse > (new HTTPJsonShardOperationResponse(req));
-
-    const CoreInfo_t *indexDataContainerConf = clusterReadview->getCore(coreId);
-
-    switch (req->type) {
-    case EVHTTP_REQ_PUT: {
-        // if search-response-format is 0 or 2
-        if (indexDataContainerConf->getSearchResponseFormat() == RESPONSE_WITH_STORED_ATTR) {
-            std::stringstream log_str;
-            evkeyvalq headers;
-            evhttp_parse_query(req->uri, &headers);
-            const char *exportedDataFileName = evhttp_find_header(&headers, URLParser::nameParamName);
-            // TODO : should we free exportedDataFileName?
-            if(exportedDataFileName){
-                boost::shared_ptr<StatusAggregator<SerializeCommand> >
-                resultsAggregator(new StatusAggregator<SerializeCommand>(configurationManager,req, clusterReadview, coreId));
-
-                brokerSideInformationJson->finalizeOK();
-                resultsAggregator->setJsonShardOperationResponse(brokerSideInformationJson);
-
-            	CorePartitioner * partitioner = new CorePartitioner(clusterReadview->getPartitioner(coreId));
-                vector<NodeTargetShardInfo> targets;
-                partitioner->getAllTargets(targets);
-                if(targets.size() == 0){
-                    brokerSideInformationJson->addError(HTTPJsonResponse::getJsonSingleMessage(HTTP_JSON_All_Shards_Down_Error));
-                	brokerSideInformationJson->finalizeOK();
-                    delete partitioner;
-                    return;
-                }else{
-                    time_t timeValue;
-                    time(&timeValue);
-                    timeValue = timeValue + TIMEOUT_WAIT_TIME;
-					SerializeCommand * serializeInput =
-							new SerializeCommand(SerializeCommand::SERIALIZE_RECORDS, string(exportedDataFileName));
-					resultsAggregator->addRequestObj(serializeInput);
-            		bool routingStatus = dpMessageHandler.broadcast<SerializeCommand, CommandStatus>(serializeInput,
-            						true,
-            						true,
-            						resultsAggregator,
-            						timeValue,
-            						targets,
-            						clusterReadview);
-
-            		if(! routingStatus){
-            	        brokerSideInformationJson->finalizeError("Internal Server Error.");
-            	        delete partitioner;
-            	        return;
-            		}
-                }
-                delete partitioner;
-            }else {
-                brokerSideInformationJson->finalizeInvalid();
-            }
-        } else{
-            brokerSideInformationJson->addError(HTTPJsonResponse::getJsonSingleMessage(HTTP_JSON_Search_Res_Format_Wrong_Error));
-        	brokerSideInformationJson->finalizeOK();
-        }
-        break;
-    }
-    default: {
-        brokerSideInformationJson->finalizeInvalid();
-        break;
-    }
-    };
-
-
-}
-
-
-
-/*
-  * 1. Receives a reset log request from a client (not from another shard)
-  * 2. broadcasts this request to DPInternalRequestHandler objects of other shards
-  * 3. Gives ResultAggregator object to PendingRequest framework and it's used to aggregate the
-  *       results. Results will be aggregator by another thread since it's not a blocking call.
-  */
-void DPExternalRequestHandler::externalResetLogCommand(boost::shared_ptr<const ClusterResourceMetadata_Readview> clusterReadview,
-		evhttp_request *req, unsigned coreId){
-
-	boost::shared_ptr<HTTPJsonShardOperationResponse > brokerSideInformationJson =
-			boost::shared_ptr<HTTPJsonShardOperationResponse > (new HTTPJsonShardOperationResponse(req));
-
-    const CoreInfo_t *indexDataContainerConf = clusterReadview->getCore(coreId);
-
-    switch(req->type) {
-    case EVHTTP_REQ_PUT: {
-        boost::shared_ptr<StatusAggregator<ResetLogCommand> >
-        resultsAggregator(new StatusAggregator<ResetLogCommand>(configurationManager,req, clusterReadview, coreId));
-
-        brokerSideInformationJson->finalizeOK();
-        resultsAggregator->setJsonShardOperationResponse(brokerSideInformationJson);
-
-    	CorePartitioner * partitioner = new CorePartitioner(clusterReadview->getPartitioner(coreId));
-        vector<NodeTargetShardInfo> targets;
-        partitioner->getAllTargets(targets);
-        if(targets.size() == 0){
-            brokerSideInformationJson->addError(HTTPJsonResponse::getJsonSingleMessage(HTTP_JSON_All_Shards_Down_Error));
-            delete partitioner;
-            return;
-        }else{
-            time_t timeValue;
-            time(&timeValue);
-            timeValue = timeValue + TIMEOUT_WAIT_TIME;
-			ResetLogCommand * resetInput = new ResetLogCommand();
-			resultsAggregator->addRequestObj(resetInput);
-    		bool routingStatus = dpMessageHandler.broadcast<ResetLogCommand, CommandStatus>(resetInput,
-    						true,
-    						true,
-    						resultsAggregator,
-    						timeValue,
-    						targets,
-    						clusterReadview);
-
-    		if(! routingStatus){
-    	        brokerSideInformationJson->finalizeError("Internal Server Error.");
-    	        delete partitioner;
-    	        return;
-    		}
-        }
-        delete partitioner;
-        break;
-    }
-    default: {
-        brokerSideInformationJson->finalizeInvalid();
-        break;
-    }
-    };
-}
 
 /*
   * 1. Receives a commit request from a client (not from another shard)

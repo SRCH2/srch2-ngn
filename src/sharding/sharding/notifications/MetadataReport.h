@@ -4,6 +4,7 @@
 #include "Notification.h"
 #include "../metadata_manager/Cluster_Writeview.h"
 #include "core/util/SerializationHelper.h"
+#include "sharding/transport/Message.h"
 
 namespace srch2is = srch2::instantsearch;
 using namespace srch2is;
@@ -18,6 +19,9 @@ public:
 		this->writeview = writeview;
 	}
 	MetadataReport(){};
+
+	static bool resolveMessage(Message * msg, NodeId sendeNode);
+
     ShardingMessageType messageType() const{
     	return ShardingNewNodeReadMetadataReplyMessageType;
     }
@@ -57,6 +61,7 @@ public:
         ShardingMessageType messageType() const{
         	return ShardingNewNodeReadMetadataRequestMessageType;
         }
+		static bool resolveMessage(Message * msg, NodeId sendeNode);
     };
 };
 

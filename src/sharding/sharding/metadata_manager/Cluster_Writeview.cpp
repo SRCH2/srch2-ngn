@@ -882,6 +882,31 @@ void Cluster_Writeview::setNodeShardServer(const NodeShardId & nodeShardId, boos
 	this->localNodeDataShards.find(nodeShardId.partitionId)->second.server = server;
 }
 
+void Cluster_Writeview::getPatitionInvolvedNodes(const ClusterShardId & shardId, vector<NodeId> & participants){
+	// only those nodes that have a replica of this partition
+	ClusterShardId id;
+	bool isLocal;
+	ShardState state;
+	NodeId nodeId;
+	LocalPhysicalShard physicalShard;
+	double load;
+	ClusterShardIterator cShardItr(this);
+	cShardItr.beginClusterShardsIteration();
+	while(cShardItr.getNextClusterShard(id, load, state, isLocal, nodeId)){
+		if(state == SHARDSTATE_UNASSIGNED){
+			continue;
+		}
+		if(shardId.getPartitionId() == id.getPartitionId()){
+			if(std::find(participants.begin(), participants.end(), nodeId) == participants.end()){
+				participants.push_back(nodeId);
+			}
+		}
+	}
+	if(participants.size() == 0){
+		this->getArrivedNodes(participants, true);
+	}
+}
+
 void Cluster_Writeview::getFullUnassignedPartitions(vector<ClusterPID> & fullUnassignedPartitions ){
 
 	ClusterShardId id;

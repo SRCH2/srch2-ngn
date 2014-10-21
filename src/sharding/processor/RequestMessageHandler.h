@@ -87,7 +87,7 @@ public:
         	resultFlag = sendReply<SearchCommandResults>(internalDP.internalSearchCommand(target, clusterReadview, (SearchCommand*)requestObj), node, requestMessageId, clusterReadview);
         	break;
         case InsertUpdateCommandMessageType: // -> for Record object (used for insert and update)
-        	resultFlag = sendReply<CommandStatus>(internalDP.internalInsertUpdateCommand(target, clusterReadview, (InsertUpdateCommand*)requestObj), node, requestMessageId, clusterReadview);
+        	resultFlag = sendReply<CommandStatus>(internalDP.internalInsertUpdateCommand(target, clusterReadview, (WriteCommandNotification*)requestObj), node, requestMessageId, clusterReadview);
         	break;
         case DeleteCommandMessageType: // -> for DeleteCommandInput object (used for delete)
         	resultFlag = sendReply<CommandStatus>(internalDP.internalDeleteCommand(target, clusterReadview, (DeleteCommand *)requestObj), node, requestMessageId, clusterReadview);

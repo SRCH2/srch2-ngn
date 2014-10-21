@@ -25,11 +25,13 @@ namespace httpwrapper {
 
 class ClusterResourceMetadata_Readview;
 class Cluster_Writeview;
-class ClusterOperationStateMachine;
+class StateMachine;
 class ResourceLockManager ;
+class LockManager;
 class ResourceMetadataManager;
 class MigrationManager;
 struct ShardMigrationStatus;
+class ProducerInterface;
 
 /*
  * This class is the main responsible class to do operations on shards of data in the cluster.
@@ -44,12 +46,16 @@ public:
 	static NodeId getCurrentNodeId();
 	static Cluster_Writeview * getWriteview();
 	static void getReadview(boost::shared_ptr<const ClusterResourceMetadata_Readview> & readview);
-
+	static StateMachine * getStateMachine();
 	ShardManager(ConfigManager * configManager, ResourceMetadataManager * metadataManager);
 	~ShardManager();
 	void start();
 	void save(evhttp_request *req);
 	void shutdown(evhttp_request *req);
+
+	void insert(const unsigned coreId , evhttp_request *req);
+
+
 	void nodesInfo(evhttp_request *req);
 
 	void _shutdown();
@@ -67,6 +73,8 @@ public:
 	// callback provided to TransportManager, it deserializes the messages and passes them to
 	// notification resolve methods
 	bool resolveMessage(Message * msg, NodeId node);
+
+	bool handleBouncing(ShardingNotification * notif);
 
 
 	/*
@@ -87,6 +95,8 @@ public:
 	 */
 	// called from migration manager to inform us about the status of a migration
 	void resolveMMNotification(const ShardMigrationStatus & migrationStatus);
+	void registerMMSessionListener(const unsigned operationId, ProducerInterface * listener);
+
 
 	/*
 	 * IMPORTANT NOTE:
@@ -109,14 +119,23 @@ public:
 	void resolve(SaveMetadataNotification * saveDataNotif);
 	void resolve(MergeNotification * mergeNotification);
 
+	bool resolveLocal(ShardingNotification * request);
+
+
 	TransportManager * getTransportManager() const;
 	ConfigManager * getConfigManager() const;
 	ResourceMetadataManager * getMetadataManager() const;
 	ResourceLockManager * getLockManager() const;
-	ClusterOperationStateMachine * getStateMachine() const;
+	LockManagerExternalInterface * _getLockManager() const;
+	StateMachine * _getStateMachine() const;
+	StateMachine * getRecordOperationsStateMachine() const;
+	MigrationManager * getMigrationManager() const;
 	void initMigrationManager();
 	void attachToTransportManager(TransportManager * tm);
     boost::mutex shardManagerGlobalMutex;
+
+
+    void initFirstNode();
 
 	void setJoined();
 	bool isJoined() const;
@@ -148,13 +167,19 @@ private:
 	MigrationManager *migrationManager;
 
 	ResourceLockManager * lockManager;
+	LockManagerExternalInterface * _lockManager;
     ResourceMetadataManager * metadataManager;
 
 
 
-	ClusterOperationStateMachine * stateMachine;
+	StateMachine * stateMachine;
+
+	StateMachine * recordOperationsStateMachine;
 
 	vector<ShardingNotification *> bouncedNotifications;
+
+	// map from operatioId to MM listener
+	map<unsigned , ProducerInterface *> mmSessionListeners;
 
 	bool joinedFlag;
 	bool cancelledFlag;
@@ -171,8 +196,12 @@ private:
 	void saveBouncedNotification(ShardingNotification * notif);
 	void bounceNotification(ShardingNotification * notif);
 
+	static 	void * _resolveLocal(void * request);
+
+
 public:
 	void getNodeInfoJson(Json::Value & nodeInfo);
+
 
 };
 

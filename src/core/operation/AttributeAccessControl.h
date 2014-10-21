@@ -42,11 +42,6 @@ public:
 typedef map<string, PairOfAttrsListSharedPtr>::iterator AclMapIter;
 typedef map<string, PairOfAttrsListSharedPtr>::const_iterator AclMapConstIter;
 
-enum AclActionType {
-	ACL_REPLACE, // insert new acl
-	ACL_DELETE, // delete existing acl
-	ACL_APPEND  // append to existing acl
-};
 class AttributeAccessControl {
 public:
 	AttributeAccessControl(const SchemaInternal *schema) {

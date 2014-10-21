@@ -107,7 +107,8 @@ typedef enum {
 	HTTP_JSON_Search_Res_Format_Wrong_Error,
 	HTTP_JSON_Merge_Already_Done_Info,
 	HTTP_JSON_Commit_Already_Done_Info,
-	HTTP_JSON_Cluster_Not_Ready_Error
+	HTTP_JSON_Cluster_Not_Ready_Error,
+	HTTP_JSON_Merge_Parameter_Not_Recognized
 } HTTPJsonMessageCode;
 
 }

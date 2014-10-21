@@ -31,7 +31,7 @@ namespace httpwrapper {
 class ConfigManager;
 class Srch2Server;
 class SearchCommand;
-class InsertUpdateCommand;
+class WriteCommandNotification;
 class DeleteCommand;
 class SerializeCommand;
 class ResetLogCommand;
@@ -73,7 +73,7 @@ public:
      * internalInsertCommand and internalUpdateCommand
      */
     CommandStatus * internalInsertUpdateCommand(const NodeTargetShardInfo & target,
-    		boost::shared_ptr<const ClusterResourceMetadata_Readview> clusterReadview, InsertUpdateCommand * insertUpdateData);
+    		boost::shared_ptr<const ClusterResourceMetadata_Readview> clusterReadview, WriteCommandNotification * insertUpdateData);
 
     /*
      * 1. Receives a delete request from a shard and makes sure this

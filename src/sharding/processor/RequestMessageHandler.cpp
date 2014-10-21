@@ -41,8 +41,8 @@ bool RequestMessageHandler::resolveMessage(Message * msg, NodeId node){
     }
     case InsertUpdateCommandMessageType: // -> for Record object (used for insert and update)
     {
-    	InsertUpdateCommand* insertUpdateCommand =
-    			InsertUpdateCommand::deserialize(buffer,clusterReadview->getCore(target.getCoreId())->getSchema());
+    	WriteCommandNotification* insertUpdateCommand =
+    			WriteCommandNotification::deserialize(buffer,clusterReadview->getCore(target.getCoreId())->getSchema());
     	resultFlag = resolveMessage(insertUpdateCommand, node, msg->getMessageId(), target, msg->getType(), clusterReadview);
     	delete insertUpdateCommand;
     	break;
@@ -114,7 +114,7 @@ void RequestMessageHandler::deleteResponseRequestObjectBasedOnType(ShardingMessa
         delete (SearchCommand*)responseObject;
         return;
     case InsertUpdateCommandMessageType:
-    	delete (InsertUpdateCommand *)responseObject;
+    	delete (WriteCommandNotification *)responseObject;
     	return;
     case DeleteCommandMessageType:
     	delete (DeleteCommand *)responseObject;

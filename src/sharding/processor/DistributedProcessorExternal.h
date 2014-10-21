@@ -71,6 +71,8 @@ public:
 	 */
 	void externalInsertCommand(boost::shared_ptr<const ClusterResourceMetadata_Readview> clusterReadview,
 			evhttp_request *req, unsigned coreId);
+	void _externalInsertCommand(boost::shared_ptr<const ClusterResourceMetadata_Readview> clusterReadview,
+			evhttp_request *req, unsigned coreId);
 
 	/*
 	 * 1. Receives an update request from a client (not from another shard)

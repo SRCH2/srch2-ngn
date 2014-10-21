@@ -5,6 +5,7 @@
 #include "Notification.h"
 #include "../metadata_manager/ResourceMetadataChange.h"
 #include "core/util/SerializationHelper.h"
+#include "sharding/transport/Message.h"
 
 
 namespace srch2is = srch2::instantsearch;
@@ -24,6 +25,9 @@ public:
 	};
 	~CommitNotification(){
 	}
+
+	static bool resolveMessage(Message * msg, NodeId sendeNode);
+
 	MetadataChange * getMetadataChange() const;
 
 	void * serialize(void * buffer) const{
@@ -77,6 +81,8 @@ public:
 	    	return ShardingCommitACKMessageType;
 	    }
 	    bool operator==(const CommitNotification::ACK & right);
+
+		static bool resolveMessage(Message * msg, NodeId sendeNode);
 	};
 };
 

@@ -3,6 +3,7 @@
 
 #include "Notification.h"
 #include "core/util/SerializationHelper.h"
+#include "sharding/transport/Message.h"
 
 
 namespace srch2is = srch2::instantsearch;
@@ -17,6 +18,8 @@ public:
 	LoadBalancingReport(double load){
 		this->load = load;
 	};
+
+	static bool resolveMessage(Message * msg, NodeId sendeNode);
 
     ShardingMessageType messageType() const{
     	return ShardingLoadBalancingReportMessageType;
@@ -54,6 +57,7 @@ public:
 	    ShardingMessageType messageType() const{
 	    	return ShardingLoadBalancingReportRequestMessageType;
 	    }
+		static bool resolveMessage(Message * msg, NodeId sendeNode);
 	};
 };
 

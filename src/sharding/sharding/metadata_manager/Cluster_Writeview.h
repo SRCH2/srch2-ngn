@@ -189,8 +189,7 @@ public:
 	void removeNodeShard(const NodeShardId & nodeShardId);
 	void setNodeShardServer(const NodeShardId & nodeShardId, boost::shared_ptr<Srch2Server> server);
 
-
-
+	void getPatitionInvolvedNodes(const ClusterShardId & shardId, vector<NodeId> & participants);
 	// these partitions don't have write access yet.
 	void getFullUnassignedPartitions(vector<ClusterPID> & fullUnassignedPartitions );
 	// returns true if this partition has least one pending shard

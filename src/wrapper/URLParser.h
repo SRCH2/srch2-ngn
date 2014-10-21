@@ -38,6 +38,8 @@ public:
     static const char* const centerLongitudeParamName;
     static const char* const radiusParamName;
     static const char* const nameParamName;
+    static const char* const logNameParamName ;
+    static const char* const setParamName;
 };
 
 }

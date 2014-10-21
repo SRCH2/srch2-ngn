@@ -3,7 +3,9 @@
 #include "HTTPJsonResponse.h"
 #include "sharding/processor/DistributedProcessorExternal.h"
 #include "sharding/configuration/ConfigManager.h"
+#include "sharding/sharding/transactions/cluster_transactions/ShardCommandHttp.h"
 #include <exception>
+
 
 namespace srch2
 {
@@ -14,7 +16,9 @@ Srch2ServerGateway::PortInfo * Srch2ServerGateway::coreSpecificPorts = NULL;
 Srch2ServerGateway::PortInfo * Srch2ServerGateway::globalPorts = NULL;
 
 void Srch2ServerGateway::init(ConfigManager * serverConf){
-
+	// Ready to take off.
+	// We are going open to the outside world.
+	// Connecting to the Sharding core API_a (coreSpecificPorts[portType].callback)
 
 	coreSpecificPorts = new PortInfo[(unsigned)GlobalPortsStart + 1];
 	for (srch2http::PortType_t portType = (srch2http::PortType_t) 0;
@@ -83,19 +87,19 @@ void Srch2ServerGateway::cb_coreSpecificOperations(struct evhttp_request * req, 
     		dpExternal->externalUpdateCommand(clusterReadview, req, coreId);
     		break;
     	case srch2http::SavePort:
-    		srch2http::ShardManager::getShardManager()->save(req);
+    		ShardCommandHttpHandler::runCommand(clusterReadview, req, coreId, ShardCommandCode_SaveData_SaveMetadata);
     		break;
     	case srch2http::ExportPort:
-    		dpExternal->externalSerializeRecordsCommand(clusterReadview, req, coreId);
+    		ShardCommandHttpHandler::runCommand(clusterReadview, req, coreId, ShardCommandCode_Export);
     		break;
     	case srch2http::ResetLoggerPort:
-    		dpExternal->externalResetLogCommand(clusterReadview, req, coreId);
+    		ShardCommandHttpHandler::runCommand(clusterReadview, req, coreId, ShardCommandCode_ResetLogger);
     		break;
     	case srch2http::CommitPort:
-    		dpExternal->externalCommitCommand(clusterReadview, req, coreId);
+    		ShardCommandHttpHandler::runCommand(clusterReadview, req, coreId, ShardCommandCode_Commit);
     		break;
-    	case srch2http::MergePort:
-    		dpExternal->externalMergeCommand(clusterReadview, req, coreId);
+    	case srch2http::MergePort: // also includes mergeSetOn and mergeSetOff
+    		ShardCommandHttpHandler::runCommand(clusterReadview, req, coreId, ShardCommandCode_Merge);
     		break;
     	case srch2http::AttributeAclAdd:
     	case srch2http::AttributeAclDelete:

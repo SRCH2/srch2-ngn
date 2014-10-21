@@ -36,6 +36,8 @@ const char* const URLParser::centerLatitudeParamName = "ct_lat";
 const char* const URLParser::centerLongitudeParamName = "ct_lng";
 const char* const URLParser::radiusParamName = "radius";
 const char* const URLParser::nameParamName = "exported_data_file";
+const char* const URLParser::logNameParamName = "log_data_file";
+const char* const URLParser::setParamName = "set";
 
 // Schema will be used in Attribute-based search to set attribute bitmap.
 

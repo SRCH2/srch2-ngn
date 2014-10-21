@@ -99,6 +99,11 @@ typedef enum{
 	Acl_Record_Delete
 }RecordAclCommandType;
 
+enum AclActionType {
+	ACL_REPLACE, // insert new acl
+	ACL_DELETE, // delete existing acl
+	ACL_APPEND  // append to existing acl
+};
 /// Query constants
 // TODO : change getAllResults in the code to FindAllResults
 typedef enum

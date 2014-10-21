@@ -48,9 +48,9 @@ public:
 	virtual std::string toString() const = 0;
 	virtual bool isClusterShard() const = 0 ;
 	virtual bool isReplica(ShardId * shardId) const = 0;
-    void* serialize(void * buffer) const;
-    void * deserialize(void* buffer);
-    unsigned getNumberOfBytes() const;
+    void* serialize(void * buffer) const = 0;
+    void * deserialize(void* buffer) = 0;
+    unsigned getNumberOfBytes() const = 0;
 
 };
 
@@ -199,7 +199,7 @@ public:
 	vector<ClusterShardId> getTargetClusterShards() const;
 	vector<NodeShardId> getTargetNodeShards() const;
 
-    void* serialize(void * buffer);
+    void* serialize(void * buffer) const;
     unsigned getNumberOfBytes() const;
     void * deserialize(void* buffer);
 

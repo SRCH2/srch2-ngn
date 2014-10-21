@@ -109,7 +109,10 @@ private:
 	const NodeId failedNodeId;
 };
 
-
+// NOTE : the reason MigrationManager status report is
+//        a child of ShardingNotification is that we can
+//        use the API of this class to keep src and dest of
+//        this "data transfer"
 class MMNotification : public ShardingNotification{
 public:
 
@@ -132,20 +135,20 @@ private:
 
 class SaveDataNotification : public ShardingNotification {
 public:
+	SaveDataNotification(const NodeTargetShardInfo & info){
+		targets = info;
+	}
 	ShardingMessageType messageType() const{
 		return ShardingSaveDataMessageType;
 	}
-
-public:
-
-	class ACK : public ShardingNotification {
-	public:
-		ShardingMessageType messageType() const{
-			return ShardingSaveDataACKMessageType;
-		}
-	};
-
-};
+	static bool resolveMessage(Message * msg, NodeId sendeNode);
+    void * serialize(void * buffer) const;
+    unsigned getNumberOfBytes() const;
+    void * deserialize(void * buffer) ;
+    NodeTargetShardInfo & getTargets(){return targets;};
+private:
+	NodeTargetShardInfo targets;
+}; // ACK is StatusMessageType
 
 
 
@@ -154,29 +157,40 @@ public:
 	ShardingMessageType messageType() const{
 		return ShardingSaveMetadataMessageType;
 	}
-
-public:
-
-	class ACK : public ShardingNotification {
-	public:
-		ShardingMessageType messageType() const{
-			return ShardingSaveMetadataACKMessageType;
-		}
-	};
-
-};
+	static bool resolveMessage(Message * msg, NodeId sendeNode);
+}; // ACK is StatusMessageType
 
 class MergeNotification : public ShardingNotification {
 public:
+	MergeNotification(const MergeOperationType & opType = MergeOperationType_Merge,
+			const vector<ClusterShardId> & clusterShards = vector<ClusterShardId>(),
+			const vector<NodeShardId> & nodeShards = vector<NodeShardId>()):
+					operationType(opType){
+		this->clusterShardIds = clusterShards;
+		this->nodeShardIds = nodeShards;
+	}
 	ShardingMessageType messageType() const{
 		return ShardingMergeMessageType;
 	}
+	static bool resolveMessage(Message * msg, NodeId sendeNode);
+	MergeOperationType getMergeOperationType() const;
+    void * serialize(void * buffer) const;
+    unsigned getNumberOfBytes() const;
+    void * deserialize(void * buffer) ;
+private:
+	const MergeOperationType operationType;
+
+	// if merge flag is going to be set ON/OFF
+	// we need a list of shards for the node that this notification goes to
+	vector<ClusterShardId> clusterShardIds;
+	vector<NodeShardId> nodeShardIds;
 public:
 	class ACK : public ShardingNotification{
 	public:
 		ShardingMessageType messageType() const{
 			return ShardingMergeACKMessageType;
 		}
+		static bool resolveMessage(Message * msg, NodeId sendeNode);
 	};
 };
 
@@ -186,6 +200,7 @@ public:
 	ShardingMessageType messageType() const {
 		return ShardingShutdownMessageType;
 	}
+	static bool resolveMessage(Message * msg, NodeId sendeNode);
 };
 
 }

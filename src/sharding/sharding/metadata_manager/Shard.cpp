@@ -20,20 +20,6 @@ ShardId::ShardId(const ShardId & copy){
 	this->coreId = copy.coreId;
 }
 
-void* ShardId::serialize(void * buffer) const{
-	buffer = srch2::util::serializeFixedTypes(coreId, buffer);
-	return buffer;
-}
-void * ShardId::deserialize(void* buffer){
-	buffer = srch2::util::deserializeFixedTypes(buffer, coreId);
-	return buffer;
-}
-unsigned ShardId::getNumberOfBytes() const{
-	unsigned numberOfBytes = 0;
-	numberOfBytes += sizeof(coreId);
-	return numberOfBytes;
-}
-
 bool ClusterShardId::isPrimaryShard() const{
 	return (replicaId == 0); // replica #0 is always the primary shard
 }
@@ -118,7 +104,7 @@ ClusterShardId & ClusterShardId::operator=(const ClusterShardId & rhs){
 //serializes the object to a byte array and places array into the region
 //allocated by given allocator
 void* ClusterShardId::serialize(void * buffer) const{
-	buffer = ShardId::serialize(buffer);
+	buffer = srch2::util::serializeFixedTypes(coreId, buffer);
 	buffer = srch2::util::serializeFixedTypes(partitionId, buffer);
 	buffer = srch2::util::serializeFixedTypes(replicaId, buffer);
 	return buffer;
@@ -126,7 +112,7 @@ void* ClusterShardId::serialize(void * buffer) const{
 
 //given a byte stream recreate the original object
 void * ClusterShardId::deserialize(void* buffer){
-	buffer = ShardId::deserialize(buffer);
+	buffer = srch2::util::deserializeFixedTypes(buffer, coreId);
 	buffer = srch2::util::deserializeFixedTypes(buffer, partitionId);
 	buffer = srch2::util::deserializeFixedTypes(buffer, replicaId);
 	return buffer;
@@ -134,7 +120,7 @@ void * ClusterShardId::deserialize(void* buffer){
 
 unsigned ClusterShardId::getNumberOfBytes() const{
 	unsigned numberOfBytes = 0;
-	numberOfBytes += ShardId::getNumberOfBytes();
+	numberOfBytes += sizeof(coreId);
 	numberOfBytes += sizeof(unsigned);
 	numberOfBytes += sizeof(unsigned);
 	return numberOfBytes;
@@ -209,7 +195,7 @@ NodeShardId & NodeShardId::operator=(const NodeShardId & rhs){
 //serializes the object to a byte array and places array into the region
 //allocated by given allocator
 void* NodeShardId::serialize(void * buffer) const{
-	buffer = ShardId::serialize(buffer);
+	buffer = srch2::util::serializeFixedTypes(coreId, buffer);
 	buffer = srch2::util::serializeFixedTypes(nodeId, buffer);
 	buffer = srch2::util::serializeFixedTypes(partitionId, buffer);
 	return buffer;
@@ -217,7 +203,7 @@ void* NodeShardId::serialize(void * buffer) const{
 
 //given a byte stream recreate the original object
 void * NodeShardId::deserialize(void* buffer){
-	buffer = ShardId::deserialize(buffer);
+	buffer = srch2::util::deserializeFixedTypes(buffer, coreId);
 	buffer = srch2::util::deserializeFixedTypes(buffer, nodeId);
 	buffer = srch2::util::deserializeFixedTypes(buffer, partitionId);
 	return buffer;
@@ -225,7 +211,7 @@ void * NodeShardId::deserialize(void* buffer){
 
 unsigned NodeShardId::getNumberOfBytes() const{
 	unsigned numberOfBytes = 0;
-	numberOfBytes += ShardId::getNumberOfBytes();
+	numberOfBytes += sizeof(coreId);
 	numberOfBytes += sizeof(NodeId);
 	numberOfBytes += sizeof(unsigned);
 	return numberOfBytes;
@@ -389,7 +375,7 @@ vector<NodeShardId> NodeTargetShardInfo::getTargetNodeShards() const{
 
 //serializes the object to a byte array and places array into the region
 //allocated by given allocator
-void* NodeTargetShardInfo::serialize(void * bufferWritePointer){
+void* NodeTargetShardInfo::serialize(void * bufferWritePointer) const{
 
     bufferWritePointer = srch2::util::serializeFixedTypes(nodeId, bufferWritePointer);
     bufferWritePointer = srch2::util::serializeFixedTypes(coreId, bufferWritePointer);

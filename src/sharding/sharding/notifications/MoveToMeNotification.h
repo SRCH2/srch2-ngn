@@ -4,6 +4,7 @@
 #include "Notification.h"
 #include "../metadata_manager/Shard.h"
 #include "core/util/SerializationHelper.h"
+#include "sharding/transport/Message.h"
 
 namespace srch2is = srch2::instantsearch;
 using namespace srch2is;
@@ -20,6 +21,9 @@ public:
         this->shardId = shardId;
     }
 	MoveToMeNotification(){};
+
+
+	static bool resolveMessage(Message * msg, NodeId sendeNode);
 
 	void * serialize(void * buffer) const{
         buffer = ShardingNotification::serialize(buffer);
@@ -49,12 +53,15 @@ private:
     ClusterShardId shardId;
 
 public:
-	class START : public ShardingNotification {
+	class CleanUp : public ShardingNotification {
 	public:
-		START(const ClusterShardId & shardId){
+		CleanUp(const ClusterShardId & shardId){
 			this->shardId = shardId;
 		}
-		START(){};
+		CleanUp(){};
+
+		static bool resolveMessage(Message * msg, NodeId sendeNode);
+
 		ShardingMessageType messageType() const{
 			return ShardingMoveToMeStartMessageType;
 		}
@@ -75,7 +82,7 @@ public:
 			return buffer;
 		}
 
-		bool operator==(const MoveToMeNotification::START & right){
+		bool operator==(const MoveToMeNotification::CleanUp & right){
 			return shardId == right.shardId;
 		}
 
@@ -90,18 +97,22 @@ public:
 		ShardingMessageType messageType() const{
 			return ShardingMoveToMeACKMessageType;
 		}
+
+		static bool resolveMessage(Message * msg, NodeId sendeNode);
 	};
 	class FINISH : public ShardingNotification {
 	public:
 		ShardingMessageType messageType() const{
 			return ShardingMoveToMeFinishMessageType;
 		}
+		static bool resolveMessage(Message * msg, NodeId sendeNode);
 	};
 	class ABORT : public ShardingNotification {
 	public:
 		ShardingMessageType messageType() const{
 			return ShardingMoveToMeAbortMessageType;
 		}
+		static bool resolveMessage(Message * msg, NodeId sendeNode);
 	};
 };
 

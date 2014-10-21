@@ -24,6 +24,7 @@ SingleResourceLockRequest::SingleResourceLockRequest(const ClusterShardId & reso
 	this->holders = holders;
 	this->lockType = lockType;
 	this->requestType = ResourceLockRequestTypeLock;
+	this->primaryKey = "";
 }
 
 SingleResourceLockRequest::SingleResourceLockRequest(const ClusterShardId & resource,
@@ -31,6 +32,7 @@ SingleResourceLockRequest::SingleResourceLockRequest(const ClusterShardId & reso
 	this->resource = resource;
 	this->holders = holders;
 	this->requestType = ResourceLockRequestTypeRelease;
+	this->primaryKey = "";
 }
 
 // Lock
@@ -43,6 +45,7 @@ SingleResourceLockRequest::SingleResourceLockRequest(const ClusterShardId & reso
 	this->holders = holders;
 	this->lockType = lockType;
 	this->requestType = ResourceLockRequestTypeLock;
+	this->primaryKey = "";
 }
 
 // Release
@@ -53,6 +56,7 @@ SingleResourceLockRequest::SingleResourceLockRequest(const ClusterShardId & reso
 	this->resource = resource;
 	this->holders = holders;
 	this->requestType = ResourceLockRequestTypeRelease;
+	this->primaryKey = "";
 }
 
 SingleResourceLockRequest::SingleResourceLockRequest(const ClusterShardId & resource,ResourceLockRequestType requestType){
@@ -60,10 +64,46 @@ SingleResourceLockRequest::SingleResourceLockRequest(const ClusterShardId & reso
 	ASSERT(requestType == ResourceLockRequestTypeUpgrade ||
 			requestType == ResourceLockRequestTypeDowngrade);
 	this->requestType = requestType;
+	this->primaryKey = "";
+}
+
+//// Lock
+//SingleResourceLockRequest::SingleResourceLockRequest(const string & primaryKey,const vector<NodeOperationId> & holders,ResourceLockType lockType){
+//	this->primaryKey = primaryKey;
+//	this->holders = holders;
+//	this->lockType = lockType;
+//	this->requestType = RecordLockRequestType;
+//}
+//// Release
+//SingleResourceLockRequest::SingleResourceLockRequest(const string & primaryKey,const vector<NodeOperationId> & holders){
+//	ASSERT(primaryKey.compare("") != 0);
+//	this->primaryKey = primaryKey;
+//	this->holders = holders;
+//	this->requestType = RecordReleaseRequestType;
+//}
+// Lock
+SingleResourceLockRequest::SingleResourceLockRequest(const string & primaryKey,const NodeOperationId & holder,ResourceLockType lockType){
+	vector<NodeOperationId> holders;
+	holders.push_back(holder);
+	ASSERT(primaryKey.compare("") != 0);
+	this->primaryKey = primaryKey;
+	this->holders = holders;
+	this->lockType = lockType;
+	this->requestType = RecordLockRequestType;
+}
+// Release
+SingleResourceLockRequest::SingleResourceLockRequest(const string & primaryKey,const NodeOperationId & holder){
+	vector<NodeOperationId> holders;
+	holders.push_back(holder);
+	ASSERT(primaryKey.compare("") != 0);
+	this->primaryKey = primaryKey;
+	this->holders = holders;
+	this->requestType = RecordReleaseRequestType;
 }
 
 SingleResourceLockRequest::SingleResourceLockRequest(const SingleResourceLockRequest & copy){
 	this->resource = copy.resource;
+	this->primaryKey = copy.primaryKey;
 	this->lockType = copy.lockType;
 	this->requestType = copy.requestType;
 	this->holders = copy.holders;
@@ -71,11 +111,12 @@ SingleResourceLockRequest::SingleResourceLockRequest(const SingleResourceLockReq
 
 bool SingleResourceLockRequest::operator==(const SingleResourceLockRequest & right){
 	return (resource == right.resource) && (lockType == right.lockType)
-			&& (requestType == right.requestType) && (holders == right.holders);
+			&& (requestType == right.requestType) && (holders == right.holders) && primaryKey.compare(right.primaryKey) == 0;
 }
 
 void * SingleResourceLockRequest::serialize(void * buffer) const{
 	buffer = resource.serialize(buffer);
+	buffer = srch2::util::serializeString(primaryKey, buffer);
 	buffer = srch2::util::serializeFixedTypes(lockType, buffer);
 	buffer = srch2::util::serializeFixedTypes(requestType, buffer);
 	buffer = srch2::util::serializeVectorOfDynamicTypes(holders, buffer);
@@ -84,6 +125,7 @@ void * SingleResourceLockRequest::serialize(void * buffer) const{
 unsigned SingleResourceLockRequest::getNumberOfBytes() const{
 	unsigned numberOfBytes = 0;
 	numberOfBytes += resource.getNumberOfBytes();
+	numberOfBytes += primaryKey.size() + sizeof(unsigned);
 	numberOfBytes += sizeof(ResourceLockType);
 	numberOfBytes += sizeof(ResourceLockRequestType);
 	numberOfBytes += srch2::util::getNumberOfBytesVectorOfDynamicTypes(holders);
@@ -91,6 +133,7 @@ unsigned SingleResourceLockRequest::getNumberOfBytes() const{
 }
 void * SingleResourceLockRequest::deserialize(void * buffer){
 	buffer = resource.deserialize(buffer);
+	buffer = srch2::util::deserializeString(buffer, primaryKey);
 	buffer = srch2::util::deserializeFixedTypes(buffer, lockType);
 	buffer = srch2::util::deserializeFixedTypes(buffer, requestType);
 	buffer = srch2::util::deserializeVectorOfDynamicTypes(buffer, holders);
@@ -117,7 +160,7 @@ string SingleResourceLockRequest::toString() const{
 	case ResourceLockRequestTypeLock:
 		switch (lockType) {
 			case ResourceLockType_S:
-				ss << "S on " << resource.toString() ;
+				ss << "S on " << resource.toString();
 				break;
 			case ResourceLockType_X:
 				ss << "X on " << resource.toString() ;
@@ -143,86 +186,12 @@ string SingleResourceLockRequest::toString() const{
 	case ResourceLockRequestTypeDowngrade:
 		ss << "Dwngrd " << resource.toString();
 		break;
-	}
-	return ss.str();
-}
-
-ResourceLockRequest::ResourceLockRequest(){
-	this->isBlocking = false;
-}
-ResourceLockRequest::~ResourceLockRequest(){
-	for(unsigned i = 0; i < requestBatch.size(); ++i){
-		delete requestBatch.at(i);
-		requestBatch.at(i) = NULL;
-	}
-	requestBatch.clear();
-}
-
-ResourceLockRequest::ResourceLockRequest(const ResourceLockRequest & copy){
-	this->isBlocking = copy.isBlocking;
-	for(unsigned i = 0 ; i < copy.requestBatch.size() ; ++i){
-		this->requestBatch.push_back(new SingleResourceLockRequest(*(copy.requestBatch.at(i))));
-	}
-}
-
-bool ResourceLockRequest::applyNodeFailure(const unsigned failedNodeId){
-	// any lock request that all its single requests get deleted will return false.
-	vector<SingleResourceLockRequest *> requestBatchFixed;
-	for(unsigned i = 0 ; i < requestBatch.size() ; ++i){
-		if(requestBatch.at(i)->applyNodeFailure(failedNodeId)){
-			requestBatchFixed.push_back(requestBatch.at(i));
-		}else{
-			delete requestBatch.at(i);
-		}
-	}
-	if(requestBatchFixed.size() > 0){
-		requestBatch = requestBatchFixed;
-		return true;
-	}
-	requestBatch.clear();
-	return false;
-}
-bool ResourceLockRequest::operator==(const ResourceLockRequest & right){
-	if(isBlocking != right.isBlocking){
-		return false;
-	}
-	if(requestBatch.size() != right.requestBatch.size()){
-		return false;
-	}
-	for(unsigned i = 0 ; i < requestBatch.size(); ++i){
-		if(! ( *(requestBatch.at(i)) == *(right.requestBatch.at(i)))){
-			return false;
-		}
-	}
-	return true;
-}
-
-void * ResourceLockRequest::serialize(void * buffer) const{
-	buffer = srch2::util::serializeVectorOfDynamicTypePointers(requestBatch, buffer);
-	buffer = srch2::util::serializeFixedTypes(isBlocking, buffer);
-	return buffer;
-}
-unsigned ResourceLockRequest::getNumberOfBytes() const{
-	unsigned numberOfBytes = 0 ;
-	numberOfBytes += srch2::util::getNumberOfBytesVectorOfDynamicTypePointers(requestBatch);
-	numberOfBytes += sizeof(bool);
-	return numberOfBytes;
-}
-void * ResourceLockRequest::deserialize(void * buffer){
-	buffer = srch2::util::deserializeVectorOfDynamicTypePointers(buffer, requestBatch);
-	buffer = srch2::util::deserializeFixedTypes(buffer, isBlocking);
-	return buffer;
-}
-
-string ResourceLockRequest::toString() const{
-	stringstream ss;
-	if(isBlocking){
-		ss << "Blocking" << "%";
-	}else{
-		ss << "Non-Blocking" << "%";
-	}
-	for(unsigned i = 0; i < requestBatch.size(); ++i){
-		ss << requestBatch.at(i)->toString() << "%";
+	case RecordLockRequestType:
+		ss << "Lock PK(" << primaryKey << ")";
+		break;
+	case RecordReleaseRequestType:
+		ss << "Rls PK(" << primaryKey << ")";
+		break;
 	}
 	return ss.str();
 }
@@ -402,6 +371,7 @@ void * LockHoldersRepository::serialize(void * buffer) const{
 	buffer = serializeHolderList(buffer, S_Holders);
 	buffer = serializeHolderList(buffer, U_Holders);
 	buffer = serializeHolderList(buffer, X_Holders);
+	// we don't serialize record locks
 	return buffer;
 }
 unsigned LockHoldersRepository::getNumberOfBytes() const{
@@ -409,12 +379,14 @@ unsigned LockHoldersRepository::getNumberOfBytes() const{
 	numberOfBytes += getNumberOfBytesHolderList(S_Holders);
 	numberOfBytes += getNumberOfBytesHolderList(U_Holders);
 	numberOfBytes += getNumberOfBytesHolderList(X_Holders);
+	// we don't serialize record locks
 	return numberOfBytes;
 }
 void * LockHoldersRepository::deserialize(void * buffer){
 	buffer = deserializeHolderList(S_Holders, buffer);
 	buffer = deserializeHolderList(U_Holders, buffer);
 	buffer = deserializeHolderList(X_Holders, buffer);
+	// we don't serialize record locks
 	return buffer;
 }
 bool LockHoldersRepository::isFree(const ClusterShardId & resource) const{
@@ -531,6 +503,17 @@ void LockHoldersRepository::applyNodeFailure(const unsigned failedNodeId){
 	for(unsigned i = 0 ; i < holdersToRemove.size(); ++i){
 		X_Holders.erase(holdersToRemove.at(i));
 	}
+
+
+	// record locks
+	map<string,NodeOperationId> tempRecordLocks;
+	for(map<string,NodeOperationId>::iterator lockItr = recordXLockHolders.begin(); lockItr != recordXLockHolders.end(); ++lockItr){
+		if(lockItr->second.nodeId != failedNodeId){
+			tempRecordLocks[lockItr->first] = lockItr->second;
+		}
+	}
+	recordXLockHolders.clear();
+	recordXLockHolders = tempRecordLocks;
 }
 
 void LockHoldersRepository::printLockHolders(const map<ClusterShardId, vector<NodeOperationId> > & holders, const string & tableName) const{
@@ -559,10 +542,30 @@ void LockHoldersRepository::printLockHolders(const map<ClusterShardId, vector<No
 	}
 }
 
+void LockHoldersRepository::printRecordLockHolders() const{
+	if(recordXLockHolders.size() == 0){
+		return;
+	}
+	string tableName = "Record insetion/delete/update x locks : ";
+	vector<string> holderHeaders;
+	holderHeaders.push_back("Holders list");
+	vector<string> holderLabels;
+	for(map<string, NodeOperationId >::const_iterator lockTokenItr = recordXLockHolders.begin(); lockTokenItr != recordXLockHolders.end(); ++lockTokenItr){
+		holderLabels.push_back(lockTokenItr->first);
+	}
+	srch2::util::TableFormatPrinter lockTable(tableName, 120, holderHeaders, holderLabels);
+	lockTable.printColumnHeaders();
+	lockTable.startFilling();
+	for(map<string, NodeOperationId >::const_iterator lockedTokenItr = recordXLockHolders.begin(); lockedTokenItr != recordXLockHolders.end(); ++lockedTokenItr){
+		lockTable.printNextCell(lockedTokenItr->second.toString());
+	}
+}
+
 void LockHoldersRepository::print() const{
 	if(S_Holders.size() > 0 ||
 			U_Holders.size() > 0 ||
-			X_Holders.size() > 0){
+			X_Holders.size() > 0 ||
+			recordXLockHolders.size() > 0){
 		cout << "**************************************************************************************************" << endl;
 		cout << "Lock repository : " << endl;
 		cout << "**************************************************************************************************" << endl;
@@ -570,18 +573,21 @@ void LockHoldersRepository::print() const{
 	printLockHolders(S_Holders, "Resource S Lock% Holders");
 	printLockHolders(U_Holders, "Resource U Lock% Holders");
 	printLockHolders(X_Holders, "Resource X Lock% Holders");
+	printRecordLockHolders();
 }
 
 bool LockHoldersRepository::operator==(const LockHoldersRepository & right) const{
 	return (this->S_Holders == right.S_Holders)
 			&& (this->U_Holders == right.U_Holders)
-			&& (this->X_Holders == right.X_Holders);
+			&& (this->X_Holders == right.X_Holders)
+			&& (this->recordXLockHolders == this->recordXLockHolders);
 }
 
 void LockHoldersRepository::clear(){
 	S_Holders.clear();
 	U_Holders.clear();
 	X_Holders.clear();
+	recordXLockHolders.clear();
 }
 
 void * LockHoldersRepository::serializeHolderList(void * buffer,
@@ -801,6 +807,18 @@ bool ResourceLockManager::resolveBatch(const NodeOperationId & requesterAddress,
 }
 
 
+// it returns a map giving the result for each primaryKey in the lockRequest
+void ResourceLockManager::resolveRecordLockBatch(const NodeOperationId & requesterAddress, ResourceLockRequest * lockRequest, map<string, bool> & results){
+	for(unsigned i = 0; i < lockRequest->requestBatch.size(); ++i){
+		if(! canGrantRequest(*(lockRequest->requestBatch.at(i)))){
+			results[lockRequest->requestBatch.at(i)->primaryKey] = false;
+		}else{
+			executeRequest(*(lockRequest->requestBatch.at(i)));
+			results[lockRequest->requestBatch.at(i)->primaryKey] = true;
+		}
+	}
+}
+
 LockHoldersRepository * ResourceLockManager::getShardLockHolders(){
 	return lockHolders;
 }
@@ -983,6 +1001,12 @@ bool ResourceLockManager::canGrantRequest(const SingleResourceLockRequest & requ
 			return canUpgrade(request.resource, *lockHolders);
 		case ResourceLockRequestTypeDowngrade:
 			return canDowngrade(request.resource, *lockHolders);
+		case RecordLockRequestType:
+			canLock(request.primaryKey);
+			break;
+		case RecordReleaseRequestType:
+			canRelease(request.primaryKey);
+			break;
 		default:
 			ASSERT(false);
 			return false;
@@ -1005,6 +1029,12 @@ void ResourceLockManager::executeRequest(const SingleResourceLockRequest & reque
 		case ResourceLockRequestTypeDowngrade:
 			downgrade(request.resource, *lockHolders);
 			return;
+		case RecordLockRequestType:
+			lock(request.primaryKey, request.holders.at(0));
+			break;
+		case RecordReleaseRequestType:
+			release(request.primaryKey);
+			break;
 		default:
 			ASSERT(false);
 			return;
@@ -1053,10 +1083,19 @@ void ResourceLockManager::release(const ClusterShardId & shardId, const vector<N
 	return;
 }
 
+void ResourceLockManager::release(const string & primaryKey){
+	if(this->lockHolders->recordXLockHolders.find(primaryKey) != this->lockHolders->recordXLockHolders.end()){
+		this->lockHolders->recordXLockHolders.erase(primaryKey);
+	}
+}
+
 bool ResourceLockManager::canRelease(const ClusterShardId & shardId, LockHoldersRepository & lockRepository){
 	return true;
 }
 
+bool ResourceLockManager::canRelease(const string & primaryKey){
+	return true;
+}
 // returns false if it could not acquire the lock
 void ResourceLockManager::lock(ResourceLockType lockType, const ClusterShardId & resource,
 		const vector<NodeOperationId> & lockHolders, LockHoldersRepository & lockRepository){
@@ -1207,6 +1246,17 @@ void ResourceLockManager::lock_X(const ClusterShardId & resource, const vector<N
 	// 2. add lock holders to u list of this resource
 	lockRepository.X_Holders[resource] = lockHolders;
 	return;
+}
+
+void ResourceLockManager::lock(const string & primaryKey, const NodeOperationId & lockHolder){
+	ASSERT(canLock(primaryKey));
+	this->lockHolders->recordXLockHolders[primaryKey] = lockHolder;
+}
+bool ResourceLockManager::canLock(const string & primaryKey){
+	if(this->lockHolders->recordXLockHolders.find(primaryKey) != this->lockHolders->recordXLockHolders.end()){
+		return false;
+	}
+	return true;
 }
 
 }

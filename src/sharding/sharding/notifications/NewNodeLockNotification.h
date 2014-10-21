@@ -4,6 +4,7 @@
 #include "../notifications/Notification.h"
 #include "../metadata_manager/ResourceLocks.h"
 #include "core/util/SerializationHelper.h"
+#include "sharding/transport/Message.h"
 
 namespace srch2is = srch2::instantsearch;
 using namespace srch2is;
@@ -22,6 +23,9 @@ public:
 	NewNodeLockNotification(){};
 	~NewNodeLockNotification(){
 	};
+
+
+	static bool resolveMessage(Message * msg, NodeId senderNode);
 
 	void * serialize(void * buffer) const{
 		buffer = ShardingNotification::serialize(buffer);
@@ -60,6 +64,7 @@ public:
 		}
 		return *lockRequest == *(right.lockRequest);
 	}
+
 private:
 	vector<NodeId> allNodesUpToNewNode; // without the new one itself
 	ResourceLockRequest * lockRequest;
@@ -74,6 +79,10 @@ public:
 			this->shardLockRepository = shardLockRepository;
 		};
 		ACK(){};
+
+
+		static bool resolveMessage(Message * msg, NodeId sendeNode);
+
 		void * serialize(void * buffer) const{
 			buffer = ShardingNotification::serialize(buffer);
 			buffer = shardLockRepository->serialize(buffer);

@@ -121,11 +121,11 @@ void * DPInternalRequestHandler::searchInShardThreadWork(void * args){
  * internalInsertCommand and internalUpdateCommand
  */
 CommandStatus * DPInternalRequestHandler::internalInsertUpdateCommand(const NodeTargetShardInfo & target,
-		boost::shared_ptr<const ClusterResourceMetadata_Readview> clusterReadview, InsertUpdateCommand * insertUpdateData){
+		boost::shared_ptr<const ClusterResourceMetadata_Readview> clusterReadview, WriteCommandNotification * insertUpdateData){
 
     if(insertUpdateData == NULL){
         CommandStatus * status = NULL;
-    	if(insertUpdateData->getInsertOrUpdate() == InsertUpdateCommand::DP_INSERT){ // insert case
+    	if(insertUpdateData->getInsertOrUpdate() == WriteCommandNotification::DP_INSERT){ // insert case
     		status = new CommandStatus(CommandStatus::DP_INSERT);
     	}else{
     		status = new CommandStatus(CommandStatus::DP_UPDATE);
@@ -144,7 +144,7 @@ CommandStatus * DPInternalRequestHandler::internalInsertUpdateCommand(const Node
 		ShardInsertUpdateArgs * shardInsertUpdateArgs = new ShardInsertUpdateArgs(new Record(*(insertUpdateData->getRecord())),
 				shard->getSrch2Server().get(), shard->getShardIdentifier());
 		allShardsInsertArguments.push_back(shardInsertUpdateArgs);
-		if(insertUpdateData->getInsertOrUpdate() == InsertUpdateCommand::DP_INSERT){ // insert case
+		if(insertUpdateData->getInsertOrUpdate() == WriteCommandNotification::DP_INSERT){ // insert case
 			if (pthread_create(&shardInsertUpdateThreads[shardIdx], NULL, insertInShardThreadWork , shardInsertUpdateArgs) != 0){
 				perror("Cannot create thread for handling local message");
 				return NULL;
@@ -158,7 +158,7 @@ CommandStatus * DPInternalRequestHandler::internalInsertUpdateCommand(const Node
 	}
 
     CommandStatus * status = NULL;
-	if(insertUpdateData->getInsertOrUpdate() == InsertUpdateCommand::DP_INSERT){ // insert case
+	if(insertUpdateData->getInsertOrUpdate() == WriteCommandNotification::DP_INSERT){ // insert case
 		status = new CommandStatus(CommandStatus::DP_INSERT);
 	}else{
 		status = new CommandStatus(CommandStatus::DP_UPDATE);
