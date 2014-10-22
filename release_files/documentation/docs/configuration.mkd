@@ -712,14 +712,16 @@ The engine will load the sample data to build the indexes.
 
 Note that each RESTful request needs to use a proper [URL
 encoder](http://www.w3schools.com/tags/ref_urlencode.asp) to be
-converted to characters in a format that can be transmitted properly. 
+converted to characters in a format that can be transmitted properly.
+In addition, make sure to use quotes ("%22") for each search query.
 
 In a shell terminal, run the following command:
 
 ```
-shell> curl "http://localhost:8081/search?q=%E5%96%9C%E6%AC%A2"
+shell> curl "http://localhost:8081/search?q=%22%E5%96%9C%E6%AC%A2%22"
 ```
 
+If running in the browser, 
 You should see a record with the keyword "喜欢". 
 
 ####11.6.6.4 Insert a Record
@@ -732,7 +734,7 @@ shell> curl "http://localhost:8081/docs" -i -X PUT -d '{"id" : "300", "content" 
 Now search with the keyword "面食"
 
 ```
-shell> curl "http://localhost:8081/search?q=%E9%9D%A2%E9%A3%9F"
+shell> curl "http://localhost:8081/search?q=%22%E9%9D%A2%E9%A3%9F%22"
 ``` 
 The engine should return the newly inserted record.
 
