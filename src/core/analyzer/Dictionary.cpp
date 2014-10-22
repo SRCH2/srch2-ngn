@@ -60,7 +60,7 @@ int Dictionary::loadDict(const string &dictFilePath){
       return -1;      
     }
 
-    // uncrambled the frequency
+    // uncramble the frequency
     this->insert(word, unscrambleShort(scrambledFreq));
 
     wordNum ++;

@@ -73,7 +73,6 @@ void testDictionarySerializer()
   dict.loadDict(dictionarySerializedFile);
   for (int i = 0; i < words.size(); i ++) {
     short retrievedFreq = dict.getFreq(words[i]);
-    cout << "+ " << words[i] << " + " << retrievedFreq << " + " << freqs[i] << "\n";
     ASSERT(retrievedFreq == freqs[i]);
   }
 }
@@ -192,7 +191,6 @@ void testChineseAnalyzer(const string &dataDir){
         charVector = tokenStream->getProcessedToken();
         charTypeVectorToUtf8String(charVector, src);
         cout << src << endl;
-        cout << vectorString[i] << "===" << src << "\n"; // TODO
         ASSERT(vectorString[i] == src);
         i++;
     }
@@ -1227,7 +1225,6 @@ int buildChineseDictionary(const string & builder, const string & textFile, cons
         return -1;
     }
     string command = builder + " " + textFile + " " + outputBin;
-    cout << "Running system command: " << command << "\n";
     int ret = system(command.c_str());
     if (ret != 0){
         Logger::error("ChineseDictionaryBuilder run error.");

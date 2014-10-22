@@ -36,8 +36,8 @@ private:
     int mMaxWordLength;
     WordFrequencyMap mWordFrequencyMap;
 
-    const uint8_t SCRAMBLE_CHAR_MASK = 0x65; // mask used to scramble bytes
-    const uint16_t SCRAMBLE_SHORT_MASK = 0x710F; // mask used to scramble shorts
+#define SCRAMBLE_CHAR_MASK (0x65) // mask used to scramble bytes
+#define SCRAMBLE_SHORT_MASK (0x710F) // mask used to scramble shorts
  
     char scrambleChar(char oldChar);
     char unscrambleChar(char oldChar);
