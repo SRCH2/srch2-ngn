@@ -726,13 +726,13 @@ You should see a record with the keyword "喜欢".
 
 The following request adds a record to the indexes.
 ```
-shell> curl "http://localhost:8081/docs" -i -X PUT -d '{"id" : "300", "content" : "搜索引擎的自动信息搜集功能分两种"}'
+shell> curl "http://localhost:8081/docs" -i -X PUT -d '{"id" : "300", "content" : "饺子，又名（水饺）起源于东汉中原宛城，是古老的汉族传统面食，深受中国广大人民喜爱的食品。"}'
 ```
 
-Now search with the keyword "信息"
+Now search with the keyword "面食"
 
 ```
-shell> curl "http://localhost:8081/search?q=%E4%BF%A1%E6%81%AF"
+shell> curl "http://localhost:8081/search?q=%E9%9D%A2%E9%A3%9F"
 ``` 
 The engine should return the newly inserted record.
 
@@ -741,7 +741,7 @@ The engine should return the newly inserted record.
 The following request will update the content of the newly inserted record.
 
 ```
-shell>  curl "http://localhost:8081/update" -i -X PUT -d '{"id" : "300", "content" : "搜索引擎分类部分提到过全文搜索引擎从网站提取信息建立网页数据库的概念"}'
+shell>  curl "http://localhost:8081/update" -i -X PUT -d '{"id" : "300", "content" : "饺子是一种有馅的半圆形或半月形、角形的面食。"}'
 ```
 
 Wait for about 4 seconds for the server to make the change, then do the above search query again. The engine should return this updated record.
