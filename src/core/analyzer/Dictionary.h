@@ -38,6 +38,7 @@ private:
 
 #define SCRAMBLE_CHAR_MASK (0x65) // mask used to scramble bytes
 #define SCRAMBLE_SHORT_MASK (0x710F) // mask used to scramble shorts
+#define DICTIONARY_LEADING_KEY (1894704) // unique identifier for SRCH2 dictionaries
  
     char scrambleChar(char oldChar);
     char unscrambleChar(char oldChar);

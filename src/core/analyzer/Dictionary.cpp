@@ -21,6 +21,18 @@ int Dictionary::loadDict(const string &dictFilePath){
     return -1;
   }  
 
+  // load the leading key at the beginning of the file
+  int leadingKey;
+  if (fread(&leadingKey, 1, sizeof(leadingKey), fp) != sizeof(leadingKey)) {
+    Logger::error("Error while reading the file %s ", dictFilePath.c_str());
+    return -1;      
+  }
+
+  if (leadingKey != DICTIONARY_LEADING_KEY) {
+    Logger::error("Wrong dictonary file ", dictFilePath.c_str());
+    return -1;      
+  }
+
   // load mMaxWordLength
   if (fread(&mMaxWordLength, 1, sizeof(mMaxWordLength), fp) 
       != sizeof(mMaxWordLength)) {
@@ -50,7 +62,10 @@ int Dictionary::loadDict(const string &dictFilePath){
     string word;
     char ch;
     for (int i = 0; i < len; i ++) {
-      ch = fgetc(fp);
+      if (fread(&ch, 1, sizeof(ch), fp) != sizeof(ch)) {
+        Logger::error("Error while reading the file %s ", dictFilePath.c_str());
+        return -1;      
+      }
       word.append(1, unscrambleChar(ch));
     }
 
@@ -98,6 +113,10 @@ bool Dictionary::saveDict(const string &dictFilePath){
     if (fp == NULL)
         return false;
 
+    // write the leading key at the beginning of the file
+    int leadingKey = DICTIONARY_LEADING_KEY;
+    fwrite(&leadingKey, 1, sizeof(leadingKey), fp);
+
     // save mMaxWordLength
     fwrite (&mMaxWordLength, 1, sizeof(mMaxWordLength), fp);
 
@@ -116,7 +135,8 @@ bool Dictionary::saveDict(const string &dictFilePath){
 
       // serialize the scrambled bytes in the string
       for (int i = 0; i < len; i ++) {
-        fputc(scrambleChar(word[i]), fp);
+        char ch = scrambleChar(word[i]);
+        fwrite(&ch, 1, sizeof(ch), fp);
       }
 
       short scrambledFreq = scrambleShort(freq);
