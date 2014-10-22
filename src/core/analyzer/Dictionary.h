@@ -19,8 +19,8 @@ public:
 
     Dictionary();
 
-    int loadDict(const std::string &dictFilePath);
     bool saveDict(const std::string &dictFilePath);
+    int loadDict(const std::string &dictFilePath);
 
     short getFreq(const std::vector<CharType> &buffer, unsigned istart, unsigned length) const;
     short getFreq(const std::string &str) const;
@@ -35,6 +35,15 @@ private:
 
     int mMaxWordLength;
     WordFrequencyMap mWordFrequencyMap;
+
+    const uint8_t SCRAMBLE_CHAR_MASK = 0x65; // mask used to scramble bytes
+    const uint16_t SCRAMBLE_SHORT_MASK = 0x710F; // mask used to scramble shorts
+ 
+    char scrambleChar(char oldChar);
+    char unscrambleChar(char oldChar);
+    short scrambleShort(short oldShort);
+    short unscrambleShort(short oldShort);
+
 protected:
 	friend class boost::serialization::access;
 
