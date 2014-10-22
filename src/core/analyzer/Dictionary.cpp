@@ -29,7 +29,7 @@ int Dictionary::loadDict(const string &dictFilePath){
   }
 
   if (leadingKey != DICTIONARY_LEADING_KEY) {
-    Logger::error("Wrong dictonary file ", dictFilePath.c_str());
+    Logger::error("Wrong dictionary file ", dictFilePath.c_str());
     return -1;      
   }
 
