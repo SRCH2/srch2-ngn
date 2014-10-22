@@ -671,6 +671,86 @@ instance, the string "海边城市" will be tokenized as "海","边","城",
 and "市".  The SRCH2 Chinese dictionary is a binary file named as
 "srch2_dictionary_zh_cn.bin" inside the "srch2_data" folder. 
 
+The following part of this section describes how to use SRCH2 to do text search in Chinese language.
+Download a <a href=../example-demo/chinese-data.json>sample data file</a> to a local folder to run the demo. 
+
+####11.6.6.1 Configure SRCH2
+Download a sample  <a href="../example-demo/srch2-config-chinese.xml">configuration file</a> for the SRCH2 engine.  
+Find the following line inside the <i>config</i> element to specify the path of sample data file.
+```
+<dataFile>../example-demo/chinese-data.json</dataFile>
+```
+
+Find the following lines inside the <i>config</i> element to specify information about Chinese dictionary, stop words and protected words:
+
+```
+    <types>
+        <fieldType name="text_chinese" dictionary="../srch2_data/srch2_dictionary_zh_cn.bin"> 
+            <analyzer>
+                <filter name="StopFilter" words="../srch2_data/srch2_stop_words_zh_cn.txt" />
+                <filter name="protectedKeyWordsFilter" words="../srch2_data/srch2_protected_words.txt" />
+            </analyzer> 
+        </fieldType>
+    </types>
+```
+
+####11.6.6.2 Start SRCH2 Engine
+
+Go to the install folder of SRCH2 and run the following command to start the SRCH2 engine:
+
+```
+/home/joe/srch2/example-demo> ../bin/srch2-engine --config-file=./srch2-config-chinese.xml
+```
+
+The engine will load the sample data to build the indexes.
+
+####11.6.6.3 Search 
+
+Note that each RESTful request needs to use a proper [URL encoder](http://www.w3schools.com/tags/ref_urlencode.asp) to be converted to characters in a format that can be transmitted properly.
+
+In a shell terminal, run the following command:
+
+```
+shell> curl "http://localhost:8081/search?q=%E5%96%9C%E6%AC%A2"
+```
+
+You should see the record with the keyword "喜欢". 
+
+####11.6.6.4 Insert a Record
+
+The following request adds a record to the indexes.
+```
+shell> curl "http://localhost:8081/docs" -i -X PUT -d '{"id" : "300", "content" : "搜索引擎的自动信息搜集功能分两种"}'
+```
+
+Now search with the keyword "信息"
+
+```
+shell> curl "http://localhost:8081/search?q=%E4%BF%A1%E6%81%AF"
+``` 
+The SRCH2 engine should return the newly inserted record.
+
+####11.6.6.5 Update a Record
+
+The following request will update the content of the newly inserted record.
+
+```
+shell>  curl "http://localhost:8081/update" -i -X PUT -d '{"id" : "300", "content" : "搜索引擎分类部分提到过全文搜索引擎从网站提取信息建立网页数据库的概念"}'
+```
+
+Wait for about 4 seconds for the SRCH2 server to make the change, then do the above search query again. The SRCH2 engine should return this updated record.
+
+####11.6.6.6 Delete a Record
+
+Run the following command to delete the updated record:
+```
+shell> curl "http://localhost:8081/docs?id=300" -i -X DELETE
+```
+
+Do the above search query again. The SRCH2 engine should not return the record that we just deleted.
+
+For more information about SRCH2 RESTful API, please see [RESTful Search](restful-search.mkd) and [RESTful Update](restful-insert-update-delete.mkd)
+
 ##12. Logging
 
 The following tag includes parameters related to logging by the SRCH2 engine.
