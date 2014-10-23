@@ -193,7 +193,7 @@ ENDIF()
 #  4.  SQLServer connector 
 #
 
-IF(NOT ANDROID)
+IF(LINUX_OS)
     FILE(GLOB_RECURSE SQLSERVER_CONNECTOR_SRC RELATIVE ${CMAKE_CURRENT_SOURCE_DIR} "sqlserver/*.cpp" "util/*.cpp" "../src/core/util/Logger.cpp")
 
     INCLUDE_DIRECTORIES(

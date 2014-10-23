@@ -55,11 +55,21 @@ Author: Chen Liu, Oct. 2014
 
 5. Enable the Change Tracking for the target Database and the Table (for eache table , this step is needed only once):
 
-   On windows, open the MS SQL Server Management Studio.
-   Select the target database, right click on the database, choose Properties->Change Tracking, enable the Change Tracking for this database.
-   Selete the target table, right click on the table, choose Properties->Change Tracking, enable the Change Tracking for this table.
-   You can also enable the table Change Tracking by the following query:
-   sql> ALTER TABLE table_name ENABLE CHANGE_TRACKING WITH (TRACK_COLUMNS_UPDATED = ON)
+   For MS SQL Server Management Studio:
+      On windows, open the MS SQL Server Management Studio.
+      Select the target database, right click on the database, choose Properties->Change Tracking, enable the Change Tracking for this database.
+      Selete the target table, right click on the table, choose Properties->Change Tracking, enable the Change Tracking for this table.
+   For MS SQL Shell: 
+      sql@admin 1> CREATE LOGIN srch2 WITH PASSWORD = 'srch2'
+      sql@admin 2> go
+      sql@admin 1> CREATE DATABASE demo
+      sql@admin 2> go
+      sql@admin 1> USE demo
+      sql@admin 2> go
+      sql@admin 1> CREATE USER srch2 FOR LOGIN srch2
+      sql@admin 2> go
+      sql@admin 1> GRANT ALTER,CONTROL TO srch2
+      sql@admin 2> go
 
 6. shell> cd srch2-ngn/test/wrapper/system_tests
    Set the SQL Server dataSource, server, database name, table name, username and password in adapter_sqlserver/conf.xml.
