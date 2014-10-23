@@ -229,7 +229,7 @@ def connectToDB():
         conn = pyodbc.connect('DRIVER={'+str(dataSource)+'};SERVER='+str(server)+';DATABASE='+str(dbName)+';UID='+str(myUserName)+';PWD='+str(myPassword)+';')
     except Exception, exc: 
         print 'Access denied while connecting to the SQL Server database. Make sure the IP Address is correct and set the SQL Server user name and password in ./adapter_sqlserver/conf.xml'
-        os._exit(-2)
+        os._exit(-1)
     finally:
         signal.alarm(0)
 

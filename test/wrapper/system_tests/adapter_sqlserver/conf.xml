@@ -100,10 +100,10 @@
 				<dbSharedLibraryName>libsqlserverConnector</dbSharedLibraryName>
 				<dbKeyValues>
 					<dbKeyValue key="dataSource" value="ODBC Driver 11 for SQL Server" />
-					<dbKeyValue key="server" value="192.168.1.16" />
-					<dbKeyValue key="user" value="liusrch2" />
-					<dbKeyValue key="dbName" value="srch2Test" />
-					<dbKeyValue key="password" value="19890213" />
+					<dbKeyValue key="server" value="192.168.1.18" />
+					<dbKeyValue key="user" value="srch2" />
+					<dbKeyValue key="dbName" value="demo" />
+					<dbKeyValue key="password" value="srch2" />
 					<dbKeyValue key="tableName" value="COMPANY" />
 					<dbKeyValue key="listenerWaitTime" value="3" />
 				</dbKeyValues>
