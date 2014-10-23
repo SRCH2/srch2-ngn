@@ -24,5 +24,6 @@ sudo ln -s libcrypto.so.0.9.8 libcrypto.so.6
 sudo sh -c "echo /usr/loacl/lib >> /etc/ld.so.conf"
 sudo ldconfig
 
-cd $CURRENTDIR
+echo $MSSQLDIR
+cd $MSSQLDIR
 sudo bash ./install.sh install --force
