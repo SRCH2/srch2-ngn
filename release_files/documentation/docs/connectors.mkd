@@ -549,7 +549,7 @@ shell> sudo make install
 ```
 ####5.1.2. To install MS ODBC Driver 11 for SQL Server for Ubuntu:
 
-Download the driver for ReadHat5 Linux on the website : http://www.microsoft.com/en-us/download/details.aspx?id=36437
+Download the driver for RedHat5 Linux from the website [here](http://www.microsoft.com/en-us/download/details.aspx?id=36437) and run the following commands:
 
 ```
 shell> tar -xvf msodbcsql*.tar.gz
