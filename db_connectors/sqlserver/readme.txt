@@ -14,13 +14,12 @@ Author: Chen Liu, Oct. 2014
       shell> ./configure --disable-gui --disable-drivers --enable-iconv --with-iconv-char-enc=UTF8 --with-iconv-ucode-enc=UTF16LE
       shell> make
       shell> sudo make install
-    To install MS ODBC Driver 11 for SQL Server for Ubuntu, download the driver for ReadHat Linux on the website : http://www.microsoft.com/en-us/download/details.aspx?id=36437
-    Choose the RedHat5 and Download it. 
-    Unpack the driver archive. 
+    To install MS ODBC Driver 11 for SQL Server for Ubuntu, download the driver for ReadHat5 Linux on the website : http://www.microsoft.com/en-us/download/details.aspx?id=36437
+      shell> tar -xvf msodbcsql*.tar.gz
       shell> cd msodbcsql*
       shell> lib64
       shell> ldd libmsodbcsql*
-    Fine the lines that have "not found". The next step is to install these missing dependencies. The general approach is to enter the library name in the Ubuntu Package Search(packages.ubuntu.com)
+    Find the lines that have "not found". The next step is to install these missing dependencies. The general approach is to enter the library name in the Ubuntu Package Search(packages.ubuntu.com)
     To find the libcrypto.so.6 and libssl.so.6, download and install the package libss10.9.8.
       shell> cd /usr/lib
       shell> sudo ln -s libssl.so.0.9.8 libssl.so.6
@@ -31,7 +30,7 @@ Author: Chen Liu, Oct. 2014
       shell> sudo bash ./install.sh install --force
     To test the installation,
       shell> sqlcmd -S localhost
-    You should get and error message indicating a network error.
+    You should get an error message indicating a network error.
 
 2. Install thirdparty libraries:
 

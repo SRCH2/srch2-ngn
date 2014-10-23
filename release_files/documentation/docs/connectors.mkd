@@ -504,5 +504,250 @@ shell> curl "http://localhost:8081/search?q=Kim"
 ```
 The SRCH2 engine should not return the deleted record.
 
-Besides MongoDB, SQLite, and MySQL, we are developing connectors for
+
+##5. Search in MS SQL Server
+
+This section describes how to use SRCH2 to do text search on
+[SQL Server](http://www.microsoft.com/en-us/server-cloud/products/sql-server/).The following figure illustrates how
+a SRCH2 connector interacts with a SQL Server table.  In the configuration
+file of SRCH2, a user specifies a SQL Server data source with information
+such as host name, port number, and table name.  The SRCH2 engine will
+load the SQL Server connector (as a shared library called
+"libsqlserverConnector"), which will read the records from the table, and
+insert the records into the SRCH2 engine. 
+
+<span ><center><img style="float: center" width="60%" src="../images/sqlserver-connector.png" /></center></span>
+
+###5.1. Setup SQL Server Driver for Linux
+
+Follow the instructions at [here](http://msdn.microsoft.com/en-us/library/hh568451%28v=sql.110%29.aspx) to install SQL Server Driver:
+
+Notice that Microsoft only officially support RedHat Linux and SUSE Linux, for other Linux platforms, we need to do some modification.
+
+For Ubuntu:  
+
+Download the <a href="../example-demo/srch2-install-sqlserver-odbc-ubuntu.sh">script</a> to automatically
+get the required packages and execute the commands to setup the SQL Server Driver for Ubuntu by the following command: 
+```
+shell> sudo ./srch2-install-sqlserver-odbc-ubuntu.sh
+```
+
+Or you can follow the steps in section 5.1 to manually setup the Driver for Ubuntu.
+####5.1.1. To install unixODBC(ODBC Driver Manager for Linux) :
+```
+shell> sudo apt-get remove libodbc1 unixodbc unixodbc-dev
+shell> wget ftp://ftp.unixodbc.org/pub/unixODBC/unixODBC-2.3.2.tar.gz
+shell> tar -xvf unixODBC-2.3.2.tar.gz
+shell> cd unixODBC-2.3.2
+```
+Open the file <tt>configure</tt> and search for the ```LIB_VERSION="2:0:0"```, change it to ```LIB_VERSION="1:0:0"```
+
+```
+shell> ./configure --disable-gui --disable-drivers --enable-iconv --with-iconv-char-enc=UTF8 --with-iconv-ucode-enc=UTF16LE
+shell> make
+shell> sudo make install
+```
+####5.1.2. To install MS ODBC Driver 11 for SQL Server for Ubuntu:
+
+Download the driver for ReadHat5 Linux on the website : http://www.microsoft.com/en-us/download/details.aspx?id=36437
+
+```
+shell> tar -xvf msodbcsql*.tar.gz
+shell> cd msodbcsql*
+shell> cd lib64
+shell> ldd libmsodbcsql*
+```
+
+Find the lines that have "not found". The next step is to install these missing dependencies.
+To find the libcrypto.so.6 and libssl.so.6, download and install the package libssl0.9.8.
+The general approach is to enter the library name in the [Ubuntu Package Search](http://packages.ubuntu.com/) or use [Synaptic](http://www.nongnu.org/synaptic/).
+Then run the following commands :
+```
+shell> cd /usr/lib
+shell> sudo ln -s libssl.so.0.9.8 libssl.so.6
+shell> sudo ln -s libcrypto.so.0.9.8 libcrypto.so.6
+```
+To find the libodbc.so.1, add path /usr/loacl/lib to the end of file /etc/ld.so.conf, then run the following command :
+```
+shell> sudo ldconfig
+```
+Once all the dependencies are met. Run the following command to install MS SQL Server Driver:
+```
+hell> sudo bash ./install.sh install --force
+```
+To test the installation:
+```
+shell> sqlcmd -S localhost
+```
+You should get an error message indicating a network error because there is no SQL Server instance on the local machine.
+
+###5.2. Populate SQL Server
+
+Log in with administrator account or run the following commands on windows to create an temp account ```srch2``` for database ```demo```:
+
+```
+sql@admin 1> CREATE LOGIN srch2 WITH PASSWORD = 'srch2'
+sql@admin 2> go
+sql@admin 1> CREATE DATABASE demo
+sql@admin 2> go
+sql@admin 1> USE demo
+sql@admin 2> go
+sql@admin 1> CREATE USER srch2 FOR LOGIN srch2
+sql@admin 2> go
+sql@admin 1> GRANT ALTER,CONTROL TO srch2
+sql@admin 2> go
+```
+
+Log in with the demo account ```srch2``` on Linux machine.
+
+Create a temp table ```COMPANY``` and enable [Change Tracking](http://msdn.microsoft.com/en-us/library/bb933875.aspx) for the database ```demo``` and table ```COMPANY```:
+
+```
+shell> sqlcmd -S address -U srch2 -P srch2
+1> USE demo
+2> go
+1> CREATE TABLE COMPANY(ID CHAR(50) PRIMARY KEY NOT NULL, NAME CHAR(50) NOT NULL, AGE CHAR(50) NOT NULL, ADDRESS CHAR(50), SALARY CHAR(50))
+2> go
+1> ALTER DATABASE demo
+2> SET CHANGE_TRACKING = ON
+3> (CHANGE_RETENTION = 2 DAYS, AUTO_CLEANUP = ON)
+4> go
+1> ALTER TABLE COMPANY
+2> ENABLE CHANGE_TRACKING
+3> WITH (TRACK_COLUMNS_UPDATED = ON)
+4> go
+```
+
+Insert sample data into the table COMPANY by the following commands:
+
+```
+1> INSERT INTO COMPANY (ID,NAME,AGE,ADDRESS,SALARY)VALUES (1, 'Paul', 32, 'California', 20000.00 )
+2> INSERT INTO COMPANY (ID,NAME,AGE,ADDRESS,SALARY)VALUES (2, 'Allen', 25, 'Texas', 15000.00 )
+3> INSERT INTO COMPANY (ID,NAME,AGE,ADDRESS,SALARY)VALUES (3, 'Teddy', 23, 'Norway', 20000.00 )
+4> INSERT INTO COMPANY (ID,NAME,AGE,ADDRESS,SALARY) VALUES (4, 'Mark', 25, 'Rich-Mond ', 65000.00 )
+5> INSERT INTO COMPANY (ID,NAME,AGE,ADDRESS,SALARY) VALUES (5, 'David', 27, 'Texas', 85000.00 )
+6> INSERT INTO COMPANY (ID,NAME,AGE,ADDRESS,SALARY) VALUES (6, 'Kim', 22, 'South-Hall', 45000.00 )
+7> go
+```
+
+Later you can drop the user, table and database by commands:
+```
+sql@admin 1> IF EXISTS (SELECT * FROM sys.database_principals WHERE name = N'srch2') DROP USER [srch2]
+sql@admin 2> go
+sql@admin 1> DROP TABLE COMPANY
+sql@admin 2> go
+sql@admin 1> DROP DATABASE demo
+sql@admin 2> go
+```
+
+To check if the data has been loaded, run following commands:
+```
+1> SELECT * FROM COMPANY
+2> go
+
+| ID | NAME  | AGE | ADDRESS    | SALARY |
+|  1 | Paul  |  32 | California |  20000 |
+|  2 | Allen |  25 | Texas      |  15000 |
+|  3 | Teddy |  23 | Norway     |  20000 |
+|  4 | Mark  |  25 | Rich-Mond  |  65000 |
+|  5 | David |  27 | Texas      |  85000 |
+|  6 | Kim   |  22 | South-Hall |  45000 |
+
+```
+As shown above, there should be six records in the "COMPANY" table.
+
+###5.3. Configure SRCH2
+
+Download a sample <a href="../example-demo/srch2-config-sqlserver.xml">configuration file</a> for the SRCH2 engine.  Find the following lines inside the <i>config</i> element to specify information about this SQL Server data source:
+ 
+```
+    <dataSourceType>2</dataSourceType>
+    <dbParameters>
+        <dbSharedLibraryPath>db_connectors/</dbSharedLibraryPath>
+        <dbSharedLibraryName>libsqlserverConnector</dbSharedLibraryName>
+        <dbKeyValues>
+            <dbKeyValue key="dataSource" value="ODBC Driver 11 for SQL Server" />
+            <dbKeyValue key="server" value="sqlserver_address" />
+            <dbKeyValue key="user" value="srch2" />
+            <dbKeyValue key="dbName" value="demo" />
+            <dbKeyValue key="password" value="srch2" />
+            <dbKeyValue key="tableName" value="COMPANY" />
+            <dbKeyValue key="listenerWaitTime" value="3" />
+        </dbKeyValues>
+    </dbParameters>
+```
+
+These parameters are similar to those used in the MongoDB connector. 
+The ```dataSource``` is the name of MS SQL Server Driver name in the file ```/usr/local/etc/odbcinst.ini```.
+Notice that the engine requires a shared library
+called "libsqlserverConnector" for SQL Server, which is included in the package.  Change the parameters if needed.  Make sure that you have also set the "srch2Home" variable in the SRCH2 configuration file. All other paths mentioned in the configuration file are relative to the "srch2Home" folder.
+
+###5.4. Start SRCH2 Engine
+
+Go to the install folder of SRCH2 and run the following:
+
+```
+ /home/joe/srch2/example-demo> ../bin/srch2-engine --config-file=./srch2-config-sqlserver.xml
+```
+
+The engine will use a SQL Server connector to read the data from the SQL Server
+database, build indexes, and wait for queries. It also starts a thread
+that listens to the latest changes from the database and adds these changes to its indexes. 
+
+###5.5. Search
+
+In a terminal, run the following command:
+
+```
+shell> curl "http://localhost:8081/search?q=paul"
+```
+You should see a record with the keyword "Paul".
+
+###5.6. Insert a Record
+
+In the SQL Server shell, run the following command to insert a new record.
+```
+shell> sqlcmd -S 192.168.1.16 -U srch2 -P srch2
+1> USE demo
+2> go
+1> INSERT INTO COMPANY (ID,NAME,AGE,ADDRESS,SALARY) VALUES (7, 'Joe', 20, 'Nevada', 15000.00 )
+2> go
+```
+
+Wait for about 4 seconds for the SRCH2 server to save the change. Do the search query:
+```
+shell> curl "http://localhost:8081/search?q=joe"
+```
+The search engine should return this newly inserted record. 
+
+###5.7. Update a Record
+
+We want to update Kim's address from "South-Hall" to "Texas" by running the following command:
+```
+1> UPDATE COMPANY SET ADDRESS = 'Texas' WHERE ID = 6
+2> go
+```
+
+Wait for about 4 seconds for the SRCH2 server to save the change, then do the search query:
+```
+shell> curl "http://localhost:8081/search?q=kim"
+```
+The SRCH2 engine should be able to return this updated record, with "Texas" as the <i>ADDRESS</i> value.
+
+###5.8. Delete a Record
+
+Run the following command in the SQL Server shell to delete the updated record:
+```
+1> DELETE FROM COMPANY WHERE ID = 6
+2> go
+```
+
+Again, wait for about 4 seconds for the SRCH2 server to save the change, then do the above search query:
+
+```
+shell> curl "http://localhost:8081/search?q=Kim"
+```
+The SRCH2 engine should not return the deleted record.
+
+Besides MongoDB, SQLite, MySQL and SQL Server, we are developing connectors for
 other data sources.
