@@ -390,7 +390,6 @@ void ShardManager::resolveMMNotification(const ShardMigrationStatus & migrationS
 	boost::unique_lock<boost::mutex> shardManagerGlobalLock(shardManagerGlobalMutex);
 
 	if(mmSessionListeners.find(migrationStatus.srcOperationId) == mmSessionListeners.end()){
-		ASSERT(false);
 		return;
 	}
 	mmSessionListeners.find(migrationStatus.srcOperationId)->second->consume(migrationStatus);
