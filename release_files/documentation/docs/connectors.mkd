@@ -575,6 +575,7 @@ Download a sample <a href="../example-demo/srch2-config-sqlserver.xml">configura
             <dbKeyValue key="password" value="srch2" />
             <dbKeyValue key="tableName" value="COMPANY" />
             <dbKeyValue key="listenerWaitTime" value="3" />
+            <dbKeyValue key="sqlServerMaxColumnLength" value="1024" />
         </dbKeyValues>
     </dbParameters>
 ```
@@ -582,6 +583,13 @@ Download a sample <a href="../example-demo/srch2-config-sqlserver.xml">configura
 These parameters are similar to those used in other connectors. 
 The ```dataSource``` is the name of MS SQL Server Driver name in the
 file ```/usr/local/etc/odbcinst.ini```. 
+The ```sqlServerMaxColumnLength``` is the max length of the column in the table attribute.
+For example, the table is created by the following query:
+```
+CREATE TABLE COMPANY(ID CHAR(10) PRIMARY KEY NOT NULL, NAME CHAR(50) NOT NULL, AGE INT NOT NULL, ADDRESS CHAR(250), SALARY REAL)
+```
+Then the ```sqlServerMaxColumnLength``` should be set to 250. The default ```sqlServerMaxColumnLength``` is 1024 if not set.   
+
 Notice that the engine requires a shared library
 called "libsqlserverConnector" for SQL Server, which is included in
 the package.  Change the parameters if needed.  Make sure that you

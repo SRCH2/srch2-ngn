@@ -36,6 +36,7 @@ private:
     SQLHDBC hdbc;
 
     int listenerWaitTime;
+    int sqlServerMaxColumnLength;
     ServerInterface *serverHandle;
 
     //Storing the table schema information

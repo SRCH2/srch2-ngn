@@ -106,6 +106,7 @@
 					<dbKeyValue key="dbName" value="demo" />
 					<dbKeyValue key="tableName" value="COMPANY" />
 					<dbKeyValue key="listenerWaitTime" value="3" />
+					<dbKeyValue key="sqlServerMaxColumnLength" value="1024" />
 				</dbKeyValues>
 			</dbParameters>
 

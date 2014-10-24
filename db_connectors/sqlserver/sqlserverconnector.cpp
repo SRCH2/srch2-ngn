@@ -15,7 +15,7 @@
 #include "json/json.h"
 #include <fstream>
 
-#define SQLSERVER_DEFAULT_MAX_RECORD_LEN (1024)
+#define SQLSERVER_DEFAULT_MAX_COLUMN_LEN (1024)
 
 using namespace std;
 using srch2::util::Logger;
@@ -26,6 +26,7 @@ SQLServerConnector::SQLServerConnector() {
     henv = 0;
     hdbc = 0;
     lastAccessedLogRecordChangeVersion = -1;
+    sqlServerMaxColumnLength = SQLSERVER_DEFAULT_MAX_COLUMN_LEN;
 }
 
 //Initialize the connector. Establish a connection to the SQL Server.
@@ -39,6 +40,20 @@ int SQLServerConnector::init(ServerInterface *serverHandle) {
     if (listenerWaitTimeStr.size() == 0 || listenerWaitTime == 0) {
         listenerWaitTime = 1;
     }
+
+    //Get SQLSERVER_MAX_RECORD_LEN from the config file.
+    std::string sqlServerMaxColumnLengthStr;
+    this->serverHandle->configLookUp("sqlServerMaxColumnLength",
+            sqlServerMaxColumnLengthStr);
+    sqlServerMaxColumnLength = static_cast<int>(strtol(
+            sqlServerMaxColumnLengthStr.c_str(),
+            NULL, 10));
+    if (sqlServerMaxColumnLengthStr.size() == 0
+            || sqlServerMaxColumnLength == 0) {
+        sqlServerMaxColumnLength = SQLSERVER_DEFAULT_MAX_COLUMN_LEN;
+    }
+    //Add one for '\0'
+    sqlServerMaxColumnLength++;
 
     /*
      * 1. Check if the config file has all the required parameters.
@@ -215,7 +230,7 @@ bool SQLServerConnector::checkConfigValidity() {
 //For example: table emp(id, name, age, salary).
 //The schema vector will contain {id, name, age, salary}
 bool SQLServerConnector::populateTableSchema(std::string & tableName) {
-    SQLCHAR * sSchema = new SQLCHAR[DEFAULT_RECORD_LEN];
+    SQLCHAR * sSchema = new SQLCHAR[sqlServerMaxColumnLength];
     SQLRETURN retcode;
     SQLHSTMT hstmt;
 
@@ -239,8 +254,9 @@ bool SQLServerConnector::populateTableSchema(std::string & tableName) {
         }
 
         //Bind columns
-        retcode = SQLBindCol(hstmt, 1, SQL_C_CHAR, sSchema, DEFAULT_RECORD_LEN,
-        NULL);
+        retcode = SQLBindCol(hstmt, 1, SQL_C_CHAR, sSchema,
+                sqlServerMaxColumnLength,
+                NULL);
 
         //Fetch and save each row of schema. On an error, display a message and exit.
         bool sqlErrorFlag = false;
@@ -284,7 +300,7 @@ int SQLServerConnector::createNewIndexes() {
     vector<SQLCHAR *> sqlRecord;
 
     for (int i = 0; i < fieldNames.size(); i++) {
-        SQLCHAR * sqlCol = new SQLCHAR[DEFAULT_RECORD_LEN];
+        SQLCHAR * sqlCol = new SQLCHAR[sqlServerMaxColumnLength];
         sqlRecord.push_back(sqlCol);
     }
 
@@ -311,8 +327,8 @@ int SQLServerConnector::createNewIndexes() {
         for (vector<SQLCHAR *>::iterator it = sqlRecord.begin();
                 it != sqlRecord.end(); ++it) {
             retcode = SQLBindCol(hstmt, colPosition++, SQL_C_CHAR, *it,
-            DEFAULT_RECORD_LEN,
-            NULL);
+                    sqlServerMaxColumnLength,
+                    NULL);
         }
         bool sqlErrorFlag = false;
         while (1) {
@@ -342,7 +358,8 @@ int SQLServerConnector::createNewIndexes() {
                 if (serverHandle->insertRecord(jsonString) == 0) {
                     indexedRecordsCount++;
                 }
-                Logger::debug("SQLSERVERCONNECTOR: Line %d %s", __LINE__, jsonString.c_str());
+                Logger::debug("SQLSERVERCONNECTOR: Line %d %s", __LINE__,
+                        jsonString.c_str());
                 if (indexedRecordsCount && (indexedRecordsCount % 1000) == 0)
                     Logger::info(
                             "SQLSERVERCONNECTOR: Indexed %d records so far ...",
@@ -397,7 +414,7 @@ int SQLServerConnector::runListener() {
     vector<SQLCHAR *> sqlRecord;
     vector<SQLLEN> sqlCallBack;
     for (int i = 0; i < fieldNames.size() + 3; i++) {
-        SQLCHAR * sqlCol = new SQLCHAR[DEFAULT_RECORD_LEN];
+        SQLCHAR * sqlCol = new SQLCHAR[sqlServerMaxColumnLength];
         sqlRecord.push_back(sqlCol);
         sqlCallBack.push_back(0);
     }
@@ -414,11 +431,28 @@ int SQLServerConnector::runListener() {
          * Create the prepared select statement. Because the SRCH2 engine only
          * supports atomic primary keys but not compound primary keys, here we
          * assume the primary key of the table only has one attribute.
+         *
+         * A example of this query is :
+         * SELECT SYS_CHANGE_VERSION, SYS_CHANGE_OPERATION, CT.ID, t.ID, t.Name
+         * , t.Address, t.Salary
+         * FROM CHANGETABLE(CHANGES COMPANY , ?)CT left outer join COMPANY as t
+         * on CT.ID = t.ID
+         *
+         * SYS_CHANGE_VERSION is the "timestamp" which increase automatically
+         * for each transaction happens in table COMPANY.
+         *
+         * SYS_CHANGE_OPERATION has 3 options, 'I', 'D', 'U', which represent
+         * INSERT, DELETE, and UPDATE sequentially.
+         *
+         * CT.[uniqueKey] is the primary key of record changed in the table COMPANY.
+         *
+         * The reason using LEFT OUTER JOIN is to handle the DELETE operation,
+         * since the record will be removed from the table COMPANY.
          */
         sql.str("");
-        sql << "SELECT SYS_CHANGE_VERSION, SYS_CHANGE_OPERATION, CT.ID";
+        sql << "SELECT SYS_CHANGE_VERSION, SYS_CHANGE_OPERATION, CT."
+                << uniqueKey;
 
-        //TODO add comments
         for (vector<string>::iterator it = fieldNames.begin();
                 it != fieldNames.end(); ++it) {
             sql << ", t." << *it;
@@ -437,7 +471,7 @@ int SQLServerConnector::runListener() {
         for (vector<SQLCHAR *>::iterator it = sqlRecord.begin();
                 it != sqlRecord.end(); ++it) {
             retcode = SQLBindCol(hstmt, colPosition++,
-            SQL_C_CHAR, *it, DEFAULT_RECORD_LEN, &(*itCallBack++));
+            SQL_C_CHAR, *it, sqlServerMaxColumnLength, &(*itCallBack++));
         }
         /*
          * Loop for the run listener, the loop will be executed every
@@ -453,7 +487,7 @@ int SQLServerConnector::runListener() {
 
             retcode = SQLBindParameter(hstmt, 1, SQL_PARAM_INPUT,
             SQL_C_CHAR,
-            SQL_CHAR, DEFAULT_RECORD_LEN, 0,
+            SQL_CHAR, sqlServerMaxColumnLength, 0,
                     (SQLPOINTER) lastAccessedLogRecordChangeVersionStr.c_str(),
                     lastAccessedLogRecordChangeVersionStr.size(), NULL);
 
@@ -594,7 +628,7 @@ void SQLServerConnector::populateLastAccessedLogRecordTime() {
             << tableName << ", 0)CT";
 
     SQLHSTMT hstmt;
-    SQLCHAR * changeVersion = new SQLCHAR[DEFAULT_RECORD_LEN];
+    SQLCHAR * changeVersion = new SQLCHAR[sqlServerMaxColumnLength];
     do {
         // Allocate statement handle
         if (!allocateSQLHandle(hstmt)) {
@@ -608,7 +642,7 @@ void SQLServerConnector::populateLastAccessedLogRecordTime() {
 
         SQLLEN callBack = 0;
         SQLRETURN retcode = SQLBindCol(hstmt, 1, SQL_C_CHAR, changeVersion,
-        DEFAULT_RECORD_LEN, &callBack);
+                sqlServerMaxColumnLength, &callBack);
 
         retcode = SQLFetch(hstmt);
         if (retcode == SQL_SUCCESS || retcode == SQL_SUCCESS_WITH_INFO) {
