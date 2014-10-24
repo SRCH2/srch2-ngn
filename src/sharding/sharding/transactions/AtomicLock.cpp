@@ -110,7 +110,7 @@ bool AtomicLock::condition(SP(ShardingNotification) reqArg, SP(ShardingNotificat
 	SP(LockingNotification) req = boost::dynamic_pointer_cast<LockingNotification>(reqArg);
 	SP(LockingNotification::ACK) res = boost::dynamic_pointer_cast<LockingNotification::ACK>(resArg);
 
-	if(req == NULL || res == NULL){
+	if(! req || ! res){
 		ASSERT(false);
 		recover();
 		return false;
