@@ -344,6 +344,7 @@ static bool checkOperationPermission(evhttp_request *req, Srch2Server *srch2Serv
         { srch2http::AclAppendRecordsForRole, "clAppendRecordsForRole"},
         { srch2http::AclDeleteRecordsForRole, "aclDeleteRecordsForRole"},
 		#endif
+        { srch2http::FeedbackPort, "feedback"},
         { srch2http::EndOfPortType, NULL },
     };
 
@@ -429,6 +430,9 @@ static void cb_single_core_operator_route(evhttp_request *req, void *arg){
                 break;
             case srch2http::ResetLoggerPort:
     	        HTTPRequestHandler::resetLoggerCommand(req, srch2Server);
+                break;
+            case srch2http::FeedbackPort:
+    	        HTTPRequestHandler::feedback(req, srch2Server);
                 break;
             case srch2http::AttributeAclReplace:
             case srch2http::AttributeAclDelete:
@@ -858,6 +862,7 @@ static int startServers(ConfigManager *config, vector<struct event_base *> *evBa
             { "/aclRecordRoleReplace", srch2http::RecordAclReplace, cb_single_core_operator_route},
             { "/aclRecordRoleAppend", srch2http::RecordAclAppend, cb_single_core_operator_route},
             { "/aclRecordRoleDelete", srch2http::RecordAclDelete, cb_single_core_operator_route},
+            { "/feedback", srch2http::FeedbackPort, cb_single_core_operator_route},
 			#if 0
             { "/aclAddRecordsForRole", srch2http::AclAddRecordsForRole, cb_single_core_operator_route},
             { "/aclAppendRecordsForRole", srch2http::AclAppendRecordsForRole, cb_single_core_operator_route},

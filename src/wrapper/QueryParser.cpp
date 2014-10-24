@@ -289,6 +289,7 @@ void QueryParser::mainQueryParser() { // TODO: change the prototype to reflect i
             /*
              * At this point we should first extract the AND/OR/NOT parse tree
              */
+        	originalQueryString  = mainQueryStr;
             bool parsed = parseBooleanExpression( mainQueryStr, this->container->parseTreeRoot );
             if(parsed == false){
                 Logger::info(

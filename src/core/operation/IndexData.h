@@ -346,7 +346,7 @@ public:
     INDEXWRITE_RETVAL _recoverRecord(const std::string &externalRecordId, unsigned internalRecordId);
 
     // check if a record exists
-    INDEXLOOKUP_RETVAL _lookupRecord(const std::string &externalRecordId) const;
+    INDEXLOOKUP_RETVAL _lookupRecord(const std::string &externalRecordId, unsigned& internalRecordId) const;
 
     // build the index. After commit(), no more records can be added
     INDEXWRITE_RETVAL finishBulkLoad();

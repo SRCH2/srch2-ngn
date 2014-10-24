@@ -6,7 +6,7 @@
 #include "QueryEvaluatorInternal.h"
 #include "physical_plan/FilterQueryOperator.h"
 #include "util/Logger.h"
-
+#include  "physical_plan/FeedbackRankingOperator.h"
 namespace srch2 {
 namespace instantsearch {
 
@@ -308,6 +308,22 @@ void QueryOptimizer::injectRequiredSortOperators(vector<PhysicalPlanOptimization
             sortByScoreOp->addChild(*treeOption);
             *treeOption = sortByScoreOp;
         }
+
+    	// inject FeedbackRanking operator which affects the score before sortByScore operator
+    	FeedbackRankingOptimizationOperator *feedbackRankingOp =
+    			this->queryEvaluator->getPhysicalOperatorFactory()->createFeedbackRankingOptimizationOperator();
+    	feedbackRankingOp->setLogicalPlanNode((*treeOption)->getLogicalPlanNode());
+        if ((*treeOption)->getType() == PhysicalPlanNode_SortByScore) {
+        	feedbackRankingOp->addChild((*treeOption)->getChildAt(0));
+        	(*treeOption)->addChild(feedbackRankingOp);
+        } else {
+        	feedbackRankingOp->addChild((*treeOption));
+            SortByScoreOptimizationOperator * sortByScoreOp =
+                    this->queryEvaluator->getPhysicalOperatorFactory()->createSortByScoreOptimizationOperator();
+            sortByScoreOp->setLogicalPlanNode((*treeOption)->getLogicalPlanNode());
+            sortByScoreOp->addChild(feedbackRankingOp);
+            *treeOption = sortByScoreOp;
+        }
     }
 }
 
@@ -554,6 +570,14 @@ PhysicalPlanNode * QueryOptimizer::buildPhysicalPlanFirstVersionFromTreeStructur
             LogicalPlanPhraseNode * phraseLogicalNode = reinterpret_cast<LogicalPlanPhraseNode *>(logPlanNode);
             executableResult = (PhysicalPlanNode *)this->queryEvaluator->getPhysicalOperatorFactory()->createPhraseSearchOperator(phraseLogicalNode->getPhraseInfo());
             break;
+        }
+        case PhysicalPlanNode_FeedbackRanker:
+        {
+        	PhysicalOperatorFactory * operatorFactory = this->queryEvaluator->getPhysicalOperatorFactory();
+        	optimizationResult = (PhysicalPlanOptimizationNode *)this->queryEvaluator->getPhysicalOperatorFactory()->createFeedbackRankingOptimizationOperator();
+        	executableResult = (PhysicalPlanNode *)operatorFactory->createFeedbackRankingOperator(
+        			logicalPlan->orignalQueryString, this->queryEvaluator->getFeedbackIndex());
+        	break;
         }
         default:
             ASSERT(false);

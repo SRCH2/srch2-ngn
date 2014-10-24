@@ -151,7 +151,11 @@ INDEXWRITE_RETVAL IndexReaderWriter::recoverRecord(const std::string &primaryKey
     return returnValue;
 }
 
-INDEXLOOKUP_RETVAL IndexReaderWriter::lookupRecord(const std::string &primaryKeyID)
+INDEXLOOKUP_RETVAL IndexReaderWriter::lookupRecord(const std::string &primaryKeyID) {
+	unsigned internalRecordId;
+	return lookupRecord(primaryKeyID, internalRecordId);
+}
+INDEXLOOKUP_RETVAL IndexReaderWriter::lookupRecord(const std::string &primaryKeyID, unsigned& internalRecordId)
 {
     // although it's a read-only OP, since we need to check the writeview
     // we need to acquire the writelock
@@ -159,7 +163,7 @@ INDEXLOOKUP_RETVAL IndexReaderWriter::lookupRecord(const std::string &primaryKey
 
     pthread_mutex_lock(&lockForWriters);
     
-    INDEXLOOKUP_RETVAL returnValue = this->index->_lookupRecord(primaryKeyID);
+    INDEXLOOKUP_RETVAL returnValue = this->index->_lookupRecord(primaryKeyID, internalRecordId);
 
     pthread_mutex_unlock(&lockForWriters);
 
@@ -238,6 +242,8 @@ INDEXWRITE_RETVAL IndexReaderWriter::merge(bool updateHistogram)
     struct timespec tstart;
     clock_gettime(CLOCK_REALTIME, &tstart);
 
+    this->userFeedbackIndex->merge();
+
     INDEXWRITE_RETVAL returnValue = this->index->_merge(updateHistogram);
 
     struct timespec tend;
@@ -261,6 +267,7 @@ IndexReaderWriter::IndexReaderWriter(IndexMetaData* indexMetaData, Analyzer *ana
                                       schema,
                                       srch2::instantsearch::DISABLE_STEMMER_NORMALIZER
                                       );
+     this->userFeedbackIndex = new FeedbackIndex();
      this->initIndexReaderWriter(indexMetaData);
      // start merge threads after commit
  }
@@ -269,6 +276,7 @@ IndexReaderWriter::IndexReaderWriter(IndexMetaData* indexMetaData)
 {
     // LOAD Index
     this->index = IndexData::load(indexMetaData->directoryName);
+    this->userFeedbackIndex = new FeedbackIndex();
     this->initIndexReaderWriter(indexMetaData);
     //this->startMergerThreads();
 }

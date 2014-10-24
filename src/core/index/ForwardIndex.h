@@ -868,7 +868,7 @@ public:
             unsigned internalRecordId);
 
     INDEXLOOKUP_RETVAL lookupRecord(
-            const std::string &externalRecordId) const;
+            const std::string &externalRecordId, unsigned& internalRecordId) const;
 
     void reassignKeywordIds(shared_ptr<vectorview<ForwardListPtr> > & forwardListDirectoryReadView,
     		const unsigned recordId,

@@ -1508,11 +1508,11 @@ bool ForwardIndex::recoverRecord(const std::string &externalRecordId,
 
 // check if a record with a specific internal id exists
 INDEXLOOKUP_RETVAL ForwardIndex::lookupRecord(
-        const std::string &externalRecordId) const {
+        const std::string &externalRecordId, unsigned& internalRecordId) const {
     if (externalRecordId.empty())
         return LU_ABSENT_OR_TO_BE_DELETED;
 
-    unsigned internalRecordId;
+
     bool isInMap = this->externalToInternalRecordIdMap.getValue(externalRecordId , internalRecordId);
 
     if(isInMap == false){

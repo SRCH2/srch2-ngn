@@ -54,7 +54,7 @@ class HTTPRequestHandler
         static void aclAddRecordsForRole(evhttp_request *req, Srch2Server *server);
         static void aclAppendRecordsForRole(evhttp_request *req, Srch2Server *server);
         static void aclDeleteRecordsForRole(evhttp_request *req, Srch2Server *server);
-
+        static void feedback(evhttp_request *req, Srch2Server *server);
 
 	private:
 
@@ -104,7 +104,8 @@ class HTTPRequestHandler
 				const QueryResults *queryResults);
 		static void aclModifyRecordsForRole(evhttp_request *req, Srch2Server *server, srch2::instantsearch::RecordAclCommandType commandType);
 		static void aclModifyRolesForRecord(evhttp_request *req, Srch2Server *server, srch2::instantsearch::RecordAclCommandType commandType);
-
+		static bool processSingleFeedback(const Json::Value& doc,
+				Srch2Server *server, Json::Value& feedbackResponse);
 };
 
 }

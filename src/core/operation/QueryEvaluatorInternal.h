@@ -51,6 +51,7 @@ class IndexReaderWriter;
 class InvertedIndex;
 class PhysicalOperatorFactory;
 class PhysicalPlanRecordItemFactory;
+class FeedbackIndex;
 /**
  * QueryEvaluatorInternal is the implementation of QueryEvaluator.
  */
@@ -148,6 +149,8 @@ public:
     		PrefixActiveNodeSet * activeNodes,
     		unsigned numberOfSuggestionsToReturn ,
     		std::vector<SuggestionInfo > & suggestionPairs) const;
+    FeedbackIndex * getFeedbackIndex();
+    string orignalQueryString;
 private:
     const IndexData *indexData;
     IndexReaderWriter *indexer;

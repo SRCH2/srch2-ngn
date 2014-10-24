@@ -44,6 +44,9 @@ class MergeTopKOptimizationOperator;
 class FilterQueryOperator;
 class FilterQueryOptimizationOperator;
 class PhysicalOperatorFactory;
+class FeedbackRankingOperator;
+class FeedbackRankingOptimizationOperator;
+class FeedbackIndex;
 
 /*
  * The following two operators are used for verifying a term/record match using forward index.
@@ -628,6 +631,8 @@ public:
 	GeoNearestNeighborOptimizationOperator * createGeoNearestNeighborOptimizationOperator();
 	GeoSimpleScanOperator * createGeoSimpleScanOperator();
 	GeoSimpleScanOptimizationOperator * createGeoSimpleScanOptimizationOperator();
+	FeedbackRankingOperator* createFeedbackRankingOperator(const string &query, const FeedbackIndex * feedbackIndex);
+	FeedbackRankingOptimizationOperator* createFeedbackRankingOptimizationOperator();
 
 
 private:

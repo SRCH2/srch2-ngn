@@ -96,7 +96,7 @@ public:
     // localparamter related variables end
     bool isParsedError; // true -> there was error while parsing, false parsing was successful. no erros. Warnings may still be present.
     bool isSearchTypeSet; // whether the searchType has been set or not.
-
+    string originalQueryString;
 private:
 
     ParsedParameterContainer * container;

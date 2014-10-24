@@ -158,7 +158,7 @@ public:
 	bool shouldRunFuzzyQuery;
 	Query *exactQuery;
 	Query *fuzzyQuery;
-
+	string orignalQueryString;
     // constructs a term logical plan node
     LogicalPlanNode * createTermLogicalPlanNode(const std::string &queryKeyword,
     		TermType type,

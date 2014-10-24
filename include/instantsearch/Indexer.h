@@ -40,7 +40,7 @@ class Schema;
 class Record;
 class GlobalCache;
 class AttributeAccessControl;
-
+class FeedbackIndex;
 class IndexMetaData
 {
 public:
@@ -137,7 +137,11 @@ public:
       Check if a record exists */
     virtual INDEXLOOKUP_RETVAL lookupRecord(const std::string &primaryKeyID) = 0;
 
+    virtual INDEXLOOKUP_RETVAL lookupRecord(const std::string &primaryKeyID, unsigned& internalId) = 0;
+
     virtual uint32_t getNumberOfDocumentsInIndex() const = 0;
+
+    virtual FeedbackIndex* getFeedbackIndexer() = 0;
 
     virtual const std::string getIndexHealth() const = 0;
 

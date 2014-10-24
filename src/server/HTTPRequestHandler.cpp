@@ -31,6 +31,7 @@
 #include "util/RecordSerializer.h"
 #include "util/RecordSerializerUtil.h"
 #include "DataConnectorThread.h"
+#include "index/FeedbackIndex.h"
 
 #define SEARCH_TYPE_OF_RANGE_QUERY_WITHOUT_KEYWORDS 2
 
@@ -1344,6 +1345,146 @@ void decodeAmpersand(const char *uri, unsigned len, string& decodeUri) {
 	}
 }
 
+bool HTTPRequestHandler::processSingleFeedback(const Json::Value& doc,
+		Srch2Server *server, Json::Value& feedbackResponse) {
+
+	Json::Value query = doc.get("query", Json::Value());
+	Json::Value recordId = doc.get("recordId", Json::Value());
+
+	if (query.type()  != Json::stringValue) {
+		std::stringstream log_str;
+		log_str << "API : feedback, Error: 'query' key is missing in request JSON.";
+		feedbackResponse = log_str.str();
+		return false;
+	}
+	string queryString = query.asString();
+	boost::algorithm::trim(queryString);
+	if (queryString.size() == 0) {
+		std::stringstream log_str;
+		log_str << "API : feedback, Error: 'query' key is empty in request JSON.";
+		feedbackResponse = log_str.str();
+		return false;
+	}
+	if (recordId.type() != Json::stringValue) {
+		std::stringstream log_str;
+		log_str << "API : feedback, Error: 'recordId' key is missing in request JSON.";
+		feedbackResponse = log_str.str();
+		return false;
+	}
+	string recordIdString = recordId.asString();
+	boost::algorithm::trim(recordIdString);
+	if (recordIdString.size() == 0) {
+		std::stringstream log_str;
+		log_str << "API : feedback, Error: 'recordId' key is empty in request JSON.";
+		feedbackResponse = log_str.str();
+		return false;
+	}
+
+	Json::Value timestamp = doc.get("timestamp", Json::Value());
+	unsigned secondSinceEpoch;
+	if (timestamp.type() == Json::stringValue) {
+		string timestampString = timestamp.asString();
+		boost::algorithm::trim(timestampString);
+		bool valid = srch2is::DateAndTimeHandler::verifyDateTimeString(timestampString,
+				srch2is::DateTimeTypePointOfTime);
+		if (!valid) {
+			std::stringstream log_str;
+			log_str << "API : feedback, Error: 'timestamp' key is invalid in request JSON.";
+			feedbackResponse = log_str.str();
+			return false;
+		}
+		secondSinceEpoch = srch2is::DateAndTimeHandler::convertDateTimeStringToSecondsFromEpoch(timestampString);
+	} else {
+		secondSinceEpoch = time(NULL);
+	}
+	unsigned internalRecordId;
+	INDEXLOOKUP_RETVAL retVal = server->indexer->lookupRecord(recordIdString, internalRecordId);
+	if (retVal != LU_PRESENT_IN_READVIEW_AND_WRITEVIEW) {
+		std::stringstream log_str;
+		log_str << "API : feedback, Error: 'recordId' key is invalid in request JSON.";
+		feedbackResponse = log_str.str();
+		return false;
+	}
+	server->indexer->getFeedbackIndexer()->addFeedback(queryString, internalRecordId, secondSinceEpoch);
+	return true;
+}
+
+void HTTPRequestHandler::feedback(evhttp_request *req, Srch2Server *server) {
+	Json::Value response(Json::objectValue);
+	switch (req->type) {
+		case EVHTTP_REQ_PUT: {
+	        size_t length = EVBUFFER_LENGTH(req->input_buffer);
+
+	        if (length == 0) {
+	            bmhelper_evhttp_send_reply(req, HTTP_BADREQUEST, "BAD REQUEST",
+	                    "{\"message\":\"http body is empty\"}");
+	            Logger::warn("http body is empty");
+	            break;
+	        }
+
+	        const char *post_data = (char *) EVBUFFER_DATA(req->input_buffer);
+
+	        std::stringstream log_str;
+	        Json::Value root;
+	        Json::Reader reader;
+	        bool parseSuccess = reader.parse(post_data, root, false);
+	        bool error = false;
+        	Json::Value feedbackResponse(Json::arrayValue);
+	        if (parseSuccess == false) {
+	            log_str << "API : feedback, Error: JSON object parse error";
+	            response[JSON_LOG] = log_str.str();
+	            response[JSON_MESSAGE] = "The request was NOT processed successfully";
+	            bmhelper_evhttp_send_reply(req, HTTP_BADREQUEST, "INVALID DATA",
+	            		global_customized_writer.write(response));
+	            Logger::info("%s", global_customized_writer.write(response).c_str());
+	            return;
+	        } else {
+	        	const AttributeAccessControl& attrAcl = server->indexer->getAttributeAcl();
+	        	if (root.type() == Json::arrayValue) {
+	        		feedbackResponse.resize(root.size());
+	        		//the record parameter is an array of json objects
+	        		for(Json::UInt index = 0; index < root.size(); index++) {
+	        			Json::Value defaultValueToReturn = Json::Value("");
+	        			const Json::Value doc = root.get(index,
+	        					defaultValueToReturn);
+
+	        			bool  status = processSingleFeedback(doc, server, feedbackResponse[index]);
+	        			if (status == false) {
+	        				error = true;
+	        				break;
+	        			} else {
+		        			feedbackResponse[index] = "API : feedback, Success";
+	        			}
+	        		}
+	        	} else {
+	        		feedbackResponse.resize(1);
+	        		// the record parameter is a single json object
+	        		const Json::Value doc = root;
+	        		bool  status = processSingleFeedback(doc, server, feedbackResponse[0]);
+	        		if (status == false) {
+	        			error = true;
+	        		} else {
+	        			feedbackResponse[0] = "API : feedback, Success";
+	        		}
+	        	}
+	        }
+	        response[JSON_LOG] = feedbackResponse;
+	        if (!error) {
+	        	response[JSON_MESSAGE] = "The batch was processed successfully";
+	        	bmhelper_evhttp_send_reply(req, HTTP_OK, "OK",
+	        			global_customized_writer.write(response));
+	        } else {
+	        	response[JSON_MESSAGE] = "The request was NOT processed successfully";
+	        	bmhelper_evhttp_send_reply(req, HTTP_BADREQUEST, "INVALID DATA",
+	        			global_customized_writer.write(response));
+	        }
+	        Logger::info("%s", global_customized_writer.write(response).c_str());
+			break;
+		}
+		default:
+			response_to_invalid_request(req, response);
+	}
+}
 /*
  *   Wrapper layer API to handle ACL operations such as insert, delete, and append.
  *   example url :
@@ -1551,6 +1692,7 @@ boost::shared_ptr<Json::Value> HTTPRequestHandler::doSearchOneCore(evhttp_reques
             *(AnalyzerFactory::getCurrentThreadAnalyzer(indexDataContainerConf)),
             &paramContainer, server->indexer->getAttributeAcl());
     LogicalPlan logicalPlan;
+    logicalPlan.orignalQueryString = qp.originalQueryString;
     if(qr.rewrite(logicalPlan) == false){
         // if the query is not valid, print the error message to the response
         errorStream << paramContainer.getMessageString();

@@ -584,8 +584,8 @@ INDEXWRITE_RETVAL IndexData::_recoverRecord(const std::string &externalRecordId,
 
 // check if the record exists
 INDEXLOOKUP_RETVAL IndexData::_lookupRecord(
-		const std::string &externalRecordId) const {
-	return this->forwardIndex->lookupRecord(externalRecordId);
+		const std::string &externalRecordId, unsigned& internalRecordId) const {
+	return this->forwardIndex->lookupRecord(externalRecordId, internalRecordId);
 }
 
 /* build the index. After commit(), no more records can be added.
