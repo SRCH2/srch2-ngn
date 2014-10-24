@@ -106,7 +106,11 @@ void AtomicLock::init(){
 /*
  * This method is called after receiving the response from each participant
  */
-bool AtomicLock::condition(SP(ShardingNotification) reqArg, SP(ShardingNotification) resArg){
+bool AtomicLock::condition(SP(ShardingNotification) reqArg, SP(ShardingNotification) resArg, vector<NodeId> & updatedListOfParticipants){
+
+	// get updated list of arrived nodes
+	lockNotification->getInvolvedNodes(updatedListOfParticipants);
+
 	SP(LockingNotification) req = boost::dynamic_pointer_cast<LockingNotification>(reqArg);
 	SP(LockingNotification::ACK) res = boost::dynamic_pointer_cast<LockingNotification::ACK>(resArg);
 

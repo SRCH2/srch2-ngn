@@ -65,7 +65,7 @@ public:
 	/*
 	 * This method is called after receiving the response from each participant
 	 */
-	bool condition(SP(ShardingNotification) req, SP(ShardingNotification) res);
+	bool condition(SP(ShardingNotification) req, SP(ShardingNotification) res, vector<NodeId> & updatedListOfParticipants);
 
 	bool shouldAbort(const NodeId & failedNode);
 

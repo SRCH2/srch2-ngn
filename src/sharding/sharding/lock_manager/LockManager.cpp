@@ -112,11 +112,6 @@ void LockManager::resolveLock(LockBatch * lockBatch){
 	// specific to node arrival, nodes must join in ascending nodeId order
 	if(lockBatch->batchType == LockRequestType_Metadata && lockBatch->olderNodes.size() > 0){
 		Cluster_Writeview * writeview = ShardManager::getWriteview();
-		if(lockBatch->olderNodes.size() < 1){ // at least this node must be in the list
-			ASSERT(false);
-			finalize(lockBatch, false);
-			delete lockBatch;
-		}
 		for(unsigned i = 0 ; i < lockBatch->olderNodes.size() ; ++i){
 			// 1. is this node in the writeview of this node ?
 			if(writeview->nodes.find(lockBatch->olderNodes.at(i)) == writeview->nodes.end()){
@@ -258,6 +253,7 @@ bool LockManager::canAcquireAllBatch(LockBatch * lockBatch){
 
 	while(true){
 		switch (lockBatch->batchType) {
+			// NOTE: metadata lock conflicts with all cluster shard id locks
 			case LockRequestType_Copy:
 			case LockRequestType_Move:
 			case LockRequestType_GeneralPurpose:
@@ -265,6 +261,9 @@ bool LockManager::canAcquireAllBatch(LockBatch * lockBatch){
 			{
 					pair<ClusterShardId, LockLevel> & nxtToken = lockBatch->tokens.at(lastGrantedPreValue + 1);
 
+					if(allNodeSharedInfo.isLock(metadataResourceName)){
+						return false;
+					}
 					if(! clusterShardLocks.canLock(nxtToken.first, nxtToken.second)){
 						return false;
 					}else{
@@ -283,6 +282,11 @@ bool LockManager::canAcquireAllBatch(LockBatch * lockBatch){
 					if(! isNodePassedInitialization(lockBatch->olderNodes.at(i))){
 						return false; // stil not allowed to run this.
 					}
+				}
+				vector<ClusterShardId> allResource;
+				clusterShardLocks.getAllLockedResource(allResource);
+				if(! allResource.empty()){
+					return false;
 				}
 				// we can try to lock for this new node now
 				return allNodeSharedInfo.canLock(metadataResourceName, lockBatch->metadataLockLevel);
@@ -320,27 +324,36 @@ bool LockManager::moveLockBatchForward(LockBatch * lockBatch){
 			case LockRequestType_GeneralPurpose:
 			case LockRequestType_ShardIdList:
 			{
-					pair<ClusterShardId, LockLevel> & nxtToken = lockBatch->tokens.at(lockBatch->lastGrantedItemIndex + 1);
+				if(allNodeSharedInfo.isLock(metadataResourceName)){
+					return false;
+				}
 
-					if(clusterShardLocks.lock(nxtToken.first, lockBatch->opIds, nxtToken.second)){
-						// one more token was granted.
-						lockBatch->lastGrantedItemIndex++;
-						if(lockBatch->lastGrantedItemIndex == lockBatch->tokens.size() - 1){
-							lockBatch->versionId = ShardManager::getWriteview()->versionId;
-							ASSERT(lockBatch->isReadviewPending());
-							return false; // because we should still wait for the release of readview
-						}else{
-							ASSERT(! lockBatch->incremental);
-							// let's just wait for next tokens to acquire lock entirely
-						}
+				pair<ClusterShardId, LockLevel> & nxtToken = lockBatch->tokens.at(lockBatch->lastGrantedItemIndex + 1);
+				if(clusterShardLocks.lock(nxtToken.first, lockBatch->opIds, nxtToken.second)){
+					// one more token was granted.
+					lockBatch->lastGrantedItemIndex++;
+					if(lockBatch->lastGrantedItemIndex == lockBatch->tokens.size() - 1){
+						lockBatch->versionId = ShardManager::getWriteview()->versionId;
+						ASSERT(lockBatch->isReadviewPending());
+						return false; // because we should still wait for the release of readview
 					}else{
-						// let's just wait until we can move forward
-						return false;
+						ASSERT(! lockBatch->incremental);
+						// let's just wait for next tokens to acquire lock entirely
 					}
-					break;
+				}else{
+					// let's just wait until we can move forward
+					return false;
+				}
+				break;
 			}
 			case LockRequestType_Metadata:
 			{
+				vector<ClusterShardId> allResource;
+				clusterShardLocks.getAllLockedResource(allResource);
+				if(! allResource.empty()){
+					return false;
+				}
+
 				ASSERT(lockBatch->lastGrantedItemIndex == -1);
 				LockLevel lockLevel = lockBatch->metadataLockLevel;
 				for(unsigned i = 0 ; i < lockBatch->olderNodes.size(); ++i){

@@ -122,7 +122,10 @@ bool OrderedNodeIteratorOperation::validateResponse(SP(ShardingNotification) res
 	if(this->validatorObj == NULL){
 		return true;
 	}
-	return this->validatorObj->condition(request, response);
+	vector<NodeId> newParticipants;
+	bool conditionResult = this->validatorObj->condition(request, response, newParticipants);
+	updateParticipantsList(newParticipants);
+	return conditionResult;
 }
 
 string OrderedNodeIteratorOperation::getOperationName() const {
@@ -149,6 +152,21 @@ OperationState * OrderedNodeIteratorOperation::askNode(const unsigned nodeIndex)
 	const NodeOperationId & target = this->participants.at(nodeIndex);
 	send(request, target);
 	return this;
+}
+
+void OrderedNodeIteratorOperation::updateParticipantsList(vector<NodeId> newParticipants){
+	std::sort(newParticipants.begin(), newParticipants.end());
+	// 1. check to see if there are any new node
+	//    new nodes must have larger ids
+	NodeId largestParticipant = this->participants.at(this->participants.size() - 1).nodeId;
+
+	// append new participants
+	for(unsigned i = 0 ; i < newParticipants.size() ; ++i){
+		if(newParticipants.at(i) > largestParticipant){
+			// we should append this new participant to the end of list
+			this->participants.push_back(NodeOperationId(newParticipants.at(i)));
+		}
+	}
 }
 
 }

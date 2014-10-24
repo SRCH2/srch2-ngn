@@ -65,6 +65,8 @@ private:
 
 	OperationState * askNode(const unsigned nodeIndex);
 
+	void updateParticipantsList(vector<NodeId> newParticipants);
+
 };
 
 }

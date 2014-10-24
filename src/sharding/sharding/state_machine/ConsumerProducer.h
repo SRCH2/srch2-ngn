@@ -79,7 +79,7 @@ public:
 	virtual ~OrderedNodeIteratorListenerInterface(){};
 	// This method, is called after each response is retreived and before we move to the next participant,
 	// if it returns false, the iterator will abort. (still, getTransIdToDelete() will be called after.)
-	virtual bool condition(SP(ShardingNotification) req, SP(ShardingNotification) res){
+	virtual bool condition(SP(ShardingNotification) req, SP(ShardingNotification) res, vector<NodeId> & updatedListOfParticipants){
 		return true;
 	}
 };
