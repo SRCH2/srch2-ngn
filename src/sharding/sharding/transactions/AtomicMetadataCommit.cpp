@@ -20,7 +20,7 @@ namespace httpwrapper {
 
 AtomicMetadataCommit::AtomicMetadataCommit(const vector<NodeId> & exceptions,
 		MetadataChange * metadataChange,
-		ConsumerInterface * consumer): ProducerInterface(consumer){
+		ConsumerInterface * consumer, const bool skipLock): ProducerInterface(consumer){
 	ASSERT(metadataChange != NULL);
 	this->metadataChange = metadataChange;
 	Cluster_Writeview * writeview = ShardManager::getShardManager()->getWriteview();
@@ -36,10 +36,11 @@ AtomicMetadataCommit::AtomicMetadataCommit(const vector<NodeId> & exceptions,
 	this->atomicRelease = NULL;
 	this->finalizedFlag = false;
 	this->currentAction = "";
+	this->skipLock = skipLock;
 }
 
 AtomicMetadataCommit::AtomicMetadataCommit(const NodeId & exception,
-		MetadataChange * metadataChange, ConsumerInterface * consumer): ProducerInterface(consumer){
+		MetadataChange * metadataChange, ConsumerInterface * consumer, const bool skipLock): ProducerInterface(consumer){
 	ASSERT(metadataChange != NULL);
 	this->metadataChange = metadataChange;
 	Cluster_Writeview * writeview = ShardManager::getShardManager()->getWriteview();
@@ -54,10 +55,11 @@ AtomicMetadataCommit::AtomicMetadataCommit(const NodeId & exception,
 	this->atomicLock = NULL;
 	this->atomicRelease = NULL;
 	this->currentAction = "";
+	this->skipLock = skipLock;
 }
 
 AtomicMetadataCommit::AtomicMetadataCommit(MetadataChange * metadataChange,
-		const vector<NodeId> & participants, ConsumerInterface * consumer): ProducerInterface(consumer){
+		const vector<NodeId> & participants, ConsumerInterface * consumer, const bool skipLock): ProducerInterface(consumer){
 	ASSERT(metadataChange != NULL);
 	this->metadataChange = metadataChange;
 	this->participants = participants;
@@ -65,6 +67,7 @@ AtomicMetadataCommit::AtomicMetadataCommit(MetadataChange * metadataChange,
 	this->atomicLock = NULL;
 	this->atomicRelease = NULL;
 	this->currentAction = "";
+	this->skipLock = skipLock;
 }
 
 AtomicMetadataCommit::~AtomicMetadataCommit(){
@@ -84,23 +87,27 @@ Transaction * AtomicMetadataCommit::getTransaction(){
 }
 
 void AtomicMetadataCommit::produce(){
-	lock();
+    if(participants.size() == 0){
+        // no participant exists
+        finalize(true);
+        return ;
+    }
+    if(metadataChange == NULL){
+        ASSERT(false);
+        finalize(false);
+        return;
+    }
+    //lock should be acquired on all nodes
+    atomicLock = new AtomicLock(selfOperationId, this); // X-locks metadata by default
+    atomicRelease = new AtomicRelease(selfOperationId, this);
+    if(skipLock){
+        commit();
+    }else{
+        lock();
+    }
 }
 
 void AtomicMetadataCommit::lock(){
-	if(participants.size() == 0){
-		// no participant exists
-		finalize(true);
-		return ;
-	}
-	if(metadataChange == NULL){
-		ASSERT(false);
-		finalize(false);
-		return;
-	}
-	//lock should be acquired on all nodes
-	atomicLock = new AtomicLock(selfOperationId, this); // X-locks metadata by default
-	atomicRelease = new AtomicRelease(selfOperationId, this);
 	this->currentAction = "lock";
 	atomicLock->produce();
 }
@@ -152,7 +159,11 @@ void AtomicMetadataCommit::end_(map<NodeOperationId , SP(ShardingNotification)> 
 		finalize(false);
 		return;
 	}
-	release();
+	if(skipLock){
+	    finalize(true);
+	}else{
+        release();
+	}
 }
 
 void AtomicMetadataCommit::release(){

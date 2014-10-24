@@ -35,6 +35,7 @@ public:
 	bool isPartitionLocked(const ClusterPID & pid);
 	void getLockedPartitions(vector<ClusterPID> & lockedPartitions);
 	void setNodePassedInitialization(const NodeId & nodeId);
+	void initialize();
 private:
 
 

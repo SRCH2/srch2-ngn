@@ -48,7 +48,7 @@ NodeJoiner::NodeJoiner(){
 	this->releaser = NULL;
 	this->metadataChange = NULL;
 	this->committer = NULL;
-	this->currentOperation = "";
+	this->currentOperation = PreStart;
 }
 
 
@@ -79,45 +79,51 @@ void NodeJoiner::lock(){ // locks the metadata to be safe to read it
 	locker = new AtomicLock(selfOperationId, this, olderNodes); // X-locks metadata by default
 	releaser = new AtomicRelease(selfOperationId, this);
 	Logger::debug("Acquiring lock on metadata ...");
-	this->currentOperation = "lock";
+	this->currentOperation = Lock;
 	locker->produce();
 }
 
 // coming back from lock
 void NodeJoiner::consume(bool granted){
-	if(this->currentOperation.compare("lock")){ // lock
-		if(! granted){
-			ASSERT(false);
-			Logger::error("New node could not join the cluster.");
-			finalize(false);
-		}else{
-			readMetadata();
-		}
-	}else if(this->currentOperation.compare("readmetadata")){ // read metadata
-		ASSERT(false);
-	}else if(this->currentOperation.compare("commit")){ // commit
-		if(! granted){
-			Logger::debug("New node booting a fresh cluster because commit operation failed.");
-			ASSERT(false);
-			finalize(false);
-			return;
-		}else{
-			release();
-		}
-	}else if(this->currentOperation.compare("release")){ // release
-		if(! granted){
-			Logger::debug("New node booting a fresh cluster because release operation failed.");
-			ASSERT(false);
-			finalize(false);
-			return;
-		}else{
-			finalize();
-		}
-	}else{
-		Logger::debug("New node booting a fresh cluster because of unknown reason.");
-		ASSERT(false); //
-		finalize(false);
-	}
+    switch (this->currentOperation) {
+        case Lock:
+            if(! granted){
+                ASSERT(false);
+                Logger::error("New node could not join the cluster.");
+                finalize(false);
+            }else{
+                readMetadata();
+            }
+            break;
+        case ReadMetadata:
+            ASSERT(false);
+            break;
+        case Commit:
+            if(! granted){
+                Logger::debug("New node booting a fresh cluster because commit operation failed.");
+                ASSERT(false);
+                finalize(false);
+                return;
+            }else{
+                release();
+            }
+            break;
+        case Release:
+            if(! granted){
+                Logger::debug("New node booting a fresh cluster because release operation failed.");
+                ASSERT(false);
+                finalize(false);
+                return;
+            }else{
+                finalize();
+            }
+            break;
+        default:
+            Logger::debug("New node booting a fresh cluster because of unknown reason.");
+            ASSERT(false); //
+            finalize(false);
+            break;
+    }
 }
 
 void NodeJoiner::readMetadata(){ // read the metadata of the cluster
@@ -137,7 +143,7 @@ void NodeJoiner::readMetadata(){ // read the metadata of the cluster
 
 	ConcurrentNotifOperation * reader = new ConcurrentNotifOperation(readMetadataNotif,
 			ShardingNewNodeReadMetadataReplyMessageType, randomNodeToReadFrom, this);
-	this->currentOperation = "readmetadata";
+	this->currentOperation = ReadMetadata;
 	// committer is deallocated in state-machine so we don't have to have the
 	// pointer. Before deleting committer, state-machine calls it's getMainTransactionId()
 	// which calls lastCallback from its consumer
@@ -209,14 +215,14 @@ void NodeJoiner::commit(){
 			new NodeAddChange(ShardManager::getCurrentNodeId(),localClusterShards, nodeShardIds);
 	vector<NodeId> olderNodes;
 	getOlderNodesList(olderNodes);
-	this->committer = new AtomicMetadataCommit(nodeAddChange,  olderNodes, this);
-	this->currentOperation = "commit";
+	this->committer = new AtomicMetadataCommit(nodeAddChange,  olderNodes, this, true);
+	this->currentOperation = Commit;
 	this->committer->produce();
 }
 
 void NodeJoiner::release(){ // releases the lock on metadata
 	ASSERT(! this->releaseModeFlag);
-	this->currentOperation = "release";
+	this->currentOperation = Release;
 	this->releaser->produce();
 }
 

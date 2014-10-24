@@ -78,7 +78,14 @@ private:
 	NodeOperationId selfOperationId;
 	NodeId randomNodeToReadFrom;
 
-	string currentOperation;
+	enum CurrentOperation{
+	    PreStart,
+	    Lock,
+	    ReadMetadata,
+	    Commit,
+	    Release
+	};
+	CurrentOperation currentOperation;
 	bool finalizedFlag ;
 	bool releaseModeFlag;
 	AtomicLock * locker;
