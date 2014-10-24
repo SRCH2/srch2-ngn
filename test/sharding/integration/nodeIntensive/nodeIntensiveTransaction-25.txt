@@ -1,0 +1,11 @@
+A||start
+B||start
+C||start
+D||start
+E||start
+-||sleep||10
+A||nodeCount||5
+B||nodeCount||5
+C||nodeCount||5
+D||nodeCount||5
+E||nodeCount||5

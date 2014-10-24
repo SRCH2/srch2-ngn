@@ -114,7 +114,7 @@ void DPExternalRequestHandler::externalSearchCommand(boost::shared_ptr<const Clu
     // simple example for query is : q={boost=2}name:foo~0.5 AND bar^3*&fq=name:"John"
     //1. first create query parser to parse the url
     QueryParser qp(headers, resultAggregator->getParamContainer());
-    bool isSyntaxValid = qp.parse();
+    bool isSyntaxValid = qp.parse(indexDataContainerConf->getSchema());
     if (!isSyntaxValid) {
         // if the query is not valid print the error message to the response
         bmhelper_evhttp_send_reply2(req, HTTP_BADREQUEST, "Bad Request",

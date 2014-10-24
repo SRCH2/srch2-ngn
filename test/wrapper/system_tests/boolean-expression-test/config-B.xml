@@ -6,9 +6,29 @@
 -->
  
 <config>
-
+    <!--
+        SRCH2 Home directory 
+        Required
+         
+        This directory is going to be your srch2 home's directory.
+        All other paths HAVE to be reletive to this path.
+        For Example:
+            To have "/usr/share/srch2/" as srch2 home directory, you should have the following line
+            <srch2Home>/usr/share/srch2/</srch2Home>
+             
+        All other paths in this conif file have to be relative to this path.
+        For Example:
+            If your data file is inside srch2 home directory, having the following absolute path
+            "/usr/share/srch2/data/sample-data.json"
+            In this config file it should be as "data/sample-data.json"
+    -->
     <srch2Home>./</srch2Home>
-    <authorization-key>blackberry</authorization-key> 
+    <!--<srch2Home>/home/jamshid/workspace-srch2-v4/srch2-ngn/test/wrapper/system_tests/</srch2Home>-->
+    <transport>
+        <port>4002</port>
+        <ipaddress>127.0.0.1</ipaddress>
+    </transport>
+
     <!--
         License Key File
         Required
@@ -25,7 +45,7 @@
         Hostname and port number of the server. Make sure the port is open.
     -->
     <listeningHostname>127.0.0.1</listeningHostname>
-    <listeningPort>8087</listeningPort>
+    <listeningPort>8089</listeningPort>
  
     <!--
         Index Directoy Path
@@ -34,7 +54,7 @@
         The file path to the folder where we store serialized index files.
         REQUIRED, when "index-load-or-create" is set to 1.
     -->
-    <dataDir>./data/authorization/</dataDir>
+    <dataDir>./data/boolean-expression-test</dataDir>
      
     <!--
         Data File
@@ -43,7 +63,9 @@
         Path for a data file to be loaded. The file must be in the json format.
         REQUIRED, when "index-load-or-create" is set to 0.
     -->
-    <dataFile>./authorization/data.json</dataFile>
+    <dataFile>./boolean-expression-test/empty.json</dataFile>
+
+    <node-name>node-B</node-name>
      
     <!--
 	Maximum Number of Threads
@@ -53,9 +75,10 @@
 	Defaults to 1
     -->
     <maxSearchThreads>2</maxSearchThreads>
-     
-         
+
     <indexConfig>
+
+        <enablePositionIndex>1</enablePositionIndex> 
          
         <!--
             Index Type
@@ -95,7 +118,7 @@
             Attribute used as the boost value of a record.
             Need to be float type in the json objects in the data file.
         -->
-        <recordBoostField>relevance</recordBoostField>
+        <recordBoostField></recordBoostField>
          
          
         <!--
@@ -127,10 +150,10 @@
         </rankingAlgorithm>
  
         <!--
-            Query Term Fuzzy Penalty
+            Fuzzy Match Penalty
             Optional
              
-            Defaults to 1
+            Defaults to 0.5
         -->
         <fuzzyMatchPenalty>0.5</fuzzyMatchPenalty>
          
@@ -282,10 +305,11 @@
           <mergeEveryNSeconds>10</mergeEveryNSeconds>
           <mergeEveryMWrites>100</mergeEveryMWrites>
         </mergePolicy>
-              
+             
     </updatehandler>
 
-	<schema>
+
+	<schema name="SRCH2" version="3">
 	  
 	 <fields>
 	   <!--
@@ -319,9 +343,9 @@
 		    here and indexed="false" it will be also used for sort,filtering and facet.
 		    - 
 	   -->
-           <field name="relevance" type="float" refining="true" highlight="true" />
-	   <field name="category" type="text" indexed="true" />
-	   <field name="name" type="text" indexed="true" />
+	   <field name="title" type="text" indexed="true" />
+	   <field name="description" type="text" indexed="true" />
+	   <field name="genre" type="text" indexed="true" />
 	 </fields>
 	 
 	 <!--
@@ -343,6 +367,7 @@
 	  		- values are false (disabled) and true (enabled)
 	  		- By default it is disabled.
 	  -->
+
 	  <facetEnabled>true</facetEnabled>
 	  
 	  <facetFields>
@@ -388,7 +413,7 @@
 		        For Example:
 		            Disable Stop Word Filter: <filter name="StopFilter" words="" />
 		    -->
-		    <filter name="StopFilter" words="" />
+		    <filter name="StopFilter" words="./phraseSearch/srch2_stop_words.txt" />
 		     
 		    <!--
 		        Synonym Filter
@@ -406,7 +431,7 @@
 	 </types>
 	</schema>
 	
-    <updateLog>
+       <updateLog>
             <!-- 
                 Log Level
                 Optional
@@ -426,9 +451,10 @@
                  
                 Path to Access Log File
             -->
-            <accessLogFile>./data/authorization/log.txt</accessLogFile>
-    </updateLog>
-	
+            <accessLogFile>./data/boolean-expression-test/srch2-log.txt</accessLogFile>
+        </updateLog>
+ 	
 </config>
  
+
 

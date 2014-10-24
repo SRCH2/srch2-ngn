@@ -1451,12 +1451,14 @@ void ConfigManager::parseFacetFields(const xml_node &schemaNode, CoreInfo_t *cor
 								coreInfo->facetEnabled = false;
 								break;
 							}
-							if (!srch2is::DateAndTimeHandler::verifyDateTimeString(
-									gapTextValue,
-									srch2is::DateTimeTypeDurationOfTime)) {
-								Logger::error("In core %s : Facet attribute end value is in wrong format. Facet disabled.", coreInfo->name.c_str());
-								coreInfo->facetEnabled = false;
-								break;
+							if(facetAttributeType == srch2is::ATTRIBUTE_TYPE_TIME){
+                                if (! srch2is::DateAndTimeHandler::verifyDateTimeString(
+                                        gapTextValue,
+                                        srch2is::DateTimeTypeDurationOfTime)) {
+                                    Logger::error("In core %s : Facet attribute end value is in wrong format. Facet disabled.", coreInfo->name.c_str());
+                                    coreInfo->facetEnabled = false;
+                                    break;
+                                }
 							}
 							coreInfo->facetGaps.push_back(gapTextValue);
                         } else {

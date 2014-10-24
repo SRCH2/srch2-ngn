@@ -6,9 +6,24 @@
 -->
  
 <config>
-
+    <!--
+        SRCH2 Home directory 
+        Required
+         
+        This directory is going to be your srch2 home's directory.
+        All other paths HAVE to be reletive to this path.
+        For Example:
+            To have "/usr/share/srch2/" as srch2 home directory, you should have the following line
+            <srch2Home>/usr/share/srch2/</srch2Home>
+             
+        All other paths in this conif file have to be relative to this path.
+        For Example:
+            If your data file is inside srch2 home directory, having the following absolute path
+            "/usr/share/srch2/data/sample-data.json"
+            In this config file it should be as "data/sample-data.json"
+    -->
     <srch2Home>./</srch2Home>
-    <authorization-key>blackberry</authorization-key> 
+ 
     <!--
         License Key File
         Required
@@ -18,6 +33,11 @@
     -->
     <licenseFile>../conf/srch2_license_key.txt</licenseFile>
  
+    <transport>
+        <port>4002</port>
+        <ipaddress>127.0.0.1</ipaddress>
+    </transport>
+
     <!--
         Hostname and Port Number
         Required
@@ -25,7 +45,7 @@
         Hostname and port number of the server. Make sure the port is open.
     -->
     <listeningHostname>127.0.0.1</listeningHostname>
-    <listeningPort>8087</listeningPort>
+    <listeningPort>8089</listeningPort>
  
     <!--
         Index Directoy Path
@@ -34,7 +54,7 @@
         The file path to the folder where we store serialized index files.
         REQUIRED, when "index-load-or-create" is set to 1.
     -->
-    <dataDir>./data/authorization/</dataDir>
+    <dataDir>./data/cache_a1/</dataDir>
      
     <!--
         Data File
@@ -43,8 +63,10 @@
         Path for a data file to be loaded. The file must be in the json format.
         REQUIRED, when "index-load-or-create" is set to 0.
     -->
-    <dataFile>./authorization/data.json</dataFile>
+    <dataFile>./cache_a1/empty.json</dataFile>
      
+    <node-name>node-B</node-name>
+
     <!--
 	Maximum Number of Threads
 	Optional
@@ -123,7 +145,7 @@
             record-score-expression=idf_score*doc_boost
         -->
         <rankingAlgorithm>
-            <recordScoreExpression>idf_score*doc_boost</recordScoreExpression>
+            <recordScoreExpression>doc_boost</recordScoreExpression>
         </rankingAlgorithm>
  
         <!--
@@ -279,10 +301,10 @@
             The number of write operations after which newly inserted/deleted records are merged into the indexes.
         -->
         <mergePolicy>
-          <mergeEveryNSeconds>10</mergeEveryNSeconds>
+          <mergeEveryNSeconds>3</mergeEveryNSeconds>
           <mergeEveryMWrites>100</mergeEveryMWrites>
         </mergePolicy>
-              
+             
     </updatehandler>
 
 	<schema>
@@ -319,9 +341,9 @@
 		    here and indexed="false" it will be also used for sort,filtering and facet.
 		    - 
 	   -->
-           <field name="relevance" type="float" refining="true" highlight="true" />
 	   <field name="category" type="text" indexed="true" />
 	   <field name="name" type="text" indexed="true" />
+           <field name="relevance" type="float" refining="true" highlight="true" />
 	 </fields>
 	 
 	 <!--
@@ -405,7 +427,7 @@
 	    </fieldType>
 	 </types>
 	</schema>
-	
+
     <updateLog>
             <!-- 
                 Log Level
@@ -426,7 +448,7 @@
                  
                 Path to Access Log File
             -->
-            <accessLogFile>./data/authorization/log.txt</accessLogFile>
+            <accessLogFile>./data/exact_a1/log.txt</accessLogFile>
     </updateLog>
 	
 </config>

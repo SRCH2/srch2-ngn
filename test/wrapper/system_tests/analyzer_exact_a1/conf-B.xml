@@ -3,12 +3,31 @@
     Configuration file for SRCH2 search server. Please email
     contact@srch2.com if you have questions.
     In this documment, "attribute" and "field" are used interchangeably.
--->
- 
+--> 
 <config>
-
+    <!--
+        SRCH2 Home directory 
+        Required
+         
+        This directory is going to be your srch2 home's directory.
+        All other paths HAVE to be reletive to this path.
+        For Example:
+            To have "/usr/share/srch2/" as srch2 home directory, you should have the following line
+            <srch2Home>/usr/share/srch2/</srch2Home>
+             
+        All other paths in this conif file have to be relative to this path.
+        For Example:
+            If your data file is inside srch2 home directory, having the following absolute path
+            "/usr/share/srch2/data/sample-data.json"
+            In this config file it should be as "data/sample-data.json"
+    -->
     <srch2Home>./</srch2Home>
-    <authorization-key>blackberry</authorization-key> 
+    
+    <transport>
+        <port>4002</port>
+        <ipaddress>127.0.0.1</ipaddress>
+    </transport>
+ 
     <!--
         License Key File
         Required
@@ -25,7 +44,7 @@
         Hostname and port number of the server. Make sure the port is open.
     -->
     <listeningHostname>127.0.0.1</listeningHostname>
-    <listeningPort>8087</listeningPort>
+    <listeningPort>8089</listeningPort>
  
     <!--
         Index Directoy Path
@@ -34,7 +53,7 @@
         The file path to the folder where we store serialized index files.
         REQUIRED, when "index-load-or-create" is set to 1.
     -->
-    <dataDir>./data/authorization/</dataDir>
+    <dataDir>./data/analyzer_exact_a1/</dataDir>
      
     <!--
         Data File
@@ -43,8 +62,10 @@
         Path for a data file to be loaded. The file must be in the json format.
         REQUIRED, when "index-load-or-create" is set to 0.
     -->
-    <dataFile>./authorization/data.json</dataFile>
-     
+    <dataFile>./analyzer_exact_a1/empty.json</dataFile>
+
+    <node-name>node-B</node-name>
+ 
     <!--
 	Maximum Number of Threads
 	Optional
@@ -127,10 +148,10 @@
         </rankingAlgorithm>
  
         <!--
-            Query Term Fuzzy Penalty
+            Fuzzy Match Penalty
             Optional
              
-            Defaults to 1
+            Defaults to 0.5
         -->
         <fuzzyMatchPenalty>0.5</fuzzyMatchPenalty>
          
@@ -282,7 +303,7 @@
           <mergeEveryNSeconds>10</mergeEveryNSeconds>
           <mergeEveryMWrites>100</mergeEveryMWrites>
         </mergePolicy>
-              
+             
     </updatehandler>
 
 	<schema>
@@ -378,7 +399,7 @@
 		        For Example:
 		            Disable Stemmer: <filter name="PorterStemFilter" dictionary="" />
 		    -->
-		    <filter name="PorterStemFilter" dictionary="" />
+		    <filter name="PorterStemFilter" dictionary="./analyzer_exact_a1/srch2_stemmer_words.txt" />
 		     
 		    <!--
 		        Stop Word Filter
@@ -388,25 +409,16 @@
 		        For Example:
 		            Disable Stop Word Filter: <filter name="StopFilter" words="" />
 		    -->
-		    <filter name="StopFilter" words="" />
+		    <filter name="StopFilter" words="./analyzer_exact_a1/srch2_stop_words.txt" />
+
+            <filter name="protectedKeyWordsFilter" words="./analyzer_exact_a1/srch2_protected_words.txt" />
 		     
-		    <!--
-		        Synonym Filter
-		        Optional
-		         
-		        Enable/Disabling the Synonym Filter By providing "synonym" file.
-		        For Example:
-		            Disable Synonym Filter: <filter name="SynonymFilter" synonyms=""  expand="true"/>
-		        To keep the original word in this filter, set the "expand" attribute as "True"
-		        Otherwise set it as "False"
-		    -->
-		    <filter name="SynonymFilter" synonyms=""  expand="true"/>      
 		</analyzer>
 	    </fieldType>
 	 </types>
 	</schema>
-	
-    <updateLog>
+		        
+        <updateLog>
             <!-- 
                 Log Level
                 Optional
@@ -426,8 +438,8 @@
                  
                 Path to Access Log File
             -->
-            <accessLogFile>./data/authorization/log.txt</accessLogFile>
-    </updateLog>
+            <accessLogFile>./data/analyzer_exact_a1/log.txt</accessLogFile>
+        </updateLog>
 	
 </config>
  

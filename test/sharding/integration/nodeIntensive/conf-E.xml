@@ -54,7 +54,6 @@
  
             <dataDir>./nodeIntensive/stackoverflow-1</dataDir>
             <dataSourceType>1</dataSourceType>
-            <dataFile>stackoverflow-data-100.json</dataFile>
             <indexConfig>
                 <indexType>0</indexType>
                 <supportSwapInEditDistance>true</supportSwapInEditDistance>
@@ -143,7 +142,6 @@
             <core-number_of_replicas>2</core-number_of_replicas>
             <dataDir>./nodeIntensive/statemedia-1</dataDir>
             <dataSourceType>1</dataSourceType>
-            <dataFile>statemedia-100k.json</dataFile>
             <indexConfig>
                 <indexType>0</indexType>
                 <supportSwapInEditDistance>true</supportSwapInEditDistance>
