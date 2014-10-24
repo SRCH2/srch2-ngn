@@ -140,6 +140,7 @@ void LoadBalancer::balance(){
 		shardMover->produce();
 		return;
 	}
+	finalize();
 	return;
 }
 

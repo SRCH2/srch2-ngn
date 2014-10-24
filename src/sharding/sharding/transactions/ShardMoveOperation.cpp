@@ -112,6 +112,7 @@ void ShardMoveOperation::transfer(){
 	// NOTE : this is deallocated by the state machine
 	ConcurrentNotifOperation * copyer = new ConcurrentNotifOperation(moveToMeNotif,
 			ShardingMoveToMeACKMessageType, srcAddress.nodeId , this);
+	copyer->setOperationId(currentOpId.operationId);
 	this->currentOp = Transfer;
 	ShardManager::getShardManager()->getStateMachine()->registerOperation(copyer);
 }
