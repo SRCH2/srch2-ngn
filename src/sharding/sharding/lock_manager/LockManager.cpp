@@ -19,7 +19,7 @@ LockManager::LockManager(){
 
 
 void LockManager::resolve(SP(LockingNotification)  notif){
-	if(notif){
+	if(! notif){
 		ASSERT(false);
 		return;
 	}
