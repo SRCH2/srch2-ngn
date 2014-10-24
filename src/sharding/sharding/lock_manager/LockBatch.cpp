@@ -68,9 +68,9 @@ LockBatch * LockBatch::generateLockBatch(SP(LockingNotification) notif){
 			lockBatch->opIds.push_back(copyAgent);
 			if(srcShardId <= destShardId){
 				lockBatch->tokens.push_back(std::make_pair(srcShardId, LockLevel_S));
-				lockBatch->tokens.push_back(std::make_pair(srcShardId, LockLevel_X));
+				lockBatch->tokens.push_back(std::make_pair(destShardId, LockLevel_X));
 			}else{
-				lockBatch->tokens.push_back(std::make_pair(srcShardId, LockLevel_X));
+				lockBatch->tokens.push_back(std::make_pair(destShardId, LockLevel_X));
 				lockBatch->tokens.push_back(std::make_pair(srcShardId, LockLevel_S));
 			}
 			return lockBatch;
