@@ -31,17 +31,21 @@ bool LockBatch::update(const NodeId & failedNode){
 			return false;
 		}
 	}
-	for(vector<NodeOperationId>::iterator nItr = opIds.begin(); nItr != opIds.end(); ++nItr){
+	for(vector<NodeOperationId>::iterator nItr = opIds.begin(); nItr != opIds.end(); ){
 		if(nItr->nodeId == failedNode){
 			nItr = opIds.erase(nItr);
+		}else{
+			++nItr;
 		}
 	}
 	if(opIds.empty()){
 		return false;
 	}
-	for(vector<NodeId>::iterator nItr = olderNodes.begin(); nItr != olderNodes.end(); ++nItr){
+	for(vector<NodeId>::iterator nItr = olderNodes.begin(); nItr != olderNodes.end();){
 		if(failedNode == *nItr){
 			nItr = olderNodes.erase(nItr);
+		}else{
+			++nItr;
 		}
 	}
 	return true;

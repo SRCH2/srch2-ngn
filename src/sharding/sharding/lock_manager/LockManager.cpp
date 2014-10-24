@@ -31,12 +31,14 @@ void LockManager::resolve(const unsigned readviewReleasedVersion){
 	// lock
 	readviewReleaseMutex.lock();
 	for(vector<LockBatch *>::iterator lockBItr = rvReleasePendingLockBatches.begin();
-			lockBItr != rvReleasePendingLockBatches.end(); ++lockBItr){
+			lockBItr != rvReleasePendingLockBatches.end(); ){
 		LockBatch * lockBatch = *lockBItr;
 		if(readviewReleasedVersion >= lockBatch->versionId){
 			finalize(lockBatch, true);
 			delete lockBatch;
 			lockBItr = rvReleasePendingLockBatches.erase(lockBItr);
+		}else{
+			++lockBItr;
 		}
 	}
 	readviewReleaseMutex.unlock();
@@ -45,21 +47,25 @@ void LockManager::resolve(const unsigned readviewReleasedVersion){
 void LockManager::resolveNodeFailure(const NodeId & failedNode){
 	readviewReleaseMutex.lock();
 	for(vector<LockBatch *>::iterator lockBItr = rvReleasePendingLockBatches.begin();
-			lockBItr != rvReleasePendingLockBatches.end(); ++lockBItr){
+			lockBItr != rvReleasePendingLockBatches.end(); ){
 		LockBatch * lockBatch = *lockBItr;
 		if(! lockBatch->update(failedNode)){
 			delete lockBatch;
 			lockBItr = rvReleasePendingLockBatches.erase(lockBItr);
+		}else{
+			++lockBItr;
 		}
 	}
 	readviewReleaseMutex.unlock();
 
 	for(vector<LockBatch *>::iterator lockBItr = pendingLockBatches.begin();
-			lockBItr != pendingLockBatches.end(); ++lockBItr){
+			lockBItr != pendingLockBatches.end(); ){
 		LockBatch * lockBatch = *lockBItr;
 		if(! lockBatch->update(failedNode)){
 			delete lockBatch;
 			lockBItr = pendingLockBatches.erase(lockBItr);
+		}else{
+			++lockBItr;
 		}
 	}
 
@@ -218,7 +224,7 @@ void LockManager::getLockedPartitions(vector<ClusterPID> & lockedPartitions){
 
 void LockManager::movePendingLockBatchesForward(){
 	for(vector<LockBatch *>::iterator lockBatchItr = pendingLockBatches.begin();
-			lockBatchItr != pendingLockBatches.end(); ++lockBatchItr){
+			lockBatchItr != pendingLockBatches.end(); ){
 		ASSERT(! (*lockBatchItr)->release);
 		if(moveLockBatchForward(*lockBatchItr)){
 			delete *lockBatchItr;
@@ -230,6 +236,7 @@ void LockManager::movePendingLockBatchesForward(){
 				lockBatchItr = pendingLockBatches.erase(lockBatchItr);
 				setPendingForRVRelease(lockBatch);
 			}
+			++lockBatchItr;
 		}
 	}
 }

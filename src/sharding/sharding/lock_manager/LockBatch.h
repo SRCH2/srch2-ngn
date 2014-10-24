@@ -57,10 +57,12 @@ public:
 		}
 		bool releaseHappened = false;
 		for(vector<pair<NodeOperationId, LockLevel> >::iterator resItr = grantedLocks[resource].begin();
-				resItr != grantedLocks[resource].end(); ++resItr){
+				resItr != grantedLocks[resource].end();){
 			if(resItr->first == opid){
 				resItr = grantedLocks[resource].erase(resItr);
 				releaseHappened = true;
+			}else{
+				++resItr;
 			}
 		}
 		if(grantedLocks[resource].size() == 0){
@@ -79,10 +81,11 @@ public:
 
 		for(typename map<Resource, vector<pair<NodeOperationId, LockLevel> > >::iterator resItr = grantedLocks.begin();
 				resItr != grantedLocks.end(); ++resItr){
-			for(vector<pair<NodeOperationId, LockLevel> >::iterator nodeItr = resItr->second.begin();
-					nodeItr != resItr->second.end(); ++nodeItr){
+			for(vector<pair<NodeOperationId, LockLevel> >::iterator nodeItr = resItr->second.begin(); nodeItr != resItr->second.end(); ){
 				if(nodeItr->first.nodeId == failedNodeId){
 					nodeItr = resItr->second.erase(nodeItr);
+				}else{
+					++nodeItr;
 				}
 			}
 			if(resItr->second.size() == 0){
