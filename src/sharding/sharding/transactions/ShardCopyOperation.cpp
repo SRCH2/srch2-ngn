@@ -89,6 +89,7 @@ void ShardCopyOperation::transfer(){ // : requires receiving a call to our callb
 
 	// NOTE : this is deallocated by the state machine
 	ConcurrentNotifOperation * copyer = new ConcurrentNotifOperation(copyToMeNotif, NULLType, srcNodeId , this, false);
+	copyer->setOperationId(currentOpId.operationId);
 	ShardManager::getShardManager()->getStateMachine()->registerOperation(copyer);
 }
 
@@ -109,7 +110,7 @@ bool ShardCopyOperation::shouldAbort(const NodeId & failedNode){
 }
 
 // for transfer
-void ShardCopyOperation::receiveStatus(const ShardMigrationStatus & status){
+void ShardCopyOperation::consume(const ShardMigrationStatus & status){
 	// failed or succeed?
 	if(status.status == MM_STATUS_FAILURE){
 		this->successFlag = false;

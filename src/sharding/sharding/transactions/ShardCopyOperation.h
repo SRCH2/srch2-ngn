@@ -40,7 +40,7 @@ public:
 	// if returns true, operation must stop and return null to state_machine
 	bool shouldAbort(const NodeId & failedNode);
 	// coming back from transfer
-	void receiveStatus(const ShardMigrationStatus & status);
+	void consume(const ShardMigrationStatus & status);
 	void commit();
 	// ** end if
 	void release();
