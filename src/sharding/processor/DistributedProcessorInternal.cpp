@@ -716,7 +716,7 @@ void * DPInternalRequestHandler::mergeInShardThreadWork(void * args){
 
 SP(CommandStatusNotification) DPInternalRequestHandler::resolveShardCommand(SP(CommandNotification) notif){
 	//TODO
-	if(notif == NULL){
+	if(! notif){
 		return SP(CommandStatusNotification)(new CommandStatusNotification(ShardCommandCode_Merge));
 	}
 	boost::shared_ptr<const ClusterResourceMetadata_Readview> clusterReadview = notif->getReadview();
