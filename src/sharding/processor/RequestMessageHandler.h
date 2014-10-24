@@ -17,12 +17,8 @@
 #include "processor/serializables/SerializableInsertUpdateCommandInput.h"
 #include "processor/serializables/SerializableDeleteCommandInput.h"
 #include "processor/serializables/SerializableCommandStatus.h"
-#include "processor/serializables/SerializableSerializeCommandInput.h"
-#include "processor/serializables/SerializableResetLogCommandInput.h"
-#include "processor/serializables/SerializableCommitCommandInput.h"
 #include "processor/serializables/SerializableGetInfoCommandInput.h"
 #include "processor/serializables/SerializableGetInfoResults.h"
-#include "processor/serializables/SerializableMergeCommandInput.h"
 
 namespace srch2is = srch2::instantsearch;
 using namespace std;
@@ -87,25 +83,13 @@ public:
         	resultFlag = sendReply<SearchCommandResults>(internalDP.internalSearchCommand(target, clusterReadview, (SearchCommand*)requestObj), node, requestMessageId, clusterReadview);
         	break;
         case InsertUpdateCommandMessageType: // -> for Record object (used for insert and update)
-        	resultFlag = sendReply<CommandStatus>(internalDP.internalInsertUpdateCommand(target, clusterReadview, (WriteCommandNotification*)requestObj), node, requestMessageId, clusterReadview);
+        	resultFlag = sendReply<CommandStatus>(internalDP.internalInsertUpdateCommand(target, clusterReadview, (InsertUpdateCommand*)requestObj), node, requestMessageId, clusterReadview);
         	break;
         case DeleteCommandMessageType: // -> for DeleteCommandInput object (used for delete)
         	resultFlag = sendReply<CommandStatus>(internalDP.internalDeleteCommand(target, clusterReadview, (DeleteCommand *)requestObj), node, requestMessageId, clusterReadview);
         	break;
-        case SerializeCommandMessageType: // -> for SerializeCommandInput object
-        	resultFlag = sendReply<CommandStatus>(internalDP.internalSerializeCommand(target, clusterReadview, (SerializeCommand*)requestObj), node, requestMessageId, clusterReadview);
-        	break;
         case GetInfoCommandMessageType: // -> for GetInfoCommandInput object (used for getInfo)
         	resultFlag = sendReply<GetInfoCommandResults>(internalDP.internalGetInfoCommand(target, clusterReadview, (GetInfoCommand*)requestObj), node, requestMessageId, clusterReadview);
-        	break;
-        case CommitCommandMessageType: // -> for CommitCommandInput object
-        	resultFlag = sendReply<CommandStatus>(internalDP.internalCommitCommand(target, clusterReadview, (CommitCommand*)requestObj), node, requestMessageId, clusterReadview);
-        	break;
-        case ResetLogCommandMessageType: // -> for ResetLogCommandInput (used for resetting log)
-        	resultFlag = sendReply<CommandStatus>(internalDP.internalResetLogCommand(target, clusterReadview, (ResetLogCommand*)requestObj), node, requestMessageId, clusterReadview);
-        	break;
-        case MergeCommandMessageType: // -> for ResetLogCommandInput (used for resetting log)
-        	resultFlag = sendReply<CommandStatus>(internalDP.internalMergeCommand(target, clusterReadview, (MergeCommand*)requestObj), node, requestMessageId, clusterReadview);
         	break;
         default:
             ASSERT(false);

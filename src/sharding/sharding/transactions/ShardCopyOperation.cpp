@@ -1,13 +1,16 @@
 #include "ShardCopyOperation.h"
 
+#include "../metadata_manager/Cluster_Writeview.h"
+#include "../ShardManager.h"
+#include "../../configuration/ShardingConstants.h"
 #include "core/util/SerializationHelper.h"
 #include "core/util/Assert.h"
-#include "../../../configuration/ShardingConstants.h"
-#include "../../metadata_manager/ResourceLocks.h"
-#include "../../metadata_manager/Cluster_Writeview.h"
-#include "../../ShardManager.h"
 #include "server/Srch2Server.h"
 #include "sharding/migration/MigrationManager.h"
+#include "../state_machine/node_iterators/ConcurrentNotifOperation.h"
+#include "../state_machine/StateMachine.h"
+
+
 namespace srch2is = srch2::instantsearch;
 using namespace srch2is;
 using namespace std;
@@ -16,15 +19,11 @@ namespace httpwrapper {
 
 ShardCopyOperation::ShardCopyOperation(const ClusterShardId & unassignedShard,
 		NodeId srcNodeId, const ClusterShardId & shardToReplicate,
-		ConsumerInterface * consumer):unassignedShardId(unassignedShard),replicaShardId(shardToReplicate),srcNodeId(srcNodeId){
+		ConsumerInterface * consumer):ProducerInterface(consumer),
+		unassignedShardId(unassignedShard),replicaShardId(shardToReplicate),srcNodeId(srcNodeId){
 	this->currentOpId = NodeOperationId(ShardManager::getCurrentNodeId());
-	this->releasingMode = false;
-	ASSERT(this->consumer != NULL);
-	this->consumer = consumer;
-	ProducerInterface::connectDeletePathToParent(consumer);
 	this->locker = NULL;
 	this->releaser = NULL;
-	this->copyToMeNotif = NULL;
 	this->committer = NULL;
 	this->finalizedFlag = false;
 	this->successFlag = true;
@@ -38,12 +37,13 @@ ShardCopyOperation::~ShardCopyOperation(){
 	if(this->releaser != NULL){
 		delete this->releaser;
 	}
-	if(this->copyToMeNotif != NULL){
-		delete this->copyToMeNotif;
-	}
 	if(this->committer != NULL){
 		delete this->committer;
 	}
+}
+
+Transaction * ShardCopyOperation::getTransaction() {
+	return this->getConsumer()->getTransaction();
 }
 
 void ShardCopyOperation::produce(){
@@ -85,7 +85,7 @@ void ShardCopyOperation::transfer(){ // : requires receiving a call to our callb
 	// 1. register this transaction in shard manager to receive MM notification
 	ShardManager::getShardManager()->registerMMSessionListener(currentOpId.operationId, this);
 	// 2. send copyToMe notification to the srcNode to start transferring the data
-	this->copyToMeNotif = new CopyToMeNotification(replicaShardId, unassignedShardId);
+	this->copyToMeNotif = SP(CopyToMeNotification)(new CopyToMeNotification(replicaShardId, unassignedShardId));
 
 	// NOTE : this is deallocated by the state machine
 	ConcurrentNotifOperation * copyer = new ConcurrentNotifOperation(copyToMeNotif, NULLType, srcNodeId , this, false);
@@ -93,7 +93,7 @@ void ShardCopyOperation::transfer(){ // : requires receiving a call to our callb
 }
 
 void ShardCopyOperation::end(map<NodeId, ShardingNotification * > & replies){
-	if(replies < 1){
+	if(replies.size() < 1){
 		this->successFlag = false;
 		release();
 	}
@@ -111,10 +111,10 @@ bool ShardCopyOperation::shouldAbort(const NodeId & failedNode){
 // for transfer
 void ShardCopyOperation::receiveStatus(const ShardMigrationStatus & status){
 	// failed or succeed?
-	if(status == MM_STATUS_FAILURE){
+	if(status.status == MM_STATUS_FAILURE){
 		this->successFlag = false;
 		release();
-	}else if(status == MM_STATUS_SUCCESS){
+	}else if(status.status == MM_STATUS_SUCCESS){
 		Cluster_Writeview * writeview = ShardManager::getWriteview();
 
 		string indexDirectory = ShardManager::getShardManager()->getConfigManager()->getShardDir(writeview->clusterName,
@@ -140,15 +140,13 @@ void ShardCopyOperation::commit(){
 // ** end if
 void ShardCopyOperation::release(){
 	// release the locks
-	ASSERT(! this->releasingMode);
-	this->releasingMode = true;
 	currentAction = "release";
 	this->releaser->produce();
 }
 
 void ShardCopyOperation::finalize(){ // ** return **
 	this->finalizedFlag = true;
-	this->consumer->consume(this->successFlag);
+	this->getConsumer()->consume(this->successFlag);
 }
 
 }

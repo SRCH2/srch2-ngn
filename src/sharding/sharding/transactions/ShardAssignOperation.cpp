@@ -2,12 +2,12 @@
 
 #include "core/util/SerializationHelper.h"
 #include "core/util/Assert.h"
-#include "LoadBalancingStartOperation.h"
 #include "../../configuration/ShardingConstants.h"
-#include "../metadata_manager/ResourceLocks.h"
 #include "../metadata_manager/Cluster_Writeview.h"
 #include "../ShardManager.h"
 #include "../metadata_manager/DataShardInitializer.h"
+#include "../state_machine/node_iterators/ConcurrentNotifOperation.h"
+#include "./AtomicRelease.h"
 
 namespace srch2is = srch2::instantsearch;
 using namespace srch2is;
@@ -16,17 +16,12 @@ namespace srch2 {
 namespace httpwrapper {
 
 ShardAssignOperation::ShardAssignOperation(const ClusterShardId & unassignedShard,
-		ConsumerInterface * consumer):shardId(unassignedShard){
+		ConsumerInterface * consumer):ProducerConsumerInterface(consumer), shardId(unassignedShard){
 	this->locker = NULL;
 	this->releaser = NULL;
 	this->committer = NULL;
-	this->releasingMode = false;
-	this->finalizedFlag = false;
 	this->successFlag = true;
-	this->currentAction = "";
-	ASSERT(consumer != NULL);
-	this->consumer = consumer;
-	ProducerInterface::connectDeletePathToParent(consumer);
+	this->currentAction = PreStart;
 }
 
 ShardAssignOperation::~ShardAssignOperation(){
@@ -50,24 +45,32 @@ void ShardAssignOperation::lock(){ // ** start **
 	// locker calls all methods of LockResultCallbackInterface from us
 	this->releaser = new AtomicRelease(shardId, currentOpId , this);
 	// releaser calls all methods of BooleanCallbackInterface from us
-	currentAction = "lock";
+	currentAction = Lock;
 	this->locker->produce();
 }
 // for lock
 void ShardAssignOperation::consume(bool granted){
-	if(currentAction.compare("lock") == 0){
-		if(granted){
-			commit();
-		}else{
-			this->successFlag = false;
+	switch (currentAction) {
+		case Lock:
+			if(granted){
+				commit();
+			}else{
+				this->successFlag = false;
+				release();
+			}
+			break;
+		case Commit:
+			ASSERT(granted);
 			release();
-		}
-	}else if(currentAction.compare("commit") == 0){
-		ASSERT(done);
-		release();
-	}else if(currentAction.compare("release") == 0){
-		ASSERT(done);
-		finalize();
+			break;
+		case Release:
+			ASSERT(granted);
+			finalize();
+			break;
+		default:
+			ASSERT(false);
+			finalize();
+			break;
 	}
 }
 // ** if (granted)
@@ -87,22 +90,19 @@ void ShardAssignOperation::commit(){
 	// prepare the shard change
 	ShardAssignChange * shardAssignChange = new ShardAssignChange(shardId, ShardManager::getCurrentNodeId(), 0);
 	shardAssignChange->setPhysicalShard(physicalShard);
-	currentAction = "commit";
+	currentAction = Commit;
 	this->committer = new AtomicMetadataCommit(shardAssignChange,  vector<NodeId>(), this);
 	this->committer->produce();
 }
 // ** end if
 void ShardAssignOperation::release(){
 	// release the locks
-	ASSERT(! this->releasingMode);
-	this->releasingMode = true;
-	currentAction = "release";
+	currentAction = Release;
 	this->releaser->produce();
 }
 
 void ShardAssignOperation::finalize(){ // ** return **
-	this->finalizedFlag = true;
-	this->consumer->consume(this->successFlag);
+	this->getConsumer()->consume(this->successFlag);
 }
 
 }

@@ -7,15 +7,12 @@
 #include "src/sharding/configuration/ConfigManager.h"
 
 #include "src/sharding/processor/serializables/SerializableCommandStatus.h"
-#include "src/sharding/processor/serializables/SerializableCommitCommandInput.h"
 #include "src/sharding/processor/serializables/SerializableDeleteCommandInput.h"
 #include "src/sharding/processor/serializables/SerializableGetInfoCommandInput.h"
 #include "src/sharding/processor/serializables/SerializableGetInfoResults.h"
 #include "src/sharding/processor/serializables/SerializableInsertUpdateCommandInput.h"
-#include "src/sharding/processor/serializables/SerializableResetLogCommandInput.h"
 #include "src/sharding/processor/serializables/SerializableSearchCommandInput.h"
 #include "src/sharding/processor/serializables/SerializableSearchResults.h"
-#include "src/sharding/processor/serializables/SerializableSerializeCommandInput.h"
 
 #include "test/core/unit/UnitTestHelper.h"
 
@@ -241,10 +238,10 @@ void testSerializableInsertUpdateCommandInput(){
     record1->setPrimaryKey("primary key 1");
     record1->setSearchableAttributeValue(0, "the data for primary key 1");
 
-	WriteCommandNotification commandInput1(record1, WriteCommandNotification::DP_INSERT);
+	InsertUpdateCommand commandInput1(record1, InsertUpdateCommand::DP_INSERT);
 	MessageAllocator * aloc = new MessageAllocator();
 	void * buffer = commandInput1.serialize(aloc);
-	const WriteCommandNotification & deserializedCommandInput1 = *(WriteCommandNotification::deserialize(buffer, schema));
+	const InsertUpdateCommand & deserializedCommandInput1 = *(InsertUpdateCommand::deserialize(buffer, schema));
 	ASSERT(commandInput1.getInsertOrUpdate() == deserializedCommandInput1.getInsertOrUpdate());
 	ASSERT(commandInput1.getRecord()->getPrimaryKey() == deserializedCommandInput1.getRecord()->getPrimaryKey());
 	string originalValue, deserializedValue;
@@ -264,10 +261,10 @@ void testSerializableInsertUpdateCommandInput(){
     record2->setSearchableAttributeValue(1, "the body for primary key 1");
 
 
-	WriteCommandNotification commandInput2(record2, WriteCommandNotification::DP_UPDATE);
+    InsertUpdateCommand commandInput2(record2, InsertUpdateCommand::DP_UPDATE);
 	MessageAllocator * aloc2 = new MessageAllocator();
 	void * buffer2 = commandInput2.serialize(aloc2);
-	const WriteCommandNotification & deserializedCommandInput2 = *(WriteCommandNotification::deserialize(buffer2, schema2));
+	const InsertUpdateCommand & deserializedCommandInput2 = *(InsertUpdateCommand::deserialize(buffer2, schema2));
 	ASSERT(commandInput2.getInsertOrUpdate() == deserializedCommandInput2.getInsertOrUpdate());
 	ASSERT(commandInput2.getRecord()->getPrimaryKey() == deserializedCommandInput2.getRecord()->getPrimaryKey());
 	commandInput2.getRecord()->getSearchableAttributeValue(0,originalValue);
@@ -355,20 +352,6 @@ void testSerializableSearchResults(){
 }
 
 
-void testSerializableSerializeCommandInput(){
-	SerializeCommand commandInput1(SerializeCommand::SERIALIZE_INDEX);
-	MessageAllocator * aloc = new MessageAllocator();
-	void * buffer = commandInput1.serialize(aloc);
-	const SerializeCommand & deserializedCommandInput1 = *(SerializeCommand::deserialize(buffer));
-	ASSERT(commandInput1.getIndexOrRecord() == deserializedCommandInput1.getIndexOrRecord());
-
-	SerializeCommand commandInput2(SerializeCommand::SERIALIZE_RECORDS , "path/serialization_file_name.txt");
-	buffer = commandInput2.serialize(aloc);
-	const SerializeCommand & deserializedCommandInput2 = *(SerializeCommand::deserialize(buffer));
-	ASSERT(commandInput2.getIndexOrRecord() == deserializedCommandInput2.getIndexOrRecord());
-	ASSERT(commandInput2.getDataFileName() == deserializedCommandInput2.getDataFileName());
-}
-
 int main(){
 	testSerializableCommandStatus();
 	testSerializableCommitCommandInput();
@@ -379,7 +362,6 @@ int main(){
 	testSerializableResetLogCommandInput();
 	testSerializableSearchCommandInput();
 	testSerializableSearchResults();
-	testSerializableSerializeCommandInput();
 
     cout << "Sharding Serialization unit tests: Passed" << endl;
 }

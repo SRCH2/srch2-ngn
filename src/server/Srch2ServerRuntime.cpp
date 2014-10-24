@@ -3,6 +3,7 @@
 #include "core/analyzer/AnalyzerContainers.h"
 #include <event2/event-config.h>
 #include <event2/thread.h>
+#include "sharding/sharding/ShardManager.h"
 
 namespace srch2
 {
@@ -149,6 +150,7 @@ void Srch2ServerRuntime::initializeDataProcessorUnits(){
 
 	// create DP external
 	dpExternal = new srch2http::DPExternalRequestHandler(*serverConf, *transportManager, *dpInternal);
+	ShardManager::getShardManager()->setDPInternal(dpInternal);
 }
 
 int Srch2ServerRuntime::startInternalCommunication(){

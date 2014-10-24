@@ -25,8 +25,11 @@ enum ShardingMessageType{
     SearchCommandMessageType, // -> for LogicalPlan object
     SearchResultsMessageType, // -> for SerializedQueryResults object
     DeleteCommandMessageType, // -> for DeleteCommandInput object (used for delete)
+    GetInfoCommandMessageType,
+    GetInfoResultsMessageType,
     StatusMessageType, // -> for CommandStatus object (object returned from insert, delete, update)
     RecordWriteCommandMessageType,
+
 
 
     // For SM
@@ -50,13 +53,9 @@ enum ShardingMessageType{
     MigrationCompleteAckMessage,
 
     // For SHM
-    ShardingNewNodeLockMessageType,
-    ShardingNewNodeLockACKMessageType,
     ShardingMoveToMeMessageType,
-    ShardingMoveToMeStartMessageType,
     ShardingMoveToMeACKMessageType,
-    ShardingMoveToMeFinishMessageType,
-    ShardingMoveToMeAbortMessageType,
+    ShardingMoveToMeCleanupMessageType,
     ShardingNewNodeReadMetadataRequestMessageType,
     ShardingNewNodeReadMetadataReplyMessageType,
     ShardingLockMessageType,
@@ -69,13 +68,7 @@ enum ShardingMessageType{
 
     ShardingCommitMessageType,
     ShardingCommitACKMessageType,
-    ShardingSaveDataMessageType,
-    ShardingSaveDataACKMessageType,
-    ShardingSaveMetadataMessageType,
-    ShardingSaveMetadataACKMessageType,
-    ShardingMergeMessageType,
     ShardingShutdownMessageType,
-    ShardingMergeACKMessageType,
 
     ShardingRecordLockMessageType,
     ShardingRecordLockACKMessageType,
@@ -87,53 +80,7 @@ enum ShardingMessageType{
     ShardingNodeFailureNotificationMessageType
 };
 
-const char * getShardingMessageTypeStr(ShardingMessageType shardingMessageType){
-	   switch (shardingMessageType) {
-	   case ShardingNewNodeLockMessageType:
-		   return "ShardingNewNodeLockMessageType";
-	   case ShardingNewNodeLockACKMessageType:
-		   return "ShardingNewNodeLockACKMessageType";
-	   case ShardingMoveToMeMessageType:
-		   return "ShardingMoveToMeMessageType";
-	   case ShardingMoveToMeStartMessageType:
-		   return "ShardingMoveToMeStartMessageType";
-	   case ShardingMoveToMeACKMessageType:
-		   return "ShardingMoveToMeACKMessageType";
-	   case ShardingMoveToMeFinishMessageType:
-		   return "ShardingMoveToMeFinishMessageType";
-	   case ShardingMoveToMeAbortMessageType:
-		   return "ShardingMoveToMeAbortMessageType";
-	   case ShardingNewNodeReadMetadataRequestMessageType:
-		   return "ShardingNewNodeReadMetadataRequestMessageType";
-	   case ShardingNewNodeReadMetadataReplyMessageType:
-		   return "ShardingNewNodeReadMetadataReplyMessageType";
-	   case ShardingLockMessageType:
-		   return "ShardingLockMessageType";
-	   case ShardingLockACKMessageType:
-		   return "ShardingLockACKMessageType";
-	   case ShardingLockRVReleasedMessageType:
-		   return "ShardingLockACKMessageType";
-	   case ShardingLoadBalancingReportMessageType:
-		   return "ShardingLoadBalancingReportMessageType";
-	   case ShardingLoadBalancingReportRequestMessageType:
-		   return "ShardingLoadBalancingReportRequestMessageType";
-	   case ShardingCopyToMeMessageType:
-		   return "ShardingCopyToMeMessageType";
-	   case ShardingCommitMessageType:
-		   return "ShardingCommitMessageType";
-	   case ShardingCommitACKMessageType:
-		   return "ShardingCommitACKMessageType";
-	   case ShardingMMNotificationMessageType:
-		   return "ShardingMMNotificationMessageType";
-	   case ShardingNodeFailureNotificationMessageType:
-		   return "ShardingNodeFailureNotificationMessageType";
-	   default:
-		   return "Message";
-		   break;
-	   }
-	   ASSERT(false);
-	   return "";
-}
+const char * getShardingMessageTypeStr(ShardingMessageType shardingMessageType);
 
 //Adding portions of new header file, beginning from here
 enum ShardState {
@@ -173,7 +120,7 @@ enum PortType_t {
     SearchAllPort,
 	ShutdownPort,
 	NodeShutdownPort,
-	EndOfPortType, // stop value - not valid (also used to indicate all/default ports)
+	EndOfPortType // stop value - not valid (also used to indicate all/default ports)
 };
 
 enum CLUSTERSTATE {
@@ -286,13 +233,6 @@ enum LockRequestType{
 	LockRequestType_ShardIdList
 };
 
-enum MergeOperationType{
-	MergeOperationType_Merge,
-	MergeOperationType_SetON,
-	MergeOperationType_SetOFF
-};
-
-
 enum ShardCommandCode{
 	ShardCommandCode_SaveData_SaveMetadata,
 	ShardCommandCode_SaveData,
@@ -317,7 +257,8 @@ enum ShardingTransactionType{
 	ShardingTransactionType_Loadbalancing,
 	ShardingTransactionType_NodeJoin,
 	ShardingTransactionType_ShardCommandCode,
-	ShardingTransactionType_InsertUpdateCommand
+	ShardingTransactionType_InsertUpdateCommand,
+	ShardingTransactionType_Shutdown
 };
 
 

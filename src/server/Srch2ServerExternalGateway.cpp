@@ -4,6 +4,7 @@
 #include "sharding/processor/DistributedProcessorExternal.h"
 #include "sharding/configuration/ConfigManager.h"
 #include "sharding/sharding/transactions/cluster_transactions/ShardCommandHttp.h"
+#include "sharding/sharding/transactions/cluster_transactions/ClusterShutdownOperation.h"
 #include <exception>
 
 
@@ -162,7 +163,7 @@ void Srch2ServerGateway::cb_globalOperations(struct evhttp_request * req, void *
     		dpExternal->externalGetInfoCommand(clusterReadview, req, (unsigned) -1, portType);
     		break;
     	case srch2http::ShutdownPort:
-    		srch2http::ShardManager::getShardManager()->shutdown(req);
+    		srch2http::ShutdownCommand::runShutdown(req);
     		break;
     	case srch2http::NodeShutdownPort:
     		srch2http::ShardManager::getShardManager()->_shutdown();

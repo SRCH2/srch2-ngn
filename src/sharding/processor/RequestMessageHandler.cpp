@@ -41,8 +41,8 @@ bool RequestMessageHandler::resolveMessage(Message * msg, NodeId node){
     }
     case InsertUpdateCommandMessageType: // -> for Record object (used for insert and update)
     {
-    	WriteCommandNotification* insertUpdateCommand =
-    			WriteCommandNotification::deserialize(buffer,clusterReadview->getCore(target.getCoreId())->getSchema());
+    	InsertUpdateCommand* insertUpdateCommand =
+    			InsertUpdateCommand::deserialize(buffer,clusterReadview->getCore(target.getCoreId())->getSchema());
     	resultFlag = resolveMessage(insertUpdateCommand, node, msg->getMessageId(), target, msg->getType(), clusterReadview);
     	delete insertUpdateCommand;
     	break;
@@ -54,40 +54,12 @@ bool RequestMessageHandler::resolveMessage(Message * msg, NodeId node){
     	delete deleteCommand;
     	break;
     }
-    case SerializeCommandMessageType: // -> for SerializeCommandInput object
-    {
-    	SerializeCommand* serializeCommand = SerializeCommand::deserialize(buffer);
-    	resultFlag = resolveMessage(serializeCommand, node, msg->getMessageId(), target, msg->getType(), clusterReadview);
-    	delete serializeCommand;
-    	break;
-    }
     case GetInfoCommandMessageType: // -> for GetInfoCommandInput object (used for getInfo)
     {
     	GetInfoCommand* getInfoCommand = GetInfoCommand::deserialize(buffer);
         resultFlag = resolveMessage(getInfoCommand, node, msg->getMessageId(), target, msg->getType(), clusterReadview);
     	delete getInfoCommand;
     	break;
-    }
-    case CommitCommandMessageType: // -> for CommitCommandInput object
-    {
-    	CommitCommand* commitCommand = CommitCommand::deserialize(buffer);
-        resultFlag = resolveMessage(commitCommand, node, msg->getMessageId(), target, msg->getType(), clusterReadview);
-        delete commitCommand;
-        break;
-    }
-    case ResetLogCommandMessageType: // -> for ResetLogCommandInput (used for resetting log)
-    {
-    	ResetLogCommand* resetLogCommand = ResetLogCommand::deserialize(buffer);
-        resultFlag = resolveMessage(resetLogCommand, node, msg->getMessageId(), target, msg->getType(), clusterReadview);
-        delete resetLogCommand;
-        break;
-    }
-    case MergeCommandMessageType: // -> for ResetLogCommandInput (used for resetting log)
-    {
-    	MergeCommand* mergeCommand = MergeCommand::deserialize(buffer);
-        resultFlag = resolveMessage(mergeCommand, node, msg->getMessageId(), target, msg->getType(), clusterReadview);
-        delete mergeCommand;
-        break;
     }
     default:
     {
@@ -114,22 +86,13 @@ void RequestMessageHandler::deleteResponseRequestObjectBasedOnType(ShardingMessa
         delete (SearchCommand*)responseObject;
         return;
     case InsertUpdateCommandMessageType:
-    	delete (WriteCommandNotification *)responseObject;
+    	delete (InsertUpdateCommand *)responseObject;
     	return;
     case DeleteCommandMessageType:
     	delete (DeleteCommand *)responseObject;
     	return;
-    case SerializeCommandMessageType:
-    	delete (SerializeCommand *)responseObject;
-    	return;
     case GetInfoCommandMessageType:
     	delete (GetInfoCommand *)responseObject;
-    	return;
-    case CommitCommandMessageType:
-    	delete (CommitCommand *)responseObject;
-    	return;
-    case ResetLogCommandMessageType:
-    	delete (ResetLogCommand *)responseObject;
     	return;
     default:
         ASSERT(false);

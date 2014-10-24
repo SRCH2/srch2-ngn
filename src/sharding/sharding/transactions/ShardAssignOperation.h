@@ -4,10 +4,10 @@
 #include "./AtomicLock.h"
 #include "./AtomicMetadataCommit.h"
 #include "../metadata_manager/Shard.h"
-#include "../../state_machine/State.h"
-#include "../../notifications/Notification.h"
-#include "../../notifications/CommitNotification.h"
-#include "../../notifications/LockingNotification.h"
+#include "../state_machine/State.h"
+#include "../notifications/Notification.h"
+#include "../notifications/CommitNotification.h"
+#include "../notifications/LockingNotification.h"
 
 namespace srch2is = srch2::instantsearch;
 using namespace srch2is;
@@ -15,7 +15,7 @@ using namespace std;
 namespace srch2 {
 namespace httpwrapper {
 
-class ShardAssignOperation: public ConsumerInterface,public ProducerInterface {
+class ShardAssignOperation: public ProducerConsumerInterface {
 public:
 
 	ShardAssignOperation(const ClusterShardId & unassignedShard, ConsumerInterface * consumer);
@@ -36,17 +36,21 @@ public:
 
 private:
 
+
+	enum CurrentAction{
+		PreStart,
+		Lock,
+		Release,
+		Commit
+	};
 	NodeOperationId currentOpId; // used to be able to release locks, and also talk with MM
 	const ClusterShardId shardId;
 
 	ConsumerInterface * consumer;
-	string currentAction;
+	CurrentAction currentAction;
 	AtomicLock * locker;
 	AtomicRelease * releaser;
 	AtomicMetadataCommit * committer;
-	bool releasingMode;
-
-	bool finalizedFlag;
 	bool successFlag;
 
 };

@@ -23,21 +23,18 @@ public:
 	MoveToMeNotification(){};
 
 
-	static bool resolveMessage(Message * msg, NodeId sendeNode);
+	bool resolveNotification(SP(ShardingNotification) _notif);
 
-	void * serialize(void * buffer) const{
-        buffer = ShardingNotification::serialize(buffer);
+	void * serializeBody(void * buffer) const{
         buffer = shardId.serialize(buffer);
         return buffer;
     }
-    unsigned getNumberOfBytes() const{
+    unsigned getNumberOfBytesBody() const{
         unsigned numberOfBytes = 0;
-        numberOfBytes += ShardingNotification::getNumberOfBytes();
         numberOfBytes += shardId.getNumberOfBytes();
         return numberOfBytes;
     }
-    void * deserialize(void * buffer){
-        buffer = ShardingNotification::deserialize(buffer);
+    void * deserializeBody(void * buffer){
         buffer = shardId.deserialize(buffer);
         return buffer;
     }
@@ -60,24 +57,21 @@ public:
 		}
 		CleanUp(){};
 
-		static bool resolveMessage(Message * msg, NodeId sendeNode);
+		bool resolveNotification(SP(ShardingNotification) _notif);
 
 		ShardingMessageType messageType() const{
-			return ShardingMoveToMeStartMessageType;
+			return ShardingMoveToMeCleanupMessageType;
 		}
-		void * serialize(void * buffer) const{
-			buffer = ShardingNotification::serialize(buffer);
+		void * serializeBody(void * buffer) const{
 			buffer = shardId.serialize(buffer);
 			return buffer;
 		}
-		unsigned getNumberOfBytes() const{
+		unsigned getNumberOfBytesBody() const{
 			unsigned numberOfBytes = 0;
-			numberOfBytes += ShardingNotification::getNumberOfBytes();
 			numberOfBytes += shardId.getNumberOfBytes();
 			return numberOfBytes;
 		}
-		void * deserialize(void * buffer){
-			buffer = ShardingNotification::deserialize(buffer);
+		void * deserializeBody(void * buffer){
 			buffer = shardId.deserialize(buffer);
 			return buffer;
 		}
@@ -98,21 +92,7 @@ public:
 			return ShardingMoveToMeACKMessageType;
 		}
 
-		static bool resolveMessage(Message * msg, NodeId sendeNode);
-	};
-	class FINISH : public ShardingNotification {
-	public:
-		ShardingMessageType messageType() const{
-			return ShardingMoveToMeFinishMessageType;
-		}
-		static bool resolveMessage(Message * msg, NodeId sendeNode);
-	};
-	class ABORT : public ShardingNotification {
-	public:
-		ShardingMessageType messageType() const{
-			return ShardingMoveToMeAbortMessageType;
-		}
-		static bool resolveMessage(Message * msg, NodeId sendeNode);
+		bool resolveNotification(SP(ShardingNotification) _notif);
 	};
 };
 

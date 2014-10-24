@@ -3,7 +3,6 @@
 
 #include "../State.h"
 #include "../../notifications/Notification.h"
-#include "../../metadata_manager/ResourceLocks.h"
 #include "../../../configuration/ShardingConstants.h"
 
 #include <sstream>
@@ -21,22 +20,24 @@ namespace httpwrapper {
 class OrderedNodeIteratorOperation : public OperationState {
 public:
 
-	OrderedNodeIteratorOperation(ShardingNotification * request,ShardingMessageType resType,
-			const vector<NodeId> & participants, OrderedNodeIteratorListenerInterface * validatorObj = NULL);
+	OrderedNodeIteratorOperation(SP(ShardingNotification) request, ShardingMessageType resType,
+			vector<NodeId> & participants, OrderedNodeIteratorListenerInterface * validatorObj = NULL);
 	virtual ~OrderedNodeIteratorOperation();
+
+	Transaction * getTransaction();
 
 	OperationState * entry();
 	// it returns this, or next state or NULL.
 	// if it returns NULL, we delete the object.
-	OperationState * handle(Notification * n);
+	OperationState * handle(SP(Notification) n);
 
-	OperationState * handle(ShardingNotification * notif);
+	OperationState * handle(SP(ShardingNotification) notif);
 
-	OperationState * handle(NodeFailureNotification * notif);
+	OperationState * handle(SP(NodeFailureNotification) notif);
 
-	void setParticipants(const vector<NodeId> & participants);
+	void setParticipants(vector<NodeId> & participants);
 
-	bool validateResponse(ShardingNotification * response);
+	bool validateResponse(SP(ShardingNotification) response);
 
 	string getOperationName() const ;
 
@@ -45,8 +46,8 @@ public:
 
 
 private:
-	const ShardingMessageType resType;
-	ShardingNotification * request;
+	ShardingMessageType resType;
+	SP(ShardingNotification) request;
 
 	vector<NodeOperationId> participants;
 	unsigned participantsIndex;

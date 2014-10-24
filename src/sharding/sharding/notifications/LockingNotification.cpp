@@ -1,10 +1,14 @@
 #include "LockingNotification.h"
 
-#include "../metadata_manager/ResourceLocks.h"
 #include "../ShardManager.h"
 #include "../state_machine/StateMachine.h"
 #include "core/util/SerializationHelper.h"
 #include "core/util/Assert.h"
+#include "../metadata_manager/Cluster_Writeview.h"
+#include "../metadata_manager/Cluster.h"
+#include "../metadata_manager/ResourceMetadataManager.h"
+#include "../lock_manager/LockManager.h"
+
 
 #include <sstream>
 
@@ -92,29 +96,17 @@ LockingNotification::LockingNotification(const vector<ClusterShardId> & shardIdL
 	this->shardIdListLockHolder = shardIdListLockHolder;
 }
 
-LockingNotification::LockingNotification(){}
+LockingNotification::LockingNotification():
+				lockRequestType(LockRequestType_GeneralPurpose),
+				releaseRequestFlag(true),
+				blocking(true || releaseRequestFlag){}
 
-bool LockingNotification::resolveMessage(Message * msg, NodeId sendeNode){
-	LockingNotification * lockNotif =
-			ShardingNotification::deserializeAndConstruct<LockingNotification>(Message::getBodyPointerFromMessagePointer(msg));
-	Logger::debug("%s | %s",
-			lockNotif->getDescription().c_str(),
-			lockNotif->toString());
-	if ( ShardManager::getShardManager()->handleBouncing(lockNotif) ) {
-		return true;
-	}
-
-	resolveNotif(lockNotif);
-	delete lockNotif;
-	return false;
+bool LockingNotification::resolveNotification(SP(ShardingNotification) _notif){
+	ShardManager::getShardManager()->_getLockManager()->resolve(boost::dynamic_pointer_cast<LockingNotification>(_notif));
+	return true;
 }
 
-void LockingNotification::resolveNotif(LockingNotification * notif){
-	ShardManager::getShardManager()->_getLockManager()->resolve(notif);
-}
-
-void * LockingNotification::serialize(void * buffer) const{
-	buffer = ShardingNotification::serialize(buffer);
+void * LockingNotification::serializeBody(void * buffer) const{
 	buffer = srch2::util::serializeFixedTypes(lockRequestType, buffer);
 	buffer = srch2::util::serializeFixedTypes(blocking, buffer);
 	buffer = srch2::util::serializeFixedTypes(releaseRequestFlag, buffer);
@@ -152,9 +144,8 @@ void * LockingNotification::serialize(void * buffer) const{
 	}
 	return buffer;
 }
-unsigned LockingNotification::getNumberOfBytes() const{
+unsigned LockingNotification::getNumberOfBytesBody() const{
 	unsigned numberOfBytes = 0 ;
-	numberOfBytes += ShardingNotification::getNumberOfBytes();
 	numberOfBytes += sizeof(lockRequestType);
 	numberOfBytes += sizeof(blocking);
 	numberOfBytes += sizeof(releaseRequestFlag);
@@ -192,8 +183,7 @@ unsigned LockingNotification::getNumberOfBytes() const{
 	}
 	return numberOfBytes;
 }
-void * LockingNotification::deserialize(void * buffer){
-	buffer = ShardingNotification::deserialize(buffer);
+void * LockingNotification::deserializeBody(void * buffer){
 	buffer = srch2::util::deserializeFixedTypes(buffer, lockRequestType);
 	buffer = srch2::util::deserializeFixedTypes(buffer, blocking);
 	buffer = srch2::util::deserializeFixedTypes(buffer, releaseRequestFlag);
@@ -393,50 +383,89 @@ void LockingNotification::getLockRequestInfo(vector<ClusterShardId> & shardIdLis
 	shardIdListLockLevel = this->shardIdListLockLevel;
 }
 
+vector<string> & LockingNotification::getPrimaryKeys(){
+	return primaryKeys;
+}
+NodeOperationId LockingNotification::getWriterAgent() const{
+	return writerAgent;
+}
+
+bool LockingNotification::isReleaseRequest() const{
+	return releaseRequestFlag;
+}
+
+bool LockingNotification::isBlocking() const{
+	return blocking;
+}
+
+LockRequestType LockingNotification::getType() const{
+	return lockRequestType;
+}
+
+
+void LockingNotification::getInvolvedNodes(vector<NodeId> & participants) const{
+	participants.clear();
+	Cluster_Writeview * writeview = ShardManager::getShardManager()->getWriteview();
+	switch (lockRequestType) {
+	case LockRequestType_Copy:
+	{
+		// only those nodes that have a replica of this partition
+		writeview->getPatitionInvolvedNodes(srcShardId, participants);
+		if(std::find(participants.begin(), participants.end(), writeview->currentNodeId) == participants.end()){
+			participants.push_back(writeview->currentNodeId);
+		}
+		break;
+	}
+	case LockRequestType_Move:
+	{
+		writeview->getPatitionInvolvedNodes(shardId, participants);
+		if(std::find(participants.begin(), participants.end(), writeview->currentNodeId) == participants.end()){
+			participants.push_back(writeview->currentNodeId);
+		}
+		break;
+	}
+	case LockRequestType_PrimaryKey:
+		//TODO participants must be given from outside because it must work based on readview
+		break;
+	case LockRequestType_Metadata:
+	{
+		writeview->getArrivedNodes(participants, true);
+		break;
+	}
+	case LockRequestType_GeneralPurpose:
+	{
+		writeview->getPatitionInvolvedNodes(generalPurposeShardId, participants);
+		break;
+	}
+	}
+}
+
 LockingNotification::ACK::ACK(bool grantedFlag){
 	this->granted = grantedFlag;
 	this->indexOfLastGrantedItem = 0;
 };
 
-bool LockingNotification::ACK::resolveMessage(Message * msg, NodeId sendeNode){
-	LockingNotification::ACK * lockAckNotif =
-			ShardingNotification::deserializeAndConstruct<LockingNotification::ACK>(Message::getBodyPointerFromMessagePointer(msg));
-	Logger::debug("%s | ACK : Granted(%d), LastGrantedItem(%d)", lockAckNotif->getDescription().c_str(), lockAckNotif->isGranted(), lockAckNotif->getIndexOfLastGrantedItem());
-	if(lockAckNotif->isBounced()){
-		Logger::debug("==> Bounced.");
-		ASSERT(false);
-		delete lockAckNotif;
-		return true;
-	}
-
-	resolveNotif(lockAckNotif);
-	return false;
-}
-
-void LockingNotification::ACK::resolveNotif(LockingNotification::ACK * ack){
+bool LockingNotification::ACK::resolveNotification(SP(ShardingNotification) ack){
 	ShardManager::getShardManager()->getStateMachine()->handle(ack);
-	delete ack;
+	return true;
 }
 
 ShardingMessageType LockingNotification::ACK::messageType() const{
 	return ShardingLockACKMessageType;
 }
 
-void * LockingNotification::ACK::serialize(void * buffer) const{
-	buffer = ShardingNotification::serialize(buffer);
+void * LockingNotification::ACK::serializeBody(void * buffer) const{
 	buffer = srch2::util::serializeFixedTypes(granted, buffer);
 	buffer = srch2::util::serializeFixedTypes(indexOfLastGrantedItem, buffer);
 	return buffer;
 }
-unsigned LockingNotification::ACK::getNumberOfBytes() const{
+unsigned LockingNotification::ACK::getNumberOfBytesBody() const{
 	unsigned numberOfBytes = 0;
-	numberOfBytes += ShardingNotification::getNumberOfBytes();
 	numberOfBytes += sizeof(granted);
 	numberOfBytes += sizeof(indexOfLastGrantedItem);
 	return numberOfBytes;
 }
-void * LockingNotification::ACK::deserialize(void * buffer){
-	buffer = ShardingNotification::deserialize(buffer);
+void * LockingNotification::ACK::deserializeBody(void * buffer){
 	buffer = srch2::util::deserializeFixedTypes(buffer, granted);
 	buffer = srch2::util::deserializeFixedTypes(buffer, indexOfLastGrantedItem);
 	return buffer;

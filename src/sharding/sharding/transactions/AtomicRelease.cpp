@@ -6,7 +6,7 @@
 #include "../metadata_manager/Node.h"
 #include "../metadata_manager/Cluster_Writeview.h"
 #include "../ShardManager.h"
-#include "../StateMachine.h"
+#include "../state_machine/StateMachine.h"
 
 #include <sstream>
 
@@ -20,43 +20,34 @@ namespace httpwrapper {
 AtomicRelease::AtomicRelease(const ClusterShardId & srcShardId,
 		const ClusterShardId & destShardId,
 		const NodeOperationId & copyAgent,
-		ConsumerInterface * consumer){
+		ConsumerInterface * consumer) : ProducerInterface(consumer){
 
 	// prepare the locker and locking notification
-	this->releaseNotification = new LockingNotification(srcShardId, destShardId, copyAgent, true);
-	this->lockType = LockingNotification::LockRequestType_Copy;
-	ASSERT(consumer != NULL);
-	this->consumer = consumer;
-	ProducerInterface::connectDeletePathToParent(consumer);
+	this->releaseNotification = SP(LockingNotification)(new LockingNotification(srcShardId, destShardId, copyAgent, true));
+	this->lockType = LockRequestType_Copy;
 	this->finalizeFlag = false;
 	init();
 }
 
 /// node arrival
 AtomicRelease::AtomicRelease(const NodeOperationId & newNodeOpId,
-		ConsumerInterface * consumer){ // releases the metadata
+		ConsumerInterface * consumer): ProducerInterface(consumer){ // releases the metadata
 
 	// prepare the locker and locking notification
-	this->releaseNotification = new LockingNotification(newNodeOpId, vector<NodeId>(), LockLevel_X, true, true);
+	this->releaseNotification = SP(LockingNotification)(new LockingNotification(newNodeOpId, vector<NodeId>(), LockLevel_X, true, true));
 	// LockLevel_X is just a place holder,
-	this->lockType = LockingNotification::LockRequestType_Metadata;
-	ASSERT(consumer != NULL);
-	this->consumer = consumer;
-	ProducerInterface::connectDeletePathToParent(consumer);
+	this->lockType = LockRequestType_Metadata;
 	this->finalizeFlag = false;
 	init();
 }
 
 /// record releasing
-AtomicRelease::AtomicRelease(const vector<string> & primaryKeys, const NodeOperationId & writerAgent,
-		ConsumerInterface * consumer){
+AtomicRelease::AtomicRelease(const vector<string> & primaryKeys, const NodeOperationId & writerAgent, const ClusterPID & pid,
+		ConsumerInterface * consumer): ProducerInterface(consumer){
 
 	// prepare the locker and locking notification
-	this->releaseNotification = new LockingNotification(primaryKeys, writerAgent, true);
-	this->lockType = LockingNotification::LockRequestType_PrimaryKey;
-	ASSERT(consumer != NULL);
-	this->consumer = consumer;
-	ProducerInterface::connectDeletePathToParent(consumer);
+	this->releaseNotification = SP(LockingNotification)(new LockingNotification(primaryKeys, writerAgent, pid, true));
+	this->lockType = LockRequestType_PrimaryKey;
 	this->finalizeFlag = false;
 	init();
 }
@@ -64,40 +55,36 @@ AtomicRelease::AtomicRelease(const vector<string> & primaryKeys, const NodeOpera
 
 /// general purpose cluster shard releasing
 AtomicRelease::AtomicRelease(const ClusterShardId & shardId, const NodeOperationId & agent,
-		ConsumerInterface * consumer){
+		ConsumerInterface * consumer): ProducerInterface(consumer){
 
 	// prepare the locker and locking notification
-	this->releaseNotification = new LockingNotification(shardId, agent, true);
-	this->lockType = LockingNotification::LockRequestType_GeneralPurpose;
-	ASSERT(consumer != NULL);
-	this->consumer = consumer;
-	ProducerInterface::connectDeletePathToParent(consumer);
+	this->releaseNotification = SP(LockingNotification)(new LockingNotification(shardId, agent, true));
+	this->lockType = LockRequestType_GeneralPurpose;
 	this->finalizeFlag = false;
 	init();
 }
 
 
 AtomicRelease::~AtomicRelease(){
-	if(releaseNotification == NULL){
-		ASSERT(false);
-	}else{
-		delete releaseNotification;
-	}
+}
+
+Transaction * AtomicRelease::getTransaction(){
+	return this->getConsumer()->getTransaction();
 }
 
 void AtomicRelease::produce(){
 	ShardManager::getShardManager()->getStateMachine()->registerOperation(releaser);
 }
 
-void AtomicRelease::end(map<NodeId, ShardingNotification * > & replies){
+void AtomicRelease::end(map<NodeId, SP(ShardingNotification) > & replies){
 	finalize();
 }
 void AtomicRelease::finalize(){
 	this->finalizeFlag = true;
-	this->consumer->consume(true);
+	this->getConsumer()->consume(true);
 }
 
-void AtomicRelease::setParticipants(const vector<NodeId> & participants){
+void AtomicRelease::setParticipants(vector<NodeId> & participants){
 	if(releaser == NULL){
 		ASSERT(false);
 		return;

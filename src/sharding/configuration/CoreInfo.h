@@ -250,7 +250,7 @@ public:
 
 	AnalyzerType getAnalyzerType() const {	return analyzerType;};
 
-	const string& getChineseDictionaryPath() const { return chineseDictionaryFilePath;	}
+	const string getChineseDictionaryPath() const { return chineseDictionaryFilePath;	}
 
 	uint32_t getDocumentLimit() const;
 	uint64_t getMemoryLimit() const;
@@ -262,9 +262,9 @@ public:
 	uint32_t getUpdateHistogramEveryQWrites() const;
 
 	// **** accessors for settings in ConfigManager (global to all cores) ****
-			const string &getSrch2Home() const ;
-	const string& getLicenseKeyFileName() const ;
-	const string& getHTTPServerAccessLogFile() const ;
+	const string getSrch2Home() const ;
+	const string getLicenseKeyFileName() const ;
+	const string getHTTPServerAccessLogFile() const ;
 	const Logger::LogLevel& getHTTPServerLogLevel() const;
 
 	bool getIsFuzzyTermsQuery() const;

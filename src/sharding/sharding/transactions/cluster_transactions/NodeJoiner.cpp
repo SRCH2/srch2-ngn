@@ -4,6 +4,8 @@
 #include "../AtomicMetadataCommit.h"
 #include "../AtomicLock.h"
 #include "../AtomicRelease.h"
+#include "../../state_machine/StateMachine.h"
+#include "../../state_machine/node_iterators/ConcurrentNotifOperation.h"
 
 #include "core/util/Logger.h"
 
@@ -16,22 +18,15 @@ namespace httpwrapper {
 
 
 
-void NodeJoiner::run(){
+void NodeJoiner::join(){
 	NodeJoiner * joiner = new NodeJoiner();
-	ShardManager::getShardManager()->getStateMachine()->registerTransaction(this);
-	joiner->join();
+	Transaction::startTransaction(joiner);
 }
 
 
 NodeJoiner::~NodeJoiner(){
 	if(locker != NULL){
 		delete locker;
-	}
-	if( readMetadataNotif != NULL){
-		delete readMetadataNotif;
-	}
-	if(commitNotification != NULL){
-		delete commitNotification;
 	}
 	if(releaser != NULL){
 		delete releaser;
@@ -49,19 +44,30 @@ NodeJoiner::NodeJoiner(){
 	this->selfOperationId = NodeOperationId(ShardManager::getCurrentNodeId(), this->getTID());
 	this->randomNodeToReadFrom = 0;
 	this->locker = NULL;
-	this->readMetadataNotif = new MetadataReport::REQUEST();;
-	this->commitNotification = NULL;
+	this->readMetadataNotif = SP(MetadataReport::REQUEST)(new MetadataReport::REQUEST());
 	this->releaser = NULL;
 	this->metadataChange = NULL;
 	this->committer = NULL;
 	this->currentOperation = "";
 }
 
+
+Transaction * NodeJoiner::getTransaction() {
+	return this;
+}
+
+void NodeJoiner::initSession(){
+	TransactionSession * session = new TransactionSession();
+	ShardManager::getReadview(session->clusterReadview);
+	session->response = new JsonResponseHandler();
+}
+
 ShardingTransactionType NodeJoiner::getTransactionType(){
 	return ShardingTransactionType_NodeJoin;
 }
-void NodeJoiner::join(){
+bool NodeJoiner::run(){
 	lock();
+	return true;
 }
 
 
@@ -146,14 +152,14 @@ bool NodeJoiner::shouldAbort(const NodeId & failedNode){
 	return false;
 }
 // if returns true, operation must stop and return null to state_machine
-void NodeJoiner::end_(map<NodeOperationId, ShardingNotification * > & replies){
+void NodeJoiner::end_(map<NodeOperationId, SP(ShardingNotification) > & replies){
 	if(replies.size() != 1){
 		ASSERT(false);
 		finalize(false);
 		return;
 	}
 	ASSERT(replies.begin()->first == randomNodeToReadFrom);
-	MetadataReport * metadataReport = (MetadataReport * )replies.begin()->second;
+	SP(MetadataReport) metadataReport = boost::dynamic_pointer_cast<MetadataReport>(replies.begin()->second);
 	Cluster_Writeview * clusterWriteview = metadataReport->getWriteview();
 	if(clusterWriteview == NULL){
 		ASSERT(false);
@@ -226,7 +232,7 @@ void NodeJoiner::finalize(bool result){
 	Logger::info("Joined to the cluster.");
 	}
 	// so state machine will deallocate this transaction
-	ConsumerInterface::setTransIdToDelete(this->getTID());
+	this->setFinished();
 }
 
 void NodeJoiner::getOlderNodesList(vector<NodeId> & olderNodes){
@@ -254,7 +260,7 @@ void NodeJoiner::getOlderNodesList(vector<NodeId> & olderNodes){
 	Logger::debug("Sending list of nodes : %s with the lock request.", ss.str().c_str());
 
 	ASSERT(olderNodes.size() > 0 &&
-			olderNodes.at(allNodesUpToCurrentNode.size()-1) < ShardManager::getCurrentNodeId());
+			olderNodes.at(olderNodes.size()-1) < ShardManager::getCurrentNodeId());
 }
 
 }

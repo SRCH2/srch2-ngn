@@ -69,9 +69,9 @@ public:
 	 *    in a non-blocking manner. The status response is taken care of by aggregator in
 	 *    another thread when these responses come.
 	 */
+//	void externalInsertCommand(boost::shared_ptr<const ClusterResourceMetadata_Readview> clusterReadview,
+//			evhttp_request *req, unsigned coreId);
 	void externalInsertCommand(boost::shared_ptr<const ClusterResourceMetadata_Readview> clusterReadview,
-			evhttp_request *req, unsigned coreId);
-	void _externalInsertCommand(boost::shared_ptr<const ClusterResourceMetadata_Readview> clusterReadview,
 			evhttp_request *req, unsigned coreId);
 
 	/*

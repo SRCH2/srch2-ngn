@@ -1,12 +1,12 @@
 
 #include "Cluster_Writeview.h"
-#include "ResourceLocks.h"
 
 
 #include "../ShardManager.h"
 #include "../../transport/MessageAllocator.h"
 #include "../../util/FramedPrinter.h"
 #include "../../sharding/metadata_manager/Node.h"
+#include "../lock_manager/LockManager.h"
 #include "core/util/SerializationHelper.h"
 #include "server/Srch2Server.h"
 
@@ -824,7 +824,14 @@ void Cluster_Writeview::moveClusterShard(const ClusterShardId & shardId, const N
 		ASSERT(shard->state == SHARDSTATE_READY);
 		// erase the physical shard
 		if(localClusterDataShards.find(shardId) != localClusterDataShards.end()){
-            localClusterDataShards.erase(shardId);
+			localClusterDataShardBackups.push_back(new DataShardBackup());
+			localClusterDataShardBackups.at(
+					localClusterDataShardBackups.size()-1)->localPhysicalShard =
+							localClusterDataShards.find(shardId)->second;
+			localClusterDataShardBackups.at(localClusterDataShardBackups.size()-1)->shardId = shardId;
+			localClusterDataShardBackups.at(localClusterDataShardBackups.size()-1)->newNodeLocation = destNodeId;
+			localClusterDataShards.erase(shardId);
+
 		}else{
 		    ASSERT(false);
 		}
@@ -1108,7 +1115,7 @@ ClusterResourceMetadata_Readview * Cluster_Writeview::getNewReadview(){
 
 		// set locks of partitions of this core
 		vector<ClusterShardId> lockedPartitions;
-		ShardManager::getShardManager()->getLockManager()->getLockedPartitions(lockedPartitions);
+		ShardManager::getShardManager()->_getLockManager()->getLockedPartitions(lockedPartitions);
 		for(unsigned i = 0 ; i < lockedPartitions.size(); i++){
 			if(lockedPartitions.at(i).coreId == coreId){
 				corePartitionContainer->setPartitionLock(lockedPartitions.at(i).partitionId, PartitionLock_Locked);

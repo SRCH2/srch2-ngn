@@ -74,14 +74,14 @@ TARGET_LINK_LIBRARIES(SingleNodeIntraCommunicationTest
 LIST(APPEND SHARD_UNIT_TESTS SingleNodeIntraCommunicationTest)
 
 
-ADD_EXECUTABLE(ResourceLockManager_Test ./shard_manager/ResourceLockManager_Test.cpp $<TARGET_OBJECTS:WRAPPER_OBJECTS> $<TARGET_OBJECTS:SHARDING_OBJECTS> $<TARGET_OBJECTS:SERVER_OBJECTS>)
-TARGET_LINK_LIBRARIES(ResourceLockManager_Test
-                        ${Srch2InstantSearch_LIBRARIES} 
-                        ${jsoncpp_LIBRARY}  ${CMAKE_SOURCE_DIR}/thirdparty/event/lib/libevent.a 
-                        ${CMAKE_SOURCE_DIR}/thirdparty/event/lib/libevent_pthreads.a
-                        ${Boost_LIBRARIES} ${CMAKE_REQUIRED_LIBRARIES}  ${GPERFTOOL_LIBS}
-                    )
-LIST(APPEND SHARD_UNIT_TESTS ResourceLockManager_Test)
+#ADD_EXECUTABLE(ResourceLockManager_Test ./shard_manager/ResourceLockManager_Test.cpp $<TARGET_OBJECTS:WRAPPER_OBJECTS> $<TARGET_OBJECTS:SHARDING_OBJECTS> $<TARGET_OBJECTS:SERVER_OBJECTS>)
+#TARGET_LINK_LIBRARIES(ResourceLockManager_Test
+#                        ${Srch2InstantSearch_LIBRARIES} 
+#                        ${jsoncpp_LIBRARY}  ${CMAKE_SOURCE_DIR}/thirdparty/event/lib/libevent.a 
+#                        ${CMAKE_SOURCE_DIR}/thirdparty/event/lib/libevent_pthreads.a
+#                        ${Boost_LIBRARIES} ${CMAKE_REQUIRED_LIBRARIES}  ${GPERFTOOL_LIBS}
+#                    )
+#LIST(APPEND SHARD_UNIT_TESTS ResourceLockManager_Test)
 
 ADD_EXECUTABLE(Notification_Test ./shard_manager/Notification_Test.cpp $<TARGET_OBJECTS:WRAPPER_OBJECTS> $<TARGET_OBJECTS:SHARDING_OBJECTS> $<TARGET_OBJECTS:SERVER_OBJECTS>)
 TARGET_LINK_LIBRARIES(Notification_Test

@@ -12,7 +12,6 @@ namespace srch2 {
 namespace httpwrapper {
 
 
-class ResourceLockRequest;
 class LockingNotification : public ShardingNotification{
 public:
 
@@ -54,11 +53,10 @@ public:
 
 	LockingNotification();
 
-	static bool resolveMessage(Message * msg, NodeId sendeNode);
-	static void resolveNotif(LockingNotification * notif);
-	void * serialize(void * buffer) const;
-	unsigned getNumberOfBytes() const;
-	void * deserialize(void * buffer);
+	bool resolveNotification(SP(ShardingNotification) _notif);
+	void * serializeBody(void * buffer) const;
+	unsigned getNumberOfBytesBody() const;
+	void * deserializeBody(void * buffer);
 	ShardingMessageType messageType() const;
     bool operator==(const LockingNotification & lockingNotification);
 
@@ -72,62 +70,24 @@ public:
     void getLockRequestInfo(vector<ClusterShardId> & shardIdList, NodeOperationId & shardIdListLockHolder,
     		LockLevel & shardIdListLockLevel) const;
 
-    vector<string> & getPrimaryKeys(){
-    	return primaryKeys;
-    }
-    NodeOperationId getWriterAgent() const{
-    	return writerAgent;
-    }
+    vector<string> & getPrimaryKeys();
+    NodeOperationId getWriterAgent() const;
 
-    bool isReleaseRequest() const{
-    	return releaseRequestFlag;
-    }
+    bool isReleaseRequest() const;
 
-    bool isBlocking() const{
-    	return blocking;
-    }
+    bool isBlocking() const;
 
-    LockRequestType getType(){
-    	return lockRequestType;
-    }
+    LockRequestType getType() const;
 
 
-    void getInvolvedNodes(vector<NodeId> & participants){
-    	participants.clear();
-    	Cluster_Writeview * writeview = ShardManager::getShardManager()->getWriteview();
-    	switch (lockRequestType) {
-    	case LockRequestType_Copy:
-    	{
-    		// only those nodes that have a replica of this partition
-    		writeview->getPatitionInvolvedNodes(srcShardId, participants);
-    		break;
-    	}
-    	case LockRequestType_Move:
-    	{
-    		writeview->getPatitionInvolvedNodes(shardId, participants);
-    		break;
-    	}
-    	case LockRequestType_PrimaryKey:
-    		//TODO participants must be given from outside because it must work based on readview
-    	case LockRequestType_Metadata:
-    	{
-    		writeview->getArrivedNodes(participants, true);
-    		break;
-    	}
-    	case LockRequestType_GeneralPurpose:
-    	{
-    		writeview->getPatitionInvolvedNodes(generalPurposeShardId, participants);
-    		break;
-    	}
-    	}
-    }
+    void getInvolvedNodes(vector<NodeId> & participants) const;
 
 private:
 
     bool releaseRequestFlag;
 
     LockRequestType lockRequestType;
-    const bool blocking;
+    bool blocking;
 	/*
 	 * in case of LockRequestType_Copy
 	 */
@@ -188,13 +148,13 @@ public:
 		};
 		ACK(bool grantedFlag);
 
-		static bool resolveMessage(Message * msg, NodeId sendeNode);
-		static void resolveNotif(ACK * ack);
+
+		bool resolveNotification(SP(ShardingNotification) _notif);
 
 		ShardingMessageType messageType() const;
-		void * serialize(void * buffer) const;
-		unsigned getNumberOfBytes() const;
-		void * deserialize(void * buffer);
+		void * serializeBody(void * buffer) const;
+		unsigned getNumberOfBytesBody() const;
+		void * deserializeBody(void * buffer);
 
 	    bool operator==(const LockingNotification::ACK & right);
 

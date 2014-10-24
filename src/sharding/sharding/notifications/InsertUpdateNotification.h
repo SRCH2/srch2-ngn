@@ -8,6 +8,7 @@ using namespace std;
 #include <instantsearch/Record.h>
 #include "core/util/SerializationHelper.h"
 #include "sharding/transport/MessageAllocator.h"
+#include "./Notification.h"
 
 namespace srch2 {
 namespace httpwrapper {
@@ -29,6 +30,10 @@ public:
         this->record = record;
         this->insertOrUpdate = insertOrUpdate;
     }
+    InsertUpdateNotification(){
+        this->record = NULL;
+        this->insertOrUpdate = DP_INSERT;
+    }
     ~InsertUpdateNotification(){
         delete record;
     }
@@ -39,27 +44,28 @@ public:
     srch2is::Record * getRecord() const{
         return this->record;
     }
+	bool resolveNotification(SP(ShardingNotification) _notif){
+		return true;//TODO
+	}
+
     //serializes the object to a byte array and places array into the region
     //allocated by given allocator
-    void* serialize(void * buffer){
+    void* serializeBody(void * buffer) const{
         // and serialize things in calculate
-    	buffer = ShardingNotification::serialize(buffer);
     	buffer = srch2::util::serializeFixedTypes(insertOrUpdate, buffer);
         buffer = record->serializeForNetwork(buffer);
         return buffer;
     }
 
-    unsigned getNumberOfBytes() const{
+    unsigned getNumberOfBytesBody() const{
         unsigned numberOfBytes = 0;
-    	numberOfBytes += ShardingNotification::getNumberOfBytes();
         numberOfBytes += sizeof(OperationCode);
         numberOfBytes += record->getNumberOfBytesSize();
         return numberOfBytes;
     }
 
     //given a byte stream recreate the original object
-    static InsertUpdateNotification* deserialize(void* buffer, const Schema * schema){
-    	buffer = ShardingNotification::deserialize(buffer);
+    static InsertUpdateNotification* deserializeBody(void* buffer, const Schema * schema){
         Record * record = new Record(schema);
         OperationCode insertOrUpdate ;
         buffer = srch2::util::deserializeFixedTypes(buffer, insertOrUpdate);
@@ -70,10 +76,6 @@ public:
 
     InsertUpdateNotification * clone(){
     	return new InsertUpdateNotification(new Record(*this->record), this->insertOrUpdate);
-    }
-    //Returns the type of message which uses this kind of object as transport
-    static ShardingMessageType messageType(){
-        return InsertUpdateCommandMessageType;
     }
 
 private:

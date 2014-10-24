@@ -22,39 +22,15 @@ public:
     }
 	CopyToMeNotification(){};
 
-	static bool resolveMessage(Message * msg, NodeId sendeNode);
+	bool resolveNotification(SP(ShardingNotification) _notif);
 
-	void * serialize(void * buffer) const{
-		buffer = ShardingNotification::serialize(buffer);
-		buffer = replicaShardId.serialize(buffer);
-        buffer = unassignedShardId.serialize(buffer);
-		return buffer;
-	}
-	unsigned getNumberOfBytes() const{
-		unsigned numberOfBytes = 0;
-		numberOfBytes += ShardingNotification::getNumberOfBytes();
-		numberOfBytes += replicaShardId.getNumberOfBytes();
-        numberOfBytes += unassignedShardId.getNumberOfBytes();
-		return numberOfBytes;
-	}
-	void * deserialize(void * buffer) {
-		buffer = ShardingNotification::deserialize(buffer);
-		buffer = replicaShardId.deserialize(buffer);
-        buffer = unassignedShardId.deserialize(buffer);
-		return buffer;
-	}
-	ShardingMessageType messageType() const{
-		return ShardingCopyToMeMessageType;
-	}
-    ClusterShardId getReplicaShardId() const{
-    	return replicaShardId;
-    }
-    ClusterShardId getUnassignedShardId() const{
-        return unassignedShardId;
-    }
-	bool operator==(const CopyToMeNotification & right){
-		return replicaShardId == right.replicaShardId && unassignedShardId == right.unassignedShardId;
-	}
+	void * serializeBody(void * buffer) const;
+	unsigned getNumberOfBytesBody() const;
+	void * deserializeBody(void * buffer) ;
+	ShardingMessageType messageType() const;
+    ClusterShardId getReplicaShardId() const;
+    ClusterShardId getUnassignedShardId() const;
+	bool operator==(const CopyToMeNotification & right);
 private:
 	ClusterShardId replicaShardId;
 	ClusterShardId unassignedShardId;

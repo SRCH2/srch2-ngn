@@ -1,5 +1,5 @@
 #include "StateMachine.h"
-
+#include "../transactions/Transaction.h"
 #include "../../util/FramedPrinter.h"
 
 #include "core/util/Assert.h"
@@ -9,18 +9,6 @@ using namespace srch2is;
 using namespace std;
 namespace srch2 {
 namespace httpwrapper {
-
-bool StateMachine::registerTransaction(Transaction * transaction){
-	if(transaction == NULL){
-		ASSERT(false);
-		return false;
-	}
-	if(activeTransactions.find(transaction->getTID()) != activeTransactions.end()){
-		return false;
-	}
-	activeTransactions[transaction->getTID()] = transaction;
-	return true;
-}
 
 void StateMachine::registerOperation(OperationState * operation){
 	if(operation == NULL){
@@ -33,19 +21,8 @@ void StateMachine::registerOperation(OperationState * operation){
 	startOperation(operation);
 }
 
-void StateMachine::removeTransaction(TRANS_ID tid){
-	if(tid == TRANS_ID_NULL){
-		return;
-	}
-	if(activeTransactions.find(tid) == activeTransactions.end()){
-		return;
-	}
-	Transaction::deallocateTransaction(activeTransactions.find(tid)->second);
-	activeTransactions.erase(tid);
-}
-
-void StateMachine::handle(ShardingNotification * notification){
-	if(notification == NULL){
+void StateMachine::handle(SP(ShardingNotification) notification){
+	if(! notification){
 		ASSERT(false);
 		return;
 	}
@@ -59,8 +36,8 @@ void StateMachine::handle(ShardingNotification * notification){
 }
 
 // goes to everybody
-void StateMachine::handle(Notification * notification){
-	if(notification == NULL){
+void StateMachine::handle(SP(Notification) notification){
+	if(! notification){
 		ASSERT(false);
 		return;
 	}
@@ -135,7 +112,9 @@ void StateMachine::stateTransit(OperationState * operation, OperationState * nex
 			// now, this is where we check this operation to see if there
 			// is any ending transaction to delete
 			// 3. delete the old operation
-			removeTransaction(operation->getTransIdToDelete());
+			if(operation->getTransaction() != NULL && operation->getTransaction()->isFinished()){
+				delete operation->getTransaction();
+			}
 			delete operation;
 			return;
 		}

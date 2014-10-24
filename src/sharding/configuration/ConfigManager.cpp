@@ -2506,7 +2506,7 @@ bool ConfigManager::getSupportSwapInEditDistance(const string &coreName) const
     return clusterReadview->getCoreByName(coreNameTmp)->getSupportSwapInEditDistance();
 }
 
-const string& ConfigManager::getAttributeLatitude(const string &coreName) const
+const string ConfigManager::getAttributeLatitude(const string &coreName) const
 {
 	string coreNameTmp = coreName;
     if (coreNameTmp.compare("") == 0) {
@@ -2517,7 +2517,7 @@ const string& ConfigManager::getAttributeLatitude(const string &coreName) const
     return clusterReadview->getCoreByName(coreNameTmp)->getFieldLatitude();
 }
 
-const string& ConfigManager::getAttributeLongitude(const string &coreName) const
+const string ConfigManager::getAttributeLongitude(const string &coreName) const
 {
 	string coreNameTmp = coreName;
     if (coreNameTmp.compare("") == 0) {
@@ -2656,7 +2656,7 @@ const vector<string> * ConfigManager::getFacetGaps(const string &coreName) const
 }
 
 
-const string &ConfigManager::getSrch2Home() const {
+const string ConfigManager::getSrch2Home() const {
     return srch2Home;
 }
 
@@ -2671,7 +2671,7 @@ bool ConfigManager::getStemmerFlag(const string &coreName) const
     return clusterReadview->getCoreByName(coreNameTmp)->getStemmerFlag();
 }
 
-const string &ConfigManager::getStemmerFile(const string &coreName) const
+const string ConfigManager::getStemmerFile(const string &coreName) const
 {
 	string coreNameTmp = coreName;
     if (coreNameTmp.compare("") == 0) {
@@ -2682,7 +2682,7 @@ const string &ConfigManager::getStemmerFile(const string &coreName) const
     return clusterReadview->getCoreByName(coreNameTmp)->getStemmerFile();
 }
 
-const string &ConfigManager::getSynonymFilePath(const string &coreName) const
+const string ConfigManager::getSynonymFilePath(const string &coreName) const
 {
 	string coreNameTmp = coreName;
     if (coreNameTmp.compare("") == 0) {
@@ -2693,7 +2693,7 @@ const string &ConfigManager::getSynonymFilePath(const string &coreName) const
     return clusterReadview->getCoreByName(coreNameTmp)->getSynonymFilePath();
 }
 
-const string &ConfigManager::getProtectedWordsFilePath(const string &coreName) const
+const string ConfigManager::getProtectedWordsFilePath(const string &coreName) const
 {
 	string coreNameTmp = coreName;
     if (coreNameTmp.compare("") == 0) {
@@ -2715,7 +2715,7 @@ bool ConfigManager::getSynonymKeepOrigFlag(const string &coreName) const
     return clusterReadview->getCoreByName(coreNameTmp)->getSynonymKeepOrigFlag();
 }
 
-const string &ConfigManager::getStopFilePath(const string &coreName) const
+const string ConfigManager::getStopFilePath(const string &coreName) const
 {
 	string coreNameTmp = coreName;
     if (coreNameTmp.compare("") == 0) {
@@ -2726,7 +2726,7 @@ const string &ConfigManager::getStopFilePath(const string &coreName) const
     return clusterReadview->getCoreByName(coreNameTmp)->getStopFilePath();
 }
 
-const string& ConfigManager::getAttributeRecordBoostName(const string &coreName) const
+const string ConfigManager::getAttributeRecordBoostName(const string &coreName) const
 {
 	string coreNameTmp = coreName;
     if (coreNameTmp.compare("") == 0) {
@@ -2737,7 +2737,7 @@ const string& ConfigManager::getAttributeRecordBoostName(const string &coreName)
     return clusterReadview->getCoreByName(coreNameTmp)->getrecordBoostField();
 }
 
-const string& ConfigManager::getRecordAllowedSpecialCharacters(const string &coreName) const {
+const string ConfigManager::getRecordAllowedSpecialCharacters(const string &coreName) const {
 	string coreNameTmp = coreName;
     if (coreNameTmp.compare("") == 0) {
         coreNameTmp = getDefaultCoreName();

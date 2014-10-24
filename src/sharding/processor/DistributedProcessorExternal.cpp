@@ -41,15 +41,12 @@
 
 
 #include "serializables/SerializableCommandStatus.h"
-#include "serializables/SerializableCommitCommandInput.h"
 #include "serializables/SerializableDeleteCommandInput.h"
 #include "serializables/SerializableGetInfoCommandInput.h"
 #include "serializables/SerializableGetInfoResults.h"
 #include "serializables/SerializableInsertUpdateCommandInput.h"
-#include "serializables/SerializableResetLogCommandInput.h"
 #include "serializables/SerializableSearchCommandInput.h"
 #include "serializables/SerializableSearchResults.h"
-#include "serializables/SerializableSerializeCommandInput.h"
 
 #include "sharding/sharding/ShardManager.h"
 #include "sharding/configuration/ConfigManager.h"
@@ -211,12 +208,12 @@ void DPExternalRequestHandler::externalSearchAllCommand(boost::shared_ptr<const 
  *    in a non-blocking manner. The status response is taken care of by aggregator in
  *    another thread when these responses come.
  */
-void DPExternalRequestHandler::externalInsertCommand(boost::shared_ptr<const ClusterResourceMetadata_Readview> clusterReadview,
-		evhttp_request *req, unsigned coreId){
-	ExternalInsertUpdateCommandHttp::insert(clusterReadview, req, coreId);
-}
+//void DPExternalRequestHandler::externalInsertCommand(boost::shared_ptr<const ClusterResourceMetadata_Readview> clusterReadview,
+//		evhttp_request *req, unsigned coreId){
+//	ExternalInsertUpdateCommandHttp::insert(clusterReadview, req, coreId);
+//}
 
-void DPExternalRequestHandler::_externalInsertCommand(boost::shared_ptr<const ClusterResourceMetadata_Readview> clusterReadview,
+void DPExternalRequestHandler::externalInsertCommand(boost::shared_ptr<const ClusterResourceMetadata_Readview> clusterReadview,
 		evhttp_request *req, unsigned coreId){
 
 //    Logger::console("Cluster readview used for insert: ");
@@ -224,8 +221,8 @@ void DPExternalRequestHandler::_externalInsertCommand(boost::shared_ptr<const Cl
 //    clusterReadview->print();
 //    Logger::console("====================================");
 
-	boost::shared_ptr<HTTPJsonRecordOperationResponse > brokerSideInformationJson =
-			boost::shared_ptr<HTTPJsonRecordOperationResponse > (new HTTPJsonRecordOperationResponse(req));
+	boost::shared_ptr<JsonRecordOperationResponse > brokerSideInformationJson =
+			boost::shared_ptr<JsonRecordOperationResponse > (new JsonRecordOperationResponse(req));
 
     const CoreInfo_t *indexDataContainerConf = clusterReadview->getCore(coreId);
     const string coreName = indexDataContainerConf->getName();
@@ -280,8 +277,8 @@ void DPExternalRequestHandler::_externalInsertCommand(boost::shared_ptr<const Cl
             if(JSONRecordParser::_JSONValueObjectToRecord(record, doc,
                     indexDataContainerConf, errorStream, recSerializer) == false){
 
-            	Json::Value recordJsonResponse = HTTPJsonRecordOperationResponse::getRecordJsonResponse(record->getPrimaryKey(), c_action_insert, false , coreName);
-            	HTTPJsonRecordOperationResponse::addRecordError(recordJsonResponse, HTTP_JSON_Custom_Error, errorStream.str());
+            	Json::Value recordJsonResponse = JsonRecordOperationResponse::getRecordJsonResponse(record->getPrimaryKey(), c_action_insert, false , coreName);
+            	JsonRecordOperationResponse::addRecordError(recordJsonResponse, HTTP_JSON_Custom_Error, errorStream.str());
             	brokerSideInformationJson->addRecordShardResponse(recordJsonResponse);
 
                 delete record;
@@ -304,8 +301,8 @@ void DPExternalRequestHandler::_externalInsertCommand(boost::shared_ptr<const Cl
         if(JSONRecordParser::_JSONValueObjectToRecord(record, root,
                 indexDataContainerConf, errorStream , recSerializer) == false){
 
-        	Json::Value recordJsonResponse = HTTPJsonRecordOperationResponse::getRecordJsonResponse(record->getPrimaryKey(), c_action_insert, false , coreName);
-        	HTTPJsonRecordOperationResponse::addRecordError(recordJsonResponse, HTTP_JSON_Custom_Error, errorStream.str());
+        	Json::Value recordJsonResponse = JsonRecordOperationResponse::getRecordJsonResponse(record->getPrimaryKey(), c_action_insert, false , coreName);
+        	JsonRecordOperationResponse::addRecordError(recordJsonResponse, HTTP_JSON_Custom_Error, errorStream.str());
         	brokerSideInformationJson->addRecordShardResponse(recordJsonResponse);
             record->clear();
             delete storedSchema;
@@ -328,8 +325,8 @@ void DPExternalRequestHandler::_externalInsertCommand(boost::shared_ptr<const Cl
      * The reason that aggregator is wrapped in shared pointer is that we use a separate pending request for each
      * insert in a batch insert, so we want the aggregator to be deleted after all of them are resolved.
      */
-    boost::shared_ptr<StatusAggregator<WriteCommandNotification> >
-    resultsAggregator(new StatusAggregator<WriteCommandNotification>(configurationManager,req, clusterReadview, coreId,recordsToInsert.size()));
+    boost::shared_ptr<StatusAggregator<InsertUpdateCommand> >
+    resultsAggregator(new StatusAggregator<InsertUpdateCommand>(configurationManager,req, clusterReadview, coreId,recordsToInsert.size()));
     // pass the Json response to the aggregator
     resultsAggregator->setJsonRecordOperationResponse(brokerSideInformationJson);
 	// 1. first find all destination shards.
@@ -339,20 +336,20 @@ void DPExternalRequestHandler::_externalInsertCommand(boost::shared_ptr<const Cl
         time_t timeValue;
         time(&timeValue);
         timeValue = timeValue + TIMEOUT_WAIT_TIME;
-        WriteCommandNotification  * insertUpdateInput = new WriteCommandNotification(*recordItr,WriteCommandNotification::DP_INSERT);
+        InsertUpdateCommand  * insertUpdateInput = new InsertUpdateCommand(*recordItr,InsertUpdateCommand::DP_INSERT);
         resultsAggregator->addRequestObj(insertUpdateInput);
         vector<NodeTargetShardInfo> targets;
         partitioner->getAllWriteTargets(partitioner->hashDJB2(insertUpdateInput->getRecord()->getPrimaryKey().c_str()),
         		clusterReadview->getCurrentNodeId(), targets);
         if(targets.size() == 0){
         	Json::Value recordJsonResponse =
-        			HTTPJsonRecordOperationResponse::getRecordJsonResponse(insertUpdateInput->getRecord()->getPrimaryKey(), c_action_insert , false , coreName);
-        	HTTPJsonRecordOperationResponse::addRecordError(recordJsonResponse, HTTP_JSON_All_Shards_Down_Error);
+        			JsonRecordOperationResponse::getRecordJsonResponse(insertUpdateInput->getRecord()->getPrimaryKey(), c_action_insert , false , coreName);
+        	JsonRecordOperationResponse::addRecordError(recordJsonResponse, HTTP_JSON_All_Shards_Down_Error);
         	brokerSideInformationJson->addRecordShardResponse(recordJsonResponse);
 
         }else{
 
-    		bool routingStatus = dpMessageHandler.broadcast<WriteCommandNotification, CommandStatus>(insertUpdateInput,
+    		bool routingStatus = dpMessageHandler.broadcast<InsertUpdateCommand, CommandStatus>(insertUpdateInput,
     						true,
     						true,
     						resultsAggregator,
@@ -386,8 +383,8 @@ void DPExternalRequestHandler::externalUpdateCommand(boost::shared_ptr<const Clu
 		evhttp_request *req, unsigned coreId){
 
 
-	boost::shared_ptr<HTTPJsonRecordOperationResponse > brokerSideInformationJson =
-			boost::shared_ptr<HTTPJsonRecordOperationResponse > (new HTTPJsonRecordOperationResponse(req));
+	boost::shared_ptr<JsonRecordOperationResponse > brokerSideInformationJson =
+			boost::shared_ptr<JsonRecordOperationResponse > (new JsonRecordOperationResponse(req));
     const CoreInfo_t *indexDataContainerConf = clusterReadview->getCore(coreId);
     const string coreName = indexDataContainerConf->getName();
     // it must be an update query
@@ -442,8 +439,8 @@ void DPExternalRequestHandler::externalUpdateCommand(boost::shared_ptr<const Clu
 			bool parseJson = JSONRecordParser::_JSONValueObjectToRecord(record, doc,
 					indexDataContainerConf, errorStream, recSerializer);
 			if(parseJson == false) {
-            	Json::Value recordJsonResponse = HTTPJsonRecordOperationResponse::getRecordJsonResponse(record->getPrimaryKey(), c_action_insert, false , coreName);
-            	HTTPJsonRecordOperationResponse::addRecordError(recordJsonResponse, HTTP_JSON_Custom_Error, errorStream.str());
+            	Json::Value recordJsonResponse = JsonRecordOperationResponse::getRecordJsonResponse(record->getPrimaryKey(), c_action_insert, false , coreName);
+            	JsonRecordOperationResponse::addRecordError(recordJsonResponse, HTTP_JSON_Custom_Error, errorStream.str());
             	brokerSideInformationJson->addRecordShardResponse(recordJsonResponse);
 				delete record;
 			}else{
@@ -464,8 +461,8 @@ void DPExternalRequestHandler::externalUpdateCommand(boost::shared_ptr<const Clu
 		bool parseJson = JSONRecordParser::_JSONValueObjectToRecord(record, root,
 				indexDataContainerConf, errorStream, recSerializer);
 		if(parseJson == false) {
-        	Json::Value recordJsonResponse = HTTPJsonRecordOperationResponse::getRecordJsonResponse(record->getPrimaryKey(), c_action_insert, false , coreName);
-        	HTTPJsonRecordOperationResponse::addRecordError(recordJsonResponse, HTTP_JSON_Custom_Error, errorStream.str());
+        	Json::Value recordJsonResponse = JsonRecordOperationResponse::getRecordJsonResponse(record->getPrimaryKey(), c_action_insert, false , coreName);
+        	JsonRecordOperationResponse::addRecordError(recordJsonResponse, HTTP_JSON_Custom_Error, errorStream.str());
         	brokerSideInformationJson->addRecordShardResponse(recordJsonResponse);
 			record->clear();
 			delete storedSchema;
@@ -486,8 +483,8 @@ void DPExternalRequestHandler::externalUpdateCommand(boost::shared_ptr<const Clu
 
 
 
-    boost::shared_ptr<StatusAggregator<WriteCommandNotification> >
-    resultsAggregator(new StatusAggregator<WriteCommandNotification>(configurationManager,req, clusterReadview, coreId, recordsToUpdate.size()));
+    boost::shared_ptr<StatusAggregator<InsertUpdateCommand> >
+    resultsAggregator(new StatusAggregator<InsertUpdateCommand>(configurationManager,req, clusterReadview, coreId, recordsToUpdate.size()));
     resultsAggregator->setJsonRecordOperationResponse(brokerSideInformationJson);
 	CorePartitioner * partitioner = new CorePartitioner(clusterReadview->getPartitioner(coreId));
     for(vector<Record *>::iterator recordItr = recordsToUpdate.begin(); recordItr != recordsToUpdate.end() ; ++recordItr){
@@ -496,16 +493,16 @@ void DPExternalRequestHandler::externalUpdateCommand(boost::shared_ptr<const Clu
         		clusterReadview->getCurrentNodeId(), targets);
         if(targets.size() == 0){
         	Json::Value recordJsonResponse =
-        			HTTPJsonRecordOperationResponse::getRecordJsonResponse((*recordItr)->getPrimaryKey(), c_action_insert , false , coreName);
-        	HTTPJsonRecordOperationResponse::addRecordError(recordJsonResponse, HTTP_JSON_All_Shards_Down_Error);
+        			JsonRecordOperationResponse::getRecordJsonResponse((*recordItr)->getPrimaryKey(), c_action_insert , false , coreName);
+        	JsonRecordOperationResponse::addRecordError(recordJsonResponse, HTTP_JSON_All_Shards_Down_Error);
         	brokerSideInformationJson->addRecordShardResponse(recordJsonResponse);
         }else{
             time_t timeValue;
             time(&timeValue);
             timeValue = timeValue + TIMEOUT_WAIT_TIME;
-			WriteCommandNotification  * insertUpdateInput = new WriteCommandNotification(*recordItr,WriteCommandNotification::DP_UPDATE);
+            InsertUpdateCommand  * insertUpdateInput = new InsertUpdateCommand(*recordItr,InsertUpdateCommand::DP_UPDATE);
 			resultsAggregator->addRequestObj(insertUpdateInput);
-    		bool routingStatus = dpMessageHandler.broadcast<WriteCommandNotification, CommandStatus>(insertUpdateInput,
+    		bool routingStatus = dpMessageHandler.broadcast<InsertUpdateCommand, CommandStatus>(insertUpdateInput,
     						true,
     						true,
     						resultsAggregator,
@@ -539,8 +536,8 @@ void DPExternalRequestHandler::externalDeleteCommand(boost::shared_ptr<const Clu
 		evhttp_request *req, unsigned coreId){
 
 
-	boost::shared_ptr<HTTPJsonRecordOperationResponse > brokerSideInformationJson =
-			boost::shared_ptr<HTTPJsonRecordOperationResponse > (new HTTPJsonRecordOperationResponse(req));
+	boost::shared_ptr<JsonRecordOperationResponse > brokerSideInformationJson =
+			boost::shared_ptr<JsonRecordOperationResponse > (new JsonRecordOperationResponse(req));
 
     // it must be an update query
     ASSERT(req->type == EVHTTP_REQ_DELETE);
@@ -578,8 +575,8 @@ void DPExternalRequestHandler::externalDeleteCommand(boost::shared_ptr<const Clu
         		clusterReadview->getCurrentNodeId(), targets);
         if(targets.size() == 0){
         	Json::Value recordJsonResponse =
-        			HTTPJsonRecordOperationResponse::getRecordJsonResponse(primaryKeyStringValue, c_action_insert , false , coreName);
-        	HTTPJsonRecordOperationResponse::addRecordError(recordJsonResponse, HTTP_JSON_All_Shards_Down_Error);
+        			JsonRecordOperationResponse::getRecordJsonResponse(primaryKeyStringValue, c_action_insert , false , coreName);
+        	JsonRecordOperationResponse::addRecordError(recordJsonResponse, HTTP_JSON_All_Shards_Down_Error);
         	brokerSideInformationJson->addRecordShardResponse(recordJsonResponse);
         }else{
             time_t timeValue;
@@ -603,7 +600,7 @@ void DPExternalRequestHandler::externalDeleteCommand(boost::shared_ptr<const Clu
         delete partitioner;
     }else{
         brokerSideInformationJson->finalizeOK();
-        brokerSideInformationJson->addError(HTTPJsonResponse::getJsonSingleMessageStr(HTTP_JSON_PK_NOT_PROVIDED));
+        brokerSideInformationJson->addError(JsonResponseHandler::getJsonSingleMessageStr(HTTP_JSON_PK_NOT_PROVIDED));
         // Free the objects
         evhttp_clear_headers(&headers);
         return;
@@ -627,7 +624,7 @@ void DPExternalRequestHandler::externalGetInfoCommand(boost::shared_ptr<const Cl
 	switch (portType) {
 		case InfoPort_Nodes_NodeID:
 		{
-			HTTPJsonResponse httpResponse(req);
+			JsonResponseHandler httpResponse(req);
 			httpResponse.setResponseAttribute(c_cluster_name, Json::Value(clusterReadview->getClusterName()));
 			Json::Value nodes(Json::arrayValue);
 			ShardManager::getShardManager()->getNodeInfoJson(nodes);
@@ -646,8 +643,8 @@ void DPExternalRequestHandler::externalGetInfoCommand(boost::shared_ptr<const Cl
 			break;
 	}
 
-	boost::shared_ptr<HTTPJsonGetInfoResponse > brokerSideInformationJson =
-			boost::shared_ptr<HTTPJsonGetInfoResponse > (new HTTPJsonGetInfoResponse(req));
+	boost::shared_ptr<GetInfoJsonResponse > brokerSideInformationJson =
+			boost::shared_ptr<GetInfoJsonResponse > (new GetInfoJsonResponse(req));
 
     vector<unsigned> coreIds;
     if(coreId == (unsigned) -1){
@@ -674,7 +671,7 @@ void DPExternalRequestHandler::externalGetInfoCommand(boost::shared_ptr<const Cl
     boost::shared_ptr<GetInfoResponseAggregator> resultsAggregator(
     		new GetInfoResponseAggregator(configurationManager,brokerSideInformationJson, clusterReadview, coreId, debugRequest));
 	if(targets.size() == 0){
-		brokerSideInformationJson->addError(HTTPJsonResponse::getJsonSingleMessage(HTTP_JSON_All_Shards_Down_Error));
+		brokerSideInformationJson->addError(JsonResponseHandler::getJsonSingleMessage(HTTP_JSON_All_Shards_Down_Error));
 		brokerSideInformationJson->finalizeOK();
 	}else{
 		brokerSideInformationJson->finalizeOK();
@@ -696,123 +693,6 @@ void DPExternalRequestHandler::externalGetInfoCommand(boost::shared_ptr<const Cl
 		}
 	}
 
-}
-
-
-/*
-  * 1. Receives a commit request from a client (not from another shard)
-  * 2. broadcasts this request to DPInternalRequestHandler objects of other shards
-  * 3. Gives ResultAggregator object to PendingRequest framework and it's used to aggregate the
-  *       results. Results will be aggregator by another thread since it's not a blocking call.
-  */
-void DPExternalRequestHandler::externalCommitCommand(boost::shared_ptr<const ClusterResourceMetadata_Readview> clusterReadview,
-		evhttp_request *req, unsigned coreId){
-
-	boost::shared_ptr<HTTPJsonShardOperationResponse > brokerSideInformationJson =
-			boost::shared_ptr<HTTPJsonShardOperationResponse > (new HTTPJsonShardOperationResponse(req));
-
-    const CoreInfo_t *indexDataContainerConf = clusterReadview->getCore(coreId);
-
-    switch(req->type) {
-    case EVHTTP_REQ_PUT: {
-        boost::shared_ptr<StatusAggregator<CommitCommand> >
-        resultsAggregator(new StatusAggregator<CommitCommand>(configurationManager,req, clusterReadview, coreId));
-
-        brokerSideInformationJson->finalizeOK();
-		resultsAggregator->setJsonShardOperationResponse(brokerSideInformationJson);
-
-		CorePartitioner * partitioner = new CorePartitioner(clusterReadview->getPartitioner(coreId));
-        vector<NodeTargetShardInfo> targets;
-        partitioner->getAllTargets(targets);
-        if(targets.size() == 0){
-            brokerSideInformationJson->addError(HTTPJsonResponse::getJsonSingleMessage(HTTP_JSON_All_Shards_Down_Error));
-            delete partitioner;
-            return;
-        }else{
-            time_t timeValue;
-            time(&timeValue);
-            timeValue = timeValue + TIMEOUT_WAIT_TIME;
-			CommitCommand * commitInput = new CommitCommand();
-			resultsAggregator->addRequestObj(commitInput);
-    		bool routingStatus = dpMessageHandler.broadcast<CommitCommand, CommandStatus>(commitInput,
-    						true,
-    						true,
-    						resultsAggregator,
-    						timeValue,
-    						targets,
-    						clusterReadview);
-
-    		if(! routingStatus){
-    	        brokerSideInformationJson->finalizeError("Internal Server Error.");
-    	        delete partitioner;
-    	        return;
-    		}
-        }
-        delete partitioner;
-        break;
-    }
-    default: {
-        brokerSideInformationJson->finalizeInvalid();
-        break;
-    }
-    };
-}
-
-/*
-  * 1. Receives a merge request from a client (not from another shard)
-  * 2. broadcasts this request to DPInternalRequestHandler objects of other shards
-  * 3. Gives ResultAggregator object to PendingRequest framework and it's used to aggregate the
-  *       results. Results will be aggregator by another thread since it's not a blocking call.
-  */
-void DPExternalRequestHandler::externalMergeCommand(boost::shared_ptr<const ClusterResourceMetadata_Readview> clusterReadview,
-		evhttp_request *req, unsigned coreId){
-
-	boost::shared_ptr<HTTPJsonShardOperationResponse > brokerSideInformationJson =
-			boost::shared_ptr<HTTPJsonShardOperationResponse > (new HTTPJsonShardOperationResponse(req));
-
-    const CoreInfo_t *indexDataContainerConf = clusterReadview->getCore(coreId);
-
-    switch(req->type) {
-    case EVHTTP_REQ_PUT: {
-        boost::shared_ptr<StatusAggregator<MergeCommand> >
-        resultsAggregator(new StatusAggregator<MergeCommand>(configurationManager,req, clusterReadview, coreId));
-        brokerSideInformationJson->finalizeOK();
-        resultsAggregator->setJsonShardOperationResponse(brokerSideInformationJson);
-    	CorePartitioner * partitioner = new CorePartitioner(clusterReadview->getPartitioner(coreId));
-        vector<NodeTargetShardInfo> targets;
-        partitioner->getAllTargets(targets);
-        if(targets.size() == 0){
-            brokerSideInformationJson->addError(HTTPJsonResponse::getJsonSingleMessage(HTTP_JSON_All_Shards_Down_Error));
-            delete partitioner;
-            return;
-        }else{
-            time_t timeValue;
-            time(&timeValue);
-            timeValue = timeValue + TIMEOUT_WAIT_TIME;
-            MergeCommand * mergeInput = new MergeCommand();
-			resultsAggregator->addRequestObj(mergeInput);
-    		bool routingStatus = dpMessageHandler.broadcast<MergeCommand, CommandStatus>(mergeInput,
-    						true,
-    						true,
-    						resultsAggregator,
-    						timeValue,
-    						targets,
-    						clusterReadview);
-
-    		if(! routingStatus){
-    	        brokerSideInformationJson->finalizeError("Internal Server Error.");
-    	        delete partitioner;
-    	        return;
-    		}
-        }
-        delete partitioner;
-        break;
-    }
-    default: {
-        brokerSideInformationJson->finalizeInvalid();
-        break;
-    }
-    };
 }
 
 }

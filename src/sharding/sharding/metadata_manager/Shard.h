@@ -48,9 +48,9 @@ public:
 	virtual std::string toString() const = 0;
 	virtual bool isClusterShard() const = 0 ;
 	virtual bool isReplica(ShardId * shardId) const = 0;
-    void* serialize(void * buffer) const = 0;
-    void * deserialize(void* buffer) = 0;
-    unsigned getNumberOfBytes() const = 0;
+    virtual void* serialize(void * buffer) const = 0;
+    virtual void * deserialize(void* buffer) = 0;
+    virtual unsigned getNumberOfBytes() const = 0;
 
 };
 

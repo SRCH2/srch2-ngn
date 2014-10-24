@@ -5,9 +5,6 @@
 #include "../serializables/SerializableCommandStatus.h"
 #include "../serializables/SerializableInsertUpdateCommandInput.h"
 #include "../serializables/SerializableDeleteCommandInput.h"
-#include "../serializables/SerializableSerializeCommandInput.h"
-#include "../serializables/SerializableResetLogCommandInput.h"
-#include "../serializables/SerializableCommitCommandInput.h"
 #include "../PendingMessages.h"
 #include "server/HTTPJsonResponse.h"
 #include <string>
@@ -26,6 +23,76 @@ class StatusAggregator : public DistributedProcessorAggregator<RequestWithStatus
 public:
 
 
+    StatusAggregator(ConfigManager * configurationManager, evhttp_request *req,
+    		boost::shared_ptr<const ClusterResourceMetadata_Readview> clusterReadview, unsigned coreId, unsigned multiRouteMode = 0):
+    			DistributedProcessorAggregator<RequestWithStatusResponse,CommandStatus>(clusterReadview, coreId),
+    			requestType(RequestWithStatusResponse::messageType()){
+        this->configurationManager = configurationManager;
+        this->req = req;
+        this->multiRouteMode = multiRouteMode; // this is the case where aggregator is shared with multiple callbacks
+        this->preProcessCalled = false;
+        this->numberOfFinalizedCallsSoFar = 0;
+    }
+
+
+    void setJsonRecordOperationResponse(boost::shared_ptr<JsonRecordOperationResponse > brokerSideRecordOpInfoJson){
+        boost::unique_lock< boost::shared_mutex > lock(_access);
+        this->brokerSideRecordOpInfoJson = brokerSideRecordOpInfoJson;
+    }
+
+    void setJsonShardOperationResponse(boost::shared_ptr<ShardOperationJsonResponse > brokerSideShardOpInfoJson){
+        boost::unique_lock< boost::shared_mutex > lock(_access);
+        this->brokerSideShardOpInfoJson = brokerSideShardOpInfoJson;
+    }
+
+    /*
+     * This function is always called by RoutingManager as the first call back function
+     */
+    void preProcess(ResponseAggregatorMetadata metadata){
+        if(multiRouteMode > 0){
+            // we need to make sure preProcess is only called once
+            boost::unique_lock< boost::shared_mutex > lock(_access);
+            if(preProcessCalled == true){ // already called once
+                return;
+            }else{ // not called yet, the first time
+                preProcessCalled = true;
+            }
+        }
+        // any preprocess code must be written here :
+        // right now, nothing to do in preProcess.
+    }
+
+    /*
+     * This function is called by RoutingManager if a timeout happens, The call to
+     * this function must be between preProcessing(...) and callBack()
+     */
+    /*
+     * This function is called by RoutingManager if a timeout happens, The call to
+     * this function must be between preProcessing(...) and callBack()
+     */
+    void processTimeout(PendingMessage<RequestWithStatusResponse, CommandStatus> * message,
+            ResponseAggregatorMetadata metadata){
+
+        if(message == NULL){
+            return;
+        }
+		boost::unique_lock< boost::shared_mutex > lock(_access);
+		Json::Value timeoutWarning(Json::objectValue);
+		timeoutWarning[c_message] = JsonResponseHandler::getJsonSingleMessageStr(HTTP_JSON_Node_Timeout_Warning);
+		timeoutWarning[c_node_name2] = Json::Value(this->getClusterReadview()->getNode(message->getNodeId()).getName());
+
+
+		switch (requestType) {
+			case InsertUpdateCommandMessageType:
+			case DeleteCommandMessageType:
+				this->brokerSideRecordOpInfoJson->addWarning(timeoutWarning);
+				break;
+			default:
+				ASSERT(false);
+				break;
+		}
+
+    }
 
     /*
      * The main function responsible of aggregating status (success or failure) results
@@ -57,22 +124,22 @@ public:
 
 			switch (requestType) {
 				case InsertUpdateCommandMessageType:{
-					const WriteCommandNotification * sentInsetUpdateRequest = (const WriteCommandNotification *)(sentRequest);
+					const InsertUpdateCommand * sentInsetUpdateRequest = (const InsertUpdateCommand *)(sentRequest);
 
 					Json::Value recordShardResponse =
-							HTTPJsonRecordOperationResponse::getRecordJsonResponse(sentInsetUpdateRequest->getRecord()->getPrimaryKey(),
-							(sentInsetUpdateRequest->getInsertOrUpdate() == WriteCommandNotification::DP_INSERT?c_action_insert:c_action_update),
+							JsonRecordOperationResponse::getRecordJsonResponse(sentInsetUpdateRequest->getRecord()->getPrimaryKey(),
+							(sentInsetUpdateRequest->getInsertOrUpdate() == InsertUpdateCommand::DP_INSERT?c_action_insert:c_action_update),
 							recordShardResult->statusValue , coreName);
-					HTTPJsonResponse::appendDetails(recordShardResponse, recordShardResult->messages);
+					JsonResponseHandler::appendDetails(recordShardResponse, recordShardResult->messages);
 					this->brokerSideRecordOpInfoJson->addRecordShardResponse(recordShardResponse);
 					break;
 				}
 				case DeleteCommandMessageType:{
 		        	const DeleteCommand * sentDeleteRequest = (const DeleteCommand *)(sentRequest);
 					Json::Value recordShardResponse =
-							HTTPJsonRecordOperationResponse::getRecordJsonResponse(sentDeleteRequest->getPrimaryKey(),
+							JsonRecordOperationResponse::getRecordJsonResponse(sentDeleteRequest->getPrimaryKey(),
 							c_action_delete, recordShardResult->statusValue , coreName);
-					HTTPJsonResponse::appendDetails(recordShardResponse, recordShardResult->messages);
+					JsonResponseHandler::appendDetails(recordShardResponse, recordShardResult->messages);
 					this->brokerSideRecordOpInfoJson->addRecordShardResponse(recordShardResponse);
 					break;
 				}
@@ -84,6 +151,35 @@ public:
 
 		}
 
+    }
+
+    void callBack(vector<PendingMessage<RequestWithStatusResponse, CommandStatus> * > messagesArg){
+
+        //TODO shard info can be better than just an index
+        for(typename vector<PendingMessage<RequestWithStatusResponse, CommandStatus> * >::iterator
+                messageItr = messagesArg.begin(); messageItr != messagesArg.end(); ++messageItr){
+        	callBack(*messageItr);
+        }
+    }
+    /*
+     * The last call back function called by RoutingManager in all cases.
+     * Example of call back call order for search :
+     * 1. preProcessing()
+     * 2. timeoutProcessing() [only if some shard times out]
+     * 3. aggregateSearchResults()
+     * 4. finalize()
+     */
+    void finalize(ResponseAggregatorMetadata metadata){
+        if(multiRouteMode > 0){
+            // we need to make sure finalize is only called once
+            boost::unique_lock< boost::shared_mutex > lock(_access);
+            numberOfFinalizedCallsSoFar ++;
+            if(multiRouteMode != numberOfFinalizedCallsSoFar){
+                return;
+            }
+            // ready to be finalized because all requests are finalized
+        }
+        //... code here
     }
 
 
@@ -100,8 +196,8 @@ private:
 
 	const ShardingMessageType requestType ;
 
-    boost::shared_ptr<HTTPJsonRecordOperationResponse >brokerSideRecordOpInfoJson;
-    boost::shared_ptr<HTTPJsonShardOperationResponse > brokerSideShardOpInfoJson;
+    boost::shared_ptr<JsonRecordOperationResponse >brokerSideRecordOpInfoJson;
+    boost::shared_ptr<ShardOperationJsonResponse > brokerSideShardOpInfoJson;
 };
 
 }

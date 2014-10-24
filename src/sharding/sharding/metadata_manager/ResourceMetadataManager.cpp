@@ -22,11 +22,7 @@ ResourceMetadataManager::~ResourceMetadataManager(){
 	}
 }
 
-void ResourceMetadataManager::resolve(ConfigManager * confManager, SaveMetadataNotification * saveDataNotification){
-	if(saveDataNotification == NULL){
-		ASSERT(false);
-		return;
-	}
+void ResourceMetadataManager::saveMetadata(ConfigManager * confManager){
 	if(writeview != NULL){
 		MetadataInitializer metadataInitializer(confManager, this);
 		metadataInitializer.saveToDisk(writeview->clusterName);

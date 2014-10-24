@@ -1,10 +1,11 @@
 #ifndef __SHARDING_SHARDING_LOAD_BALANCING_START_OPERATION_H__
 #define __SHARDING_SHARDING_LOAD_BALANCING_START_OPERATION_H__
 
-#include "../State.h"
-#include "../notifications/Notification.h"
-#include "../notifications/LoadBalancingReport.h"
-#include "../metadata_manager/Shard.h"
+#include "../Transaction.h"
+#include "../../state_machine/State.h"
+#include "../../notifications/Notification.h"
+#include "../../notifications/LoadBalancingReport.h"
+#include "../../metadata_manager/Shard.h"
 
 namespace srch2is = srch2::instantsearch;
 using namespace srch2is;
@@ -29,39 +30,57 @@ struct AssignCandidatePartition{
 	inline bool operator()(const AssignCandidatePartition& a, const AssignCandidatePartition& b);
 };
 
-class LoadBalancer : public Transaction, public AggregatorCallbackInterface, public BooleanCallbackInterface{
+class ShardAssignOperation;
+class ShardCopyOperation;
+class ShardMoveOperation;
+
+class LoadBalancer : public Transaction, public NodeIteratorListenerInterface{
 public:
-	static void run();
+	static void runLoadBalancer();
 
 
 	~LoadBalancer();
-private:
+
 	LoadBalancer();
+
+	Transaction * getTransaction(){
+		return this;
+	}
+
+	void initSession();
+
 	// tries to balance the shard placement on cluster nodes
-	void balance();
+	bool run();
 
 	// asks other nodes about load information
 	void collectInfo();
-	void receiveReplies(map<NodeOperationId , ShardingNotification *> replies);
-	void abort(int error_code);
+	void end_(map<NodeOperationId, SP(ShardingNotification) > & _replies);
 
 	// decides on shard copy or shard movements
-	void _balance();
+	void balance();
 
 	// receives the results of ShardAssign, ShardMove and ShardCopy
-	void finish(bool done);
-
-	TRANS_ID lastCallback(void *);
+	void consume(bool done);
 
 	ShardingTransactionType getTransactionType();
 
 	void finalize();
 
-	LoadBalancingReport::REQUEST * reportReq;
+
+private:
+	enum CurrentOperationType{
+		PreStart,
+		CollectInfo,
+		Assign,
+		Copy,
+		Move
+	};
+
+	SP(LoadBalancingReport::REQUEST) reportReq;
 
 	map<NodeId, double> nodeLoads;
-	bool finalizedFlag;
 
+	CurrentOperationType currentOp;
 
 	ShardAssignOperation * shardAssigner;
 	ShardCopyOperation * shardCopyer;

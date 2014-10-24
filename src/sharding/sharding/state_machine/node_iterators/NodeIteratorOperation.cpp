@@ -12,25 +12,24 @@ namespace srch2 {
 namespace httpwrapper {
 
 
-OrderedNodeIteratorOperation::OrderedNodeIteratorOperation(ShardingNotification * request, ShardingMessageType resType,
-		const vector<NodeId> & participants, OrderedNodeIteratorListenerInterface * validatorObj):
+OrderedNodeIteratorOperation::OrderedNodeIteratorOperation(SP(ShardingNotification) request, ShardingMessageType resType,
+		vector<NodeId> & participants, OrderedNodeIteratorListenerInterface * validatorObj):
 	OperationState(this->getNextOperationId()), resType(resType){
 	this->setParticipants(participants);
 	this->request = request;
-	ASSERT(this->request != NULL);
+	ASSERT(! ! (this->request));
 	this->validatorObj = validatorObj;
-	if(this->validatorObj != NULL){
-		this->connectDeletePathToParent(this->validatorObj);
-	}
 	this->participantsIndex = 0;
 }
-virtual OrderedNodeIteratorOperation::~OrderedNodeIteratorOperation(){
-	if(validatorObj == NULL){
-		if(request != NULL){
-			delete request;
-		}
-	}
+OrderedNodeIteratorOperation::~OrderedNodeIteratorOperation(){
 };
+
+Transaction * OrderedNodeIteratorOperation::getTransaction(){
+	if(this->validatorObj != NULL){
+		return this->validatorObj->getTransaction();
+	}
+	return OperationState::getTransaction();
+}
 
 OperationState * OrderedNodeIteratorOperation::entry(){
 	ASSERT(this->participants.size() > 0);
@@ -40,16 +39,18 @@ OperationState * OrderedNodeIteratorOperation::entry(){
 }
 // it returns this, or next state or NULL.
 // if it returns NULL, we delete the object.
-OperationState * OrderedNodeIteratorOperation::handle(Notification * n){
+OperationState * OrderedNodeIteratorOperation::handle(SP(Notification) n){
 	if(n == NULL){
 		ASSERT(false);
 		return NULL;
 	}
+
+	if(resType){
+		return handle(boost::dynamic_pointer_cast<ShardingNotification>(n));
+	}
 	switch(n->messageType()){
 	case ShardingNodeFailureNotificationMessageType:
-		return handle((NodeFailureNotification *) n);
-	case resType:
-		return handle((ShardingNotification *) n);
+		return handle(boost::dynamic_pointer_cast<NodeFailureNotification>(n));
 	default :
 		ASSERT(false);
 		return this;
@@ -59,7 +60,7 @@ OperationState * OrderedNodeIteratorOperation::handle(Notification * n){
 }
 
 
-OperationState * OrderedNodeIteratorOperation::handle(ShardingNotification * notif){
+OperationState * OrderedNodeIteratorOperation::handle(SP(ShardingNotification) notif){
 	if(! validateResponse(notif)){
 		return NULL;
 	}
@@ -68,7 +69,7 @@ OperationState * OrderedNodeIteratorOperation::handle(ShardingNotification * not
 	return askNode(this->participantsIndex);
 }
 
-OperationState * OrderedNodeIteratorOperation::handle(NodeFailureNotification * notif){
+OperationState * OrderedNodeIteratorOperation::handle(SP(NodeFailureNotification) notif){
 	NodeId failedNode = notif->getFailedNodeID();
 	if(this->validatorObj != NULL){
 		if(this->validatorObj->shouldAbort(failedNode)){
@@ -95,7 +96,7 @@ OperationState * OrderedNodeIteratorOperation::handle(NodeFailureNotification * 
 		if(this->participants.size() == 0){
 			// we are done, we shoud just call finalize
 			if(this->validatorObj != NULL){
-				this->validatorObj->end_();
+				this->validatorObj->end();
 			}
 			return NULL;
 		}
@@ -108,7 +109,7 @@ OperationState * OrderedNodeIteratorOperation::handle(NodeFailureNotification * 
 	return this;
 }
 
-void OrderedNodeIteratorOperation::setParticipants(const vector<NodeId> & participants){
+void OrderedNodeIteratorOperation::setParticipants(vector<NodeId> & participants){
 	ASSERT(participants.size() > 0);
 	this->participants.clear();
 	std::sort(participants.begin(), participants.end());
@@ -117,7 +118,7 @@ void OrderedNodeIteratorOperation::setParticipants(const vector<NodeId> & partic
 	}
 }
 
-bool OrderedNodeIteratorOperation::validateResponse(ShardingNotification * response){
+bool OrderedNodeIteratorOperation::validateResponse(SP(ShardingNotification) response){
 	if(this->validatorObj == NULL){
 		return true;
 	}
@@ -141,19 +142,12 @@ OperationState * OrderedNodeIteratorOperation::askNode(const unsigned nodeIndex)
 	// if all nodes are already iterated : call finalize from validator
 	if(nodeIndex >= this->participants.size()){
 		if(this->validatorObj != NULL){
-			this->validatorObj->end_();
+			this->validatorObj->end();
 		}
 		return NULL;
 	}
 	const NodeOperationId & target = this->participants.at(nodeIndex);
-	const NodeId currentNodeId = ShardManager::getCurrentNodeId();
-	if(target.nodeId == currentNodeId){
-		request->setDest(target);
-		request->setSrc(NodeOperationId(currentNodeId, this->getOperationId()));
-		ShardManager::getShardManager()->resolveLocal(request);
-	}else{
-		send(request, target);
-	}
+	send(request, target);
 	return this;
 }
 

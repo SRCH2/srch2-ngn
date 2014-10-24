@@ -1,11 +1,9 @@
 #ifndef __SHARDING_SHARDING_ATOMIC_LOCK_OPERATION_H__
 #define __SHARDING_SHARDING_ATOMIC_LOCK_OPERATION_H__
 
-#include "NodeIteratorOperation.h"
 #include "../state_machine/State.h"
 #include "../state_machine/node_iterators/NodeIteratorOperation.h"
 #include "../notifications/Notification.h"
-#include "../metadata_manager/ResourceLocks.h"
 #include "../notifications/LockingNotification.h"
 #include "../../configuration/ShardingConstants.h"
 
@@ -49,6 +47,7 @@ public:
 	/// record locking
 	AtomicLock(const vector<string> & primaryKeys,
 			const NodeOperationId & writerAgent,
+			const ClusterPID & pid,
 			ConsumerInterface * lockRequester);
 
 
@@ -59,12 +58,14 @@ public:
 
 	~AtomicLock();
 
+	Transaction * getTransaction();
+
 	void produce();
 
 	/*
 	 * This method is called after receiving the response from each participant
 	 */
-	bool condition(ShardingNotification * req, ShardingNotification * res);
+	bool condition(SP(ShardingNotification) req, SP(ShardingNotification) res);
 
 	bool shouldAbort(const NodeId & failedNode);
 
@@ -72,7 +73,7 @@ public:
 	 * Lock request must be successful (or partially successful in case of primarykeys)
 	 * if we reach to this function.
 	 */
-	void end(map<NodeId, ShardingNotification * > & replies);
+	void end(map<NodeId, SP(ShardingNotification) > & replies);
 
 
 	// TODO if we solve the problem of primary keys, we can remove this API
@@ -80,19 +81,19 @@ public:
 
 
 private:
-	ConsumerInterface * consumer;
 
-	LockingNotification * lockNotification;
-	LockingNotification::LockRequestType lockType;
+	SP(LockingNotification) lockNotification;
+	LockRequestType lockType;
 	OrderedNodeIteratorOperation * locker; // it will be deleted by state-machine when it returns NULL
 
-	LockingNotification * releaseNotification;
+	SP(LockingNotification) releaseNotification;
 
 	vector<NodeId> participants;
 	int participantIndex;
 	// rejectedPrimaryKey => participant index
 	map<string, unsigned> rejectedPrimaryKeys;
 	NodeOperationId writeAgent; // only valid and meaningful value if primary key lock
+	ClusterPID pid;
 
 	bool finalzedFlag ;
 

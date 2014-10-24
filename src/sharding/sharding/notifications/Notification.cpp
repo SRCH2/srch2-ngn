@@ -1,7 +1,7 @@
 #include "Notification.h"
 #include "../ShardManager.h"
 //#include "../metadata_manager/ResourceMetadataManager.h"
-#include "../ClusterOperationContainer.h"
+#include "../state_machine/StateMachine.h"
 
 #include "core/util/SerializationHelper.h"
 
@@ -123,6 +123,23 @@ ShardingNotification::ShardingNotification(){
 
 }
 
+void ShardingNotification::swapSrcDest(){
+	NodeOperationId temp = srcOperationId;
+	srcOperationId = destOperationId;
+	destOperationId = temp;
+}
+
+string ShardingNotification::getDescription(){
+	stringstream ss;
+	ss << getShardingMessageTypeStr(this->messageType()) << "(" << srcOperationId.toString() << " => " << destOperationId.toString();
+	if(bounced){
+		ss << ", bounced)";
+	}else{
+		ss << ")";
+	}
+	return ss.str();
+}
+
 NodeOperationId ShardingNotification::getSrc() const {
 	return srcOperationId;
 }
@@ -145,231 +162,109 @@ bool ShardingNotification::isBounced() const{
 	return this->bounced;
 }
 
-void * ShardingNotification::serialize(void * buffer) const{
+
+Message * ShardingNotification::serialize(MessageAllocator * allocator) const{
+	unsigned numberOfBytes = getNumberOfBytesHeader() + getNumberOfBytesBody();
+	Message * msg = allocator->allocateMessage(numberOfBytes);
+	serializeHeaderInfo(msg);
+	serializeContent(msg);
+	return msg;
+}
+
+Message * ShardingNotification::createMessage(MessageAllocator * allocator) const{
+	unsigned numberOfBytes = getNumberOfBytesHeader() + getNumberOfBytesBody();
+	return allocator->allocateMessage(numberOfBytes);
+}
+
+void ShardingNotification::serializeHeaderInfo(Message * msg) const{
+	char * buffer = Message::getBodyPointerFromMessagePointer(msg);
+	serializeHeader(buffer);
+}
+
+void ShardingNotification::serializeContent(Message * msg) const{
+	char * buffer = Message::getBodyPointerFromMessagePointer(msg);
+	buffer = buffer + getNumberOfBytesHeader();
+	serializeBody(buffer);
+}
+
+void ShardingNotification::deserializeHeader(Message * msg, NodeId srcNode,
+		NodeOperationId & srcAddress, NodeOperationId & destAddress, bool & bounced){
+	DummyShardingNotification notif;
+	char * buffer = Message::getBodyPointerFromMessagePointer(msg);
+	notif.deserializeHeader(buffer);
+	srcAddress = notif.getSrc();
+	destAddress = notif.getDest();
+	bounced = notif.isBounced();
+}
+
+bool ShardingNotification::send(SP(ShardingNotification) notification){
+	if(! notification){
+		ASSERT(false);
+		return false;
+	}
+	if(notification->getDest().nodeId == ShardManager::getCurrentNodeId()){
+		return ShardManager::getShardManager()->resolveLocal(notification);
+	}
+	TransportManager * tm = ShardManager::getShardManager()->getTransportManager();
+	Message * notificationMessage = notification->serialize(
+			tm->getMessageAllocator());
+	notificationMessage->setShardingMask();
+	notificationMessage->setMessageId(tm->getUniqueMessageIdValue());
+	notificationMessage->setType(notification->messageType());
+
+	Logger::debug("%s | Sending [Type: %s, ID: %d] ... ", notification->getDescription().c_str(),
+			notificationMessage->getDescription().c_str(), notificationMessage->getMessageId());
+
+	tm->sendMessage(notification->getDest().nodeId , notificationMessage, 0);
+	tm->getMessageAllocator()->deallocateByMessagePointer(notificationMessage);
+
+	// currently TM always send the message
+	return true;
+}
+
+bool ShardingNotification::send(SP(ShardingNotification) notification, const vector<NodeOperationId> & destinations ){
+	TransportManager * tm = ShardManager::getShardManager()->getTransportManager();
+	// first serialize the body
+	Message * notificationMessage = notification->serialize(tm->getMessageAllocator());
+	for(unsigned i = 0 ; i < destinations.size(); ++i){
+		// 	now serialize header for each destination
+		notification->serializeHeaderInfo(notificationMessage);
+		notificationMessage->setShardingMask();
+		notificationMessage->setMessageId(tm->getUniqueMessageIdValue());
+		notificationMessage->setType(notification->messageType());
+
+		Logger::debug("%s | Sending [Type: %s, ID: %d] ... ", notification->getDescription().c_str(),
+				notificationMessage->getDescription().c_str(), notificationMessage->getMessageId());
+	}
+	tm->sendMessage(notification->getDest().nodeId , notificationMessage, 0);
+	tm->getMessageAllocator()->deallocateByMessagePointer(notificationMessage);
+	return true;
+}
+
+
+void * ShardingNotification::serializeHeader(void * buffer) const{
 	buffer = srcOperationId.serialize(buffer);
 	buffer = destOperationId.serialize(buffer);
 	buffer = srch2::util::serializeFixedTypes(bounced, buffer);
 	return buffer;
 }
-unsigned ShardingNotification::getNumberOfBytes() const{
+unsigned ShardingNotification::getNumberOfBytesHeader() const{
 	unsigned numberOfBytes = 0;
 	numberOfBytes += srcOperationId.getNumberOfBytes();
 	numberOfBytes += destOperationId.getNumberOfBytes();
 	numberOfBytes += sizeof(bool);
 	return numberOfBytes;
 }
-void * ShardingNotification::deserialize(void * buffer) {
+void * ShardingNotification::deserializeHeader(void * buffer) {
 	buffer = srcOperationId.deserialize(buffer);
 	buffer = destOperationId.deserialize(buffer);
 	buffer = srch2::util::deserializeFixedTypes(buffer, bounced);
 	return buffer;
 }
 
-MMNotification::MMNotification(const ShardMigrationStatus & status):status(status){
-    this->setSrc(NodeOperationId(this->status.sourceNodeId, this->status.srcOperationId));
-    this->setDest(NodeOperationId(this->status.destinationNodeId, this->status.dstOperationId));
-}
-MMNotification::MMNotification(){};
-ShardMigrationStatus MMNotification::getStatus() const{
-    return this->status;
-}
-void MMNotification::setStatus(const ShardMigrationStatus & status){
-    this->status = status;
-}
-ShardingMessageType MMNotification::messageType() const {
-    return ShardingMMNotificationMessageType;
-}
-
-void * MMNotification::serialize(void * buffer) const{
-    buffer = ShardingNotification::serialize(buffer);
-    buffer = status.serialize(buffer);
-    return buffer;
-}
-unsigned MMNotification::getNumberOfBytes() const{
-    unsigned numberOfBytes = 0;
-    numberOfBytes += ShardingNotification::getNumberOfBytes();
-    numberOfBytes += status.getNumberOfBytes();
-    return numberOfBytes;
-}
-void * MMNotification::deserialize(void * buffer) {
-    buffer = ShardingNotification::deserialize(buffer);
-    buffer = status.deserialize(buffer);
-    return buffer;
-}
-
-
-bool SaveDataNotification::resolveMessage(Message * msg, NodeId sendeNode){
-	SaveDataNotification * saveDataNotif =
-			ShardingNotification::deserializeAndConstruct<SaveDataNotification>(Message::getBodyPointerFromMessagePointer(msg));
-	Logger::debug("%s | .", saveDataNotif->getDescription().c_str());
-	if(ShardManager::getShardManager()->handleBouncing(saveDataNotif)){
-		return true;
-	}
-
-	ShardManager::getShardManager()->resolve(saveDataNotif);
-	delete saveDataNotif;
-	return false;
-}
-
-void * SaveDataNotification::serialize(void * buffer) const{
-    buffer = ShardingNotification::serialize(buffer);
-    buffer = targets.serialize(buffer);
-    return buffer;
-
-}
-unsigned SaveDataNotification::getNumberOfBytes() const{
-    unsigned numberOfBytes = 0;
-    numberOfBytes += ShardingNotification::getNumberOfBytes();
-    numberOfBytes += targets.getNumberOfBytes();
-    return numberOfBytes;
-}
-void * SaveDataNotification::deserialize(void * buffer) {
-    buffer = ShardingNotification::deserialize(buffer);
-    buffer = targets.deserialize(buffer);
-    return buffer;
-}
-
-bool SaveDataNotification::ACK::resolveMessage(Message * msg, NodeId sendeNode){
-	SaveDataNotification::ACK * saveDataNotif =
-			ShardingNotification::deserializeAndConstruct<SaveDataNotification::ACK>(Message::getBodyPointerFromMessagePointer(msg));
-	Logger::debug("%s | .", saveDataNotif->getDescription().c_str());
-	if(saveDataNotif->isBounced()){
-		Logger::debug("==> Bounced.");
-		ASSERT(false);
-		delete saveDataNotif;
-		return true;
-	}
-
-	ShardManager::getShardManager()->getStateMachine()->handle(saveDataNotif);
-	delete saveDataNotif;
-	return false;
-}
-
-
-bool SaveMetadataNotification::resolveMessage(Message * msg, NodeId sendeNode){
-	SaveMetadataNotification * saveMetadataNotif =
-			ShardingNotification::deserializeAndConstruct<SaveMetadataNotification>(Message::getBodyPointerFromMessagePointer(msg));
-	Logger::debug("%s | .", saveMetadataNotif->getDescription().c_str());
-	if(ShardManager::getShardManager()->handleBouncing(saveMetadataNotif)){
-		return true;
-	}
-
-	ShardManager::getShardManager()->resolve(saveMetadataNotif);
-	delete saveMetadataNotif;
-	return false;
-}
-
-
-bool SaveMetadataNotification::ACK::resolveMessage(Message * msg, NodeId sendeNode){
-	SaveMetadataNotification::ACK * saveMetadataNotif =
-			ShardingNotification::deserializeAndConstruct<SaveMetadataNotification::ACK>(Message::getBodyPointerFromMessagePointer(msg));
-	Logger::debug("%s | .", saveMetadataNotif->getDescription().c_str());
-	if(saveMetadataNotif->isBounced()){
-		Logger::debug("==> Bounced.");
-		ASSERT(false);
-		delete saveMetadataNotif;
-		return true;
-	}
-
-	ShardManager::getShardManager()->getStateMachine()->handle(saveMetadataNotif);
-	delete saveMetadataNotif;
-	return false;
-}
-
-bool MergeNotification::resolveMessage(Message * msg, NodeId sendeNode){
-	MergeNotification * mergeNotification =
-			ShardingNotification::deserializeAndConstruct<MergeNotification>(Message::getBodyPointerFromMessagePointer(msg));
-	if(ShardManager::getShardManager()->handleBouncing(mergeNotification)){
-		return true;
-	}
-	ShardManager::getShardManager()->resolve(mergeNotification);
-	delete mergeNotification;
-	return false;
-}
-
-MergeOperationType MergeNotification::getMergeOperationType() const{
-	return this->operationType;
-}
-void * MergeNotification::serialize(void * buffer) const{
-    buffer = ShardingNotification::serialize(buffer);
-    buffer = srch2::util::serializeFixedTypes(operationType, buffer);
-    switch (operationType) {
-		case MergeOperationType_Merge:
-		{
-			break;
-		}
-		case MergeOperationType_SetON:
-		case MergeOperationType_SetOFF:
-		{
-			buffer = srch2::util::serializeVectorOfDynamicTypes(clusterShardIds, buffer);
-			buffer = srch2::util::serializeVectorOfDynamicTypes(nodeShardIds, buffer);
-			break;
-		}
-	}
-    return buffer;
-}
-unsigned MergeNotification::getNumberOfBytes() const{
-	unsigned numberOfBytes = 0;
-	numberOfBytes += ShardingNotification::getNumberOfBytes();
-	numberOfBytes += sizeof(operationType);
-    switch (operationType) {
-		case MergeOperationType_Merge:
-		{
-			break;
-		}
-		case MergeOperationType_SetON:
-		case MergeOperationType_SetOFF:
-		{
-			numberOfBytes += srch2::util::getNumberOfBytesVectorOfDynamicTypes(clusterShardIds);
-			numberOfBytes += srch2::util::getNumberOfBytesVectorOfDynamicTypes(nodeShardIds);
-			break;
-		}
-	}
-	return numberOfBytes;
-}
-void * MergeNotification::deserialize(void * buffer) {
-    buffer = ShardingNotification::deserialize(buffer);
-    buffer = srch2::util::deserializeFixedTypes(buffer, operationType);
-    switch (operationType) {
-		case MergeOperationType_Merge:
-		{
-			break;
-		}
-		case MergeOperationType_SetON:
-		case MergeOperationType_SetOFF:
-		{
-			buffer = srch2::util::deserializeVectorOfDynamicTypes(buffer, clusterShardIds);
-			buffer = srch2::util::deserializeVectorOfDynamicTypes(buffer, nodeShardIds);
-			break;
-		}
-	}
-    return buffer;
-}
-
-
-bool MergeNotification::ACK::resolveMessage(Message * msg, NodeId sendeNode){
-	MergeNotification::ACK * mergeNotification =
-			ShardingNotification::deserializeAndConstruct<MergeNotification::ACK>(Message::getBodyPointerFromMessagePointer(msg));
-	if(mergeNotification->isBounced()){
-		Logger::debug("==> Bounced.");
-		ASSERT(false);
-		delete mergeNotification;
-		true;
-	}
-
-	ShardManager::getShardManager()->getStateMachine()->handle(mergeNotification);
-	delete mergeNotification;
-	return false;
-}
-
-bool ShutdownNotification::resolveMessage(Message * msg, NodeId sendeNode){
-	ShutdownNotification * shutdownNotification =
-			ShardingNotification::deserializeAndConstruct<ShutdownNotification>(Message::getBodyPointerFromMessagePointer(msg));
-	if(ShardManager::getShardManager()->handleBouncing(shutdownNotification)){
-		return true;
-	}
+bool ShutdownNotification::resolveNotification(SP(ShardingNotification) _notif){
 	ShardManager::getShardManager()->_shutdown();
-	return false;
+	return true;
 }
 
 }

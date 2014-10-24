@@ -7,6 +7,10 @@
 #include "sharding/transport/MessageAllocator.h"
 #include "migration/MigrationManager.h"
 #include "core/util/Assert.h"
+#include "boost/shared_ptr.hpp"
+
+
+#define SP(TYPE) boost::shared_ptr<TYPE>
 
 namespace srch2is = srch2::instantsearch;
 using namespace srch2is;
@@ -20,33 +24,48 @@ public:
     virtual ~Notification(){};
 };
 
-
-//// TEMP
-//enum MIGRATION_STATUS{
-//	MIGRATION_STATUS_FAIL,
-//	MIGRATION_STATUS_FINISH
-//};
-//struct ShardMigrationStatus{
-//	ShardMigrationStatus(){};
-//	ShardMigrationStatus(const ShardMigrationStatus & status);
-//	ShardMigrationStatus & operator=(const ShardMigrationStatus & status);
-//
-//    void * serialize(void * buffer) const;
-//    unsigned getNumberOfBytes() const;
-//    void * deserialize(void * buffer) ;
-//
-//	unsigned srcOperationId;    // #1
-//    unsigned dstOperationId;   // #7
-//	NodeId sourceNodeId;   // NodeA
-//	NodeId destinationNodeId;   // Current Node
-//	boost::shared_ptr<Srch2Server> shard;
-//	MIGRATION_STATUS status;
-//};
-
 class ShardingNotification : public Notification{
 public:
 	ShardingNotification();
 	virtual ~ShardingNotification(){};
+
+	Message * serialize(MessageAllocator * allocator) const;
+
+	Message * createMessage(MessageAllocator * allocator) const;
+
+	void serializeHeaderInfo(Message * msg) const;
+
+	void serializeContent(Message * msg) const;
+
+	static void deserializeHeader(Message * msg, NodeId srcNode,
+			NodeOperationId & srcAddress, NodeOperationId & destAddress, bool & bounced);
+
+	template<class TYPE>
+    static SP(TYPE) deserializeAndConstruct(Message * msg){
+		void * buffer = Message::getBodyPointerFromMessagePointer(msg);
+		return deserializeAndConstruct<TYPE>(buffer);
+    }
+	template<class TYPE>
+    static SP(TYPE) deserializeAndConstruct(void * buffer){
+		SP(TYPE) notification = create<TYPE>();
+    	buffer = notification->deserializeHeader(buffer);
+    	notification->deserializeBody(buffer);
+    	return notification;
+    }
+
+	template<class TYPE>
+    static SP(TYPE) create(){
+		return SP(TYPE)(new TYPE());
+    }
+
+	virtual bool resolveNotification(SP(ShardingNotification) _notif)=0;
+
+	static bool send(SP(ShardingNotification) notification);
+
+	static bool send(SP(ShardingNotification) notification, const vector<NodeOperationId> & destinations );
+
+	void swapSrcDest();
+	string getDescription();
 	NodeOperationId getSrc() const;
 	NodeOperationId getDest() const;
 	void setSrc(const NodeOperationId & src) ;
@@ -55,45 +74,45 @@ public:
 	void resetBounced();
 	bool isBounced() const;
 
-	virtual void * serialize(void * buffer) const;
-	virtual unsigned getNumberOfBytes() const;
-	virtual void * deserialize(void * buffer) ;
-	Message * serialize(MessageAllocator * allocator) const{
-		unsigned numberOfBytes = getNumberOfBytes();
-		Message * msg = allocator->allocateMessage(numberOfBytes);
-		void * bufferWritePointer = Message::getBodyPointerFromMessagePointer(msg);
-		bufferWritePointer = serialize(bufferWritePointer);
-		return msg;
+	void * serializeAll(void * buffer) const{
+		buffer = serializeHeader(buffer);
+		buffer = serializeBody(buffer);
+		return buffer;
 	}
-	template<class TYPE>
-    static TYPE * deserializeAndConstruct(void * buffer){
-    	TYPE * notification = new TYPE();
-    	notification->deserialize(buffer);
-    	return notification;
-    }
-	void swapSrcDest(){
-		NodeOperationId temp = srcOperationId;
-		srcOperationId = destOperationId;
-		destOperationId = temp;
+	unsigned getNumberOfBytesAll() const{
+		return getNumberOfBytesHeader() + getNumberOfBytesBody();
 	}
-
-	string getDescription(){
-		stringstream ss;
-		ss << "(" << srcOperationId.toString() << " => " << destOperationId.toString();
-		if(bounced){
-			ss << ", bounced)";
-		}else{
-			ss << ")";
-		}
-		return ss.str();
+	void * deserializeAll(void * buffer) {
+		buffer = deserializeHeader(buffer);
+		buffer = deserializeBody(buffer);
+		return buffer;
 	}
 
 private:
     NodeOperationId srcOperationId;
     NodeOperationId destOperationId;
     bool bounced;
+
+	void * serializeHeader(void * buffer) const;
+	unsigned getNumberOfBytesHeader() const;
+	void * deserializeHeader(void * buffer) ;
+
+	virtual void * serializeBody(void * buffer) const{ return buffer;};
+	virtual unsigned getNumberOfBytesBody() const{return 0;};
+	virtual void * deserializeBody(void * buffer) {return buffer;};
 };
 
+
+class DummyShardingNotification : public ShardingNotification{
+public:
+    ShardingMessageType messageType() const {
+    	return NULLType;
+    }
+	bool resolveNotification(SP(ShardingNotification) _notif){
+		ASSERT(false);
+		return true;
+	}
+};
 
 class NodeFailureNotification : public Notification{
 public:
@@ -109,98 +128,13 @@ private:
 	const NodeId failedNodeId;
 };
 
-// NOTE : the reason MigrationManager status report is
-//        a child of ShardingNotification is that we can
-//        use the API of this class to keep src and dest of
-//        this "data transfer"
-class MMNotification : public ShardingNotification{
-public:
-
-	MMNotification(const ShardMigrationStatus & status);
-	MMNotification();
-	ShardMigrationStatus getStatus() const;
-	void setStatus(const ShardMigrationStatus & status);
-    ShardingMessageType messageType() const ;
-
-    void * serialize(void * buffer) const;
-    unsigned getNumberOfBytes() const;
-    void * deserialize(void * buffer) ;
-
-private:
-	ShardMigrationStatus status;
-
-};
-
-
-
-class SaveDataNotification : public ShardingNotification {
-public:
-	SaveDataNotification(const NodeTargetShardInfo & info){
-		targets = info;
-	}
-	ShardingMessageType messageType() const{
-		return ShardingSaveDataMessageType;
-	}
-	static bool resolveMessage(Message * msg, NodeId sendeNode);
-    void * serialize(void * buffer) const;
-    unsigned getNumberOfBytes() const;
-    void * deserialize(void * buffer) ;
-    NodeTargetShardInfo & getTargets(){return targets;};
-private:
-	NodeTargetShardInfo targets;
-}; // ACK is StatusMessageType
-
-
-
-class SaveMetadataNotification : public ShardingNotification {
-public:
-	ShardingMessageType messageType() const{
-		return ShardingSaveMetadataMessageType;
-	}
-	static bool resolveMessage(Message * msg, NodeId sendeNode);
-}; // ACK is StatusMessageType
-
-class MergeNotification : public ShardingNotification {
-public:
-	MergeNotification(const MergeOperationType & opType = MergeOperationType_Merge,
-			const vector<ClusterShardId> & clusterShards = vector<ClusterShardId>(),
-			const vector<NodeShardId> & nodeShards = vector<NodeShardId>()):
-					operationType(opType){
-		this->clusterShardIds = clusterShards;
-		this->nodeShardIds = nodeShards;
-	}
-	ShardingMessageType messageType() const{
-		return ShardingMergeMessageType;
-	}
-	static bool resolveMessage(Message * msg, NodeId sendeNode);
-	MergeOperationType getMergeOperationType() const;
-    void * serialize(void * buffer) const;
-    unsigned getNumberOfBytes() const;
-    void * deserialize(void * buffer) ;
-private:
-	const MergeOperationType operationType;
-
-	// if merge flag is going to be set ON/OFF
-	// we need a list of shards for the node that this notification goes to
-	vector<ClusterShardId> clusterShardIds;
-	vector<NodeShardId> nodeShardIds;
-public:
-	class ACK : public ShardingNotification{
-	public:
-		ShardingMessageType messageType() const{
-			return ShardingMergeACKMessageType;
-		}
-		static bool resolveMessage(Message * msg, NodeId sendeNode);
-	};
-};
-
 
 class ShutdownNotification : public ShardingNotification {
 public:
 	ShardingMessageType messageType() const {
 		return ShardingShutdownMessageType;
 	}
-	static bool resolveMessage(Message * msg, NodeId sendeNode);
+	bool resolveNotification(SP(ShardingNotification) _notif);
 };
 
 }

@@ -2,8 +2,8 @@
 #define __SHARDING_SHARDING_SHARD_COMMAND_HTTP_H__
 
 #include "../../state_machine/State.h"
-#include "../../state_machine/notifications/Notification.h"
-#include "../../state_machine/notifications/CommandStatusNotification.h"
+#include "../../notifications/Notification.h"
+#include "../../notifications/CommandStatusNotification.h"
 #include "../../metadata_manager/Shard.h"
 
 #include "core/util/Logger.h"
@@ -24,27 +24,32 @@ namespace httpwrapper {
  * 2. When all nodes saved their indices, request all nodes to save their cluster metadata
  * 3. When all nodes acked metadata save, write the metadata on disk and done.
  */
-class ShardCommandHttpHandler: public Transaction, public CommandStatusAggregationCallbackInterface {
+class ShardCommandHttpHandler: public Transaction, public ConsumerInterface {
 public:
 
 	static void runCommand(boost::shared_ptr<const ClusterResourceMetadata_Readview> clusterReadview,
 			evhttp_request *req, unsigned coreId , ShardCommandCode commandCode){
 		ShardCommandHttpHandler * commandHttpHandler = new ShardCommandHttpHandler(clusterReadview, req, coreId, commandCode);
-		ShardManager::getShardManager()->getStateMachine()->registerTransaction(commandHttpHandler);
-		if ( ! commandHttpHandler->run()){
-			ShardManager::getShardManager()->getStateMachine()->removeTransaction(commandHttpHandler->getTID());
-		}
+		Transaction::startTransaction(commandHttpHandler);
 		return ;
 	}
 private:
 	ShardCommandHttpHandler(boost::shared_ptr<const ClusterResourceMetadata_Readview> clusterReadview,
 			evhttp_request *req, unsigned coreId , ShardCommandCode commandCode){
-		this->brokerSideInformationJson = boost::shared_ptr<HTTPJsonShardOperationResponse > (new HTTPJsonShardOperationResponse(req));
+		this->brokerSideInformationJson = new ShardOperationJsonResponse();
 		this->req = req;
 		this->coreId = coreId;
 		this->commandCode = commandCode;
 		initActionName();
 		this->clusterReadview = clusterReadview;
+	}
+
+	void initSession(){
+		TransactionSession * session = new TransactionSession();
+		session->response = this->brokerSideInformationJson;
+		session->clusterReadview = clusterReadview;
+
+		this->setSession(session);
 	}
 
 	~ShardCommandHttpHandler(){
@@ -53,7 +58,20 @@ private:
 		}
 	}
 
+	Transaction * getTransaction() {
+		return this;
+	}
+
 	bool run(){
+		if(! _run()){
+			// print
+			this->brokerSideInformationJson->printHTTP(req);
+			return false;
+		}
+		return true;
+	}
+
+	bool _run(){
 	    const CoreInfo_t *indexDataContainerConf = clusterReadview->getCore(coreId);
 	    switch (req->type) {
 	    case EVHTTP_REQ_PUT: {
@@ -63,21 +81,27 @@ private:
 	                std::stringstream log_str;
 	                evkeyvalq headers;
 	                evhttp_parse_query(req->uri, &headers);
-	                char *exportedDataFileName = NULL;
 	    	    	if(commandCode == ShardCommandCode_Export){
-						exportedDataFileName = evhttp_find_header(&headers, URLParser::nameParamName);
+	    	    		const char * exportedDataFileName = evhttp_find_header(&headers, URLParser::nameParamName);
+						// TODO : should we free exportedDataFileName?
+						if(exportedDataFileName){
+							filePath = string(exportedDataFileName);
+						}else{
+							brokerSideInformationJson->finalizeInvalid();
+							return false;
+						}
 	    	    	}else { ///commandCode == ShardCommandCode_ResetLogger
-						exportedDataFileName = evhttp_find_header(&headers, URLParser::logNameParamName);
+	    	    		const char * exportedDataFileName = evhttp_find_header(&headers, URLParser::logNameParamName);
+	    	    		// TODO : should we free exportedDataFileName?
+						if(exportedDataFileName){
+							filePath = string(exportedDataFileName);
+						}else{
+							brokerSideInformationJson->finalizeInvalid();
+							return false;
+						}
 	    	    	}
-	                // TODO : should we free exportedDataFileName?
-	                if(exportedDataFileName){
-	                	filePath = string(exportedDataFileName);
-	                }else{
-	                    brokerSideInformationJson->finalizeInvalid();
-	                    return false;
-	                }
 	            }else{
-	                brokerSideInformationJson->addError(HTTPJsonResponse::getJsonSingleMessage(HTTP_JSON_Search_Res_Format_Wrong_Error));
+	                brokerSideInformationJson->addError(JsonResponseHandler::getJsonSingleMessage(HTTP_JSON_Search_Res_Format_Wrong_Error));
 	            	brokerSideInformationJson->finalizeOK();
 	            	return false;
 	            }
@@ -92,17 +116,17 @@ private:
                 	}else if (((string)"1").compare(flagSet) == 0){
                 		commandCode = ShardCommandCode_MergeSetOn;
                 	}else{
-    	                brokerSideInformationJson->addError(HTTPJsonResponse::getJsonSingleMessage(HTTP_JSON_Merge_Parameter_Not_Recognized));
+    	                brokerSideInformationJson->addError(JsonResponseHandler::getJsonSingleMessage(HTTP_JSON_Merge_Parameter_Not_Recognized));
     	            	brokerSideInformationJson->finalizeOK();
     	            	return false;
                 	}
                 }
 	    	}
 			shardCommand = new ShardCommand(this, coreId, commandCode, filePath);
-			if(this->isDeleteTopDown()){
+			shardCommand->produce();
+			if(! getTransaction()->isAttached()){
 				return false;
 			}
-			shardCommand->start();
 	    	return true;
 	    }
 	    default:
@@ -115,16 +139,19 @@ private:
 	}
 
 
-	void receiveStatus(map<NodeId, vector<CommandStatusNotification::ShardStatus *> > shardsStatus){
-		for(unsigned i = 0 ; i < shardsStatus.size(); ++i){
-			CommandStatusNotification::ShardStatus * recordShardResult = shardsStatus.at(i);
-			this->brokerSideInformationJson->addShardResponse(action_name.c_str(),
-					recordShardResult->getStatusValue(), recordShardResult->messages);
-			delete shardsStatus;
+	void consume(map<NodeId, vector<CommandStatusNotification::ShardStatus *> > & shardsStatus){
+		for(map<NodeId, vector<CommandStatusNotification::ShardStatus *> >::iterator nodeItr =
+				shardsStatus.begin(); nodeItr != shardsStatus.end(); ++nodeItr){
+			for(unsigned i = 0 ; i < nodeItr->second.size(); ++i){
+				CommandStatusNotification::ShardStatus * recordShardResult = nodeItr->second.at(i);
+				this->brokerSideInformationJson->addShardResponse(action_name.c_str(),
+						recordShardResult->getStatusValue(), recordShardResult->messages);
+				delete nodeItr->second.at(i);
+			}
 		}
-	}
-	TRANS_ID lastCallback(void * args){
-		return this->getTID();
+
+		this->brokerSideInformationJson->printHTTP(req);
+		this->setFinished();
 	}
 
 
@@ -132,7 +159,7 @@ private:
 		return ShardingTransactionType_ShardCommandCode;
 	}
 private:
-	boost::shared_ptr<HTTPJsonShardOperationResponse > brokerSideInformationJson;
+	ShardOperationJsonResponse * brokerSideInformationJson;
 	boost::shared_ptr<const ClusterResourceMetadata_Readview> clusterReadview;
 	evhttp_request *req;
 	unsigned coreId;

@@ -1,12 +1,12 @@
 #ifndef __SHARDING_SHARDING_CLUSTER_TRANS_SHARD_COMMAND_H__
 #define __SHARDING_SHARDING_CLUSTER_TRANS_SHARD_COMMAND_H__
 
-#include "./ConcurrentNotifOperation.h"
+#include "../../state_machine/node_iterators/ConcurrentNotifOperation.h"
 #include "../../state_machine/State.h"
-#include "../../state_machine/notifications/Notification.h"
-#include "../../state_machine/notifications/CommandStatusNotification.h"
+#include "../../notifications/Notification.h"
+#include "../../notifications/CommandStatusNotification.h"
 #include "../../metadata_manager/Shard.h"
-
+#include "../Transaction.h"
 #include "core/util/Logger.h"
 #include "core/util/Assert.h"
 #include "server/HTTPJsonResponse.h"
@@ -24,53 +24,42 @@ namespace httpwrapper {
  * 2. When all nodes saved their indices, request all nodes to save their cluster metadata
  * 3. When all nodes acked metadata save, write the metadata on disk and done.
  */
-class ShardCommand: public AggregatorCallbackInterface {
+class ShardCommand: public ProducerInterface, public NodeIteratorListenerInterface {
 public:
 
-	ShardCommand(CommandStatusAggregationCallbackInterface * consumer,
-			unsigned coreId, ShardCommandCode commandCode = ShardCommandCode_Merge,
+	ShardCommand(ConsumerInterface * consumer,
+			unsigned coreId = (unsigned)-1, ShardCommandCode commandCode = ShardCommandCode_Merge,
 			const string & filePath = "");
 	~ShardCommand();
 
+	Transaction * getTransaction(){
+		return this->getConsumer()->getTransaction();
+	}
 
-
-	void partition(vector<NodeTargetShardInfo> & targets);
-
-
-	void start();
+	void produce();
 
 	// process coming back from distributed conversation to aggregate the results of
 	// this command
-	void receiveReplies(map<NodeOperationId , ShardingNotification *> replies);
-
-	TRANS_ID lastCallback(void * args);
-
-	void abort(int error_code);
-
-	void setMessageChannel(boost::shared_ptr<HTTPJsonShardOperationResponse > brokerSideInformationJson){
-		this->brokerSideInformationJson = brokerSideInformationJson;
-	}
+	void end_(map<NodeOperationId , SP(ShardingNotification)> & replies);
 
 private:
-	const unsigned coreId;
-	const ShardCommandCode commandCode;
-	vector<NodeTargetShardInfo> targets;
-	vector<std::pair<ShardingNotification * , NodeId> > notifications;
-	CommandStatusAggregationCallbackInterface * consumer;
 
-	bool finalizedFlag ;
+	bool partition(vector<NodeTargetShardInfo> & targets);
+	const unsigned coreId;
+	ShardCommandCode commandCode;
+	vector<NodeTargetShardInfo> targets;
+	vector<std::pair<SP(ShardingNotification) , NodeId> > notifications;
+	ConsumerInterface * consumer;
+	Transaction * trans;
+	boost::shared_ptr<const ClusterResourceMetadata_Readview> clusterReadview;
 
 	string filePath ; // holds either jsonFilePath or the newLogFilePath
 
 	bool dataSavedFlag;
 
-	boost::shared_ptr<HTTPJsonShardOperationResponse > brokerSideInformationJson;
-//			boost::shared_ptr<HTTPJsonShardOperationResponse > (new HTTPJsonShardOperationResponse(req));
+	bool isSaveSuccessful(map<NodeOperationId , SP(ShardingNotification)> & replies) const;
 
-
-	bool isSaveSuccessful(map<NodeOperationId , ShardingNotification *> & replies) const;
-
-	void finalize(map<NodeOperationId , ShardingNotification *> & replies);
+	void finalize(map<NodeOperationId , SP(ShardingNotification)> & replies);
 
 };
 

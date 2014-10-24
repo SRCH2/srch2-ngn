@@ -1,12 +1,11 @@
 #ifndef __SHARDING_SHARDING_ATOMIC_RELEASE_OPERATION_H__
 #define __SHARDING_SHARDING_ATOMIC_RELEASE_OPERATION_H__
 
-#include "NodeIteratorOperation.h"
-#include "../State.h"
+#include "../state_machine/node_iterators/NodeIteratorOperation.h"
+#include "../state_machine/State.h"
 #include "../notifications/Notification.h"
 #include "../notifications/LockingNotification.h"
-#include "../../metadata_manager/ResourceLocks.h"
-#include "../../../configuration/ShardingConstants.h"
+#include "../../configuration/ShardingConstants.h"
 
 namespace srch2is = srch2::instantsearch;
 using namespace srch2is;
@@ -35,7 +34,7 @@ public:
 			ConsumerInterface * consumer);
 
 	/// record releasing
-	AtomicRelease(const vector<string> & primaryKeys, const NodeOperationId & writerAgent,
+	AtomicRelease(const vector<string> & primaryKeys, const NodeOperationId & writerAgent, const ClusterPID & pid,
 			ConsumerInterface * consumer);
 
 
@@ -45,23 +44,25 @@ public:
 
 	~AtomicRelease();
 
+	Transaction * getTransaction();
+
 	void produce();
 
 	/*
 	 * Lock request must be successful (or partially successful in case of primarykeys)
 	 * if we reach to this function.
 	 */
-	void end(map<NodeId, ShardingNotification * > & replies);
+	void end(map<NodeId, SP(ShardingNotification) > & replies);
 private:
 
-	LockingNotification::LockRequestType lockType;
-	LockingNotification * releaseNotification;
+	LockRequestType lockType;
+	SP(LockingNotification) releaseNotification;
 	OrderedNodeIteratorOperation * releaser; // it will be deleted by state-machie when it returns NULL
 	ConsumerInterface * consumer;
 
 	bool finalizeFlag ;
 	// TODO if we solve the problem of primary keys, we can remove this API
-	void setParticipants(const vector<NodeId> & participants);
+	void setParticipants(vector<NodeId> & participants);
 
 	void init();
 

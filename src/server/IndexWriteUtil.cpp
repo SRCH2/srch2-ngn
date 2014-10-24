@@ -66,6 +66,9 @@ Json::Value IndexWriteUtil::_insertCommand(Indexer *indexer,
 			response[c_reason] =
 					"The record with same primary key already exists";
 			break;
+		default :
+			ASSERT(false);
+			break;
 		}
 		};
 	} else {
@@ -100,6 +103,7 @@ Json::Value IndexWriteUtil::_deleteCommand(Indexer *indexer,
 		default: // OP_SUCCESS.
 		{
 			response[c_action_delete] = c_success;
+			break;
 		}
 		};
 	} else {
@@ -138,6 +142,7 @@ Json::Value IndexWriteUtil::_deleteCommand_QueryURI(Indexer *indexer,
 		default: // OP_SUCCESS.
 		{
 			response[c_action_delete] = c_success;
+			break;
 		}
 		};
 	} else {
@@ -192,6 +197,7 @@ Json::Value IndexWriteUtil::_updateCommand(Indexer *indexer,
 	default: // OP_SUCCESS.
 	{
 		recordExisted = true;
+		break;
 	}
 	};
 
@@ -223,6 +229,9 @@ Json::Value IndexWriteUtil::_updateCommand(Indexer *indexer,
 					"insert: The record with same primary key already exists";
 			break;
 		}
+		default :
+			ASSERT(false);
+			break;
 		};
 	} else {
 		response[c_action_update] = c_failed;
@@ -243,6 +252,7 @@ Json::Value IndexWriteUtil::_updateCommand(Indexer *indexer,
 	default: // OP_SUCCESS.
 	{
 		response[c_resume] = c_success;
+		break;
 	}
 	};
 	return response;
@@ -300,6 +310,9 @@ Json::Value IndexWriteUtil::_aclRecordModifyRoles(Indexer *indexer,
 					"rid: " + primaryKeyID
 							+ " add role failed. reason: No record with this primary key";
 			break;
+		default :
+			ASSERT(false);
+			break;
 		}
 		;
 		break;
@@ -315,6 +328,9 @@ Json::Value IndexWriteUtil::_aclRecordModifyRoles(Indexer *indexer,
 					"rid: " + primaryKeyID
 							+ " append role failed. reason: No record with this primary key";
 			break;
+		default :
+			ASSERT(false);
+			break;
 		}
 		;
 		break;
@@ -329,6 +345,9 @@ Json::Value IndexWriteUtil::_aclRecordModifyRoles(Indexer *indexer,
 			response[c_detail] =
 					"rid: " + primaryKeyID
 							+ " delete role failed. reason: No record with this primary key";
+			break;
+		default :
+			ASSERT(false);
 			break;
 		}
 		;
@@ -359,6 +378,9 @@ Json::Value IndexWriteUtil::_aclModifyRecordsOfRole(Indexer *indexer, string &ro
 			break;
 		case srch2::instantsearch::OP_FAIL:
 			"No record with this primary key: " + resourceIds[i] + " ";
+			break;
+		default :
+			ASSERT(false);
 			break;
 		}
 	}

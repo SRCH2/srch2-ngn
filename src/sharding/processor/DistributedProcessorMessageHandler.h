@@ -22,11 +22,11 @@ public:
 
 	DPMessageHandler(ConfigManager& configurationManager,
 			TransportManager& transportManager, DPInternalRequestHandler& dpInternal):
+				requestMessageHandler(configurationManager, transportManager, dpInternal, replyMessageHandler),
+				replyMessageHandler(transportManager.getMessageAllocator()),
 				configurationManager(configurationManager),
 				transportManager(transportManager),
-				dpInternal(dpInternal),
-				replyMessageHandler(transportManager.getMessageAllocator()),
-				requestMessageHandler(configurationManager, transportManager, dpInternal, replyMessageHandler){};
+				dpInternal(dpInternal){};
 	/*
 	 * This callback is called from TM when a message of type DP is received.
 	 * This message is either passed to DP internal (if it's a request) or
@@ -57,6 +57,7 @@ public:
     	nodeTargetShardInfoVector.push_back(target);
     	broadcast(requestObj, waitForAll, withCallback, aggregator, timeoutValue, nodeTargetShardInfoVector,
     			clusterReadview);
+    	return true;
     }
 
     template<typename RequestType, typename ResponseType>
@@ -195,11 +196,11 @@ private:
 				delete reqHandlerArgs;
 				return NULL;
 			case InsertUpdateCommandMessageType:
-				reqHandlerArgs->requestMessageHandler->resolveMessage((WriteCommandNotification*)reqHandlerArgs->requestObj,
+				reqHandlerArgs->requestMessageHandler->resolveMessage((InsertUpdateCommand*)reqHandlerArgs->requestObj,
 						reqHandlerArgs->node, reqHandlerArgs->requestMessageId,
 						reqHandlerArgs->target, reqHandlerArgs->type,
 						reqHandlerArgs->clusterReadview);
-				delete (WriteCommandNotification*)reqHandlerArgs->requestObj;
+				delete (InsertUpdateCommand*)reqHandlerArgs->requestObj;
 				delete reqHandlerArgs;
 				return NULL;
 			case DeleteCommandMessageType:
@@ -210,44 +211,12 @@ private:
 				delete (DeleteCommand*)reqHandlerArgs->requestObj;
 				delete reqHandlerArgs;
 				return NULL;
-			case SerializeCommandMessageType:
-				reqHandlerArgs->requestMessageHandler->resolveMessage((SerializeCommand*)reqHandlerArgs->requestObj,
-						reqHandlerArgs->node, reqHandlerArgs->requestMessageId,
-						reqHandlerArgs->target, reqHandlerArgs->type,
-						reqHandlerArgs->clusterReadview);
-				delete (SerializeCommand*)reqHandlerArgs->requestObj;
-				delete reqHandlerArgs;
-				return NULL;
 			case GetInfoCommandMessageType:
 				reqHandlerArgs->requestMessageHandler->resolveMessage((GetInfoCommand*)reqHandlerArgs->requestObj,
 						reqHandlerArgs->node, reqHandlerArgs->requestMessageId,
 						reqHandlerArgs->target, reqHandlerArgs->type,
 						reqHandlerArgs->clusterReadview);
 				delete (GetInfoCommand*)reqHandlerArgs->requestObj;
-				delete reqHandlerArgs;
-				return NULL;
-			case CommitCommandMessageType:
-				reqHandlerArgs->requestMessageHandler->resolveMessage((CommitCommand*)reqHandlerArgs->requestObj,
-						reqHandlerArgs->node, reqHandlerArgs->requestMessageId,
-						reqHandlerArgs->target, reqHandlerArgs->type,
-						reqHandlerArgs->clusterReadview);
-				delete (CommitCommand*)reqHandlerArgs->requestObj;
-				delete reqHandlerArgs;
-				return NULL;
-			case ResetLogCommandMessageType:
-				reqHandlerArgs->requestMessageHandler->resolveMessage((ResetLogCommand*)reqHandlerArgs->requestObj,
-						reqHandlerArgs->node, reqHandlerArgs->requestMessageId,
-						reqHandlerArgs->target, reqHandlerArgs->type,
-						reqHandlerArgs->clusterReadview);
-				delete (ResetLogCommand*)reqHandlerArgs->requestObj;
-				delete reqHandlerArgs;
-				return NULL;
-			case MergeCommandMessageType:
-				reqHandlerArgs->requestMessageHandler->resolveMessage((MergeCommand*)reqHandlerArgs->requestObj,
-						reqHandlerArgs->node, reqHandlerArgs->requestMessageId,
-						reqHandlerArgs->target, reqHandlerArgs->type,
-						reqHandlerArgs->clusterReadview);
-				delete (MergeCommand*)reqHandlerArgs->requestObj;
 				delete reqHandlerArgs;
 				return NULL;
 			default:

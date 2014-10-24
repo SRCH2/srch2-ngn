@@ -31,34 +31,31 @@ public:
 
 	ResourceMetadataManager();
 	~ResourceMetadataManager();
-	void resolve(CommitNotification * commitNotification){
-		if(commitNotification == NULL){
+	void resolve(SP(CommitNotification) commitNotification){
+		if(! commitNotification){
 			ASSERT(false);
 			return;
 		}
 		applyAndCommit(commitNotification->getMetadataChange());
-		delete commitNotification->getMetadataChange();
 		// reply ack
-		CommitNotification::ACK * ack = new CommitNotification::ACK();
+		SP(CommitNotification::ACK) ack = ShardingNotification::create<CommitNotification::ACK>();
 		ack->setSrc(NodeOperationId(ShardManager::getCurrentNodeId()));
 		ack->setDest(commitNotification->getSrc());
-		ShardManager::getShardManager()->send(ack);
-		delete ack;
+		ShardingNotification::send(ack);
 	}
 
 
-	void resolve(ConfigManager * confManager, SaveMetadataNotification * saveDataNotification);
+	void saveMetadata(ConfigManager * confManager);
 
 
-	void resolve(MetadataReport::REQUEST * readRequest){
-		MetadataReport * report = new MetadataReport(this->writeview);
+	void resolve(SP(MetadataReport::REQUEST) readRequest){
+		SP(MetadataReport) report = SP(MetadataReport)(new MetadataReport(this->writeview));
 		report->setSrc(NodeOperationId(ShardManager::getCurrentNodeId()));
 		report->setDest(readRequest->getSrc());
-		ShardManager::getShardManager()->send(report);
-		delete report;
+		ShardingNotification::send(report);
 	}
 
-	void resolve(NodeFailureNotification * nodeFailureNotif){
+	void resolve(SP(NodeFailureNotification) nodeFailureNotif){
 		this->writeview->removeNode(nodeFailureNotif->getFailedNodeID());
 		this->commitClusterMetadata();
 	}

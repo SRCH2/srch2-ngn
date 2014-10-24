@@ -6,7 +6,10 @@
 #include "../metadata_manager/Node.h"
 #include "../metadata_manager/Cluster_Writeview.h"
 #include "../ShardManager.h"
-#include "./ConcurrentNotifOperation.h"
+#include "./AtomicLock.h"
+#include "./AtomicRelease.h"
+#include "../state_machine/node_iterators/ConcurrentNotifOperation.h"
+#include "../state_machine/StateMachine.h"
 
 namespace srch2is = srch2::instantsearch;
 using namespace srch2is;
@@ -17,7 +20,7 @@ namespace httpwrapper {
 
 AtomicMetadataCommit::AtomicMetadataCommit(const vector<NodeId> & exceptions,
 		MetadataChange * metadataChange,
-		ConsumerInterface * consumer){
+		ConsumerInterface * consumer): ProducerInterface(consumer){
 	ASSERT(metadataChange != NULL);
 	this->metadataChange = metadataChange;
 	Cluster_Writeview * writeview = ShardManager::getShardManager()->getWriteview();
@@ -28,10 +31,6 @@ AtomicMetadataCommit::AtomicMetadataCommit(const vector<NodeId> & exceptions,
 			this->participants.push_back(allNodes.at(i));
 		}
 	}
-	this->commitNotification = NULL;
-	ASSERT(consumer != NULL);
-	this->consumer = consumer;
-	ProducerInterface::connectDeletePathToParent(consumer);
 	this->selfOperationId = NodeOperationId(ShardManager::getCurrentNodeId(), OperationState::getNextOperationId());
 	this->atomicLock = NULL;
 	this->atomicRelease = NULL;
@@ -40,7 +39,7 @@ AtomicMetadataCommit::AtomicMetadataCommit(const vector<NodeId> & exceptions,
 }
 
 AtomicMetadataCommit::AtomicMetadataCommit(const NodeId & exception,
-		MetadataChange * metadataChange, ConsumerInterface * consumer){
+		MetadataChange * metadataChange, ConsumerInterface * consumer): ProducerInterface(consumer){
 	ASSERT(metadataChange != NULL);
 	this->metadataChange = metadataChange;
 	Cluster_Writeview * writeview = ShardManager::getShardManager()->getWriteview();
@@ -51,10 +50,6 @@ AtomicMetadataCommit::AtomicMetadataCommit(const NodeId & exception,
 			this->participants.push_back(allNodes.at(i));
 		}
 	}
-	this->commitNotification = NULL;
-	ASSERT(consumer != NULL);
-	this->consumer = consumer;
-	ProducerInterface::connectDeletePathToParent(consumer);
 	this->selfOperationId = NodeOperationId(ShardManager::getCurrentNodeId(), OperationState::getNextOperationId());
 	this->atomicLock = NULL;
 	this->atomicRelease = NULL;
@@ -62,14 +57,10 @@ AtomicMetadataCommit::AtomicMetadataCommit(const NodeId & exception,
 }
 
 AtomicMetadataCommit::AtomicMetadataCommit(MetadataChange * metadataChange,
-		const vector<NodeId> & participants, ConsumerInterface * consumer){
+		const vector<NodeId> & participants, ConsumerInterface * consumer): ProducerInterface(consumer){
 	ASSERT(metadataChange != NULL);
 	this->metadataChange = metadataChange;
 	this->participants = participants;
-	this->commitNotification = NULL;
-	ASSERT(consumer != NULL);
-	this->consumer = consumer;
-	ProducerInterface::connectDeletePathToParent(consumer);
 	this->selfOperationId = NodeOperationId(ShardManager::getCurrentNodeId(), OperationState::getNextOperationId());
 	this->atomicLock = NULL;
 	this->atomicRelease = NULL;
@@ -80,15 +71,16 @@ AtomicMetadataCommit::~AtomicMetadataCommit(){
 	if(metadataChange != NULL){
 		delete metadataChange;
 	}
-	if(commitNotification != NULL){
-		delete commitNotification;
-	}
 	if(atomicLock != NULL){
 		delete atomicLock;
 	}
 	if(atomicRelease != NULL){
 		delete atomicRelease;
 	}
+}
+
+Transaction * AtomicMetadataCommit::getTransaction(){
+	return this->getConsumer()->getTransaction();
 }
 
 void AtomicMetadataCommit::produce(){
@@ -130,7 +122,7 @@ void AtomicMetadataCommit::consume(bool granted){
 }
 
 void AtomicMetadataCommit::commit(){
-	commitNotification = new CommitNotification( metadataChange );
+	commitNotification = SP(CommitNotification)(new CommitNotification( metadataChange ));
 
 	ConcurrentNotifOperation * committer = new ConcurrentNotifOperation(commitNotification,
 			ShardingCommitACKMessageType, participants, this);
@@ -153,7 +145,7 @@ bool AtomicMetadataCommit::shouldAbort(const NodeId & failedNode){
 	return false;
 }
 
-void AtomicMetadataCommit::end_(map<NodeOperationId , ShardingNotification *> & replies){
+void AtomicMetadataCommit::end_(map<NodeOperationId , SP(ShardingNotification)> & replies){
 	// nothing to do with commit acks
 	if(replies.size() != participants.size()){
 		ASSERT(false);
@@ -173,7 +165,7 @@ void AtomicMetadataCommit::release(){
 }
 
 void AtomicMetadataCommit::finalize(bool result){
-	consumer->consume(result);
+	this->getConsumer()->consume(result);
 	this->finalizedFlag = true;
 	return;
 }

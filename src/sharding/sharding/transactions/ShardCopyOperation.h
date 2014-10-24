@@ -1,16 +1,16 @@
 #ifndef __SHARDING_SHARDING_SHARD_COPY_OPERATION_H__
 #define __SHARDING_SHARDING_SHARD_COPY_OPERATION_H__
 
-#include "../State.h"
 #include "./AtomicLock.h"
 #include "./AtomicRelease.h"
 #include "./AtomicMetadataCommit.h"
-#include "../../metadata_manager/Shard.h"
-#include "../../metadata_manager/Cluster_Writeview.h"
-#include "../../notifications/Notification.h"
-#include "../../notifications/CopyToMeNotification.h"
-#include "../../notifications/CommitNotification.h"
-#include "../..//notifications/LockingNotification.h"
+#include "../state_machine/State.h"
+#include "../metadata_manager/Shard.h"
+#include "../metadata_manager/Cluster_Writeview.h"
+#include "../notifications/Notification.h"
+#include "../notifications/CopyToMeNotification.h"
+#include "../notifications/CommitNotification.h"
+#include "../notifications/LockingNotification.h"
 
 namespace srch2is = srch2::instantsearch;
 using namespace srch2is;
@@ -18,7 +18,7 @@ using namespace std;
 namespace srch2 {
 namespace httpwrapper {
 
-class ShardCopyOperation : public ConsumerInterface, public ProducerInterface, public NodeIteratorListenerInterface{
+class ShardCopyOperation : public ProducerInterface, public NodeIteratorListenerInterface{
 public:
 
 	ShardCopyOperation(const ClusterShardId & unassignedShard,
@@ -26,6 +26,8 @@ public:
 			ConsumerInterface * consumer);
 
 	~ShardCopyOperation();
+
+	Transaction * getTransaction() ;
 
 	void produce();
 
@@ -51,13 +53,11 @@ private:
 	const ClusterShardId replicaShardId;
 	const NodeId srcNodeId;
 
-	ConsumerInterface * consumer;
 	string currentAction;
 	AtomicLock * locker;
 	AtomicRelease * releaser;
-	CopyToMeNotification * copyToMeNotif ;
+	SP(CopyToMeNotification) copyToMeNotif ;
 	AtomicMetadataCommit * committer;
-	bool releasingMode;
 
 	bool finalizedFlag;
 	bool successFlag;

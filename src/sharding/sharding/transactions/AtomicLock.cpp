@@ -4,6 +4,7 @@
 #include "core/util/Assert.h"
 #include "../metadata_manager/Cluster_Writeview.h"
 #include "../ShardManager.h"
+#include "../state_machine/StateMachine.h"
 
 namespace srch2is = srch2::instantsearch;
 using namespace srch2is;
@@ -15,15 +16,12 @@ namespace httpwrapper {
 AtomicLock::AtomicLock(const ClusterShardId & srcShardId,
 		const ClusterShardId & destShardId,
 		const NodeOperationId & copyAgent,
-		ConsumerInterface * consumer){
+		ConsumerInterface * consumer): ProducerInterface(consumer){
 
 	// prepare the locker and locking notification
-	lockNotification = new LockingNotification(srcShardId, destShardId, copyAgent);
-	releaseNotification = new LockingNotification(srcShardId, destShardId, copyAgent, true);
-	lockType = LockingNotification::LockRequestType_Copy;
-	ASSERT(consumer != NULL);
-	this->consumer = consumer;
-	ProducerInterface::connectDeletePathToParent(this->consumer);
+	lockNotification = SP(LockingNotification)(new LockingNotification(srcShardId, destShardId, copyAgent));
+	releaseNotification = SP(LockingNotification)(new LockingNotification(srcShardId, destShardId, copyAgent, true));
+	lockType = LockRequestType_Copy;
 	this->finalzedFlag = false;
 	init();
 }
@@ -32,32 +30,26 @@ AtomicLock::AtomicLock(const ClusterShardId & srcShardId,
 AtomicLock::AtomicLock(const ClusterShardId & shardId,
 		const NodeOperationId & srcMoveAgent,
 		const NodeOperationId & destMoveAgent,
-		ConsumerInterface * lockRequester){
+		ConsumerInterface * consumer): ProducerInterface(consumer){
 
 	// prepare the locker and locking notification
-	lockNotification = new LockingNotification(shardId, srcMoveAgent, destMoveAgent);
-	releaseNotification = new LockingNotification(shardId, srcMoveAgent, destMoveAgent, true);
-	lockType = LockingNotification::LockRequestType_Move;
-	ASSERT(consumer != NULL);
-	this->consumer = lockRequester;
-	ProducerInterface::connectDeletePathToParent(this->consumer);
+	lockNotification = SP(LockingNotification)(new LockingNotification(shardId, srcMoveAgent, destMoveAgent));
+	releaseNotification = SP(LockingNotification)(new LockingNotification(shardId, srcMoveAgent, destMoveAgent, true));
+	lockType = LockRequestType_Move;
 	this->finalzedFlag = false;
 	init();
 }
 
 /// node arrival
 AtomicLock::AtomicLock(const NodeOperationId & newNodeOpId,
-		ConsumerInterface * lockRequester,
+		ConsumerInterface * consumer,
 		const vector<NodeId> & listOfOlderNodes, const LockLevel & lockLevel,
-		const bool blocking){
+		const bool blocking): ProducerInterface(consumer){
 
 	// prepare the locker and locking notification
-	lockNotification = new LockingNotification(newNodeOpId, listOfOlderNodes, lockLevel);
-	releaseNotification = new LockingNotification(newNodeOpId, listOfOlderNodes, lockLevel, true);
-	lockType = LockingNotification::LockRequestType_Metadata;
-	ASSERT(consumer != NULL);
-	this->consumer = lockRequester;
-	ProducerInterface::connectDeletePathToParent(this->consumer);
+	lockNotification = SP(LockingNotification)(new LockingNotification(newNodeOpId, listOfOlderNodes, lockLevel));
+	releaseNotification = SP(LockingNotification)(new LockingNotification(newNodeOpId, listOfOlderNodes, lockLevel, true));
+	lockType = LockRequestType_Metadata;
 	this->finalzedFlag = false;
 	init();
 }
@@ -65,16 +57,14 @@ AtomicLock::AtomicLock(const NodeOperationId & newNodeOpId,
 /// record locking
 AtomicLock::AtomicLock(const vector<string> & primaryKeys,
 		const NodeOperationId & writerAgent,
-		ConsumerInterface * lockRequester){
+		const ClusterPID & pid,
+		ConsumerInterface * consumer): ProducerInterface(consumer){
 
 	// prepare the locker and locking notification
-	lockNotification = new LockingNotification(primaryKeys, writerAgent);
+	lockNotification = SP(LockingNotification)(new LockingNotification(primaryKeys, writerAgent, pid));
 //	releaseNotification = new LockingNotification(primaryKeys, writerAgent, true);
-	releaseNotification = NULL;
-	lockType = LockingNotification::LockRequestType_PrimaryKey;
-	ASSERT(consumer != NULL);
-	this->consumer = lockRequester;
-	ProducerInterface::connectDeletePathToParent(this->consumer);
+//	releaseNotification = NULL;
+	lockType = LockRequestType_PrimaryKey;
 	this->finalzedFlag = false;
 	init();
 }
@@ -83,26 +73,22 @@ AtomicLock::AtomicLock(const vector<string> & primaryKeys,
 /// general purpose cluster shard locking
 AtomicLock::AtomicLock(const ClusterShardId & shardId,
 		const NodeOperationId & agent, const LockLevel & lockLevel,
-		ConsumerInterface * lockRequester){
+		ConsumerInterface * consumer): ProducerInterface(consumer){
 
 	// prepare the locker and locking notification
-	lockNotification = new LockingNotification(shardId, agent, lockLevel);
-	releaseNotification = new LockingNotification(shardId, agent, true);
-	lockType = LockingNotification::LockRequestType_GeneralPurpose;
-	ASSERT(consumer != NULL);
-	this->consumer = lockRequester;
-	ProducerInterface::connectDeletePathToParent(this->consumer);
+	lockNotification = SP(LockingNotification)(new LockingNotification(shardId, agent, lockLevel));
+	releaseNotification = SP(LockingNotification)(new LockingNotification(shardId, agent, true));
+	lockType = LockRequestType_GeneralPurpose;
 	this->finalzedFlag = false;
 	init();
 }
 
 
 AtomicLock::~AtomicLock(){
-	if(lockNotification == NULL){
-		ASSERT(false);
-	}else{
-		delete lockNotification;
-	}
+}
+
+Transaction * AtomicLock::getTransaction(){
+	return this->getConsumer()->getTransaction();
 }
 
 void AtomicLock::produce(){
@@ -120,9 +106,9 @@ void AtomicLock::init(){
 /*
  * This method is called after receiving the response from each participant
  */
-bool AtomicLock::condition(ShardingNotification * reqArg, ShardingNotification * resArg){
-	LockingNotification * req = (LockingNotification *)reqArg;
-	LockingNotification::ACK * res = (LockingNotification::ACK)resArg;
+bool AtomicLock::condition(SP(ShardingNotification) reqArg, SP(ShardingNotification) resArg){
+	SP(LockingNotification) req = boost::dynamic_pointer_cast<LockingNotification>(reqArg);
+	SP(LockingNotification::ACK) res = boost::dynamic_pointer_cast<LockingNotification::ACK>(resArg);
 
 	if(req == NULL || res == NULL){
 		ASSERT(false);
@@ -137,28 +123,28 @@ bool AtomicLock::condition(ShardingNotification * reqArg, ShardingNotification *
 
 	participantIndex ++;
 
-	if(req->getLockRequestType() == LockingNotification::LockRequestType_PrimaryKey){
-		vector<string> & primaryKeys = req->getPrimaryKeys();
-		for(unsigned pkIndex = 0 ; pkIndex < primaryKeys.size(); ++pkIndex){
-			if(res->isGranted(pkIndex)){
-				continue;
-			}else{
-				// primary key rejected
-				// 1. put primary key in rejected PKs map
-				if(participantIndex > 0){ // only if any node actually needs recovery
-					rejectedPrimaryKeys[primaryKeys.at(pkIndex)] = participantIndex;
-				}
-				// 2. remove primaryKey from list
-				primaryKeys.erase(primaryKeys.begin()+pkIndex);
-				pkIndex--;
-			}
-		}
-		if(primaryKeys.size() > 0){
-			return true;
-		}
-		// no primaryKey is left, all are rejected : release successful requests
-		recover();
-		return false; // stops the locker operation
+	if(req->getLockRequestType() == LockRequestType_PrimaryKey){
+//		vector<string> & primaryKeys = req->getPrimaryKeys();
+//		for(unsigned pkIndex = 0 ; pkIndex < primaryKeys.size(); ++pkIndex){
+//			if(res->isGranted(pkIndex)){
+//				continue;
+//			}else{
+//				// primary key rejected
+//				// 1. put primary key in rejected PKs map
+//				if(participantIndex > 0){ // only if any node actually needs recovery
+//					rejectedPrimaryKeys[primaryKeys.at(pkIndex)] = participantIndex;
+//				}
+//				// 2. remove primaryKey from list
+//				primaryKeys.erase(primaryKeys.begin()+pkIndex);
+//				pkIndex--;
+//			}
+//		}
+//		if(primaryKeys.size() > 0){
+//			return true;
+//		}
+//		// no primaryKey is left, all are rejected : release successful requests
+//		recover();
+//		return false; // stops the locker operation
 	}// else : other lock request only need one boolean value to be checked;
 	else{
 		if(res->isGranted()){
@@ -169,6 +155,7 @@ bool AtomicLock::condition(ShardingNotification * reqArg, ShardingNotification *
 		}
 	}
 
+	return false;
 }
 
 bool AtomicLock::shouldAbort(const NodeId & failedNode){
@@ -197,24 +184,24 @@ void AtomicLock::recover(){
 	}
 
 	vector<NodeId> releaseParticipants;
-	if(lockType == LockingNotification::LockRequestType_PrimaryKey){
-		ASSERT(releaseNotification == NULL);
-		vector<string> primaryKeysToRelease ;
-		unsigned maxParticipantIndex = 0 ;
-		for(map<string, unsigned>::iterator pkItr = rejectedPrimaryKeys.begin(); pkItr != rejectedPrimaryKeys.end(); ++pkItr){
-			primaryKeysToRelease.push_back(pkItr->first);
-			if(pkItr->second > maxParticipantIndex){
-				maxParticipantIndex = pkItr->second;
-			}
-		}
-		for(unsigned i = 0 ; i < maxParticipantIndex; ++i){
-			releaseParticipants.push_back(participants.at(i));
-		}
-		if(maxParticipantIndex == 0){ // no need to recover anything
-			finalize(false);
-			return;
-		}
-		releaseNotification = new LockingNotification(primaryKeysToRelease, writeAgent, true);
+	if(lockType == LockRequestType_PrimaryKey){
+//		ASSERT(releaseNotification == NULL);
+//		vector<string> primaryKeysToRelease ;
+//		unsigned maxParticipantIndex = 0 ;
+//		for(map<string, unsigned>::iterator pkItr = rejectedPrimaryKeys.begin(); pkItr != rejectedPrimaryKeys.end(); ++pkItr){
+//			primaryKeysToRelease.push_back(pkItr->first);
+//			if(pkItr->second > maxParticipantIndex){
+//				maxParticipantIndex = pkItr->second;
+//			}
+//		}
+//		for(unsigned i = 0 ; i < maxParticipantIndex; ++i){
+//			releaseParticipants.push_back(participants.at(i));
+//		}
+//		if(maxParticipantIndex == 0){ // no need to recover anything
+//			finalize(false);
+//			return;
+//		}
+//		releaseNotification = new LockingNotification(primaryKeysToRelease, writeAgent, pid, true);
 
 	}else{
 		// release from [0 to participantIndex)
@@ -233,21 +220,21 @@ void AtomicLock::recover(){
  * Lock request must be granted (or partially granted in case of primarykeys)
  * if we reach to this function.
  */
-void AtomicLock::end(map<NodeId, ShardingNotification * > & replies){
+void AtomicLock::end(map<NodeId, SP(ShardingNotification) > & replies){
 	if(! replies.empty()){
 		ASSERT(false);
 		finalize(false);
 		return;
 	}
-	if(lockType == LockingNotification::LockRequestType_PrimaryKey){
-		vector<string> rejectedPKs;
-		if(rejectedPrimaryKeys.size() > 0){
-			for(map<string, unsigned>::iterator pkItr = rejectedPrimaryKeys.begin(); pkItr != rejectedPrimaryKeys.end(); ++pkItr){
-				rejectedPKs.push_back(pkItr->first);
-			}
-			recover();
-		}
-		finalize(rejectedPKs);
+	if(lockType == LockRequestType_PrimaryKey){
+//		vector<string> rejectedPKs;
+//		if(rejectedPrimaryKeys.size() > 0){
+//			for(map<string, unsigned>::iterator pkItr = rejectedPrimaryKeys.begin(); pkItr != rejectedPrimaryKeys.end(); ++pkItr){
+//				rejectedPKs.push_back(pkItr->first);
+//			}
+//			recover();
+//		}
+//		finalize(rejectedPKs);
 	}else{
 		finalize(true);
 	}
@@ -270,11 +257,11 @@ void AtomicLock::setParticipants(const vector<NodeId> & participants){
 
 void AtomicLock::finalize(bool result){
 	this->finalzedFlag = true;
-	consumer->consume(result);
+	this->getConsumer()->consume(result);
 }
 void AtomicLock::finalize(const vector<string> & rejectedPKs){
 	this->finalzedFlag = true;
-	consumer->consume(rejectedPKs);
+	this->getConsumer()->consume(rejectedPKs);
 }
 
 }}

@@ -26,12 +26,13 @@ namespace httpwrapper {
 class ClusterResourceMetadata_Readview;
 class Cluster_Writeview;
 class StateMachine;
-class ResourceLockManager ;
 class LockManager;
 class ResourceMetadataManager;
 class MigrationManager;
 struct ShardMigrationStatus;
 class ProducerInterface;
+class DPInternalRequestHandler;
+class ConsumerInterface;
 
 /*
  * This class is the main responsible class to do operations on shards of data in the cluster.
@@ -50,8 +51,6 @@ public:
 	ShardManager(ConfigManager * configManager, ResourceMetadataManager * metadataManager);
 	~ShardManager();
 	void start();
-	void save(evhttp_request *req);
-	void shutdown(evhttp_request *req);
 
 	void insert(const unsigned coreId , evhttp_request *req);
 
@@ -59,10 +58,6 @@ public:
 	void nodesInfo(evhttp_request *req);
 
 	void _shutdown();
-
-	// sends this sharding notification to destination using TM
-	bool send(ShardingNotification * notification);
-
 
 	/*
 	 * IMPORTANT NOTE:
@@ -74,9 +69,7 @@ public:
 	// notification resolve methods
 	bool resolveMessage(Message * msg, NodeId node);
 
-	bool handleBouncing(ShardingNotification * notif);
-
-
+	bool handleBouncing(SP(ShardingNotification) notif);
 	/*
 	 * IMPORTANT NOTE:
 	 * *** This is not a normal entry point. This entry point to lock manager of
@@ -95,7 +88,7 @@ public:
 	 */
 	// called from migration manager to inform us about the status of a migration
 	void resolveMMNotification(const ShardMigrationStatus & migrationStatus);
-	void registerMMSessionListener(const unsigned operationId, ProducerInterface * listener);
+	void registerMMSessionListener(const unsigned operationId, ConsumerInterface * listener);
 
 
 	/*
@@ -115,21 +108,24 @@ public:
 	 */
 	void resolveSMNodeFailure(const NodeId failedNodeId);
 
-	void resolve(SaveDataNotification * saveDataNotif);
-	void resolve(SaveMetadataNotification * saveDataNotif);
-	void resolve(MergeNotification * mergeNotification);
-
-	bool resolveLocal(ShardingNotification * request);
+	struct ResolveLocalArgs{
+		ResolveLocalArgs(SP(ShardingNotification) notif){
+			this->notif = notif;
+		}
+		SP(ShardingNotification) notif;
+	};
+	bool resolveLocal(SP(ShardingNotification) request);
 
 
 	TransportManager * getTransportManager() const;
 	ConfigManager * getConfigManager() const;
 	ResourceMetadataManager * getMetadataManager() const;
-	ResourceLockManager * getLockManager() const;
-	LockManagerExternalInterface * _getLockManager() const;
+//	ResourceLockManager * getLockManager() const;
+	LockManager * _getLockManager() const;
 	StateMachine * _getStateMachine() const;
-	StateMachine * getRecordOperationsStateMachine() const;
 	MigrationManager * getMigrationManager() const;
+	void setDPInternal(DPInternalRequestHandler * dpInternal);
+	DPInternalRequestHandler * getDPInternal() const;
 	void initMigrationManager();
 	void attachToTransportManager(TransportManager * tm);
     boost::mutex shardManagerGlobalMutex;
@@ -163,23 +159,23 @@ private:
 
 	TransportManager * transportManager;
 	ConfigManager * configManager;
+	DPInternalRequestHandler * dpInternal;
 
 	MigrationManager *migrationManager;
 
-	ResourceLockManager * lockManager;
-	LockManagerExternalInterface * _lockManager;
+	LockManager * _lockManager;
     ResourceMetadataManager * metadataManager;
 
 
 
 	StateMachine * stateMachine;
 
-	StateMachine * recordOperationsStateMachine;
-
-	vector<ShardingNotification *> bouncedNotifications;
+	vector<SP(ShardingNotification)> bouncedNotifications;
+	void saveBouncedNotification(SP(ShardingNotification) notif);
+	void bounceNotification(SP(ShardingNotification) notif);
 
 	// map from operatioId to MM listener
-	map<unsigned , ProducerInterface *> mmSessionListeners;
+	map<unsigned , ConsumerInterface *> mmSessionListeners;
 
 	bool joinedFlag;
 	bool cancelledFlag;
@@ -193,10 +189,8 @@ private:
 	 */
 	static void * periodicWork(void *args) ;
 
-	void saveBouncedNotification(ShardingNotification * notif);
-	void bounceNotification(ShardingNotification * notif);
-
 	static 	void * _resolveLocal(void * request);
+
 
 
 public:

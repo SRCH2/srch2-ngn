@@ -1,7 +1,7 @@
 #include "CommitNotification.h"
 #include "../ShardManager.h"
 #include "../metadata_manager/ResourceMetadataManager.h"
-#include "../ClusterOperationContainer.h"
+#include "../state_machine/StateMachine.h"
 
 namespace srch2is = srch2::instantsearch;
 using namespace srch2is;
@@ -15,18 +15,52 @@ CommitNotification::CommitNotification(MetadataChange * metadataChange){
 	this->metadataChange = metadataChange;
 }
 
-bool CommitNotification::resolveMessage(Message * msg, NodeId sendeNode){
-	CommitNotification * commitNotif =
-			ShardingNotification::deserializeAndConstruct<CommitNotification>(Message::getBodyPointerFromMessagePointer(msg));
-	Logger::debug("%s | Change : %s", commitNotif->getDescription().c_str(),
-			commitNotif->getMetadataChange()->toNameString().c_str());
-	if(ShardManager::getShardManager()->handleBouncing(commitNotif)){
-		return true;
-	}
+CommitNotification::CommitNotification(){
+	metadataChange = NULL;
+};
+CommitNotification::~CommitNotification(){
+}
 
-	ShardManager::getShardManager()->getMetadataManager()->resolve(commitNotif);
-	delete commitNotif;
-	return false;
+
+void * CommitNotification::serializeBody(void * buffer) const{
+	ASSERT(metadataChange != NULL);
+	buffer = srch2::util::serializeFixedTypes(metadataChange->getType(), buffer);
+	buffer = metadataChange->serialize(buffer);
+	return buffer;
+}
+unsigned CommitNotification::getNumberOfBytesBody() const{
+	unsigned numberOfBytes = 0;
+	numberOfBytes += sizeof(MetadataChangeType);
+	numberOfBytes += metadataChange->getNumberOfBytes();
+	return numberOfBytes;
+}
+void * CommitNotification::deserializeBody(void * buffer){
+	MetadataChangeType type;
+	buffer = srch2::util::deserializeFixedTypes(buffer, type);
+	switch (type) {
+		case ShardingChangeTypeNodeAdd:
+			metadataChange = new NodeAddChange();
+			break;
+		case ShardingChangeTypeShardAssign:
+			metadataChange = new ShardAssignChange();
+			break;
+		case ShardingChangeTypeShardMove:
+			metadataChange = new ShardMoveChange();
+			break;
+		case ShardingChangeTypeLoadChange:
+			metadataChange = new ShardLoadChange();
+			break;
+		default:
+			ASSERT(false);
+			break;
+	}
+	buffer = metadataChange->deserialize(buffer);
+	return buffer;
+}
+
+bool CommitNotification::CommitNotification::resolveNotification(SP(ShardingNotification) notif){
+	ShardManager::getShardManager()->getMetadataManager()->resolve(boost::dynamic_pointer_cast<CommitNotification>(notif));
+	return true;
 }
 
 MetadataChange * CommitNotification::getMetadataChange() const{
@@ -47,20 +81,9 @@ bool CommitNotification::ACK::operator==(const CommitNotification::ACK & right){
 	return true;
 }
 
-bool CommitNotification::ACK::resolveMessage(Message * msg, NodeId sendeNode){
-	CommitNotification::ACK * commitAckNotif =
-			ShardingNotification::deserializeAndConstruct<CommitNotification::ACK>(Message::getBodyPointerFromMessagePointer(msg));
-	Logger::debug("%s | .", commitAckNotif->getDescription().c_str());
-	if(commitAckNotif->isBounced()){
-		Logger::debug("==> Bounced.");
-		ASSERT(false);
-		delete commitAckNotif;
-		return true;
-	}
-
-	ShardManager::getShardManager()->getStateMachine()->handle(commitAckNotif);
-	delete commitAckNotif;
-	return false;
+bool CommitNotification::ACK::resolveNotification(SP(ShardingNotification) ack){
+	ShardManager::getShardManager()->getStateMachine()->handle(ack);
+	return true;
 }
 
 }

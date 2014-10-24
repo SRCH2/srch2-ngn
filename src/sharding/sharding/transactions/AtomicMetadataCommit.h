@@ -2,12 +2,12 @@
 #define __SHARDING_SHARDING_METADATA_MANAGER_H__
 
 
-#include "../State.h"
+#include "../state_machine/State.h"
 #include "../notifications/Notification.h"
-#include "../../configuration/ShardingConstants.h"
 #include "../notifications/CommitNotification.h"
 #include "../metadata_manager/ResourceMetadataChange.h"
 #include "../metadata_manager/ResourceMetadataManager.h"
+#include "../../configuration/ShardingConstants.h"
 
 namespace srch2is = srch2::instantsearch;
 using namespace srch2is;
@@ -15,8 +15,10 @@ using namespace std;
 namespace srch2 {
 namespace httpwrapper {
 
+class AtomicRelease;
+class AtomicLock;
 
-class AtomicMetadataCommit : public ConsumerInterface, public ProducerInterface, public NodeIteratorListenerInterface{
+class AtomicMetadataCommit : public ProducerInterface, public NodeIteratorListenerInterface{
 public:
 
 	AtomicMetadataCommit(const vector<NodeId> & exceptions,
@@ -27,6 +29,8 @@ public:
 			const vector<NodeId> & participants, ConsumerInterface * consumer);
 	~AtomicMetadataCommit();
 
+	Transaction * getTransaction();
+
 	void produce();
 
 	void lock(); // locks metadata
@@ -35,7 +39,7 @@ public:
 
 	void commit();
 	bool shouldAbort(const NodeId & failedNode);
-	void end_(map<NodeOperationId , ShardingNotification *> & replies) ; // receives notification when commit it done.
+	void end_(map<NodeOperationId , SP(ShardingNotification)> & replies) ; // receives notification when commit it done.
 
 
 	void release(); // unlocks metadata
@@ -48,7 +52,7 @@ private:
 	string currentAction;
 	AtomicLock * atomicLock;
 	AtomicRelease * atomicRelease;
-	CommitNotification * commitNotification;
+	SP(CommitNotification) commitNotification;
 	MetadataChange * metadataChange;
 	ConsumerInterface * consumer;
 

@@ -12,61 +12,53 @@ namespace srch2 {
 namespace httpwrapper {
 
 
-ConcurrentNotifOperation::ConcurrentNotifOperation(ShardingNotification * request,
+ConcurrentNotifOperation::ConcurrentNotifOperation(SP(ShardingNotification) request,
 		ShardingMessageType resType,
 		NodeId participant,
-		NodeIteratorListenerInterface * consumer = NULL, bool expectResponse = true):
+		NodeIteratorListenerInterface * consumer, bool expectResponse):
 		OperationState(this->getNextOperationId()),resType(resType), expectResponse(expectResponse){
 	this->participants.push_back(NodeOperationId(participant));
 	this->requests.push_back(request);
 	this->consumer = consumer;
-	if(this->consumer != NULL){
-		this->connectDeletePathToParent(this->consumer);
-	}
 }
 
-ConcurrentNotifOperation::ConcurrentNotifOperation(ShardingNotification * request,
+ConcurrentNotifOperation::ConcurrentNotifOperation(SP(ShardingNotification) request,
 		ShardingMessageType resType,
 		vector<NodeId> participants,
-		NodeIteratorListenerInterface * consumer = NULL, bool expectResponse = true):
+		NodeIteratorListenerInterface * consumer , bool expectResponse):
 			OperationState(this->getNextOperationId()),resType(resType), expectResponse(expectResponse){
 	for(unsigned p = 0 ; p < participants.size(); p++){
 		this->participants.push_back(NodeOperationId(participants.at(p)));
 		this->requests.push_back(request);
 	}
 	this->consumer = consumer;
-	if(this->consumer != NULL){
-		this->connectDeletePathToParent(this->consumer);
-	}
 }
 ConcurrentNotifOperation::ConcurrentNotifOperation(ShardingMessageType resType,
-		vector<std::pair<ShardingNotification * , NodeId> > participants,
-		NodeIteratorListenerInterface * consumer = NULL, bool expectResponse = true):
+		vector<std::pair<SP(ShardingNotification) , NodeId> > participants,
+		NodeIteratorListenerInterface * consumer , bool expectResponse ):
 			OperationState(this->getNextOperationId()),resType(resType), expectResponse(expectResponse){
 	for(unsigned p = 0 ; p < participants.size(); p++){
 		this->participants.push_back(NodeOperationId(participants.at(p).second));
 		this->requests.push_back(participants.at(p).first);
 	}
 	this->consumer = consumer;
-	if(this->consumer != NULL){
-		this->connectDeletePathToParent(this->consumer);
-	}
 };
 
 ConcurrentNotifOperation::~ConcurrentNotifOperation(){
 	if(consumer == NULL){
 		if(this->expectResponse){
-			for(typename map<NodeOperationId , ShardingNotification *>::iterator targetResItr =
-					targetResponsesMap.begin(); targetResItr != targetResponsesMap.end(); ++targetResItr){
-				if(targetResItr->second != NULL){
-					delete targetResItr->second;
-				}
-			}
 			targetResponsesMap.clear();
 		}
 		return;
 	}
 };
+
+Transaction * ConcurrentNotifOperation::getTransaction(){
+	if(this->consumer != NULL){
+		this->consumer->getTransaction();
+	}
+	return OperationState::getTransaction();
+}
 
 OperationState * ConcurrentNotifOperation::entry(){
 	if(this->participants.size() == 0){
@@ -74,10 +66,10 @@ OperationState * ConcurrentNotifOperation::entry(){
 	}
 	for(unsigned p = 0 ; p < this->participants.size(); ++p){
 		// 1. send the request to the target
-		sendRequest(this->requests.at(p), this->participants.at(p));
+		send(this->requests.at(p), this->participants.at(p));
 		// 2. handle targetResponsesMap
 		if(! this->expectResponse){
-			this->targetResponsesMap[this->participants.at(p)] = NULL;
+			this->targetResponsesMap[this->participants.at(p)] = SP(ShardingNotification)();
 		}
 	}
 	if(! this->expectResponse){
@@ -88,16 +80,19 @@ OperationState * ConcurrentNotifOperation::entry(){
 }
 // it returns this, or next state or NULL.
 // if it returns NULL, we delete the object.
-OperationState * ConcurrentNotifOperation::handle(Notification * n){
+OperationState * ConcurrentNotifOperation::handle(SP(Notification) n){
 	if(n == NULL){
 		ASSERT(false);
 		return NULL;
 	}
+
+	if(resType){
+		return handle(boost::dynamic_pointer_cast<ShardingNotification>(n));
+	}
+
 	switch(n->messageType()){
 	case ShardingNodeFailureNotificationMessageType:
-		return handle((NodeFailureNotification *) n);
-	case resType:
-		return handle((ShardingNotification *) n);
+		return handle(boost::dynamic_pointer_cast<NodeFailureNotification>(n));
 	default :
 		ASSERT(false);
 		return this;
@@ -105,7 +100,7 @@ OperationState * ConcurrentNotifOperation::handle(Notification * n){
 	return this;
 }
 
-OperationState * ConcurrentNotifOperation::handle(NodeFailureNotification *  notif){
+OperationState * ConcurrentNotifOperation::handle(SP(NodeFailureNotification)  notif){
 	NodeId failedNode = notif->getFailedNodeID();
 
 	if(consumer != NULL){
@@ -115,9 +110,6 @@ OperationState * ConcurrentNotifOperation::handle(NodeFailureNotification *  not
 	}
 
 	if(targetResponsesMap.find(failedNode) != targetResponsesMap.end()){
-		if(targetResponsesMap.find(failedNode)->second != NULL){
-			delete targetResponsesMap.find(failedNode)->second;
-		}
 		targetResponsesMap.erase(failedNode);
 	}
 	for(unsigned p = 0 ; p < this->participants.size(); ++p){
@@ -132,7 +124,7 @@ OperationState * ConcurrentNotifOperation::handle(NodeFailureNotification *  not
 	return this;
 }
 
-OperationState * ConcurrentNotifOperation::handle(ShardingNotification * response){
+OperationState * ConcurrentNotifOperation::handle(SP(ShardingNotification) response){
 	// 1. save the response in the map
 	targetResponsesMap[response->getSrc()] = response;
 	// 2. check if we are done
@@ -164,17 +156,6 @@ bool ConcurrentNotifOperation::checkFinished(){
 		}
 	}
 	return true;
-}
-
-void ConcurrentNotifOperation::sendRequest(ShardingNotification * request, const NodeOperationId & target){
-	const NodeId currentNodeId = ShardManager::getCurrentNodeId();
-	if(target.nodeId == currentNodeId){
-		request->setDest(target);
-		request->setSrc(NodeOperationId(currentNodeId, this->getOperationId()));
-		ShardManager::getShardManager()->resolveLocal(request);
-	}else{
-		send(request, target);
-	}
 }
 
 }

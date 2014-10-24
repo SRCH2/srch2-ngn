@@ -121,14 +121,14 @@ bool CoreInfo_t::getIsFuzzyTermsQuery() const
     return exactFuzzy;
 }
 
-const string &CoreInfo_t::getSrch2Home() const {
+const string CoreInfo_t::getSrch2Home() const {
 	return configManager->getSrch2Home();
 }
-const string& CoreInfo_t::getLicenseKeyFileName() const {
+const string CoreInfo_t::getLicenseKeyFileName() const {
 	return configManager->getLicenseKeyFileName();
 }
 
-const string& CoreInfo_t::getHTTPServerAccessLogFile() const {
+const string CoreInfo_t::getHTTPServerAccessLogFile() const {
 	return configManager->getHTTPServerAccessLogFile();
 }
 const Logger::LogLevel& CoreInfo_t::getHTTPServerLogLevel() const{

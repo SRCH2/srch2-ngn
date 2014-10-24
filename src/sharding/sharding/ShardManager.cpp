@@ -2,24 +2,25 @@
 
 
 #include "./state_machine/StateMachine.h"
+#include "./state_machine/ConsumerProducer.h"
 #include "./metadata_manager/ResourceMetadataManager.h"
-#include "./metadata_manager/ResourceLocks.h"
+#include "./lock_manager/LockManager.h"
 #include "./lock_manager/LockManager.h"
 #include "./metadata_manager/Cluster_Writeview.h"
 #include "./metadata_manager/Cluster.h"
 #include "./metadata_manager/MetadataInitializer.h"
-#include "./cluster_operations/ClusterSaveOperation.h"
-#include "./cluster_operations/ClusterShutdownOperation.h"
+#include "./transactions/cluster_transactions/ClusterShutdownOperation.h"
 #include "./notifications/Notification.h"
-#include "./notifications/NewNodeLockNotification.h"
 #include "./notifications/CommitNotification.h"
 #include "./notifications/LoadBalancingReport.h"
 #include "./notifications/LockingNotification.h"
 #include "./notifications/MetadataReport.h"
 #include "./notifications/MoveToMeNotification.h"
 #include "./notifications/CopyToMeNotification.h"
+#include "./notifications/CommandNotification.h"
 #include "./transactions/cluster_transactions/LoadBalancer.h"
 #include "./transactions/ShardMoveOperation.h"
+#include "./transactions/cluster_transactions/NodeJoiner.h"
 #include "sharding/migration/MigrationManager.h"
 
 #include "core/util/Assert.h"
@@ -78,10 +79,8 @@ ShardManager::ShardManager(ConfigManager * configManager,ResourceMetadataManager
 
 	this->configManager = configManager;
 	this->metadataManager = metadataManager;
-	this->lockManager = new ResourceLockManager();
-	this->_lockManager = new LockManagerExternalInterface;
+	this->_lockManager = new LockManager();
 	this->stateMachine = new StateMachine();
-	this->recordOperationsStateMachine = new StateMachine();
 	this->joinedFlag = false;
 	this->cancelledFlag = false;
 	this->loadBalancingThread = new pthread_t;
@@ -119,10 +118,7 @@ ConfigManager * ShardManager::getConfigManager() const{
 ResourceMetadataManager * ShardManager::getMetadataManager() const{
 	return metadataManager;
 }
-ResourceLockManager * ShardManager::getLockManager() const{
-	return lockManager;
-}
-LockManagerExternalInterface * ShardManager::_getLockManager() const{
+LockManager * ShardManager::_getLockManager() const{
 	return _lockManager;
 }
 
@@ -130,12 +126,15 @@ StateMachine * ShardManager::_getStateMachine() const{
 	return this->stateMachine;
 }
 
-StateMachine * ShardManager::getRecordOperationsStateMachine() const{
-	return this->recordOperationsStateMachine;
-}
-
 MigrationManager * ShardManager::getMigrationManager() const{
 	return this->migrationManager;
+}
+
+void ShardManager::setDPInternal(DPInternalRequestHandler * dpInternal){
+	this->dpInternal = dpInternal;
+}
+DPInternalRequestHandler * ShardManager::getDPInternal() const{
+	return this->dpInternal;
 }
 
 void ShardManager::initMigrationManager(){
@@ -176,11 +175,11 @@ pthread_t * ShardManager::getLoadbalancingThread() {
 void ShardManager::print(){
 	metadataManager->print();
 
-	lockManager->print();
+//	lockManager->print(); //TODO
 
 	stateMachine->print();
 
-	recordOperationsStateMachine->print();
+//	recordOperationsStateMachine->print();
 
 	// bounced notifications
 	if(bouncedNotifications.size() == 0){
@@ -195,7 +194,7 @@ void ShardManager::print(){
 	}
 	cout << "**************************************************************************************************" << endl;
 	for(unsigned i = 0; i < bouncedNotifications.size(); ++i){
-		const ShardingNotification * notif = bouncedNotifications.at(i);
+		SP(ShardingNotification) notif = bouncedNotifications.at(i);
 		cout << notif->getDest().toString() << endl;
 	}
 
@@ -203,6 +202,7 @@ void ShardManager::print(){
 
 void ShardManager::start(){
 	Logger::info("Starting data processor ...");
+	ShardManager::getShardManager()->_lockManager->setNodePassedInitialization(getCurrentNodeId());
 	unsigned numberOfNodes = this->metadataManager->getClusterWriteview()->nodes.size();
 	if(numberOfNodes == 1){ // we are the first node:
 		// assign primary shards to this node :
@@ -220,7 +220,7 @@ void ShardManager::start(){
 		print();
 
 		// we must join an existing cluster :
-		NodeJoiner::run();
+		NodeJoiner::join();
 	}
     if (pthread_create(loadBalancingThread, NULL, ShardManager::periodicWork , NULL) != 0){
         //        Logger::console("Cannot create thread for handling local message");
@@ -229,62 +229,10 @@ void ShardManager::start(){
     }
 }
 
-/*
- * Saves the cluster metadata and indices ...
- */
-void ShardManager::save(evhttp_request *req){
-	boost::shared_ptr<HTTPJsonShardOperationResponse > brokerSideInformationJson =
-			boost::shared_ptr<HTTPJsonShardOperationResponse > (new HTTPJsonShardOperationResponse(req));
-	if(this->metadataManager->getClusterWriteview() == NULL){
-		brokerSideInformationJson->finalizeOK();
-		brokerSideInformationJson->addError(HTTPJsonResponse::getJsonSingleMessage(HTTP_JSON_Cluster_Not_Ready_Error));
-		brokerSideInformationJson->addShardResponse(c_action_save, false, nullJsonValue);
-		return;
-	}
-
-
-    /* Yes, we are expecting a post request */
-    switch (req->type) {
-    case EVHTTP_REQ_PUT: {
-    	ClusterSaveOperation * saveOperation = new ClusterSaveOperation(brokerSideInformationJson);
-    	this->stateMachine->registerOperation(saveOperation);
-        break;
-    }
-    default: {
-        brokerSideInformationJson->finalizeInvalid();
-        break;
-    }
-    };
-}
-
-/*
- * Shuts the cluster down.
- * In this process, we first save all the indices and the cluster metadata and then shut the entire cluster down.
- */
-void ShardManager::shutdown(evhttp_request *req){
-	boost::unique_lock<boost::mutex> shardManagerGlobalLock(shardManagerGlobalMutex);
-    switch (req->type) {
-    case EVHTTP_REQ_PUT: {
-    	ClusterShutdownOperation * shutdownOperation = new ClusterShutdownOperation();
-    	this->stateMachine->registerOperation(shutdownOperation);
-		bmhelper_evhttp_send_reply2(req, HTTP_OK, "OK",
-				"{\"message\":\"Shutting down the cluster...\"}\n");
-        break;
-    }
-    default: {
-        bmhelper_evhttp_send_reply2(req, HTTP_BADREQUEST, "INVALID REQUEST",
-                "{\"error\":\"The request has an invalid or missing argument. See Srch2 API documentation for details.\"}");
-        Logger::error(
-                "The request has an invalid or missing argument. See Srch2 API documentation for details");
-        break;
-    }
-    };
-}
-
 void ShardManager::insert(const unsigned coreId , evhttp_request *req){
 	boost::unique_lock<boost::mutex> shardManagerGlobalLock(shardManagerGlobalMutex);
-	ClusterRecordOperation * insertOperation = new ClusterRecordOperation(Insert_ClusterRecordOperation_Type, coreId, req);
-	this->recordOperationsStateMachine->registerOperation(insertOperation);
+//	ClusterRecordOperation * insertOperation = new ClusterRecordOperation(Insert_ClusterRecordOperation_Type, coreId, req);
+//	this->recordOperationsStateMachine->registerOperation(insertOperation);
 	return;
 }
 
@@ -303,7 +251,7 @@ void ShardManager::nodesInfo(evhttp_request *req){
 	boost::shared_ptr<const ClusterResourceMetadata_Readview> readview;
 	this->getReadview(readview);
 
-	HTTPJsonResponse httpResponse(req);
+	JsonResponseHandler httpResponse(req);
 
 	httpResponse.setResponseAttribute(c_cluster_name, Json::Value(readview->getClusterName()));
 	Json::Value nodes(Json::arrayValue);
@@ -315,35 +263,7 @@ void ShardManager::nodesInfo(evhttp_request *req){
 }
 
 
-// sends this sharding notification to destination using TM
-bool ShardManager::send(ShardingNotification * notification){
-	if(notification == NULL){
-		ASSERT(false);
-		return false;
-	}
-	if(notification->getDest().nodeId == getCurrentNodeId()){
-		ASSERT(false);
-		return true;
-	}
-	unsigned notificationByteSize = notification->getNumberOfBytes();
-	void * bodyByteArray = transportManager->getMessageAllocator()->allocateMessageReturnBody(notificationByteSize);
-	notification->serialize(bodyByteArray);
-	Message * notificationMessage = Message::getMessagePointerFromBodyPointer(bodyByteArray);
-	notificationMessage->setShardingMask();
-	notificationMessage->setMessageId(transportManager->getUniqueMessageIdValue());
-	notificationMessage->setType(notification->messageType());
-
-	Logger::debug("%s | Sending [Type: %s, ID: %d] ... ", notification->getDescription().c_str(),
-			notificationMessage->getDescription().c_str(), notificationMessage->getMessageId());
-
-	transportManager->sendMessage(notification->getDest().nodeId , notificationMessage, 0);
-	transportManager->getMessageAllocator()->deallocateByMessagePointer(notificationMessage);
-
-	// currently TM always send the message
-	return true;
-}
-
-bool ShardManager::handleBouncing(ShardingNotification * notif){
+bool ShardManager::handleBouncing(SP(ShardingNotification) notif){
 	if(notif->isBounced()){
 		saveBouncedNotification(notif);
 		Logger::debug("==> Bounced.");
@@ -376,89 +296,73 @@ bool ShardManager::resolveMessage(Message * msg, NodeId senderNode){
 		return true;
 	}
 	Logger::debug("SHM | Type :  %s , MsgID : %d . Going to be processed ...", msg->getDescription().c_str() , msg->getMessageId());
+	// deserialize sharding header information
+	NodeOperationId srcAddress, destAddress;
+	bool bounced;
+	ShardingNotification::deserializeHeader(msg, senderNode, srcAddress, destAddress, bounced);
+	// deserialize to get notifications
 	bool isBouncingActive = false;
+	SP(ShardingNotification) notif;
 	switch (msg->getType()) {
+		case ShardingShardCommandMessageType:
+			notif = ShardingNotification::deserializeAndConstruct<CommandNotification>(msg);
+			break;
 		case ShardingNewNodeReadMetadataRequestMessageType:
-			isBouncingActive = MetadataReport::REQUEST::resolveMessage(msg, senderNode);
+			notif = ShardingNotification::deserializeAndConstruct<MetadataReport::REQUEST>(msg);
 			break;
 		case ShardingNewNodeReadMetadataReplyMessageType:
-			isBouncingActive = MetadataReport::resolveMessage(msg, senderNode);
-			break;
-		case ShardingNewNodeLockMessageType:
-			isBouncingActive = NewNodeLockNotification::resolveMessage(msg, senderNode);
-			break;
-		case ShardingNewNodeLockACKMessageType:
-			isBouncingActive = NewNodeLockNotification::ACK::resolveMessage(msg, senderNode);
+			notif = ShardingNotification::deserializeAndConstruct<MetadataReport>(msg);
 			break;
 		case ShardingLockMessageType:
-			isBouncingActive = LockingNotification::resolveMessage(msg, senderNode);
+			notif = ShardingNotification::deserializeAndConstruct<LockingNotification>(msg);
 			break;
 		case ShardingLockACKMessageType:
-			isBouncingActive = LockingNotification::ACK::resolveMessage(msg, senderNode);
-			break;
-		case ShardingLockRVReleasedMessageType:
-			ASSERT(false);
-			break;
-		case ShardingLoadBalancingReportMessageType:
-			isBouncingActive = LoadBalancingReport::resolveMessage(msg, senderNode);
-			break;
-		case ShardingLoadBalancingReportRequestMessageType:
-			isBouncingActive = LoadBalancingReport::REQUEST::resolveMessage(msg,senderNode);
-			break;
-		case ShardingMoveToMeMessageType:
-			isBouncingActive = MoveToMeNotification::resolveMessage(msg, senderNode);
-			break;
-		case ShardingMoveToMeStartMessageType:
-			isBouncingActive = MoveToMeNotification::START::resolveMessage(msg, senderNode);
-			break;
-		case ShardingMoveToMeACKMessageType:
-			isBouncingActive = MoveToMeNotification::ACK::resolveMessage(msg, senderNode);
-			break;
-		case ShardingMoveToMeAbortMessageType:
-			isBouncingActive = MoveToMeNotification::ABORT::resolveMessage(msg, senderNode);
-			break;
-		case ShardingMoveToMeFinishMessageType:
-			isBouncingActive = MoveToMeNotification::FINISH::resolveMessage(msg, senderNode);
-			break;
-		case ShardingCopyToMeMessageType:
-			isBouncingActive = CopyToMeNotification::resolveMessage(msg, senderNode);
+			notif = ShardingNotification::deserializeAndConstruct<LockingNotification::ACK>(msg);
 			break;
 		case ShardingCommitMessageType:
-			isBouncingActive = CommitNotification::resolveMessage(msg, senderNode);
+			notif = ShardingNotification::deserializeAndConstruct<CommitNotification>(msg);
 			break;
 		case ShardingCommitACKMessageType:
-			isBouncingActive = CommitNotification::ACK::resolveMessage(msg, senderNode);
+			notif = ShardingNotification::deserializeAndConstruct<CommitNotification::ACK>(msg);
 			break;
-		case ShardingSaveDataMessageType:
-			isBouncingActive = SaveDataNotification::resolveMessage(msg, senderNode);
+		case ShardingLoadBalancingReportMessageType:
+			notif = ShardingNotification::deserializeAndConstruct<LoadBalancingReport>(msg);
 			break;
-		case ShardingSaveDataACKMessageType:
-			isBouncingActive = SaveDataNotification::ACK::resolveMessage(msg, senderNode);
+		case ShardingLoadBalancingReportRequestMessageType:
+			notif = ShardingNotification::deserializeAndConstruct<LoadBalancingReport::REQUEST>(msg);
 			break;
-		case ShardingSaveMetadataMessageType:
-			isBouncingActive = SaveMetadataNotification::resolveMessage(msg, senderNode);
+		case ShardingMoveToMeMessageType:
+			notif = ShardingNotification::deserializeAndConstruct<MoveToMeNotification>(msg);
 			break;
-		case ShardingSaveMetadataACKMessageType:
-			isBouncingActive = SaveMetadataNotification::ACK::resolveMessage(msg, senderNode);
+		case ShardingMoveToMeACKMessageType:
+			notif = ShardingNotification::deserializeAndConstruct<MoveToMeNotification::ACK>(msg);
 			break;
-		case ShardingMergeMessageType:
-			isBouncingActive = MergeNotification::resolveMessage(msg, senderNode);
+		case ShardingMoveToMeCleanupMessageType:
+			notif = ShardingNotification::deserializeAndConstruct<MoveToMeNotification::CleanUp>(msg);
 			break;
-		case ShardingMergeACKMessageType:
-			isBouncingActive = MergeNotification::ACK::resolveMessage(msg, senderNode);
+		case ShardingCopyToMeMessageType:
+			notif = ShardingNotification::deserializeAndConstruct<CopyToMeNotification>(msg);
 			break;
 		case ShardingShutdownMessageType:
-			isBouncingActive = ShutdownNotification::resolveMessage(msg, senderNode);
+			notif = ShardingNotification::deserializeAndConstruct<ShutdownNotification>(msg);
 			break;
 		default:
 			ASSERT(false);
 			break;
 	}
 
+	if(bounced){
+		if(! handleBouncing(notif)){
+			Logger::debug("SHM | Bounced notification saved to be sent again later. Notification : %s", notif->getDescription().c_str());
+			return true;
+		}
+	}
+
+	if(! notif->resolveNotification(notif)){
+		Logger::debug("SHM | Notification resolve returned false : %s", notif->getDescription().c_str());
+	}
+
 	Logger::debug("SHM | Type :  %s , MsgID : %d . Processed.", msg->getDescription().c_str() , msg->getMessageId());
-//    cout << "Shard Manager status after handling message:" << endl;
-//    ShardManager::getShardManager()->print();
-//    cout << "======================================================================" << endl;
 
 	return true;
 }
@@ -467,7 +371,7 @@ void * ShardManager::resolveReadviewRelease_ThreadChange(void * vidPtr){
 	unsigned metadataVersion = *(unsigned *)vidPtr;
 	delete (unsigned *)vidPtr;
 	Logger::debug("DP | Metadata release VID=%d", metadataVersion);
-	ShardManager::getShardManager()->_getLockManager()->resolveReadviewRelease(metadataVersion);
+	ShardManager::getShardManager()->_getLockManager()->resolve(metadataVersion);
 	Logger::debug("DP | Metadata release VID=%d processed.", metadataVersion);
 
 //    cout << "Shard Manager status after receiving RV release, vid = " << metadataVersion << endl;
@@ -487,8 +391,13 @@ void ShardManager::resolveMMNotification(const ShardMigrationStatus & migrationS
 		ASSERT(false);
 		return;
 	}
-	mmSessionListeners.find(migrationStatus.srcOperationId)->second->receiveStatus(migrationStatus);
-	this->stateMachine->removeTransaction(mmSessionListeners.find(migrationStatus.srcOperationId)->second->getTransIdToDelete());
+	mmSessionListeners.find(migrationStatus.srcOperationId)->second->consume(migrationStatus);
+	if(mmSessionListeners.find(migrationStatus.srcOperationId)->second->getTransaction() != NULL
+			&& mmSessionListeners.find(migrationStatus.srcOperationId)->second->getTransaction()->isFinished()){
+		delete mmSessionListeners.find(migrationStatus.srcOperationId)->second;
+	}
+	mmSessionListeners.erase(mmSessionListeners.find(migrationStatus.srcOperationId));
+
 	Logger::debug("MM | (%d => %d) was %s Processed.", migrationStatus.sourceNodeId, migrationStatus.destinationNodeId,
 			(migrationStatus.status == MM_STATUS_SUCCESS)? "Done."  : "Failed.");
 //    cout << "Shard Manager status after receiving migration manager notification:" << endl;
@@ -496,7 +405,7 @@ void ShardManager::resolveMMNotification(const ShardMigrationStatus & migrationS
 //    cout << "======================================================================" << endl;
 }
 
-void ShardManager::registerMMSessionListener(const unsigned operationId, ProducerInterface * listener){
+void ShardManager::registerMMSessionListener(const unsigned operationId, ConsumerInterface * listener){
 	if(listener == NULL){
 		ASSERT(false);
 		return;
@@ -522,88 +431,21 @@ void ShardManager::resolveSMNodeArrival(const Node & newNode){
 void ShardManager::resolveSMNodeFailure(const NodeId failedNodeId){
 	Logger::debug("Node %d failure.", failedNodeId);
 	boost::unique_lock<boost::mutex> shardManagerGlobalLock(shardManagerGlobalMutex);
-	NodeFailureNotification * nodeFailureNotif = new NodeFailureNotification(failedNodeId);
+	SP(Notification) nodeFailureNotif(new NodeFailureNotification(failedNodeId));
 	// 1. metadata manager
-	this->metadataManager->resolve(nodeFailureNotif);
+	this->metadataManager->resolve(boost::dynamic_pointer_cast<NodeFailureNotification>(nodeFailureNotif));
 	// 2. lock manager
-	this->lockManager->resolve(nodeFailureNotif);
+	this->_lockManager->resolveNodeFailure(failedNodeId);
 	// 3. state machine
 	this->stateMachine->handle(nodeFailureNotif);
 	Logger::debug("Node %d failure. Processed.", failedNodeId);
 
 }
 
-void ShardManager::resolve(SaveDataNotification * saveDataNotif){
-	// Move on all local shards and save them on the disk.
-	Cluster_Writeview * writeview = this->getWriteview();
-	for(map<ClusterShardId, LocalPhysicalShard >::iterator localClusterShardItr = writeview->localClusterDataShards.begin();
-			localClusterShardItr != writeview->localClusterDataShards.end(); ++localClusterShardItr){
-		localClusterShardItr->second.server->getIndexer()->save();
-	}
-
-	for(map<unsigned,  LocalPhysicalShard >::iterator localNodeShardItr = writeview->localNodeDataShards.begin();
-			localNodeShardItr != writeview->localNodeDataShards.end(); ++localNodeShardItr){
-		localNodeShardItr->second.server->getIndexer()->save();
-	}
-
-	// reply ack
-	SaveDataNotification::ACK * ack = new SaveDataNotification::ACK();
-	ack->setSrc(NodeOperationId(ShardManager::getCurrentNodeId()));
-	ack->setDest(saveDataNotif->getSrc());
-	if(ack->getDest().nodeId == ShardManager::getCurrentNodeId()){
-		this->stateMachine->handle(ack);
-	}else{
-		send(ack);
-	}
-	delete ack;
-}
-
-void ShardManager::resolve(SaveMetadataNotification * saveDataNotif){
-
-	this->metadataManager->resolve(this->getConfigManager(), saveDataNotif);
-
-	// reply ack
-	SaveMetadataNotification::ACK * ack = new SaveMetadataNotification::ACK();
-	ack->setSrc(NodeOperationId(ShardManager::getCurrentNodeId()));
-	ack->setDest(saveDataNotif->getSrc());
-	if(ack->getDest().nodeId == ShardManager::getCurrentNodeId()){
-		this->stateMachine->handle(ack);
-	}else{
-		send(ack);
-	}
-	delete ack;
-}
-
-void ShardManager::resolve(MergeNotification * mergeNotification){
-	//TODO : merge can be unsuccessful. What should we do in that case ?
-	// Move on all local shards and merge them.
-	Cluster_Writeview * writeview = this->getWriteview();
-	for(map<ClusterShardId, LocalPhysicalShard >::iterator localClusterShardItr = writeview->localClusterDataShards.begin();
-			localClusterShardItr != writeview->localClusterDataShards.end(); ++localClusterShardItr){
-		localClusterShardItr->second.server->getIndexer()->merge();
-	}
-
-	for(map<unsigned,  LocalPhysicalShard >::iterator localNodeShardItr = writeview->localNodeDataShards.begin();
-			localNodeShardItr != writeview->localNodeDataShards.end(); ++localNodeShardItr){
-		localNodeShardItr->second.server->getIndexer()->merge();
-	}
 
 
-	// reply ack
-	MergeNotification::ACK * ack = new MergeNotification::ACK();
-	ack->setSrc(NodeOperationId(ShardManager::getCurrentNodeId()));
-	ack->setDest(mergeNotification->getSrc());
-	if(ack->getDest().nodeId == ShardManager::getCurrentNodeId()){
-		stateMachine->handle(ack);
-	}else{
-		send(ack);
-	}
-	delete ack;
-}
-
-
-bool ShardManager::resolveLocal(ShardingNotification * request){
-	if(request == NULL){
+bool ShardManager::resolveLocal(SP(ShardingNotification) request){
+	if(! request){
 		ASSERT(false);
 		return false;
 	}
@@ -613,7 +455,8 @@ bool ShardManager::resolveLocal(ShardingNotification * request){
 	}
 	// NOTE : we must detach the local notif handling thread here. And this must be the ONLY detachment point.
 	pthread_t localThread;
-    if (pthread_create(&localThread, NULL, _resolveLocal , (void *)request) != 0){
+	ResolveLocalArgs * args = new ResolveLocalArgs(request);
+    if (pthread_create(&localThread, NULL, _resolveLocal , args) != 0){
         // Logger::console("Cannot create thread for handling local message");
         perror("Cannot create thread for handling local message");
         return false;
@@ -622,29 +465,13 @@ bool ShardManager::resolveLocal(ShardingNotification * request){
     return true;
 }
 
-void * ShardManager::_resolveLocal(void * arg){
+void * ShardManager::_resolveLocal(void * _args){
 	boost::unique_lock<boost::mutex> shardManagerGlobalLock(ShardManager::getShardManager()->shardManagerGlobalMutex);
-	ShardingNotification * request = (ShardingNotification *)arg;
-	switch (request->messageType()) {
-		case ShardingLockMessageType:
-			LockingNotification::resolveNotif((LockingNotification *)request);
-			break;
-		case ShardingLockACKMessageType:
-			LockingNotification::ACK::resolveNotif((LockingNotification::ACK *)request);
-			break;
-		case ShardingCommitMessageType:
-		{
-			MetadataChange * metadataChange = ((CommitNotification *)request)->getMetadataChange();
-			ShardManager::getShardManager()->getMetadataManager()->applyAndCommit(metadataChange);
-			break;
-		}
-		case ShardingMergeMessageType:
-		{
-			ShardManager::getShardManager()->resolve((MergeNotification *)request);
-			break;
-		}
-		default:
-			break;
+	ResolveLocalArgs * args = (ResolveLocalArgs *)_args;
+	SP(ShardingNotification) request = args->notif;
+	delete args;
+	if(! request->resolveNotification(request)){
+		Logger::debug("SHM | Notification resolve returned false : %s", request->getDescription().c_str());
 	}
 	return NULL;
 }
@@ -665,8 +492,8 @@ void * ShardManager::periodicWork(void *args) {
 
 		// 1. Resend bounced notifications.
 		for(unsigned i = 0 ; i < ShardManager::getShardManager()->bouncedNotifications.size() ; ++i){
-			ShardingNotification * notif = ShardManager::getShardManager()->bouncedNotifications.at(i);
-			ShardManager::getShardManager()->send(notif);
+			SP(ShardingNotification) notif = ShardManager::getShardManager()->bouncedNotifications.at(i);
+			ShardingNotification::send(notif);
 		}
 		ShardManager::getShardManager()->bouncedNotifications.clear();
 
@@ -674,7 +501,7 @@ void * ShardManager::periodicWork(void *args) {
 		// 2. if we are joined, start load balancing.
 		if(ShardManager::getShardManager()->isJoined() && ! ShardManager::getShardManager()->isLoadBalancing()){
 			ShardManager::getShardManager()->setLoadBalancing();
-			ShardManager::getShardManager()->stateMachine->registerOperation(new LoadBalancer());
+			LoadBalancer::runLoadBalancer();
 		}
 
 		// TODO remove
@@ -688,17 +515,16 @@ void * ShardManager::periodicWork(void *args) {
 	return NULL;
 }
 
-void ShardManager::saveBouncedNotification(ShardingNotification * notif){
+void ShardManager::saveBouncedNotification(SP(ShardingNotification) notif){
 	notif->resetBounced();
 	notif->swapSrcDest();
 	bouncedNotifications.push_back(notif);
 }
 
-void ShardManager::bounceNotification(ShardingNotification * notif){
+void ShardManager::bounceNotification(SP(ShardingNotification) notif){
 	notif->setBounced();
 	notif->swapSrcDest();
-	send(notif);
-	delete notif;
+	ShardingNotification::send(notif);
 }
 
 void ShardManager::getNodeInfoJson(Json::Value & nodeInfo){

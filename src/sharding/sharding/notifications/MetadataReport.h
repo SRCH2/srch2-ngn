@@ -20,35 +20,15 @@ public:
 	}
 	MetadataReport(){};
 
-	static bool resolveMessage(Message * msg, NodeId sendeNode);
+	bool resolveNotification(SP(ShardingNotification) _notif);
 
-    ShardingMessageType messageType() const{
-    	return ShardingNewNodeReadMetadataReplyMessageType;
-    }
-	void * serialize(void * buffer) const{
-		buffer = ShardingNotification::serialize(buffer);
-		buffer = writeview->serialize(buffer, false);
-		return buffer;
-	}
-	unsigned getNumberOfBytes() const{
-		unsigned numberOfBytes= 0;
-		numberOfBytes += ShardingNotification::getNumberOfBytes();
-		numberOfBytes += writeview->getNumberOfBytes(false);
-		return numberOfBytes;
-	}
-	void * deserialize(void * buffer) {
-		buffer = ShardingNotification::deserialize(buffer);
-		writeview = new Cluster_Writeview();
-		buffer = writeview->deserialize(buffer, false);
-		return buffer;
-	}
-    Cluster_Writeview * getWriteview() const{
-    	return writeview;
-    };
+	ShardingMessageType messageType() const;
+	void * serializeBody(void * buffer) const;
+	unsigned getNumberOfBytesBody() const;
+	void * deserializeBody(void * buffer) ;
+    Cluster_Writeview * getWriteview() const;
 
-    bool operator==(const MetadataReport & report){
-    	return *writeview == *(report.writeview);
-    }
+    bool operator==(const MetadataReport & report);
 
 private:
     // must not be deleted in this class.
@@ -58,10 +38,8 @@ public:
     ///////////// Sub classes :
     class REQUEST : public ShardingNotification{
     public:
-        ShardingMessageType messageType() const{
-        	return ShardingNewNodeReadMetadataRequestMessageType;
-        }
-		static bool resolveMessage(Message * msg, NodeId sendeNode);
+        ShardingMessageType messageType() const;
+		bool resolveNotification(SP(ShardingNotification) _notif);
     };
 };
 

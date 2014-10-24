@@ -3,13 +3,17 @@
 
 #include "core/util/SerializationHelper.h"
 #include "core/util/Assert.h"
-#include "../../configuration/ShardingConstants.h"
-#include "../metadata_manager/ResourceLocks.h"
-#include "../metadata_manager/Cluster_Writeview.h"
-#include "../ShardManager.h"
-#include "./atomic_transactions/ShardAssignOperation.h"
-#include "./atomic_transactions/ShardCopyOperation.h"
-#include "./atomic_transactions/ShardMoveOperation.h"
+#include "../../../configuration/ShardingConstants.h"
+#include "../../metadata_manager/Cluster_Writeview.h"
+#include "../../ShardManager.h"
+#include "../ShardAssignOperation.h"
+#include "../ShardCopyOperation.h"
+#include "../ShardMoveOperation.h"
+#include "../TransactionSession.h"
+#include "../../state_machine/StateMachine.h"
+#include "../../state_machine/node_iterators/ConcurrentNotifOperation.h"
+#include "../../lock_manager/LockManager.h"
+
 
 namespace srch2is = srch2::instantsearch;
 using namespace srch2is;
@@ -28,7 +32,7 @@ unsigned AssignCandidatePartition::getAttentionNeedScore() const{
 void AssignCandidatePartition::removeUnavailableReadyReplicas(){
 	vector<std::pair<ClusterShardId, NodeId> > readyReplicasCopy;
 	for(unsigned i = 0 ; i < readyReplicas.size(); ++i){
-		bool canAcquireSLock = ShardManager::getShardManager()->getLockManager()->canAcquireLock(readyReplicas.at(i).first, ResourceLockType_S);;
+		bool canAcquireSLock = ShardManager::getShardManager()->_getLockManager()->canAcquireLock(readyReplicas.at(i).first, LockLevel_S);;
 		if(canAcquireSLock){
 			readyReplicasCopy.push_back(readyReplicas.at(i));
 		}
@@ -49,12 +53,10 @@ inline bool AssignCandidatePartition::operator()(const AssignCandidatePartition&
 }
 
 
-void LoadBalancer::run(){
+void LoadBalancer::runLoadBalancer(){
 	LoadBalancer * loadBalancer = new LoadBalancer();
-	ShardManager::getShardManager()->getStateMachine()->registerTransaction(loadBalancer);
-	loadBalancer->balance();
+	Transaction::startTransaction(loadBalancer);
 }
-
 
 LoadBalancer::~LoadBalancer(){
 	if(shardAssigner != NULL){
@@ -66,41 +68,45 @@ LoadBalancer::~LoadBalancer(){
 	if (shardMover != NULL){
 		delete shardMover;
 	}
-	if(reportReq != NULL){
-		delete reportReq;
-	}
+}
+
+void LoadBalancer::initSession(){
+	TransactionSession * session = new TransactionSession();
+	// TODO : we don't give response or readview to shard copy an#include "../state_machine/State.h"d shard move
+	setSession(session);
 }
 
 // tries to balance the shard placement on cluster nodes
-void LoadBalancer::balance(){
+bool LoadBalancer::run(){
 	collectInfo();
+	return true;
 }
 
 // asks other nodes about load information
 void LoadBalancer::collectInfo(){
-	reportReq = new LoadBalancingReport::REQUEST();
+	reportReq = SP(LoadBalancingReport::REQUEST)(new LoadBalancingReport::REQUEST());
 	Cluster_Writeview * writeview = ShardManager::getWriteview();
 	vector<NodeId> allNodes;
 	writeview->getArrivedNodes(allNodes, true);
-	ConcurrentNotifOperation * commandSender = new ConcurrentNotifOperation(reportReq, ShardingLoadBalancingReportMessageType, allNodes, this);
+	ConcurrentNotifOperation * commandSender =
+			new ConcurrentNotifOperation(reportReq, ShardingLoadBalancingReportMessageType, allNodes, this);
+	this->currentOp = CollectInfo;
 	ShardManager::getShardManager()->getStateMachine()->registerOperation(commandSender);
 }
-void LoadBalancer::receiveReplies(map<NodeOperationId , ShardingNotification *> replies){
-	for(map<NodeOperationId , ShardingNotification *>::iterator replyItr = replies.begin();
+void LoadBalancer::end_(map<NodeOperationId, SP(ShardingNotification) > & replies){
+
+	for(map<NodeOperationId , SP(ShardingNotification)>::iterator replyItr = replies.begin();
 			replyItr != replies.end(); ++replyItr){
-		nodeLoads[replyItr->first.nodeId] = ((LoadBalancingReport *)replyItr->second)->getLoad();
-		if(replyItr->second != NULL){
-			delete replyItr->second;
-		}
+		nodeLoads[replyItr->first.nodeId] = boost::dynamic_pointer_cast<LoadBalancingReport>(replyItr->second)->getLoad();
 	}
-	_balance();
-}
-void LoadBalancer::abort(int error_code){
-	//TODO
+	balance();
 }
 
 // decides on shard copy or shard movements
-void LoadBalancer::_balance(){
+void LoadBalancer::balance(){
+	if(nodeLoads.size() == 0){
+		finalize();
+	}
 	if(! canAcceptMoreShards(ShardManager::getCurrentNodeId())){
 		finalize();
 	}
@@ -108,7 +114,8 @@ void LoadBalancer::_balance(){
 	if(nodeLoads.size() == 1){ // only us or not light
 		tryShardAssginmentAndShardCopy(true);// assignment only
 		if(this->shardAssigner != NULL){
-			shardAssigner->assign();
+			currentOp = Assign;
+			shardAssigner->produce();
 			return;
 		}
 		// only us and no unassigned shard can be assigned to us
@@ -118,7 +125,8 @@ void LoadBalancer::_balance(){
 
 	tryShardAssginmentAndShardCopy();
 	if(shardCopyer != NULL){
-		shardCopyer->copy();
+		currentOp = Copy;
+		shardCopyer->produce();
 		return;
 	}
 
@@ -128,10 +136,10 @@ void LoadBalancer::_balance(){
 
 	tryShardMove();
 	if(shardMover != NULL){
-		shardMover->move();
+		currentOp = Move;
+		shardMover->produce();
 		return;
 	}
-	finalize();
 	return;
 }
 
@@ -139,25 +147,16 @@ void LoadBalancer::_balance(){
 
 
 // receives the results of ShardAssign, ShardMove and ShardCopy
-void LoadBalancer::finish(bool done){
-	if(shardAssigner != NULL){
+void LoadBalancer::consume(bool done){
+
+	if(currentOp == Assign){
 		Logger::debug("Load balancing : Shard assignment was %s", done?"successful." : "failed.");
-	}else if(shardCopyer != NULL){
+	}else if(currentOp == Copy){
 		Logger::debug("Load balancing : Shard copy was %s", done?"successful." : "failed.");
-	}else if (shardMover != NULL){
+	}else if (currentOp == Move){
 		Logger::debug("Load balancing : Shard move was %s", done?"successful." : "failed.");
 	}
 	finalize();
-}
-
-
-
-TRANS_ID LoadBalancer::lastCallback(void *){
-	if(! this->finalizedFlag){
-		return TRANS_ID_NULL;
-	}else{
-		return this->getTID();
-	}
 }
 
 ShardingTransactionType LoadBalancer::getTransactionType(){
@@ -165,17 +164,18 @@ ShardingTransactionType LoadBalancer::getTransactionType(){
 }
 
 void LoadBalancer::finalize(){
+
+	this->setFinished();
+
 	ShardManager::getShardManager()->resetLoadBalancing();
-	this->finalizedFlag = true;
 	return;
 }
 
 LoadBalancer::LoadBalancer(){
-	this->reportReq = NULL;
-	this->finalizedFlag = false;
 	this->shardAssigner = NULL;
 	this->shardCopyer = NULL;
 	this->shardMover = NULL;
+	this->currentOp = PreStart;
 }
 
 
@@ -302,7 +302,7 @@ void LoadBalancer::prepareAssignmentCandidates(vector<AssignCandidatePartition *
 			continue;
 		}
 
-		bool canAcquireXLock = ShardManager::getShardManager()->getLockManager()->canAcquireLock(id, ResourceLockType_X);
+		bool canAcquireXLock = ShardManager::getShardManager()->_getLockManager()->canAcquireLock(id, LockLevel_X);
 		if(! canAcquireXLock){
 			continue;
 		}
@@ -379,7 +379,7 @@ void LoadBalancer::prepareMoveCandidates(vector<std::pair<NodeId, ClusterShardId
 			continue;
 		}
 
-		bool canAcquireULock = ShardManager::getShardManager()->getLockManager()->canAcquireLock(id, ResourceLockType_U);
+		bool canAcquireULock = ShardManager::getShardManager()->_getLockManager()->canAcquireLock(id, LockLevel_X);
 		if(! canAcquireULock){
 			continue;
 		}

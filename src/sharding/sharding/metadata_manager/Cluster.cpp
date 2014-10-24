@@ -72,6 +72,9 @@ const LocalShardContainer * ClusterResourceMetadata_Readview::getLocalShardConta
 
 void ClusterResourceMetadata_Readview::getAllCores(vector<const CoreInfo_t *> & cores) const{
 	for(map<unsigned, CoreInfo_t *>::const_iterator coreItr = allCores.begin(); coreItr != allCores.end(); ++coreItr){
+//		if(coreItr->second->isAclCore()){
+//			continue;
+//		}
 		cores.push_back(coreItr->second);
 	}
 }

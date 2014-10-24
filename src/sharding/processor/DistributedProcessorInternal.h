@@ -18,6 +18,8 @@
 
 #include "serializables/SerializableSearchResults.h"
 #include "serializables/SerializableCommandStatus.h"
+#include "sharding/sharding/notifications/CommandStatusNotification.h"
+#include "sharding/sharding/notifications/CommandNotification.h"
 #include "serializables/SerializableGetInfoResults.h"
 
 #include "server/HTTPJsonResponse.h"
@@ -31,12 +33,9 @@ namespace httpwrapper {
 class ConfigManager;
 class Srch2Server;
 class SearchCommand;
-class WriteCommandNotification;
+class CommandStatus;
+class InsertUpdateCommand;
 class DeleteCommand;
-class SerializeCommand;
-class ResetLogCommand;
-class CommitCommand;
-class MergeCommand;
 class GetInfoCommand;
 
 
@@ -73,7 +72,7 @@ public:
      * internalInsertCommand and internalUpdateCommand
      */
     CommandStatus * internalInsertUpdateCommand(const NodeTargetShardInfo & target,
-    		boost::shared_ptr<const ClusterResourceMetadata_Readview> clusterReadview, WriteCommandNotification * insertUpdateData);
+    		boost::shared_ptr<const ClusterResourceMetadata_Readview> clusterReadview, InsertUpdateCommand * insertUpdateData);
 
     /*
      * 1. Receives a delete request from a shard and makes sure this
@@ -99,26 +98,30 @@ public:
      * This call back function is called for serialization. It uses internalSerializeIndexCommand
      * and internalSerializeRecordsCommand for our two types of serialization.
      */
-    CommandStatus * internalSerializeCommand(const NodeTargetShardInfo & target,
-    		boost::shared_ptr<const ClusterResourceMetadata_Readview> clusterReadview, SerializeCommand * seralizeData);
+    SP(CommandStatusNotification) internalSerializeCommand(const NodeTargetShardInfo & target,
+    		boost::shared_ptr<const ClusterResourceMetadata_Readview> clusterReadview,
+    		ShardCommandCode commandCode, const string & fileName);
 
     /*
      * 1. Receives a ResetLog request from a shard
      * 2. Uses core to reset log
      * 3. Sends the results to the shard which initiated this reset-log request(Failure or Success)
      */
-    CommandStatus * internalResetLogCommand(const NodeTargetShardInfo & target,
-    		boost::shared_ptr<const ClusterResourceMetadata_Readview> clusterReadview, ResetLogCommand * resetData);
+    SP(CommandStatusNotification) internalResetLogCommand(const NodeTargetShardInfo & target,
+    		boost::shared_ptr<const ClusterResourceMetadata_Readview> clusterReadview);
 
 
     /*
      * Receives a commit command and commits the index
      */
-    CommandStatus * internalCommitCommand(const NodeTargetShardInfo & target,
-    		boost::shared_ptr<const ClusterResourceMetadata_Readview> clusterReadview, CommitCommand * resetData);
+    SP(CommandStatusNotification) internalCommitCommand(const NodeTargetShardInfo & target,
+    		boost::shared_ptr<const ClusterResourceMetadata_Readview> clusterReadview);
 
-    CommandStatus * internalMergeCommand(const NodeTargetShardInfo & target,
-    		boost::shared_ptr<const ClusterResourceMetadata_Readview> clusterReadview, MergeCommand * mergeData);
+    SP(CommandStatusNotification) internalMergeCommand(const NodeTargetShardInfo & target,
+    		boost::shared_ptr<const ClusterResourceMetadata_Readview> clusterReadview, bool mainAction = true, bool flagValue = true);
+
+
+    SP(CommandStatusNotification) resolveShardCommand(SP(CommandNotification) notif);
 
 private:
 
@@ -194,29 +197,29 @@ private:
 
     struct ShardSerializeArgs{
     	ShardSerializeArgs(const string dataFileName, Srch2Server * server,
-    			const string & shardIdentifier,
+    			ShardId * shardIdentifier,
     			const string & shardIndexDirectory):
     				dataFileName(dataFileName),
     				shardIndexDirectory(shardIndexDirectory){
     		this->server = server;
-    		this->shardResults = new CommandStatus::ShardResults(shardIdentifier);
+    		this->shardResults = new CommandStatusNotification::ShardStatus(shardIdentifier);
     	}
     	const string dataFileName;
     	const string shardIndexDirectory;
     	Srch2Server * server;
-    	CommandStatus::ShardResults * shardResults;
+    	CommandStatusNotification::ShardStatus * shardResults;
     };
 
     static void * serializeIndexInShardThreadWork(void * args);
     static void * serializeRecordsInShardThreadWork(void * args);
 
     struct ShardStatusOnlyArgs{
-    	ShardStatusOnlyArgs(Srch2Server * server, string shardIdentifier){
+    	ShardStatusOnlyArgs(Srch2Server * server, ShardId * shardId){
     		this->server = server;
-    		this->shardResults = new CommandStatus::ShardResults(shardIdentifier);
+    		this->shardResults = new CommandStatusNotification::ShardStatus(shardId);
     	}
     	Srch2Server * server;
-    	CommandStatus::ShardResults * shardResults;
+    	CommandStatusNotification::ShardStatus * shardResults;
     };
 
     void handleStatusOnlyCommands();

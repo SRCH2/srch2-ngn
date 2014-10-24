@@ -1,12 +1,13 @@
 #ifndef __SHARDING_SHARDING_NEW_NODE_JOIN_OPERATION_H__
 #define __SHARDING_SHARDING_NEW_NODE_JOIN_OPERATION_H__
 
-#include "../State.h"
-#include "../notifications/Notification.h"
-#include "../notifications/NewNodeLockNotification.h"
-#include "../notifications/CommitNotification.h"
-#include "../notifications/LockingNotification.h"
-#include "../notifications/MetadataReport.h"
+#include "../../state_machine/State.h"
+#include "../../notifications/Notification.h"
+#include "../../notifications/CommitNotification.h"
+#include "../../notifications/LockingNotification.h"
+#include "../../notifications/MetadataReport.h"
+#include "../Transaction.h"
+#include "../TransactionSession.h"
 #include <stdlib.h>
 #include <time.h>
 
@@ -15,6 +16,10 @@ using namespace srch2is;
 using namespace std;
 namespace srch2 {
 namespace httpwrapper {
+
+class AtomicLock;
+class AtomicRelease;
+class AtomicMetadataCommit;
 
 /*
  * This class (which is kind of state for a state machine)
@@ -28,10 +33,10 @@ namespace httpwrapper {
  */
 
 
-class NodeJoiner : public Transaction, public ConsumerInterface, public NodeIteratorListenerInterface{
+class NodeJoiner : public Transaction, public NodeIteratorListenerInterface{
 public:
 
-	static void run();
+	static void join();
 
 
 	~NodeJoiner();
@@ -40,9 +45,12 @@ private:
 
 	NodeJoiner();
 
-	ShardingTransactionType getTransactionType();
-	void join();
+	Transaction * getTransaction() ;
+	void initSession();
 
+
+	ShardingTransactionType getTransactionType();
+	bool run();
 
 	void lock();
 
@@ -52,7 +60,7 @@ private:
 	void readMetadata();
 
 	// coming back from readMetadata
-	void end_(map<NodeOperationId, ShardingNotification * > & replies);
+	void end_(map<NodeOperationId, SP(ShardingNotification) > & replies);
 	// if returns true, operation must stop and return null to state_machine
 	bool shouldAbort(const NodeId & failedNode);
 
@@ -75,8 +83,8 @@ private:
 	bool releaseModeFlag;
 	AtomicLock * locker;
 	AtomicRelease * releaser;
-	MetadataReport::REQUEST * readMetadataNotif;
-	CommitNotification * commitNotification;
+	SP(MetadataReport::REQUEST) readMetadataNotif;
+	SP(CommitNotification) commitNotification;
 	MetadataChange * metadataChange;
 	AtomicMetadataCommit * committer;
 
