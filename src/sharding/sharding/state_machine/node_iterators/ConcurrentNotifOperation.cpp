@@ -55,7 +55,7 @@ ConcurrentNotifOperation::~ConcurrentNotifOperation(){
 
 Transaction * ConcurrentNotifOperation::getTransaction(){
 	if(this->consumer != NULL){
-		this->consumer->getTransaction();
+		return this->consumer->getTransaction();
 	}
 	return OperationState::getTransaction();
 }
