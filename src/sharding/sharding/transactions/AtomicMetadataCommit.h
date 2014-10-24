@@ -22,11 +22,11 @@ class AtomicMetadataCommit : public ProducerInterface, public NodeIteratorListen
 public:
 
 	AtomicMetadataCommit(const vector<NodeId> & exceptions,
-			MetadataChange * metadataChange, ConsumerInterface * consumer);
+			MetadataChange * metadataChange, ConsumerInterface * consumer, const bool skipLock = false);
 	AtomicMetadataCommit(const NodeId & exception,
-			MetadataChange * metadataChange, ConsumerInterface * consumer);
+			MetadataChange * metadataChange, ConsumerInterface * consumer, const bool skipLock = false);
 	AtomicMetadataCommit(MetadataChange * metadataChange,
-			const vector<NodeId> & participants, ConsumerInterface * consumer);
+			const vector<NodeId> & participants, ConsumerInterface * consumer, const bool skipLock = false);
 	~AtomicMetadataCommit();
 
 	Transaction * getTransaction();
@@ -48,6 +48,8 @@ private:
 	// control members
 	vector<NodeId> participants;
 	NodeOperationId selfOperationId;
+
+	bool skipLock;
 
 	string currentAction;
 	AtomicLock * atomicLock;

@@ -202,7 +202,9 @@ void ShardManager::print(){
 
 void ShardManager::start(){
 	Logger::info("Starting data processor ...");
-	ShardManager::getShardManager()->_lockManager->setNodePassedInitialization(getCurrentNodeId());
+
+	// insert this node and all older nodes in the lock manager in the beginning.
+	ShardManager::getShardManager()->_lockManager->initialize();
 	unsigned numberOfNodes = this->metadataManager->getClusterWriteview()->nodes.size();
 	if(numberOfNodes == 1){ // we are the first node:
 		// assign primary shards to this node :

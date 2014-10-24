@@ -403,5 +403,12 @@ void LockManager::setNodePassedInitialization(const NodeId & nodeId){
 	passedInitialization[nodeId] = true;
 }
 
+void LockManager::initialize(){
+    map<NodeId, std::pair<ShardingNodeState, Node *> > & nodes = ShardManager::getShardManager()->getWriteview()->nodes;
+    for(map<NodeId, std::pair<ShardingNodeState, Node *> >::iterator nodeItr = nodes.begin(); nodeItr != nodes.end(); ++nodeItr){
+        setNodePassedInitialization(nodeItr->second.second->getId());
+    }
+}
+
 }
 }
