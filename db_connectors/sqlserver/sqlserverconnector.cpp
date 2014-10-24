@@ -15,7 +15,7 @@
 #include "json/json.h"
 #include <fstream>
 
-#define DEFAULT_RECORD_LEN 255
+#define SQLSERVER_DEFAULT_MAX_RECORD_LEN (1024)
 
 using namespace std;
 using srch2::util::Logger;
@@ -210,7 +210,7 @@ bool SQLServerConnector::checkConfigValidity() {
 
 //Get the table's schema and save them into a vector<schema_name>
 //Query: SELECT COLUMN_NAME FROM INFORMATION_SCHEMA.COLUMNS
-//WHERE TABLE_NAME = 'table name'
+//WHERE TABLE_NAME = [TABLE]
 //ORDER BY ORDINAL_POSITION ASC
 //For example: table emp(id, name, age, salary).
 //The schema vector will contain {id, name, age, salary}
@@ -271,7 +271,7 @@ bool SQLServerConnector::populateTableSchema(std::string & tableName) {
 
 /*
  * Retrieve records from the table records and insert them into the SRCH2 engine.
- * Query : SELECT * FROM table;
+ * Query : SELECT * FROM [TABLE];
  */
 int SQLServerConnector::createNewIndexes() {
     std::string tableName;
@@ -410,10 +410,15 @@ int SQLServerConnector::runListener() {
             continue;
         }
 
-        //Create the prepared select prepared statement
+        /*
+         * Create the prepared select statement. Because the SRCH2 engine only
+         * supports atomic primary keys but not compound primary keys, here we
+         * assume the primary key of the table only has one attribute.
+         */
         sql.str("");
         sql << "SELECT SYS_CHANGE_VERSION, SYS_CHANGE_OPERATION, CT.ID";
 
+        //TODO add comments
         for (vector<string>::iterator it = fieldNames.begin();
                 it != fieldNames.end(); ++it) {
             sql << ", t." << *it;

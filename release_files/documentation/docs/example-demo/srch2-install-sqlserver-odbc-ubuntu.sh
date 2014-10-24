@@ -18,7 +18,7 @@ cd ..
 
 wget http://security.ubuntu.com/ubuntu/pool/universe/o/openssl098/libssl0.9.8_0.9.8o-7ubuntu3.2.14.04.1_amd64.deb
 sudo dpkg -i libssl0.9.8_0.9.8o-7ubuntu3.2.14.04.1_amd64.deb
-cd /usr/lib
+cd /usr/lib/x86_64-linux-gnu/
 sudo ln -s libssl.so.0.9.8 libssl.so.6
 sudo ln -s libcrypto.so.0.9.8 libcrypto.so.6
 sudo sh -c "echo /usr/loacl/lib >> /etc/ld.so.conf"

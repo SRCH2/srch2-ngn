@@ -96,14 +96,14 @@
 			<!-- DB settings Required if dataSourceType = 2 -->
 			<dataSourceType>2</dataSourceType>
 			<dbParameters>
-				<dbSharedLibraryPath>db_connectors/</dbSharedLibraryPath>
+				<dbSharedLibraryPath>../../../../db_connectors/build</dbSharedLibraryPath>
 				<dbSharedLibraryName>libsqlserverConnector</dbSharedLibraryName>
 				<dbKeyValues>
 					<dbKeyValue key="dataSource" value="ODBC Driver 11 for SQL Server" />
-					<dbKeyValue key="server" value="sqlserver_address" />
+					<dbKeyValue key="server" value="192.168.1.18" />
 					<dbKeyValue key="user" value="srch2" />
-					<dbKeyValue key="dbName" value="demo" />
 					<dbKeyValue key="password" value="srch2" />
+					<dbKeyValue key="dbName" value="demo" />
 					<dbKeyValue key="tableName" value="COMPANY" />
 					<dbKeyValue key="listenerWaitTime" value="3" />
 				</dbKeyValues>
