@@ -48,7 +48,7 @@ AtomicLock::AtomicLock(const NodeOperationId & newNodeOpId,
 
 	// prepare the locker and locking notification
 	lockNotification = SP(LockingNotification)(new LockingNotification(newNodeOpId, listOfOlderNodes, lockLevel));
-	releaseNotification = SP(LockingNotification)(new LockingNotification(newNodeOpId, listOfOlderNodes, lockLevel, true));
+	releaseNotification = SP(LockingNotification)(new LockingNotification(newNodeOpId, listOfOlderNodes, lockLevel, true,true));
 	lockType = LockRequestType_Metadata;
 	this->finalzedFlag = false;
 	init();
@@ -77,7 +77,7 @@ AtomicLock::AtomicLock(const ClusterShardId & shardId,
 
 	// prepare the locker and locking notification
 	lockNotification = SP(LockingNotification)(new LockingNotification(shardId, agent, lockLevel));
-	releaseNotification = SP(LockingNotification)(new LockingNotification(shardId, agent, true));
+	releaseNotification = SP(LockingNotification)(new LockingNotification(shardId, agent));
 	lockType = LockRequestType_GeneralPurpose;
 	this->finalzedFlag = false;
 	init();
