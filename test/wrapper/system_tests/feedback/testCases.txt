@@ -1,0 +1,43 @@
+# Case 1 : search query
+S||ser||97 64 77 68 3 40 48 51 84 20
+
+# update feedback for case1 query
+C||feedback||{ "query" : "ser", "recordId" : "64" }
+
+# sleep for 3 seconds for merge
+W||3
+
+# case 2: repeat case 1 again. Now feedback record = 64 should be ranked higher (rank = 1) than before (rank = 2). 
+S||ser||64 97 77 68 3 40 48 51 84 20
+
+# case 3:  search for multi word queries
+S||Goods Garden||6 44 66
+
+# update feedback for case 3 query
+C||feedback||{ "query" : "Goods AND Garden", "recordId" : "66" }
+
+# case 4:  search for case 3 again. Feedback record = 66 score increased but it is still less than score of record 44 .
+S||Goods Garden||6 44 66
+
+# update feedback for case 3 query multiple times
+C||feedback||{ "query" : "Goods AND Garden", "recordId" : "66" }
+C||feedback||{ "query" : "Goods AND Garden", "recordId" : "66" }
+C||feedback||{ "query" : "Goods AND Garden", "recordId" : "66" }
+
+# sleep for 3 seconds for merge
+W||3
+
+# case 5:  search for case 3 again. Now feedback record = 66 has higher score than score of record 44 .
+S||Goods Garden||6 66 44
+
+# case 6: search for multi word queries
+S||Personal Services||29 36 10 37 13 52 8
+
+# update feedback for case 6 query
+C||feedback||{ "query" : "Personal AND Services", "recordId" : "10" }
+
+# sleep for 3 seconds for merge
+W||3
+
+# case 7: search for case 5  again. Now record 10 should be ranked higher than record =36
+S||Personal Services||10 29 36 37 13 52 8
