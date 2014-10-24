@@ -247,6 +247,7 @@ private:
     bool needToSaveIndexes;
     unsigned mergeEveryNSeconds;
     unsigned mergeEveryMWrites;
+    string indexDirectoryName;
 
     unsigned updateHistogramEveryPMerges;
     unsigned updateHistogramEveryQWrites;

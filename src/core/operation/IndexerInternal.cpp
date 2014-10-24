@@ -192,7 +192,8 @@ void IndexReaderWriter::save()
     pthread_mutex_lock(&lockForWriters);
 
     // If no insert/delete/update is performed, we don't need to save.
-    if(this->needToSaveIndexes == false){
+    bool needToSaveFeedbackIndex = userFeedbackIndex->shouldSaveIndex();
+    if(this->needToSaveIndexes == false && needToSaveFeedbackIndex == false){
       pthread_mutex_unlock(&lockForWriters);
     	return;
     }
@@ -202,13 +203,17 @@ void IndexReaderWriter::save()
     writesCounterForMerge = 0;
 
     srch2::util::Logger::console("Saving Indexes ...");
-    this->index->_save();
+    if (this->needToSaveIndexes)
+    	this->index->_save();
+    if (needToSaveFeedbackIndex)
+    	this->userFeedbackIndex->save(indexDirectoryName);
 
     // Since one save is done, we need to set needToSaveIndexes back to false
     // we need this line because of bulk-load. Because in normal save, the engine will be killed after save
     // so we don't need this flag (the engine will die anyways); but in the save which happens after bulk-load,
     // we should set this flag back to false for future save calls.
     this->needToSaveIndexes = false;
+    userFeedbackIndex->shouldSaveIndex(false);
 
     pthread_mutex_unlock(&lockForWriters);
 }
@@ -277,6 +282,7 @@ IndexReaderWriter::IndexReaderWriter(IndexMetaData* indexMetaData)
     // LOAD Index
     this->index = IndexData::load(indexMetaData->directoryName);
     this->userFeedbackIndex = new FeedbackIndex();
+    this->userFeedbackIndex->load(indexMetaData->directoryName);
     this->initIndexReaderWriter(indexMetaData);
     //this->startMergerThreads();
 }
@@ -291,6 +297,7 @@ void IndexReaderWriter::initIndexReaderWriter(IndexMetaData* indexMetaData)
      this->writesCounterForMerge = 0;
      this->mergeCounterForUpdatingHistogram = 0;
      this->needToSaveIndexes = false;
+     this->indexDirectoryName = indexMetaData->directoryName;
 
      this->mergeThreadStarted = false; // No threads running
      //zero indicates that the lockForWriters is unset

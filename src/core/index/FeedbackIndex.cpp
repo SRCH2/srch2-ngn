@@ -2,10 +2,16 @@
  * QueryIndex.cpp
  *
  *  Created on: Oct 20, 2014
- *      Author: srch2
+ *      Author: Surendra
  */
 
 #include "FeedbackIndex.h"
+#include "util/Logger.h"
+#include "serialization/Serializer.h"
+#include "IndexUtil.h"
+#include <sys/stat.h>
+
+using namespace srch2::util;
 
 namespace srch2 {
 namespace instantsearch {
@@ -28,6 +34,7 @@ FeedbackIndex::FeedbackIndex() {
 	queryTrie->commit();
 	feedbackListIndexVector = new cowvector<UserFeedbackList>();
 	feedbackListIndexVector->commit();
+	saveIndexFlag = false;
 }
 
 void FeedbackIndex::addFeedback(const string& query, unsigned recordId, unsigned timestamp) {
@@ -63,6 +70,7 @@ void FeedbackIndex::addFeedback(const string& query, unsigned recordId, unsigned
 		feedbackList->getWriteView()->at(idx) = feedbackInfo;
 	}
 	feedBackListsToMerge.insert(feedbackListIndex);
+	saveIndexFlag = true;
 }
 
 void FeedbackIndex::addFeedback(const string& query, unsigned recordId) {
@@ -186,6 +194,76 @@ FeedbackIndex::~FeedbackIndex() {
 		delete feedbackListIndexVector->getWriteView()->getElement(i);
 	}
 	delete feedbackListIndexVector;
+}
+
+void FeedbackIndex::save(const string& directoryName) {
+
+	if (this->queryTrie->isMergeRequired())
+		this->queryTrie->merge(NULL, NULL, 0, false);
+
+	// serialize the data structures to disk
+	Serializer serializer;
+	string queryTrieFilePath = directoryName + "/" + IndexConfig::queryTrieFileName;
+	try {
+		serializer.save(*this->queryTrie, queryTrieFilePath);
+	} catch (exception &ex) {
+		Logger::error("Error writing query index file: %s", queryTrieFilePath.c_str());
+	}
+
+	string userfeedbackListFilePath = directoryName + "/" + IndexConfig::queryFeedbackFileName;
+	std::ofstream ofs(userfeedbackListFilePath.c_str(), std::ios::binary);
+	if (!ofs.good())
+		throw std::runtime_error("Error opening " + userfeedbackListFilePath);
+	boost::archive::binary_oarchive oa(ofs);
+    oa << IndexVersion::currentVersion;
+	oa << maxFedbackInfoCountPerQuery;
+	oa << feedbackListIndexVector;
+	for (unsigned i = 0; i < feedbackListIndexVector->getWriteView()->size(); ++i) {
+		oa << feedbackListIndexVector->getWriteView()->at(i);
+	}
+	ofs.close();
+}
+
+void FeedbackIndex::load(const string& directoryName) {
+
+	// serialize the data structures to disk
+	Serializer serializer;
+	string queryTrieFilePath = directoryName + "/" + IndexConfig::queryTrieFileName;
+	struct stat fileStat;
+
+	if (::stat(queryTrieFilePath.c_str(), &fileStat) == -1) {
+		Logger::info("query index not found during load.");
+		return;
+	}
+
+	try {
+		serializer.load(*this->queryTrie, queryTrieFilePath);
+	} catch (exception &ex) {
+		Logger::error("Error writing query index file: %s", queryTrieFilePath.c_str());
+	}
+
+	string userfeedbackListFilePath = directoryName + "/" + IndexConfig::queryFeedbackFileName;
+	std::ifstream ifs(userfeedbackListFilePath.c_str(), std::ios::binary);
+	if (!ifs.good()) {
+		Logger::info("query index not found during load.");
+	}
+	boost::archive::binary_iarchive ia(ifs);
+	IndexVersion storedIndexVersion;
+	ia >> storedIndexVersion;
+	if (IndexVersion::currentVersion == storedIndexVersion) {
+		ia >> maxFedbackInfoCountPerQuery;
+		ia >> feedbackListIndexVector;
+		for (unsigned i = 0; i < feedbackListIndexVector->getWriteView()->size(); ++i) {
+			ia >> feedbackListIndexVector->getWriteView()->at(i);
+		}
+		ifs.close();
+	} else {
+		ifs.close();
+		Logger::error(
+				"Invalid index file. Either index files are built with a previous version"
+				" of the engine or copied from a different machine/architecture.");
+		throw exception();
+	}
 }
 
 } /* namespace instantsearch */

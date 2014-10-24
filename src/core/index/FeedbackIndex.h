@@ -5,8 +5,8 @@
  *      Author: srch2
  */
 
-#ifndef __CORE_INDEX_FEEBACKINDEX_H__
-#define __CORE_INDEX_FEEBACKINDEX_H__
+#ifndef __CORE_INDEX_FEEDBACKINDEX_H__
+#define __CORE_INDEX_FEEDBACKINDEX_H__
 
 #include <string>
 #include <set>
@@ -23,12 +23,15 @@ namespace instantsearch {
 struct UserFeedbackInfo;
 typedef cowvector<UserFeedbackInfo>* UserFeedbackList;
 
+#define CURRENT_FEEDBACK_LIST_INDEX_VERSION 0
+
 class FeedbackIndex {
 	Trie *queryTrie;
     cowvector<UserFeedbackList> * feedbackListIndexVector;
     unsigned maxFedbackInfoCountPerQuery;
     boost::mutex writerLock;
     std::set<unsigned> feedBackListsToMerge;
+    bool saveIndexFlag;
 public:
     //writers
     void addFeedback(const string& query, unsigned recordId, unsigned timestamp);
@@ -40,6 +43,18 @@ public:
     bool hasFeedbackDataForQuery(const string& query);
 
     void merge();
+
+    void save(const string& directoryName);
+
+    void load(const string& directoryName);
+
+    bool shouldSaveIndex() {
+    	return saveIndexFlag;
+    }
+
+    void shouldSaveIndex(bool flag) {
+    	saveIndexFlag = flag;
+    }
 
     // constructor
     FeedbackIndex();
@@ -53,8 +68,15 @@ struct UserFeedbackInfo{
 	unsigned recordId;           // selected record for a query
 	unsigned feedbackFrequency;  // frequency of selecting this record for a query
 	unsigned timestamp;          // epoch time
+
+	template <class Archive>
+	void serialize(Archive& ar, int version) {
+		ar & recordId;
+		ar & feedbackFrequency;
+		ar & timestamp;
+	}
 };
 
 } /* namespace instantsearch */
 } /* namespace srch2 */
-#endif /* __CORE_INDEX_FEEBACKINDEX_H__ */
+#endif /* __CORE_INDEX_FEEDBACKINDEX_H__ */

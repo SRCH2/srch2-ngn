@@ -40,7 +40,7 @@
         The file path to the folder where we store serialized index files.
         REQUIRED, when "index-load-or-create" is set to 1.
     -->
-    <dataDir>./data/exact_a1/</dataDir>
+    <dataDir>./data/feedback/</dataDir>
      
     <!--
         Data File
@@ -49,7 +49,7 @@
         Path for a data file to be loaded. The file must be in the json format.
         REQUIRED, when "index-load-or-create" is set to 0.
     -->
-    <dataFile>./exact_a1/data.json</dataFile>
+    <dataFile>./feedback/data.json</dataFile>
      
     <!--
 	Maximum Number of Threads
@@ -432,7 +432,7 @@
                  
                 Path to Access Log File
             -->
-            <accessLogFile>./data/exact_a1/log.txt</accessLogFile>
+            <accessLogFile>./data/feedback/log.txt</accessLogFile>
         </updateLog>
  	
 </config>
