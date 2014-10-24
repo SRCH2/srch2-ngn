@@ -344,7 +344,7 @@ bool LockManager::moveLockBatchForward(LockBatch * lockBatch){
 				// we can try to lock for this new node now
 				if(allNodeSharedInfo.lock(metadataResourceName, lockBatch->opIds, lockBatch->metadataLockLevel)){
 					// we can got the metadata lock, let's get back to the user.
-					ASSERT(lockBatch->lastGrantedItemIndex == 0);
+					lockBatch->lastGrantedItemIndex ++;
 					finalize(lockBatch, true);
 					return true;
 				}

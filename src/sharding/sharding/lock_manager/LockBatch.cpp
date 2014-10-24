@@ -53,6 +53,8 @@ LockBatch * LockBatch::generateLockBatch(SP(LockingNotification) notif){
 	lockBatch->release = notif->isReleaseRequest();
 	lockBatch->batchType = notif->getType();
 	lockBatch->ack = ShardingNotification::create<LockingNotification::ACK>();
+	lockBatch->ack->setDest(notif->getSrc());
+	lockBatch->ack->setSrc(notif->getDest());
 	switch (notif->getType()) {
 		case LockRequestType_Copy:
 		{

@@ -24,13 +24,13 @@ public:
 			grantedLocks[resource] = vector<pair<NodeOperationId, LockLevel> >();
 		}
 		if(grantedLocks[resource].size() == 0){
-			for(unsigned i = 1; i < opids.size(); ++i){
+			for(unsigned i = 0; i < opids.size(); ++i){
 				grantedLocks[resource].push_back(std::make_pair(opids.at(i), lockLevel));
 			}
 			return true;
 		}
 		if(! conflict(grantedLocks[resource].at(0).second, lockLevel) ){
-			for(unsigned i = 1; i < opids.size(); ++i){
+			for(unsigned i = 0; i < opids.size(); ++i){
 				grantedLocks[resource].push_back(std::make_pair(opids.at(i), lockLevel));
 			}
 			return true;
