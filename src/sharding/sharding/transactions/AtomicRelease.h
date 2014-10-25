@@ -53,7 +53,7 @@ public:
 	 * if we reach to this function.
 	 */
 	void end(map<NodeId, SP(ShardingNotification) > & replies);
-	string getName() const {return "AtomicLock";};
+	string getName() const {return "AtomicRelease";};
 private:
 
 	LockRequestType lockType;
