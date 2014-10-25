@@ -111,6 +111,11 @@ bool MoveToMeNotification::resolveNotification(SP(ShardingNotification) _notif){
 	ShardManager::getShardManager()->getMigrationManager()->migrateShard(moveNotif->getShardId(),
 			writeview->localClusterDataShards.at(moveNotif->getShardId()).server, moveNotif->getShardId(),moveNotif->getDest(), moveNotif->getSrc());
 
+	SP(MoveToMeNotification::ACK) ack = ShardingNotification::create<MoveToMeNotification::ACK>();
+	ack->setSrc(moveNotif->getDest());
+	ack->setDest(moveNotif->getSrc());
+	ShardingNotification::send(ack);
+
 	return true;
 }
 
