@@ -175,14 +175,12 @@ pthread_t * ShardManager::getLoadbalancingThread() {
 void ShardManager::print(){
 	metadataManager->print();
 
-	_lockManager->print(); //TODO
+	_lockManager->print();
 
 	stateMachine->print();
 
-//	recordOperationsStateMachine->print();
-
 	// bounced notifications
-	if(bouncedNotifications.size() == 0){
+	if(bouncedNotifications.empty()){
 		return;
 	}
 	cout << "**************************************************************************************************" << endl;
@@ -205,20 +203,20 @@ void ShardManager::start(){
 
 	// insert this node and all older nodes in the lock manager in the beginning.
 	ShardManager::getShardManager()->_lockManager->initialize();
-	unsigned numberOfNodes = this->metadataManager->getClusterWriteview()->nodes.size();
+	unsigned numberOfNodes = this->metadataManager->getClusterWriteview()->getNumberOfAliveNodes();
 	if(numberOfNodes == 1){ // we are the first node:
 		// assign primary shards to this node :
 		initFirstNode();
 
 		Logger::info("Cluster is ready to accept new nodes. Current node ID : %d", ShardManager::getCurrentNodeId());
-		//TODO remove
-		print();
+//		//TODO remove
+//		print();
 	}else{
 		// commit the readview to be accessed by readers until we join
 		this->getMetadataManager()->commitClusterMetadata();
 		Logger::info("Joining the existing cluster ...");
-		//TODO remove
-		Logger::debug("Printing node information before join ...");
+		ASSERT(! this->isJoined());
+		Logger::sharding(Logger::Info, "Printing node information before join ...");
 		print();
 
 		// we must join an existing cluster :
@@ -227,6 +225,8 @@ void ShardManager::start(){
     if (pthread_create(loadBalancingThread, NULL, ShardManager::periodicWork , NULL) != 0){
         //        Logger::console("Cannot create thread for handling local message");
         perror("Cannot create thread for load balancing.");
+        __FUNC_LINE__
+        Logger::sharding(Logger::Error, "Cannot create thread for load balancing.");
         return;
     }
 }
@@ -297,7 +297,7 @@ bool ShardManager::resolveMessage(Message * msg, NodeId senderNode){
 		Logger::debug("ignored because source node had failed before.!!!");
 		return true;
 	}
-	Logger::debug("SHM | Type :  %s , MsgID : %d . Going to be processed ...", msg->getDescription().c_str() , msg->getMessageId());
+//	Logger::debug("SHM | Type :  %s , MsgID : %d . Going to be processed ...", msg->getDescription().c_str() , msg->getMessageId());
 	// deserialize sharding header information
 	NodeOperationId srcAddress, destAddress;
 	bool bounced;
@@ -367,7 +367,7 @@ bool ShardManager::resolveMessage(Message * msg, NodeId senderNode){
 		Logger::debug("SHM | Notification resolve returned false : %s", notif->getDescription().c_str());
 	}
 
-	Logger::debug("SHM | Type :  %s , MsgID : %d . Processed.", msg->getDescription().c_str() , msg->getMessageId());
+//	Logger::debug("SHM | Type :  %s , MsgID : %d . Processed.", msg->getDescription().c_str() , msg->getMessageId());
 
 	return true;
 }
@@ -501,7 +501,10 @@ void * ShardManager::periodicWork(void *args) {
 		}
 		ShardManager::getShardManager()->bouncedNotifications.clear();
 
-
+		/*
+		 * TODO : we must implement a method with periodically goes through all data structures and
+		 *        makes sure they are not stuck anywhere ....
+		 */
 		// 2. if we are joined, start load balancing.
 		if(ShardManager::getShardManager()->isJoined() && ! ShardManager::getShardManager()->isLoadBalancing()){
 			ShardManager::getShardManager()->setLoadBalancing();

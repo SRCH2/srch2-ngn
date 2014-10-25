@@ -27,6 +27,8 @@ LockingNotification::LockingNotification(const ClusterShardId & srcShardId,
 	this->srcShardId = srcShardId;
 	this->destShardId = destShardId;
 	this->copyAgent = copyAgent;
+	Logger::sharding(Logger::Detail, "LockNotif| Copy srcShardId(%s), destShardId(%s), copyAgent(%s), B(%d), R(%d)",
+			srcShardId.toString().c_str(), destShardId.toString().c_str(), copyAgent.toString().c_str(), this->blocking, releaseRequestFlag);
 }
 LockingNotification::LockingNotification(const ClusterShardId & shardId,
 		const NodeOperationId & srcMoveAgent, const NodeOperationId & destMoveAgent, const bool releaseRequest):
@@ -36,6 +38,8 @@ LockingNotification::LockingNotification(const ClusterShardId & shardId,
 	this->shardId = shardId;
 	this->srcMoveAgent = srcMoveAgent;
 	this->destMoveAgent = destMoveAgent;
+	Logger::sharding(Logger::Detail, "LockNotif| Move shardId(%s), srcMoveAgent(%s), destMoveAgent(%s), B(%d), R(%d)",
+			shardId.toString().c_str(), this->srcMoveAgent.toString().c_str(), this->destMoveAgent.toString().c_str(), this->blocking, releaseRequestFlag);
 }
 LockingNotification::LockingNotification(const NodeOperationId & newNodeOpId,
 		const vector<NodeId> & listOfOlderNodes,
@@ -54,7 +58,8 @@ LockingNotification::LockingNotification(const NodeOperationId & newNodeOpId,
     for(vector<NodeId>::iterator nodeItr = this->listOfOlderNodes.begin(); nodeItr != this->listOfOlderNodes.end(); ++nodeItr){
         ss << *nodeItr << " - ";
     }
-	Logger::debug("DETAILS : LockingNotification : newNodeOpId(%s), olderNodes(%s), lockLevel(%d)", newNodeOpId.toString().c_str(), ss.str().c_str(), metadataLockLevel);
+	Logger::sharding(Logger::Detail, "LockNotif| Metadata newNodeOpId(%s), olderNodes(%s), lockLevel(%s), B(%d), R(%d)",
+			newNodeOpId.toString().c_str(), ss.str().c_str(), metadataLockLevel == LockLevel_S ? "S" : "X" , this->blocking, releaseRequestFlag);
 }
 LockingNotification::LockingNotification(const vector<string> & primaryKeys,
 		const NodeOperationId & writerAgent, const ClusterPID & pid, const bool releaseRequest):
@@ -64,6 +69,8 @@ LockingNotification::LockingNotification(const vector<string> & primaryKeys,
 	this->primaryKeys = primaryKeys;
 	this->writerAgent = writerAgent;
 	this->pid = pid;
+	Logger::sharding(Logger::Detail, "LockNotif| PrimaryKey writerAgent(%s), pid(%s), B(%d), R(%d)",
+			writerAgent.toString().c_str(), this->pid.toString().c_str(), this->blocking, releaseRequestFlag);
 }
 
 LockingNotification::LockingNotification(const ClusterShardId & shardId,
@@ -74,6 +81,9 @@ LockingNotification::LockingNotification(const ClusterShardId & shardId,
 	this->generalPurposeShardId = shardId;
 	this->generalPurposeAgent = agent;
 	this->generalPurposeLockLevel = lockLevel;
+	Logger::sharding(Logger::Detail, "LockNotif| Gen-purpose generalPurposeShardId(%s), generalPurposeAgent(%s), generalPurposeLockLevel(%s), B(%d), R(LOCK)",
+			generalPurposeShardId.toString().c_str(), generalPurposeAgent.toString().c_str(),
+			this->generalPurposeLockLevel == LockLevel_S ? "S" : "X", this->blocking);
 }
 
 LockingNotification::LockingNotification(const ClusterShardId & shardId,
@@ -83,6 +93,9 @@ LockingNotification::LockingNotification(const ClusterShardId & shardId,
 		blocking(true || releaseRequestFlag) { // release is always blocking
 	this->generalPurposeShardId = shardId;
 	this->generalPurposeAgent = agent;
+	Logger::sharding(Logger::Detail, "LockNotif| Gen-purpose generalPurposeShardId(%s), generalPurposeAgent(%s), generalPurposeLockLevel(%s), B(%d), R(RELEASE)",
+			generalPurposeShardId.toString().c_str(), generalPurposeAgent.toString().c_str(),
+			this->generalPurposeLockLevel == LockLevel_S ? "S" : "X", this->blocking);
 }
 
 LockingNotification::LockingNotification(const vector<ClusterShardId> & shardIdList,
@@ -93,6 +106,16 @@ LockingNotification::LockingNotification(const vector<ClusterShardId> & shardIdL
 	this->shardIdList = shardIdList;
 	this->shardIdListLockHolder = shardIdListLockHolder;
 	this->shardIdListLockLevel = lockLevel;
+	stringstream ss;
+	for(unsigned i = 0; i < shardIdList.size(); ++i){
+		if(i != 0){
+			ss << "|";
+		}
+		ss << shardIdList.at(i).toString();
+	}
+	Logger::sharding(Logger::Detail, "LockNotif| Gen-purpose-list shardIdList(%s), shardIdListLockHolder(%s), shardIdListLockLevel(%s), B(%d), R(LOCK)",
+			ss.str().c_str(), shardIdListLockHolder.toString().c_str(),
+			shardIdListLockLevel == LockLevel_S ? "S" : "X", this->blocking);
 }
 LockingNotification::LockingNotification(const vector<ClusterShardId> & shardIdList,
 		const NodeOperationId & shardIdListLockHolder):
@@ -101,6 +124,16 @@ LockingNotification::LockingNotification(const vector<ClusterShardId> & shardIdL
 		blocking(true || releaseRequestFlag){ // release is always blocking
 	this->shardIdList = shardIdList;
 	this->shardIdListLockHolder = shardIdListLockHolder;
+	stringstream ss;
+	for(unsigned i = 0; i < shardIdList.size(); ++i){
+		if(i != 0){
+			ss << "|";
+		}
+		ss << shardIdList.at(i).toString();
+	}
+	Logger::sharding(Logger::Detail, "LockNotif| Gen-purpose-list shardIdList(%s), shardIdListLockHolder(%s), B(%d), R(RELEASE)",
+			ss.str().c_str(), shardIdListLockHolder.toString().c_str(),
+			this->blocking);
 }
 
 LockingNotification::LockingNotification():

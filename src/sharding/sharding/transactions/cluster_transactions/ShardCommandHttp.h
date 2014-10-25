@@ -158,6 +158,8 @@ private:
 	ShardingTransactionType getTransactionType(){
 		return ShardingTransactionType_ShardCommandCode;
 	}
+
+	string getName() const {return "shard-command-http" + action_name;};
 private:
 	ShardOperationJsonResponse * brokerSideInformationJson;
 	boost::shared_ptr<const ClusterResourceMetadata_Readview> clusterReadview;

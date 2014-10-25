@@ -41,7 +41,7 @@ public:
 	// process coming back from distributed conversation to aggregate the results of
 	// this command
 	void end_(map<NodeOperationId , SP(ShardingNotification)> & replies);
-
+	string getName() const {return "shard-command";};
 private:
 
 	bool partition(vector<NodeTargetShardInfo> & targets);

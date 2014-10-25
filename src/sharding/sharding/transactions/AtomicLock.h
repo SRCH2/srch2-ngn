@@ -79,6 +79,7 @@ public:
 	// TODO if we solve the problem of primary keys, we can remove this API
 	void setParticipants(const vector<NodeId> & participants);
 
+	string getName() const {return "AtomicLock";};
 
 private:
 

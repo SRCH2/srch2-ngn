@@ -72,7 +72,7 @@ private:
 
 	void getOlderNodesList(vector<NodeId> & olderNodes);
 
-
+	string getName() const {return "node-joiner";};
 
 private:
 	NodeOperationId selfOperationId;

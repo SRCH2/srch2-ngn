@@ -37,7 +37,7 @@ const char * getShardingMessageTypeStr(ShardingMessageType shardingMessageType){
 	   case ShardingNodeFailureNotificationMessageType:
 		   return "ShardingNodeFailureNotificationMessageType";
 	   default:
-		   return "Message";
+		   return "Message Does Not Have Description";
 		   break;
 	   }
 	   return "";

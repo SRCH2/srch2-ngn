@@ -34,6 +34,8 @@ public:
 
 	void finalize(); // ** return **
 
+	string getName() const {return "shard-assign";};
+
 private:
 
 

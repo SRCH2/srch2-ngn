@@ -45,6 +45,7 @@ public:
 	// ** end if
 	void release();
 	void finalize(); // ** return **
+	string getName() const {return "shard-copy";};
 
 private:
 

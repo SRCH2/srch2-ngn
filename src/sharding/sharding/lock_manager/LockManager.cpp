@@ -29,7 +29,7 @@ void LockManager::resolve(SP(LockingNotification)  notif){
 }
 
 void LockManager::resolve(const unsigned readviewReleasedVersion){
-    Logger::debug("STEP :  Lock Manager : resolving RV release, version %d", readviewReleasedVersion);
+    Logger::sharding(Logger::Step, "LockManager| resolving RV release, version %d", readviewReleasedVersion);
 	// lock
 	readviewReleaseMutex.lock();
 	for(vector<LockBatch *>::iterator lockBItr = rvReleasePendingLockBatches.begin();
@@ -47,7 +47,7 @@ void LockManager::resolve(const unsigned readviewReleasedVersion){
 }
 
 void LockManager::resolveNodeFailure(const NodeId & failedNode){
-    Logger::debug("STEP :  Lock Manager : resolving node failure , for node %d", failedNode);
+	Logger::sharding(Logger::Step, "LockManager| resolving node failure , for node %d", failedNode);
 	readviewReleaseMutex.lock();
 	for(vector<LockBatch *>::iterator lockBItr = rvReleasePendingLockBatches.begin();
 			lockBItr != rvReleasePendingLockBatches.end(); ){
@@ -106,7 +106,7 @@ void LockManager::resolve(LockBatch * lockBatch){
 
 
 void LockManager::resolveLock(LockBatch * lockBatch){
-    Logger::debug("STEP :  Lock Manager : resolving lock request : %s", lockBatch->toString().c_str());
+	Logger::sharding(Logger::Step, "LockManager| resolving LOCK request : %s", lockBatch->toString().c_str());
 	if(lockBatch->release){
 		ASSERT(false);
 		finalize(lockBatch, false);
@@ -130,7 +130,7 @@ void LockManager::resolveLock(LockBatch * lockBatch){
 		// if all the batch cannot succeed right now, we send reject ack back
 		if(! canAcquireAllBatch(lockBatch)){
 			// reject the request right here
-	        Logger::debug("DETAILS :  Lock Manager : lock request rejected. ");
+			Logger::sharding(Logger::Step, "LockManager| REJECTED. ");
 			finalize(lockBatch, false);
 			delete lockBatch;
 			return;
@@ -139,18 +139,18 @@ void LockManager::resolveLock(LockBatch * lockBatch){
 
 	if(moveLockBatchForward(lockBatch)){
 		// batch was done completely, we can finish this request
-        Logger::debug("DETAILS :  Lock Manager : lock request batch was done completely.");
+		Logger::sharding(Logger::Step, "LockManager| GRANTED");
 		delete lockBatch;
 		return;
 	}else{
 		// if we must wait for rv-release
 		if(lockBatch->isReadviewPending()){
 			// just put it in rv release pending lock batches
-		    Logger::debug("DETAILS :  Lock Manager : lock request pending for RV release.");
+			Logger::sharding(Logger::Detail, "LockManager| lock request pending for RV release.");
 			setPendingForRVRelease(lockBatch);
 			return;
 		}else{
-		    Logger::debug("DETAILS :  Lock Manager : lock request gone to waiting list ...");
+			Logger::sharding(Logger::Detail, "LockManager| lock request gone to waiting list ...");
 			pendingLockBatches.push_back(lockBatch);
 			return;
 		}
@@ -159,7 +159,7 @@ void LockManager::resolveLock(LockBatch * lockBatch){
 
 
 void LockManager::resolveRelease(LockBatch * lockBatch){
-    Logger::debug("STEP :  Lock Manager : resolving release request : ", lockBatch->toString().c_str());
+	Logger::sharding(Logger::Step, "LockManager| resolving RELEASE request : ", lockBatch->toString().c_str());
 	bool releaseHappened = false;
 
 	switch (lockBatch->batchType) {
@@ -199,7 +199,7 @@ void LockManager::resolveRelease(LockBatch * lockBatch){
 	}
 
 	if(releaseHappened){
-        Logger::debug("DETAILS :  Lock Manager : release request triggers some pending lock requests to be applied ....");
+		Logger::sharding(Logger::Detail, "LockManager| release request triggers some pending lock requests.");
 		movePendingLockBatchesForward();
 	}
 }
@@ -231,14 +231,15 @@ void LockManager::movePendingLockBatchesForward(){
 			lockBatchItr != pendingLockBatches.end(); ){
 		ASSERT(! (*lockBatchItr)->release);
 		if(moveLockBatchForward(*lockBatchItr)){
+			Logger::sharding(Logger::Detail, "LockManager| GRANTED : %s", ((*lockBatchItr)->getLockHoldersStr() + "/" + (*lockBatchItr)->getBatchTypeStr()).c_str());
 			delete *lockBatchItr;
 			lockBatchItr = pendingLockBatches.erase(lockBatchItr);
-            Logger::debug("DETAILS :  Lock Manager : lock request finished.");
 		}else{
 			if((*lockBatchItr)->isReadviewPending()){
 				// erase it from pendingLockRequests and put it in readview release
 				LockBatch * lockBatch = *lockBatchItr;
-	            Logger::debug("DETAILS :  Lock Manager : lock request gone to RV release pending list. ");
+				Logger::sharding(Logger::Detail, "LockManager| %s gone to RV release pending list. ",
+						((*lockBatchItr)->getLockHoldersStr() + "/" + (*lockBatchItr)->getBatchTypeStr()).c_str());
 				lockBatchItr = pendingLockBatches.erase(lockBatchItr);
 				setPendingForRVRelease(lockBatch);
 			}
@@ -336,6 +337,7 @@ bool LockManager::moveLockBatchForward(LockBatch * lockBatch){
 			case LockRequestType_ShardIdList:
 			{
 				if(allNodeSharedInfo.isLock(metadataResourceName)){
+					Logger::sharding(Logger::Detail, "LockManager| failed to move forward because metadata is locked.");
 					return false;
 				}
 
@@ -362,6 +364,14 @@ bool LockManager::moveLockBatchForward(LockBatch * lockBatch){
 				vector<ClusterShardId> allResource;
 				clusterShardLocks.getAllLockedResource(allResource);
 				if(! allResource.empty()){
+					stringstream ss;
+					for(unsigned i = 0 ; i < allResource.size(); i++){
+						if(i != 0){
+							ss << ",";
+						}
+						ss << allResource.at(i).toString();
+					}
+					Logger::sharding(Logger::Detail, "LockManager| failed to move forward because clusterShardIds are locked : %s", ss.str().c_str());
 					return false;
 				}
 
@@ -369,6 +379,7 @@ bool LockManager::moveLockBatchForward(LockBatch * lockBatch){
 				LockLevel lockLevel = lockBatch->metadataLockLevel;
 				for(unsigned i = 0 ; i < lockBatch->olderNodes.size(); ++i){
 					if(! isNodePassedInitialization(lockBatch->olderNodes.at(i))){
+						Logger::sharding(Logger::Detail, "LockManager| node %d is ahead of this node.", lockBatch->olderNodes.at(i));
 						return false; // stil not allowed to run this.
 					}
 				}
@@ -424,6 +435,9 @@ void LockManager::finalize(LockBatch * lockBatch, bool result ){
 }
 
 bool LockManager::isNodePassedInitialization(const NodeId & nodeId){
+	if(! ShardManager::getWriteview()->isNodeAlive(nodeId)){
+		return true; // failed nodes are assumed to have passed the initialization step
+	}
 	if(passedInitialization.find(nodeId) == passedInitialization.end()){
 		passedInitialization[nodeId] = false;
 		return false;
@@ -437,7 +451,9 @@ void LockManager::setNodePassedInitialization(const NodeId & nodeId){
 void LockManager::initialize(){
     map<NodeId, std::pair<ShardingNodeState, Node *> > & nodes = ShardManager::getShardManager()->getWriteview()->nodes;
     for(map<NodeId, std::pair<ShardingNodeState, Node *> >::iterator nodeItr = nodes.begin(); nodeItr != nodes.end(); ++nodeItr){
-        setNodePassedInitialization(nodeItr->second.second->getId());
+    	if(nodeItr->second.first == ShardingNodeStateArrived){
+			setNodePassedInitialization(nodeItr->second.second->getId());
+    	}
     }
 }
 

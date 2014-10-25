@@ -43,7 +43,7 @@ public:
 
 
 	void release(); // unlocks metadata
-
+	string getName() const {return "metadata-commit";};
 private:
 	// control members
 	vector<NodeId> participants;

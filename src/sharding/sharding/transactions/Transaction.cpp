@@ -19,6 +19,7 @@ Transaction::Transaction():transactionId(OperationState::getNextOperationId()){
 }
 
 Transaction::~Transaction(){
+    __FUNC_LINE__
 	delete session;
 }
 
@@ -27,12 +28,11 @@ void Transaction::startTransaction(Transaction * trans){
 		ASSERT(false);
 		return;
 	}
-	trans->run();
-	if(! trans->isAttached()){
-	    Logger::debug("New transaction could not be attached to another thread.");
+	if(! trans->run() || ! trans->isAttached()){
+		__FUNC_LINE__
+	    Logger::sharding(Logger::Error, "New transaction could not be attached to another thread, so it was aborted.");
 		delete trans;
 	}
-	Logger::debug("New transaction is running.");
 }
 
 TRANS_ID Transaction::getTID() const {

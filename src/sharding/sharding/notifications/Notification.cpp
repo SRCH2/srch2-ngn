@@ -212,8 +212,8 @@ bool ShardingNotification::send(SP(ShardingNotification) notification){
 	notificationMessage->setMessageId(tm->getUniqueMessageIdValue());
 	notificationMessage->setType(notification->messageType());
 
-	Logger::debug("%s | Sending [Type: %s, ID: %d] ... ", notification->getDescription().c_str(),
-			notificationMessage->getDescription().c_str(), notificationMessage->getMessageId());
+//	Logger::sharding(Logger::Detail, "%s | Sending [Type: %s, ID: %d]. ", notification->getDescription().c_str(),
+//			notificationMessage->getDescription().c_str(), notificationMessage->getMessageId());
 
 	tm->sendMessage(notification->getDest().nodeId , notificationMessage, 0);
 	tm->getMessageAllocator()->deallocateByMessagePointer(notificationMessage);
@@ -233,8 +233,8 @@ bool ShardingNotification::send(SP(ShardingNotification) notification, const vec
 		notificationMessage->setMessageId(tm->getUniqueMessageIdValue());
 		notificationMessage->setType(notification->messageType());
 
-		Logger::debug("%s | Sending [Type: %s, ID: %d] ... ", notification->getDescription().c_str(),
-				notificationMessage->getDescription().c_str(), notificationMessage->getMessageId());
+//		Logger::sharding(Logger::Detail, "%s | Sending [Type: %s, ID: %d]. ", notification->getDescription().c_str(),
+//				notificationMessage->getDescription().c_str(), notificationMessage->getMessageId());
 	}
 	tm->sendMessage(notification->getDest().nodeId , notificationMessage, 0);
 	tm->getMessageAllocator()->deallocateByMessagePointer(notificationMessage);

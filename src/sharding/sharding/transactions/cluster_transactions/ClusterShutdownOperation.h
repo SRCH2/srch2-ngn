@@ -61,7 +61,7 @@ public:
 	void save();
 	void consume(map<NodeId, vector<CommandStatusNotification::ShardStatus *> > & result) ;
 	void clusterShutdown();
-
+	string getName() const {return "shutdown-command";};
 
 private:
 

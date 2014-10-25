@@ -54,6 +54,7 @@ public:
 	void end(map<NodeId, SP(ShardingNotification) > & replies);
 
 	void finalize();
+	string getName() const {return "shard-move";};
 
 private:
 

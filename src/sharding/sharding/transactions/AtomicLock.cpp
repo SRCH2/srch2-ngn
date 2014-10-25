@@ -92,7 +92,7 @@ Transaction * AtomicLock::getTransaction(){
 }
 
 void AtomicLock::produce(){
-    Logger::debug("STEP : Atomic lock starts ...");
+    Logger::sharding(Logger::Detail, "AtomicLock| starts.");
 	ShardManager::getShardManager()->getStateMachine()->registerOperation(locker);
 }
 
@@ -155,6 +155,7 @@ bool AtomicLock::condition(SP(ShardingNotification) reqArg, SP(ShardingNotificat
 		if(res->isGranted()){
 			return true;
 		}else{
+			Logger::sharding(Logger::Detail, "AtomicLock| node %s rejected lock.", resArg->getSrc().toString().c_str());
 			recover();
 			return false;
 		}
@@ -173,7 +174,9 @@ bool AtomicLock::shouldAbort(const NodeId & failedNode){
 			break;
 		}
 	}
-	this->participants.erase(this->participants.begin() + failedNodeIndex);
+	if(failedNodeIndex < this->participants.size()){
+		this->participants.erase(this->participants.begin() + failedNodeIndex);
+	}
 	if(this->participantIndex >= failedNodeIndex ){
 		this->participantIndex --;
 	}
@@ -183,7 +186,7 @@ bool AtomicLock::shouldAbort(const NodeId & failedNode){
 // if not granted :
 void AtomicLock::recover(){
 
-    Logger::debug("STEP : Atomic lock, going to recovery state ...");
+    Logger::sharding(Logger::Detail, "AtomicLock| Recovery state caused by node failure.");
 	if(participantIndex == 0){
 		finalize(false);
 		return;
@@ -216,7 +219,7 @@ void AtomicLock::recover(){
 		}
 		// releaseNotification is prepared in the time of preparing locker
 	}
-	Logger::debug("STEP : Atomic lock making the release operation for recovery...");
+	Logger::sharding(Logger::Detail, "AtomicLock| making the release operation for recovery.");
 	OrderedNodeIteratorOperation * releaser =
 			new OrderedNodeIteratorOperation(releaseNotification, ShardingLockACKMessageType , releaseParticipants);
 	ShardManager::getShardManager()->getStateMachine()->registerOperation(releaser);
@@ -230,6 +233,8 @@ void AtomicLock::recover(){
 void AtomicLock::end(map<NodeId, SP(ShardingNotification) > & replies){
 	if(! replies.empty()){
 		ASSERT(false);
+		__FUNC_LINE__
+		Logger::sharding(Logger::Error, "AtomicLock| end must be empty but has %d elements.", replies.size());
 		finalize(false);
 		return;
 	}
@@ -264,7 +269,7 @@ void AtomicLock::setParticipants(const vector<NodeId> & participants){
 
 void AtomicLock::finalize(bool result){
 	this->finalzedFlag = true;
-	Logger::debug("STEP : Atomic lock ends ...");
+	Logger::sharding(Logger::Detail, "AtomicLock| lock : %s", result ? "successfull" : "failed");
 	this->getConsumer()->consume(result);
 }
 void AtomicLock::finalize(const vector<string> & rejectedPKs){

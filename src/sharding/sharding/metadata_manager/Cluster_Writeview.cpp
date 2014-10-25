@@ -548,6 +548,24 @@ void Cluster_Writeview::getAllNodes(std::vector<const Node *> & localCopy) const
 	}
 }
 
+unsigned Cluster_Writeview::getNumberOfAliveNodes() const{
+	unsigned count = 0;
+	for(map<NodeId, std::pair<ShardingNodeState, Node *> >::const_iterator nodeItr = nodes.begin();
+			nodeItr != nodes.end(); ++nodeItr){
+		if(nodeItr->second.first != ShardingNodeStateFailed){
+			count++;
+		}
+	}
+	return count;
+}
+
+bool Cluster_Writeview::isNodeAlive(const NodeId & nodeId) const{
+	if(nodes.find(nodeId) == nodes.end()){
+		return false;
+	}
+	return nodes.find(nodeId)->second.first != ShardingNodeStateFailed;
+}
+
 void Cluster_Writeview::addNode(const Node & node){
 
     if(nodes.find(node.getId()) == nodes.end()){ // new node.

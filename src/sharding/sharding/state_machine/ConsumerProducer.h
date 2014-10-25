@@ -19,6 +19,7 @@ public:
 	virtual void consume(map<NodeId, vector<CommandStatusNotification::ShardStatus *> > & result) {};
 	virtual void consume(const ShardMigrationStatus & migrationStatus){};
 	virtual Transaction * getTransaction() = 0;
+	virtual string getName() const = 0;
 };
 
 class ProducerInterface{

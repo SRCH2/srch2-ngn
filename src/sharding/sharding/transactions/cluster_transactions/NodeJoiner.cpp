@@ -37,13 +37,14 @@ NodeJoiner::~NodeJoiner(){
 	if(committer != NULL){
 		delete committer;
 	}
-    Logger::debug("DETAILS : Node Joiner is deleting.");
+	__FUNC_LINE__ // prints the name of file and function (only in debug mode)
 }
 
 NodeJoiner::NodeJoiner(){
 	this->finalizedFlag = false;
 	this->selfOperationId = NodeOperationId(ShardManager::getCurrentNodeId(), this->getTID());
-	Logger::debug("DETAILS : Join Op ID : %s", this->selfOperationId.toString().c_str());
+	__FUNC_LINE__
+	Logger::sharding(Logger::Detail, "NodeJoiner| Join operation ID : %s", this->selfOperationId.toString().c_str());
 	this->randomNodeToReadFrom = 0;
 	this->locker = NULL;
 	this->readMetadataNotif = SP(MetadataReport::REQUEST)(new MetadataReport::REQUEST());
@@ -62,31 +63,35 @@ void NodeJoiner::initSession(){
 	TransactionSession * session = new TransactionSession();
 	ShardManager::getReadview(session->clusterReadview);
 	session->response = new JsonResponseHandler();
+	this->setSession(session);
 }
 
 ShardingTransactionType NodeJoiner::getTransactionType(){
 	return ShardingTransactionType_NodeJoin;
 }
 bool NodeJoiner::run(){
+	__FUNC_LINE__
+	Logger::sharding(Logger::Step, "NodeJoiner| Starting to join this node ...");
 	lock();
 	return true;
 }
 
 
 void NodeJoiner::lock(){ // locks the metadata to be safe to read it
-    Logger::debug("STEP : locking the metadata.");
+	__FUNC_LINE__
+    Logger::sharding(Logger::Step, "NodeJoiner| Starting to lock the metadata ...");
 	vector<NodeId> olderNodes;
 	getOlderNodesList(olderNodes);
 	//lock should be acquired on all nodes
 	locker = new AtomicLock(selfOperationId, this, olderNodes); // X-locks metadata by default
 	releaser = new AtomicRelease(selfOperationId, this);
-	Logger::debug("Acquiring lock on metadata ...");
 	this->currentOperation = Lock;
 	locker->produce();
 }
 
 // coming back from lock
 void NodeJoiner::consume(bool granted){
+	__FUNC_LINE__
     switch (this->currentOperation) {
         case Lock:
             if(! granted){
@@ -102,7 +107,7 @@ void NodeJoiner::consume(bool granted){
             break;
         case Commit:
             if(! granted){
-                Logger::debug("New node booting a fresh cluster because commit operation failed.");
+                Logger::sharding(Logger::Step, "NodeJoiner| New node booting a fresh cluster because commit operation failed.");
                 ASSERT(false);
                 finalize(false);
                 return;
@@ -112,7 +117,7 @@ void NodeJoiner::consume(bool granted){
             break;
         case Release:
             if(! granted){
-                Logger::debug("New node booting a fresh cluster because release operation failed.");
+                Logger::sharding(Logger::Step, "NodeJoiner| New node booting a fresh cluster because release operation failed.");
                 ASSERT(false);
                 finalize(false);
                 return;
@@ -121,7 +126,7 @@ void NodeJoiner::consume(bool granted){
             }
             break;
         default:
-            Logger::debug("New node booting a fresh cluster because of unknown reason.");
+            Logger::sharding(Logger::Step, "NodeJoiner| New node booting a fresh cluster because of unknown reason.");
             ASSERT(false); //
             finalize(false);
             break;
@@ -129,13 +134,15 @@ void NodeJoiner::consume(bool granted){
 }
 
 void NodeJoiner::readMetadata(){ // read the metadata of the cluster
-	Logger::debug("STEP : Reading metadata writeview ...");
+	__FUNC_LINE__
+	Logger::sharding(Logger::Step,"NodeJoiner| Reading metadata writeview ...");
 	// send read_metadata notification to the smallest node id
 	vector<NodeId> olderNodes;
 	getOlderNodesList(olderNodes);
 
 	if(olderNodes.size() == 0){
 		Logger::info("New node booting up a fresh cluster ...");
+		Logger::sharding(Logger::Step, "NodeJoiner| no other nodes are left.");
 		finalize(false);
 		return;
 	}
@@ -143,7 +150,7 @@ void NodeJoiner::readMetadata(){ // read the metadata of the cluster
 	srand(time(NULL));
 	this->randomNodeToReadFrom = olderNodes.at(rand() % olderNodes.size());
 
-	Logger::debug("DETAILS : Node joiner going to read metadata from node %d ...", this->randomNodeToReadFrom);
+	Logger::sharding(Logger::Detail, "NodeJoiner| Reading metadata from node %d", this->randomNodeToReadFrom);
 	ConcurrentNotifOperation * reader = new ConcurrentNotifOperation(readMetadataNotif,
 			ShardingNewNodeReadMetadataReplyMessageType, randomNodeToReadFrom, this);
 	this->currentOperation = ReadMetadata;
@@ -155,6 +162,7 @@ void NodeJoiner::readMetadata(){ // read the metadata of the cluster
 
 bool NodeJoiner::shouldAbort(const NodeId & failedNode){
 	if(randomNodeToReadFrom == failedNode){
+		Logger::sharding(Logger::Detail, "NodeJoiner| retrying metadata read.");
 		readMetadata();
 		return true;
 	}
@@ -168,7 +176,7 @@ void NodeJoiner::end_(map<NodeOperationId, SP(ShardingNotification) > & replies)
 		return;
 	}
 	ASSERT(replies.begin()->first == randomNodeToReadFrom);
-	Logger::debug("STEP : Node Joiner : metadata is read from node %d", randomNodeToReadFrom);
+	Logger::sharding(Logger::Step, "NodeJoiner|  Node Joiner : metadata is read from node %d", randomNodeToReadFrom);
 	SP(MetadataReport) metadataReport = boost::dynamic_pointer_cast<MetadataReport>(replies.begin()->second);
 	Cluster_Writeview * clusterWriteview = metadataReport->getWriteview();
 	if(clusterWriteview == NULL){
@@ -185,13 +193,14 @@ void NodeJoiner::end_(map<NodeOperationId, SP(ShardingNotification) > & replies)
 	// new writeview is ready, replace current writeview with the new one
 	ShardManager::getShardManager()->getMetadataManager()->setWriteview(clusterWriteview);
 	ShardManager::getShardManager()->getMetadataManager()->commitClusterMetadata();
-	Logger::debug("STEP : Node joiner : Metadata initialized from the cluster.");
+	Logger::sharding(Logger::Detail, "NodeJoiner| Metadata initialized from the cluster.");
 	// ready to commit.
 	commit();
 }
 
 void NodeJoiner::commit(){
-	Logger::debug("STEP : Node Joiner : Committing the new node change to the cluster ...");
+	__FUNC_LINE__
+	Logger::sharding(Logger::Step, "NodeJoiner| Committing the new node change to the cluster ...");
 	// prepare the commit operation
 	Cluster_Writeview * writeview = ShardManager::getWriteview();
 	vector<ClusterShardId> localClusterShards;
@@ -225,22 +234,25 @@ void NodeJoiner::commit(){
 }
 
 void NodeJoiner::release(){ // releases the lock on metadata
+	__FUNC_LINE__
 	ASSERT(! this->releaseModeFlag);
 	this->currentOperation = Release;
-    Logger::debug("STEP : Node Joiner : Releasing lock ...");
+	Logger::sharding(Logger::Step, "NodeJoiner| Releasing lock ...");
 	this->releaser->produce();
 }
 
 void NodeJoiner::finalize(bool result){
 	if(! result){
 		ShardManager::getShardManager()->initFirstNode();
-		Logger::error("New node booting up as a single node.");
+		Logger::error("New node booting up as a single node to form a cluster.");
+		Logger::sharding(Logger::Error, "NodeJoiner| New node booting up as a single node to form a cluster.");
 	}else{
 	// release is also done.
 	// just setJoined and done.
 	this->finalizedFlag = true;
 	ShardManager::getShardManager()->setJoined();
 	Logger::info("Joined to the cluster.");
+	Logger::sharding(Logger::Step, "NodeJoiner| Joined. Done.");
 	}
 	// so state machine will deallocate this transaction
 	this->setFinished();
@@ -268,7 +280,7 @@ void NodeJoiner::getOlderNodesList(vector<NodeId> & olderNodes){
 		}
 		ss << olderNodes.at(i);
 	}
-	Logger::debug("Sending list of nodes : %s with the lock request.", ss.str().c_str());
+	Logger::sharding(Logger::Detail, "NodeJoiner| List of older nodes: %s", ss.str().c_str());
 
 	ASSERT(olderNodes.size() > 0 &&
 			olderNodes.at(olderNodes.size()-1) < ShardManager::getCurrentNodeId());

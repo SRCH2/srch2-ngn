@@ -4,6 +4,12 @@
 #include <cstdarg>
 #include <cstring>
 #include <ctime>
+#include <string>
+#include <sstream>
+#include <stdio.h>
+#include <pthread.h>
+#include <sys/types.h>
+#include <unistd.h>
 
 #ifdef ANDROID
 #include <android/log.h>
@@ -133,6 +139,45 @@ void Logger::debug(const char *format, ...) {
 	}
 #endif
 }
+void Logger::sharding(ShardingLogLevel logLevel, const char *format, ...){
+#ifndef NDEBUG
+    // NDEBUG is defined when we have run cmake BUILD_RELEASE=ON ..
+	if (_logLevel >= Logger::SRCH2_LOG_DEBUG) {
+		va_list args;
+		va_start(args, format);
+		char buffer[kMaxLengthOfMessage] = { 0 };
+		std::stringstream ss;
+		ss << "SHARDING-";
+		switch (logLevel) {
+			case Error:
+				ss << "ERROR";
+				break;
+			case Step:
+				ss << "STEP";
+				break;
+			case Detail:
+				ss << "DETAIL";
+				break;
+			case Info:
+				ss << "INFO";
+				break;
+			case FuncLine:
+				ss << "F/L";
+				break;
+			default:
+				break;
+		}
+		ss << "\t";
+		ss << "P" << getpid() << "/T" << (unsigned int)pthread_self() << " || ";
+		formatLogString(buffer, ss.str().c_str());
+		vsnprintf(buffer + strlen(buffer), kMaxLengthOfMessage - strlen(buffer),
+				format, args);
+		va_end(args);
+		writeToFile(_out_file, buffer);
+	}
+#endif
+}
+
 
 }
 }

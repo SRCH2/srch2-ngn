@@ -20,6 +20,10 @@ ConcurrentNotifOperation::ConcurrentNotifOperation(SP(ShardingNotification) requ
 	this->participants.push_back(NodeOperationId(participant));
 	this->requests.push_back(request);
 	this->consumer = consumer;
+	Logger::sharding(Logger::Detail, "NodeAggregator(opid=%s)| sending request(%s) to nodes %s and aggregating response(%s). Consumer is %s. ExpectResponse(%s)"
+			, NodeOperationId(ShardManager::getCurrentNodeId(), this->getOperationId()).toString().c_str()
+			, getShardingMessageTypeStr(request->messageType()), this->participants.at(0).toString().c_str(),
+			getShardingMessageTypeStr(resType), consumer == NULL ? "NULL" : consumer->getName().c_str(), expectResponse ? "YES" : "NO");
 }
 
 ConcurrentNotifOperation::ConcurrentNotifOperation(SP(ShardingNotification) request,
@@ -27,21 +31,37 @@ ConcurrentNotifOperation::ConcurrentNotifOperation(SP(ShardingNotification) requ
 		vector<NodeId> participants,
 		NodeIteratorListenerInterface * consumer , bool expectResponse):
 			OperationState(this->getNextOperationId()),resType(resType), expectResponse(expectResponse){
+	stringstream ss;
 	for(unsigned p = 0 ; p < participants.size(); p++){
+		if(p != 0){
+			ss << " | ";
+		}
 		this->participants.push_back(NodeOperationId(participants.at(p)));
 		this->requests.push_back(request);
+		ss << NodeOperationId(participants.at(p)).toString();
 	}
 	this->consumer = consumer;
+	Logger::sharding(Logger::Detail, "NodeAggregator(opid=%s)| Sending %s to %s . Consumer is %s. ExpectResponse(%s)"
+			, NodeOperationId(ShardManager::getCurrentNodeId(), this->getOperationId()).toString().c_str()
+			, getShardingMessageTypeStr(request->messageType()), ss.str().c_str(),  consumer == NULL ? "NULL" : consumer->getName().c_str(), expectResponse ? "YES" : "NO");
 }
 ConcurrentNotifOperation::ConcurrentNotifOperation(ShardingMessageType resType,
 		vector<std::pair<SP(ShardingNotification) , NodeId> > participants,
 		NodeIteratorListenerInterface * consumer , bool expectResponse ):
 			OperationState(this->getNextOperationId()),resType(resType), expectResponse(expectResponse){
+	stringstream ss;
 	for(unsigned p = 0 ; p < participants.size(); p++){
+		if(p != 0){
+			ss << " | ";
+		}
 		this->participants.push_back(NodeOperationId(participants.at(p).second));
 		this->requests.push_back(participants.at(p).first);
+		ss << NodeOperationId(participants.at(p).second).toString() << " to " << getShardingMessageTypeStr(participants.at(p).first->messageType()) ;
 	}
 	this->consumer = consumer;
+	Logger::sharding(Logger::Detail, "NodeAggregator(opid=%s)| Sending %s . Consumer is %s. ExpectResponse(%s)"
+			, NodeOperationId(ShardManager::getCurrentNodeId(), this->getOperationId()).toString().c_str()
+			,ss.str().c_str(),  consumer == NULL ? "NULL" : consumer->getName().c_str(), expectResponse ? "YES" : "NO");
 };
 
 ConcurrentNotifOperation::~ConcurrentNotifOperation(){
@@ -61,18 +81,8 @@ Transaction * ConcurrentNotifOperation::getTransaction(){
 }
 
 OperationState * ConcurrentNotifOperation::entry(){
-    Logger::debug("STEP : concurrent notif operation entry ...");
-    stringstream ss;
-    ss << "Participants : ";
-    for(unsigned p = 0 ; p < this->participants.size(); ++p){
-        ss << this->participants.at(p).toString() << " - ";
-    }
-    if(! this->expectResponse){
-        ss << "W/O response.";
-    }else{
-        ss << "W response." ;
-    }
-    Logger::debug("DETAILS : concurrent notif operation %s" , ss.str().c_str());
+	__FUNC_LINE__
+	Logger::sharding(Logger::Detail, "NodeAggregator| entry");
 
 	if(this->participants.size() == 0){
 		return finalize();
@@ -118,6 +128,8 @@ OperationState * ConcurrentNotifOperation::handle(SP(NodeFailureNotification)  n
 
 	if(consumer != NULL){
 		if(consumer->shouldAbort(failedNode)){
+			Logger::sharding(Logger::Detail, "NodeAggregator(opid=%s)| consumer(%s) asked for abort due to node failure."
+					, NodeOperationId(ShardManager::getCurrentNodeId(), this->getOperationId()).toString().c_str(), consumer->getName().c_str());
 			return NULL;
 		}
 	}
@@ -132,6 +144,8 @@ OperationState * ConcurrentNotifOperation::handle(SP(NodeFailureNotification)  n
 		}
 	}
 	if(checkFinished()){
+		Logger::sharding(Logger::Detail, "NodeAggregator(opid=%s)| terminated due to node failure."
+				, NodeOperationId(ShardManager::getCurrentNodeId(), this->getOperationId()).toString().c_str());
 		return finalize();
 	}
 	return this;
@@ -166,7 +180,7 @@ string ConcurrentNotifOperation::getOperationStatus() const {
 
 OperationState * ConcurrentNotifOperation::finalize(){
 
-    Logger::debug("STEP : concurrent notif operation is finilizing. Consumer %s null" , (consumer == NULL ? "==" : "!="));
+	Logger::sharding(Logger::Detail, "NodeAggregator(opid=%s)| Done." , NodeOperationId(ShardManager::getCurrentNodeId(), this->getOperationId()).toString().c_str());
     if(consumer == NULL){
 		return NULL;
 	}

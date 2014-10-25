@@ -66,6 +66,7 @@ public:
 
 	void finalize();
 
+	string getName() const {return "load-balancer";};
 
 private:
 	enum CurrentOperationType{
