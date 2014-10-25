@@ -69,7 +69,7 @@ unsigned ResourceMetadataManager::applyAndCommit(MetadataChange * metadataChange
 		return 0;
 	}
 	metadataChange->doChange(writeview);
-    Logger::debug("DETAILS : Applying the change : %s", metadataChange->toString().c_str() );
+    Logger::sharding(Logger::Detail, "MetadataManager| Applying the change : %s", metadataChange->toString().c_str() );
 	this->commitClusterMetadata(writeview->getNewReadview());
 	return writeview->versionId - 1;
 }

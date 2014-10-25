@@ -87,7 +87,7 @@ Transaction * AtomicMetadataCommit::getTransaction(){
 }
 
 void AtomicMetadataCommit::produce(){
-    Logger::debug("STEP : Atomic Metadata Commit : starting ...");
+    Logger::sharding(Logger::Detail, "Atomic Metadata Commit : starting ...");
     if(participants.size() == 0){
         // no participant exists
         finalize(true);
@@ -110,7 +110,7 @@ void AtomicMetadataCommit::produce(){
 
 void AtomicMetadataCommit::lock(){
 	this->currentAction = "lock";
-    Logger::debug("STEP : Atomic Metadata Commit : locking ...");
+    Logger::sharding(Logger::Detail, "Atomic Metadata Commit : locking ...");
 	atomicLock->produce();
 }
 
@@ -132,7 +132,7 @@ void AtomicMetadataCommit::consume(bool granted){
 
 void AtomicMetadataCommit::commit(){
 
-    Logger::debug("STEP : Atomic Metadata Commit : committing the change on all metadatas ...");
+    Logger::sharding(Logger::Detail, "Atomic Metadata Commit : committing the change on all metadatas ...");
 
 	commitNotification = SP(CommitNotification)(new CommitNotification( metadataChange ));
 
@@ -177,7 +177,7 @@ void AtomicMetadataCommit::release(){
 		return;
 	}
 	this->currentAction = "release";
-    Logger::debug("STEP : Atomic Metadata Commit : releasing locks ...");
+    Logger::sharding(Logger::Detail, "Atomic Metadata Commit : releasing locks ...");
 	atomicRelease->produce();
 }
 

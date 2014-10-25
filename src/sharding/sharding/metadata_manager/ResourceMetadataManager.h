@@ -36,7 +36,7 @@ public:
 			ASSERT(false);
 			return;
 		}
-	    Logger::debug("STEP : Applying the commitNotifcation coming from operation %s ...", commitNotification->getSrc().toString().c_str());
+	    Logger::sharding(Logger::Step, "MetadataManager| Applying the commitNotifcation coming from operation %s.", commitNotification->getSrc().toString().c_str());
 		applyAndCommit(commitNotification->getMetadataChange());
 		// reply ack
 		SP(CommitNotification::ACK) ack = ShardingNotification::create<CommitNotification::ACK>();

@@ -268,12 +268,12 @@ void ShardManager::nodesInfo(evhttp_request *req){
 bool ShardManager::handleBouncing(SP(ShardingNotification) notif){
 	if(notif->isBounced()){
 		saveBouncedNotification(notif);
-		Logger::debug("==> Bounced.");
+		Logger::sharding(Logger::Detail, "SHM| Bounced notification received and saved.");
 		return true;
 	}
 	if(! isJoined()){
 		bounceNotification(notif);
-		Logger::debug("==> Not joined yet. Bounced.");
+		Logger::sharding(Logger::Detail, "SHM| Not joined yet. Notification bounced.");
 		return true;
 	}
 	return false;
@@ -293,8 +293,8 @@ bool ShardManager::resolveMessage(Message * msg, NodeId senderNode){
 	// if a node fails, we don't accept any more messages from it.
 	if(writeview->nodes.find(senderNode) != writeview->nodes.end() &&
 			writeview->nodes[senderNode].first == ShardingNodeStateFailed){
-		Logger::debug("!!! Warning: Message with type %s was", msg->getDescription().c_str());
-		Logger::debug("ignored because source node had failed before.!!!");
+		Logger::sharding(Logger::Error, "SHM| !!! Warning: Message with type %s was", msg->getDescription().c_str());
+		Logger::sharding(Logger::Error, "     ignored because source node had failed before.!!!");
 		return true;
 	}
 //	Logger::debug("SHM | Type :  %s , MsgID : %d . Going to be processed ...", msg->getDescription().c_str() , msg->getMessageId());
@@ -358,13 +358,13 @@ bool ShardManager::resolveMessage(Message * msg, NodeId senderNode){
 
 	if(bounced){
 		if(! handleBouncing(notif)){
-			Logger::debug("SHM | Bounced notification saved to be sent again later. Notification : %s", notif->getDescription().c_str());
+			Logger::sharding(Logger::Detail, "SHM| Bounced notification saved to be sent again later. Notification : %s", notif->getDescription().c_str());
 			return true;
 		}
 	}
 
 	if(! notif->resolveNotification(notif)){
-		Logger::debug("SHM | Notification resolve returned false : %s", notif->getDescription().c_str());
+		Logger::sharding(Logger::Detail, "SHM| Notification resolve returned false : %s", notif->getDescription().c_str());
 	}
 
 //	Logger::debug("SHM | Type :  %s , MsgID : %d . Processed.", msg->getDescription().c_str() , msg->getMessageId());
@@ -375,9 +375,9 @@ bool ShardManager::resolveMessage(Message * msg, NodeId senderNode){
 void * ShardManager::resolveReadviewRelease_ThreadChange(void * vidPtr){
 	unsigned metadataVersion = *(unsigned *)vidPtr;
 	delete (unsigned *)vidPtr;
-	Logger::debug("DP | Metadata release VID=%d", metadataVersion);
+	Logger::sharding(Logger::Detail, "SHM| Metadata release VID=%d", metadataVersion);
 	ShardManager::getShardManager()->_getLockManager()->resolve(metadataVersion);
-	Logger::debug("DP | Metadata release VID=%d processed.", metadataVersion);
+	Logger::sharding(Logger::Detail, "SHM| Metadata release VID=%d processed.", metadataVersion);
 
 //    cout << "Shard Manager status after receiving RV release, vid = " << metadataVersion << endl;
 //    ShardManager::getShardManager()->print();
@@ -388,7 +388,7 @@ void * ShardManager::resolveReadviewRelease_ThreadChange(void * vidPtr){
 
 void ShardManager::resolveMMNotification(const ShardMigrationStatus & migrationStatus){
 
-	Logger::debug("MM | (%d => %d) was %s", migrationStatus.sourceNodeId, migrationStatus.destinationNodeId,
+	Logger::sharding(Logger::Detail, "SHM| MM (%d => %d) was %s", migrationStatus.sourceNodeId, migrationStatus.destinationNodeId,
 			(migrationStatus.status == MM_STATUS_SUCCESS)? "Done."  : "Failed.");
 	boost::unique_lock<boost::mutex> shardManagerGlobalLock(shardManagerGlobalMutex);
 
@@ -402,7 +402,7 @@ void ShardManager::resolveMMNotification(const ShardMigrationStatus & migrationS
 	}
 	mmSessionListeners.erase(mmSessionListeners.find(migrationStatus.srcOperationId));
 
-	Logger::debug("MM | (%d => %d) was %s Processed.", migrationStatus.sourceNodeId, migrationStatus.destinationNodeId,
+	Logger::sharding(Logger::Detail, "SHM| MM (%d => %d) was %s Processed.", migrationStatus.sourceNodeId, migrationStatus.destinationNodeId,
 			(migrationStatus.status == MM_STATUS_SUCCESS)? "Done."  : "Failed.");
 //    cout << "Shard Manager status after receiving migration manager notification:" << endl;
 //    ShardManager::getShardManager()->print();
@@ -422,18 +422,18 @@ void ShardManager::registerMMSessionListener(const unsigned operationId, Consume
 }
 
 void ShardManager::resolveSMNodeArrival(const Node & newNode){
-	Logger::debug("SM | Node %d arrival.", newNode.getId());
+	Logger::sharding(Logger::Detail, "SHM| SM Node %d arrival.", newNode.getId());
     boost::unique_lock<boost::mutex> shardManagerGlobalLock(shardManagerGlobalMutex);
     Cluster_Writeview * writeview = this->getWriteview();
     writeview->addNode(newNode);
-	Logger::debug("SM | Node %d arrival. Processed.", newNode.getId());
+	Logger::sharding(Logger::Detail, "SHM| SM Node %d arrival. Processed.", newNode.getId());
 //    cout << "Shard Manager status after arrival of node " << newNode.getId() << ":" << endl;
 //    ShardManager::getShardManager()->print();
 //    cout << "======================================================================" << endl;
 }
 
 void ShardManager::resolveSMNodeFailure(const NodeId failedNodeId){
-	Logger::debug("Node %d failure.", failedNodeId);
+	Logger::sharding(Logger::Detail, "SHM| SM Node %d failure.", failedNodeId);
 	boost::unique_lock<boost::mutex> shardManagerGlobalLock(shardManagerGlobalMutex);
 	SP(Notification) nodeFailureNotif(new NodeFailureNotification(failedNodeId));
 	// 1. metadata manager
@@ -442,7 +442,7 @@ void ShardManager::resolveSMNodeFailure(const NodeId failedNodeId){
 	this->_lockManager->resolveNodeFailure(failedNodeId);
 	// 3. state machine
 	this->stateMachine->handle(nodeFailureNotif);
-	Logger::debug("Node %d failure. Processed.", failedNodeId);
+	Logger::sharding(Logger::Detail, "SHM| SM Node %d failure. Processed.", failedNodeId);
 
 }
 
@@ -463,6 +463,7 @@ bool ShardManager::resolveLocal(SP(ShardingNotification) request){
     if (pthread_create(&localThread, NULL, _resolveLocal , args) != 0){
         // Logger::console("Cannot create thread for handling local message");
         perror("Cannot create thread for handling local message");
+        Logger::sharding(Logger::Error, "SHM| Cannot create thread for handling local message");
         return false;
     }
     pthread_detach(localThread);
@@ -475,7 +476,7 @@ void * ShardManager::_resolveLocal(void * _args){
 	SP(ShardingNotification) request = args->notif;
 	delete args;
 	if(! request->resolveNotification(request)){
-		Logger::debug("SHM | Notification resolve returned false : %s", request->getDescription().c_str());
+		Logger::sharding(Logger::Detail, "SHM| Notification resolve returned false : %s", request->getDescription().c_str());
 	}
 	return NULL;
 }
