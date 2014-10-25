@@ -175,7 +175,7 @@ pthread_t * ShardManager::getLoadbalancingThread() {
 void ShardManager::print(){
 	metadataManager->print();
 
-//	lockManager->print(); //TODO
+	_lockManager->print(); //TODO
 
 	stateMachine->print();
 

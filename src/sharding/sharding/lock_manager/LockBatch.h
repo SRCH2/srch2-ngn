@@ -167,6 +167,39 @@ public:
 		return numberOfBytes;
 	}
 
+	void print(const string & tableName){
+
+		vector<string> colomnHeaders;
+		colomnHeaders.push_back("Lock holders");
+		vector<string> labels;
+		for(typename map<Resource, vector<pair<NodeOperationId, LockLevel> > >::const_iterator
+				resItr = grantedLocks.begin(); resItr != grantedLocks.end(); ++resItr){
+			if(resItr->second.size() > 0){
+				labels.push_back(_toString(resItr->first));
+			}
+		}
+		if(labels.size() == 0){
+			cout << tableName << " is empty." << endl;
+		}
+		srch2::util::TableFormatPrinter lockTable(tableName, 120, colomnHeaders, labels );
+		lockTable.printColumnHeaders();
+		lockTable.startFilling();
+		for(typename map<Resource, vector<pair<NodeOperationId, LockLevel> > >::const_iterator
+				resItr = grantedLocks.begin(); resItr != grantedLocks.end(); ++resItr){
+			if(resItr->second.size() == 0){
+				continue;
+			}
+			stringstream ss;
+			for(unsigned i = 0; i < resItr->second.size(); ++i){
+				if(i != 0){
+					ss << " ==|== ";
+				}
+				ss << resItr->second.at(i).first.toString() << "=" << resItr->second.at(i).second ;
+			}
+			lockTable.printNextCell(ss.str());
+		}
+	}
+
 private:
 	map<Resource, vector<pair<NodeOperationId, LockLevel> > > grantedLocks;
 	bool conflict(const LockLevel & level1, const LockLevel & level2){
@@ -201,6 +234,12 @@ private:
 	unsigned getNumberOfBytes(const ClusterShardId & shardId) const{
 		return shardId.getNumberOfBytes();
 	}
+	string _toString(const ClusterShardId & id){
+		return id.toString();
+	}
+	string _toString(const string & resource){
+		return resource;
+	}
 };
 
 
@@ -234,29 +273,86 @@ public:
 
 	bool update(const NodeId & failedNode);
 
-	string toString(){
-	    stringstream ss;
-	    ss << "B(" << blocking << "), R(" << release << "), I(" << incremental << "), batchType(";
+	string getBatchTypeStr() const {
+		stringstream ss;
 	    switch(batchType){
 	    case LockRequestType_Copy:
-	        ss << "copy), ";
+	        ss << "copy";
 	        break;
 	    case LockRequestType_Move:
-            ss << "move), ";
+            ss << "move";
             break;
 	    case LockRequestType_Metadata:
-            ss << "metadata), ";
+            ss << "metadata";
             break;
 	    case LockRequestType_PrimaryKey:
-            ss << "pk), ";
+            ss << "pk";
             break;
 	    case LockRequestType_GeneralPurpose:
-            ss << "gen-purpose), ";
+            ss << "gen-purpose";
             break;
 	    case LockRequestType_ShardIdList:
-            ss << "shard-list), ";
+            ss << "shard-list";
             break;
 	    }
+	    return ss.str();
+	}
+
+	string getLockHoldersStr() const{
+		stringstream ss;
+		for(unsigned i = 0 ; i < opIds.size(); ++i){
+			if(i != 0){
+				ss << " - ";
+			}
+			ss << opIds.at(i).toString();
+		}
+		return ss.str();
+	}
+	string getResourceStr() const{
+	    stringstream ss;
+        switch(batchType){
+        case LockRequestType_Copy:
+        case LockRequestType_Move:
+        case LockRequestType_GeneralPurpose:
+        case LockRequestType_ShardIdList:
+            {
+                for(unsigned i = 0 ; i < tokens.size(); ++i){
+                    ss << tokens.at(i).first.toString() << "/";
+                    if(tokens.at(i).second == LockLevel_S){
+                        ss << "S%";
+                    }else{
+                        ss << "X%";
+                    }
+                }
+                break;
+            }
+        case LockRequestType_Metadata:
+            ss << "metadata";
+            if(metadataLockLevel == LockLevel_S){
+                ss << "S%";
+            }else{
+                ss << "X%";
+            }
+            break;
+        case LockRequestType_PrimaryKey:
+        	ss << "PK%";
+            break;
+        }
+        return ss.str();
+	}
+
+	string getExtraInfoStr() const{
+		stringstream ss;
+		ss << "b:" << blocking << "|";
+		ss << "r:" << release << "|";
+		ss << "i:" << incremental << "|";
+		ss << "v:" << versionId << "|";
+		return ss.str();
+	}
+
+	string toString(){
+	    stringstream ss;
+	    ss << "B(" << blocking << "), R(" << release << "), I(" << incremental << "), batchType(" << getBatchTypeStr() << "), ";
         switch(batchType){
         case LockRequestType_Copy:
         case LockRequestType_Move:

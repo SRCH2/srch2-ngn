@@ -25,6 +25,7 @@ void LockManager::resolve(SP(LockingNotification)  notif){
 	}
 	LockBatch * lockBatch = LockBatch::generateLockBatch(notif);
 	resolve(lockBatch);
+//	print();
 }
 
 void LockManager::resolve(const unsigned readviewReleasedVersion){
@@ -170,8 +171,8 @@ void LockManager::resolveRelease(LockBatch * lockBatch){
 			for(lockBatch->lastGrantedItemIndex = 0 ;
 					lockBatch->lastGrantedItemIndex < lockBatch->tokens.size(); ++ lockBatch->lastGrantedItemIndex){
 				for(unsigned i = 0 ;i < lockBatch->opIds.size(); ++i){
-					releaseHappened = releaseHappened ||
-							clusterShardLocks.release(lockBatch->tokens.at(lockBatch->lastGrantedItemIndex).first , lockBatch->opIds.at(i));
+					bool relHap = clusterShardLocks.release(lockBatch->tokens.at(lockBatch->lastGrantedItemIndex).first , lockBatch->opIds.at(i));
+					releaseHappened = releaseHappened || relHap;
 				}
 			}
 			break;
@@ -179,8 +180,8 @@ void LockManager::resolveRelease(LockBatch * lockBatch){
 		case LockRequestType_Metadata:
 		{
 			for(unsigned i = 0 ;i < lockBatch->opIds.size(); ++i){
-				releaseHappened = releaseHappened ||
-						allNodeSharedInfo.release(metadataResourceName , lockBatch->opIds.at(i));
+				bool relHap = allNodeSharedInfo.release(metadataResourceName , lockBatch->opIds.at(i));
+				releaseHappened = releaseHappened || relHap;
 			}
 			break;
 		}
@@ -189,8 +190,8 @@ void LockManager::resolveRelease(LockBatch * lockBatch){
 			for(lockBatch->lastGrantedItemIndex = 0 ;
 					lockBatch->lastGrantedItemIndex < lockBatch->pkTokens.size(); ++ lockBatch->lastGrantedItemIndex){
 				for(unsigned i = 0 ;i < lockBatch->opIds.size(); ++i){
-					releaseHappened = releaseHappened ||
-							primaryKeyLocks.release(lockBatch->pkTokens.at(lockBatch->lastGrantedItemIndex).first , lockBatch->opIds.at(i));
+					bool relHap = primaryKeyLocks.release(lockBatch->pkTokens.at(lockBatch->lastGrantedItemIndex).first , lockBatch->opIds.at(i));
+					releaseHappened = releaseHappened || relHap;
 				}
 			}
 			break;
@@ -438,6 +439,70 @@ void LockManager::initialize(){
     for(map<NodeId, std::pair<ShardingNodeState, Node *> >::iterator nodeItr = nodes.begin(); nodeItr != nodes.end(); ++nodeItr){
         setNodePassedInitialization(nodeItr->second.second->getId());
     }
+}
+
+void LockManager::print(){
+
+	cout << "**************************************************************************************************" << endl;
+	cout << "LockManager : " << endl;
+	cout << "**************************************************************************************************" << endl;
+
+	// print pending lock requests
+	printPendingRequests(pendingLockBatches, "Pending Lock %Requests");
+
+	//  print rv pending lock requests
+	printRVPendingRequests();
+
+	// print cluster shard locks
+	printClusterShardIdLocks();
+
+	// print metadata locks
+	printMetadataLocks();
+
+
+}
+
+
+void LockManager::printPendingRequests(const vector<LockBatch *> & pendingLockBatches, const string & tableName) const{
+	if(pendingLockBatches.empty()){
+		return;
+	}
+	vector<string> colomnHeaders;
+	colomnHeaders.push_back("bach type");
+	colomnHeaders.push_back("lock holders");
+	colomnHeaders.push_back("resource/lock level");
+	colomnHeaders.push_back("blocking%release%incremental%versionId");
+
+	vector<string> labels;
+	for(unsigned i = 0; i < pendingLockBatches.size(); ++i){
+		labels.push_back(pendingLockBatches.at(i)->ack->getDest().toString());
+	}
+
+	srch2::util::TableFormatPrinter reqTable(tableName, 120, colomnHeaders, labels );
+	reqTable.printColumnHeaders();
+	reqTable.startFilling();
+	for(unsigned i = 0; i < pendingLockBatches.size(); ++i){
+		LockBatch * lb = pendingLockBatches.at(i);
+		reqTable.printNextCell(lb->getBatchTypeStr());
+		reqTable.printNextCell(lb->getLockHoldersStr());
+		reqTable.printNextCell(lb->getResourceStr());
+		reqTable.printNextCell(lb->getExtraInfoStr());
+	}
+
+}
+
+void LockManager::printRVPendingRequests(){
+	readviewReleaseMutex.lock();
+	printPendingRequests(rvReleasePendingLockBatches, "RV Release %pending Requests");
+	readviewReleaseMutex.unlock();
+}
+
+void LockManager::printClusterShardIdLocks(){
+	clusterShardLocks.print("ClusterShard Locks");
+}
+
+void LockManager::printMetadataLocks(){
+	allNodeSharedInfo.print("Metadata locks");
 }
 
 }

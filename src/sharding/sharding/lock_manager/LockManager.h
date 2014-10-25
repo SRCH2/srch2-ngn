@@ -36,8 +36,17 @@ public:
 	void getLockedPartitions(vector<ClusterPID> & lockedPartitions);
 	void setNodePassedInitialization(const NodeId & nodeId);
 	void initialize();
+	void print();
 private:
 
+
+	void printPendingRequests(const vector<LockBatch *> & pendingLockBatches, const string & tableName) const;
+
+	void printRVPendingRequests();
+
+	void printClusterShardIdLocks();
+
+	void printMetadataLocks();
 
 
 	bool canAcquireAllBatch(LockBatch * lockBatch);
