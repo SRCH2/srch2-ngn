@@ -156,7 +156,7 @@ void ShardMoveOperation::commit(){
 	// prepare the shard change
 	ShardMoveChange * shardMoveChange = new ShardMoveChange(shardId, srcAddress.nodeId, ShardManager::getCurrentNodeId());
 	shardMoveChange->setPhysicalShard(physicalShard);
-	committer = new AtomicMetadataCommit(vector<NodeId>(), shardMoveChange, this);
+	committer = new AtomicMetadataCommit(vector<NodeId>(), shardMoveChange, this, true);
 	this->currentOp = Commit;
 	committer->produce();
 }
