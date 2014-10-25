@@ -62,7 +62,7 @@
         <multiple-data-file>json1.json,json2.json</multiple-data-file>
         <coreId>1</coreId>
         <core-number_of_shards>4</core-number_of_shards> 
-	<core-number_of_replicas>0</core-number_of_replicas>
+	<core-number_of_replicas>2</core-number_of_replicas>
 
     <!--
         Index Directoy Path
