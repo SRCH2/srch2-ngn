@@ -105,7 +105,7 @@ void LockManager::resolve(LockBatch * lockBatch){
 
 
 void LockManager::resolveLock(LockBatch * lockBatch){
-    Logger::debug("STEP :  Lock Manager : resolving lock request : ", lockBatch->toString().c_str());
+    Logger::debug("STEP :  Lock Manager : resolving lock request : %s", lockBatch->toString().c_str());
 	if(lockBatch->release){
 		ASSERT(false);
 		finalize(lockBatch, false);
