@@ -109,7 +109,9 @@ public:
 	void getAllLockedResource(vector<Resource> & allResources) const{
 		for(typename map<Resource, vector<pair<NodeOperationId, LockLevel> > >::const_iterator
 				resItr = grantedLocks.begin(); resItr != grantedLocks.end(); ++resItr){
-			allResources.push_back(resItr->first);
+			if(resItr->second.size() > 0){
+				allResources.push_back(resItr->first);
+			}
 		}
 	}
 
