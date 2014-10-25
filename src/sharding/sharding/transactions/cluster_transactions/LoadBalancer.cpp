@@ -404,8 +404,17 @@ void LoadBalancer::prepareMoveCandidates(vector<std::pair<NodeId, ClusterShardId
 		candidates.push_back(std::make_pair(nodeId, id));
 	}
 
+
+
 	for(unsigned i = 0 ; i < candidates.size(); ++i){
-		if(partitionNumberOfReadyReplicas[candidates.at(i).second.getPartitionId()] >= 2){
+	    if(writeview->cores.find(candidates.at(i).second.getPartitionId().coreId) == writeview->cores.end()){
+	        continue;
+	    }
+	    unsigned limit = 1;
+	    if(writeview->cores.find(candidates.at(i).second.getPartitionId().coreId)->second->getNumberOfReplicas() > 1){
+	        limit = 2;
+	    }
+		if(partitionNumberOfReadyReplicas[candidates.at(i).second.getPartitionId()] >= limit){
 			if(partitionHasReplicaOnCurrentNode.count(candidates.at(i).second.getPartitionId()) == 0){
 				candidateSrcShards.push_back(candidates.at(i));
 			}

@@ -39,7 +39,7 @@ public:
 	bool shouldAbort(const NodeId & failedNode);
 
 	// for transfer
-	void receiveStatus(const ShardMigrationStatus & status);
+	void consume(const ShardMigrationStatus & status);
 
 	// **** If transfer was successful
 	void commit();
@@ -50,6 +50,8 @@ public:
 	void release();
 	// if data transfer was successful
 	void cleanup();
+
+	void end(map<NodeId, SP(ShardingNotification) > & replies);
 
 	void finalize();
 
@@ -70,6 +72,9 @@ private:
 	CurrentOperation currentOp;
 
 	bool successFlag;
+
+	bool transferAckReceived;
+	ShardMigrationStatus transferStatus;
 
 	LocalPhysicalShard physicalShard;
 

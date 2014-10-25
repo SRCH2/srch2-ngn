@@ -27,7 +27,7 @@ ShardMoveOperation::ShardMoveOperation(const NodeId & srcNodeId,
 	this->locker = NULL;
 	this->releaser = NULL;
 	this->committer = NULL;
-
+	this->transferAckReceived = false;
 	this->currentOp = PreStart;
 }
 
@@ -116,6 +116,19 @@ void ShardMoveOperation::transfer(){
 	this->currentOp = Transfer;
 	ShardManager::getShardManager()->getStateMachine()->registerOperation(copyer);
 }
+
+
+void ShardMoveOperation::end(map<NodeId, SP(ShardingNotification) > & replies){
+    if(this->currentOp == Transfer){
+        if(transferAckReceived){
+           consume(transferStatus);
+        }else{
+            transferAckReceived = true;
+        }
+    }
+}
+
+
 // if returns true, operation must stop and return null to state_machine
 bool ShardMoveOperation::shouldAbort(const NodeId & failedNode){
 	if(this->currentOp == Transfer){
@@ -131,24 +144,29 @@ bool ShardMoveOperation::shouldAbort(const NodeId & failedNode){
 }
 
 // for transfer
-void ShardMoveOperation::receiveStatus(const ShardMigrationStatus & status){
+void ShardMoveOperation::consume(const ShardMigrationStatus & status){
 	// failed or succeed?
-	if(status.status == MM_STATUS_FAILURE){
-		this->successFlag = false;
-		release();
-	}else if(status.status == MM_STATUS_SUCCESS){
-		Cluster_Writeview * writeview = ShardManager::getWriteview();
+    if(! transferAckReceived){
+        transferAckReceived = true;
+        transferStatus = status;
+    }else{
+        if(status.status == MM_STATUS_FAILURE){
+            this->successFlag = false;
+            release();
+        }else if(status.status == MM_STATUS_SUCCESS){
+            Cluster_Writeview * writeview = ShardManager::getWriteview();
 
-		string indexDirectory = ShardManager::getShardManager()->getConfigManager()->getShardDir(writeview->clusterName,
-				writeview->cores[shardId.coreId]->getName(), &shardId);
-		if(indexDirectory.compare("") == 0){
-			indexDirectory = ShardManager::getShardManager()->getConfigManager()->createShardDir(writeview->clusterName,
-					writeview->cores[shardId.coreId]->getName(), &shardId);
-		}
+            string indexDirectory = ShardManager::getShardManager()->getConfigManager()->getShardDir(writeview->clusterName,
+                    writeview->cores[shardId.coreId]->getName(), &shardId);
+            if(indexDirectory.compare("") == 0){
+                indexDirectory = ShardManager::getShardManager()->getConfigManager()->createShardDir(writeview->clusterName,
+                        writeview->cores[shardId.coreId]->getName(), &shardId);
+            }
 
-		physicalShard = LocalPhysicalShard(status.shard, indexDirectory, "");
-		return commit();
-	}
+            physicalShard = LocalPhysicalShard(status.shard, indexDirectory, "");
+            commit();
+        }
+    }
 }
 
 // **** If transfer was successful
@@ -175,10 +193,11 @@ void ShardMoveOperation::cleanup(){
 	cleaupNotif = SP(MoveToMeNotification::CleanUp)(new MoveToMeNotification::CleanUp(shardId));
 
 	// NOTE : this is deallocated by the state machine
-	ConcurrentNotifOperation * cleaner = new ConcurrentNotifOperation(cleaupNotif, NULLType, srcAddress.nodeId , NULL, false);
+	ConcurrentNotifOperation * cleaner = new ConcurrentNotifOperation(cleaupNotif, NULLType, srcAddress.nodeId, NULL, false);
 	// 2. send the cleanup command to the srcNode to remove the backed up data shard
 	this->currentOp = Cleanup;
 	ShardManager::getShardManager()->getStateMachine()->registerOperation(cleaner);
+	finalize();
 }
 
 void ShardMoveOperation::finalize(){ // ***** END *****
