@@ -36,7 +36,7 @@ public:
 	void consume(bool granted);
 	// ** if (granted)
 	void transfer(); // : requires receiving a call to our callback registered in state-machine to get MM messages
-	void end(map<NodeId, ShardingNotification * > & replies);
+	void end(map<NodeId, SP(ShardingNotification) > & replies);
 	// if returns true, operation must stop and return null to state_machine
 	bool shouldAbort(const NodeId & failedNode);
 	// coming back from transfer
@@ -52,6 +52,9 @@ private:
 	const ClusterShardId unassignedShardId;
 	const ClusterShardId replicaShardId;
 	const NodeId srcNodeId;
+
+	bool transferAckReceived;
+	ShardMigrationStatus transferStatus;
 
 	string currentAction;
 	AtomicLock * locker;
