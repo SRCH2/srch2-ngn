@@ -27,6 +27,10 @@ bool CopyToMeNotification::resolveNotification(SP(ShardingNotification) _copyNot
 			replicaShardId, writeview->localClusterDataShards.at(replicaShardId).server, unassignedShardId,
 			copyNotif->getDest(), copyNotif->getSrc());
 
+	SP(CopyToMeNotification::ACK) ack = ShardingNotification::create<CopyToMeNotification::ACK>();
+	ack->setSrc(copyNotif->getDest());
+	ack->setDest(copyNotif->getSrc());
+	ShardingNotification::send(ack);
 	return true;
 }
 
@@ -59,6 +63,10 @@ bool CopyToMeNotification::operator==(const CopyToMeNotification & right){
 	return replicaShardId == right.replicaShardId && unassignedShardId == right.unassignedShardId;
 }
 
+bool CopyToMeNotification::ACK::resolveNotification(SP(ShardingNotification) _notif){
+	ShardManager::getShardManager()->getStateMachine()->handle(_notif);
+	return true;
+}
 
 bool LoadBalancingReport::resolveNotification(SP(ShardingNotification) _notif){
 	ShardManager::getShardManager()->getStateMachine()->handle(_notif);

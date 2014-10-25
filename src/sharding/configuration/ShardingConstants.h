@@ -64,6 +64,7 @@ enum ShardingMessageType{
     ShardingLoadBalancingReportMessageType,
     ShardingLoadBalancingReportRequestMessageType,
     ShardingCopyToMeMessageType,
+    ShardingCopyToMeACKMessageType,
     ShardingShardCommandMessageType,
 
     ShardingCommitMessageType,
