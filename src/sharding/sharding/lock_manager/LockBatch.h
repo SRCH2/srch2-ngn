@@ -284,6 +284,7 @@ public:
         case LockRequestType_PrimaryKey:
             break;
         }
+        return ss.str();
 	}
 
 	static LockBatch * generateLockBatch(SP(LockingNotification) notif);
