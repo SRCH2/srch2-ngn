@@ -54,7 +54,7 @@ void ShardMoveOperation::produce(){
 
 
 void ShardMoveOperation::lock(){ // **** START ****
-	this->locker = new AtomicLock(shardId, srcAddress, currentOpId, this);
+	this->locker = new AtomicLock(shardId, currentOpId, LockLevel_X, this);
 	// locker calls all methods of LockResultCallbackInterface from us
 	this->releaser = new AtomicRelease(shardId, currentOpId, this); // we only release out lock, srcAddress lock is released when we ask for cleanup
 	// releaser calls all methods of BooleanCallbackInterface from us

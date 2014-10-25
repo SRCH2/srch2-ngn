@@ -58,7 +58,7 @@ AtomicRelease::AtomicRelease(const ClusterShardId & shardId, const NodeOperation
 		ConsumerInterface * consumer): ProducerInterface(consumer){
 
 	// prepare the locker and locking notification
-	this->releaseNotification = SP(LockingNotification)(new LockingNotification(shardId, agent, true));
+	this->releaseNotification = SP(LockingNotification)(new LockingNotification(shardId, agent));
 	this->lockType = LockRequestType_GeneralPurpose;
 	this->finalizeFlag = false;
 	init();
