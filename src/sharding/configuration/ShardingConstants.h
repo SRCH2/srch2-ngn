@@ -262,6 +262,8 @@ enum ShardingTransactionType{
 	ShardingTransactionType_Shutdown
 };
 
+const char * getTransTypeStr(ShardingTransactionType type);
+
 
 typedef unsigned TRANS_ID;
 const TRANS_ID TRANS_ID_NULL = 0;

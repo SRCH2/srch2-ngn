@@ -19,7 +19,10 @@ Transaction::Transaction():transactionId(OperationState::getNextOperationId()){
 }
 
 Transaction::~Transaction(){
-    __FUNC_LINE__
+//	if(this->getTransactionType() != ShardingTransactionType_Loadbalancing){
+//		__FUNC_LINE__
+//		Logger::sharding(Logger::Step, "Deallocating transaction.");
+//	}
 	delete session;
 }
 
@@ -27,6 +30,9 @@ void Transaction::startTransaction(Transaction * trans){
 	if(trans == NULL){
 		ASSERT(false);
 		return;
+	}
+	if(trans->getTransactionType() != ShardingTransactionType_Loadbalancing){
+		Logger::sharding(Logger::Step, "Starting transaction %s", getTransTypeStr(trans->getTransactionType()));
 	}
 	if(! trans->run() || ! trans->isAttached()){
 		__FUNC_LINE__

@@ -43,6 +43,21 @@ const char * getShardingMessageTypeStr(ShardingMessageType shardingMessageType){
 	   return "";
 }
 
+const char * getTransTypeStr(ShardingTransactionType type){
+	switch (type) {
+		case ShardingTransactionType_Loadbalancing:
+			return "load-balancer";
+		case ShardingTransactionType_NodeJoin:
+			return "node-joiner";
+		case ShardingTransactionType_ShardCommandCode:
+			return "shard-command";
+		case ShardingTransactionType_InsertUpdateCommand:
+			return "insert-update-command";
+		case ShardingTransactionType_Shutdown:
+			return "shutdown-command";
+	}
+}
+
 
 }
 }
