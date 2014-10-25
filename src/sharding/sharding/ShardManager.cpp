@@ -345,6 +345,9 @@ bool ShardManager::resolveMessage(Message * msg, NodeId senderNode){
 		case ShardingCopyToMeMessageType:
 			notif = ShardingNotification::deserializeAndConstruct<CopyToMeNotification>(msg);
 			break;
+		case ShardingCopyToMeACKMessageType:
+			notif = ShardingNotification::deserializeAndConstruct<CopyToMeNotification::ACK>(msg);
+			break;
 		case ShardingShutdownMessageType:
 			notif = ShardingNotification::deserializeAndConstruct<ShutdownNotification>(msg);
 			break;

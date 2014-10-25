@@ -34,6 +34,17 @@ public:
 private:
 	ClusterShardId replicaShardId;
 	ClusterShardId unassignedShardId;
+
+
+public:
+	class ACK : public ShardingNotification {
+	public:
+		ShardingMessageType messageType() const{
+			return ShardingCopyToMeACKMessageType;
+		}
+
+		bool resolveNotification(SP(ShardingNotification) _notif);
+	};
 };
 
 
