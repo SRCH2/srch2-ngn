@@ -23,7 +23,7 @@
             In this config file it should be as "data/sample-data.json"
     -->
     <!-- <srch2Home>./</srch2Home> -->
-    <cluster-name>SRCH2_Cluster</cluster-name>
+    <cluster-name>SRCH2-4node-Cluster</cluster-name>
     <node-name>node-C</node-name>
     <srch2Home>/home/jamshid/workspace-srch2-2/srch2-ngn/test/sharding/integration</srch2Home>
  
@@ -63,8 +63,8 @@
         <core name="core1">
         <multiple-data-file>json1.json,json2.json</multiple-data-file>
         <coreId>1</coreId>
-        <core-number_of_shards>3</core-number_of_shards> 
-	<core-number_of_replicas>1</core-number_of_replicas>
+        <core-number_of_shards>4</core-number_of_shards> 
+	<core-number_of_replicas>2</core-number_of_replicas>
 
     <!--
         Index Directoy Path
@@ -82,7 +82,7 @@
         Path for a data file to be loaded. The file must be in the json format.
         REQUIRED, when "index-load-or-create" is set to 0.
     -->
-    <dataFile>./input-data/empty-data.json</dataFile>
+    <dataFile>empty-data.json</dataFile>
      
     <!--
 	Maximum Number of Threads

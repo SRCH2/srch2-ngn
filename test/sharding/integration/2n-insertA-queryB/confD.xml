@@ -23,14 +23,14 @@
             In this config file it should be as "data/sample-data.json"
     -->
     <!-- <srch2Home>./</srch2Home>-->
-    <cluster-name>SRCH2_Cluster</cluster-name>
+    <cluster-name>SRCH2-4node-Cluster</cluster-name>
     <node-name>node-D</node-name>
     <srch2Home>/home/jamshid/workspace-srch2-3/srch2-ngn/test/sharding/integration</srch2Home>
 
     <ping>
-        <ping-interval>2</ping-interval>
-        <ping-timeout>8</ping-timeout>
-        <retry-count>3</retry-count>
+        <ping-interval>20000000</ping-interval>
+        <ping-timeout>80000000</ping-timeout>
+        <retry-count>30000000</retry-count>
     </ping> 
 
     <transport>
@@ -82,7 +82,7 @@
         Path for a data file to be loaded. The file must be in the json format.
         REQUIRED, when "index-load-or-create" is set to 0.
     -->
-    <dataFile>./input-data/empty-data.json</dataFile>
+    <dataFile>empty-data.json</dataFile>
      
     <!--
 	Maximum Number of Threads
