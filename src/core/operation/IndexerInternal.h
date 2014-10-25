@@ -88,6 +88,7 @@ struct IndexHealthInfo
 
 class IndexReaderWriter: public Indexer
 {
+	friend void * dispatchMergeWorkerThread(void *arg);
 public:
 
     //TODO put it as private
@@ -228,6 +229,9 @@ public:
     inline ForwardIndex * getForwardIndex() const { return this->index->forwardIndex; }
 
     pthread_t createAndStartMergeThreadLoop();
+
+    void createAndStartMergeWorkerThreads();
+
     void startMergeThreadLoop();
 
 private:
@@ -242,6 +246,8 @@ private:
 
 	pthread_t mergerThread;  // stores thread identifier.
 	pthread_attr_t mergeThreadAttributes;  // store thread attributes
+
+	pthread_t *mergerWorkerThreads;  // stores worker thread identifier.
 
     volatile unsigned writesCounterForMerge;
     bool needToSaveIndexes;

@@ -689,7 +689,12 @@ INDEXWRITE_RETVAL IndexData::_merge(bool updateHistogram) {
 		this->forwardIndex->freeSpaceOfDeletedRecords();
 	}
 
-	this->invertedIndex->merge();
+	if (this->invertedIndex->mergeWorkersCount <= 1) {
+		this->invertedIndex->merge( this->rankerExpression,
+				this->writeCounter->getNumberOfDocuments(), this->schemaInternal);
+	} else {
+		this->invertedIndex->parallelMerge();
+	}
 
 	// Since trie is the entry point of every search, trie merge should be done after all other merges.
 	// If forwardIndex or invertedIndex is merged before trie, then users can see an inconsistent state of
@@ -873,7 +878,8 @@ void IndexData::_save(const string &directoryName) const {
 	}
 
 	if (this->invertedIndex->mergeRequired())
-		this->invertedIndex->merge();
+		this->invertedIndex->merge(this->rankerExpression,
+				this->writeCounter->getNumberOfDocuments(), this->schemaInternal);
 	try {
 		serializer.save(*this->invertedIndex,
 				directoryName + "/" + IndexConfig::invertedIndexFileName);
