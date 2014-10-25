@@ -61,6 +61,19 @@ Transaction * ConcurrentNotifOperation::getTransaction(){
 }
 
 OperationState * ConcurrentNotifOperation::entry(){
+    Logger::debug("STEP : concurrent notif operation entry ...");
+    stringstream ss;
+    ss << "Participants : ";
+    for(unsigned p = 0 ; p < this->participants.size(); ++p){
+        ss << this->participants.at(p).toString() << " - ";
+    }
+    if(! this->expectResponse){
+        ss << "W/O response.";
+    }else{
+        ss << "W response." ;
+    }
+    Logger::debug("DETAILS : concurrent notif operation %s" , ss.str().c_str());
+
 	if(this->participants.size() == 0){
 		return finalize();
 	}
@@ -138,11 +151,23 @@ string ConcurrentNotifOperation::getOperationName() const {
 	return "ConcurrentNotifOperation, request " + string(getShardingMessageTypeStr(requests.at(0)->messageType()));
 }
 string ConcurrentNotifOperation::getOperationStatus() const {
-	return "operation status";//TODO
+    stringstream ss;
+    ss << "Replies status :";
+    for(unsigned p = 0 ; p < this->participants.size(); ++p){
+        ss << "Target" << this->participants.at(p).toString();
+        if(this->targetResponsesMap.find(this->participants.at(p)) == this->targetResponsesMap.end()){
+            ss << " not arrived | ";
+        }else{
+            ss << " arrived | ";
+        }
+    }
+	return ss.str();
 }
 
 OperationState * ConcurrentNotifOperation::finalize(){
-	if(consumer == NULL){
+
+    Logger::debug("STEP : concurrent notif operation is finilizing. Consumer %s null" , (consumer == NULL ? "==" : "!="));
+    if(consumer == NULL){
 		return NULL;
 	}
 	this->consumer->end_(this->targetResponsesMap);

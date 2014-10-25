@@ -84,6 +84,7 @@ bool LoadBalancer::run(){
 
 // asks other nodes about load information
 void LoadBalancer::collectInfo(){
+    Logger::debug("STEP : Load balancer : collecting information.");
 	reportReq = SP(LoadBalancingReport::REQUEST)(new LoadBalancingReport::REQUEST());
 	Cluster_Writeview * writeview = ShardManager::getWriteview();
 	vector<NodeId> allNodes;
@@ -95,10 +96,14 @@ void LoadBalancer::collectInfo(){
 }
 void LoadBalancer::end_(map<NodeOperationId, SP(ShardingNotification) > & replies){
 
+	stringstream ss;
 	for(map<NodeOperationId , SP(ShardingNotification)>::iterator replyItr = replies.begin();
 			replyItr != replies.end(); ++replyItr){
 		nodeLoads[replyItr->first.nodeId] = boost::dynamic_pointer_cast<LoadBalancingReport>(replyItr->second)->getLoad();
+		ss << nodeLoads[replyItr->first.nodeId] << " - ";
 	}
+
+    Logger::debug("STEP : Load balancer : Load information : %s", ss.str().c_str());
 	balance();
 }
 
@@ -107,14 +112,13 @@ void LoadBalancer::balance(){
 	if(nodeLoads.size() == 0){
 		finalize();
 	}
-	if(! canAcceptMoreShards(ShardManager::getCurrentNodeId())){
-		finalize();
-	}
 
 	if(nodeLoads.size() == 1){ // only us or not light
+        Logger::debug("DETAILS : Load balancer : Only this node, checking for assignments.");
 		tryShardAssginmentAndShardCopy(true);// assignment only
 		if(this->shardAssigner != NULL){
 			currentOp = Assign;
+	        Logger::debug("STEP : Load balancer : going to run ShardAssignOperation ...");
 			shardAssigner->produce();
 			return;
 		}
@@ -123,9 +127,15 @@ void LoadBalancer::balance(){
 		return;
 	}
 
+	if(! canAcceptMoreShards(ShardManager::getCurrentNodeId())){
+	    Logger::debug("DETAILS : Load balancer : node is not light loaded enough for load balancing.");
+		finalize();
+	}
+
 	tryShardAssginmentAndShardCopy();
 	if(shardCopyer != NULL){
 		currentOp = Copy;
+        Logger::debug("STEP : Load balancer : going to run ShardCopyOperation ...");
 		shardCopyer->produce();
 		return;
 	}
@@ -137,9 +147,12 @@ void LoadBalancer::balance(){
 	tryShardMove();
 	if(shardMover != NULL){
 		currentOp = Move;
+        Logger::debug("STEP : Load balancer : going to run ShardMoveOperation ...");
 		shardMover->produce();
 		return;
 	}
+
+    Logger::debug("DETAILS : Load balancer : no load balancing task is required ...");
 	finalize();
 	return;
 }
@@ -166,6 +179,7 @@ ShardingTransactionType LoadBalancer::getTransactionType(){
 
 void LoadBalancer::finalize(){
 
+    Logger::debug("STEP : Load balancer is finalizing ...");
 	this->setFinished();
 
 	ShardManager::getShardManager()->resetLoadBalancing();

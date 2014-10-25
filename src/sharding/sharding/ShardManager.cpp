@@ -218,7 +218,7 @@ void ShardManager::start(){
 		this->getMetadataManager()->commitClusterMetadata();
 		Logger::info("Joining the existing cluster ...");
 		//TODO remove
-		Logger::info("Printing node information before join ...");
+		Logger::debug("Printing node information before join ...");
 		print();
 
 		// we must join an existing cluster :

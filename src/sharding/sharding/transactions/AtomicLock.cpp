@@ -92,6 +92,7 @@ Transaction * AtomicLock::getTransaction(){
 }
 
 void AtomicLock::produce(){
+    Logger::debug("STEP : Atomic lock starts ...");
 	ShardManager::getShardManager()->getStateMachine()->registerOperation(locker);
 }
 
@@ -182,6 +183,7 @@ bool AtomicLock::shouldAbort(const NodeId & failedNode){
 // if not granted :
 void AtomicLock::recover(){
 
+    Logger::debug("STEP : Atomic lock, going to recovery state ...");
 	if(participantIndex == 0){
 		finalize(false);
 		return;
@@ -214,6 +216,7 @@ void AtomicLock::recover(){
 		}
 		// releaseNotification is prepared in the time of preparing locker
 	}
+	Logger::debug("STEP : Atomic lock making the release operation for recovery...");
 	OrderedNodeIteratorOperation * releaser =
 			new OrderedNodeIteratorOperation(releaseNotification, ShardingLockACKMessageType , releaseParticipants);
 	ShardManager::getShardManager()->getStateMachine()->registerOperation(releaser);
@@ -261,6 +264,7 @@ void AtomicLock::setParticipants(const vector<NodeId> & participants){
 
 void AtomicLock::finalize(bool result){
 	this->finalzedFlag = true;
+	Logger::debug("STEP : Atomic lock ends ...");
 	this->getConsumer()->consume(result);
 }
 void AtomicLock::finalize(const vector<string> & rejectedPKs){

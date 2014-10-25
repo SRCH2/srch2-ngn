@@ -91,10 +91,13 @@ OperationState * OrderedNodeIteratorOperation::handle(SP(NodeFailureNotification
 	if(failedTargetIndex < this->participantsIndex){ // we have passed this target
 		//2. fix the iteration index
 		this->participantsIndex -- ;
+		Logger::debug("DETAILS : Ordered node iterator has passed node(%d) before its failure.", failedNode);
 	}else if(failedTargetIndex == this->participantsIndex){ // we are waiting for the response of this target
+        Logger::debug("DETAILS : Ordered node iterator was waiting for node(%d) when it failed.", failedNode);
 		//2. fix the iteration index
 		if(this->participants.size() == 0){
 			// we are done, we shoud just call finalize
+	        Logger::debug("DETAILS : Ordered node iterator : list of participants is empty node(%d).", failedNode);
 			if(this->validatorObj != NULL){
 				this->validatorObj->end();
 			}
@@ -125,6 +128,9 @@ bool OrderedNodeIteratorOperation::validateResponse(SP(ShardingNotification) res
 	vector<NodeId> newParticipants;
 	bool conditionResult = this->validatorObj->condition(request, response, newParticipants);
 	updateParticipantsList(newParticipants);
+	if(! conditionResult){
+	    Logger::debug("DETAILS : consumer of ordered iterator asked for abort.");
+	}
 	return conditionResult;
 }
 
@@ -134,8 +140,11 @@ string OrderedNodeIteratorOperation::getOperationName() const {
 
 string OrderedNodeIteratorOperation::getOperationStatus() const {
 	stringstream ss;
-	ss << "Total " << this->participants.size()
-			<< " targets, now " <<
+	ss << "Targets (" << this->participants.size() << "): " ;
+	for(unsigned i = 0 ; i < this->participants.size() ; ++i){
+	    ss << this->participants.at(i).toString() << " - ";
+	}
+	ss << ", now " <<
 			this->participants.at(this->participantsIndex).toString().c_str() << " .";
 
 	return ss.str();
@@ -144,11 +153,13 @@ string OrderedNodeIteratorOperation::getOperationStatus() const {
 OperationState * OrderedNodeIteratorOperation::askNode(const unsigned nodeIndex){
 	// if all nodes are already iterated : call finalize from validator
 	if(nodeIndex >= this->participants.size()){
+	    Logger::debug("STEP : Ordered Node Iterator is done. ");
 		if(this->validatorObj != NULL){
 			this->validatorObj->end();
 		}
 		return NULL;
 	}
+	Logger::debug("STEP :  Ordered Node Iterator : asking the next node : %s", this->participants.at(nodeIndex).toString().c_str());
 	const NodeOperationId & target = this->participants.at(nodeIndex);
 	send(request, target);
 	return this;
@@ -165,6 +176,7 @@ void OrderedNodeIteratorOperation::updateParticipantsList(vector<NodeId> newPart
 		if(newParticipants.at(i) > largestParticipant){
 			// we should append this new participant to the end of list
 			this->participants.push_back(NodeOperationId(newParticipants.at(i)));
+		    Logger::debug("DETAILS :  new participant (Node ID %d) added to the ordered iterator.", newParticipants.at(i));
 		}
 	}
 }

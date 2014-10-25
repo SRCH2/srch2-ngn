@@ -232,6 +232,60 @@ public:
 
 	bool update(const NodeId & failedNode);
 
+	string toString(){
+	    stringstream ss;
+	    ss << "B(" << blocking << "), R(" << release << "), I(" << incremental << "), batchType(";
+	    switch(batchType){
+	    case LockRequestType_Copy:
+	        ss << "copy), ";
+	        break;
+	    case LockRequestType_Move:
+            ss << "move), ";
+            break;
+	    case LockRequestType_Metadata:
+            ss << "metadata), ";
+            break;
+	    case LockRequestType_PrimaryKey:
+            ss << "pk), ";
+            break;
+	    case LockRequestType_GeneralPurpose:
+            ss << "gen-purpose), ";
+            break;
+	    case LockRequestType_ShardIdList:
+            ss << "shard-list), ";
+            break;
+	    }
+        switch(batchType){
+        case LockRequestType_Copy:
+        case LockRequestType_Move:
+        case LockRequestType_GeneralPurpose:
+        case LockRequestType_ShardIdList:
+            {
+                ss << "for : ";
+                for(unsigned i = 0 ; i < tokens.size(); ++i){
+                    if(tokens.at(i).second == LockLevel_S){
+                        ss << "S on ";
+                    }else{
+                        ss << "X on ";
+                    }
+                    ss << tokens.at(i).first.toString() << " - ";
+                }
+                break;
+            }
+        case LockRequestType_Metadata:
+            ss << "for ";
+            if(metadataLockLevel == LockLevel_S){
+                ss << "S on ";
+            }else{
+                ss << "X on ";
+            }
+            ss << "metadata";
+            break;
+        case LockRequestType_PrimaryKey:
+            break;
+        }
+	}
+
 	static LockBatch * generateLockBatch(SP(LockingNotification) notif);
 	static LockBatch * generateLockBatch(const ClusterShardId & shardId, const LockLevel & lockLevel);
 

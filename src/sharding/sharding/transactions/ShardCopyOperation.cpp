@@ -47,6 +47,7 @@ Transaction * ShardCopyOperation::getTransaction() {
 }
 
 void ShardCopyOperation::produce(){
+    Logger::debug("STEP : ShardCopyOperation starting ... ");
 	lock();
 }
 
@@ -56,6 +57,8 @@ void ShardCopyOperation::lock(){ // ** start **
 	this->releaser = new AtomicRelease(replicaShardId, unassignedShardId, currentOpId, this);
 	// releaser calls all methods of BooleanCallbackInterface from us
 	this->currentAction = "lock";
+    Logger::debug("DETAILS : ShardCopyOperation going to lock %s and %s for operation %s." ,
+            replicaShardId.toString().c_str(), unassignedShardId.toString().c_str(), currentOpId.toString().c_str());
 	this->locker->produce();
 }
 // for lock
@@ -82,6 +85,7 @@ void ShardCopyOperation::consume(bool granted){
 // ** if (granted)
 void ShardCopyOperation::transfer(){ // : requires receiving a call to our callback registered in state-machine to get MM messages
 	// transfer data by ordering MM
+    Logger::debug("STEP : ShardCopyOperation going start transferring the shard ..." );
 	// 1. register this transaction in shard manager to receive MM notification
 	ShardManager::getShardManager()->registerMMSessionListener(currentOpId.operationId, this);
 	// 2. send copyToMe notification to the srcNode to start transferring the data
@@ -113,9 +117,11 @@ bool ShardCopyOperation::shouldAbort(const NodeId & failedNode){
 void ShardCopyOperation::consume(const ShardMigrationStatus & status){
 	// failed or succeed?
 	if(status.status == MM_STATUS_FAILURE){
+	    Logger::debug("DETAILS : ShardCopyOperation : transfer failed." );
 		this->successFlag = false;
 		release();
 	}else if(status.status == MM_STATUS_SUCCESS){
+	    Logger::debug("DETAILS : ShardCopyOperation : transfer was successful" );
 		Cluster_Writeview * writeview = ShardManager::getWriteview();
 
 		string indexDirectory = ShardManager::getShardManager()->getConfigManager()->getShardDir(writeview->clusterName,
@@ -130,11 +136,12 @@ void ShardCopyOperation::consume(const ShardMigrationStatus & status){
 	}
 }
 void ShardCopyOperation::commit(){
+    Logger::debug("STEP : ShardCopyOperation : going to commit shard assign change for shard %s" , unassignedShardId.toString().c_str());
 	// start metadata commit
 	// prepare the shard change
 	ShardAssignChange * shardAssignChange = new ShardAssignChange(unassignedShardId, ShardManager::getCurrentNodeId(), 0);
 	shardAssignChange->setPhysicalShard(physicalShard);
-	this->committer = new AtomicMetadataCommit(shardAssignChange,  vector<NodeId>(), this);
+	this->committer = new AtomicMetadataCommit(shardAssignChange,  vector<NodeId>(), this, true); // last true arg : skip lock
 	currentAction = "commit";
 	this->committer->produce();
 }
@@ -142,11 +149,13 @@ void ShardCopyOperation::commit(){
 void ShardCopyOperation::release(){
 	// release the locks
 	currentAction = "release";
+    Logger::debug("STEP : ShardCopyOperation : releasing locks ...");
 	this->releaser->produce();
 }
 
 void ShardCopyOperation::finalize(){ // ** return **
 	this->finalizedFlag = true;
+	Logger::debug("STEP : ShardCopyOperation : finalizing ...");
 	this->getConsumer()->consume(this->successFlag);
 }
 

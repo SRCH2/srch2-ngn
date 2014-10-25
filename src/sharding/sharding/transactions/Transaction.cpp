@@ -29,8 +29,10 @@ void Transaction::startTransaction(Transaction * trans){
 	}
 	trans->run();
 	if(! trans->isAttached()){
+	    Logger::debug("New transaction could not be attached to another thread.");
 		delete trans;
 	}
+	Logger::debug("New transaction is running.");
 }
 
 TRANS_ID Transaction::getTID() const {

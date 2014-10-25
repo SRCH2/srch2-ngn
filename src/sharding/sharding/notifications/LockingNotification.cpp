@@ -48,6 +48,13 @@ LockingNotification::LockingNotification(const NodeOperationId & newNodeOpId,
 	this->newNodeOpId = newNodeOpId;
 	this->listOfOlderNodes = listOfOlderNodes;
 	this->metadataLockLevel = lockLevel;
+
+    // debug print
+    stringstream ss;
+    for(vector<NodeId>::iterator nodeItr = this->listOfOlderNodes.begin(); nodeItr != this->listOfOlderNodes.end(); ++nodeItr){
+        ss << *nodeItr << " - ";
+    }
+	Logger::debug("DETAILS : LockingNotification : newNodeOpId(%s), olderNodes(%s), lockLevel(%d)", newNodeOpId.toString().c_str(), ss.str().c_str(), metadataLockLevel);
 }
 LockingNotification::LockingNotification(const vector<string> & primaryKeys,
 		const NodeOperationId & writerAgent, const ClusterPID & pid, const bool releaseRequest):

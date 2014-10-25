@@ -28,6 +28,7 @@ void LockManager::resolve(SP(LockingNotification)  notif){
 }
 
 void LockManager::resolve(const unsigned readviewReleasedVersion){
+    Logger::debug("STEP :  Lock Manager : resolving RV release, version %d", readviewReleasedVersion);
 	// lock
 	readviewReleaseMutex.lock();
 	for(vector<LockBatch *>::iterator lockBItr = rvReleasePendingLockBatches.begin();
@@ -45,6 +46,7 @@ void LockManager::resolve(const unsigned readviewReleasedVersion){
 }
 
 void LockManager::resolveNodeFailure(const NodeId & failedNode){
+    Logger::debug("STEP :  Lock Manager : resolving node failure , for node %d", failedNode);
 	readviewReleaseMutex.lock();
 	for(vector<LockBatch *>::iterator lockBItr = rvReleasePendingLockBatches.begin();
 			lockBItr != rvReleasePendingLockBatches.end(); ){
@@ -103,6 +105,7 @@ void LockManager::resolve(LockBatch * lockBatch){
 
 
 void LockManager::resolveLock(LockBatch * lockBatch){
+    Logger::debug("STEP :  Lock Manager : resolving lock request : ", lockBatch->toString().c_str());
 	if(lockBatch->release){
 		ASSERT(false);
 		finalize(lockBatch, false);
@@ -126,6 +129,7 @@ void LockManager::resolveLock(LockBatch * lockBatch){
 		// if all the batch cannot succeed right now, we send reject ack back
 		if(! canAcquireAllBatch(lockBatch)){
 			// reject the request right here
+	        Logger::debug("DETAILS :  Lock Manager : lock request rejected. ");
 			finalize(lockBatch, false);
 			delete lockBatch;
 			return;
@@ -134,15 +138,18 @@ void LockManager::resolveLock(LockBatch * lockBatch){
 
 	if(moveLockBatchForward(lockBatch)){
 		// batch was done completely, we can finish this request
+        Logger::debug("DETAILS :  Lock Manager : lock request batch was done completely.");
 		delete lockBatch;
 		return;
 	}else{
 		// if we must wait for rv-release
 		if(lockBatch->isReadviewPending()){
 			// just put it in rv release pending lock batches
+		    Logger::debug("DETAILS :  Lock Manager : lock request pending for RV release.");
 			setPendingForRVRelease(lockBatch);
 			return;
 		}else{
+		    Logger::debug("DETAILS :  Lock Manager : lock request gone to waiting list ...");
 			pendingLockBatches.push_back(lockBatch);
 			return;
 		}
@@ -151,7 +158,7 @@ void LockManager::resolveLock(LockBatch * lockBatch){
 
 
 void LockManager::resolveRelease(LockBatch * lockBatch){
-
+    Logger::debug("STEP :  Lock Manager : resolving release request : ", lockBatch->toString().c_str());
 	bool releaseHappened = false;
 
 	switch (lockBatch->batchType) {
@@ -191,6 +198,7 @@ void LockManager::resolveRelease(LockBatch * lockBatch){
 	}
 
 	if(releaseHappened){
+        Logger::debug("DETAILS :  Lock Manager : release request triggers some pending lock requests to be applied ....");
 		movePendingLockBatchesForward();
 	}
 }
@@ -224,10 +232,12 @@ void LockManager::movePendingLockBatchesForward(){
 		if(moveLockBatchForward(*lockBatchItr)){
 			delete *lockBatchItr;
 			lockBatchItr = pendingLockBatches.erase(lockBatchItr);
+            Logger::debug("DETAILS :  Lock Manager : lock request finished.");
 		}else{
 			if((*lockBatchItr)->isReadviewPending()){
 				// erase it from pendingLockRequests and put it in readview release
 				LockBatch * lockBatch = *lockBatchItr;
+	            Logger::debug("DETAILS :  Lock Manager : lock request gone to RV release pending list. ");
 				lockBatchItr = pendingLockBatches.erase(lockBatchItr);
 				setPendingForRVRelease(lockBatch);
 			}

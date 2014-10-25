@@ -73,6 +73,7 @@ Transaction * AtomicRelease::getTransaction(){
 }
 
 void AtomicRelease::produce(){
+    Logger::debug("STEP : Atomic release starts ...");
 	ShardManager::getShardManager()->getStateMachine()->registerOperation(releaser);
 }
 
@@ -80,6 +81,7 @@ void AtomicRelease::end(map<NodeId, SP(ShardingNotification) > & replies){
 	finalize();
 }
 void AtomicRelease::finalize(){
+    Logger::debug("STEP : Atomic release ends ...");
 	this->finalizeFlag = true;
 	this->getConsumer()->consume(true);
 }

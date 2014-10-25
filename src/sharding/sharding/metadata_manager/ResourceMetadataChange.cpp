@@ -47,6 +47,7 @@ NodeAddChange::NodeAddChange(const NodeAddChange & copy){
     localNodeShardIds = copy.localNodeShardIds;
 }
 bool NodeAddChange::doChange(Cluster_Writeview * metadata){
+
     if(metadata == NULL){
         ASSERT(false);
         return false;
