@@ -28,6 +28,7 @@ ShardCopyOperation::ShardCopyOperation(const ClusterShardId & unassignedShard,
 	this->finalizedFlag = false;
 	this->successFlag = true;
 	this->currentAction = "";
+    this->transferAckReceived = false;
 }
 
 ShardCopyOperation::~ShardCopyOperation(){
@@ -92,16 +93,21 @@ void ShardCopyOperation::transfer(){ // : requires receiving a call to our callb
 	this->copyToMeNotif = SP(CopyToMeNotification)(new CopyToMeNotification(replicaShardId, unassignedShardId));
 
 	// NOTE : this is deallocated by the state machine
-	ConcurrentNotifOperation * copyer = new ConcurrentNotifOperation(copyToMeNotif, NULLType, srcNodeId , this, false);
+	ConcurrentNotifOperation * copyer = new ConcurrentNotifOperation(copyToMeNotif, ShardingCopyToMeACKMessageType, srcNodeId , this);
 	copyer->setOperationId(currentOpId.operationId);
 	ShardManager::getShardManager()->getStateMachine()->registerOperation(copyer);
 }
 
-void ShardCopyOperation::end(map<NodeId, ShardingNotification * > & replies){
+void ShardCopyOperation::end(map<NodeId, SP(ShardingNotification) > & replies){
 	if(replies.size() < 1){
 		this->successFlag = false;
 		release();
 	}
+    if(transferAckReceived){
+        consume(transferStatus);
+    }else{
+        transferAckReceived = true;
+    }
 }
 // if returns true, operation must stop and return null to state_machine
 bool ShardCopyOperation::shouldAbort(const NodeId & failedNode){
@@ -115,25 +121,30 @@ bool ShardCopyOperation::shouldAbort(const NodeId & failedNode){
 
 // for transfer
 void ShardCopyOperation::consume(const ShardMigrationStatus & status){
-	// failed or succeed?
-	if(status.status == MM_STATUS_FAILURE){
-	    Logger::debug("DETAILS : ShardCopyOperation : transfer failed." );
-		this->successFlag = false;
-		release();
-	}else if(status.status == MM_STATUS_SUCCESS){
-	    Logger::debug("DETAILS : ShardCopyOperation : transfer was successful" );
-		Cluster_Writeview * writeview = ShardManager::getWriteview();
+    if(transferAckReceived){
+        // failed or succeed?
+        if(status.status == MM_STATUS_FAILURE){
+            Logger::debug("DETAILS : ShardCopyOperation : transfer failed." );
+            this->successFlag = false;
+            release();
+        }else if(status.status == MM_STATUS_SUCCESS){
+            Logger::debug("DETAILS : ShardCopyOperation : transfer was successful" );
+            Cluster_Writeview * writeview = ShardManager::getWriteview();
 
-		string indexDirectory = ShardManager::getShardManager()->getConfigManager()->getShardDir(writeview->clusterName,
-				writeview->cores[unassignedShardId.coreId]->getName(), &unassignedShardId);
-		if(indexDirectory.compare("") == 0){
-			indexDirectory = ShardManager::getShardManager()->getConfigManager()->createShardDir(writeview->clusterName,
-					writeview->cores[unassignedShardId.coreId]->getName(), &unassignedShardId);
-		}
+            string indexDirectory = ShardManager::getShardManager()->getConfigManager()->getShardDir(writeview->clusterName,
+                    writeview->cores[unassignedShardId.coreId]->getName(), &unassignedShardId);
+            if(indexDirectory.compare("") == 0){
+                indexDirectory = ShardManager::getShardManager()->getConfigManager()->createShardDir(writeview->clusterName,
+                        writeview->cores[unassignedShardId.coreId]->getName(), &unassignedShardId);
+            }
 
-		physicalShard = LocalPhysicalShard(status.shard, indexDirectory, "");
-		commit();
-	}
+            physicalShard = LocalPhysicalShard(status.shard, indexDirectory, "");
+            commit();
+        }
+    }else{
+        transferAckReceived = true;
+        transferStatus = status;
+    }
 }
 void ShardCopyOperation::commit(){
     Logger::debug("STEP : ShardCopyOperation : going to commit shard assign change for shard %s" , unassignedShardId.toString().c_str());
