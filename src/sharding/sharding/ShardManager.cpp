@@ -392,15 +392,15 @@ void ShardManager::resolveMMNotification(const ShardMigrationStatus & migrationS
 			(migrationStatus.status == MM_STATUS_SUCCESS)? "Done."  : "Failed.");
 	boost::unique_lock<boost::mutex> shardManagerGlobalLock(shardManagerGlobalMutex);
 
-	if(mmSessionListeners.find(migrationStatus.srcOperationId) == mmSessionListeners.end()){
+	if(mmSessionListeners.find(migrationStatus.dstOperationId) == mmSessionListeners.end()){
 		return;
 	}
-	mmSessionListeners.find(migrationStatus.srcOperationId)->second->consume(migrationStatus);
-	if(mmSessionListeners.find(migrationStatus.srcOperationId)->second->getTransaction() != NULL
-			&& mmSessionListeners.find(migrationStatus.srcOperationId)->second->getTransaction()->isFinished()){
-		delete mmSessionListeners.find(migrationStatus.srcOperationId)->second;
+	mmSessionListeners.find(migrationStatus.dstOperationId)->second->consume(migrationStatus);
+	if(mmSessionListeners.find(migrationStatus.dstOperationId)->second->getTransaction() != NULL
+			&& mmSessionListeners.find(migrationStatus.dstOperationId)->second->getTransaction()->isFinished()){
+		delete mmSessionListeners.find(migrationStatus.dstOperationId)->second;
 	}
-	mmSessionListeners.erase(mmSessionListeners.find(migrationStatus.srcOperationId));
+	mmSessionListeners.erase(mmSessionListeners.find(migrationStatus.dstOperationId));
 
 	Logger::sharding(Logger::Detail, "SHM| MM (%d => %d) was %s Processed.", migrationStatus.sourceNodeId, migrationStatus.destinationNodeId,
 			(migrationStatus.status == MM_STATUS_SUCCESS)? "Done."  : "Failed.");
