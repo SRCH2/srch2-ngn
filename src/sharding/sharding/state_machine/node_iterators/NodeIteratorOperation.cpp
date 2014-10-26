@@ -137,7 +137,7 @@ void OrderedNodeIteratorOperation::setParticipants(vector<NodeId> & participants
 		ss << participants.at(i);
 	}
     Logger::sharding(Logger::Detail, "NodeIterator(opid=%s)| Participants : %s",
-    		NodeOperationId(this->getOperationId()).toString().c_str(), ss.str().c_str());
+    		NodeOperationId(ShardManager::getCurrentNodeId(), this->getOperationId()).toString().c_str(), ss.str().c_str());
 }
 
 bool OrderedNodeIteratorOperation::validateResponse(SP(ShardingNotification) response){

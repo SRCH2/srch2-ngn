@@ -56,7 +56,6 @@ private:
 	AtomicRelease * atomicRelease;
 	SP(CommitNotification) commitNotification;
 	MetadataChange * metadataChange;
-	ConsumerInterface * consumer;
 
 	bool finalizedFlag ;
 

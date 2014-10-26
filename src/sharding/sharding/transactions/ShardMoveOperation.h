@@ -79,8 +79,6 @@ private:
 
 	LocalPhysicalShard physicalShard;
 
-	ConsumerInterface * consumer;
-
 	AtomicLock * locker;
 	SP(MoveToMeNotification) moveToMeNotif ;
 	AtomicMetadataCommit * committer;

@@ -49,7 +49,6 @@ private:
 	ShardCommandCode commandCode;
 	vector<NodeTargetShardInfo> targets;
 	vector<std::pair<SP(ShardingNotification) , NodeId> > notifications;
-	ConsumerInterface * consumer;
 	Transaction * trans;
 	boost::shared_ptr<const ClusterResourceMetadata_Readview> clusterReadview;
 

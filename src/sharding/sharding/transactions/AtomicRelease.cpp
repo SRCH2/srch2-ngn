@@ -73,7 +73,7 @@ Transaction * AtomicRelease::getTransaction(){
 }
 
 void AtomicRelease::produce(){
-    Logger::sharding(Logger::Detail, "AtomicRelease| starts. Consumer is %s", consumer == NULL ? "NULL" : consumer->getName().c_str());
+    Logger::sharding(Logger::Detail, "AtomicRelease| starts. Consumer is %s", this->getConsumer() == NULL ? "NULL" : this->getConsumer()->getName().c_str());
 	ShardManager::getShardManager()->getStateMachine()->registerOperation(releaser);
 }
 

@@ -59,7 +59,6 @@ private:
 	LockRequestType lockType;
 	SP(LockingNotification) releaseNotification;
 	OrderedNodeIteratorOperation * releaser; // it will be deleted by state-machie when it returns NULL
-	ConsumerInterface * consumer;
 
 	bool finalizeFlag ;
 	// TODO if we solve the problem of primary keys, we can remove this API

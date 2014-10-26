@@ -142,7 +142,7 @@ void ShardCommand::finalize(map<NodeOperationId , SP(ShardingNotification)> & re
 	}
 
 	// call callback from the consumer
-	consumer->consume(result);
+	this->getConsumer()->consume(result);
 }
 
 }
