@@ -76,6 +76,7 @@ public:
 	void addClusterShard(NodeId nodeId, ClusterShardId shardId);
 	void addNodeShard(NodeId nodeId, unsigned nodeInternalPartitionId);
 	void setPartitionLock(unsigned partitionLock, PartitionLockValue lockValue);
+	bool isCoreLocked() const; // if at least one partition is locked
 
 	const ClusterPartition * getClusterPartition(unsigned partitionId) const;
 	const NodePartition * getNodePartition(unsigned nodeId) const;

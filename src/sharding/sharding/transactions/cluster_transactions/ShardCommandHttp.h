@@ -36,19 +36,18 @@ public:
 private:
 	ShardCommandHttpHandler(boost::shared_ptr<const ClusterResourceMetadata_Readview> clusterReadview,
 			evhttp_request *req, unsigned coreId , ShardCommandCode commandCode){
-		this->brokerSideInformationJson = new ShardOperationJsonResponse();
+		initSession();
+		this->brokerSideInformationJson = (ShardOperationJsonResponse *)this->getSession()->response;
+		this->getSession()->clusterReadview = this->clusterReadview = clusterReadview;
 		this->req = req;
 		this->coreId = coreId;
 		this->commandCode = commandCode;
 		initActionName();
-		this->clusterReadview = clusterReadview;
 	}
 
 	void initSession(){
 		TransactionSession * session = new TransactionSession();
-		session->response = this->brokerSideInformationJson;
-		session->clusterReadview = clusterReadview;
-
+		session->response = new ShardOperationJsonResponse();
 		this->setSession(session);
 	}
 
@@ -73,6 +72,11 @@ private:
 
 	bool _run(){
 	    const CoreInfo_t *indexDataContainerConf = clusterReadview->getCore(coreId);
+	    if(indexDataContainerConf == NULL){
+			brokerSideInformationJson->finalizeInvalid();
+			return false;
+	    }
+		Logger::sharding(Logger::Step, "ShardCommand(%s, core:%s)| Starting ...", action_name.c_str() , indexDataContainerConf->getName().c_str());
 	    switch (req->type) {
 	    case EVHTTP_REQ_PUT: {
 	    	string filePath = "";
@@ -86,6 +90,8 @@ private:
 						// TODO : should we free exportedDataFileName?
 						if(exportedDataFileName){
 							filePath = string(exportedDataFileName);
+							Logger::sharding(Logger::Detail, "ShardCommand(%s, core:%s)| filePath = %s",
+									action_name.c_str() , indexDataContainerConf->getName().c_str(), filePath.c_str());
 						}else{
 							brokerSideInformationJson->finalizeInvalid();
 							return false;
@@ -95,6 +101,8 @@ private:
 	    	    		// TODO : should we free exportedDataFileName?
 						if(exportedDataFileName){
 							filePath = string(exportedDataFileName);
+							Logger::sharding(Logger::Detail, "ShardCommand(%s, core:%s)| filePath = %s",
+									action_name.c_str() , indexDataContainerConf->getName().c_str(), filePath.c_str());
 						}else{
 							brokerSideInformationJson->finalizeInvalid();
 							return false;
@@ -113,8 +121,12 @@ private:
                 if(flagSet){
                 	if(((string)"0").compare(flagSet) == 0){
                 		commandCode = ShardCommandCode_MergeSetOff;
+						Logger::sharding(Logger::Detail, "ShardCommand(%s, core:%s)| set flag OFF",
+								action_name.c_str() , indexDataContainerConf->getName().c_str());
                 	}else if (((string)"1").compare(flagSet) == 0){
                 		commandCode = ShardCommandCode_MergeSetOn;
+						Logger::sharding(Logger::Detail, "ShardCommand(%s, core:%s)| set flag ON",
+								action_name.c_str() , indexDataContainerConf->getName().c_str());
                 	}else{
     	                brokerSideInformationJson->addError(JsonResponseHandler::getJsonSingleMessage(HTTP_JSON_Merge_Parameter_Not_Recognized));
     	            	brokerSideInformationJson->finalizeOK();
@@ -122,6 +134,8 @@ private:
                 	}
                 }
 	    	}
+			Logger::sharding(Logger::Step, "ShardCommand(%s, core:%s)| Calling the core module ...",
+					action_name.c_str() , indexDataContainerConf->getName().c_str());
 			shardCommand = new ShardCommand(this, coreId, commandCode, filePath);
 			shardCommand->produce();
 			if(! getTransaction()->isAttached()){
@@ -151,6 +165,7 @@ private:
 		}
 
 		this->brokerSideInformationJson->printHTTP(req);
+		Logger::sharding(Logger::Detail, "ShardCommand(%s)| Finalizing.", action_name.c_str());
 		this->setFinished();
 	}
 

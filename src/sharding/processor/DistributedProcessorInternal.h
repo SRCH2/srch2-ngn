@@ -214,12 +214,19 @@ private:
     static void * serializeRecordsInShardThreadWork(void * args);
 
     struct ShardStatusOnlyArgs{
-    	ShardStatusOnlyArgs(Srch2Server * server, ShardId * shardId){
+    	ShardStatusOnlyArgs(Srch2Server * server, ShardId * shardId, unsigned mergeAction = 0){
     		this->server = server;
     		this->shardResults = new CommandStatusNotification::ShardStatus(shardId);
+    		// 0 is merge
+    		// 1 is set ON
+    		// 2 is set OFF
+    		ASSERT(mergeAction == 0 || mergeAction == 1 || mergeAction == 2);
+    		this->mergeAction = mergeAction;
+
     	}
     	Srch2Server * server;
     	CommandStatusNotification::ShardStatus * shardResults;
+    	unsigned mergeAction;
     };
 
     void handleStatusOnlyCommands();

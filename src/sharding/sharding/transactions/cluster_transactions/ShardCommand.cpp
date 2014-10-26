@@ -18,14 +18,18 @@ ShardCommand::ShardCommand(ConsumerInterface * consumer,
 	this->filePath = filePath;
 	this->commandCode = ShardCommandCode_Merge;
 	this->dataSavedFlag = false;
-	this->trans = NULL;
-	ShardManager::getReadview(clusterReadview);
+	if(this->getTransaction() != NULL){
+		clusterReadview = this->getTransaction()->getSession()->clusterReadview;
+	}else{
+		ShardManager::getReadview(clusterReadview);
+	}
 }
 
 ShardCommand::~ShardCommand(){}
 
 
 void ShardCommand::produce(){
+	Logger::sharding(Logger::Step, "ShardCommand(code : %d)| Starting core shard command operation", commandCode);
 	if(! dataSavedFlag){
 		if (!  partition(this->targets)){
 			return;
@@ -43,6 +47,7 @@ bool ShardCommand::partition(vector<NodeTargetShardInfo> & targets){
 	boost::shared_ptr<const ClusterResourceMetadata_Readview> clusterReadview;
 	ShardManager::getReadview(clusterReadview);
 	if(coreId == (unsigned)-1){
+		ASSERT(false); // we don't support this for now.
 		vector<const CoreInfo_t *> cores;
 		clusterReadview->getAllCores(cores);
 		for(unsigned cid = 0 ; cid < cores.size() ; ++cid){
@@ -52,13 +57,32 @@ bool ShardCommand::partition(vector<NodeTargetShardInfo> & targets){
 		}
 	}else{
 		CorePartitioner * partitioner = new CorePartitioner(clusterReadview->getPartitioner(coreId));
+		if(partitioner == NULL || clusterReadview->getPartitioner(coreId)->isCoreLocked()){
+			Logger::sharding(Logger::Detail, "ShardCommand(code : %d)| Core is currently locked. Request rejected.", commandCode);
+		    this->getTransaction()->getSession()->response->addError(JsonResponseHandler::getJsonSingleMessage(HTTP_JSON_All_Shards_Down_Error));
+		    this->getTransaction()->getSession()->response->finalizeOK();
+			map<NodeOperationId , SP(ShardingNotification)> emptyResult;
+			finalize(emptyResult);
+			this->getTransaction()->setUnattached();
+			delete partitioner;
+			return false;
+		}
 		partitioner->getAllTargets(targets);
 		delete partitioner;
 	}
     // if there is no targets, return to consumer
     if(targets.size() > 0){
+    	stringstream ss;
+    	for(unsigned i = 0; i < targets.size(); ++i){
+    		if(i != 0){
+    			ss << "-";
+    		}
+    		ss << targets.at(i).toString();
+    	}
+    	Logger::sharding(Logger::Detail, "ShardCommand(code : %d)| Targets are : %s", commandCode, ss.str().c_str());
     	return true;
     }
+	Logger::sharding(Logger::Detail, "ShardCommand(code : %d)| No targets found, Returning unattached.", commandCode);
     this->getTransaction()->getSession()->response->addError(JsonResponseHandler::getJsonSingleMessage(HTTP_JSON_All_Shards_Down_Error));
     this->getTransaction()->getSession()->response->finalizeOK();
 	map<NodeOperationId , SP(ShardingNotification)> emptyResult;
@@ -75,11 +99,14 @@ void ShardCommand::end_(map<NodeOperationId , SP(ShardingNotification)> & replie
 			if(! dataSavedFlag){
 				// data save replies has arrived
 				if(isSaveSuccessful(replies)){
+			    	Logger::sharding(Logger::Detail, "ShardCommand(code : %d)| Data shards save was successful.", commandCode);
 					dataSavedFlag = true;
 					// now let's start metadata save
 					this->commandCode = ShardCommandCode_SaveMetadata;
 					produce();
 					return;
+				}else{
+			    	Logger::sharding(Logger::Detail, "ShardCommand(code : %d)| Data shards save was NOT successful.", commandCode);
 				}
 			}
 			// state : metadata save replies
@@ -123,6 +150,8 @@ bool ShardCommand::isSaveSuccessful(map<NodeOperationId , SP(ShardingNotificatio
 void ShardCommand::finalize(map<NodeOperationId , SP(ShardingNotification)> & replies){
 
 	// final result that we give out to the "CommandStatusCallbackInterface * consumer" member.
+	Logger::sharding(Logger::Step, "ShardCommand(code : %d)| Done. giving the results to the consumer : %s", commandCode,
+			this->getConsumer() == NULL ? "NULL" : this->getConsumer()->getName().c_str());
 	map<NodeId, vector<CommandStatusNotification::ShardStatus *> > result;
 
 	// the following logic is to remove the ShardingNotification wrapper which is
@@ -142,7 +171,9 @@ void ShardCommand::finalize(map<NodeOperationId , SP(ShardingNotification)> & re
 	}
 
 	// call callback from the consumer
-	this->getConsumer()->consume(result);
+	if(this->getConsumer() != NULL){
+		this->getConsumer()->consume(result);
+	}
 }
 
 }

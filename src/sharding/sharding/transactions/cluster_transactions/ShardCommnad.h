@@ -33,6 +33,9 @@ public:
 	~ShardCommand();
 
 	Transaction * getTransaction(){
+		if(this->getConsumer() == NULL){
+			return NULL;
+		}
 		return this->getConsumer()->getTransaction();
 	}
 
@@ -49,7 +52,6 @@ private:
 	ShardCommandCode commandCode;
 	vector<NodeTargetShardInfo> targets;
 	vector<std::pair<SP(ShardingNotification) , NodeId> > notifications;
-	Transaction * trans;
 	boost::shared_ptr<const ClusterResourceMetadata_Readview> clusterReadview;
 
 	string filePath ; // holds either jsonFilePath or the newLogFilePath

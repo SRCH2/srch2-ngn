@@ -614,8 +614,16 @@ SP(CommandStatusNotification) DPInternalRequestHandler::internalMergeCommand(con
     pthread_t * shardMergeThreads = new pthread_t[shards.size()];
 	for(unsigned shardIdx = 0; shardIdx < shards.size(); ++shardIdx){
 		const Shard * shard = shards.at(shardIdx);
+		unsigned mergeAction = 0;
+		if(! mainAction){
+			if(flagValue){
+				mergeAction = 1;
+			}else{
+				mergeAction = 2;
+			}
+		}
 		ShardStatusOnlyArgs * shardMergeArgs =
-				new ShardStatusOnlyArgs(shard->getSrch2Server().get(), shard->cloneShardId());
+				new ShardStatusOnlyArgs(shard->getSrch2Server().get(), shard->cloneShardId(), mergeAction);
 		allShardsMergeArguments.push_back(shardMergeArgs);
 
 		if (pthread_create(&shardMergeThreads[shardIdx], NULL, mergeInShardThreadWork, shardMergeArgs) != 0){
@@ -693,6 +701,15 @@ void * DPInternalRequestHandler::commitInShardThreadWork(void * args){
 void * DPInternalRequestHandler::mergeInShardThreadWork(void * args){
 	ShardStatusOnlyArgs * shardArgs = (ShardStatusOnlyArgs * )args;
 
+	if(shardArgs->mergeAction != 0){
+		if(shardArgs->mergeAction == 1){
+			shardArgs->server->getIndexer()->enableMerge();
+		}else{
+			shardArgs->server->getIndexer()->disableMerge();
+		}
+        shardArgs->shardResults->setStatusValue(true);
+		return NULL;
+	}
     //merge the index.
 	INDEXWRITE_RETVAL mergeReturnValue = shardArgs->server->getIndexer()->merge();
     if ( mergeReturnValue == srch2::instantsearch::OP_SUCCESS)
@@ -707,6 +724,8 @@ void * DPInternalRequestHandler::mergeInShardThreadWork(void * args){
     }
     else
     {
+        Json::Value infoValue = JsonResponseHandler::getJsonSingleMessage(HTTP_JSON_Merge_DISABLED);
+        shardArgs->shardResults->messages.append(infoValue);
          shardArgs->shardResults->setStatusValue(false);
     }
 
@@ -715,7 +734,6 @@ void * DPInternalRequestHandler::mergeInShardThreadWork(void * args){
 }
 
 SP(CommandStatusNotification) DPInternalRequestHandler::resolveShardCommand(SP(CommandNotification) notif){
-	//TODO
 	if(! notif){
 		return SP(CommandStatusNotification)(new CommandStatusNotification(ShardCommandCode_Merge));
 	}
@@ -723,22 +741,29 @@ SP(CommandStatusNotification) DPInternalRequestHandler::resolveShardCommand(SP(C
 	switch (notif->getCommandCode()) {
 		case ShardCommandCode_SaveData_SaveMetadata:
 		case ShardCommandCode_SaveData:
+			Logger::sharding(Logger::Step, "DP-Internal| Saving the shards on disk ... ");
 			return internalSerializeCommand(notif->getTarget(), clusterReadview, notif->getCommandCode(), notif->getNewLogFilePath());
 		case ShardCommandCode_SaveMetadata:
-			Logger::debug("Saving the shards on disk ... ");
+			Logger::sharding(Logger::Step, "DP-Internal| Saving the metadata on disk ... ");
 			ShardManager::getShardManager()->getMetadataManager()->saveMetadata(ShardManager::getShardManager()->getConfigManager());
 			return SP(CommandStatusNotification)(new CommandStatusNotification(notif->getCommandCode()));
 		case ShardCommandCode_Export:
+			Logger::sharding(Logger::Step, "DP-Internal| Exporting shards ...");
 			return internalSerializeCommand(notif->getTarget(), clusterReadview, notif->getCommandCode(), notif->getNewLogFilePath());
 		case ShardCommandCode_Commit:
+			Logger::sharding(Logger::Step, "DP-Internal| Committing shards ...");
 			return internalCommitCommand(notif->getTarget(), clusterReadview);
 		case ShardCommandCode_Merge:
+			Logger::sharding(Logger::Step, "DP-Internal| Doing merge operation");
 			return internalMergeCommand(notif->getTarget(), clusterReadview);
 		case ShardCommandCode_MergeSetOn:
+			Logger::sharding(Logger::Step, "DP-Internal| Setting merge flag to OFF");
 			return internalMergeCommand(notif->getTarget(), clusterReadview, false, false);
 		case ShardCommandCode_MergeSetOff:
+			Logger::sharding(Logger::Step, "DP-Internal| Setting merge flag to ON");
 			return internalMergeCommand(notif->getTarget(), clusterReadview, false, true);
 		case ShardCommandCode_ResetLogger:
+			Logger::sharding(Logger::Step, "DP-Internal| Resetting logger");
 			return internalResetLogCommand(notif->getTarget(), clusterReadview);
 	}
 	ASSERT(false);

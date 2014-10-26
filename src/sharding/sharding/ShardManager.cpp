@@ -303,26 +303,33 @@ bool ShardManager::resolveMessage(Message * msg, NodeId senderNode){
 	bool bounced;
 	ShardingNotification::deserializeHeader(msg, senderNode, srcAddress, destAddress, bounced);
 	// deserialize to get notifications
-	bool isBouncingActive = false;
+	bool mustBounce = false;
 	SP(ShardingNotification) notif;
 	switch (msg->getType()) {
 		case ShardingShardCommandMessageType:
 			notif = ShardingNotification::deserializeAndConstruct<CommandNotification>(msg);
+			mustBounce = true;
+			break;
+		case StatusMessageType:
+			notif = ShardingNotification::deserializeAndConstruct<CommandStatusNotification>(msg);
 			break;
 		case ShardingNewNodeReadMetadataRequestMessageType:
 			notif = ShardingNotification::deserializeAndConstruct<MetadataReport::REQUEST>(msg);
+			mustBounce = true;
 			break;
 		case ShardingNewNodeReadMetadataReplyMessageType:
 			notif = ShardingNotification::deserializeAndConstruct<MetadataReport>(msg);
 			break;
 		case ShardingLockMessageType:
 			notif = ShardingNotification::deserializeAndConstruct<LockingNotification>(msg);
+			mustBounce = true;
 			break;
 		case ShardingLockACKMessageType:
 			notif = ShardingNotification::deserializeAndConstruct<LockingNotification::ACK>(msg);
 			break;
 		case ShardingCommitMessageType:
 			notif = ShardingNotification::deserializeAndConstruct<CommitNotification>(msg);
+			mustBounce = true;
 			break;
 		case ShardingCommitACKMessageType:
 			notif = ShardingNotification::deserializeAndConstruct<CommitNotification::ACK>(msg);
@@ -332,9 +339,11 @@ bool ShardManager::resolveMessage(Message * msg, NodeId senderNode){
 			break;
 		case ShardingLoadBalancingReportRequestMessageType:
 			notif = ShardingNotification::deserializeAndConstruct<LoadBalancingReport::REQUEST>(msg);
+			mustBounce = true;
 			break;
 		case ShardingMoveToMeMessageType:
 			notif = ShardingNotification::deserializeAndConstruct<MoveToMeNotification>(msg);
+			mustBounce = true;
 			break;
 		case ShardingMoveToMeACKMessageType:
 			notif = ShardingNotification::deserializeAndConstruct<MoveToMeNotification::ACK>(msg);
@@ -344,6 +353,7 @@ bool ShardManager::resolveMessage(Message * msg, NodeId senderNode){
 			break;
 		case ShardingCopyToMeMessageType:
 			notif = ShardingNotification::deserializeAndConstruct<CopyToMeNotification>(msg);
+			mustBounce = true;
 			break;
 		case ShardingCopyToMeACKMessageType:
 			notif = ShardingNotification::deserializeAndConstruct<CopyToMeNotification::ACK>(msg);
@@ -361,6 +371,12 @@ bool ShardManager::resolveMessage(Message * msg, NodeId senderNode){
 			Logger::sharding(Logger::Detail, "SHM| Bounced notification saved to be sent again later. Notification : %s", notif->getDescription().c_str());
 			return true;
 		}
+	}
+
+	if(mustBounce && ! isJoined()){
+		bounceNotification(notif);
+		Logger::sharding(Logger::Detail, "SHM| Bouncing incoming notification %s.", notif->getDescription().c_str());
+		return true;
 	}
 
 	if(! notif->resolveNotification(notif)){

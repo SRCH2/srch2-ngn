@@ -453,6 +453,7 @@ void IndexReaderWriter::initIndexReaderWriter(IndexMetaData* indexMetaData)
      this->needToSaveIndexes = false;
 
      this->mergeThreadStarted = false; // No threads running
+     this->mergeEnabledFlag = true;
      //zero indicates that the lockForWriters is unset
      pthread_mutex_init(&lockForWriters, 0); 
  }

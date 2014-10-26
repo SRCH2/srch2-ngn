@@ -106,9 +106,11 @@ typedef enum {
 	HTTP_JSON_PK_NOT_PROVIDED,
 	HTTP_JSON_Search_Res_Format_Wrong_Error,
 	HTTP_JSON_Merge_Already_Done_Info,
+	HTTP_JSON_Merge_DISABLED,
 	HTTP_JSON_Commit_Already_Done_Info,
 	HTTP_JSON_Cluster_Not_Ready_Error,
-	HTTP_JSON_Merge_Parameter_Not_Recognized
+	HTTP_JSON_Merge_Parameter_Not_Recognized,
+	HTTP_JSON_Request_Rejected_Due_To_Load_Balancing
 } JsonMessageCode;
 
 }

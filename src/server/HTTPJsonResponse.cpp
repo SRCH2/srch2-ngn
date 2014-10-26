@@ -113,6 +113,8 @@ Json::Value JsonResponseHandler::getJsonSingleMessage(const JsonMessageCode code
 	case HTTP_JSON_Existing_Record_Update_Info:
 	case HTTP_JSON_Merge_Already_Done_Info:
 	case HTTP_JSON_Commit_Already_Done_Info:
+	case HTTP_JSON_Merge_DISABLED:
+	case HTTP_JSON_Request_Rejected_Due_To_Load_Balancing:
 		msgValue[c_info] = getJsonSingleMessageStr(code);
 		break;
 	case HTTP_JSON_Node_Timeout_Warning:
@@ -156,12 +158,16 @@ const string JsonResponseHandler::getJsonSingleMessageStr(const JsonMessageCode 
 		return "The indexed data failed to export to disk, The request need to set search-response-format to be 0 or 2";
 	case HTTP_JSON_Merge_Already_Done_Info:
 		return "No records require merge at this time. Merge is up-to-date.";
+	case HTTP_JSON_Merge_DISABLED:
+		return "Merge is disabled. Use 'set' parameter to enable it.";
 	case HTTP_JSON_Commit_Already_Done_Info:
 		return "Commit is finished. No need to commit anymore.";
 	case HTTP_JSON_Cluster_Not_Ready_Error:
 		return "Cluster is not ready to accept this request now, please try again later.";
 	case HTTP_JSON_Merge_Parameter_Not_Recognized:
 		return "Parameter not recognized.";
+	case HTTP_JSON_Request_Rejected_Due_To_Load_Balancing:
+		return "Request rejected due to ongoing load-balancing task.";
 	default:
 		ASSERT(false);
 		return "Unknown error.";

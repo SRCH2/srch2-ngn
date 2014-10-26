@@ -17,7 +17,14 @@ class JsonResponseHandler;
 
 class TransactionSession {
 public:
-
+	TransactionSession(){
+		response = NULL;
+	}
+	~TransactionSession(){
+		if(response != NULL){
+			delete response;
+		}
+	}
 //	void setResponse(JsonResponseHandler * response){
 //		this->response = response;
 //	}

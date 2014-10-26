@@ -175,6 +175,14 @@ void CorePartitionContianer::setPartitionLock(unsigned partitionId, PartitionLoc
 	clusterPartition->setPartitionLock(lockValue);
 }
 
+bool CorePartitionContianer::isCoreLocked() const{
+	for(map<unsigned, ClusterPartition *>::const_iterator cItr = clusterPartitions.begin(); cItr != clusterPartitions.end(); ++cItr){
+		if(cItr->second->isPartitionLocked()){
+			return true;
+		}
+	}
+	return false;
+}
 
 void CorePartitionContianer::getClusterPartitionsForRead(vector<const ClusterPartition *> & clusterPartitions) const{
 	for(map<unsigned, ClusterPartition *>::const_iterator clusterPartitionsItr = this->clusterPartitions.begin() ;
