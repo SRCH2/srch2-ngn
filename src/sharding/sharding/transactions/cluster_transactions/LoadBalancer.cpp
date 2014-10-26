@@ -84,7 +84,7 @@ bool LoadBalancer::run(){
 
 // asks other nodes about load information
 void LoadBalancer::collectInfo(){
-    Logger::debug("STEP : Load balancer : collecting information.");
+    Logger::sharding(Logger::Step, "LoadBalancer| collecting information.");
 	reportReq = SP(LoadBalancingReport::REQUEST)(new LoadBalancingReport::REQUEST());
 	Cluster_Writeview * writeview = ShardManager::getWriteview();
 	vector<NodeId> allNodes;
@@ -100,10 +100,13 @@ void LoadBalancer::end_(map<NodeOperationId, SP(ShardingNotification) > & replie
 	for(map<NodeOperationId , SP(ShardingNotification)>::iterator replyItr = replies.begin();
 			replyItr != replies.end(); ++replyItr){
 		nodeLoads[replyItr->first.nodeId] = boost::dynamic_pointer_cast<LoadBalancingReport>(replyItr->second)->getLoad();
-		ss << nodeLoads[replyItr->first.nodeId] << " - ";
+		if(replyItr != replies.begin()){
+			ss << " - ";
+		}
+		ss << "(" << replyItr->first.nodeId << ":" << nodeLoads[replyItr->first.nodeId] << ")";
 	}
 
-    Logger::debug("STEP : Load balancer : Load information : %s", ss.str().c_str());
+    Logger::sharding(Logger::Step, "LoadBalancer| Load information : %s", ss.str().c_str());
 	balance();
 }
 
@@ -114,11 +117,11 @@ void LoadBalancer::balance(){
 	}
 
 	if(nodeLoads.size() == 1){ // only us or not light
-        Logger::debug("DETAILS : Load balancer : Only this node, checking for assignments.");
+        Logger::sharding(Logger::Detail, "LoadBalancer| Only this node, checking for assignments.");
 		tryShardAssginmentAndShardCopy(true);// assignment only
 		if(this->shardAssigner != NULL){
 			currentOp = Assign;
-	        Logger::debug("STEP : Load balancer : going to run ShardAssignOperation ...");
+	        Logger::sharding(Logger::Step, "LoadBalancer| going to run ShardAssignOperation ...");
 			shardAssigner->produce();
 			return;
 		}
@@ -128,14 +131,14 @@ void LoadBalancer::balance(){
 	}
 
 	if(! canAcceptMoreShards(ShardManager::getCurrentNodeId())){
-	    Logger::debug("DETAILS : Load balancer : node is not light loaded enough for load balancing.");
+	    Logger::sharding(Logger::Detail, "LoadBalancer| node is not light loaded enough for load balancing.");
 		finalize();
 	}
 
 	tryShardAssginmentAndShardCopy();
 	if(shardCopyer != NULL){
 		currentOp = Copy;
-        Logger::debug("STEP : Load balancer : going to run ShardCopyOperation ...");
+        Logger::sharding(Logger::Step, "LoadBalancer| going to run ShardCopyOperation ...");
 		shardCopyer->produce();
 		return;
 	}
@@ -147,12 +150,12 @@ void LoadBalancer::balance(){
 	tryShardMove();
 	if(shardMover != NULL){
 		currentOp = Move;
-        Logger::debug("STEP : Load balancer : going to run ShardMoveOperation ...");
+        Logger::sharding(Logger::Step, "LoadBalancer| going to run ShardMoveOperation ...");
 		shardMover->produce();
 		return;
 	}
 
-    Logger::debug("DETAILS : Load balancer : no load balancing task is required ...");
+    Logger::sharding(Logger::Detail, "LoadBalancer| no load balancing task is required ...");
 	finalize();
 	return;
 }
@@ -164,11 +167,11 @@ void LoadBalancer::balance(){
 void LoadBalancer::consume(bool done){
 
 	if(currentOp == Assign){
-		Logger::debug("Load balancing : Shard assignment was %s", done?"successful." : "failed.");
+		Logger::sharding(Logger::Detail, "LoadBalancer| Shard assignment was %s", done?"successful." : "failed.");
 	}else if(currentOp == Copy){
-		Logger::debug("Load balancing : Shard copy was %s", done?"successful." : "failed.");
+		Logger::sharding(Logger::Detail, "LoadBalancer| Shard copy was %s", done?"successful." : "failed.");
 	}else if (currentOp == Move){
-		Logger::debug("Load balancing : Shard move was %s", done?"successful." : "failed.");
+		Logger::sharding(Logger::Detail, "LoadBalancer| Shard move was %s", done?"successful." : "failed.");
 	}
 	finalize();
 }
@@ -179,7 +182,7 @@ ShardingTransactionType LoadBalancer::getTransactionType(){
 
 void LoadBalancer::finalize(){
 
-    Logger::debug("STEP : Load balancer is finalizing ...");
+    Logger::sharding(Logger::Step, "LoadBalancer| Load balancer is finalizing.");
 	this->setFinished();
 
 	ShardManager::getShardManager()->resetLoadBalancing();
@@ -438,19 +441,19 @@ bool LoadBalancer::canAcceptMoreShards(NodeId nodeId){
 
 // The first shard of a partition
 ShardAssignOperation * LoadBalancer::assignShard(const ClusterShardId & unassignedShard){
-    Logger::debug("Load balancing | Going to assign shard %s to node %d.", unassignedShard.toString().c_str() , ShardManager::getCurrentNodeId());
+    Logger::sharding(Logger::Detail, "LoadBalancer| Going to assign shard %s to node %d.", unassignedShard.toString().c_str() , ShardManager::getCurrentNodeId());
 //	return new ShardAssignOperation(this->getOperationId(), unassignedShard);
     return new ShardAssignOperation(unassignedShard, this);
 }
 ShardCopyOperation * LoadBalancer::replicateShard(const ClusterShardId & unassignedShard, NodeId srcNodeId, const ClusterShardId & shardToReplicate){
-    Logger::debug("Load balancing | Going to copy shard %s from node %d to use for unassigned shard %s which will reside on node %d",
+    Logger::sharding(Logger::Detail, "LoadBalancer| Going to copy shard %s from node %d to use for unassigned shard %s which will reside on node %d",
             shardToReplicate.toString().c_str(), srcNodeId, unassignedShard.toString().c_str() , ShardManager::getCurrentNodeId());
 //    return new ShardCopyOperation(this->getOperationId(), unassignedShard, srcNodeId, shardToReplicate);
     return new ShardCopyOperation(unassignedShard, srcNodeId, shardToReplicate, this);
 }
 
 ShardMoveOperation * LoadBalancer::moveShard(const NodeId & srcNodeId, const ClusterShardId & moveShardId){
-    Logger::debug("Load balancing | Going to move shard %s from node %d to node %d",
+    Logger::sharding(Logger::Detail, "LoadBalancer| Going to move shard %s from node %d to node %d",
             moveShardId.toString().c_str(), srcNodeId, ShardManager::getCurrentNodeId());
 	return new ShardMoveOperation(srcNodeId, moveShardId, this);
 }

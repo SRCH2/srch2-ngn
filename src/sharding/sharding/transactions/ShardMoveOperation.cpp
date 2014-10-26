@@ -22,7 +22,7 @@ ShardMoveOperation::ShardMoveOperation(const NodeId & srcNodeId,
 		const ClusterShardId & moveShardId, ConsumerInterface * consumer):
 		ProducerInterface(consumer), shardId(moveShardId){
 	this->srcAddress = NodeOperationId(srcNodeId, OperationState::DataRecoveryOperationId);
-	this->currentOpId = NodeOperationId(ShardManager::getCurrentNodeId());
+	this->currentOpId = NodeOperationId(ShardManager::getCurrentNodeId(), OperationState::getNextOperationId());
 	this->successFlag = true;
 	this->locker = NULL;
 	this->releaser = NULL;
@@ -49,11 +49,15 @@ Transaction * ShardMoveOperation::getTransaction() {
 
 
 void ShardMoveOperation::produce(){
+	Logger::sharding(Logger::Step, "ShardMove(opid=%s, mv {%s in %d} to self )| Starting ...", currentOpId.toString().c_str(),
+			shardId.toString().c_str(), srcAddress.toString().c_str());
 	lock();
 }
 
 
 void ShardMoveOperation::lock(){ // **** START ****
+	Logger::sharding(Logger::Detail, "ShardMove(opid=%s, mv {%s in %d} to self )| Acquiring lock", currentOpId.toString().c_str(),
+			shardId.toString().c_str(), srcAddress.toString().c_str());
 	this->locker = new AtomicLock(shardId, currentOpId, LockLevel_X, this);
 	// locker calls all methods of LockResultCallbackInterface from us
 	this->releaser = new AtomicRelease(shardId, currentOpId, this); // we only release out lock, srcAddress lock is released when we ask for cleanup
@@ -103,6 +107,8 @@ void ShardMoveOperation::consume(bool granted){
 }
 // **** If lock granted
 void ShardMoveOperation::transfer(){
+	Logger::sharding(Logger::Step, "ShardMove(opid=%s, mv {%s in %d} to self )| Starting transfer", currentOpId.toString().c_str(),
+			shardId.toString().c_str(), srcAddress.toString().c_str());
 	// transfer data by ordering MM
 	// 1. register this transaction in shard manager to receive MM notification
 	ShardManager::getShardManager()->registerMMSessionListener(currentOpId.operationId, this);
@@ -124,6 +130,8 @@ void ShardMoveOperation::end(map<NodeId, SP(ShardingNotification) > & replies){
            consume(transferStatus);
         }else{
             transferAckReceived = true;
+        	Logger::sharding(Logger::Detail, "ShardMove(opid=%s, mv {%s in %d} to self )| MoveToMe Ack received.", currentOpId.toString().c_str(),
+        			shardId.toString().c_str(), srcAddress.toString().c_str());
         }
     }
 }
@@ -133,6 +141,8 @@ void ShardMoveOperation::end(map<NodeId, SP(ShardingNotification) > & replies){
 bool ShardMoveOperation::shouldAbort(const NodeId & failedNode){
 	if(this->currentOp == Transfer){
 		if(failedNode == srcAddress.nodeId){
+			Logger::sharding(Logger::Step, "ShardMove(opid=%s, mv {%s in %d} to self )| src node failed, abort.", currentOpId.toString().c_str(),
+					shardId.toString().c_str(), srcAddress.toString().c_str());
 			this->successFlag = false;
 			finalize();
 			return true;
@@ -149,7 +159,11 @@ void ShardMoveOperation::consume(const ShardMigrationStatus & status){
     if(! transferAckReceived){
         transferAckReceived = true;
         transferStatus = status;
+    	Logger::sharding(Logger::Detail, "ShardMove(opid=%s, mv {%s in %d} to self )| MM status received.", currentOpId.toString().c_str(),
+    			shardId.toString().c_str(), srcAddress.toString().c_str());
     }else{
+    	Logger::sharding(Logger::Step, "ShardMove(opid=%s, mv {%s in %d} to self )| Transfer Done. Result : %s", currentOpId.toString().c_str(),
+    			shardId.toString().c_str(), srcAddress.toString().c_str(), status.status == MM_STATUS_FAILURE ? "Failure" : "Success");
         if(status.status == MM_STATUS_FAILURE){
             this->successFlag = false;
             release();
@@ -171,6 +185,8 @@ void ShardMoveOperation::consume(const ShardMigrationStatus & status){
 
 // **** If transfer was successful
 void ShardMoveOperation::commit(){
+	Logger::sharding(Logger::Step, "ShardMove(opid=%s, mv {%s in %d} to self )| committing move change.", currentOpId.toString().c_str(),
+			shardId.toString().c_str(), srcAddress.toString().c_str());
 	// prepare the shard change
 	ShardMoveChange * shardMoveChange = new ShardMoveChange(shardId, srcAddress.nodeId, ShardManager::getCurrentNodeId());
 	shardMoveChange->setPhysicalShard(physicalShard);
@@ -184,11 +200,15 @@ void ShardMoveOperation::commit(){
 // **** end if
 void ShardMoveOperation::release(){
 	// release the locks
+	Logger::sharding(Logger::Step, "ShardMove(opid=%s, mv {%s in %d} to self )| releasing lock.", currentOpId.toString().c_str(),
+			shardId.toString().c_str(), srcAddress.toString().c_str());
 	this->currentOp = Release;
 	this->releaser->produce();
 }
 // if data transfer was successful
 void ShardMoveOperation::cleanup(){
+	Logger::sharding(Logger::Step, "ShardMove(opid=%s, mv {%s in %d} to self )| Cleanup", currentOpId.toString().c_str(),
+			shardId.toString().c_str(), srcAddress.toString().c_str());
 	// 1. prepare cleanup command
 	cleaupNotif = SP(MoveToMeNotification::CleanUp)(new MoveToMeNotification::CleanUp(shardId));
 
@@ -201,6 +221,8 @@ void ShardMoveOperation::cleanup(){
 }
 
 void ShardMoveOperation::finalize(){ // ***** END *****
+	Logger::sharding(Logger::Step, "ShardMove(opid=%s, mv {%s in %d} to self )| Finalizing. Result : %s", currentOpId.toString().c_str(),
+			shardId.toString().c_str(), srcAddress.toString().c_str(), this->successFlag ? "Success" : "Failure");
 	this->getConsumer()->consume(this->successFlag);
 }
 

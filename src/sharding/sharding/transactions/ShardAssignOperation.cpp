@@ -22,6 +22,7 @@ ShardAssignOperation::ShardAssignOperation(const ClusterShardId & unassignedShar
 	this->committer = NULL;
 	this->successFlag = true;
 	this->currentAction = PreStart;
+	this->currentOpId = NodeOperationId(ShardManager::getCurrentNodeId(), OperationState::getNextOperationId());
 }
 
 ShardAssignOperation::~ShardAssignOperation(){
@@ -37,6 +38,7 @@ ShardAssignOperation::~ShardAssignOperation(){
 }
 
 void ShardAssignOperation::produce(){
+	Logger::sharding(Logger::Step, "ShardAssign(opid=%s, shardId=%s)| Starting ...", currentOpId.toString().c_str(), shardId.toString().c_str());
 	lock();
 }
 
@@ -75,6 +77,7 @@ void ShardAssignOperation::consume(bool granted){
 }
 // ** if (granted)
 void ShardAssignOperation::commit(){
+	Logger::sharding(Logger::Detail, "ShardAssign(opid=%s, shardid=%s)| Committing shard assign change.", currentOpId.toString().c_str(), shardId.toString().c_str());
 	// start metadata commit
 	// prepare the shard change
 	Cluster_Writeview * writeview = ShardManager::getWriteview();
@@ -97,11 +100,14 @@ void ShardAssignOperation::commit(){
 // ** end if
 void ShardAssignOperation::release(){
 	// release the locks
+	Logger::sharding(Logger::Detail, "ShardAssign(opid=%s, shardId=%s)| Releasing lock.", currentOpId.toString().c_str(), shardId.toString().c_str());
 	currentAction = Release;
 	this->releaser->produce();
 }
 
 void ShardAssignOperation::finalize(){ // ** return **
+	Logger::sharding(Logger::Step, "ShardAssign(opid=%s, shardId=%s)| Done, successFlag : %s", this->successFlag ? "successfull": "failed" ,
+			currentOpId.toString().c_str(), shardId.toString().c_str());
 	this->getConsumer()->consume(this->successFlag);
 }
 

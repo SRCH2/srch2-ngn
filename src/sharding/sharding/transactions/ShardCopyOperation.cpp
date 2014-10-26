@@ -21,7 +21,7 @@ ShardCopyOperation::ShardCopyOperation(const ClusterShardId & unassignedShard,
 		NodeId srcNodeId, const ClusterShardId & shardToReplicate,
 		ConsumerInterface * consumer):ProducerInterface(consumer),
 		unassignedShardId(unassignedShard),replicaShardId(shardToReplicate),srcNodeId(srcNodeId){
-	this->currentOpId = NodeOperationId(ShardManager::getCurrentNodeId());
+	this->currentOpId = NodeOperationId(ShardManager::getCurrentNodeId(), OperationState::getNextOperationId());
 	this->locker = NULL;
 	this->releaser = NULL;
 	this->committer = NULL;
@@ -48,7 +48,8 @@ Transaction * ShardCopyOperation::getTransaction() {
 }
 
 void ShardCopyOperation::produce(){
-    Logger::debug("STEP : ShardCopyOperation starting ... ");
+	Logger::sharding(Logger::Step, "ShardCopy(opid=%s, cp {%s in %d} to %s )| Starting ...", currentOpId.toString().c_str(),
+			replicaShardId.toString().c_str(), srcNodeId, unassignedShardId.toString().c_str());
 	lock();
 }
 
@@ -58,8 +59,8 @@ void ShardCopyOperation::lock(){ // ** start **
 	this->releaser = new AtomicRelease(replicaShardId, unassignedShardId, currentOpId, this);
 	// releaser calls all methods of BooleanCallbackInterface from us
 	this->currentAction = "lock";
-    Logger::debug("DETAILS : ShardCopyOperation going to lock %s and %s for operation %s." ,
-            replicaShardId.toString().c_str(), unassignedShardId.toString().c_str(), currentOpId.toString().c_str());
+	Logger::sharding(Logger::Detail, "ShardCopy(opid=%s, cp {%s in %d} to %s )| acquiring lock", currentOpId.toString().c_str(),
+			replicaShardId.toString().c_str(), srcNodeId, unassignedShardId.toString().c_str());
 	this->locker->produce();
 }
 // for lock
@@ -86,7 +87,8 @@ void ShardCopyOperation::consume(bool granted){
 // ** if (granted)
 void ShardCopyOperation::transfer(){ // : requires receiving a call to our callback registered in state-machine to get MM messages
 	// transfer data by ordering MM
-    Logger::debug("STEP : ShardCopyOperation going start transferring the shard ..." );
+	Logger::sharding(Logger::Step, "ShardCopy(opid=%s, cp {%s in %d} to %s )| Transferring ...", currentOpId.toString().c_str(),
+			replicaShardId.toString().c_str(), srcNodeId, unassignedShardId.toString().c_str());
 	// 1. register this transaction in shard manager to receive MM notification
 	ShardManager::getShardManager()->registerMMSessionListener(currentOpId.operationId, this);
 	// 2. send copyToMe notification to the srcNode to start transferring the data
@@ -103,6 +105,8 @@ void ShardCopyOperation::end(map<NodeId, SP(ShardingNotification) > & replies){
 		this->successFlag = false;
 		release();
 	}
+	Logger::sharding(Logger::Detail, "ShardCopy(opid=%s, cp {%s in %d} to %s )| CopyToMe Ack received.", currentOpId.toString().c_str(),
+			replicaShardId.toString().c_str(), srcNodeId, unassignedShardId.toString().c_str());
     if(transferAckReceived){
         consume(transferStatus);
     }else{
@@ -112,6 +116,8 @@ void ShardCopyOperation::end(map<NodeId, SP(ShardingNotification) > & replies){
 // if returns true, operation must stop and return null to state_machine
 bool ShardCopyOperation::shouldAbort(const NodeId & failedNode){
 	if(failedNode == srcNodeId){
+		Logger::sharding(Logger::Step, "ShardCopy(opid=%s, cp {%s in %d} to %s )| srcNode failed. Aborting.", currentOpId.toString().c_str(),
+				replicaShardId.toString().c_str(), srcNodeId, unassignedShardId.toString().c_str());
 		this->successFlag = false;
 		release();
 		return true;
@@ -122,13 +128,13 @@ bool ShardCopyOperation::shouldAbort(const NodeId & failedNode){
 // for transfer
 void ShardCopyOperation::consume(const ShardMigrationStatus & status){
     if(transferAckReceived){
+    	Logger::sharding(Logger::Step, "ShardCopy(opid=%s, cp {%s in %d} to %s )| Transfer Done: %s", currentOpId.toString().c_str(),
+    			replicaShardId.toString().c_str(), srcNodeId, unassignedShardId.toString().c_str(), status.status == MM_STATUS_FAILURE ? "Failed" : "Successful");
         // failed or succeed?
         if(status.status == MM_STATUS_FAILURE){
-            Logger::debug("DETAILS : ShardCopyOperation : transfer failed." );
             this->successFlag = false;
             release();
         }else if(status.status == MM_STATUS_SUCCESS){
-            Logger::debug("DETAILS : ShardCopyOperation : transfer was successful" );
             Cluster_Writeview * writeview = ShardManager::getWriteview();
 
             string indexDirectory = ShardManager::getShardManager()->getConfigManager()->getShardDir(writeview->clusterName,
@@ -142,12 +148,16 @@ void ShardCopyOperation::consume(const ShardMigrationStatus & status){
             commit();
         }
     }else{
+		Logger::sharding(Logger::Detail, "ShardCopy(opid=%s, cp {%s in %d} to %s )| MM status received.", currentOpId.toString().c_str(),
+				replicaShardId.toString().c_str(), srcNodeId, unassignedShardId.toString().c_str());
         transferAckReceived = true;
         transferStatus = status;
     }
 }
 void ShardCopyOperation::commit(){
-    Logger::debug("STEP : ShardCopyOperation : going to commit shard assign change for shard %s" , unassignedShardId.toString().c_str());
+	Logger::sharding(Logger::Step, "ShardCopy(opid=%s, cp {%s in %d} to %s )| commit shard assign change", currentOpId.toString().c_str(),
+			replicaShardId.toString().c_str(), srcNodeId, unassignedShardId.toString().c_str());
+
 	// start metadata commit
 	// prepare the shard change
 	ShardAssignChange * shardAssignChange = new ShardAssignChange(unassignedShardId, ShardManager::getCurrentNodeId(), 0);
@@ -160,13 +170,16 @@ void ShardCopyOperation::commit(){
 void ShardCopyOperation::release(){
 	// release the locks
 	currentAction = "release";
-    Logger::debug("STEP : ShardCopyOperation : releasing locks ...");
+	Logger::sharding(Logger::Step, "ShardCopy(opid=%s, cp {%s in %d} to %s )| releasing lock", currentOpId.toString().c_str(),
+			replicaShardId.toString().c_str(), srcNodeId, unassignedShardId.toString().c_str());
+
 	this->releaser->produce();
 }
 
 void ShardCopyOperation::finalize(){ // ** return **
 	this->finalizedFlag = true;
-	Logger::debug("STEP : ShardCopyOperation : finalizing ...");
+	Logger::sharding(Logger::Step, "ShardCopy(opid=%s, cp {%s in %d} to %s )| finalizing.Result : %s", currentOpId.toString().c_str(),
+			replicaShardId.toString().c_str(), srcNodeId, unassignedShardId.toString().c_str() , this->successFlag ? "Successful" : "Failed");
 	this->getConsumer()->consume(this->successFlag);
 }
 
