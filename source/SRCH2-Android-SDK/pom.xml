@@ -4,7 +4,7 @@
 
     <groupId>com.srch2</groupId>
     <artifactId>srch2-android-sdk</artifactId>
-    <version>0.2.2-SNAPSHOT</version>
+    <version>0.2.2</version>
     <packaging>aar</packaging>
     <name>SRCH2-Android-SDK</name>
     <description>The Software Development Kit for Android by SRCH2 Inc.</description>
