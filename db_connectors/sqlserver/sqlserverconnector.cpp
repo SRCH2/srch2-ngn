@@ -438,15 +438,15 @@ int SQLServerConnector::runListener() {
          * FROM CHANGETABLE(CHANGES COMPANY , ?)CT left outer join COMPANY as t
          * on CT.ID = t.ID
          *
-         * SYS_CHANGE_VERSION is the "timestamp" which increase automatically
-         * for each transaction happens in table COMPANY.
+         * SYS_CHANGE_VERSION is the "timestamp" which increases automatically
+         * for each transaction that happens in table COMPANY.
          *
          * SYS_CHANGE_OPERATION has 3 options, 'I', 'D', 'U', which represent
-         * INSERT, DELETE, and UPDATE sequentially.
+         * INSERT, DELETE, and UPDATE respectively.
          *
          * CT.[uniqueKey] is the primary key of record changed in the table COMPANY.
          *
-         * The reason using LEFT OUTER JOIN is to handle the DELETE operation,
+         * The reason for using LEFT OUTER JOIN is to handle the DELETE operation,
          * since the record will be removed from the table COMPANY.
          */
         sql.str("");

@@ -100,7 +100,7 @@
 				<dbSharedLibraryName>libsqlserverConnector</dbSharedLibraryName>
 				<dbKeyValues>
 					<dbKeyValue key="dataSource" value="ODBC Driver 11 for SQL Server" />
-					<dbKeyValue key="server" value="192.168.1.18" />
+					<dbKeyValue key="server" value="MSSERVER-HOST" />
 					<dbKeyValue key="user" value="srch2" />
 					<dbKeyValue key="password" value="srch2" />
 					<dbKeyValue key="dbName" value="demo" />

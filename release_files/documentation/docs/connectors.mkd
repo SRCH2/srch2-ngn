@@ -584,11 +584,13 @@ These parameters are similar to those used in other connectors.
 The ```dataSource``` is the name of MS SQL Server Driver name in the
 file ```/usr/local/etc/odbcinst.ini```. 
 The ```sqlServerMaxColumnLength``` is the max length of the column in the table attribute.
-For example, the table is created by the following query:
+For a string longer than this limit, the engine will ignore the characters after the limit.
+For example, consider a table that is created by the following query:
 ```
 CREATE TABLE COMPANY(ID CHAR(10) PRIMARY KEY NOT NULL, NAME CHAR(50) NOT NULL, AGE INT NOT NULL, ADDRESS CHAR(250), SALARY REAL)
 ```
-Then the ```sqlServerMaxColumnLength``` should be set to 250. The default ```sqlServerMaxColumnLength``` is 1024 if not set.   
+Then a recommended value for ```sqlServerMaxColumnLength``` is 250, which is the maximal length of an attribute. 
+If this parameter is not specified, the engine will use 1024 as the default value.  
 
 Notice that the engine requires a shared library
 called "libsqlserverConnector" for SQL Server, which is included in
