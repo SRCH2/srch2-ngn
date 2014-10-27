@@ -58,6 +58,9 @@ private:
     //Fetch the table schema and store into tableSchema
     bool populateFieldName(std::string & tableName);
 
+    //Get the latest log file name.
+    bool getFirstLogFileName(std::string & logFileName);
+
     //Load the lastSavingIndexTime from the disk
     bool loadLastAccessedLogRecordTime();
 

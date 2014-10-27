@@ -179,7 +179,7 @@ int MySQLConnector::createNewIndexes() {
             }
             Logger::info("MYSQLCONNECTOR: Total indexed %d / %d records. ",
                     indexedRecordsCount, totalRecordsCount);
-            stmt->close();/* free the object inside  */
+
             return 0;
         } catch (sql::SQLException &e) {
             Logger::error(
@@ -189,7 +189,6 @@ int MySQLConnector::createNewIndexes() {
         }
     }
 
-    stmt->close();/* free the object inside  */
     return 0;
 }
 
@@ -217,32 +216,98 @@ bool MySQLConnector::populateFieldName(std::string & tableName) {
     return true;
 }
 
+//Get the latest log file name.
+//Query: SHOW BINLOG EVENTS
+bool MySQLConnector::getFirstLogFileName(std::string & logFileName) {
+    while (1) {
+        try {
+            std::auto_ptr<sql::ResultSet> res(
+                    stmt->executeQuery("SHOW BINLOG EVENTS"));
+
+            if (res->next()) {
+                logFileName = res->getString("Log_name");
+            } else {
+                return false;
+            }
+
+            return true;
+        } catch (sql::SQLException &e) {
+            Logger::error(
+                    "MYSQLCONNECTOR: SQL error %d while getting the latest log file name : %s",
+                    e.getErrorCode(), e.getSQLState().c_str());
+            sleep(listenerWaitTime);
+        }
+    }
+    return true;
+}
+
 //Load the lastSavingIndexTime from the disk
 bool MySQLConnector::loadLastAccessedLogRecordTime() {
-    std::string dataDir, srch2Home, logName, logFileStr, logPosStr;
+    std::string dataDir, srch2Home, logName, logFileStr, logPosStr,
+            firstLogFile;
     this->serverHandle->configLookUp("logName", logName);
     this->serverHandle->configLookUp("srch2Home", srch2Home);
     this->serverHandle->configLookUp("dataDir", dataDir);
     std::string path = srch2Home + "/" + dataDir + "/mysql_data/" + "data.bin";
+
+    if (!getFirstLogFileName(firstLogFile)) {
+        Logger::error("MYSQLCONNECTOR: No Binlog file found.");
+        firstLogFile = logName + ".000001";
+    }
 
     if (checkFileExisted(path.c_str())) {
         ifstream a_file(path.c_str(), ios::in | ios::binary);
         a_file >> logFileStr >> logPosStr >> this->lastAccessedLogRecordTime;
         a_file.close();
 
-        this->currentLogFile = logFileStr;
-        this->nextPosition = static_cast<unsigned>(strtoul(logPosStr.c_str(),
-        NULL, 10));
-        return true;
+        /*
+         * MySQL Binlog will automatically deleted the out of date log.
+         * For example, we saved the binlog.00007 as the latest executed log file,
+         * Several days later, MySQL will delete the binlog.00007 and only keep
+         * the binlog file starts from binlog.00010. In this case, we will
+         * lose the table changes between binlog.00007 to binlog.00010. This may
+         * cause the indexes inconsistent with the database and the connector will
+         * check this situation and give a warning.
+         */
+        std::vector<std::string> loadedLogFile, currentOldestLogFile;
+        split(logFileStr, '.', loadedLogFile);
+        split(firstLogFile, '.', currentOldestLogFile);
+        if (loadedLogFile.size() != 2 || currentOldestLogFile.size() != 2) {
+            Logger::error(
+                    "MYSQLCONNECTOR: Error in log file %s or %s,"
+                            " the connector will use the default position and file name.",
+                    logFileStr.c_str(), firstLogFile.c_str());
+            this->currentLogFile = logName + ".000001";
+        } else {
+            if (strtoul(loadedLogFile[1].c_str(), NULL, 10)
+                    >= strtoul(currentOldestLogFile[1].c_str(), NULL, 10)) {
+                this->currentLogFile = logFileStr;
+                this->nextPosition = static_cast<unsigned>(strtoul(
+                        logPosStr.c_str(),
+                        NULL, 10));
+            } else {
+                Logger::warn("MYSQLCONNECTOR: The Binlog is out of date,"
+                        " the indexes may be inconsistent with the data,"
+                        " please rebuild the indexes. "
+                        "Last time saved log file : %s, "
+                        "current oldest log file : %s", logFileStr.c_str(),
+                        firstLogFile.c_str());
+                this->currentLogFile = firstLogFile;
+                this->nextPosition = 4;
+                this->lastAccessedLogRecordTime = time(NULL);
+            }
+        }
+
     } else {
-        Logger::debug("MYSQLCONNECTOR: Warning. Can not find %s."
-                " The connector will use the default position and file name.",
-                path.c_str());
-        this->currentLogFile = logName + ".000001";
+        this->currentLogFile = firstLogFile;
         this->nextPosition = 4;
         this->lastAccessedLogRecordTime = time(NULL);
-        return false;
     }
+
+    Logger::debug("MYSQLCONNECTOR: Reading Binlog file %s at position %d",
+            this->currentLogFile.c_str(), this->nextPosition);
+
+    return true;
 }
 
 //Save lastSavingIndexTime to the disk
@@ -280,13 +345,13 @@ int MySQLConnector::runListener() {
 
     loadLastAccessedLogRecordTime();
 
-    //Connect to the MySQL binlog by using MySQL replication listener
+//Connect to the MySQL binlog by using MySQL replication listener
     stringstream url;
     url << "mysql://" << user << ":" << password << "@" << host << ":" << port;
     mysql::Binary_log binlog(
             mysql::system::create_transport(url.str().c_str()));
 
-    //Register the handlers to listen the binlog event
+//Register the handlers to listen the binlog event
     MySQLIncidentHandler incidentHandler;
     MySQLTableIndex tableEventHandler;
     MySQLApplier applier(&tableEventHandler, serverHandle, &fieldNames,
@@ -302,7 +367,7 @@ int MySQLConnector::runListener() {
         sleep(listenerWaitTime);
     }
 
-    //Initialize the binlog pointer.
+//Initialize the binlog pointer.
     while (binlog.set_position(this->currentLogFile, this->nextPosition)) {
         Logger::error(
                 "MYSQLCONNECTOR: Can't reposition the binary log reader. Please check if the binlog mode is enabled");
@@ -359,7 +424,7 @@ int MySQLConnector::runListener() {
 }
 
 MySQLConnector::~MySQLConnector() {
-
+    stmt->close();/* free the object inside  */
 }
 
 /*
