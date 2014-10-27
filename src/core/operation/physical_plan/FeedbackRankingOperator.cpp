@@ -47,6 +47,7 @@ float FeedbackRankingOperator::getFeedbackBoostForRecord(unsigned recordId) {
 	searchInfo.recordId = recordId;
 
 	vector<UserFeedbackInfo>::iterator iter;
+	// the feedback info list is ordered by record-id in ascending order
 	iter  = std::lower_bound(feedbackInfoForQuery.begin(), feedbackInfoForQuery.end(),
 			searchInfo, userFeedbackInfoComparatorForSearch);
 	bool matchFound =  (iter != feedbackInfoForQuery.end() && iter->recordId == recordId) ;

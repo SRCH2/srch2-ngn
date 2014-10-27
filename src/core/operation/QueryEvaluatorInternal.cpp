@@ -183,7 +183,7 @@ int QueryEvaluatorInternal::search(LogicalPlan * logicalPlan , QueryResults *que
 
 	string key = logicalPlan->getUniqueStringForCaching();
 
-	// if the query is present in the user feedback index, then skip cache because because
+	// if the query is present in the user feedback index, then skip cache because
 	// its score needs to be re-calculated and its entry in the cache is no longer valid
 	// Possible optimization:(TODO) compare whether user feedback entry for this query is
 	//  more recent than cache entry. If yes, skip cache , otherwise use cache.
