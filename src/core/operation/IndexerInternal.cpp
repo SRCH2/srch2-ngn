@@ -192,7 +192,7 @@ void IndexReaderWriter::save()
     pthread_mutex_lock(&lockForWriters);
 
     // If no insert/delete/update is performed, we don't need to save.
-    bool needToSaveFeedbackIndex = userFeedbackIndex->shouldSaveIndex();
+    bool needToSaveFeedbackIndex = userFeedbackIndex->getSaveIndexFlag();
     if(this->needToSaveIndexes == false && needToSaveFeedbackIndex == false){
       pthread_mutex_unlock(&lockForWriters);
     	return;
@@ -213,7 +213,7 @@ void IndexReaderWriter::save()
     // so we don't need this flag (the engine will die anyways); but in the save which happens after bulk-load,
     // we should set this flag back to false for future save calls.
     this->needToSaveIndexes = false;
-    userFeedbackIndex->shouldSaveIndex(false);
+    userFeedbackIndex->setSaveIndexFlag(false);
 
     pthread_mutex_unlock(&lockForWriters);
 }

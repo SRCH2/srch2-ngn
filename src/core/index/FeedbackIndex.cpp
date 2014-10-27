@@ -261,7 +261,7 @@ void FeedbackIndex::save(const string& directoryName) {
 	if (!ofs.good())
 		throw std::runtime_error("Error opening " + userfeedbackListFilePath);
 	boost::archive::binary_oarchive oa(ofs);
-    oa << IndexVersion::currentVersion;
+	oa << IndexVersion::currentVersion;
 	oa << maxFeedbackInfoCountPerQuery;
 	oa << feedbackListIndexVector;
 	for (unsigned i = 0; i < feedbackListIndexVector->getWriteView()->size(); ++i) {
@@ -272,7 +272,7 @@ void FeedbackIndex::save(const string& directoryName) {
 
 void FeedbackIndex::load(const string& directoryName) {
 
-	// serialize the data structures to disk
+	// serialize the data structures from disk
 	Serializer serializer;
 	string queryTrieFilePath = directoryName + "/" + IndexConfig::queryTrieFileName;
 	struct stat fileStat;

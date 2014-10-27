@@ -1,4 +1,7 @@
-# Automated test script to start engine, fire queryes and verify results
+# Automated test script to start engine, fire queries and verify results
+# This test case tests feedback ranking by sending a record as a feedback for a query
+# and then verifying whether the record is ranked higher for the same query in a next search.
+#
 import sys, urllib2, json, time, subprocess, os, commands, signal
 
 sys.path.insert(0, 'srch2lib')

@@ -54,11 +54,11 @@ public:
 
     void load(const string& directoryName);
 
-    bool shouldSaveIndex() {
+    bool getSaveIndexFlag() {
     	return saveIndexFlag;
     }
 
-    void shouldSaveIndex(bool flag) {
+    void setSaveIndexFlag(bool flag) {
     	saveIndexFlag = flag;
     }
 
