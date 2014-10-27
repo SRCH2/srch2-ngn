@@ -20,9 +20,14 @@ C||feedback||{ "query" : "Goods AND Garden", "recordId" : "66" }
 S||Goods Garden||6 44 66
 
 # update feedback for case 3 query multiple times
-C||feedback||{ "query" : "Goods AND Garden", "recordId" : "66" }
-C||feedback||{ "query" : "Goods AND Garden", "recordId" : "66" }
-C||feedback||{ "query" : "Goods AND Garden", "recordId" : "66" }
+C||feedback||[{ "query" : "Goods AND Garden", "recordId" : "66" }, { "query" : "Goods AND Garden", "recordId" : "66" }]
+C||feedback||[{ "query" : "Goods AND Garden", "recordId" : "66" }, { "query" : "Goods AND Garden", "recordId" : "66" }]
+C||feedback||[{ "query" : "Goods AND Garden", "recordId" : "66" }, { "query" : "Goods AND Garden", "recordId" : "66" }]
+C||feedback||[{ "query" : "Goods AND Garden", "recordId" : "66" }, { "query" : "Goods AND Garden", "recordId" : "66" }]
+C||feedback||[{ "query" : "Goods AND Garden", "recordId" : "66" }, { "query" : "Goods AND Garden", "recordId" : "66" }]
+C||feedback||[{ "query" : "Goods AND Garden", "recordId" : "66" }, { "query" : "Goods AND Garden", "recordId" : "66" }]
+C||feedback||[{ "query" : "Goods AND Garden", "recordId" : "66" }, { "query" : "Goods AND Garden", "recordId" : "66" }]
+C||feedback||[{ "query" : "Goods AND Garden", "recordId" : "66" }, { "query" : "Goods AND Garden", "recordId" : "66" }]
 
 # sleep for 3 seconds for merge
 W||3

@@ -149,6 +149,25 @@ namespace srch2
     	return max( distanceRatio * distanceRatio, GEO_MIN_DISTANCE_SCORE );
     }
 
+    float DefaultTopKRanker::computeFeedbackBoost(unsigned feedbackRecencyInSecs, unsigned feedbackFrequency) {
+		/*
+		 *  Feedback boost for a record found in the user feedback list for a query is
+		 *  calculated as.
+		 *                           1
+		 *   FeedbackBoost = 1 + -------------  X  square root (f)
+		 *                       1 + (t1 - t2)
+		 *
+		 *   Where t1 = timestamp of query arrival ( time of creation of this operator).
+		 *         t2 = most recent timestamp for a record marked as a feedback for this query.
+		 *         f  = number of times a record was submitted as a feedback for this query.
+		 */
+    	float feedbackBoost = 0.0;
+		float recencyFactor = 1.0 / (1.0 + ((float)(feedbackRecencyInSecs) / 60.0));
+		float frequencyFactor = sqrtf(feedbackFrequency);
+		feedbackBoost = 1.0 + recencyFactor * frequencyFactor;
+		return feedbackBoost;
+    }
+
     /*float DefaultTopKRanker::computeOverallRecordScore(const Query *query, const vector<float> &queryResultTermScores, unsigned recordLength) const
       {
       const vector<Term *> *queryTerms = query->getQueryTerms();

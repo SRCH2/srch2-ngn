@@ -2,7 +2,7 @@
  * FeedbackRankingOperator.cpp
  *
  *  Created on: Oct 21, 2014
- *      Author: srch2
+ *      Author: Surendra
  */
 
 #include "FeedbackRankingOperator.h"
@@ -14,7 +14,7 @@ bool FeedbackRankingOperator::open(QueryEvaluatorInternal * queryEvaluator,
 		PhysicalPlanExecutionParameters & params) {
 
 	ASSERT(this->getPhysicalPlanOptimizationNode()->getChildrenCount() == 1);
-	userFeedbackIndex->getUserFeedbackInfoForQuery(this->queryString, feedbackInfoForQuery);
+	userFeedbackIndex->retrieveUserFeedbackInfoForQuery(this->queryString, feedbackInfoForQuery);
 	queryArrivalTime = time(NULL);
 	return this->getPhysicalPlanOptimizationNode()->getChildAt(0)->getExecutableNode()->open(queryEvaluator,
 			params);
@@ -35,29 +35,26 @@ PhysicalPlanRecordItem * FeedbackRankingOperator::getNext(const PhysicalPlanExec
 	return nextRecord;
 
 }
+
+bool userFeedbackInfoComparatorForSearch(const UserFeedbackInfo& lhs, const UserFeedbackInfo& rhs) {
+	return lhs.recordId < rhs.recordId;
+}
 float FeedbackRankingOperator::getFeedbackBoostForRecord(unsigned recordId) {
-	for (unsigned i = 0; i < feedbackInfoForQuery.size(); ++i) {
-		if (feedbackInfoForQuery[i].recordId == recordId) {
-			float feedbackBoost;
-			/*
-			 *  Feedback boost for a record found in the user feedback list for a query is
-			 *  calculated as.
-			 *                           1
-			 *   FeedbackBoost = 1 + -------------  X f
-			 *                       1 + (t1 - t2)
-			 *
-			 *   Where t1 = timestamp of query arrival ( time of creation of this operator).
-			 *         t2 = most recent timestamp for a record marked as a feedback for this query.
-			 *         f  = number of times a record was submitted as a feedback for this query.
-			 */
-			float timeStampFactor = 1.0 / (1.0 + ((float)(queryArrivalTime - feedbackInfoForQuery[i].timestamp) / 60.0));
-			float frequencyFactor = (float)feedbackInfoForQuery[i].feedbackFrequency;
-			feedbackBoost = 1.0 + timeStampFactor * frequencyFactor;
-			Logger::console("timestamp factor = %f, frequency factor = %f, boost: %f",timeStampFactor, frequencyFactor, feedbackBoost);
-			return feedbackBoost;
-		}
+
+	float feedbackBoost = 1.0;
+
+	UserFeedbackInfo searchInfo;
+	searchInfo.recordId = recordId;
+
+	vector<UserFeedbackInfo>::iterator iter;
+	iter  = std::lower_bound(feedbackInfoForQuery.begin(), feedbackInfoForQuery.end(),
+			searchInfo, userFeedbackInfoComparatorForSearch);
+	bool matchFound =  (iter != feedbackInfoForQuery.end() && iter->recordId == recordId) ;
+	if (matchFound) {
+		unsigned feedbackRecencyInSecs = queryArrivalTime - iter->timestamp;
+		feedbackBoost = Ranker::computeFeedbackBoost(feedbackRecencyInSecs, iter->feedbackFrequency);
 	}
-	return 1;
+	return feedbackBoost;
 }
 
 bool FeedbackRankingOperator::close(PhysicalPlanExecutionParameters & params) {

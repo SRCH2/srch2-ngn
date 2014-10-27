@@ -54,7 +54,7 @@ class HTTPRequestHandler
         static void aclAddRecordsForRole(evhttp_request *req, Srch2Server *server);
         static void aclAppendRecordsForRole(evhttp_request *req, Srch2Server *server);
         static void aclDeleteRecordsForRole(evhttp_request *req, Srch2Server *server);
-        static void feedback(evhttp_request *req, Srch2Server *server);
+        static void processFeedback(evhttp_request *req, Srch2Server *server);
 
 	private:
 

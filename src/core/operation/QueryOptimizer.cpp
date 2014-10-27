@@ -309,14 +309,21 @@ void QueryOptimizer::injectRequiredSortOperators(vector<PhysicalPlanOptimization
             *treeOption = sortByScoreOp;
         }
 
-    	// inject FeedbackRanking operator which affects the score before sortByScore operator
+    	// inject FeedbackRanking operator. We want following plan structure.
+        //   [sort-by-score] -> [feedback ranking] -> [rest of the plan]
+
     	FeedbackRankingOptimizationOperator *feedbackRankingOp =
     			this->queryEvaluator->getPhysicalOperatorFactory()->createFeedbackRankingOptimizationOperator();
     	feedbackRankingOp->setLogicalPlanNode((*treeOption)->getLogicalPlanNode());
-        if ((*treeOption)->getType() == PhysicalPlanNode_SortByScore) {
+
+    	if ((*treeOption)->getType() == PhysicalPlanNode_SortByScore) {
+        	// If sort-by-score operator is a top level operator then add FeedbackRanking operator
+        	// under this operator.
         	feedbackRankingOp->addChild((*treeOption)->getChildAt(0));
         	(*treeOption)->addChild(feedbackRankingOp);
         } else {
+        	// If sort-by-score operator is not a top level operator then create both FeedbackRanking
+        	// and sort-by-score operators.
         	feedbackRankingOp->addChild((*treeOption));
             SortByScoreOptimizationOperator * sortByScoreOp =
                     this->queryEvaluator->getPhysicalOperatorFactory()->createSortByScoreOptimizationOperator();
@@ -576,7 +583,7 @@ PhysicalPlanNode * QueryOptimizer::buildPhysicalPlanFirstVersionFromTreeStructur
         	PhysicalOperatorFactory * operatorFactory = this->queryEvaluator->getPhysicalOperatorFactory();
         	optimizationResult = (PhysicalPlanOptimizationNode *)this->queryEvaluator->getPhysicalOperatorFactory()->createFeedbackRankingOptimizationOperator();
         	executableResult = (PhysicalPlanNode *)operatorFactory->createFeedbackRankingOperator(
-        			logicalPlan->orignalQueryString, this->queryEvaluator->getFeedbackIndex());
+        			logicalPlan->originalQueryString, this->queryEvaluator->getFeedbackIndex());
         	break;
         }
         default:

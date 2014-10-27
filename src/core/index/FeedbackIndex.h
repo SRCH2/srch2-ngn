@@ -2,7 +2,7 @@
  * QueryIndex.h
  *
  *  Created on: Oct 20, 2014
- *      Author: srch2
+ *      Author: Surendra
  */
 
 #ifndef __CORE_INDEX_FEEDBACKINDEX_H__
@@ -21,16 +21,22 @@ namespace srch2 {
 namespace instantsearch {
 
 struct UserFeedbackInfo;
-typedef cowvector<UserFeedbackInfo>* UserFeedbackList;
+typedef cowvector<UserFeedbackInfo> UserFeedbackList;
 
 #define CURRENT_FEEDBACK_LIST_INDEX_VERSION 0
 
 class FeedbackIndex {
+	// Trie which stores all queries
 	Trie *queryTrie;
-    cowvector<UserFeedbackList> * feedbackListIndexVector;
-    unsigned maxFedbackInfoCountPerQuery;
+	// index vector for the Feedback list pointers.
+    cowvector<UserFeedbackList *> * feedbackListIndexVector;
+    // max feedback info per feedback list
+    unsigned maxFeedbackInfoCountPerQuery;
+    // write lock
     boost::mutex writerLock;
+    // set which stores list to be merged by merge thread.
     std::set<unsigned> feedBackListsToMerge;
+    // flag to indicate whether the index has changed and needs to be saved to disk.
     bool saveIndexFlag;
 public:
     //writers
@@ -38,7 +44,7 @@ public:
     void addFeedback(const string& query, unsigned recordId);
 
     // readers
-    void getUserFeedbackInfoForQuery(const string& query, vector<UserFeedbackInfo>& feedbackInfo) const;
+    void retrieveUserFeedbackInfoForQuery(const string& query, vector<UserFeedbackInfo>& feedbackInfo) const;
 
     bool hasFeedbackDataForQuery(const string& query);
 
@@ -59,9 +65,9 @@ public:
     // constructor
     FeedbackIndex();
     // destructor
-	virtual ~FeedbackIndex();
+    virtual ~FeedbackIndex();
 private:
-	void mergeFeedbackList(UserFeedbackList feedbackList);
+	void mergeFeedbackList(UserFeedbackList *feedbackList);
 };
 
 struct UserFeedbackInfo{

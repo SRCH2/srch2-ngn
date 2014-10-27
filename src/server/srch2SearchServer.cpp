@@ -432,7 +432,7 @@ static void cb_single_core_operator_route(evhttp_request *req, void *arg){
     	        HTTPRequestHandler::resetLoggerCommand(req, srch2Server);
                 break;
             case srch2http::FeedbackPort:
-    	        HTTPRequestHandler::feedback(req, srch2Server);
+    	        HTTPRequestHandler::processFeedback(req, srch2Server);
                 break;
             case srch2http::AttributeAclReplace:
             case srch2http::AttributeAclDelete:

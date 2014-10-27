@@ -176,17 +176,17 @@ void QueryEvaluatorInternal::findKMostPopularSuggestionsSorted(Term *term ,
 int QueryEvaluatorInternal::search(LogicalPlan * logicalPlan , QueryResults *queryResults){
 
 	// used for feedback ranking.
-	this->orignalQueryString = logicalPlan->orignalQueryString;
+	this->orignalQueryString = logicalPlan->originalQueryString;
 	ASSERT(logicalPlan != NULL);
 	// need to lock the mutex
 	boost::shared_lock< boost::shared_mutex > lock(this->indexData->globalRwMutexForReadersWriters);
 
 	string key = logicalPlan->getUniqueStringForCaching();
 
-	// if the query is present in the user feedback index, then skip cache because scores needs
-	// be re-calculated.
+	// if the query is present in the user feedback index, then skip cache because because
+	// its score needs to be re-calculated and its entry in the cache is no longer valid
 	// Possible optimization:(TODO) compare whether user feedback entry for this query is
-	//  recent than cache entry. If yes, skip cache , otherwise use cache.
+	//  more recent than cache entry. If yes, skip cache , otherwise use cache.
 	if (!indexer->getFeedbackIndexer()->hasFeedbackDataForQuery(this->orignalQueryString)) {
 		//1. first check to see if we have this query in cache
 		boost::shared_ptr<QueryResultsCacheEntry> cachedObject ;

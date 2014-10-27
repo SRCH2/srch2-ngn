@@ -1345,6 +1345,9 @@ void decodeAmpersand(const char *uri, unsigned len, string& decodeUri) {
 	}
 }
 
+// API to process single feedback update request.
+// feedback request format: {query = "" , recordId = "" , timestamp = "" }
+// timestamp is optional field.
 bool HTTPRequestHandler::processSingleFeedback(const Json::Value& doc,
 		Srch2Server *server, Json::Value& feedbackResponse) {
 
@@ -1409,7 +1412,7 @@ bool HTTPRequestHandler::processSingleFeedback(const Json::Value& doc,
 	return true;
 }
 
-void HTTPRequestHandler::feedback(evhttp_request *req, Srch2Server *server) {
+void HTTPRequestHandler::processFeedback(evhttp_request *req, Srch2Server *server) {
 	Json::Value response(Json::objectValue);
 	switch (req->type) {
 		case EVHTTP_REQ_PUT: {
@@ -1692,7 +1695,7 @@ boost::shared_ptr<Json::Value> HTTPRequestHandler::doSearchOneCore(evhttp_reques
             *(AnalyzerFactory::getCurrentThreadAnalyzer(indexDataContainerConf)),
             &paramContainer, server->indexer->getAttributeAcl());
     LogicalPlan logicalPlan;
-    logicalPlan.orignalQueryString = qp.originalQueryString;
+    logicalPlan.originalQueryString = qp.originalQueryString;
     if(qr.rewrite(logicalPlan) == false){
         // if the query is not valid, print the error message to the response
         errorStream << paramContainer.getMessageString();

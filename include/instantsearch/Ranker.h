@@ -90,6 +90,8 @@ namespace srch2 {
         float computePositionalScore(float runtimeScore, float sloppyFrequency) const;
 
         virtual ~Ranker() {};
+
+        static float computeFeedbackBoost(unsigned feedbackRecencyInSecs, unsigned feedbackFrequency);
     };
     
     typedef Ranker DefaultTopKRanker;
@@ -129,5 +131,9 @@ namespace srch2 {
     uint8_t computeEditDistanceThreshold(unsigned keywordLength , float similarityThreshold);
     }
 }
+
+class FeedbackRanker {
+
+};
 
 #endif /* __RANKER_H__ */

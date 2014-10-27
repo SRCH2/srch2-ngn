@@ -29,10 +29,10 @@ bool userFeedbackInfoComparator(const UserFeedbackInfo& lhs, const UserFeedbackI
 };
 
 FeedbackIndex::FeedbackIndex() {
-	maxFedbackInfoCountPerQuery = 20;  // TODO: create new config setting
+	maxFeedbackInfoCountPerQuery = 20;  // TODO: create new config setting
 	queryTrie = new Trie();
 	queryTrie->commit();
-	feedbackListIndexVector = new cowvector<UserFeedbackList>();
+	feedbackListIndexVector = new cowvector<UserFeedbackList *>();
 	feedbackListIndexVector->commit();
 	saveIndexFlag = false;
 }
@@ -40,36 +40,41 @@ FeedbackIndex::FeedbackIndex() {
 void FeedbackIndex::addFeedback(const string& query, unsigned recordId, unsigned timestamp) {
 	boost::unique_lock<boost::mutex> lock(writerLock);
 	UserFeedbackInfo feedbackInfo = { recordId, 1, timestamp};
-	unsigned feedbackListIndex;
-	queryTrie->addKeyword_ThreadSafe(query, feedbackListIndex);
+	unsigned feedbackListOffset;
+	queryTrie->addKeyword_ThreadSafe(query, feedbackListOffset);
 	unsigned feedbackListIndexWriteViewSize = feedbackListIndexVector->getWriteView()->size();
-	if (feedbackListIndex >= feedbackListIndexWriteViewSize) {
-		UserFeedbackList newList = new cowvector<UserFeedbackInfo>(maxFedbackInfoCountPerQuery * 1.5);
+	if (feedbackListOffset >= feedbackListIndexWriteViewSize) {
+		// allocate memory for feedbackInfo list and assign memory. Allocate enough space for write
+		// view to grow.
+		UserFeedbackList *newList = new cowvector<UserFeedbackInfo>(maxFeedbackInfoCountPerQuery * 1.5);
 		// commit to separate read view and write view.
 		newList->commit();
-		feedbackListIndexVector->getWriteView()->at(feedbackListIndex) = newList;
+		// at() api automatically increases the capacity cowvector array.
+		feedbackListIndexVector->getWriteView()->at(feedbackListOffset) = newList;
 
 	}
 
-	UserFeedbackList feedbackList = feedbackListIndexVector->getWriteView()->at(feedbackListIndex);
+	UserFeedbackList *feedbackList = feedbackListIndexVector->getWriteView()->at(feedbackListOffset);
 	boost::shared_ptr<vectorview<UserFeedbackInfo> > feedbackInfoListReadView;
 	feedbackList->getReadView(feedbackInfoListReadView);
 	unsigned readViewSize = feedbackInfoListReadView->size();
 	unsigned writeViewSize = feedbackList->getWriteView()->size();
-	unsigned idx;
-	for (idx = readViewSize; idx < writeViewSize; ++idx) {
-		if (feedbackList->getWriteView()->getElement(idx).recordId == recordId) {
+	unsigned cursor;  //
+	for (cursor = readViewSize; cursor < writeViewSize; ++cursor) {
+		if (feedbackList->getWriteView()->getElement(cursor).recordId == recordId) {
 			// append to existing info for this recordId.
-			feedbackList->getWriteView()->at(idx).feedbackFrequency += 1;
-			feedbackList->getWriteView()->at(idx).timestamp = timestamp;
+			feedbackList->getWriteView()->at(cursor).feedbackFrequency += 1;
+			feedbackList->getWriteView()->at(cursor).timestamp = timestamp;
 			break;
 		}
 	}
 
-	if (idx == writeViewSize) {
-		feedbackList->getWriteView()->at(idx) = feedbackInfo;
+	if (cursor == writeViewSize) {
+		// we reached the end of the write view.
+		// note: "at()" automatically grows the vector.
+		feedbackList->getWriteView()->at(cursor) = feedbackInfo;
 	}
-	feedBackListsToMerge.insert(feedbackListIndex);
+	feedBackListsToMerge.insert(feedbackListOffset);
 	saveIndexFlag = true;
 }
 
@@ -77,6 +82,8 @@ void FeedbackIndex::addFeedback(const string& query, unsigned recordId) {
 	addFeedback(query, recordId, time(NULL));
 }
 
+// This API determines whether a query is present in the readview of
+// the query-trie.
 bool FeedbackIndex::hasFeedbackDataForQuery(const string& query) {
 
 	boost::shared_ptr<TrieRootNodeAndFreeList > trieRootNodeReadView;
@@ -90,7 +97,8 @@ bool FeedbackIndex::hasFeedbackDataForQuery(const string& query) {
 	return true;
 }
 
-void FeedbackIndex::getUserFeedbackInfoForQuery(const string& query,
+// This API returns a list of feedback info for a query
+void FeedbackIndex::retrieveUserFeedbackInfoForQuery(const string& query,
 		vector<UserFeedbackInfo>& feedbackInfo) const{
 
 	boost::shared_ptr<TrieRootNodeAndFreeList > trieRootNodeReadView;
@@ -101,9 +109,9 @@ void FeedbackIndex::getUserFeedbackInfoForQuery(const string& query,
 	if (!terminalNode) {
 		return;
 	}
-	boost::shared_ptr<vectorview<UserFeedbackList> > feedbackListIndexVectorReadView;
+	boost::shared_ptr<vectorview<UserFeedbackList *> > feedbackListIndexVectorReadView;
 	feedbackListIndexVector->getReadView(feedbackListIndexVectorReadView);
-	UserFeedbackList feedbackList = NULL;
+	UserFeedbackList *feedbackList = NULL;
 	if (terminalNode->invertedListOffset < feedbackListIndexVectorReadView->size()) {
 		feedbackList = feedbackListIndexVectorReadView->getElement(terminalNode->invertedListOffset);
 	} else {
@@ -122,19 +130,51 @@ void FeedbackIndex::getUserFeedbackInfoForQuery(const string& query,
 }
 
 void FeedbackIndex::merge() {
+	/*
+	 *  Conceptual view of query feedback indexing
+	 *
+	 *                    /\
+	 *                   /  \
+	 *                  /    \
+	 *                 /      \
+	 *                /        \
+	 *               /          \
+	 *              / queryTrie  \
+	 *             /              \
+	 *        ----------------------------
+	 *         |
+	 *         V
+	 *        ----------------------------
+	 *        | feedbackListIndexVector  |
+	 *        ----------------------------
+	 *         |
+	 *         V
+	 *        | |
+	 *        | |
+	 *        | |   <--- User Feedback List
+	 *        | |
+	 *        ---
+	 *
+	 *  merge data structure starting from low-level towards top-level.
+	 */
+
 	boost::unique_lock<boost::mutex> lock(writerLock);
-	feedbackListIndexVector->merge();
-	// merge each feedback list
+	//1. merge each feedback list from the feedBackListsToMerge set.
 	std::set<unsigned>::iterator iter = feedBackListsToMerge.begin();
 	while (iter != feedBackListsToMerge.end()) {
 		mergeFeedbackList(feedbackListIndexVector->getWriteView()->getElement(*iter));
 		++iter;
 	}
 	feedBackListsToMerge.clear();
+
+	//2. Now merge feedbackListIndexVector
+	feedbackListIndexVector->merge();
+
+	//3. Trie should be merged last because it is a top level data structure.
 	queryTrie->merge(NULL, NULL, 0, false);
 }
 
-void FeedbackIndex::mergeFeedbackList(UserFeedbackList feedbackList) {
+void FeedbackIndex::mergeFeedbackList(UserFeedbackList *feedbackList) {
 	boost::shared_ptr<vectorview<UserFeedbackInfo> > feedbackInfoListReadView;
 	feedbackList->getReadView(feedbackInfoListReadView);
 	unsigned readViewSize = feedbackInfoListReadView->size();
@@ -143,6 +183,7 @@ void FeedbackIndex::mergeFeedbackList(UserFeedbackList feedbackList) {
 
 	ASSERT(writeViewSize > 0);
 
+	// defensive check. If true then return because there is nothing to merge.
 	if (readViewSize == writeViewSize)
 		return;
 
@@ -155,34 +196,39 @@ void FeedbackIndex::mergeFeedbackList(UserFeedbackList feedbackList) {
 	std::sort(arrayOfUserFeedbackInfo + readViewSize, arrayOfUserFeedbackInfo + writeViewSize,
 			userFeedbackInfoComparator);
 
-    // sort-merge readview and write part of the array.
+    // sort-merge readview and delta-part of the array.
     std::inplace_merge (arrayOfUserFeedbackInfo,
     		arrayOfUserFeedbackInfo + readViewSize,
     		arrayOfUserFeedbackInfo + writeViewSize,
     		userFeedbackInfoComparator);
 
-    // combined duplicate entries.
-    unsigned writeIdx = 0;
+    // combined duplicate entries because we can have a new entry with a record id which is
+    // already in the read view. Since the array is sorted, duplicate entries will be in
+    // consecutive locations.
+    unsigned writeCursor = 0;
     unsigned prevRecId = arrayOfUserFeedbackInfo[0].recordId;
     for (unsigned i = 1; i < writeViewSize; ++i) {
 
     	if (arrayOfUserFeedbackInfo[i].recordId == prevRecId) {
     		//accumulate the frequency.
-    		arrayOfUserFeedbackInfo[writeIdx].feedbackFrequency += arrayOfUserFeedbackInfo[i].feedbackFrequency;
-    		if (arrayOfUserFeedbackInfo[writeIdx].timestamp < arrayOfUserFeedbackInfo[i].timestamp) {
-    			arrayOfUserFeedbackInfo[writeIdx].timestamp =
+    		arrayOfUserFeedbackInfo[writeCursor].feedbackFrequency += arrayOfUserFeedbackInfo[i].feedbackFrequency;
+    		if (arrayOfUserFeedbackInfo[writeCursor].timestamp < arrayOfUserFeedbackInfo[i].timestamp) {
+    			arrayOfUserFeedbackInfo[writeCursor].timestamp =
     					arrayOfUserFeedbackInfo[i].timestamp;
     		}
     	} else {
-    		++writeIdx;
-    		if (writeIdx < i)
-    			arrayOfUserFeedbackInfo[writeIdx] = arrayOfUserFeedbackInfo[i];
-    		prevRecId = arrayOfUserFeedbackInfo[writeIdx].recordId;
+    		++writeCursor;
+    		if (writeCursor < i)
+    			arrayOfUserFeedbackInfo[writeCursor] = arrayOfUserFeedbackInfo[i];
+    		prevRecId = arrayOfUserFeedbackInfo[writeCursor].recordId;
     	}
     }
 
-    if (writeViewSize > maxFedbackInfoCountPerQuery) {
-    	feedbackInfoListWriteView->setSize(maxFedbackInfoCountPerQuery);
+    writeViewSize = writeCursor + 1;
+    if (writeViewSize > maxFeedbackInfoCountPerQuery) {
+    	feedbackInfoListWriteView->setSize(maxFeedbackInfoCountPerQuery);
+    } else {
+    	feedbackInfoListWriteView->setSize(writeViewSize);
     }
     //reset readview to writeview and create new write view
     feedbackList->merge();
@@ -216,7 +262,7 @@ void FeedbackIndex::save(const string& directoryName) {
 		throw std::runtime_error("Error opening " + userfeedbackListFilePath);
 	boost::archive::binary_oarchive oa(ofs);
     oa << IndexVersion::currentVersion;
-	oa << maxFedbackInfoCountPerQuery;
+	oa << maxFeedbackInfoCountPerQuery;
 	oa << feedbackListIndexVector;
 	for (unsigned i = 0; i < feedbackListIndexVector->getWriteView()->size(); ++i) {
 		oa << feedbackListIndexVector->getWriteView()->at(i);
@@ -251,7 +297,7 @@ void FeedbackIndex::load(const string& directoryName) {
 	IndexVersion storedIndexVersion;
 	ia >> storedIndexVersion;
 	if (IndexVersion::currentVersion == storedIndexVersion) {
-		ia >> maxFedbackInfoCountPerQuery;
+		ia >> maxFeedbackInfoCountPerQuery;
 		ia >> feedbackListIndexVector;
 		for (unsigned i = 0; i < feedbackListIndexVector->getWriteView()->size(); ++i) {
 			ia >> feedbackListIndexVector->getWriteView()->at(i);
