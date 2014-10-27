@@ -42,6 +42,7 @@ private:
 		this->req = req;
 		this->coreId = coreId;
 		this->commandCode = commandCode;
+		this->shardCommand = NULL;
 		initActionName();
 	}
 

@@ -199,6 +199,7 @@ void LockManager::resolveRelease(LockBatch * lockBatch){
 	}
 
 	if(releaseHappened){
+	    ShardManager::getShardManager()->getMetadataManager()->commitClusterMetadata();
 		Logger::sharding(Logger::Detail, "LockManager| release request triggers some pending lock requests.");
 		movePendingLockBatchesForward();
 	}
