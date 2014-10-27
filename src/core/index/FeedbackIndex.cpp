@@ -28,8 +28,8 @@ bool userFeedbackInfoComparator(const UserFeedbackInfo& lhs, const UserFeedbackI
 		return false;
 };
 
-FeedbackIndex::FeedbackIndex() {
-	maxFeedbackInfoCountPerQuery = 20;  // TODO: create new config setting
+FeedbackIndex::FeedbackIndex(unsigned maxFeedbackInfoCountPerQuery) {
+	this->maxFeedbackInfoCountPerQuery = maxFeedbackInfoCountPerQuery;
 	queryTrie = new Trie();
 	queryTrie->commit();
 	feedbackListIndexVector = new cowvector<UserFeedbackList *>();

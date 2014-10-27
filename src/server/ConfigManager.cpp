@@ -180,6 +180,8 @@ const char* const ConfigManager::defaultExactPostTag = "</b>";
 
 const char* const ConfigManager::heartBeatTimerTag = "heartbeattimer";
 
+const char* const ConfigManager::userFeedbackString = "userfeedback";
+
 ConfigManager::ConfigManager(const string& configFile) {
     this->configFile = configFile;
     defaultCoreName = defaultCore;
@@ -355,6 +357,10 @@ CoreInfo_t::CoreInfo_t(const CoreInfo_t &src) {
 
     ports = src.ports;
     accessControlInfo = src.accessControlInfo;
+
+    userFeedbackEnabledFlag = src.userFeedbackEnabledFlag;
+    maxFeedbackRecordsPerQuery = src.maxFeedbackRecordsPerQuery;
+
 }
 
 void ConfigManager::parseIndexConfig(const xml_node &indexConfigNode,
@@ -1188,6 +1194,24 @@ void ConfigManager::parseDataFieldSettings(const xml_node &parentNode,
     			coreInfo->recordAclFilePath = boost::filesystem::path(recordAclFilePath).normalize().string();
     		}
     	}
+    }
+
+    // <userFeedback maxFeedbackRecordsPerQuery="20" />
+    childNode = parentNode.child(userFeedbackString);
+    if (childNode) {
+    	coreInfo->userFeedbackEnabledFlag = true;
+        int maxFeedbackRecordsPerQuery = childNode.attribute("maxfeedbackrecordsperquery").as_int(0);
+        if (maxFeedbackRecordsPerQuery <= 0) {
+        	coreInfo->userFeedbackEnabledFlag = false;
+        	Logger::console("In core %s: 'maxFeedbackRecordsPerQuery' attribute of"
+        			" 'userFeedback' tag is missing or has invalid value. User feedback is disabled.",
+        			coreInfo->getName().c_str());
+        }
+        else {
+        	coreInfo->maxFeedbackRecordsPerQuery = maxFeedbackRecordsPerQuery;
+        }
+    } else {
+    	coreInfo->userFeedbackEnabledFlag = false;
     }
 
 }

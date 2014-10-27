@@ -309,27 +309,31 @@ void QueryOptimizer::injectRequiredSortOperators(vector<PhysicalPlanOptimization
             *treeOption = sortByScoreOp;
         }
 
-    	// inject FeedbackRanking operator. We want following plan structure.
-        //   [sort-by-score] -> [feedback ranking] -> [rest of the plan]
+        // if user feedback is enabled then originalQueryString is set else it is empty.
+        if (logicalPlan->originalQueryString != "") {
 
-    	FeedbackRankingOptimizationOperator *feedbackRankingOp =
-    			this->queryEvaluator->getPhysicalOperatorFactory()->createFeedbackRankingOptimizationOperator();
-    	feedbackRankingOp->setLogicalPlanNode((*treeOption)->getLogicalPlanNode());
+        	// inject FeedbackRanking operator. We want following plan structure.
+        	//   [sort-by-score] -> [feedback ranking] -> [rest of the plan]
 
-    	if ((*treeOption)->getType() == PhysicalPlanNode_SortByScore) {
-        	// If sort-by-score operator is a top level operator then add FeedbackRanking operator
-        	// under this operator.
-        	feedbackRankingOp->addChild((*treeOption)->getChildAt(0));
-        	(*treeOption)->addChild(feedbackRankingOp);
-        } else {
-        	// If sort-by-score operator is not a top level operator then create both FeedbackRanking
-        	// and sort-by-score operators.
-        	feedbackRankingOp->addChild((*treeOption));
-            SortByScoreOptimizationOperator * sortByScoreOp =
-                    this->queryEvaluator->getPhysicalOperatorFactory()->createSortByScoreOptimizationOperator();
-            sortByScoreOp->setLogicalPlanNode((*treeOption)->getLogicalPlanNode());
-            sortByScoreOp->addChild(feedbackRankingOp);
-            *treeOption = sortByScoreOp;
+        	FeedbackRankingOptimizationOperator *feedbackRankingOp =
+        			this->queryEvaluator->getPhysicalOperatorFactory()->createFeedbackRankingOptimizationOperator();
+        	feedbackRankingOp->setLogicalPlanNode((*treeOption)->getLogicalPlanNode());
+
+        	if ((*treeOption)->getType() == PhysicalPlanNode_SortByScore) {
+        		// If sort-by-score operator is a top level operator then add FeedbackRanking operator
+        		// under this operator.
+        		feedbackRankingOp->addChild((*treeOption)->getChildAt(0));
+        		(*treeOption)->addChild(feedbackRankingOp);
+        	} else {
+        		// If sort-by-score operator is not a top level operator then create both FeedbackRanking
+        		// and sort-by-score operators.
+        		feedbackRankingOp->addChild((*treeOption));
+        		SortByScoreOptimizationOperator * sortByScoreOp =
+        				this->queryEvaluator->getPhysicalOperatorFactory()->createSortByScoreOptimizationOperator();
+        		sortByScoreOp->setLogicalPlanNode((*treeOption)->getLogicalPlanNode());
+        		sortByScoreOp->addChild(feedbackRankingOp);
+        		*treeOption = sortByScoreOp;
+        	}
         }
     }
 }

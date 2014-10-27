@@ -63,7 +63,7 @@ public:
     }
 
     // constructor
-    FeedbackIndex();
+    FeedbackIndex(unsigned maxFeedbackInfoCountPerQuery);
     // destructor
     virtual ~FeedbackIndex();
 private:

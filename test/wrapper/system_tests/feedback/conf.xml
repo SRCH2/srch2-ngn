@@ -59,6 +59,8 @@
 	Defaults to 1
     -->
     <maxSearchThreads>2</maxSearchThreads>
+
+    <userFeedback maxFeedbackRecordsPerQuery = "20" />
      
          
     <indexConfig>

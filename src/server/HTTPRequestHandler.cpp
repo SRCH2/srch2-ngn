@@ -1695,7 +1695,10 @@ boost::shared_ptr<Json::Value> HTTPRequestHandler::doSearchOneCore(evhttp_reques
             *(AnalyzerFactory::getCurrentThreadAnalyzer(indexDataContainerConf)),
             &paramContainer, server->indexer->getAttributeAcl());
     LogicalPlan logicalPlan;
-    logicalPlan.originalQueryString = qp.originalQueryString;
+    if (server->indexDataConfig->isUserFeedbackEnabled()) {
+    	// set only if user feedback is enabled else leave it empty.
+    	logicalPlan.originalQueryString = qp.originalQueryString;
+    }
     if(qr.rewrite(logicalPlan) == false){
         // if the query is not valid, print the error message to the response
         errorStream << paramContainer.getMessageString();

@@ -562,6 +562,8 @@ private:
     static const char* const defaultExactPostTag;
 
     static const char* const heartBeatTimerTag;
+
+    static const char* const userFeedbackString;
 public:
     static const char* const defaultCore;
 };
@@ -581,7 +583,10 @@ public:
 class CoreInfo_t {
 
 public:
-    CoreInfo_t(class ConfigManager *manager) : configManager(manager), accessControlInfo(NULL) {};
+    CoreInfo_t(class ConfigManager *manager) : configManager(manager), accessControlInfo(NULL) {
+    	maxFeedbackRecordsPerQuery = 0;
+    	userFeedbackEnabledFlag = false;
+    };
     CoreInfo_t(const CoreInfo_t &src);
 
     friend class ConfigManager;
@@ -752,6 +757,10 @@ public:
     	return hasRecordAcl;
     }
 
+    bool isUserFeedbackEnabled() const { return userFeedbackEnabledFlag; }
+
+    unsigned getMaxFeedbackRecordsPerQuery() const { return maxFeedbackRecordsPerQuery; }
+
 protected:
     string name; // of core
 
@@ -875,6 +884,8 @@ protected:
     bool hasRecordAcl;
     string recordAclFilePath;
 
+    bool userFeedbackEnabledFlag;
+    unsigned maxFeedbackRecordsPerQuery;
 
 };
 

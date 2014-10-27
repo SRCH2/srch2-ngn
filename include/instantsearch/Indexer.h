@@ -92,6 +92,7 @@ public:
     unsigned mergeEveryMWrites;
     unsigned updateHistogramEveryPMerges;
     unsigned updateHistogramEveryQWrites;
+    unsigned maxFeedbackRecordsPerQuery;
 };
 
 

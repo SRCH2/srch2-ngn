@@ -155,6 +155,7 @@ IndexMetaData *Srch2Server::createIndexMetaData(
             indexDataConfig->getUpdateHistogramEveryQWrites(),
             indexDataConfig->getIndexPath());
 
+    indexMetaData->maxFeedbackRecordsPerQuery = indexDataConfig->getMaxFeedbackRecordsPerQuery();
     return indexMetaData;
 }
 void Srch2Server::createHighlightAttributesVector(
