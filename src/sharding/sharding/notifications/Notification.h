@@ -106,10 +106,15 @@ private:
 class DummyShardingNotification : public ShardingNotification{
 public:
     ShardingMessageType messageType() const {
-    	return NULLType;
+    	return NULLType; // NOTE : A new ShardingMessageType must be added and used here.
     }
 	bool resolveNotification(SP(ShardingNotification) _notif){
 		ASSERT(false);
+		// When this notification is received in this this node,
+		// ShardManager calls this functions and whatever we want to do with this
+		// notification must be implemented here (for example passing an ACK to the state-machine
+		// if some node-iterator is waiting for this ack. or passing a command notification to
+		// any of the internal processing modules like DPInteral, LockManager, ResourceMetadataManager and ...)
 		return true;
 	}
 };

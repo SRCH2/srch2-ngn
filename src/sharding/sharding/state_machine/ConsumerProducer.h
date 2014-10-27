@@ -53,6 +53,12 @@ class NodeIteratorListenerInterface : public ConsumerInterface{
 public:
 	virtual ~NodeIteratorListenerInterface(){};
 	virtual void start(){	}
+
+
+	/*
+	 * end functions are calback functions that consumer can override to receive the
+	 * result of node iteration.
+	 */
 	virtual void end_(map<NodeOperationId, SP(ShardingNotification) > & _replies){
 		// by default, the second end is used by implementors of this interface
 		map<NodeId, SP(ShardingNotification) > replies;
@@ -70,6 +76,9 @@ public:
 
 	}
 	// if returns true, operation must stop and return null to state_machine
+	// True is retunrned by the caller of this module if this failedNode must abort
+	// the task. By defaul this method does not need to be overridden because it returns
+	// false by default.
 	virtual bool shouldAbort(const NodeId & failedNode){
 		return false;
 	}

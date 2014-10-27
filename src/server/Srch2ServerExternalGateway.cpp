@@ -4,6 +4,7 @@
 #include "sharding/processor/DistributedProcessorExternal.h"
 #include "sharding/configuration/ConfigManager.h"
 #include "sharding/sharding/transactions/cluster_transactions/ShardCommandHttp.h"
+#include "sharding/sharding/transactions/cluster_transactions/AclCommandHttp.h"
 #include "sharding/sharding/transactions/cluster_transactions/ClusterShutdownOperation.h"
 #include <exception>
 
@@ -105,16 +106,20 @@ void Srch2ServerGateway::cb_coreSpecificOperations(struct evhttp_request * req, 
     	case srch2http::AttributeAclAdd:
     	case srch2http::AttributeAclDelete:
     	case srch2http::AttributeAclAppend:
-    		//dpExternal->externalAclAttributeModifyCommand(clusterReadview, req, coreId);
+    	    AclCommandHttpHandler::runCommand(clusterReadview, req, coreId /*, and probably some other
+    	    arguments lie the type of acl command. Look at Export, Merge, ResetLogger and Commit to see a similar example*/);
     		break;
     	case srch2http::RecordAclAdd:
-    		//dpExternal->externalAclRecordAddRolesCommand(clusterReadview, req, coreId);
+            AclCommandHttpHandler::runCommand(clusterReadview, req, coreId /*, and probably some other
+            arguments lie the type of acl command. Look at Export, Merge, ResetLogger and Commit to see a similar example*/);
     		break;
     	case srch2http::RecordAclAppend:
-    		//dpExternal->externalAclRecordAppendRolesCommand(clusterReadview, req, coreId);
+            AclCommandHttpHandler::runCommand(clusterReadview, req, coreId /*, and probably some other
+            arguments lie the type of acl command. Look at Export, Merge, ResetLogger and Commit to see a similar example*/);
     		break;
     	case srch2http::RecordAclDelete:
-    		//dpExternal->externalAclRecordDeleteRolesCommand(clusterReadview, req, coreId);
+            AclCommandHttpHandler::runCommand(clusterReadview, req, coreId /*, and probably some other
+            arguments lie the type of acl command. Look at Export, Merge, ResetLogger and Commit to see a similar example*/);
     		break;
     	default:
     		cb_notfound(req, NULL);
