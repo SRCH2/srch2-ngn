@@ -109,7 +109,7 @@ OperationState * ConcurrentNotifOperation::handle(SP(Notification) n){
 		return NULL;
 	}
 
-	if(resType){
+	if(resType == n->messageType()){
 		return handle(boost::dynamic_pointer_cast<ShardingNotification>(n));
 	}
 
