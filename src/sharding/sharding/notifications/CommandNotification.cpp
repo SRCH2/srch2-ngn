@@ -40,9 +40,9 @@ bool CommandNotification::resolveNotification(SP(ShardingNotification) notif){
 			ShardManager::getShardManager()->getDPInternal()->resolveShardCommand(boost::dynamic_pointer_cast<CommandNotification>(notif));
 	if(! response){
 		response = create<CommandStatusNotification>();
-		response->setSrc(notif->getDest());
-		response->setDest(notif->getSrc());
 	}
+    response->setSrc(notif->getDest());
+    response->setDest(notif->getSrc());
 	send(response);
 	return true;
 }
