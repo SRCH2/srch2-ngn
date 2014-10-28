@@ -27,9 +27,9 @@
     <srch2Home>/home/jamshid/workspace-srch2-v4/srch2-ngn/test/sharding/integration</srch2Home>
  
     <ping>
-        <ping-interval>2000000</ping-interval>
+        <ping-interval>20000000</ping-interval>
         <ping-timeout>8000000</ping-timeout>
-        <retry-count>300000</retry-count>
+        <retry-count>3000000</retry-count>
     </ping>    
     <transport>
         <port>4095</port>
