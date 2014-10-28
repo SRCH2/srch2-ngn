@@ -76,7 +76,7 @@ private:
         // its response in a 'consume' callback function.
         aclCommand = new AclCommand(this/*, and maybe other arguments */);
         aclCommand->produce();
-        if(this->getTransaction() != NULL && ! this->getTransaction()->isAttached){
+        if(this->getTransaction() != NULL && ! this->getTransaction()->isAttached()){
         	return false;
         }
         return true;
