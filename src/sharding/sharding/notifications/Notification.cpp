@@ -183,7 +183,7 @@ void ShardingNotification::serializeHeaderInfo(Message * msg) const{
 
 void ShardingNotification::serializeContent(Message * msg) const{
 	char * buffer = Message::getBodyPointerFromMessagePointer(msg);
-	buffer = buffer + getNumberOfBytesHeader();
+	buffer = ((char *)buffer) + getNumberOfBytesHeader();
 	serializeBody(buffer);
 }
 
