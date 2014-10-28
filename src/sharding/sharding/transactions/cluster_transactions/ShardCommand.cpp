@@ -16,7 +16,6 @@ ShardCommand::ShardCommand(ConsumerInterface * consumer,
 		unsigned coreId, ShardCommandCode commandCode,
 		const string & filePath):coreId(coreId), commandCode(commandCode), ProducerInterface(consumer){
 	this->filePath = filePath;
-	this->commandCode = ShardCommandCode_Merge;
 	this->dataSavedFlag = false;
 	if(this->getTransaction() != NULL){
 		clusterReadview = this->getTransaction()->getSession()->clusterReadview;

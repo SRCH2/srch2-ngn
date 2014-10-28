@@ -19,7 +19,7 @@ namespace httpwrapper {
 CommandNotification::CommandNotification(boost::shared_ptr<const ClusterResourceMetadata_Readview> clusterReadview,
 		const NodeTargetShardInfo & target, ShardCommandCode commandCode, const string & filePath ){
 	this->target = target;
-	this->commandCode = ShardCommandCode_Merge;
+	this->commandCode = commandCode;
 	if(this->commandCode == ShardCommandCode_Export){
 		jsonFilePath = filePath;
 	}

@@ -614,12 +614,12 @@ SP(CommandStatusNotification) DPInternalRequestHandler::internalMergeCommand(con
     pthread_t * shardMergeThreads = new pthread_t[shards.size()];
 	for(unsigned shardIdx = 0; shardIdx < shards.size(); ++shardIdx){
 		const Shard * shard = shards.at(shardIdx);
-		unsigned mergeAction = 0;
+		MergeActionType mergeAction = DoMerge;
 		if(! mainAction){
 			if(flagValue){
-				mergeAction = 1;
+				mergeAction = SetMergeON;
 			}else{
-				mergeAction = 2;
+				mergeAction = SetMergeOFF;
 			}
 		}
 		ShardStatusOnlyArgs * shardMergeArgs =
@@ -701,10 +701,10 @@ void * DPInternalRequestHandler::commitInShardThreadWork(void * args){
 void * DPInternalRequestHandler::mergeInShardThreadWork(void * args){
 	ShardStatusOnlyArgs * shardArgs = (ShardStatusOnlyArgs * )args;
 
-	if(shardArgs->mergeAction != 0){
-		if(shardArgs->mergeAction == 1){
+	if(shardArgs->mergeAction != DoMerge){
+		if(shardArgs->mergeAction == SetMergeON){
 			shardArgs->server->getIndexer()->enableMerge();
-		}else{
+		}else if (shardArgs->mergeAction == SetMergeOFF){
 			shardArgs->server->getIndexer()->disableMerge();
 		}
         shardArgs->shardResults->setStatusValue(true);
@@ -757,11 +757,11 @@ SP(CommandStatusNotification) DPInternalRequestHandler::resolveShardCommand(SP(C
 			Logger::sharding(Logger::Step, "DP-Internal| Doing merge operation");
 			return internalMergeCommand(notif->getTarget(), clusterReadview);
 		case ShardCommandCode_MergeSetOn:
-			Logger::sharding(Logger::Step, "DP-Internal| Setting merge flag to OFF");
-			return internalMergeCommand(notif->getTarget(), clusterReadview, false, false);
-		case ShardCommandCode_MergeSetOff:
 			Logger::sharding(Logger::Step, "DP-Internal| Setting merge flag to ON");
 			return internalMergeCommand(notif->getTarget(), clusterReadview, false, true);
+		case ShardCommandCode_MergeSetOff:
+			Logger::sharding(Logger::Step, "DP-Internal| Setting merge flag to OFF");
+			return internalMergeCommand(notif->getTarget(), clusterReadview, false, false);
 		case ShardCommandCode_ResetLogger:
 			Logger::sharding(Logger::Step, "DP-Internal| Resetting logger");
 			return internalResetLogCommand(notif->getTarget(), clusterReadview);

@@ -213,20 +213,24 @@ private:
     static void * serializeIndexInShardThreadWork(void * args);
     static void * serializeRecordsInShardThreadWork(void * args);
 
+	enum MergeActionType{
+		DoMerge,
+		SetMergeON,
+		SetMergeOFF
+	};
     struct ShardStatusOnlyArgs{
-    	ShardStatusOnlyArgs(Srch2Server * server, ShardId * shardId, unsigned mergeAction = 0){
+    	ShardStatusOnlyArgs(Srch2Server * server, ShardId * shardId, MergeActionType mergeAction = DoMerge){
     		this->server = server;
     		this->shardResults = new CommandStatusNotification::ShardStatus(shardId);
     		// 0 is merge
     		// 1 is set ON
     		// 2 is set OFF
-    		ASSERT(mergeAction == 0 || mergeAction == 1 || mergeAction == 2);
     		this->mergeAction = mergeAction;
 
     	}
     	Srch2Server * server;
     	CommandStatusNotification::ShardStatus * shardResults;
-    	unsigned mergeAction;
+    	MergeActionType mergeAction;
     };
 
     void handleStatusOnlyCommands();
