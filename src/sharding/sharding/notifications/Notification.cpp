@@ -235,8 +235,8 @@ bool ShardingNotification::send(SP(ShardingNotification) notification, const vec
 
 //		Logger::sharding(Logger::Detail, "%s | Sending [Type: %s, ID: %d]. ", notification->getDescription().c_str(),
 //				notificationMessage->getDescription().c_str(), notificationMessage->getMessageId());
+		tm->sendMessage(notification->getDest().nodeId , notificationMessage, 0);
 	}
-	tm->sendMessage(notification->getDest().nodeId , notificationMessage, 0);
 	tm->getMessageAllocator()->deallocateByMessagePointer(notificationMessage);
 	return true;
 }
