@@ -164,10 +164,10 @@ bool ShardingNotification::isBounced() const{
 
 
 Message * ShardingNotification::serialize(MessageAllocator * allocator) const{
-	unsigned numberOfBytes = getNumberOfBytesHeader() + getNumberOfBytesBody();
+	unsigned numberOfBytes = getNumberOfBytesAll();
 	Message * msg = allocator->allocateMessage(numberOfBytes);
-	serializeHeaderInfo(msg);
-	serializeContent(msg);
+	char * buffer = Message::getBodyPointerFromMessagePointer(msg);
+	serializeAll(buffer);
 	return msg;
 }
 
