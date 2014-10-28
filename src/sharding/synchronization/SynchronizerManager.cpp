@@ -333,7 +333,7 @@ void SyncManager::sendHeartBeatToAllNodesInCluster() {
 
 	localNodesCopyMutex.lock();
 	for(vector<Node>::iterator nodeItr = localNodesCopy.begin(); nodeItr != localNodesCopy.end(); ++nodeItr){
-		if (nodeItr->thisIsMe)
+		if (nodeItr->getId() == currentNodeId)
 			continue;
 		Logger::debug("SM-M%d-sending heart-beat request to node %d",
 				currentNodeId, nodeItr->getId());
@@ -375,6 +375,7 @@ bool SMCallBackHandler::resolveMessage(Message *message, NodeId node){
 	case HeartBeatMessageType:
 	{
 		if (!isMaster) {
+			Logger::debug("SM-CB-getting heart-beat request from node %d", node);
 			boost::mutex::scoped_lock lock(hbLock);
 			heartbeatMessageTimeEntry = time(NULL);
 			memcpy(heartbeatMessage, message, sizeof(Message) + sizeof(NodeId));
