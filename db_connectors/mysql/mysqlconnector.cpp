@@ -270,8 +270,8 @@ bool MySQLConnector::loadLastAccessedLogRecordTime() {
          * detect this situation and give a warning to the user.
          */
         std::vector<std::string> loadedLogFile, currentOldestLogFile;
-        split(logFileStr, '.', loadedLogFile);
-        split(firstLogFile, '.', currentOldestLogFile);
+        splitString(logFileStr, '.', loadedLogFile);
+        splitString(firstLogFile, '.', currentOldestLogFile);
         if (loadedLogFile.size() != 2 || currentOldestLogFile.size() != 2) {
             Logger::error(
                     "MYSQLCONNECTOR: Error in log file %s or %s,"

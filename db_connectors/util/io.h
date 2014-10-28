@@ -6,6 +6,6 @@
 
 bool checkDirExisted(const char* path);
 bool checkFileExisted(const char* path);
-std::vector<std::string> &split(const std::string &s, char delim,
+std::vector<std::string> &splitString(const std::string &s, char delim,
         std::vector<std::string> &elems);
 #endif
