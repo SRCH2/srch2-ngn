@@ -216,7 +216,7 @@ bool MySQLConnector::populateFieldName(std::string & tableName) {
     return true;
 }
 
-//Get the latest log file name.
+//Get the first log file name.
 //Query: SHOW BINLOG EVENTS
 bool MySQLConnector::getFirstLogFileName(std::string & logFileName) {
     while (1) {
@@ -233,7 +233,7 @@ bool MySQLConnector::getFirstLogFileName(std::string & logFileName) {
             return true;
         } catch (sql::SQLException &e) {
             Logger::error(
-                    "MYSQLCONNECTOR: SQL error %d while getting the latest log file name : %s",
+                    "MYSQLCONNECTOR: SQL error %d while getting the first log file name : %s",
                     e.getErrorCode(), e.getSQLState().c_str());
             sleep(listenerWaitTime);
         }
@@ -261,13 +261,13 @@ bool MySQLConnector::loadLastAccessedLogRecordTime() {
         a_file.close();
 
         /*
-         * MySQL Binlog will automatically deleted the out of date log.
-         * For example, we saved the binlog.00007 as the latest executed log file,
-         * Several days later, MySQL will delete the binlog.00007 and only keep
-         * the binlog file starts from binlog.00010. In this case, we will
-         * lose the table changes between binlog.00007 to binlog.00010. This may
-         * cause the indexes inconsistent with the database and the connector will
-         * check this situation and give a warning.
+         * MySQL Binlog will automatically delete the out-of-date log.
+         * For example, suppose we saved a file binlog.00007 as the latest consumed log file,
+         * Several days later, MySQL will delete this file and only keep
+         * the binlog file starting from binlog.00010. In this case, we will
+         * lose the table changes between binlog.00007 and binlog.00010. This case may
+         * cause the indexes to be inconsistent with the database. The connector will
+         * detect this situation and give a warning to the user.
          */
         std::vector<std::string> loadedLogFile, currentOldestLogFile;
         split(logFileStr, '.', loadedLogFile);
@@ -289,7 +289,7 @@ bool MySQLConnector::loadLastAccessedLogRecordTime() {
                 Logger::warn("MYSQLCONNECTOR: The Binlog is out of date,"
                         " the indexes may be inconsistent with the data,"
                         " please rebuild the indexes. "
-                        "Last time saved log file : %s, "
+                        "Latest saved log file : %s, "
                         "current oldest log file : %s", logFileStr.c_str(),
                         firstLogFile.c_str());
                 this->currentLogFile = firstLogFile;
