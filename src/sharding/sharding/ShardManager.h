@@ -52,9 +52,6 @@ public:
 	~ShardManager();
 	void start();
 
-	void insert(const unsigned coreId , evhttp_request *req);
-
-
 	void nodesInfo(evhttp_request *req);
 
 	void _shutdown();
@@ -69,7 +66,6 @@ public:
 	// notification resolve methods
 	bool resolveMessage(Message * msg, NodeId node);
 
-	bool handleBouncing(SP(ShardingNotification) notif);
 	/*
 	 * IMPORTANT NOTE:
 	 * *** This is not a normal entry point. This entry point to lock manager of
@@ -78,7 +74,7 @@ public:
 	 */
 	// called from destructor of readview to notify shard manager that the readview is released and
 	// no more readers are using it
-	static void * resolveReadviewRelease_ThreadChange(void * metadataVersion);
+	static void * resolveReadviewRelease(void * metadataVersion);
 
 	/*
 	 * IMPORTANT NOTE:

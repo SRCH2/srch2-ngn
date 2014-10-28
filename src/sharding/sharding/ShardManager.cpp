@@ -200,6 +200,7 @@ void ShardManager::print(){
 
 void ShardManager::start(){
 	Logger::info("Starting data processor ...");
+    boost::unique_lock<boost::mutex> shardManagerGlobalLock(ShardManager::getShardManager()->shardManagerGlobalMutex);
 
 	// insert this node and all older nodes in the lock manager in the beginning.
 	ShardManager::getShardManager()->_lockManager->initialize();
@@ -231,13 +232,6 @@ void ShardManager::start(){
     }
 }
 
-void ShardManager::insert(const unsigned coreId , evhttp_request *req){
-	boost::unique_lock<boost::mutex> shardManagerGlobalLock(shardManagerGlobalMutex);
-//	ClusterRecordOperation * insertOperation = new ClusterRecordOperation(Insert_ClusterRecordOperation_Type, coreId, req);
-//	this->recordOperationsStateMachine->registerOperation(insertOperation);
-	return;
-}
-
 void ShardManager::_shutdown(){
 	Logger::console("Shutting down the instance ...");
 	raise(SIGTERM);
@@ -264,20 +258,6 @@ void ShardManager::nodesInfo(evhttp_request *req){
 
 }
 
-
-bool ShardManager::handleBouncing(SP(ShardingNotification) notif){
-	if(notif->isBounced()){
-		saveBouncedNotification(notif);
-		Logger::sharding(Logger::Detail, "SHM| Bounced notification received and saved.");
-		return true;
-	}
-	if(! isJoined()){
-		bounceNotification(notif);
-		Logger::sharding(Logger::Detail, "SHM| Not joined yet. Notification bounced.");
-		return true;
-	}
-	return false;
-}
 
 bool ShardManager::resolveMessage(Message * msg, NodeId senderNode){
 	if(msg == NULL){
@@ -367,10 +347,9 @@ bool ShardManager::resolveMessage(Message * msg, NodeId senderNode){
 	}
 
 	if(bounced){
-		if(! handleBouncing(notif)){
-			Logger::sharding(Logger::Detail, "SHM| Bounced notification saved to be sent again later. Notification : %s", notif->getDescription().c_str());
-			return true;
-		}
+        saveBouncedNotification(notif);
+        Logger::sharding(Logger::Detail, "SHM| Bounced notification received and saved.");
+        return true;
 	}
 
 	if(mustBounce && ! isJoined()){
@@ -388,9 +367,12 @@ bool ShardManager::resolveMessage(Message * msg, NodeId senderNode){
 	return true;
 }
 
-void * ShardManager::resolveReadviewRelease_ThreadChange(void * vidPtr){
+void * ShardManager::resolveReadviewRelease(void * vidPtr){
 	unsigned metadataVersion = *(unsigned *)vidPtr;
 	delete (unsigned *)vidPtr;
+    // Global mutex lock which will last as long as we are in this scope.
+	boost::unique_lock<boost::mutex> shardManagerGlobalLock(ShardManager::getShardManager()->shardManagerGlobalMutex);
+
 	Logger::sharding(Logger::Detail, "SHM| Metadata release VID=%d", metadataVersion);
 	ShardManager::getShardManager()->_getLockManager()->resolve(metadataVersion);
 	Logger::sharding(Logger::Detail, "SHM| Metadata release VID=%d processed.", metadataVersion);
