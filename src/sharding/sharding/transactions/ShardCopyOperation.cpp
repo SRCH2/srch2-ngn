@@ -104,6 +104,7 @@ void ShardCopyOperation::end(map<NodeId, SP(ShardingNotification) > & replies){
 	if(replies.size() < 1){
 		this->successFlag = false;
 		release();
+		return;
 	}
 	Logger::sharding(Logger::Detail, "ShardCopy(opid=%s, cp {%s in %d} to %s )| CopyToMe Ack received.", currentOpId.toString().c_str(),
 			replicaShardId.toString().c_str(), srcNodeId, unassignedShardId.toString().c_str());
