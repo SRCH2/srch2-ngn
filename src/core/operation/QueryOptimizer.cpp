@@ -310,7 +310,11 @@ void QueryOptimizer::injectRequiredSortOperators(vector<PhysicalPlanOptimization
         }
 
         // if user feedback is enabled then originalQueryString is set else it is empty.
-        if (logicalPlan->originalQueryString != "") {
+        bool isFeedbackEnabled = logicalPlan->originalQueryString != "";
+        // Insert a Feedback ranking operator when feedback is enabled and query is present in
+        // feedback index.
+        if (isFeedbackEnabled
+             && queryEvaluator->getFeedbackIndex()->hasFeedbackDataForQuery(logicalPlan->originalQueryString)) {
 
         	// inject FeedbackRanking operator. We want following plan structure.
         	//   [sort-by-score] -> [feedback ranking] -> [rest of the plan]
