@@ -73,7 +73,9 @@ void InvertedListContainer::sortAndMergeBeforeCommit(const unsigned keywordId, c
 // Sort them assuming those from the read view are already sorted.
 // 4) Copy them back to the write view, which is resized based on the
 // total number of valid records.
-void InvertedListContainer::sortAndMerge(const unsigned keywordId, ForwardIndex *forwardIndex,
+//
+// Return: number of elements in the final write view
+int InvertedListContainer::sortAndMerge(const unsigned keywordId, ForwardIndex *forwardIndex,
 		shared_ptr<vectorview<ForwardListPtr> >& forwardListDirectoryReadView,
 	    vector<InvertedListIdAndScore>& invertedListElements,
         unsigned totalNumberOfDocuments,
@@ -178,7 +180,7 @@ void InvertedListContainer::sortAndMerge(const unsigned keywordId, ForwardIndex 
     // In this case, instead of calling "merge()", we call "commit()" to let this COWvector commit.
     if (readView.get() == writeView) {
         this->invList->commit();
-        return;
+        return this->invList->getWriteView()->size();
     }
 
     std::inplace_merge (invertedListElements.begin(),
@@ -197,6 +199,7 @@ void InvertedListContainer::sortAndMerge(const unsigned keywordId, ForwardIndex 
     }
 
     this->invList->merge();
+    return this->invList->getWriteView()->size();
 }
 
 
@@ -393,10 +396,16 @@ void InvertedIndex::merge(RankerExpression *rankerExpression, unsigned totalNumb
     for (set<unsigned>::const_iterator iter = this->invertedListSetToMerge.begin();
         iter != this->invertedListSetToMerge.end(); ++iter) {
     	ASSERT(*iter < writeView->size());
-    	writeView->at(*iter)->sortAndMerge(keywordIdsWriteView->getElement(*iter),
+    	int finalInvListWriteViewSize =
+             writeView->at(*iter)->sortAndMerge(keywordIdsWriteView->getElement(*iter),
     			this->forwardIndex, forwardListDirectoryReadView, invertedListElements,
     			totalNumberOfDocuments, rankerExpression, schema);
     	invertedListElements.clear();
+    	if (finalInvListWriteViewSize == 0) {
+            // This inverted list is empty, so we add it to the list
+            // of empty leaf node ids to delete later
+    		trie->addEmptyLeafNodeId();
+    	}
     }
     this->invertedListSetToMerge.clear();
 }
@@ -433,6 +442,7 @@ unsigned  InvertedIndex::workerMergeTask( RankerExpression *rankerExpression,
 		unsigned invertedListId = *(mergeWorkersSharedQueue.data + cursor);
 		ASSERT(invertedListId < writeView->size());
 		if (invertedListId < writeView->size()) {
+			int finalInvListWriteViewSize =
 			writeView->at(invertedListId)->sortAndMerge(keywordIdsWriteView->getElement(invertedListId),
 					this->forwardIndex,forwardListDirectoryReadView, invertedListElements,
 					totalNumberOfDocuments, rankerExpression, schema);

@@ -735,7 +735,7 @@ unsigned Trie::addKeyword_ThreadSafe(const std::vector<CharType> &keyword, unsig
 
     // it's a map from original nodes in the trie to the copy nodes in the pathTrace
     // The reason we need this map is related to reassign ID. Since we create a new cloned path each time we
-    // add a keyword, we need this map from origianl nodes to new nodes to merge new paths (to map original nodes to
+    // add a keyword, we need this map from original nodes to new nodes to merge new paths (to map original nodes to
     // same new nodes ...)
     OldToNewTrieNodeMap oldToNewTrieNodeMap;
     // it keeps a copy of the path to the new node

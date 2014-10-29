@@ -183,7 +183,8 @@ public:
 
     void sortAndMergeBeforeCommit(const unsigned keywordId, const ForwardIndex *forwardIndex, bool needToSortEachInvertedList);
 
-    void sortAndMerge(const unsigned keywordId, ForwardIndex *forwardIndex,
+    // return value: # of elements in the final write view
+    int sortAndMerge(const unsigned keywordId, ForwardIndex *forwardIndex,
     		shared_ptr<vectorview<ForwardListPtr> >& fwdIdxReadView,
     		vector<InvertedListIdAndScore>& invertedListElements,
     		unsigned totalNumberOfDocuments,

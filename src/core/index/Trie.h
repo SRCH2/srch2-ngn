@@ -15,7 +15,7 @@
  * OR PROFITS, WHETHER IN AN ACTION OF CONTRACT, NEGLIGENCE OR OTHER ACTION, ARISING OUT OF OR IN CONNECTION
  * WITH THE USE OR PERFORMANCE OF SOFTWARE.
 
- * Copyright © 2010 SRCH2 Inc. All rights reserved
+ * Copyright �� 2010 SRCH2 Inc. All rights reserved
  */
 
 #ifndef __TRIE_H__
@@ -558,6 +558,7 @@ private:
     bool commited;
     bool mergeRequired;
 
+    vector<unsigned> emptyLeafNodeIds; // ids of leaf nodes that have an empty inverted list
 
     friend class boost::serialization::access;
 
@@ -810,6 +811,9 @@ public:
     void printSubTrie(const TrieNode *root, const TrieNode *node, set<unsigned>& keywordIds) const;
 
     void print_Trie() const;
+
+   // void emptyLeafNodeIds
+    void addEmptyLeafNodeId(unsigned emptyleafNodeId) { this->emptyLeafNodeIds.push_back(emptyleafNodeId);}
 };
 
 }
