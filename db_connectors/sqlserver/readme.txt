@@ -49,25 +49,29 @@ SQL Server.  It supports Linux only.
       libssl.so.6
       libodbcinst.so.1
 
-    To install the first two, download and install the package libss10.9.8.
-      shell> mkdir ~/tmp
-      shell> cd ~/tmp
-      shell> wget http://security.ubuntu.com/ubuntu/pool/universe/o/openssl098/libssl0.9.8_0.9.8o-7ubuntu3.2.14.04.1_amd64.deb
-      shell> sudo dpkg -i libssl0.9.8_0.9.8o-7ubuntu3.2.14.04.1_amd64.deb
+    To install the first two, download and install the package libssl-dev for Ubuntu or openssl-devel for CentOS.
+    For CentOS 64bit, run the following commands :
+      shell> sudo yum install openssl-devel
+      shell> sudo ln -s /usr/lib64/libssl.so /usr/lib64/libssl.so.6
+      shell> sudo ln -s /usr/lib64/libcrypto.so /usr/lib64/libcrypto.so.6
+      
+    For Ubuntu 64bit, run the following commands :
+      shell> sudo apt-get install libssl-dev 
+      shell> sudo ln -s /usr/lib/x86_64-linux-gnu/libssl.so /usr/lib/x86_64-linux-gnu/libssl.so.6
+      shell> sudo ln -s /usr/lib/x86_64-linux-gnu/libcrypto.so /usr/lib/x86_64-linux-gnu/libcrypto.so.6
 
-      shell> cd /usr/lib/x86_64-linux-gnu/
-      shell> sudo ln -s libssl.so.0.9.8 libssl.so.6
-      shell> sudo ln -s libcrypto.so.0.9.8 libcrypto.so.6
-
-    To find the libodbcinst.so.1, add path "/usr/loacl/lib" to the end
-    of file "/etc/ld.so.conf": 
-      shell> sudo sh -c "echo /usr/loacl/lib >> /etc/ld.so.conf"
+    To find the libodbcinst.so.1, add a file "unixODBC-2.3.2.conf" including 
+    path "/usr/loacl/lib" to the folder "/etc/ld.so.conf.d/":
+      shell> sudo sh -c "echo /usr/local/lib > /etc/ld.so.conf.d/unixODBC-2.3.2.conf"
       shell> sudo ldconfig
 
     Once all the dependencies are met, run the following command to
-    install MS SQL Server Driver: 
-      shell> cd ~/tmp/msodbcsql*
-      shell> sudo bash ./install.sh install --force
+    add the MS SQL Server Driver info to the file "/usr/local/etc/odbcinst.ini" :  
+      shell> sudo sh -c "echo [ODBC Driver 11 for SQL Server] > /usr/local/etc/odbcinst.ini"
+      shell> sudo sh -c "echo Driver=$MSSQLDIR/lib64/libmsodbcsql-11.0.so.2270.0 >> /usr/local/etc/odbcinst.ini"
+      shell> sudo sh -c "echo Threading=1 >> /usr/local/etc/odbcinst.ini"
+      shell> sudo sh -c "echo UsageCount=5 >> /usr/local/etc/odbcinst.ini"
+    In particular, ```$MSSQLDIR``` is the path of the folder ```msodbcsql-11.0.2270.0```.  
 
     To test the installation, run the following command to try to
     connect a Microsoft SQL Server on a Windows server:

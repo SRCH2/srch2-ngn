@@ -385,12 +385,12 @@ insert the records into the SRCH2 engine.
   supports RedHat Linux and SUSE Linux only.  For other Linux distributions,
   we need to do extra steps.
 
-- For Ubuntu: Run the <a
-href="../example-demo/srch2-install-sqlserver-odbc-ubuntu.sh">script</a>
+- For Ubuntu and CentOS: Run the <a
+href="../example-demo/srch2-install-sqlserver-odbc-linux.sh">script</a>
 to install the required packages and
-setup the SQL Server Driver for Ubuntu:
+setup the SQL Server Driver for Linux:
 ```
-shell> sudo ./srch2-install-sqlserver-odbc-ubuntu.sh
+shell> ./srch2-install-sqlserver-odbc-linux.sh
 ```
 
 You can skip the rest of Section 4.1, which describes the detals of
@@ -398,7 +398,6 @@ this shell script.
 
 ####4.1.1. To install unixODBC (ODBC Driver Manager for Linux) :
 ```
-shell> sudo apt-get remove libodbc1 unixodbc unixodbc-dev
 shell> wget ftp://ftp.unixodbc.org/pub/unixODBC/unixODBC-2.3.2.tar.gz
 shell> tar -xvf unixODBC-2.3.2.tar.gz
 shell> cd unixODBC-2.3.2
@@ -445,30 +444,36 @@ libssl.so.6
 libodbcinst.so.1
 ```
 
-To install the first two, download and install the package libss10.9.8.
-Run the following commands :
+To install the first two, download and install the package libssl-dev for Ubuntu or openssl-devel for CentOS.  
+For CentOS 64bit, run the following commands :
 ```
-shell> mkdir ~/tmp
-shell> cd ~/tmp
-shell> wget http://security.ubuntu.com/ubuntu/pool/universe/o/openssl098/libssl0.9.8_0.9.8o-7ubuntu3.2.14.04.1_amd64.deb
-shell> sudo dpkg -i libssl0.9.8_0.9.8o-7ubuntu3.2.14.04.1_amd64.deb
+shell> sudo yum install openssl-devel
+shell> sudo ln -s /usr/lib64/libssl.so /usr/lib64/libssl.so.6
+shell> sudo ln -s /usr/lib64/libcrypto.so /usr/lib64/libcrypto.so.6
+```
+For Ubuntu 64bit, run the following commands :
+```
+shell> sudo apt-get install libssl-dev 
+shell> sudo ln -s /usr/lib/x86_64-linux-gnu/libssl.so /usr/lib/x86_64-linux-gnu/libssl.so.6
+shell> sudo ln -s /usr/lib/x86_64-linux-gnu/libcrypto.so /usr/lib/x86_64-linux-gnu/libcrypto.so.6
+```
 
-shell> cd /usr/lib/x86_64-linux-gnu/
-shell> sudo ln -s libssl.so.0.9.8 libssl.so.6
-shell> sudo ln -s libcrypto.so.0.9.8 libcrypto.so.6
+To find the libodbcinst.so.1, add a file "unixODBC-2.3.2.conf" including 
+the path ```/usr/loacl/lib``` to the folder "/etc/ld.so.conf.d/":
 ```
-
-To find the libodbcinst.so.1, add path "/usr/loacl/lib" to the end
-of file "/etc/ld.so.conf":
-```
-shell> sudo sh -c "echo /usr/loacl/lib >> /etc/ld.so.conf"
+shell> sudo sh -c "echo /usr/local/lib > /etc/ld.so.conf.d/unixODBC-2.3.2.conf"
 shell> sudo ldconfig
 ```
 Once all the dependencies are met, run the following command to
-install MS SQL Server Driver: 
+add the MS SQL Server Driver info to the file "/usr/local/etc/odbcinst.ini" : 
 ```
-shell> sudo bash ./install.sh install --force
+shell> sudo sh -c "echo [ODBC Driver 11 for SQL Server] > /usr/local/etc/odbcinst.ini"
+shell> sudo sh -c "echo Driver=$MSSQLDIR/lib64/libmsodbcsql-11.0.so.2270.0 >> /usr/local/etc/odbcinst.ini"
+shell> sudo sh -c "echo Threading=1 >> /usr/local/etc/odbcinst.ini"
+shell> sudo sh -c "echo UsageCount=5 >> /usr/local/etc/odbcinst.ini"
 ```
+In particular, ```$MSSQLDIR``` is the path of the folder ```msodbcsql-11.0.2270.0```.  
+
 To test the installation, run the following command to try to
 connect a Microsoft SQL Server on a Windows server:
 ```

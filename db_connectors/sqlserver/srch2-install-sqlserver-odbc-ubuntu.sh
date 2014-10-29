@@ -1,1 +1,0 @@
-../../release_files/documentation/docs/example-demo/srch2-install-sqlserver-odbc-ubuntu.sh
