@@ -446,39 +446,11 @@ LockRequestType LockingNotification::getType() const{
 void LockingNotification::getInvolvedNodes(vector<NodeId> & participants) const{
 	participants.clear();
 	Cluster_Writeview * writeview = ShardManager::getShardManager()->getWriteview();
-//	switch (lockRequestType) {
-//	case LockRequestType_Copy:
-//	{
-//		// only those nodes that have a replica of this partition
-//		writeview->getPatitionInvolvedNodes(srcShardId, participants);
-//		if(std::find(participants.begin(), participants.end(), writeview->currentNodeId) == participants.end()){
-//			participants.push_back(writeview->currentNodeId);
-//		}
-//		break;
-//	}
-//	case LockRequestType_Move:
-//	{
-//		writeview->getPatitionInvolvedNodes(shardId, participants);
-//		if(std::find(participants.begin(), participants.end(), writeview->currentNodeId) == participants.end()){
-//			participants.push_back(writeview->currentNodeId);
-//		}
-//		break;
-//	}
-//	case LockRequestType_PrimaryKey:
-//		//TODO participants must be given from outside because it must work based on readview
-//		break;
-//	case LockRequestType_Metadata:
-//	{
-//		writeview->getArrivedNodes(participants, true);
-//		break;
-//	}
-//	case LockRequestType_GeneralPurpose:
-//	{
-//		writeview->getPatitionInvolvedNodes(generalPurposeShardId, participants);
-//		break;
-//	}
-//	}
-	writeview->getArrivedNodes(participants, true);; // TODO : for now, we send the lock request to every node
+	if(lockRequestType == LockRequestType_PrimaryKey){
+		writeview->getPatitionInvolvedNodes(pid, participants);
+		return;
+	}
+	writeview->getArrivedNodes(participants, true);
 }
 
 LockingNotification::ACK::ACK(bool grantedFlag){

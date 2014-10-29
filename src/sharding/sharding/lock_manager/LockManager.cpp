@@ -199,7 +199,9 @@ void LockManager::resolveRelease(LockBatch * lockBatch){
 	}
 
 	if(releaseHappened){
-	    ShardManager::getShardManager()->getMetadataManager()->commitClusterMetadata();
+		if(lockBatch->batchType != LockRequestType_PrimaryKey){
+			ShardManager::getShardManager()->getMetadataManager()->commitClusterMetadata();
+		}
 		Logger::sharding(Logger::Detail, "LockManager| release request triggers some pending lock requests.");
 		movePendingLockBatchesForward();
 	}
@@ -407,12 +409,14 @@ bool LockManager::moveLockBatchForward(LockBatch * lockBatch){
 						return true;
 					}
 				}else{
-					// let's just wait until we can move forward
-					if(lastGrantedPreValue < lockBatch->lastGrantedItemIndex){
-						// we can send an update at this point
-						finalize(lockBatch, true);
+					if(lockBatch->incremental){
+						// let's just wait until we can move forward
+						if(lastGrantedPreValue < lockBatch->lastGrantedItemIndex){
+							// we can send an update at this point
+							finalize(lockBatch, true);
+						}
 					}
-					return false; // but we are not done yet.
+					return false; // we are not done yet, we must wait until we reach to the end of batch
 				}
 				break;
 			}

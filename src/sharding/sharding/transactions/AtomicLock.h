@@ -104,7 +104,6 @@ private:
 
 
 	void finalize(bool result);
-	void finalize(const vector<string> & rejectedPKs);
 
 
 };

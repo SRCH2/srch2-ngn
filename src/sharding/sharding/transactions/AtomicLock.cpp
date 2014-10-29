@@ -12,7 +12,7 @@ using namespace std;
 namespace srch2 {
 namespace httpwrapper {
 
-	/// copy
+/// copy
 AtomicLock::AtomicLock(const ClusterShardId & srcShardId,
 		const ClusterShardId & destShardId,
 		const NodeOperationId & copyAgent,
@@ -60,13 +60,22 @@ AtomicLock::AtomicLock(const vector<string> & primaryKeys,
 		const ClusterPID & pid,
 		ConsumerInterface * consumer): ProducerInterface(consumer){
 
+	/*
+	 * list of primary keys must be ascending
+	 */
+	for(unsigned i = 0 ; i < primaryKeys.size() - 1; ++i){
+		if(primaryKeys.at(i).compare(primaryKeys.at(i+1)) > 0){
+			ASSERT(false);
+			return;
+		}
+	}
 	// prepare the locker and locking notification
 	lockNotification = SP(LockingNotification)(new LockingNotification(primaryKeys, writerAgent, pid));
-//	releaseNotification = new LockingNotification(primaryKeys, writerAgent, true);
-//	releaseNotification = NULL;
+	releaseNotification = SP(LockingNotification)(new LockingNotification(primaryKeys, writerAgent, pid, true));
 	lockType = LockRequestType_PrimaryKey;
 	this->finalzedFlag = false;
 	init();
+
 }
 
 
@@ -129,38 +138,15 @@ bool AtomicLock::condition(SP(ShardingNotification) reqArg, SP(ShardingNotificat
 	participantIndex ++;
 
 	if(req->getLockRequestType() == LockRequestType_PrimaryKey){
-//		vector<string> & primaryKeys = req->getPrimaryKeys();
-//		for(unsigned pkIndex = 0 ; pkIndex < primaryKeys.size(); ++pkIndex){
-//			if(res->isGranted(pkIndex)){
-//				continue;
-//			}else{
-//				// primary key rejected
-//				// 1. put primary key in rejected PKs map
-//				if(participantIndex > 0){ // only if any node actually needs recovery
-//					rejectedPrimaryKeys[primaryKeys.at(pkIndex)] = participantIndex;
-//				}
-//				// 2. remove primaryKey from list
-//				primaryKeys.erase(primaryKeys.begin()+pkIndex);
-//				pkIndex--;
-//			}
-//		}
-//		if(primaryKeys.size() > 0){
-//			return true;
-//		}
-//		// no primaryKey is left, all are rejected : release successful requests
-//		recover();
-//		return false; // stops the locker operation
-	}// else : other lock request only need one boolean value to be checked;
-	else{
-		if(res->isGranted()){
-			return true;
-		}else{
-			Logger::sharding(Logger::Detail, "AtomicLock| node %s rejected lock.", resArg->getSrc().toString().c_str());
-			recover();
-			return false;
-		}
+		ASSERT(res->isGranted());
 	}
-
+	if(res->isGranted()){
+		return true;
+	}else{
+		Logger::sharding(Logger::Detail, "AtomicLock| node %s rejected lock.", resArg->getSrc().toString().c_str());
+		recover();
+		return false;
+	}
 	return false;
 }
 
@@ -194,24 +180,7 @@ void AtomicLock::recover(){
 
 	vector<NodeId> releaseParticipants;
 	if(lockType == LockRequestType_PrimaryKey){
-//		ASSERT(releaseNotification == NULL);
-//		vector<string> primaryKeysToRelease ;
-//		unsigned maxParticipantIndex = 0 ;
-//		for(map<string, unsigned>::iterator pkItr = rejectedPrimaryKeys.begin(); pkItr != rejectedPrimaryKeys.end(); ++pkItr){
-//			primaryKeysToRelease.push_back(pkItr->first);
-//			if(pkItr->second > maxParticipantIndex){
-//				maxParticipantIndex = pkItr->second;
-//			}
-//		}
-//		for(unsigned i = 0 ; i < maxParticipantIndex; ++i){
-//			releaseParticipants.push_back(participants.at(i));
-//		}
-//		if(maxParticipantIndex == 0){ // no need to recover anything
-//			finalize(false);
-//			return;
-//		}
-//		releaseNotification = new LockingNotification(primaryKeysToRelease, writeAgent, pid, true);
-
+		ASSERT(false);
 	}else{
 		// release from [0 to participantIndex)
 		for(unsigned i = 0 ; i < participantIndex; ++i){
@@ -238,15 +207,17 @@ void AtomicLock::end(map<NodeId, SP(ShardingNotification) > & replies){
 		finalize(false);
 		return;
 	}
+	/*
+	 * Only the fact that we reached here shows that lock was successful
+	 */
 	if(lockType == LockRequestType_PrimaryKey){
-//		vector<string> rejectedPKs;
-//		if(rejectedPrimaryKeys.size() > 0){
-//			for(map<string, unsigned>::iterator pkItr = rejectedPrimaryKeys.begin(); pkItr != rejectedPrimaryKeys.end(); ++pkItr){
-//				rejectedPKs.push_back(pkItr->first);
-//			}
-//			recover();
-//		}
-//		finalize(rejectedPKs);
+		if(participants.empty()){
+			// record change must be stopped because there is no shard
+			// anymore
+			Logger::sharding(Logger::Detail, "AtomicLock| empty list of participants in primaryKey lock : abort and return false");
+			finalize(false);
+
+		}
 	}else{
 		finalize(true);
 	}
@@ -271,10 +242,6 @@ void AtomicLock::finalize(bool result){
 	this->finalzedFlag = true;
 	Logger::sharding(Logger::Detail, "AtomicLock| lock : %s", result ? "successfull" : "failed");
 	this->getConsumer()->consume(result);
-}
-void AtomicLock::finalize(const vector<string> & rejectedPKs){
-	this->finalzedFlag = true;
-	this->getConsumer()->consume(rejectedPKs);
 }
 
 }}
