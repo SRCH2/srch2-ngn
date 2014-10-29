@@ -127,7 +127,7 @@ int readDataFromSocketWithRetry(int fd, char *buffer, int byteToRead, int retryC
 					--retryCount;
 					continue;
 				} else {
-					Logger::console("read timeout");
+					Logger::debug("read timeout");
 					return -1;
 				}
 			} else {
@@ -313,27 +313,27 @@ void MigrationService::receiveShard(ClusterShardId shardId, unsigned remoteNode)
 
 	if (receiveSocket == -1) {
 		//close socket
-		Logger::console("Migration: Network error while migrating shard %s", shardId.toString().c_str());
+		Logger::debug("Migration: Network error while migrating shard %s", shardId.toString().c_str());
 		migrationMgr->notifySHMAndCleanup(sessionKey, MM_STATUS_FAILURE);
 		return;
 	}
 
 	currentSessionInfo.listeningPort = receivePort;
 
-	Logger::console("sending init ack to %d", currentSessionInfo.remoteNode);
+	Logger::debug("sending init ack to %d", currentSessionInfo.remoteNode);
 	migrationMgr->sendInitMessageAck(currentSessionInfo);
 
-	Logger::console("waiting for sender to connect...");
+	Logger::debug("waiting for sender to connect...");
 	int commSocket = migrationMgr->acceptTCPConnection(receiveSocket, receivePort);
 	if (commSocket == -1) {
 		//close socket
-		Logger::console("Migration: Network error while migrating shard %s", shardId.toString().c_str());
+		Logger::debug("Migration: Network error while migrating shard %s", shardId.toString().c_str());
 		close(receiveSocket);
 		migrationMgr->notifySHMAndCleanup(sessionKey, MM_STATUS_FAILURE);
 		return;
 	}
 
-	Logger::console("Done");
+	Logger::debug("Done");
 //    currentSessionInfo.print();
 
 	unsigned componentCount = currentSessionInfo.shardCompCount;
@@ -357,10 +357,10 @@ void MigrationService::receiveShard(ClusterShardId shardId, unsigned remoteNode)
 
 	for (unsigned i =0; i < componentCount; ++i) {
 
-		Logger::console("waiting for component begin message...");
+		Logger::debug("waiting for component begin message...");
 		migrationMgr->busyWaitWithTimeOut(currentSessionInfo, MM_STATE_INFO_RCVD);
 		if(currentSessionInfo.status !=  MM_STATE_INFO_RCVD) {
-			Logger::console("Migration: shard %s : timeout!", shardId.toString().c_str());
+			Logger::debug("Migration: shard %s : timeout!", shardId.toString().c_str());
 			close(commSocket);
 			close(receiveSocket);
 			delete migratedShard;
@@ -371,7 +371,7 @@ void MigrationService::receiveShard(ClusterShardId shardId, unsigned remoteNode)
 		string filePath = directoryPath + "/" + currentSessionInfo.shardCompName;
 		unsigned componentSize = currentSessionInfo.shardCompSize;
 
-		Logger::console("shard path = %s", filePath.c_str());
+		Logger::debug("shard path = %s", filePath.c_str());
 
 //		currentSessionInfo.print();
 
@@ -381,7 +381,7 @@ void MigrationService::receiveShard(ClusterShardId shardId, unsigned remoteNode)
 			if (writeFd == -1) {
 				//close socket
 				perror("");   // TODO: replace perror in SM/TM/MM with strerror_r
-				Logger::console("Migration:I/O error for shard %s", shardId.toString().c_str());
+				Logger::debug("Migration:I/O error for shard %s", shardId.toString().c_str());
 				close(commSocket);
 				close(receiveSocket);
 				delete migratedShard;
@@ -398,7 +398,7 @@ void MigrationService::receiveShard(ClusterShardId shardId, unsigned remoteNode)
 			std::istringstream inputStream(ios::binary);
 			migratedShard->bootStrapShardComponentFromByteStream(inputStream, currentSessionInfo.shardCompName);
 			emptyshard = true;
-			Logger::console("%u/%u Received", 0, componentSize);
+			Logger::debug("%u/%u Received", 0, componentSize);
 			//Send ACK
 			migrationMgr->sendComponentDoneMsg(currentSessionInfo);
 			continue;
@@ -409,7 +409,7 @@ void MigrationService::receiveShard(ClusterShardId shardId, unsigned remoteNode)
 		if (ftruncStatus == -1) {
 			//close socket
 			perror("truncate: ");   // TODO: replace perror in SM/TM/MM with strerror_r
-			Logger::console("Migration:I/O error for shard %s", shardId.toString().c_str());
+			Logger::debug("Migration:I/O error for shard %s", shardId.toString().c_str());
 			close(commSocket);
 			close(receiveSocket);
 			delete migratedShard;
@@ -425,7 +425,7 @@ void MigrationService::receiveShard(ClusterShardId shardId, unsigned remoteNode)
 
 		if (mmapBuffer == MAP_FAILED) {
 			perror("mmap: ");   // TODO: replace perror in SM/TM/MM with strerror_r
-			Logger::console("Migration error for shard %s", shardId.toString().c_str());
+			Logger::debug("Migration error for shard %s", shardId.toString().c_str());
 			close(receiveSocket);
 			close(commSocket);
 			delete migratedShard;
@@ -449,7 +449,7 @@ void MigrationService::receiveShard(ClusterShardId shardId, unsigned remoteNode)
 			if (status == -1) {
 				//close socket
 				perror("");
-				Logger::console("Migration: Network error while migrating shard %s", shardId.toString().c_str());
+				Logger::debug("Migration: Network error while migrating shard %s", shardId.toString().c_str());
 				munmap(mmapBuffer, componentSize);
 				close(receiveSocket);
 				close(commSocket);
@@ -461,7 +461,7 @@ void MigrationService::receiveShard(ClusterShardId shardId, unsigned remoteNode)
 			offset += packetSize;
 			++sequenceNumber;
 		}
-		Logger::console("%u/%u Received", offset, componentSize);
+		Logger::debug("%u/%u Received", offset, componentSize);
 
 //	    currentSessionInfo.print();
 
@@ -486,7 +486,7 @@ void MigrationService::receiveShard(ClusterShardId shardId, unsigned remoteNode)
 	migratedShard->postBootStrap();
 	currentSessionInfo.shard.reset(migratedShard);
 
-	Logger::console("Saving shard to : %s", directoryPath.c_str());
+	Logger::debug("Saving shard to : %s", directoryPath.c_str());
 
 	currentSessionInfo.endTimeStamp = time(NULL);
 	Logger::console("Received shard %s in %d secs", shardId.toString().c_str(),
@@ -578,7 +578,7 @@ void MigrationService::sendShard(ClusterShardId shardId, unsigned destinationNod
 	 *  Serialize indexes and calculate size of serialized indexes.
 	 */
 
-	Logger::console("Save shard to disk...");
+	Logger::debug("Save shard to disk...");
 	shard->getIndexer()->save();
 
 	vector<std::pair<string, long> > indexFilesWithSize;
@@ -596,13 +596,13 @@ void MigrationService::sendShard(ClusterShardId shardId, unsigned destinationNod
 	//       will time out automatically in case of an error happens here.
 	if (status == -1) {
 		// cannot determine indexes size
-		Logger::console("Unable to access shard on disk");
+		Logger::debug("Unable to access shard on disk");
 		migrationMgr->notifySHMAndCleanup(sessionKey, MM_STATUS_FAILURE);
 		return;
 	}
 
 	if (currentSessionInfo.status != MM_STATE_INIT_ACK_RCVD ) {
-		Logger::console("Unable to migrate shard ..destination node did not respond");
+		Logger::debug("Unable to migrate shard ..destination node did not respond");
 		migrationMgr->notifySHMAndCleanup(sessionKey, MM_STATUS_FAILURE);
 		return;
 	}
@@ -624,7 +624,7 @@ void MigrationService::sendShard(ClusterShardId shardId, unsigned destinationNod
 		unsigned componentSize = indexFilesWithSize[i].second;
 		currentSessionInfo.shardCompSize = componentSize;
 
-		Logger::console("Migrating shard component %s", componentName.c_str());
+		Logger::debug("Migrating shard component %s", componentName.c_str());
 		migrationMgr->sendComponentInfoAndWaitForAck(currentSessionInfo);
 
 //		if (currentSessionInfo.status != MM_STATE_INFO_ACK_RCVD) {
@@ -639,13 +639,13 @@ void MigrationService::sendShard(ClusterShardId shardId, unsigned destinationNod
 		if (componentSize > 0) {
 		inputFd = open(filename.c_str(), O_RDONLY);  // TODO: Should lock as well?
 		if (inputFd == -1) {
-			Logger::console("Shard could not be read from storage device");
+			Logger::debug("Shard could not be read from storage device");
 			perror("");
 			migrationMgr->notifySHMAndCleanup(sessionKey, MM_STATUS_FAILURE);
 			return;
 		}
 		}
-		Logger::console("Sending data for shard component %s", componentName.c_str());
+		Logger::debug("Sending data for shard component %s", componentName.c_str());
 		off_t offset = 0;
 
 		if (componentSize > 0) {
@@ -655,7 +655,7 @@ void MigrationService::sendShard(ClusterShardId shardId, unsigned destinationNod
 			int status = sendfile(inputFd, sendSocket, offset, &byteToSend, NULL, 0);
 			if (status == -1 && errno != EAGAIN && errno != EWOULDBLOCK) {
 				perror("");
-				Logger::console("Network error while sending the shard");
+				Logger::debug("Network error while sending the shard");
 				migrationMgr->notifySHMAndCleanup(sessionKey, MM_STATUS_FAILURE);
 				return;
 			}
@@ -668,7 +668,7 @@ void MigrationService::sendShard(ClusterShardId shardId, unsigned destinationNod
 			int status = sendfile(sendSocket, inputFd, &offset, byteToSend);
 			if (status == -1 && errno != EAGAIN && errno != EWOULDBLOCK) {
 				perror("");
-				Logger::console("Network error while sending the shard");
+				Logger::debug("Network error while sending the shard");
 				migrationMgr->notifySHMAndCleanup(sessionKey, MM_STATUS_FAILURE);
 				return;
 			}
@@ -678,15 +678,15 @@ void MigrationService::sendShard(ClusterShardId shardId, unsigned destinationNod
 
 		}
 		}
-		Logger::console("%u/%u sent", offset, componentSize);
+		Logger::debug("%u/%u sent", offset, componentSize);
 
 		migrationMgr->busyWaitWithTimeOut(currentSessionInfo, MM_STATE_COMPONENT_TRANSFERRED_ACK_RCVD, 15);
 		if (currentSessionInfo.status != MM_STATE_COMPONENT_TRANSFERRED_ACK_RCVD) {
-			Logger::console("Unable to migrate shard ..destination node did not respond");
+			Logger::debug("Unable to migrate shard ..destination node did not respond");
 			migrationMgr->notifySHMAndCleanup(sessionKey, MM_STATUS_FAILURE);
 			return;
 		}
-		Logger::console("Data received by remote node...continuing");
+		Logger::debug("Data received by remote node...continuing");
 	}
 
 	currentSessionInfo.endTimeStamp = time(NULL);
@@ -747,7 +747,7 @@ void MigrationManager::sendInfoAckMessage(MigrationSessionInfo& currentSessionIn
 	ShardComponentInfoAckMsgBody *body = (ShardComponentInfoAckMsgBody *)infoAckMesssage->getMessageBody();
 	body->shardId = currentSessionInfo.currentShardId;
 	currentSessionInfo.status = MM_STATE_COMPONENT_RECEIVING;
-	Logger::console("sending component begin ack to %d ", currentSessionInfo.remoteNode);
+	Logger::debug("sending component begin ack to %d ", currentSessionInfo.remoteNode);
 	sendMessage(currentSessionInfo.remoteNode, infoAckMesssage);
 	MessageAllocator().deallocateByMessagePointer(infoAckMesssage);
 }
@@ -825,7 +825,7 @@ void MigrationManager::openTCPReceiveChannel(int& tcpSocket , short& receivePort
 			goto tryNextPort;
 		} else {
 			perror("");
-			Logger::console("unable to bind to port for shard migration in range = [%d : %d]",
+			Logger::debug("unable to bind to port for shard migration in range = [%d : %d]",
 					MM_MIGRATION_PORT_START, MM_MIGRATION_PORT_START + 100);
 			close(tcpSocket);
 			tcpSocket = -1;
@@ -900,7 +900,7 @@ tryNextPort:
 			goto tryNextPort;
 		} else {
 			perror("");
-			Logger::console("unable to bind to port for shard migration in range = [%d : %d]",
+			Logger::debug("unable to bind to port for shard migration in range = [%d : %d]",
 					MM_MIGRATION_PORT_START, MM_MIGRATION_PORT_START + 100);
 			exit(-1);
 		}
