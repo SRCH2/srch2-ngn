@@ -149,3 +149,44 @@ The above delete command modifies the access control map in the engine as shown 
 ```
 "1002" => "field1" , "field20"
 ```
+
+##7. Adding feedback for search results
+
+The API <code>feedback</code> allows users to add feedback for a query. 
+
+
+For example, for a query 
+
+```
+ curl -i "http://server:port/search?q=trip"
+```
+
+The query feedback can be added to the engine as shown below.
+
+
+```
+ curl "http://server:port/feedback" -X PUT -d  '{ query = "trip" , recordId = "5"}' 
+```
+
+Multiple feedbacks can also be submitted for a same query as shown below.
+
+```
+ curl "http://server:port/feedback" -X PUT -d  '[{ query = "trip" , recordId = "5"}, { query = "trip" , recordId = "7"}]' 
+```
+
+<b>Note:</b> The query field in a feedback control's JSON data should be exactly same as the text in the search query (including the operators).
+
+
+For example, feedback for a multi-word query with boolean operator AND
+
+```
+ curl -i "http://server:port/search?q=trip%20AND%20advisor"
+```
+
+should be added as shown below.
+
+```
+ curl "http://server:port/feedback" -X PUT -d  '{ query = "trip%20AND%20advisor", recordId = "5"}' 
+```
+
+<b>Note:</b> <code>%20</code> is url encoding for <code>whitespace</code>.

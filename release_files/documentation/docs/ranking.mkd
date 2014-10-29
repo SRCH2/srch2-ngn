@@ -122,3 +122,46 @@ a large slop distance (at most 10000).  For instance, we can use
 the condition <center>q="class test"~8000</center> to do proximity ranking for the
 two keywords, by only considering those occurrences where the two keywords
 are at most 8000 words apart.
+
+##4. Feedback Ranking
+
+SRCH2's feedback feature allows users to boost the ranking of a record returned in the search results of a query.
+For a query Q and a set of corresponding search results = {R<sub>1</sub> , R<sub>2</sub>, ..., R<sub>n</sub>} , 
+a feedback F is a tuple = { Q, R<sub>i</sub> } where R<sub>i</sub>  &isin; {R<sub>1</sub> , R<sub>2</sub> ..., R<sub>n</sub>}.
+
+
+In the subsequent searches for the same query Q, the ranking of the record R<sub>i</sub> will be higher than the past search 
+results. 
+
+For example, if a query Q = "trip" returns following search results in a given order.</br></br>
+<code> curl http://server:port/search?q=trip</code> </br></br>
+R<sub>1</sub> = { "id" : "1", "title" : "TripAdvisor: Reviews of Hotels, Flights and Vacation Rentals" } </br>
+R<sub>2</sub> = { "id" : "2", "title" : "Cheap Flights, Hotels & Trips , Trip.com" } </br>
+R<sub>3</sub> = { "id" : "3", "title" : "www.tripnet.org The Road Information Program" } </br>
+R<sub>4</sub> = { "id" : "4", "title" : "TRIP: Summary for TripAdvisor, Inc.- Yahoo! Finance" } </br>
+R<sub>5</sub> = { "id" : "5", "title" : "TRiP Santa Monica * Live Music Santa Monica, Venice" } </br>
+R<sub>6</sub> = { "id" : "6", "title" : "KAYAK - My Trips" } </br>
+R<sub>7</sub> = { "id" : "7", "title" : "My Trips - a free online trip planner for business, leisure and group travel." }  </br>
+
+If a user considers R<sub>5</sub> as a best match for this query, then such a feedback can be submitted to
+the engine using the <code>feedback</code> HTTP API as shown below. 
+
+<code> curl "http://server:port/feedback" -X PUT -d  '{ query = "trip" , recordId = "5"}' </code>
+
+Formula used by the engine to calculate boost for a record R<sub>i</sub> is described below.</br>
+
+<code>Boost<sub>R<sub>i</sub></sub> = 1 +  &Delta;T &times; F<sub>q</sub><sup>R<sub>i</sub></sup> </code> </br>
+
+where  </br>
+
+<code>
+&Delta;T =  1  &frasl; (1 + (T<sub>Q</sub> - T<sub>f</sub><sup>R<sub>i</sub></sup>)) in minutes. </br> </br>
+T<sub>Q</sub> =  Arrival time of the current query </br> </br>
+T<sub>f</sub><sup>R<sub>i</sub></sup> =  Recent time when R<sub>i</sub> was submitted as a feedback for the query Q</br> </br>
+F<sub>q</sub><sup>R<sub>i</sub></sup> = &radic; (number of time R<sub>i</sub> is selected for query Q) </br> </code>
+
+ 
+As a feedback of R<sub>i</sub> for query Q gets older, its effect on overall score descreas. Similarly, number of time R<sub>i</sub> is selected for query Q
+increases the boost that the record gets for the query Q.
+
+
