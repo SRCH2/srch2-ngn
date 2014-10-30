@@ -173,6 +173,7 @@ ADD_TEST(RandomAccessVerificationOr_Test ${CMAKE_CURRENT_BINARY_DIR}/core/unit/R
 
 ADD_TEST(RandomAccessVerificationNot_Test ${CMAKE_CURRENT_BINARY_DIR}/core/unit/RandomAccessVerificationNot_Test "--verbose")
 
+ADD_TEST(FeedbackIndex_Test ${CMAKE_CURRENT_BINARY_DIR}/core/unit/FeedbackIndex_Test "--verbose")
 
 #wrapper related tests should be added below this line
 

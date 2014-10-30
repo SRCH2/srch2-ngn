@@ -132,8 +132,5 @@ namespace srch2 {
     }
 }
 
-class FeedbackRanker {
-
-};
 
 #endif /* __RANKER_H__ */

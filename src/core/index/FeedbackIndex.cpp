@@ -28,6 +28,16 @@ bool userFeedbackInfoComparator(const UserFeedbackInfo& lhs, const UserFeedbackI
 		return false;
 };
 
+bool userFeedbackInfoTimestampComparator(const UserFeedbackInfo& lhs, const UserFeedbackInfo &rhs) {
+	//  comparator for min-heap
+	if (lhs.timestamp < rhs.timestamp) {
+		return false;
+	}
+	else {
+		return true;
+	}
+};
+
 FeedbackIndex::FeedbackIndex(unsigned maxFeedbackInfoCountPerQuery) {
 	this->maxFeedbackInfoCountPerQuery = maxFeedbackInfoCountPerQuery;
 	queryTrie = new Trie();
@@ -226,7 +236,25 @@ void FeedbackIndex::mergeFeedbackList(UserFeedbackList *feedbackList) {
 
     writeViewSize = writeCursor + 1;
     if (writeViewSize > maxFeedbackInfoCountPerQuery) {
+
+    	// 1. calculate count of extra entries
+    	// 2. make min-heap of existing array based on timestamp. So oldest entry will be on top.
+    	// 3. pop_heap N times. where N = count of extra entries
+    	// 4. re-sort the remaining array based on record-id
+
+    	unsigned entriesToRemove = writeViewSize - maxFeedbackInfoCountPerQuery;
+    	make_heap(arrayOfUserFeedbackInfo, arrayOfUserFeedbackInfo + writeViewSize,
+    			userFeedbackInfoTimestampComparator);
+    	for (unsigned i = 0; i < entriesToRemove; ++i) {
+    		// pop_heap copies the top entry to the end of the array and heapify rest of the
+    		// array.
+    		pop_heap(arrayOfUserFeedbackInfo, arrayOfUserFeedbackInfo + writeViewSize - i,
+    				userFeedbackInfoTimestampComparator);
+    	}
+    	std::sort(arrayOfUserFeedbackInfo, arrayOfUserFeedbackInfo + maxFeedbackInfoCountPerQuery,
+    				userFeedbackInfoComparator);
     	feedbackInfoListWriteView->setSize(maxFeedbackInfoCountPerQuery);
+
     } else {
     	feedbackInfoListWriteView->setSize(writeViewSize);
     }
