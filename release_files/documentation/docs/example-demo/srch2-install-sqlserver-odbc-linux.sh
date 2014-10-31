@@ -52,3 +52,6 @@ sudo sh -c "echo [ODBC Driver 11 for SQL Server] > /usr/local/etc/odbcinst.ini"
 sudo sh -c "echo Driver=$MSSQLDIR/lib64/libmsodbcsql-11.0.so.2270.0 >> /usr/local/etc/odbcinst.ini"
 sudo sh -c "echo Threading=1 >> /usr/local/etc/odbcinst.ini"
 sudo sh -c "echo UsageCount=5 >> /usr/local/etc/odbcinst.ini"
+
+echo "Required libraries installed." 
+echo "Use 'sqlcmd -S [SQLSERVER-HOST] -U [USERNAME] -P [PASSWORD]' to connect to the MS SQL SERVER."
