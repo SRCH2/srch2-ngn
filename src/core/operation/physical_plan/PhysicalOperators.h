@@ -346,6 +346,7 @@ private:
 	vector< PhysicalPlanRecordItem * > recordsAfterTopK;
 	bool isRecordsAfterTopKVectorSorted ;
 	vector< PhysicalPlanRecordItem * > topKBestRecords;
+	FeedbackRanker *feedbackRanker;
 };
 
 class SortByScoreOptimizationOperator : public PhysicalPlanOptimizationNode {
@@ -631,9 +632,6 @@ public:
 	GeoNearestNeighborOptimizationOperator * createGeoNearestNeighborOptimizationOperator();
 	GeoSimpleScanOperator * createGeoSimpleScanOperator();
 	GeoSimpleScanOptimizationOperator * createGeoSimpleScanOptimizationOperator();
-	FeedbackRankingOperator* createFeedbackRankingOperator(const string &query, const FeedbackIndex * feedbackIndex);
-	FeedbackRankingOptimizationOperator* createFeedbackRankingOptimizationOperator();
-
 
 private:
 	vector<PhysicalPlanNode *> executionNodes;

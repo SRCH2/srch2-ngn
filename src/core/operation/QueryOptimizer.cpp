@@ -112,6 +112,11 @@ void QueryOptimizer::buildIncompleteTreeOptions(vector<PhysicalPlanOptimizationN
 
     // now we should inject SORT operators to make these plans functional
     injectRequiredSortOperators(treeOptions);
+
+    for(vector<PhysicalPlanOptimizationNode *>::iterator treeOption = treeOptions.begin();
+                treeOption != treeOptions.end(); ++treeOption){
+    		injectSortOperatorsForFeedback(&(*treeOption));
+    }
 //    // print for test
 //    cout << "Number of initial plans : " << treeOptions.size() << endl;
 //    cout << "========================================================" << endl;
@@ -289,6 +294,70 @@ void QueryOptimizer::buildIncompleteSubTreeOptionsGeo(LogicalPlanNode * root, ve
 	}
 }
 
+
+void QueryOptimizer::injectSortOperatorsForFeedback(PhysicalPlanOptimizationNode **root) {
+	if (isNodeFeedbackCapable(*root))
+			return;
+
+	for(unsigned i = 0 ; i < (*root)->getChildrenCount() ; ++i){
+		injectSortOperatorsForFeedback((*root)->getChildAt(i), i);
+	}
+
+	//fix this node by injecting a sortByScore operator here
+    SortByScoreOptimizationOperator * sortByScoreOp =
+    		this->queryEvaluator->getPhysicalOperatorFactory()->createSortByScoreOptimizationOperator();
+    sortByScoreOp->setLogicalPlanNode((*root)->getLogicalPlanNode());
+    sortByScoreOp->addChild((*root));
+    (*root) = sortByScoreOp;
+}
+
+void QueryOptimizer::injectSortOperatorsForFeedback(PhysicalPlanOptimizationNode *node, unsigned childOffset){
+
+	if (isNodeFeedbackCapable(node))
+		return;
+
+	bool isAllChildBoosted = true;
+    for(unsigned i = 0 ; i < node->getChildrenCount() ; ++i){
+        injectSortOperatorsForFeedback(node->getChildAt(i), i);
+    }
+
+    //fix this node by injecting a sortByScore operator here
+    SortByScoreOptimizationOperator * sortByScoreOp =
+    		this->queryEvaluator->getPhysicalOperatorFactory()->createSortByScoreOptimizationOperator();
+    sortByScoreOp->setLogicalPlanNode(node->getLogicalPlanNode());
+    sortByScoreOp->addChild(node);
+
+    PhysicalPlanOptimizationNode* parentNode = node->getParent();
+    parentNode->setChildAt(childOffset, sortByScoreOp);
+    return;
+
+}
+
+// Operator is feedback capable iff
+// 1. it does NOT have sorted-by-score output property.
+// OR
+// 2. it is either MergeTopK or SortByScore operators. ( These operators have feedback logic in it)
+//
+bool QueryOptimizer::isNodeFeedbackCapable(PhysicalPlanOptimizationNode *node) {
+
+	IteratorProperties nodeOutputProp;
+	node->getOutputProperties(nodeOutputProp);
+
+	bool hasSortByScoreProperty = false;
+	for (unsigned i = 0; i < nodeOutputProp.properties.size(); ++i) {
+		if (nodeOutputProp.properties[i] == PhysicalPlanIteratorProperty_SortByScore) {
+			hasSortByScoreProperty = true;
+			break;
+		}
+	}
+	if (!hasSortByScoreProperty || node->getType() == PhysicalPlanNode_SortByScore
+			|| node->getType() == PhysicalPlanNode_MergeTopK) {
+		return true;
+	} else {
+		return false;
+	}
+}
+
 void QueryOptimizer::injectRequiredSortOperators(vector<PhysicalPlanOptimizationNode *> & treeOptions){
     // 1. iterate on trees and inject sort operators
     for(vector<PhysicalPlanOptimizationNode *>::iterator treeOption = treeOptions.begin();
@@ -307,37 +376,6 @@ void QueryOptimizer::injectRequiredSortOperators(vector<PhysicalPlanOptimization
             sortByScoreOp->setLogicalPlanNode((*treeOption)->getLogicalPlanNode());
             sortByScoreOp->addChild(*treeOption);
             *treeOption = sortByScoreOp;
-        }
-
-        // if user feedback is enabled then originalQueryString is set else it is empty.
-        bool isFeedbackEnabled = logicalPlan->originalQueryString != "";
-        // Insert a Feedback ranking operator when feedback is enabled and query is present in
-        // feedback index.
-        if (isFeedbackEnabled
-             && queryEvaluator->getFeedbackIndex()->hasFeedbackDataForQuery(logicalPlan->originalQueryString)) {
-
-        	// inject FeedbackRanking operator. We want following plan structure.
-        	//   [sort-by-score] -> [feedback ranking] -> [rest of the plan]
-
-        	FeedbackRankingOptimizationOperator *feedbackRankingOp =
-        			this->queryEvaluator->getPhysicalOperatorFactory()->createFeedbackRankingOptimizationOperator();
-        	feedbackRankingOp->setLogicalPlanNode((*treeOption)->getLogicalPlanNode());
-
-        	if ((*treeOption)->getType() == PhysicalPlanNode_SortByScore) {
-        		// If sort-by-score operator is a top level operator then add FeedbackRanking operator
-        		// under this operator.
-        		feedbackRankingOp->addChild((*treeOption)->getChildAt(0));
-        		(*treeOption)->addChild(feedbackRankingOp);
-        	} else {
-        		// If sort-by-score operator is not a top level operator then create both FeedbackRanking
-        		// and sort-by-score operators.
-        		feedbackRankingOp->addChild((*treeOption));
-        		SortByScoreOptimizationOperator * sortByScoreOp =
-        				this->queryEvaluator->getPhysicalOperatorFactory()->createSortByScoreOptimizationOperator();
-        		sortByScoreOp->setLogicalPlanNode((*treeOption)->getLogicalPlanNode());
-        		sortByScoreOp->addChild(feedbackRankingOp);
-        		*treeOption = sortByScoreOp;
-        	}
         }
     }
 }
@@ -585,14 +623,6 @@ PhysicalPlanNode * QueryOptimizer::buildPhysicalPlanFirstVersionFromTreeStructur
             LogicalPlanPhraseNode * phraseLogicalNode = reinterpret_cast<LogicalPlanPhraseNode *>(logPlanNode);
             executableResult = (PhysicalPlanNode *)this->queryEvaluator->getPhysicalOperatorFactory()->createPhraseSearchOperator(phraseLogicalNode->getPhraseInfo());
             break;
-        }
-        case PhysicalPlanNode_FeedbackRanker:
-        {
-        	PhysicalOperatorFactory * operatorFactory = this->queryEvaluator->getPhysicalOperatorFactory();
-        	optimizationResult = (PhysicalPlanOptimizationNode *)this->queryEvaluator->getPhysicalOperatorFactory()->createFeedbackRankingOptimizationOperator();
-        	executableResult = (PhysicalPlanNode *)operatorFactory->createFeedbackRankingOperator(
-        			logicalPlan->originalQueryString, this->queryEvaluator->getFeedbackIndex());
-        	break;
         }
         default:
             ASSERT(false);

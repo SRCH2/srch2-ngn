@@ -3,6 +3,7 @@
 #include "KeywordSearchOperator.h"
 #include "../QueryEvaluatorInternal.h"
 //#include <gperftools/profiler.h>
+#include "FeedbackRankingOperator.h"
 
 namespace srch2 {
 namespace instantsearch {
@@ -16,7 +17,7 @@ void freeStatsOfLogicalPlanTree(LogicalPlanNode * node) {
         freeStatsOfLogicalPlanTree(*child);
     }
 }
-bool KeywordSearchOperator::open(QueryEvaluatorInternal * queryEvaluator, PhysicalPlanExecutionParameters & p){
+bool KeywordSearchOperator::open(QueryEvaluatorInternal * queryEvaluator, PhysicalPlanExecutionParameters & /*Not used*/){
 
     //    struct timespec tstart;
     //    clock_gettime(CLOCK_REALTIME, &tstart);
@@ -28,6 +29,15 @@ bool KeywordSearchOperator::open(QueryEvaluatorInternal * queryEvaluator, Physic
     logicalPlan->setFuzzy(false);
     PhysicalPlanExecutionParameters params(0, logicalPlan->isFuzzy() , logicalPlan->getExactQuery()->getPrefixMatchPenalty(), logicalPlan->getQueryType());
     params.totalNumberOfRecords = queryEvaluator->getForwardIndex()->getTotalNumberOfForwardLists_ReadView();
+
+    // setup feedback ranker if query is present in Feedback Index.
+    params.feedbackRanker = NULL;
+    if (queryEvaluator->getFeedbackIndex()->hasFeedbackDataForQuery(queryEvaluator->queryStringWithTermsAndOps)) {
+    	params.feedbackRanker = new FeedbackRanker(queryEvaluator->queryStringWithTermsAndOps,
+    			queryEvaluator->getFeedbackIndex());
+    	params.feedbackRanker->init();
+    }
+
     //2. Apply exact/fuzzy policy and run
     vector<unsigned> resultIds;
     // this for is a two iteration loop, to avoid copying the code for exact and fuzzy

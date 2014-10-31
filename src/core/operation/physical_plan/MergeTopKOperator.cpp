@@ -4,6 +4,7 @@
 #include "operation/QueryEvaluatorInternal.h"
 #include "PhysicalOperatorsHelper.h"
 #include <cmath>
+#include "FeedbackRankingOperator.h"
 
 namespace srch2 {
 namespace instantsearch {
@@ -15,6 +16,7 @@ MergeTopKOperator::MergeTopKOperator() {
 }
 
 MergeTopKOperator::~MergeTopKOperator(){
+	delete this->feedbackRanker;
 }
 bool MergeTopKOperator::open(QueryEvaluatorInternal * queryEvaluator, PhysicalPlanExecutionParameters & params){
 
@@ -22,6 +24,14 @@ bool MergeTopKOperator::open(QueryEvaluatorInternal * queryEvaluator, PhysicalPl
 
 	if(this->queryEvaluator != NULL){ // only for mergeTopK ctest queryEvaluator can be NULL
 		queryEvaluator->getForwardIndex()->getForwardListDirectory_ReadView(forwardListDirectoryReadView);
+	}
+
+	if (params.feedbackRanker) {
+		// store the ranker object and do not pass it to children.
+		this->feedbackRanker = params.feedbackRanker;
+		params.feedbackRanker = NULL;
+	} else {
+		this->feedbackRanker = NULL;
 	}
 
 	/*
@@ -117,7 +127,12 @@ bool MergeTopKOperator::open(QueryEvaluatorInternal * queryEvaluator, PhysicalPl
 				mergeTopKCacheEntry->candidatesList.at(i)->setPositionIndexOffsets(positionIndexOffsets);
 				mergeTopKCacheEntry->candidatesList.at(i)->setTermTypes(termTypes);
 				// nextRecord->setRecordStaticScore() Should we set static score as well ?
-				mergeTopKCacheEntry->candidatesList.at(i)->setRecordRuntimeScore(params.ranker->computeAggregatedRuntimeScoreForAnd( runTimeTermRecordScores));
+				float runtimeScore = params.ranker->computeAggregatedRuntimeScoreForAnd( runTimeTermRecordScores);
+				if (this->feedbackRanker) {
+					runtimeScore *= this->feedbackRanker->getFeedbackBoostForRecord(
+							mergeTopKCacheEntry->candidatesList.at(i)->getRecordId());
+				}
+				mergeTopKCacheEntry->candidatesList.at(i)->setRecordRuntimeScore(runtimeScore);
 
 			}
 
@@ -261,7 +276,11 @@ PhysicalPlanRecordItem * MergeTopKOperator::getNext(const PhysicalPlanExecutionP
 		nextRecord->setPositionIndexOffsets(positionIndexOffsets);
 		nextRecord->setTermTypes(termTypes);
 		// nextRecord->setRecordStaticScore() Should we set static score as well ?
-		nextRecord->setRecordRuntimeScore(params.ranker->computeAggregatedRuntimeScoreForAnd( runTimeTermRecordScores));
+		float runtimeScore = params.ranker->computeAggregatedRuntimeScoreForAnd( runTimeTermRecordScores);
+		if (this->feedbackRanker) {
+			runtimeScore *= this->feedbackRanker->getFeedbackBoostForRecord(nextRecord->getRecordId());
+		}
+		nextRecord->setRecordRuntimeScore(runtimeScore);
 
 		// 4.1
 		if(topRecordToReturn == NULL){

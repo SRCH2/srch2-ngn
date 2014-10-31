@@ -150,7 +150,7 @@ public:
     		unsigned numberOfSuggestionsToReturn ,
     		std::vector<SuggestionInfo > & suggestionPairs) const;
     FeedbackIndex * getFeedbackIndex();
-    string orignalQueryString;
+    string queryStringWithTermsAndOps;
 private:
     const IndexData *indexData;
     IndexReaderWriter *indexer;
