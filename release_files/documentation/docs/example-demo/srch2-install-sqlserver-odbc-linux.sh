@@ -45,6 +45,8 @@ sudo ln -s /usr/lib64/libcrypto.so /usr/lib64/libcrypto.so.6
 sudo sh -c "echo /usr/local/lib > /etc/ld.so.conf.d/unixODBC-2.3.2.conf"
 sudo ldconfig
 
+sudo bash ./install.sh install --force
+
 #Set the unixODBC config file "odbcinst.ini"
 sudo sh -c "echo [ODBC Driver 11 for SQL Server] > /usr/local/etc/odbcinst.ini"
 sudo sh -c "echo Driver=$MSSQLDIR/lib64/libmsodbcsql-11.0.so.2270.0 >> /usr/local/etc/odbcinst.ini"

@@ -65,8 +65,9 @@ SQL Server.  It supports Linux only.
       shell> sudo sh -c "echo /usr/local/lib > /etc/ld.so.conf.d/unixODBC-2.3.2.conf"
       shell> sudo ldconfig
 
-    Once all the dependencies are met, run the following command to
-    add the MS SQL Server Driver info to the file "/usr/local/etc/odbcinst.ini" :  
+    Once all the dependencies are met, run the following command to 
+    install the the MS SQL Server Driver and add the info to the file "/usr/local/etc/odbcinst.ini" :
+      shell> sudo bash ./install.sh install --force
       shell> sudo sh -c "echo [ODBC Driver 11 for SQL Server] > /usr/local/etc/odbcinst.ini"
       shell> sudo sh -c "echo Driver=$MSSQLDIR/lib64/libmsodbcsql-11.0.so.2270.0 >> /usr/local/etc/odbcinst.ini"
       shell> sudo sh -c "echo Threading=1 >> /usr/local/etc/odbcinst.ini"
