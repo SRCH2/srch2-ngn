@@ -437,6 +437,22 @@ test_case "adapter_sqlite_recover" "python ./adapter_sqlite/adapter_sqlite_recov
     ./adapter_sqlite/testOfflineLog_sql.txt ./adapter_sqlite/testOfflineLog.txt" \
     255 "-- SKIPPED: Cannot connect to the Sqlite. Check if sqlite3 is installed."
 
+sleep 3
+
+test_case "adapter_sqlserver" "python ./adapter_sqlserver/adapter_sqlserver.py $SRCH2_ENGINE \
+    ./adapter_sqlserver/testCreateIndexes_sql.txt ./adapter_sqlite/testCreateIndexes.txt \
+    ./adapter_sqlite/testRunListener_sql.txt ./adapter_sqlite/testRunListener.txt \
+    ./adapter_sqlite/testOfflineLog_sql.txt ./adapter_sqlite/testOfflineLog.txt" \
+    255 "-- SKIPPED: Cannot connect to the SQL Server. Check if SQL Server driver is installed."
+
+sleep 3
+
+test_case "adapter_sqlserver_recover" "python ./adapter_sqlserver/adapter_sqlserver_recover.py $SRCH2_ENGINE \
+    ./adapter_sqlserver/testCreateIndexes_sql.txt ./adapter_sqlite/testCreateIndexes.txt \
+    ./adapter_sqlite/testRunListener_sql.txt ./adapter_sqlite/testRunListener.txt \
+    ./adapter_sqlite/testOfflineLog_sql.txt ./adapter_sqlite/testOfflineLog.txt" \
+    255 "-- SKIPPED: Cannot connect to the SQL Server. Check if SQL Server driver is installed."
+
 # The following cases may not run on Mac, so we put them to the end
 
 if [ $os != "$macName" ];then
