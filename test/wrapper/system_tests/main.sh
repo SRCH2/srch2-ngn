@@ -205,9 +205,14 @@ function test_case(){
 #         please be sure to append output using ">> system_test.log".
 #
 ###############################################################################################################
+rm -rf ./data/feedback/*
+test_case "User feedback" "python ./feedback/testProgram.py $SRCH2_ENGINE"
+sleep 3
+
 rm ./attributesAcl/stackoverflow/indexes/*
 rm ./attributesAcl/worldbank/indexes/*
 test_case "attributes ACL" "python ./attributesAcl/testProgram.py $SRCH2_ENGINE"
+sleep 3
 
 rm ./attributes/indexes/*
 test_case "lot of attributes" "python ./attributes/attributes.py $SRCH2_ENGINE" 

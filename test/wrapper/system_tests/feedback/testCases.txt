@@ -46,3 +46,29 @@ W||3
 
 # case 7: search for case 5  again. Now record 10 should be ranked higher than record =36
 S||Personal Services||10 29 36 37 13 52 8
+
+#case 8: test OR query
+S||service%20OR%20trades||48 92 38 56 97 31 11 64 99 77
+
+# update feedback for case 8 query
+C||feedback||{ "query" : "service OR trades", "recordId" : "38" }
+
+# sleep for 3 seconds for merge
+W||3
+
+# case 9: repeat case 8 query. Record 38 should be boosted.
+S||service%20OR%20trades||38 48 92 56 97 31 11 64 99 77
+
+
+#case 10: test complex query with OR and AND => (Personal AND Services) OR (service AND trades)
+S||%28Personal%20AND%20Services%29%20OR%20%28service%20AND%20trades%29||48 29 92 36 38 10 37 13 56 52
+
+# update feedback for case 10 query
+C||feedback||{ "query" : "(Personal AND Services) OR (service AND trades)", "recordId" : "92" }
+
+# sleep for 3 seconds for merge
+W||3
+
+# case 11: repeat case 10 query. Record 92 should be boosted.
+S||%28Personal%20AND%20Services%29%20OR%20%28service%20AND%20trades%29||92 48 29 36 38 10 37 13 56 52
+
