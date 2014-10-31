@@ -418,7 +418,7 @@ shell> ./configure --disable-gui --disable-drivers --enable-iconv --with-iconv-c
 shell> make
 shell> sudo make install
 ```
-####4.1.2. To install MS ODBC Driver 11 for SQL Server for Ubuntu:
+####4.1.2. To install MS ODBC Driver 11 for SQL Server for Linux:
 
 Install the driver for "RedHat5 Linux" from the website
 [here](http://www.microsoft.com/en-us/download/details.aspx?id=36437). In

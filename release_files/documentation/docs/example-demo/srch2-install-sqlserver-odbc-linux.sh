@@ -9,6 +9,7 @@ sudo yum group install "Development Tools"
 sudo yum install openssl-devel wget
 
 #UBUNTU
+sudo apt-get install gcc make cpp
 sudo apt-get install libssl-dev 
 
 mkdir srch2-install-sqlserver-odbc-linux
