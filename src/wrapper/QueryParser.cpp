@@ -2220,5 +2220,42 @@ void QueryParser::tokenizeAndDontBreakParentheses(const string & inputArg , vect
     }
 }
 
+// returns the query string without local parameters, fuzzy modifier, and boost modifiers.
+string QueryParser::fetchCleanQueryString() {
+	stringstream ss;
+	// first skip over the LocalParameter => {...}
+	boost::algorithm::trim(originalQueryString);
+	unsigned cursor = 0;
+	if (originalQueryString[0] == '{') {
+		while(cursor < originalQueryString.size() && originalQueryString[cursor] != '}' ) {
+			++cursor;
+		}
+		++cursor;
+	}
+
+	while (cursor < originalQueryString.size()) {
+
+		// check for boost modifier. i.e. '^'
+		if (originalQueryString[cursor] == '^') {
+			string boostModifier = "";
+			string input = originalQueryString.substr(cursor);
+			parseBoostModifier(input, boostModifier);
+			cursor += boostModifier.size();
+		}
+		// check for fuzzy modifier. i.e. '~'
+		else if (originalQueryString[cursor] == '~') {
+		    string fuzzyModifier = "";
+		    string input = originalQueryString.substr(cursor);
+		    parseFuzzyModifier(input, fuzzyModifier);
+		    cursor += fuzzyModifier.size();
+		}
+		else {
+			ss << originalQueryString[cursor];
+			++cursor;
+		}
+	}
+	return ss.str();
+}
+
 }
 }

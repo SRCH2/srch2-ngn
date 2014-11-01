@@ -44,6 +44,8 @@ using srch2is::Analyzer;
 namespace srch2 {
 namespace httpwrapper {
 
+void decodeString(const char *inputStr, string& outputStr);
+
 class QueryParser {
 public:
 
@@ -97,6 +99,8 @@ public:
     bool isParsedError; // true -> there was error while parsing, false parsing was successful. no erros. Warnings may still be present.
     bool isSearchTypeSet; // whether the searchType has been set or not.
     string originalQueryString;
+    // returns the query string without local parameters, fuzzy modifier, and boost modifiers.
+    string fetchCleanQueryString();
 private:
 
     ParsedParameterContainer * container;

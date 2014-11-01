@@ -176,7 +176,7 @@ void QueryEvaluatorInternal::findKMostPopularSuggestionsSorted(Term *term ,
 int QueryEvaluatorInternal::search(LogicalPlan * logicalPlan , QueryResults *queryResults){
 
 	// used for feedback ranking.
-	this->queryStringWithTermsAndOps = logicalPlan->originalQueryString;
+	this->queryStringWithTermsAndOps = logicalPlan->queryStringWithTermsAndOps;
 	ASSERT(logicalPlan != NULL);
 	// need to lock the mutex
 	boost::shared_lock< boost::shared_mutex > lock(this->indexData->globalRwMutexForReadersWriters);

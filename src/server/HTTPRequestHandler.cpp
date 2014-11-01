@@ -1360,14 +1360,20 @@ bool HTTPRequestHandler::processSingleFeedback(const Json::Value& doc,
 		feedbackResponse = log_str.str();
 		return false;
 	}
-	string queryString = query.asString();
-	boost::algorithm::trim(queryString);
-	if (queryString.size() == 0) {
+	string queryStringTemp = query.asString();
+	boost::algorithm::trim(queryStringTemp);
+	if (queryStringTemp.size() == 0) {
 		std::stringstream log_str;
 		log_str << "API : feedback, Error: 'query' key is empty in request JSON.";
 		feedbackResponse = log_str.str();
 		return false;
 	}
+
+	evkeyvalq dummyHeader;
+	QueryParser qp(dummyHeader);
+	decodeString(queryStringTemp.c_str(), qp.originalQueryString);
+	string queryString = qp.fetchCleanQueryString();
+
 	if (recordId.type() != Json::stringValue) {
 		std::stringstream log_str;
 		log_str << "API : feedback, Error: 'recordId' key is missing in request JSON.";
@@ -1697,7 +1703,7 @@ boost::shared_ptr<Json::Value> HTTPRequestHandler::doSearchOneCore(evhttp_reques
     LogicalPlan logicalPlan;
     if (server->indexDataConfig->isUserFeedbackEnabled()) {
     	// set only if user feedback is enabled else leave it empty.
-    	logicalPlan.originalQueryString = qp.originalQueryString;
+    	logicalPlan.queryStringWithTermsAndOps = qp.fetchCleanQueryString();
     }
     if(qr.rewrite(logicalPlan) == false){
         // if the query is not valid, print the error message to the response
