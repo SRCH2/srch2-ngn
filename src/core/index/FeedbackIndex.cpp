@@ -432,6 +432,15 @@ void FeedbackIndex::save(const string& directoryName) {
 	boost::archive::binary_oarchive oa(ofs);
 	oa << IndexVersion::currentVersion;
 	oa << maxFeedbackInfoCountPerQuery;
+	oa << maxCountOfFeedbackQueries;
+	oa << totalQueryCount;
+	oa << headId;
+	oa << tailId;
+	for (unsigned i = 0; i < totalQueryCount; ++i) {
+		oa << queryAgeOrder[i].nextIndexId;
+		oa << queryAgeOrder[i].prevIndexId;
+		oa << queryAgeOrder[i].queryId;
+	}
 	oa << feedbackListIndexVector;
 	for (unsigned i = 0; i < feedbackListIndexVector->getWriteView()->size(); ++i) {
 		oa << feedbackListIndexVector->getWriteView()->at(i);
@@ -467,6 +476,18 @@ void FeedbackIndex::load(const string& directoryName) {
 	ia >> storedIndexVersion;
 	if (IndexVersion::currentVersion == storedIndexVersion) {
 		ia >> maxFeedbackInfoCountPerQuery;
+		ia >> maxCountOfFeedbackQueries;
+		ia >> totalQueryCount;
+		ia >> headId;
+		ia >> tailId;
+		delete queryAgeOrder;
+		queryAgeOrder = new DoubleLinkedList[this->maxCountOfFeedbackQueries];
+		ASSERT(totalQueryCount <= maxCountOfFeedbackQueries);
+		for (unsigned i = 0; i < totalQueryCount; ++i) {
+			ia >> queryAgeOrder[i].nextIndexId;
+			ia >> queryAgeOrder[i].prevIndexId;
+			ia >> queryAgeOrder[i].queryId;
+		}
 		ia >> feedbackListIndexVector;
 		for (unsigned i = 0; i < feedbackListIndexVector->getWriteView()->size(); ++i) {
 			ia >> feedbackListIndexVector->getWriteView()->at(i);
