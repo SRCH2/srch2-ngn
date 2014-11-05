@@ -60,7 +60,7 @@
     -->
     <maxSearchThreads>2</maxSearchThreads>
 
-    <userFeedback maxFeedbackRecordsPerQuery = "20" />
+    <userFeedback maxFeedbackQueries = "30"  maxFeedbackRecordsPerQuery = "20" />
      
          
     <indexConfig>

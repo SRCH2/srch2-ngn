@@ -640,13 +640,17 @@ public:
     unsigned addKeyword(const std::string &keyword, unsigned &invertedListOffset);
     unsigned addKeyword_ThreadSafe(const std::string &keyword, unsigned &invertedListOffset);
 
+    // used by query feedback index.
+    unsigned addKeyword_ThreadSafe(const std::string &keyword, TrieNodePtr *terminalNode);
+
     // We add this extra level for addKeyword_ThreadSafe, because
     // 1) the GeoIndex update needs isNewTerminalNode, so it can call addKeyword_ThreadSafe_Inner
     // 2) we don't want to change how other places use addKeyword_ThreadSafe
     unsigned addKeyword_ThreadSafe(const std::vector<CharType> &keyword, unsigned &invertedListOffset);
 
     unsigned addKeyword_ThreadSafe(const std::vector<CharType> &keyword, unsigned &invertedListOffset,
-                                   bool &isNewTrieNode, bool &isNewInternalTerminalNode);
+                                   bool &isNewTrieNode, bool &isNewInternalTerminalNode,
+                                   TrieNodePtr *terminalNode = NULL);
 
     void remapPathForTrieNodesToReassign(OldToNewTrieNodeMap &oldToNewTrieNodeMap);
 

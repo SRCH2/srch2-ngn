@@ -714,7 +714,9 @@ unsigned Trie::addKeyword_ThreadSafe(const std::vector<CharType> &keyword, unsig
     return addKeyword_ThreadSafe(keyword, invertedListOffset, isNewTrieNode, isNewInternalTerminalNode);
 }
 
-unsigned Trie::addKeyword_ThreadSafe(const std::vector<CharType> &keyword, unsigned &invertedListOffset, bool &isNewTrieNode, bool &isNewInternalTerminalNode)
+unsigned Trie::addKeyword_ThreadSafe(const std::vector<CharType> &keyword,
+		unsigned &invertedListOffset, bool &isNewTrieNode, bool &isNewInternalTerminalNode,
+		TrieNodePtr *terminalNode)
 {
     /// corner case to check invalid empty string
     if (keyword.size() == 0)
@@ -811,6 +813,8 @@ unsigned Trie::addKeyword_ThreadSafe(const std::vector<CharType> &keyword, unsig
     // Flip the dummy root node to the newly created path
     // this->root.reset(trieRootNode_WriteView);
 
+    if (terminalNode)
+    	*terminalNode = node;
     return node->getId();
 }
 
@@ -821,6 +825,13 @@ unsigned Trie::addKeyword_ThreadSafe(const std::string &keyword, unsigned &inver
     return addKeyword_ThreadSafe(getCharTypeVector(keyword), invertedListOffset, isNewTrieNode, isNewInternalTerminalNode);
 }
 
+unsigned Trie::addKeyword_ThreadSafe(const std::string &keyword, TrieNodePtr *terminalNode) {
+	bool isNewTrieNode = false;
+	bool isNewInternalTerminalNode = false;
+	unsigned invertedListOffset;
+	return addKeyword_ThreadSafe(getCharTypeVector(keyword), invertedListOffset,
+			isNewTrieNode, isNewInternalTerminalNode, terminalNode);
+}
 
 void Trie::remapPathForTrieNodesToReassign(OldToNewTrieNodeMap &oldToNewTrieNodeMap)
 {

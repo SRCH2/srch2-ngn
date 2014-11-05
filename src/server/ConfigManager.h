@@ -585,6 +585,7 @@ class CoreInfo_t {
 public:
     CoreInfo_t(class ConfigManager *manager) : configManager(manager), accessControlInfo(NULL) {
     	maxFeedbackRecordsPerQuery = 0;
+    	maxFeedbackQueriesCount = 0;
     	userFeedbackEnabledFlag = false;
     };
     CoreInfo_t(const CoreInfo_t &src);
@@ -761,6 +762,8 @@ public:
 
     unsigned getMaxFeedbackRecordsPerQuery() const { return maxFeedbackRecordsPerQuery; }
 
+    unsigned getMaxFeedbackQueriesCount() const { return maxFeedbackQueriesCount; }
+
 protected:
     string name; // of core
 
@@ -886,6 +889,7 @@ protected:
 
     bool userFeedbackEnabledFlag;
     unsigned maxFeedbackRecordsPerQuery;
+    unsigned maxFeedbackQueriesCount;
 
 };
 

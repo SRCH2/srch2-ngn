@@ -360,6 +360,7 @@ CoreInfo_t::CoreInfo_t(const CoreInfo_t &src) {
 
     userFeedbackEnabledFlag = src.userFeedbackEnabledFlag;
     maxFeedbackRecordsPerQuery = src.maxFeedbackRecordsPerQuery;
+    maxFeedbackQueriesCount = src.maxFeedbackQueriesCount;
 
 }
 
@@ -1201,14 +1202,23 @@ void ConfigManager::parseDataFieldSettings(const xml_node &parentNode,
     if (childNode) {
     	coreInfo->userFeedbackEnabledFlag = true;
         int maxFeedbackRecordsPerQuery = childNode.attribute("maxfeedbackrecordsperquery").as_int(0);
+        int maxFeedbackQueriesCount = childNode.attribute("maxfeedbackqueries").as_int(0);
+
         if (maxFeedbackRecordsPerQuery <= 0) {
         	coreInfo->userFeedbackEnabledFlag = false;
         	Logger::console("In core %s: 'maxFeedbackRecordsPerQuery' attribute of"
         			" 'userFeedback' tag is missing or has invalid value. User feedback is disabled.",
         			coreInfo->getName().c_str());
         }
+        else if (maxFeedbackQueriesCount <= 0) {
+    		coreInfo->userFeedbackEnabledFlag = false;
+    		Logger::console("In core %s: 'maxfeedbackQueries' attribute of"
+    				" 'userFeedback' tag is missing or has invalid value. User feedback is disabled.",
+    				coreInfo->getName().c_str());
+    	}
         else {
         	coreInfo->maxFeedbackRecordsPerQuery = maxFeedbackRecordsPerQuery;
+        	coreInfo->maxFeedbackQueriesCount = maxFeedbackQueriesCount;
         }
     } else {
     	coreInfo->userFeedbackEnabledFlag = false;

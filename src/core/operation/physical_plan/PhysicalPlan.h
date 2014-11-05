@@ -89,6 +89,7 @@ struct PhysicalPlanExecutionParameters {
 
 		cacheObject = NULL;
 		parentIsCacheEnabled = false;
+		feedbackRanker = NULL;
 	}
 
 	~PhysicalPlanExecutionParameters(){

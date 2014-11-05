@@ -16,14 +16,11 @@ using namespace srch2::util;
 namespace srch2 {
 namespace instantsearch {
 
-bool userFeedbackInfoComparator(const UserFeedbackInfo& lhs, const UserFeedbackInfo &rhs) {
+bool userFeedbackInfoRecordIdComparator(const UserFeedbackInfo& lhs, const UserFeedbackInfo &rhs) {
 	// ascending order of record id
 	if (lhs.recordId < rhs.recordId) {
 		return true;
 	}
-//	else if (lhs.recordId == rhs.recordId) {
-//		return lhs.feedbackFrequency > rhs.feedbackFrequency;
-//	}
 	else
 		return false;
 };
@@ -38,22 +35,112 @@ bool userFeedbackInfoTimestampComparator(const UserFeedbackInfo& lhs, const User
 	}
 };
 
-FeedbackIndex::FeedbackIndex(unsigned maxFeedbackInfoCountPerQuery) {
+FeedbackIndex::FeedbackIndex(unsigned maxFeedbackInfoCountPerQuery,
+		unsigned maxCountOfFeedbackQueries) {
 	this->maxFeedbackInfoCountPerQuery = maxFeedbackInfoCountPerQuery;
+	this->maxCountOfFeedbackQueries = maxCountOfFeedbackQueries;
+	totalQueryCount = 0;
 	queryTrie = new Trie();
 	queryTrie->commit();
 	feedbackListIndexVector = new cowvector<UserFeedbackList *>();
 	feedbackListIndexVector->commit();
 	saveIndexFlag = false;
+	queryAgeOrder = new DoubleLinkedList[this->maxCountOfFeedbackQueries];
+	headId = tailId = -1;
 }
 
 void FeedbackIndex::addFeedback(const string& query, unsigned recordId, unsigned timestamp) {
 	boost::unique_lock<boost::mutex> lock(writerLock);
 	UserFeedbackInfo feedbackInfo = { recordId, 1, timestamp};
-	unsigned feedbackListOffset;
-	queryTrie->addKeyword_ThreadSafe(query, feedbackListOffset);
+	TrieNode *terminalNode;
+	unsigned queryId = queryTrie->addKeyword_ThreadSafe(query, &terminalNode);
+	unsigned feedbackListOffset = terminalNode->getInvertedListOffset();
 	unsigned feedbackListIndexWriteViewSize = feedbackListIndexVector->getWriteView()->size();
 	if (feedbackListOffset >= feedbackListIndexWriteViewSize) {
+
+		/*
+		 * It is a new query. First check whether the query count is greater than the maximum allowed
+		 * queries. If true, then remove the feedback list of the oldest query and the slot of the
+		 * oldest query in the feedbackListIndexVector will be reused for the new query.
+		 *
+		 * e.g
+		 *   Max Query in Trie = 5. Current Query to be added = Q5
+		 *
+		 *   Linked list of queries ( Q1 is oldest entry [HEAD] and Q3 is the latest entry [TAIL] )
+		 *
+		 *       ^ ------------|      |-------^
+		 *       |             V      V       |
+		 *       Q0  |  Q1  |  Q2  |  Q3  |  Q4
+		 *       ^      |      |              ^
+		 *       |------V      V--------------|
+		 *
+		 *
+		 *   Now query Q5 will replace Q1 and Q1's slot "1" will be used for Q6.  Q0 becomes the
+		 *   oldest query and Q6 becomes the latest query.
+		 *
+		 *       ^ ------------|      |-------^
+		 *       |             V      V       |
+		 *       Q0  |  Q6  |  Q2  |  Q3  |  Q4
+		 *              ^      |      |       ^
+		 *              |      V------|-------|
+		 *              |-------------V
+		 *
+		 *  If the query count is not more than maximum query then we just simply add the query to
+		 *  the end of the linked list and update the latest entry pointer [TAIL].
+		 */
+
+		++totalQueryCount;
+		if (totalQueryCount > maxCountOfFeedbackQueries) {
+
+			{
+				// take RW lock to block readers.( It is automatically unlocked on scope end)
+				boost::unique_lock<boost::shared_mutex>  writerLock(readerWriterLock);
+
+				// Logically delete the oldest query by marked inverted list offset as -1.
+				TrieNodePath tp;
+				tp.path  = new vector<TrieNode *>();
+				queryTrie->getKeywordCorrespondingPathToTrieNode_WriteView(
+						queryAgeOrder[headId].queryId, &tp);
+
+				if (tp.path->size()) {
+					unsigned lastElement = tp.path->size() - 1;
+					tp.path->at(lastElement)->setInvertedListOffset(-1);
+
+					// free feedback list
+					delete feedbackListIndexVector->getWriteView()->at(headId);
+				} else {
+					ASSERT(false);
+				}
+			}
+
+			// current Query's terminal node will reuse the slot of oldest query
+			terminalNode->setInvertedListOffset(headId);
+			feedbackListOffset = headId;
+
+			// remove the oldest query by moving head to next element in linked list.
+			headId =  queryAgeOrder[headId].nextIndexId;
+			queryAgeOrder[headId].prevIndexId = -1;
+
+			--totalQueryCount;
+		}
+
+		if (headId == -1 && tailId == -1) {
+			// this is the first query
+			headId = 0;
+			tailId = 0;
+			ASSERT(feedbackListOffset == 0);
+			queryAgeOrder[feedbackListOffset].prevIndexId = -1;
+			queryAgeOrder[feedbackListOffset].nextIndexId = -1;
+			queryAgeOrder[feedbackListOffset].queryId = queryId;
+		} else {
+			// append to end of the tail.
+			queryAgeOrder[tailId].nextIndexId = feedbackListOffset;
+			queryAgeOrder[feedbackListOffset].prevIndexId = tailId;
+			queryAgeOrder[feedbackListOffset].nextIndexId = -1;
+			queryAgeOrder[feedbackListOffset].queryId = queryId;
+			tailId = feedbackListOffset;
+		}
+
 		// allocate memory for feedbackInfo list and assign memory. Allocate enough space for write
 		// view to grow.
 		UserFeedbackList *newList = new cowvector<UserFeedbackInfo>(maxFeedbackInfoCountPerQuery * 1.5);
@@ -62,6 +149,25 @@ void FeedbackIndex::addFeedback(const string& query, unsigned recordId, unsigned
 		// at() api automatically increases the capacity cowvector array.
 		feedbackListIndexVector->getWriteView()->at(feedbackListOffset) = newList;
 
+	} else if (feedbackListOffset != tailId) {
+		// it is an existing query and NOT the latest query then put it to the
+		// end of the query linked-list
+		if (feedbackListOffset == headId) {
+			// move head to next element in linked list.
+			headId =  queryAgeOrder[feedbackListOffset].nextIndexId;
+			queryAgeOrder[headId].prevIndexId = -1;
+		} else  {
+			// detach itself from linked list by joining previous and next together
+			queryAgeOrder[queryAgeOrder[feedbackListOffset].prevIndexId].nextIndexId =
+					queryAgeOrder[feedbackListOffset].nextIndexId;
+			queryAgeOrder[queryAgeOrder[feedbackListOffset].nextIndexId].prevIndexId =
+					queryAgeOrder[feedbackListOffset].prevIndexId;
+		}
+		// append current element to end of tail.
+		queryAgeOrder[tailId].nextIndexId = feedbackListOffset;
+		queryAgeOrder[feedbackListOffset].prevIndexId = tailId;
+		queryAgeOrder[feedbackListOffset].nextIndexId = -1;
+		tailId = feedbackListOffset;
 	}
 
 	UserFeedbackList *feedbackList = feedbackListIndexVector->getWriteView()->at(feedbackListOffset);
@@ -96,20 +202,36 @@ void FeedbackIndex::addFeedback(const string& query, unsigned recordId) {
 // the query-trie.
 bool FeedbackIndex::hasFeedbackDataForQuery(const string& query) {
 
+	if (query.size() == 0)
+		return false;
+
+	boost::shared_lock<boost::shared_mutex>  readerLock(readerWriterLock);
+
 	boost::shared_ptr<TrieRootNodeAndFreeList > trieRootNodeReadView;
 	queryTrie->getTrieRootNode_ReadView(trieRootNodeReadView);
 
 	const TrieNode *terminalNode = queryTrie->getTrieNodeFromUtf8String(trieRootNodeReadView->root, query);
 
 	if (!terminalNode) {
+		// Terminal node is NULL. Query does not exist in the trie.
 		return false;
 	}
+
+	// Query exists in the trie but it is logically deleted. Trie will be cleaned up later.
+	if (terminalNode->getInvertedListOffset() == -1)
+		return false;
+
 	return true;
 }
 
 // This API returns a list of feedback info for a query
 void FeedbackIndex::retrieveUserFeedbackInfoForQuery(const string& query,
 		vector<UserFeedbackInfo>& feedbackInfo) const{
+
+	if (query.size() == 0)
+		return;
+
+	boost::shared_lock<boost::shared_mutex>  readerLock(readerWriterLock);
 
 	boost::shared_ptr<TrieRootNodeAndFreeList > trieRootNodeReadView;
 	queryTrie->getTrieRootNode_ReadView(trieRootNodeReadView);
@@ -180,6 +302,25 @@ void FeedbackIndex::merge() {
 	//2. Now merge feedbackListIndexVector
 	feedbackListIndexVector->merge();
 
+	if (queryTrie->needToReassignKeywordIds()) {
+
+		// reassign id is not thread safe so we need to grab an exclusive lock
+		boost::unique_lock<boost::shared_mutex> lock(readerWriterLock);
+		map<TrieNode *, unsigned> trieNodeIdMapper;
+		queryTrie->reassignKeywordIds(trieNodeIdMapper);
+		for (map<TrieNode *, unsigned>::iterator iter = trieNodeIdMapper.begin();
+				iter != trieNodeIdMapper.end(); ++iter) {
+			TrieNode *node = iter->first;
+			unsigned newKeywordId = iter->second;
+			node->setId(newKeywordId);
+
+			if (node->getInvertedListOffset() < maxCountOfFeedbackQueries)
+				queryAgeOrder[node->getInvertedListOffset()].queryId =  newKeywordId;
+			else
+				ASSERT(false);
+		}
+	}
+
 	//3. Trie should be merged last because it is a top level data structure.
 	queryTrie->merge(NULL, NULL, 0, false);
 }
@@ -204,13 +345,13 @@ void FeedbackIndex::mergeFeedbackList(UserFeedbackList *feedbackList) {
 	//sort the write view
 	UserFeedbackInfo *arrayOfUserFeedbackInfo = feedbackInfoListWriteView->getArray()->extent;
 	std::sort(arrayOfUserFeedbackInfo + readViewSize, arrayOfUserFeedbackInfo + writeViewSize,
-			userFeedbackInfoComparator);
+			userFeedbackInfoRecordIdComparator);
 
     // sort-merge readview and delta-part of the array.
     std::inplace_merge (arrayOfUserFeedbackInfo,
     		arrayOfUserFeedbackInfo + readViewSize,
     		arrayOfUserFeedbackInfo + writeViewSize,
-    		userFeedbackInfoComparator);
+    		userFeedbackInfoRecordIdComparator);
 
     // combined duplicate entries because we can have a new entry with a record id which is
     // already in the read view. Since the array is sorted, duplicate entries will be in
@@ -252,7 +393,7 @@ void FeedbackIndex::mergeFeedbackList(UserFeedbackList *feedbackList) {
     				userFeedbackInfoTimestampComparator);
     	}
     	std::sort(arrayOfUserFeedbackInfo, arrayOfUserFeedbackInfo + maxFeedbackInfoCountPerQuery,
-    				userFeedbackInfoComparator);
+    			userFeedbackInfoRecordIdComparator);
     	feedbackInfoListWriteView->setSize(maxFeedbackInfoCountPerQuery);
 
     } else {

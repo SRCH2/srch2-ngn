@@ -93,6 +93,7 @@ public:
     unsigned updateHistogramEveryPMerges;
     unsigned updateHistogramEveryQWrites;
     unsigned maxFeedbackRecordsPerQuery;
+    unsigned maxCountOfFeedbackQueries;
 };
 
 

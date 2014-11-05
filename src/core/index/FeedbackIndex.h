@@ -25,6 +25,11 @@ typedef cowvector<UserFeedbackInfo> UserFeedbackList;
 
 #define CURRENT_FEEDBACK_LIST_INDEX_VERSION 0
 
+struct DoubleLinkedList {
+	unsigned queryId;
+	unsigned prevIndexId;
+	unsigned nextIndexId;
+};
 class FeedbackIndex {
 	// Trie which stores all queries
 	Trie *queryTrie;
@@ -34,10 +39,25 @@ class FeedbackIndex {
     unsigned maxFeedbackInfoCountPerQuery;
     // write lock
     boost::mutex writerLock;
+    // reader/writer lock.
+    mutable boost::shared_mutex readerWriterLock;
     // set which stores list to be merged by merge thread.
     std::set<unsigned> feedBackListsToMerge;
     // flag to indicate whether the index has changed and needs to be saved to disk.
     bool saveIndexFlag;
+    // max feedback queries in the trie
+    unsigned maxCountOfFeedbackQueries;
+    // Linked list to track the age/recency of the queries.
+    DoubleLinkedList * queryAgeOrder;
+    // Head of the list points to oldest query
+    unsigned headId;
+    // Tail of the list points to recent query
+    unsigned tailId;
+
+    // running count of queries in index;
+    unsigned totalQueryCount;
+
+
 public:
     //writers
     void addFeedback(const string& query, unsigned recordId, unsigned timestamp);
@@ -63,7 +83,7 @@ public:
     }
 
     // constructor
-    FeedbackIndex(unsigned maxFeedbackInfoCountPerQuery);
+    FeedbackIndex(unsigned maxFeedbackInfoCountPerQuery, unsigned maxCountOfFeedbackQueries);
     // destructor
     virtual ~FeedbackIndex();
 private:
