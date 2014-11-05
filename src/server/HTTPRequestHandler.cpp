@@ -1406,15 +1406,15 @@ bool HTTPRequestHandler::processSingleFeedback(const Json::Value& doc,
 	} else {
 		secondSinceEpoch = time(NULL);
 	}
-	unsigned internalRecordId;
-	INDEXLOOKUP_RETVAL retVal = server->indexer->lookupRecord(recordIdString, internalRecordId);
+
+	INDEXLOOKUP_RETVAL retVal = server->indexer->lookupRecord(recordIdString);
 	if (retVal != LU_PRESENT_IN_READVIEW_AND_WRITEVIEW) {
 		std::stringstream log_str;
 		log_str << "API : feedback, Error: 'recordId' key is invalid in request JSON.";
 		feedbackResponse = log_str.str();
 		return false;
 	}
-	server->indexer->getFeedbackIndexer()->addFeedback(queryString, internalRecordId, secondSinceEpoch);
+	server->indexer->getFeedbackIndexer()->addFeedback(queryString, recordIdString, secondSinceEpoch);
 	return true;
 }
 

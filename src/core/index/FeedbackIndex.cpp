@@ -10,6 +10,7 @@
 #include "serialization/Serializer.h"
 #include "IndexUtil.h"
 #include <sys/stat.h>
+#include "operation/IndexerInternal.h"
 
 using namespace srch2::util;
 
@@ -36,9 +37,10 @@ bool userFeedbackInfoTimestampComparator(const UserFeedbackInfo& lhs, const User
 };
 
 FeedbackIndex::FeedbackIndex(unsigned maxFeedbackInfoCountPerQuery,
-		unsigned maxCountOfFeedbackQueries) {
+		unsigned maxCountOfFeedbackQueries, Indexer *indexer) {
 	this->maxFeedbackInfoCountPerQuery = maxFeedbackInfoCountPerQuery;
 	this->maxCountOfFeedbackQueries = maxCountOfFeedbackQueries;
+	this->indexer = reinterpret_cast<IndexReaderWriter *>(indexer);
 	totalQueryCount = 0;
 	queryTrie = new Trie();
 	queryTrie->commit();
@@ -49,6 +51,13 @@ FeedbackIndex::FeedbackIndex(unsigned maxFeedbackInfoCountPerQuery,
 	headId = tailId = -1;
 }
 
+void FeedbackIndex::addFeedback(const string& query, const string& externalRecordId, unsigned timestamp) {
+	unsigned internalRecordId;
+	INDEXLOOKUP_RETVAL retVal = indexer->lookupRecord(externalRecordId, internalRecordId);
+	if (retVal == LU_PRESENT_IN_READVIEW_AND_WRITEVIEW) {
+		addFeedback(query, internalRecordId, timestamp);
+	}
+}
 void FeedbackIndex::addFeedback(const string& query, unsigned recordId, unsigned timestamp) {
 	boost::unique_lock<boost::mutex> lock(writerLock);
 	UserFeedbackInfo feedbackInfo = { recordId, 1, timestamp};

@@ -20,6 +20,9 @@ using namespace std;
 namespace srch2 {
 namespace instantsearch {
 
+class Indexer;
+class IndexReaderWriter;
+
 struct UserFeedbackInfo;
 typedef cowvector<UserFeedbackInfo> UserFeedbackList;
 
@@ -31,6 +34,8 @@ struct DoubleLinkedList {
 	unsigned nextIndexId;
 };
 class FeedbackIndex {
+	// The record index structure pointer
+	IndexReaderWriter *indexer;
 	// Trie which stores all queries
 	Trie *queryTrie;
 	// index vector for the Feedback list pointers.
@@ -60,6 +65,7 @@ class FeedbackIndex {
 
 public:
     //writers
+    void addFeedback(const string& query, const string& externalRecordId, unsigned timestamp);
     void addFeedback(const string& query, unsigned recordId, unsigned timestamp);
     void addFeedback(const string& query, unsigned recordId);
 
@@ -83,7 +89,8 @@ public:
     }
 
     // constructor
-    FeedbackIndex(unsigned maxFeedbackInfoCountPerQuery, unsigned maxCountOfFeedbackQueries);
+    FeedbackIndex(unsigned maxFeedbackInfoCountPerQuery, unsigned maxCountOfFeedbackQueries,
+    		Indexer *indexer);
     // destructor
     virtual ~FeedbackIndex();
 private:

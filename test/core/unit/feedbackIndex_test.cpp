@@ -25,7 +25,8 @@ bool operator == (UserFeedbackInfo& lhs, UserFeedbackInfo& rhs) {
 void test_feedback_list() {
 
 	unsigned maxFeedbackInfoCountPerQuery = 5;
-	FeedbackIndex userFeedbackIndex(maxFeedbackInfoCountPerQuery, 10);
+	Indexer * indexer = NULL; // not used in this test.
+	FeedbackIndex userFeedbackIndex(maxFeedbackInfoCountPerQuery, 10, indexer);
 
 	/* ----------------------------------------------------------------------------------
 	 *
@@ -299,7 +300,8 @@ void test_feedback_list() {
 void test_query_replacement() {
 	unsigned maxFeedbackInfoCountPerQuery = 5;
 	unsigned maxFeedbackQueriesCount = 5;
-	FeedbackIndex userFeedbackIndex(maxFeedbackInfoCountPerQuery, maxFeedbackQueriesCount);
+	Indexer * indexer = NULL ; // not used in this test.
+	FeedbackIndex userFeedbackIndex(maxFeedbackInfoCountPerQuery, maxFeedbackQueriesCount, indexer);
 
 	/* ----------------------------------------------------------------------------------
 	 *

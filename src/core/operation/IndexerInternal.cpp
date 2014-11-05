@@ -273,7 +273,7 @@ IndexReaderWriter::IndexReaderWriter(IndexMetaData* indexMetaData, Analyzer *ana
                                       srch2::instantsearch::DISABLE_STEMMER_NORMALIZER
                                       );
      this->userFeedbackIndex = new FeedbackIndex(indexMetaData->maxFeedbackRecordsPerQuery,
-    		 indexMetaData->maxCountOfFeedbackQueries);
+    		 indexMetaData->maxCountOfFeedbackQueries, this);
      this->initIndexReaderWriter(indexMetaData);
      // start merge threads after commit
  }
@@ -283,7 +283,7 @@ IndexReaderWriter::IndexReaderWriter(IndexMetaData* indexMetaData)
     // LOAD Index
     this->index = IndexData::load(indexMetaData->directoryName);
     this->userFeedbackIndex = new FeedbackIndex(indexMetaData->maxFeedbackRecordsPerQuery,
-    		indexMetaData->maxCountOfFeedbackQueries);
+    		indexMetaData->maxCountOfFeedbackQueries, this);
     this->userFeedbackIndex->load(indexMetaData->directoryName);
     this->initIndexReaderWriter(indexMetaData);
     //this->startMergerThreads();
