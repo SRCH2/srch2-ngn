@@ -32,10 +32,13 @@ bool KeywordSearchOperator::open(QueryEvaluatorInternal * queryEvaluator, Physic
 
     // setup feedback ranker if query is present in Feedback Index.
     params.feedbackRanker = NULL;
-    if (queryEvaluator->getFeedbackIndex()->hasFeedbackDataForQuery(queryEvaluator->queryStringWithTermsAndOps)) {
-    	params.feedbackRanker = new FeedbackRanker(queryEvaluator->queryStringWithTermsAndOps,
-    			queryEvaluator->getFeedbackIndex());
-    	params.feedbackRanker->init();
+    if(logicalPlan->getPostProcessingInfo() == NULL ||
+    		logicalPlan->getPostProcessingInfo()->getSortEvaluator() == NULL){
+    	if (queryEvaluator->getFeedbackIndex()->hasFeedbackDataForQuery(queryEvaluator->queryStringWithTermsAndOps)) {
+    		params.feedbackRanker = new FeedbackRanker(queryEvaluator->queryStringWithTermsAndOps,
+    				queryEvaluator->getFeedbackIndex());
+    		params.feedbackRanker->init();
+    	}
     }
 
     //2. Apply exact/fuzzy policy and run

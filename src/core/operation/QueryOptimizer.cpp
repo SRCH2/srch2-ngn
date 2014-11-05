@@ -113,9 +113,14 @@ void QueryOptimizer::buildIncompleteTreeOptions(vector<PhysicalPlanOptimizationN
     // now we should inject SORT operators to make these plans functional
     injectRequiredSortOperators(treeOptions);
 
-    for(vector<PhysicalPlanOptimizationNode *>::iterator treeOption = treeOptions.begin();
-                treeOption != treeOptions.end(); ++treeOption){
-    		injectSortOperatorsForFeedback(&(*treeOption));
+    if(logicalPlan->getPostProcessingInfo() == NULL ||
+    		logicalPlan->getPostProcessingInfo()->getSortEvaluator() == NULL){
+    	// If only sort is not specified by the user we will do feedback boosting.
+    	for(vector<PhysicalPlanOptimizationNode *>::iterator treeOption = treeOptions.begin();
+    			treeOption != treeOptions.end(); ++treeOption){
+    		if (!isLogicalPlanBoosted(*treeOption))
+    			injectSortOperatorsForFeedback(&(*treeOption), *treeOption,  -1 /*dummy*/);
+    	}
     }
 //    // print for test
 //    cout << "Number of initial plans : " << treeOptions.size() << endl;
@@ -294,43 +299,66 @@ void QueryOptimizer::buildIncompleteSubTreeOptionsGeo(LogicalPlanNode * root, ve
 	}
 }
 
+/*
+ *  Determine whether the logical plan is feedback boosted.
+ */
+bool QueryOptimizer::isLogicalPlanBoosted(PhysicalPlanOptimizationNode *node) {
 
-void QueryOptimizer::injectSortOperatorsForFeedback(PhysicalPlanOptimizationNode **root) {
-	if (isNodeFeedbackCapable(*root))
-			return;
-
-	for(unsigned i = 0 ; i < (*root)->getChildrenCount() ; ++i){
-		injectSortOperatorsForFeedback((*root)->getChildAt(i), i);
+	if (isNodeFeedbackCapable(node)){
+		node->setBoosted();
+		return true;
 	}
 
-	//fix this node by injecting a sortByScore operator here
-    SortByScoreOptimizationOperator * sortByScoreOp =
-    		this->queryEvaluator->getPhysicalOperatorFactory()->createSortByScoreOptimizationOperator();
-    sortByScoreOp->setLogicalPlanNode((*root)->getLogicalPlanNode());
-    sortByScoreOp->addChild((*root));
-    (*root) = sortByScoreOp;
-}
-
-void QueryOptimizer::injectSortOperatorsForFeedback(PhysicalPlanOptimizationNode *node, unsigned childOffset){
-
-	if (isNodeFeedbackCapable(node))
-		return;
+	if (node->getChildrenCount() == 0) {
+		// nodes are marked not boosted by default.
+		return false;
+	}
 
 	bool isAllChildBoosted = true;
-    for(unsigned i = 0 ; i < node->getChildrenCount() ; ++i){
-        injectSortOperatorsForFeedback(node->getChildAt(i), i);
-    }
+	for (unsigned i = 0; i < node->getChildrenCount(); ++i) {
+		isAllChildBoosted &= isLogicalPlanBoosted(node->getChildAt(i));
+	}
 
-    //fix this node by injecting a sortByScore operator here
-    SortByScoreOptimizationOperator * sortByScoreOp =
-    		this->queryEvaluator->getPhysicalOperatorFactory()->createSortByScoreOptimizationOperator();
-    sortByScoreOp->setLogicalPlanNode(node->getLogicalPlanNode());
-    sortByScoreOp->addChild(node);
+	if (isAllChildBoosted) {
+		node->setBoosted();
+		return true;
+	} else {
+		return false;
+	}
+}
 
-    PhysicalPlanOptimizationNode* parentNode = node->getParent();
-    parentNode->setChildAt(childOffset, sortByScoreOp);
-    return;
+void QueryOptimizer::injectSortOperatorsForFeedback(PhysicalPlanOptimizationNode **root,
+		PhysicalPlanOptimizationNode *node, unsigned childOffset){
 
+	bool atLeastOneChildBoost = false;
+	for(unsigned i = 0 ; i < node->getChildrenCount() ; ++i){
+		atLeastOneChildBoost |= node->getChildAt(i)->isBoosted();
+	}
+
+	if (atLeastOneChildBoost) {
+		// There are some child which are boosted and some are not boosted.
+		// traverse to the non-boosted children and fix them by inserting sort operator..
+		for(unsigned i = 0 ; i < node->getChildrenCount() ; ++i) {
+			if (node->getChildAt(i)->isBoosted()) {
+				injectSortOperatorsForFeedback(root, node->getChildAt(i), i);
+			}
+		}
+	} else {
+		// ALL nodes are NOT boosted or there are no children.
+		// fix this node by injecting a sortByScore operator here
+		SortByScoreOptimizationOperator * sortByScoreOp =
+				this->queryEvaluator->getPhysicalOperatorFactory()->createSortByScoreOptimizationOperator();
+		sortByScoreOp->setLogicalPlanNode(node->getLogicalPlanNode());
+		sortByScoreOp->addChild(node);
+
+		PhysicalPlanOptimizationNode* parentNode = node->getParent();
+		if (parentNode != NULL) {
+			parentNode->setChildAt(childOffset, sortByScoreOp);
+		} else {
+			// must be root node. make sort-by-score new root.
+			(*root) = sortByScoreOp;
+		}
+	}
 }
 
 // Operator is feedback capable iff

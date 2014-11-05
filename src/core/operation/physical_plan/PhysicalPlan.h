@@ -249,6 +249,11 @@ public:
 	}
 
 	void printSubTree(unsigned indent = 0);
+
+	void setBoosted() { isBoostedFlag = false; }
+	bool isBoosted() { return isBoostedFlag; }
+
+	PhysicalPlanOptimizationNode() { isBoostedFlag = false; }
 private:
 	PhysicalPlanNode * executableNode;
 	vector<PhysicalPlanOptimizationNode *> children;
@@ -257,6 +262,7 @@ private:
 	PhysicalPlanOptimizationNode * parent;
 
 	LogicalPlanNode * logicalPlanNode;
+	bool isBoostedFlag;
 };
 
 
