@@ -22,6 +22,8 @@ AtomicMetadataCommit::AtomicMetadataCommit(const vector<NodeId> & exceptions,
 		MetadataChange * metadataChange,
 		ConsumerInterface * consumer, const bool skipLock): ProducerInterface(consumer){
 	ASSERT(metadataChange != NULL);
+	ASSERT(this->getConsumer() != NULL);
+	ASSERT(this->getConsumer()->getTransaction() != NULL);
 	this->metadataChange = metadataChange;
 	Cluster_Writeview * writeview = ShardManager::getShardManager()->getWriteview();
 	vector<NodeId> allNodes;
@@ -42,6 +44,8 @@ AtomicMetadataCommit::AtomicMetadataCommit(const vector<NodeId> & exceptions,
 AtomicMetadataCommit::AtomicMetadataCommit(const NodeId & exception,
 		MetadataChange * metadataChange, ConsumerInterface * consumer, const bool skipLock): ProducerInterface(consumer){
 	ASSERT(metadataChange != NULL);
+	ASSERT(this->getConsumer() != NULL);
+	ASSERT(this->getConsumer()->getTransaction() != NULL);
 	this->metadataChange = metadataChange;
 	Cluster_Writeview * writeview = ShardManager::getShardManager()->getWriteview();
 	vector<NodeId> allNodes;
@@ -61,8 +65,15 @@ AtomicMetadataCommit::AtomicMetadataCommit(const NodeId & exception,
 AtomicMetadataCommit::AtomicMetadataCommit(MetadataChange * metadataChange,
 		const vector<NodeId> & participants, ConsumerInterface * consumer, const bool skipLock): ProducerInterface(consumer){
 	ASSERT(metadataChange != NULL);
+	ASSERT(this->getConsumer() != NULL);
+	ASSERT(this->getConsumer()->getTransaction() != NULL);
 	this->metadataChange = metadataChange;
-	this->participants = participants;
+	Cluster_Writeview * writeview = ShardManager::getWriteview();
+	for(unsigned i = 0 ; i < participants.size(); ++i){
+		if(! writeview->isNodeAlive(participants.at(i))){
+			this->participants.push_back(participants.at(i));
+		}
+	}
 	this->selfOperationId = NodeOperationId(ShardManager::getCurrentNodeId(), OperationState::getNextOperationId());
 	this->atomicLock = NULL;
 	this->atomicRelease = NULL;
@@ -88,9 +99,16 @@ Transaction * AtomicMetadataCommit::getTransaction(){
 
 void AtomicMetadataCommit::produce(){
     Logger::sharding(Logger::Detail, "Atomic Metadata Commit : starting ...");
-    if(participants.size() == 0){
+	Cluster_Writeview * writeview = ShardManager::getWriteview();
+	for(int i = 0 ; i < participants.size(); ++i){
+		if(! writeview->isNodeAlive(participants.at(i))){
+			participants.erase(participants.begin() + i);
+			i--;
+		}
+	}
+    if(participants.empty()){
         // no participant exists
-        finalize(true);
+    	this->getTransaction()->setUnattached();
         return ;
     }
     if(metadataChange == NULL){

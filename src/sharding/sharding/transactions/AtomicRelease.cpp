@@ -48,6 +48,7 @@ AtomicRelease::AtomicRelease(const vector<string> & primaryKeys, const NodeOpera
 	// prepare the locker and locking notification
 	this->releaseNotification = SP(LockingNotification)(new LockingNotification(primaryKeys, writerAgent, pid, true));
 	this->lockType = LockRequestType_PrimaryKey;
+	this->pid = pid;
 	this->finalizeFlag = false;
 	init();
 }
@@ -74,7 +75,25 @@ Transaction * AtomicRelease::getTransaction(){
 
 void AtomicRelease::produce(){
     Logger::sharding(Logger::Detail, "AtomicRelease| starts. Consumer is %s", this->getConsumer() == NULL ? "NULL" : this->getConsumer()->getName().c_str());
-	ShardManager::getShardManager()->getStateMachine()->registerOperation(releaser);
+
+    Cluster_Writeview * writeview = ShardManager::getWriteview();
+    bool participantsChangedFlag = false;
+    for(int nodeIdx = 0; nodeIdx < participants.size(); ++nodeIdx){
+    	if(! writeview->isNodeAlive(participants.at(nodeIdx))){
+    		participants.erase(participants.begin() + nodeIdx);
+    		nodeIdx --;
+    		participantsChangedFlag = true;
+    	}
+    }
+    if(participants.empty()){
+    	this->getTransaction()->setUnattached();
+        Logger::sharding(Logger::Detail, "AtomicLock| ends unattached, no participant found.");
+    	return;
+    }else if(participantsChangedFlag){
+    	releaser->setParticipants(participants);
+    }
+
+    ShardManager::getShardManager()->getStateMachine()->registerOperation(releaser);
 }
 
 void AtomicRelease::end(map<NodeId, SP(ShardingNotification) > & replies){
@@ -83,7 +102,12 @@ void AtomicRelease::end(map<NodeId, SP(ShardingNotification) > & replies){
 void AtomicRelease::finalize(){
     Logger::sharding(Logger::Detail, "AtomicRelease| ends ...");
 	this->finalizeFlag = true;
-	this->getConsumer()->consume(true);
+
+	if(lockType == LockRequestType_PrimaryKey){
+		this->getConsumer()->consume(true, pid);
+	}else{
+		this->getConsumer()->consume(true);
+	}
 }
 
 void AtomicRelease::setParticipants(vector<NodeId> & participants){
@@ -94,9 +118,17 @@ void AtomicRelease::setParticipants(vector<NodeId> & participants){
 	releaser->setParticipants(participants);
 }
 
+bool AtomicRelease::updateParticipants(){
+	releaseNotification->getInvolvedNodes(participants);
+	if(participants.empty()){
+		return false;
+	}
+	releaser->setParticipants(participants);
+	return true;
+}
+
 void AtomicRelease::init(){
 	// participants are all node
-	vector<NodeId> participants;
 	releaseNotification->getInvolvedNodes(participants);
 	releaser = new OrderedNodeIteratorOperation(releaseNotification, ShardingLockACKMessageType , participants, this);
 }

@@ -17,7 +17,8 @@ AtomicLock::AtomicLock(const ClusterShardId & srcShardId,
 		const ClusterShardId & destShardId,
 		const NodeOperationId & copyAgent,
 		ConsumerInterface * consumer): ProducerInterface(consumer){
-
+	ASSERT(this->getConsumer() != NULL);
+	ASSERT(this->getConsumer()->getTransaction() != NULL);
 	// prepare the locker and locking notification
 	lockNotification = SP(LockingNotification)(new LockingNotification(srcShardId, destShardId, copyAgent));
 	releaseNotification = SP(LockingNotification)(new LockingNotification(srcShardId, destShardId, copyAgent, true));
@@ -72,7 +73,8 @@ AtomicLock::AtomicLock(const vector<string> & primaryKeys,
 	// prepare the locker and locking notification
 	lockNotification = SP(LockingNotification)(new LockingNotification(primaryKeys, writerAgent, pid));
 	releaseNotification = SP(LockingNotification)(new LockingNotification(primaryKeys, writerAgent, pid, true));
-	lockType = LockRequestType_PrimaryKey;
+	this->pid = pid;
+	this->lockType = LockRequestType_PrimaryKey;
 	this->finalzedFlag = false;
 	init();
 
@@ -102,6 +104,24 @@ Transaction * AtomicLock::getTransaction(){
 
 void AtomicLock::produce(){
     Logger::sharding(Logger::Detail, "AtomicLock| starts.");
+    Cluster_Writeview * writeview = ShardManager::getWriteview();
+    bool participantsChangedFlag = false;
+    for(int nodeIdx = 0; nodeIdx < participants.size(); ++nodeIdx){
+    	if(! writeview->isNodeAlive(participants.at(nodeIdx))){
+    		participants.erase(participants.begin() + nodeIdx);
+    		nodeIdx --;
+    		participantsChangedFlag = true;
+    	}
+    }
+    if(participants.empty()){
+    	this->getTransaction()->setUnattached();
+        Logger::sharding(Logger::Detail, "AtomicLock| ends unattached, no participant found.");
+    	return;
+    }else if(participantsChangedFlag){
+    	locker->setParticipants(participants);
+    }
+
+	// register and run the operation state in the state-machine
 	ShardManager::getShardManager()->getStateMachine()->registerOperation(locker);
 }
 
@@ -151,17 +171,23 @@ bool AtomicLock::condition(SP(ShardingNotification) reqArg, SP(ShardingNotificat
 }
 
 bool AtomicLock::shouldAbort(const NodeId & failedNode){
-	if ( std::find(this->participants.begin(), this->participants.end(), failedNode) == this->participants.end()){
-		return false;
-	}
-	unsigned failedNodeIndex = 0 ;
+	unsigned failedNodeIndex = this->participants.size() ;
 	for(; failedNodeIndex < this->participants.size(); ++failedNodeIndex){
 		if(this->participants.at(failedNodeIndex) == failedNode){
 			break;
 		}
 	}
-	if(failedNodeIndex < this->participants.size()){
-		this->participants.erase(this->participants.begin() + failedNodeIndex);
+	if(failedNodeIndex == this->participants.size()){
+		return false;
+	}
+
+	this->participants.erase(this->participants.begin() + failedNodeIndex);
+
+	if(this->participants.empty()){
+		// all nodes that are involved in lock are now dead, so we should return the
+		// default status.
+		finalize(getDefaultStatusValue());
+		return true;
 	}
 	if(this->participantIndex >= failedNodeIndex ){
 		this->participantIndex --;
@@ -181,14 +207,18 @@ void AtomicLock::recover(){
 	vector<NodeId> releaseParticipants;
 	if(lockType == LockRequestType_PrimaryKey){
 		ASSERT(false);
-	}else{
-		// release from [0 to participantIndex)
-		for(unsigned i = 0 ; i < participantIndex; ++i){
-			releaseParticipants.push_back(participants.at(i));
-		}
-		// releaseNotification is prepared in the time of preparing locker
+	}
+	// release from [0 to participantIndex)
+	for(int i = 0 ; i < participantIndex; ++i){
+		releaseParticipants.push_back(participants.at(i));
+	}
+	if(releaseParticipants.empty()){
+		ASSERT(false);
+		finalize(false);
+		return;
 	}
 	Logger::sharding(Logger::Detail, "AtomicLock| making the release operation for recovery.");
+	// NOTE: releaseNotification is prepared in the time of preparing locker
 	OrderedNodeIteratorOperation * releaser =
 			new OrderedNodeIteratorOperation(releaseNotification, ShardingLockACKMessageType , releaseParticipants);
 	ShardManager::getShardManager()->getStateMachine()->registerOperation(releaser);
@@ -212,36 +242,30 @@ void AtomicLock::end(map<NodeId, SP(ShardingNotification) > & replies){
 	 */
 	if(lockType == LockRequestType_PrimaryKey){
 		if(participants.empty()){
+			ASSERT(false);
 			// record change must be stopped because there is no shard
 			// anymore
 			Logger::sharding(Logger::Detail, "AtomicLock| empty list of participants in primaryKey lock : abort and return false");
 			finalize(false);
-
 		}
+		finalize(true);
 	}else{
 		finalize(true);
 	}
 }
 
-void AtomicLock::setParticipants(const vector<NodeId> & participants){
-	if(participants.empty()){
-		return;
-	}
-	this->participants.clear();
-	this->participants.insert(this->participants.begin(), participants.begin(), participants.end());
-	participantIndex = -1;
-	if(locker == NULL){
-		ASSERT(false);
-		return;
-	}
-	locker->setParticipants(this->participants);
-}
-
-
 void AtomicLock::finalize(bool result){
 	this->finalzedFlag = true;
 	Logger::sharding(Logger::Detail, "AtomicLock| lock : %s", result ? "successfull" : "failed");
-	this->getConsumer()->consume(result);
+	if(lockType == LockRequestType_PrimaryKey){
+		this->getConsumer()->consume(result, pid);
+	}else{
+		this->getConsumer()->consume(result);
+	}
+}
+
+bool AtomicLock::getDefaultStatusValue() const{
+	return false;
 }
 
 }}

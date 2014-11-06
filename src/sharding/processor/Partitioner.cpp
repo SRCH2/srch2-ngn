@@ -209,6 +209,37 @@ void CorePartitioner::getAllWriteTargets(unsigned hashKey, NodeId currentNodeId,
 		targets.push_back(nodeEntry->second);
 	}
 }
+void CorePartitioner::getAllWriteTargets(const ClusterPID & pid, NodeId currentNodeId, vector<NodeTargetShardInfo> & targets) const{
+	map<NodeId, NodeTargetShardInfo> targetNodes;
+	// first get local write targets if this node has any node partition
+	const NodePartition * localNodePartition = partitionContainer->getNodePartitionForWrite(0, currentNodeId); // hashKet doesn't matter in node shards
+	if(localNodePartition != NULL){
+		if(targetNodes.find(currentNodeId) == targetNodes.end()){
+			targetNodes[currentNodeId] = NodeTargetShardInfo(currentNodeId, partitionContainer->getCoreId());
+		}
+		addPartitionToNodeTargetContainer(localNodePartition, targetNodes[currentNodeId]);
+	}
+
+	// now add cluster write targets
+	const ClusterPartition * writeClusterPartition = partitionContainer->getClusterPartition(pid.partitionId);
+	if(writeClusterPartition != NULL && ! writeClusterPartition->isPartitionLocked()){
+
+		vector<NodeId> partitionCoveringNodes;
+		writeClusterPartition->getShardLocations(partitionCoveringNodes);
+		for(vector<NodeId>::iterator coveringNodeIdItr = partitionCoveringNodes.begin();
+				coveringNodeIdItr != partitionCoveringNodes.end(); ++coveringNodeIdItr){
+			if(targetNodes.find(*coveringNodeIdItr) == targetNodes.end()){
+				targetNodes[*coveringNodeIdItr] = NodeTargetShardInfo(*coveringNodeIdItr, partitionContainer->getCoreId());
+			}
+			addWritePartitionToNodeTargetContainer(writeClusterPartition, targetNodes[*coveringNodeIdItr]);
+		}
+	}
+
+	// add all prepared targets to the output
+	for(map<NodeId, NodeTargetShardInfo>::iterator nodeEntry = targetNodes.begin(); nodeEntry != targetNodes.end(); ++nodeEntry){
+		targets.push_back(nodeEntry->second);
+	}
+}
 
 
 void CorePartitioner::getAllShardIds(vector<ClusterShardId> & allShardIds) const{
@@ -260,6 +291,16 @@ unsigned CorePartitioner::hashDJB2(const char *str) const {
         hash = ((hash << 5) + hash) + c; /* hash * 33 + c */
     }while(*str++);
     return hash;
+}
+
+bool CorePartitioner::getClusterPartitionId(const string & primaryKey, ClusterPID & pid) const{
+	unsigned hashKey = hashDJB2(primaryKey.c_str());
+	const ClusterPartition * writeClusterPartition = partitionContainer->getClusterPartitionForWrite(hashKey);
+	if(writeClusterPartition == NULL){
+		return false; // no partition id
+	}
+	pid = ClusterPID(writeClusterPartition->getCoreId() , writeClusterPartition->getPartitionId(), 0);
+	return true;
 }
 
 }

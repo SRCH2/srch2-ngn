@@ -44,6 +44,9 @@ ShardMoveOperation::~ShardMoveOperation(){
 }
 
 Transaction * ShardMoveOperation::getTransaction() {
+	if(this->getConsumer() == NULL){
+		return NULL;
+	}
 	return this->getConsumer()->getTransaction();
 }
 

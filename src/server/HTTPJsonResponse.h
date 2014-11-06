@@ -106,6 +106,8 @@ public:
 	};
 	static Json::Value getRecordJsonResponse(const string & primaryKey, const char * action, bool status, const string & coreName);
 	static void addRecordError(Json::Value & responseRoot, const JsonMessageCode code, const string & message = "");
+	static void addRecordMessage(Json::Value & responseRoot, const Json::Value & msgObj);
+	static void addRecordMessages(Json::Value & responseRoot, const vector<JsonMessageCode> & msgCode);
 
 	virtual ~JsonRecordOperationResponse(){};
 

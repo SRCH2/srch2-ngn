@@ -51,7 +51,30 @@ public:
     virtual void* serialize(void * buffer) const = 0;
     virtual void * deserialize(void* buffer) = 0;
     virtual unsigned getNumberOfBytes() const = 0;
+	virtual bool operator==(const ShardId& rhs) const = 0;
+	virtual bool operator<(const ShardId& rhs) const = 0;
 
+};
+struct ShardPtrComparator {
+	//this must return a < b
+    bool operator()(const ShardId * a, const ShardId * b) const {
+    	// NULL < NULL : false
+    	// NULL < non-NULL : true
+    	// non-NULL < NULL : false
+        if(a == NULL){
+        	if(b == NULL){
+        		return false;
+        	}else{
+        		return true;
+        	}
+        }
+        // a != NULL
+        if(b == NULL){
+        	return false;
+        }
+        // non of them are NULL
+        return *a < *b;
+    }
 };
 
 class ClusterShardId;
@@ -72,6 +95,18 @@ public:
 	bool isReplica(ShardId * shardId) const;
 	ClusterPID getPartitionId() const;
 
+	bool operator<(const ShardId& rhs) const {
+		if(string(typeid(rhs).name()).compare("ClusterShardId") != 0 ){
+			return false;
+		}
+		return (*this < (const ClusterShardId&) rhs);
+	}
+	bool operator==(const ShardId& rhs) const{
+		if(string(typeid(rhs).name()).compare("ClusterShardId") != 0 ){
+			return false;
+		}
+		return (*this == (const ClusterShardId&) rhs);
+	}
 	bool operator==(const ClusterShardId& rhs) const ;
 	bool operator!=(const ClusterShardId& rhs) const ;
 	bool operator>(const ClusterShardId& rhs) const ;
@@ -105,6 +140,19 @@ public:
 	std::string _toString() const;
 	bool isClusterShard() const ;
 	bool isReplica(ShardId * shardId) const;
+
+	bool operator<(const ShardId& rhs) const {
+		if(string(typeid(rhs).name()).compare("NodeShardId") != 0 ){
+			return false;
+		}
+		return (*this < (const NodeShardId&) rhs);
+	}
+	bool operator==(const ShardId& rhs) const{
+		if(string(typeid(rhs).name()).compare("NodeShardId") != 0 ){
+			return false;
+		}
+		return (*this == (const NodeShardId&) rhs);
+	}
 	bool operator==(const NodeShardId& rhs) const ;
 	bool operator!=(const NodeShardId& rhs) const ;
 	bool operator>(const NodeShardId& rhs) const ;
@@ -193,6 +241,27 @@ public:
 	}
 	void addClusterShard(ClusterShardId shardId);
 	void addNodeShard(const NodeShardId & shardId);
+
+
+	// returns true if only cluster shards are
+	// available and false if only node shards
+	bool isClusterShardsMode() const{
+		if(targetNodeShards.empty()){
+			if(targetClusterShards.empty()){
+				ASSERT(false);
+				return false;
+			}
+			// cluster shards only
+			return true;
+		}
+		if(! targetClusterShards.empty()){
+			ASSERT(false);
+			return false;
+		}
+
+		// node shards only
+		return false;
+	}
 
 	const unsigned getCoreId() const;
 	const NodeId getNodeId() const;

@@ -16,7 +16,7 @@ namespace srch2 {
 namespace httpwrapper {
 
 ShardAssignOperation::ShardAssignOperation(const ClusterShardId & unassignedShard,
-		ConsumerInterface * consumer):ProducerConsumerInterface(consumer), shardId(unassignedShard){
+		ConsumerInterface * consumer):ProducerInterface(consumer), shardId(unassignedShard){
 	this->locker = NULL;
 	this->releaser = NULL;
 	this->committer = NULL;

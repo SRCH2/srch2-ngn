@@ -134,6 +134,8 @@ const string JsonResponseHandler::getJsonSingleMessageStr(const JsonMessageCode 
 	switch (code) {
 	case HTTP_JSON_Parse_Error:
 		return "JSON object parse error";
+	case HTTP_JSON_Empty_Body:
+		return "Http body is empty.";
 	case HTTP_JSON_All_Shards_Down_Error:
 		return "No data shard is available for this request.";
 	case HTTP_JSON_Node_Timeout_Warning:
@@ -168,6 +170,16 @@ const string JsonResponseHandler::getJsonSingleMessageStr(const JsonMessageCode 
 		return "Parameter not recognized.";
 	case HTTP_JSON_Request_Rejected_Due_To_Load_Balancing:
 		return "Request rejected due to ongoing load-balancing task.";
+	case HTTP_JSON_Request_ACL_Not_Available:
+		return "does not have record-based access control.";
+	case HTTP_Json_DUP_PRIMARY_KEY:
+		return "Primary key repeats in the same batch, first one is used.";
+	case HTTP_Json_Partition_Is_Locked:
+		return "The corresponding partition of data is not usable now. Please try again later.";
+	case HTTP_Json_No_Data_Shard_Available_For_Write:
+		return "No data shard is currently available for this record. This is mostly caused by node failure. Please try again later.";
+	case HTTP_Json_General_Error:
+		return "Unknown Error.";
 	default:
 		ASSERT(false);
 		return "Unknown error.";
@@ -367,17 +379,30 @@ Json::Value JsonRecordOperationResponse::getRecordJsonResponse(
 }
 
 void JsonRecordOperationResponse::addRecordError(Json::Value& recordRoot,
-		const JsonMessageCode code, const string& message) {
+		const JsonMessageCode code, const string& message ) {
 	if (recordRoot.get(c_detail, nullJsonValue) == nullJsonValue) {
 		recordRoot[c_detail] = Json::Value(Json::arrayValue);
 	}
-	if (code == HTTP_JSON_Custom_Error) {
+	if (code == HTTP_JSON_Custom_Error && message.compare("") != 0) {
 		Json::Value errValue(Json::objectValue);
 		errValue[c_message_code] = (unsigned) (code);
 		errValue[c_error] = message;
 		recordRoot[c_detail].append(errValue);
 	}else{
 		recordRoot[c_detail].append(JsonResponseHandler::getJsonSingleMessage(code));
+	}
+}
+
+void JsonRecordOperationResponse::addRecordMessage(Json::Value & recordRoot, const Json::Value & msgObj){
+	if (recordRoot.get(c_detail, nullJsonValue) == nullJsonValue) {
+		recordRoot[c_detail] = Json::Value(Json::arrayValue);
+	}
+	recordRoot[c_detail].append(msgObj);
+}
+
+void JsonRecordOperationResponse::addRecordMessages(Json::Value & responseRoot, const vector<JsonMessageCode> & msgCode){
+	for(unsigned i = 0 ; i < msgCode.size(); ++i){
+		addRecordError(responseRoot, msgCode.at(i));
 	}
 }
 

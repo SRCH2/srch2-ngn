@@ -17,9 +17,9 @@
 #include <boost/thread/locks.hpp>
 
 #include "serializables/SerializableSearchResults.h"
-#include "serializables/SerializableCommandStatus.h"
 #include "sharding/sharding/notifications/CommandStatusNotification.h"
 #include "sharding/sharding/notifications/CommandNotification.h"
+#include "sharding/sharding/notifications/Write2PCNotification.h"
 #include "serializables/SerializableGetInfoResults.h"
 
 #include "server/HTTPJsonResponse.h"
@@ -33,9 +33,6 @@ namespace httpwrapper {
 class ConfigManager;
 class Srch2Server;
 class SearchCommand;
-class CommandStatus;
-class InsertUpdateCommand;
-class DeleteCommand;
 class GetInfoCommand;
 
 
@@ -65,24 +62,6 @@ public:
      */
     SearchCommandResults * internalSearchCommand(const NodeTargetShardInfo & target,
     		boost::shared_ptr<const ClusterResourceMetadata_Readview> clusterReadview, SearchCommand * searchData);
-
-
-    /*
-     * This call back is always called for insert and update, it will use
-     * internalInsertCommand and internalUpdateCommand
-     */
-    CommandStatus * internalInsertUpdateCommand(const NodeTargetShardInfo & target,
-    		boost::shared_ptr<const ClusterResourceMetadata_Readview> clusterReadview, InsertUpdateCommand * insertUpdateData);
-
-    /*
-     * 1. Receives a delete request from a shard and makes sure this
-     *    shard is the correct reponsible of this record using Partitioner
-     * 2. Uses core execute this delete query
-     * 3. Sends the results to the shard which initiated this delete request (Failure or Success)
-     */
-    CommandStatus *  internalDeleteCommand(const NodeTargetShardInfo & target,
-    		boost::shared_ptr<const ClusterResourceMetadata_Readview> clusterReadview, DeleteCommand * deleteData);
-
 
 
     /*
@@ -123,6 +102,8 @@ public:
 
     SP(CommandStatusNotification) resolveShardCommand(SP(CommandNotification) notif);
 
+    SP(Write2PCNotification::ACK) resolveWrite2PC(SP(Write2PCNotification) notif);
+
 private:
 
     ConfigManager * configurationManager;
@@ -146,41 +127,17 @@ private:
     static void * searchInShardThreadWork(void *);
 
 
-    struct ShardInsertUpdateArgs{
-    	ShardInsertUpdateArgs(Record * record, Srch2Server * server, string shardIdentifier):record(record){
-    		this->server = server;
-    		this->shardResults = new CommandStatus::ShardResults(shardIdentifier);
-    	}
-    	~ShardInsertUpdateArgs(){
-    		if(record != NULL){
-    			delete record;
-    		}
-    	}
-    	Record * record;
-    	Srch2Server * server;
-    	CommandStatus::ShardResults * shardResults;
-    };
-
-    struct ShardDeleteArgs{
-    	ShardDeleteArgs(const string primaryKey, unsigned shardingKey, Srch2Server * server, string shardIdentifier):primaryKey(primaryKey){
-    		this->shardingKey = shardingKey;
-    		this->server = server;
-    		this->shardResults = new CommandStatus::ShardResults(shardIdentifier);
-    	}
-    	const string primaryKey;
-    	unsigned shardingKey;
-    	Srch2Server * server;
-    	CommandStatus::ShardResults * shardResults;
-    };
-
-    static void insertInShard(const Record * record, Srch2Server * server, Json::Value & messages , bool & statusValue);
-    static void * insertInShardThreadWork(void *);
-    static void updateInShard(const Record * record, Srch2Server * server, Json::Value & messages , bool & statusValue);
-    static void * updateInShardThreadWork(void * args);
-
-    static void deleteInShard(const string primaryKey, unsigned shardingKey,
-    		Srch2Server * server, Json::Value & messages, bool & statusValue);
-    static void * deleteInShardThreadWork(void * args);
+    static void insertInShard(const Record * record, Srch2Server * server, vector<JsonMessageCode> & messageCodes , bool & statusValue);
+    static void insertInShardTest(const string & primaryKey, Srch2Server * server, vector<JsonMessageCode> & messageCodes , bool & statusValue);
+    static void updateInShard(const Record * record, Srch2Server * server, vector<JsonMessageCode> & messageCodes , bool & statusValue);
+    static void updateInShardTest(const string & primaryKey, Srch2Server * server, vector<JsonMessageCode> & messageCodes , bool & statusValue){
+    	statusValue = true;
+    }
+    static void deleteInShard(const string primaryKey,
+    		Srch2Server * server, vector<JsonMessageCode> & messageCodes, bool & statusValue);
+    static void deleteInShardTest(const string primaryKey, Srch2Server * server, vector<JsonMessageCode> & messageCodes , bool & statusValue){
+    	statusValue = true;
+    }
 
 //    GetInfoShardResult
     struct ShardGetInfoArgs{

@@ -36,7 +36,19 @@ Transaction * OrderedNodeIteratorOperation::getTransaction(){
 
 OperationState * OrderedNodeIteratorOperation::entry(){
 	__FUNC_LINE__
-	ASSERT(this->participants.size() > 0);
+	// Consistency check : participants must not be empty
+	if(this->participants.empty()){
+		ASSERT(false);
+		return NULL;
+	}
+	// Consistency check : all participants must be alive
+	Cluster_Writeview * writeview = ShardManager::getShardManager()->getWriteview();
+	for(unsigned i = 0 ; i < this->participants.size(); ++i){
+		if(! writeview->isNodeAlive(this->participants.at(i).nodeId)){
+			ASSERT(false);
+			return NULL;
+		}
+	}
 	// ask the first node.
 	this->participantsIndex = 0;
 	return askNode(	this->participantsIndex);
@@ -76,7 +88,7 @@ OperationState * OrderedNodeIteratorOperation::handle(SP(ShardingNotification) n
 OperationState * OrderedNodeIteratorOperation::handle(SP(NodeFailureNotification) notif){
 	NodeId failedNode = notif->getFailedNodeID();
 	if(this->validatorObj != NULL){
-		if(this->validatorObj->shouldAbort(failedNode)){
+		if(this->validatorObj->shouldAbort(failedNode, this->getOperationId())){
 			return NULL;
 		}
 	}
@@ -109,7 +121,7 @@ OperationState * OrderedNodeIteratorOperation::handle(SP(NodeFailureNotification
 	        		NodeOperationId(ShardManager::getCurrentNodeId(), this->getOperationId()).toString().c_str(),
 	        		failedNode);
 			if(this->validatorObj != NULL){
-				this->validatorObj->end();
+				this->validatorObj->end(this->getOperationId());
 			}
 			return NULL;
 		}
@@ -123,9 +135,27 @@ OperationState * OrderedNodeIteratorOperation::handle(SP(NodeFailureNotification
 }
 
 void OrderedNodeIteratorOperation::setParticipants(vector<NodeId> & participants){
-	ASSERT(participants.size() > 0);
-	this->participants.clear();
+
+	// Consistency check : there must be at least one participant
+	if(participants.empty()){
+		ASSERT(false);
+		return;
+	}
+
+	// Consistency check : all participants must be alive
+	Cluster_Writeview * writeview = ShardManager::getShardManager()->getWriteview();
+	for(int nodeIdx = 0; participants.size(); ++nodeIdx){
+		if(! writeview->isNodeAlive(participants.at(nodeIdx))){
+			ASSERT(false);
+			return;
+		}
+	}
+
+
+	// we can continue with this set of participants
 	std::sort(participants.begin(), participants.end());
+
+	this->participants.clear();
 	for(unsigned i = 0 ; i < participants.size() ; ++i){
 		this->participants.push_back(NodeOperationId(participants.at(i)));
 	}
@@ -175,7 +205,7 @@ OperationState * OrderedNodeIteratorOperation::askNode(const unsigned nodeIndex)
 	if(nodeIndex >= this->participants.size()){
 	    Logger::sharding(Logger::Detail, "NodeIterator(opid=%s)| Done. ",NodeOperationId(ShardManager::getCurrentNodeId(), this->getOperationId()).toString().c_str());
 		if(this->validatorObj != NULL){
-			this->validatorObj->end();
+			this->validatorObj->end(this->getOperationId());
 		}
 		return NULL;
 	}

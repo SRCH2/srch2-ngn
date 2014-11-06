@@ -14,9 +14,6 @@
 #include "processor/serializables/SerializableSearchCommandInput.h"
 #include "processor/serializables/SerializableSearchCommandInput.h"
 #include "processor/serializables/SerializableSearchResults.h"
-#include "processor/serializables/SerializableInsertUpdateCommandInput.h"
-#include "processor/serializables/SerializableDeleteCommandInput.h"
-#include "processor/serializables/SerializableCommandStatus.h"
 #include "processor/serializables/SerializableGetInfoCommandInput.h"
 #include "processor/serializables/SerializableGetInfoResults.h"
 
@@ -81,12 +78,6 @@ public:
         case SearchCommandMessageType: // -> for LogicalPlan object
         	// give search query to DP internal and pass the result to sendReply
         	resultFlag = sendReply<SearchCommandResults>(internalDP.internalSearchCommand(target, clusterReadview, (SearchCommand*)requestObj), node, requestMessageId, clusterReadview);
-        	break;
-        case InsertUpdateCommandMessageType: // -> for Record object (used for insert and update)
-        	resultFlag = sendReply<CommandStatus>(internalDP.internalInsertUpdateCommand(target, clusterReadview, (InsertUpdateCommand*)requestObj), node, requestMessageId, clusterReadview);
-        	break;
-        case DeleteCommandMessageType: // -> for DeleteCommandInput object (used for delete)
-        	resultFlag = sendReply<CommandStatus>(internalDP.internalDeleteCommand(target, clusterReadview, (DeleteCommand *)requestObj), node, requestMessageId, clusterReadview);
         	break;
         case GetInfoCommandMessageType: // -> for GetInfoCommandInput object (used for getInfo)
         	resultFlag = sendReply<GetInfoCommandResults>(internalDP.internalGetInfoCommand(target, clusterReadview, (GetInfoCommand*)requestObj), node, requestMessageId, clusterReadview);

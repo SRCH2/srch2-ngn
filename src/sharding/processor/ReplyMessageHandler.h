@@ -54,12 +54,6 @@ public:
 						SearchCommandResults::deserialize(Message::getBodyPointerFromMessagePointer(reply));
 				return resolveReply(searchResults, nodeId , reply->getRequestMessageId());
 			}
-			case StatusMessageType:
-			{
-				CommandStatus * statusResult =
-						CommandStatus::deserialize(Message::getBodyPointerFromMessagePointer(reply));
-				return resolveReply(statusResult, nodeId , reply->getRequestMessageId());
-			}
 			case GetInfoResultsMessageType:
 			{
 				GetInfoCommandResults * getInfoResult =

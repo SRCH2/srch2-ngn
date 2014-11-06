@@ -39,21 +39,6 @@ bool RequestMessageHandler::resolveMessage(Message * msg, NodeId node){
         delete searchCommand;
         break;
     }
-    case InsertUpdateCommandMessageType: // -> for Record object (used for insert and update)
-    {
-    	InsertUpdateCommand* insertUpdateCommand =
-    			InsertUpdateCommand::deserialize(buffer,clusterReadview->getCore(target.getCoreId())->getSchema());
-    	resultFlag = resolveMessage(insertUpdateCommand, node, msg->getMessageId(), target, msg->getType(), clusterReadview);
-    	delete insertUpdateCommand;
-    	break;
-    }
-    case DeleteCommandMessageType: // -> for DeleteCommandInput object (used for delete)
-    {
-    	DeleteCommand* deleteCommand = DeleteCommand::deserialize(buffer);
-    	resultFlag = resolveMessage(deleteCommand, node, msg->getMessageId(), target, msg->getType(), clusterReadview);
-    	delete deleteCommand;
-    	break;
-    }
     case GetInfoCommandMessageType: // -> for GetInfoCommandInput object (used for getInfo)
     {
     	GetInfoCommand* getInfoCommand = GetInfoCommand::deserialize(buffer);
@@ -76,21 +61,12 @@ void RequestMessageHandler::deleteResponseRequestObjectBasedOnType(ShardingMessa
     case SearchResultsMessageType: // -> for LogicalPlan object
         delete (SearchCommandResults*)responseObject;
         return;
-    case StatusMessageType: // -> for Record object (used for insert and update)
-        delete (CommandStatus*)responseObject;
-        return;
     case GetInfoResultsMessageType: // -> for DeleteCommandInput object (used for delete)
     	delete (GetInfoCommandResults*)responseObject;
     	return;
     case SearchCommandMessageType:
         delete (SearchCommand*)responseObject;
         return;
-    case InsertUpdateCommandMessageType:
-    	delete (InsertUpdateCommand *)responseObject;
-    	return;
-    case DeleteCommandMessageType:
-    	delete (DeleteCommand *)responseObject;
-    	return;
     case GetInfoCommandMessageType:
     	delete (GetInfoCommand *)responseObject;
     	return;

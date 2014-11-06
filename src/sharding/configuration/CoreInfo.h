@@ -137,6 +137,10 @@ public:
 		return this->numberOfReplicas;
 	}
 
+	bool isDistributedCore() const{
+		return (this->getNumberOfPrimaryShards() > 0);
+	}
+
 	ClusterShardId getPrimaryShardId(unsigned partitionId) const;
 
 	CoreInfo_t(class ConfigManager *manager) : configManager(manager),  accessControlInfo(NULL)  {
@@ -357,7 +361,7 @@ protected:
 	// can do it in V0 or after V1. SRCH2 will take care about load
 	// balancing, relocating, gathering the results from nodes, etc.
 	// ES: core.number_of_replicas: 1 // index.number_of_replicas: 1
-	unsigned numberOfReplicas; // always 0 for V0
+	unsigned numberOfReplicas;
 
 	ConfigManager *configManager;
 

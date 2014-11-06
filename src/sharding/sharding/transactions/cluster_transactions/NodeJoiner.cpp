@@ -235,6 +235,10 @@ void NodeJoiner::commit(){
 
 void NodeJoiner::release(){ // releases the lock on metadata
 	__FUNC_LINE__
+	if(! this->releaser->updateParticipants()){
+		finalize(false);
+		return;
+	}
 	this->currentOperation = Release;
 	Logger::sharding(Logger::Step, "NodeJoiner| Releasing lock ...");
 	this->releaser->produce();

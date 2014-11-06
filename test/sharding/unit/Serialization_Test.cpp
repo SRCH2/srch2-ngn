@@ -6,11 +6,8 @@
 
 #include "src/sharding/configuration/ConfigManager.h"
 
-#include "src/sharding/processor/serializables/SerializableCommandStatus.h"
-#include "src/sharding/processor/serializables/SerializableDeleteCommandInput.h"
 #include "src/sharding/processor/serializables/SerializableGetInfoCommandInput.h"
 #include "src/sharding/processor/serializables/SerializableGetInfoResults.h"
-#include "src/sharding/processor/serializables/SerializableInsertUpdateCommandInput.h"
 #include "src/sharding/processor/serializables/SerializableSearchCommandInput.h"
 #include "src/sharding/processor/serializables/SerializableSearchResults.h"
 
@@ -147,51 +144,9 @@ QueryResults * prepareQueryResults(){
     return queryResults;
 }
 
-
-void testSerializableCommandStatus(){
-	CommandStatus commandInput1(CommandStatus::DP_INSERT);
-	CommandStatus::ShardResults* shardResult = new CommandStatus::ShardResults("identifier");
-	shardResult->statusValue =  true;
-	shardResult->messages.append(Json::Value("INSERT True"));
-	commandInput1.addShardResult(shardResult);
-
-	MessageAllocator * aloc = new MessageAllocator();
-	void * buffer = commandInput1.serialize(aloc);
-	const CommandStatus & deserializedCommandInput1 = *(CommandStatus::deserialize(buffer));
-	ASSERT(commandInput1.getCommandCode() == deserializedCommandInput1.getCommandCode());
-	ASSERT(commandInput1.getShardResults().at(0)->statusValue == deserializedCommandInput1.getShardResults().at(0)->statusValue);
-	ASSERT(commandInput1.getShardResults().at(0)->messages == deserializedCommandInput1.getShardResults().at(0)->messages);
-
-	CommandStatus commandInput2(CommandStatus::DP_DELETE);
-	CommandStatus::ShardResults* shardResult2 = new CommandStatus::ShardResults("identifier2");
-	shardResult2->statusValue =  true;
-	shardResult->messages.append(Json::Value("INSERT True"));
-	commandInput2.addShardResult(shardResult2);
-	buffer = commandInput2.serialize(aloc);
-	const CommandStatus & deserializedCommandInput2 = *(CommandStatus::deserialize(buffer));
-	ASSERT(commandInput2.getCommandCode() == deserializedCommandInput2.getCommandCode());
-	ASSERT(commandInput2.getShardResults().at(0)->statusValue == deserializedCommandInput2.getShardResults().at(0)->statusValue);
-	ASSERT(commandInput2.getShardResults().at(0)->messages == deserializedCommandInput2.getShardResults().at(0)->messages);
-}
-
 void testSerializableCommitCommandInput(){
 
 	// This class is empty for now
-}
-
-void testSerializableDeleteCommandInput(){
-	DeleteCommand commandInput1("primary key 1",1);
-	MessageAllocator * aloc = new MessageAllocator();
-	void * buffer = commandInput1.serialize(aloc);
-	const DeleteCommand & deserializedCommandInput1 = *(DeleteCommand::deserialize(buffer));
-	ASSERT(commandInput1.getPrimaryKey() == deserializedCommandInput1.getPrimaryKey());
-	ASSERT(commandInput1.getShardingKey() == deserializedCommandInput1.getShardingKey());
-
-	DeleteCommand commandInput2("primary key 3",-1);
-	buffer = commandInput2.serialize(aloc);
-	const DeleteCommand & deserializedCommandInput2 = *(DeleteCommand::deserialize(buffer));
-	ASSERT(commandInput2.getPrimaryKey() == deserializedCommandInput2.getPrimaryKey());
-	ASSERT(commandInput2.getShardingKey() == deserializedCommandInput2.getShardingKey());
 }
 
 void testSerializableGetInfoCommandInput(){
@@ -228,53 +183,6 @@ void testSerializableGetInfoResults(){
 	ASSERT(commandInput2.getShardResults().at(0)->versionInfo == deserializedCommandInput2.getShardResults().at(0)->versionInfo);
 }
 
-void testSerializableInsertUpdateCommandInput(){
-    /// Create a Schema
-	srch2is::SchemaInternal *schema = dynamic_cast<srch2is::SchemaInternal*>(srch2is::Schema::create(srch2is::DefaultIndex));
-	schema->setPrimaryKey("primaryKey"); // integer, not searchable
-	schema->setSearchableAttribute("description", 2); // searchable text
-
-	Record *record1 = new Record(schema);
-    record1->setPrimaryKey("primary key 1");
-    record1->setSearchableAttributeValue(0, "the data for primary key 1");
-
-	InsertUpdateCommand commandInput1(record1, InsertUpdateCommand::DP_INSERT);
-	MessageAllocator * aloc = new MessageAllocator();
-	void * buffer = commandInput1.serialize(aloc);
-	const InsertUpdateCommand & deserializedCommandInput1 = *(InsertUpdateCommand::deserialize(buffer, schema));
-	ASSERT(commandInput1.getInsertOrUpdate() == deserializedCommandInput1.getInsertOrUpdate());
-	ASSERT(commandInput1.getRecord()->getPrimaryKey() == deserializedCommandInput1.getRecord()->getPrimaryKey());
-	string originalValue, deserializedValue;
-	commandInput1.getRecord()->getSearchableAttributeValue(0,originalValue);
-	deserializedCommandInput1.getRecord()->getSearchableAttributeValue(0,deserializedValue);
-	ASSERT(originalValue == deserializedValue);
-
-
-	srch2is::SchemaInternal *schema2 = dynamic_cast<srch2is::SchemaInternal*>(srch2is::Schema::create(srch2is::DefaultIndex));
-	schema2->setPrimaryKey("primaryKey"); // integer, not searchable
-	schema2->setSearchableAttribute("description", 2); // searchable text
-	schema2->setSearchableAttribute("body", 3); // searchable text
-
-	Record *record2 = new Record(schema);
-    record2->setPrimaryKey("primary key 1");
-    record2->setSearchableAttributeValue(0, "the data for primary key 1");
-    record2->setSearchableAttributeValue(1, "the body for primary key 1");
-
-
-    InsertUpdateCommand commandInput2(record2, InsertUpdateCommand::DP_UPDATE);
-	MessageAllocator * aloc2 = new MessageAllocator();
-	void * buffer2 = commandInput2.serialize(aloc2);
-	const InsertUpdateCommand & deserializedCommandInput2 = *(InsertUpdateCommand::deserialize(buffer2, schema2));
-	ASSERT(commandInput2.getInsertOrUpdate() == deserializedCommandInput2.getInsertOrUpdate());
-	ASSERT(commandInput2.getRecord()->getPrimaryKey() == deserializedCommandInput2.getRecord()->getPrimaryKey());
-	commandInput2.getRecord()->getSearchableAttributeValue(0,originalValue);
-	deserializedCommandInput2.getRecord()->getSearchableAttributeValue(0,deserializedValue);
-	ASSERT(originalValue == deserializedValue);
-	commandInput2.getRecord()->getSearchableAttributeValue(1,originalValue);
-	deserializedCommandInput2.getRecord()->getSearchableAttributeValue(1,deserializedValue);
-	ASSERT(originalValue == deserializedValue);
-
-}
 
 void testSerializableResetLogCommandInput(){
 	// This class is empty for now
@@ -353,12 +261,9 @@ void testSerializableSearchResults(){
 
 
 int main(){
-	testSerializableCommandStatus();
 	testSerializableCommitCommandInput();
-	testSerializableDeleteCommandInput();
 	testSerializableGetInfoCommandInput();
 	testSerializableGetInfoResults();
-	testSerializableInsertUpdateCommandInput();
 	testSerializableResetLogCommandInput();
 	testSerializableSearchCommandInput();
 	testSerializableSearchResults();

@@ -15,7 +15,7 @@ using namespace std;
 namespace srch2 {
 namespace httpwrapper {
 
-class ShardAssignOperation: public ProducerConsumerInterface {
+class ShardAssignOperation: public ProducerInterface, public ConsumerInterface {
 public:
 
 	ShardAssignOperation(const ClusterShardId & unassignedShard, ConsumerInterface * consumer);
@@ -36,6 +36,13 @@ public:
 
 	string getName() const {return "shard-assign";};
 
+	Transaction * getTransaction(){
+		if(this->getConsumer() == NULL){
+			return NULL;
+		}
+		return this->getConsumer()->getTransaction();
+	}
+
 private:
 
 
@@ -48,7 +55,6 @@ private:
 	NodeOperationId currentOpId; // used to be able to release locks, and also talk with MM
 	const ClusterShardId shardId;
 
-	ConsumerInterface * consumer;
 	CurrentAction currentAction;
 	AtomicLock * locker;
 	AtomicRelease * releaser;

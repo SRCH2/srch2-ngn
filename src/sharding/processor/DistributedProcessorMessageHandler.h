@@ -195,22 +195,6 @@ private:
 				delete (SearchCommand*)reqHandlerArgs->requestObj;
 				delete reqHandlerArgs;
 				return NULL;
-			case InsertUpdateCommandMessageType:
-				reqHandlerArgs->requestMessageHandler->resolveMessage((InsertUpdateCommand*)reqHandlerArgs->requestObj,
-						reqHandlerArgs->node, reqHandlerArgs->requestMessageId,
-						reqHandlerArgs->target, reqHandlerArgs->type,
-						reqHandlerArgs->clusterReadview);
-				delete (InsertUpdateCommand*)reqHandlerArgs->requestObj;
-				delete reqHandlerArgs;
-				return NULL;
-			case DeleteCommandMessageType:
-				reqHandlerArgs->requestMessageHandler->resolveMessage((DeleteCommand*)reqHandlerArgs->requestObj,
-						reqHandlerArgs->node, reqHandlerArgs->requestMessageId,
-						reqHandlerArgs->target, reqHandlerArgs->type,
-						reqHandlerArgs->clusterReadview);
-				delete (DeleteCommand*)reqHandlerArgs->requestObj;
-				delete reqHandlerArgs;
-				return NULL;
 			case GetInfoCommandMessageType:
 				reqHandlerArgs->requestMessageHandler->resolveMessage((GetInfoCommand*)reqHandlerArgs->requestObj,
 						reqHandlerArgs->node, reqHandlerArgs->requestMessageId,

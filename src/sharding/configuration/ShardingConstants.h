@@ -75,6 +75,8 @@ enum ShardingMessageType{
     ShardingRecordLockACKMessageType,
 
     InsertUpdateCommandMessageType,
+    ShardingWriteCommand2PCMessageType,
+    ShardingWriteCommand2PCACKMessageType,
 
     // just notifications
     ShardingMMNotificationMessageType,

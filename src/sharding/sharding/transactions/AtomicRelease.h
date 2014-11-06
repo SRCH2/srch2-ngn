@@ -47,7 +47,7 @@ public:
 	Transaction * getTransaction();
 
 	void produce();
-
+	bool updateParticipants();
 	/*
 	 * Lock request must be successful (or partially successful in case of primarykeys)
 	 * if we reach to this function.
@@ -59,11 +59,13 @@ private:
 	LockRequestType lockType;
 	SP(LockingNotification) releaseNotification;
 	OrderedNodeIteratorOperation * releaser; // it will be deleted by state-machie when it returns NULL
+	vector<NodeId> participants;
+
+	ClusterPID pid;// only valid and meaningful value if primary key lock
 
 	bool finalizeFlag ;
 	// TODO if we solve the problem of primary keys, we can remove this API
 	void setParticipants(vector<NodeId> & participants);
-
 	void init();
 
 	void finalize();

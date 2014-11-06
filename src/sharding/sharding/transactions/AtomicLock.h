@@ -76,9 +76,6 @@ public:
 	void end(map<NodeId, SP(ShardingNotification) > & replies);
 
 
-	// TODO if we solve the problem of primary keys, we can remove this API
-	void setParticipants(const vector<NodeId> & participants);
-
 	string getName() const {return "AtomicLock";};
 
 private:
@@ -91,10 +88,8 @@ private:
 
 	vector<NodeId> participants;
 	int participantIndex;
-	// rejectedPrimaryKey => participant index
-	map<string, unsigned> rejectedPrimaryKeys;
-	NodeOperationId writeAgent; // only valid and meaningful value if primary key lock
-	ClusterPID pid;
+
+	ClusterPID pid;// only valid and meaningful value if primary key lock
 
 	bool finalzedFlag ;
 
@@ -104,6 +99,8 @@ private:
 
 
 	void finalize(bool result);
+
+	bool getDefaultStatusValue() const;
 
 
 };

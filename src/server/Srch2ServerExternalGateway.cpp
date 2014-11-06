@@ -4,6 +4,7 @@
 #include "sharding/processor/DistributedProcessorExternal.h"
 #include "sharding/configuration/ConfigManager.h"
 #include "sharding/sharding/transactions/cluster_transactions/ShardCommandHttp.h"
+#include "sharding/sharding/transactions/cluster_transactions/WriteCommandHttp.h"
 #include "sharding/sharding/transactions/cluster_transactions/AclCommandHttp.h"
 #include "sharding/sharding/transactions/cluster_transactions/ClusterShutdownOperation.h"
 #include <exception>
@@ -79,14 +80,14 @@ void Srch2ServerGateway::cb_coreSpecificOperations(struct evhttp_request * req, 
     		break;
     	case srch2http::DocsPort:
     	    if(req->type == EVHTTP_REQ_PUT){
-                dpExternal->externalInsertCommand(clusterReadview, req, coreId);
+        		WriteCommandHttp::insert(clusterReadview, req, coreId);
     	    }else if(req->type == EVHTTP_REQ_DELETE){
     	    	Logger::console("Delete request came ...");
-    	    	dpExternal->externalDeleteCommand(clusterReadview, req, coreId);
+    	    	WriteCommandHttp::deleteRecord(clusterReadview, req, coreId);
     	    }
     		break;
     	case srch2http::UpdatePort:
-    		dpExternal->externalUpdateCommand(clusterReadview, req, coreId);
+    		WriteCommandHttp::update(clusterReadview, req, coreId);
     		break;
     	case srch2http::SavePort:
     		ShardCommandHttpHandler::runCommand(clusterReadview, req, coreId, ShardCommandCode_SaveData_SaveMetadata);

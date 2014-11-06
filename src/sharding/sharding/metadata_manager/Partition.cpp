@@ -202,13 +202,13 @@ const ClusterPartition * CorePartitionContianer::getClusterPartitionForWrite(uns
 		return NULL;
 	}
 	unsigned partitionId = hashKey % totalNumberOfPartitions;
-	return clusterPartitions.find(partitionId)->second;
+	return getClusterPartition(partitionId);
 }
 const NodePartition * CorePartitionContianer::getNodePartitionForWrite(unsigned hashKey, NodeId nodeId) const{
 	if(nodePartitions.find(nodeId) == nodePartitions.end()){
 		return NULL;
 	}
-	return nodePartitions.find(nodeId)->second;
+	return getNodePartition(nodeId);
 }
 
 

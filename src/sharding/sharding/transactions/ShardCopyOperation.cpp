@@ -44,6 +44,9 @@ ShardCopyOperation::~ShardCopyOperation(){
 }
 
 Transaction * ShardCopyOperation::getTransaction() {
+	if(this->getConsumer() == NULL){
+		return NULL;
+	}
 	return this->getConsumer()->getTransaction();
 }
 

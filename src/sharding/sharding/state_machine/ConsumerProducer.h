@@ -14,10 +14,16 @@ class Transaction;
 class ConsumerInterface{
 public:
 	virtual ~ConsumerInterface(){};
+	virtual void consume(){};
+	virtual void consume(const ClusterPID & pid){};
 	virtual void consume(bool booleanResult){};
 	virtual void consume(const vector<string> & rejectedPKs){};
 	virtual void consume(map<NodeId, vector<CommandStatusNotification::ShardStatus *> > & result) {};
 	virtual void consume(const ShardMigrationStatus & migrationStatus){};
+	virtual void consume(bool booleanResult, const ClusterPID & pid){};
+	virtual void consume(const map<string, bool> & recordResults){};
+	virtual void consume(const map<string, bool> & results,
+			map<string, map<ShardId * ,vector<JsonMessageCode>, ShardPtrComparator > > & messageCodes){};
 	virtual Transaction * getTransaction() = 0;
 	virtual string getName() const = 0;
 };
@@ -41,14 +47,6 @@ private:
 	ConsumerInterface * consumer;
 };
 
-class ProducerConsumerInterface : public ConsumerInterface, public ProducerInterface{
-public:
-	ProducerConsumerInterface(ConsumerInterface * consumer):ProducerInterface(consumer){	}
-	Transaction * getTransaction(){
-		return this->getConsumer()->getTransaction();
-	}
-};
-
 class NodeIteratorListenerInterface : public ConsumerInterface{
 public:
 	virtual ~NodeIteratorListenerInterface(){};
@@ -58,19 +56,30 @@ public:
 	/*
 	 * end functions are calback functions that consumer can override to receive the
 	 * result of node iteration.
+	 * NOTE : each class which implements this interface must override one and exactly one
+	 *        end function from this list.
 	 */
-	virtual void end_(map<NodeOperationId, SP(ShardingNotification) > & _replies){
+	virtual void end_(map<NodeOperationId, SP(ShardingNotification) > & _replies, unsigned callerId){
 		// by default, the second end is used by implementors of this interface
 		map<NodeId, SP(ShardingNotification) > replies;
 		for(map<NodeOperationId, SP(ShardingNotification) >::iterator nodeOpItr = _replies.begin();
 				nodeOpItr != _replies.end(); ++ nodeOpItr){
 			replies[nodeOpItr->first.nodeId] = nodeOpItr->second;
 		}
+		end_(_replies);
+		end(callerId);
+		end();
+		end(replies, callerId);
 		end(replies);
 	}
+	virtual void end_(map<NodeOperationId, SP(ShardingNotification) > & _replies){
+	}
+	virtual void end(unsigned callerId){
+	}
 	virtual void end(){
-		map<NodeId, SP(ShardingNotification) > replies;
-		end(replies);
+	}
+	virtual void end(map<NodeId, SP(ShardingNotification) > & replies, unsigned callerId){
+
 	}
 	virtual void end(map<NodeId, SP(ShardingNotification) > & replies){
 
@@ -79,6 +88,9 @@ public:
 	// True is retunrned by the caller of this module if this failedNode must abort
 	// the task. By defaul this method does not need to be overridden because it returns
 	// false by default.
+	virtual bool shouldAbort(const NodeId & failedNode, unsigned callerId){
+		return shouldAbort(failedNode);
+	}
 	virtual bool shouldAbort(const NodeId & failedNode){
 		return false;
 	}
