@@ -21,10 +21,12 @@ class FeedbackRanker {
 	const FeedbackIndex *userFeedbackIndex;
 	vector<UserFeedbackInfo> feedbackInfoForQuery;
 	unsigned queryArrivalTime;
+	float maxBoostForThisQuery;
 public:
 	FeedbackRanker(const string &query, const FeedbackIndex * feedbackIndex) ;
 	void init();
 	float getFeedbackBoostForRecord(unsigned recordId);
+	float getMaxBoostForThisQuery();
 };
 
 } /* namespace instantsearch */

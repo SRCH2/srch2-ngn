@@ -24,7 +24,7 @@ bool userFeedbackInfoRecordIdComparator(const UserFeedbackInfo& lhs, const UserF
 	}
 	else
 		return false;
-};
+}
 
 bool userFeedbackInfoTimestampComparator(const UserFeedbackInfo& lhs, const UserFeedbackInfo &rhs) {
 	//  comparator for min-heap
@@ -34,7 +34,7 @@ bool userFeedbackInfoTimestampComparator(const UserFeedbackInfo& lhs, const User
 	else {
 		return true;
 	}
-};
+}
 
 FeedbackIndex::FeedbackIndex(unsigned maxFeedbackInfoCountPerQuery,
 		unsigned maxCountOfFeedbackQueries, Indexer *indexer) {

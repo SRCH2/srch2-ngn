@@ -218,7 +218,10 @@ PhysicalPlanRecordItem * MergeTopKOperator::getNext(const PhysicalPlanExecutionP
 		topRecordToReturn= candidatesList.at(0);
 		candidatesList.erase(candidatesList.begin());
 		float maxScore = 0;
-		if( getMaximumScoreOfUnvisitedRecords(maxScore) == false){
+		float maxFeedbackBoostForQuery = 1.0;
+		if (this->feedbackRanker)
+			maxFeedbackBoostForQuery = feedbackRanker->getMaxBoostForThisQuery();
+		if( getMaximumScoreOfUnvisitedRecords(maxScore, maxFeedbackBoostForQuery) == false){
 			listsHaveMoreRecordsInThem = false;
 		}
 		if(maxScore < topRecordToReturn->getRecordRuntimeScore()){
@@ -296,7 +299,10 @@ PhysicalPlanRecordItem * MergeTopKOperator::getNext(const PhysicalPlanExecutionP
 
 		//5.
 		float maxScore = 0;
-		if( getMaximumScoreOfUnvisitedRecords(maxScore) == false){
+		float maxFeedbackBoostForQuery = 1.0;
+		if (this->feedbackRanker)
+			maxFeedbackBoostForQuery = feedbackRanker->getMaxBoostForThisQuery();
+		if( getMaximumScoreOfUnvisitedRecords(maxScore, maxFeedbackBoostForQuery) == false){
 			listsHaveMoreRecordsInThem = false;
 			break;
 		}
@@ -437,7 +443,7 @@ bool MergeTopKOperator::verifyRecordWithChildren(PhysicalPlanRecordItem * record
 
 }
 
-bool MergeTopKOperator::getMaximumScoreOfUnvisitedRecords(float & score){
+bool MergeTopKOperator::getMaximumScoreOfUnvisitedRecords(float & score, float maxFeedbackBoostForQuery){
 	// we just get the summation of all nextRecords in nextItemsFromChildren
 	score = 0;
 	for(vector<PhysicalPlanRecordItem * >::iterator nextRecord = nextItemsFromChildren.begin() ;
@@ -447,6 +453,7 @@ bool MergeTopKOperator::getMaximumScoreOfUnvisitedRecords(float & score){
 		}
 		score += (*nextRecord)->getRecordRuntimeScore();
 	}
+	score *= maxFeedbackBoostForQuery;
 	return true;
 }
 

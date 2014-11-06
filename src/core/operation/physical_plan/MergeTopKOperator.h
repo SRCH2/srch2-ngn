@@ -214,7 +214,7 @@ private:
 						std::vector<TermType>& termTypes,
 						const PhysicalPlanExecutionParameters & params);
 
-	bool getMaximumScoreOfUnvisitedRecords(float & score);
+	bool getMaximumScoreOfUnvisitedRecords(float & score, float maxFeedbackBoostForQuery);
 
 	MergeTopKOperator() ;
 	void insertResult(PhysicalPlanRecordItem * recordItem);

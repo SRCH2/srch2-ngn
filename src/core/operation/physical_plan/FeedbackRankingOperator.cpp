@@ -21,6 +21,19 @@ FeedbackRanker::FeedbackRanker(const string &query, const FeedbackIndex * feedba
 void FeedbackRanker::init() {
 	userFeedbackIndex->retrieveUserFeedbackInfoForQuery(this->queryString, feedbackInfoForQuery);
 	queryArrivalTime = time(NULL);
+
+	maxBoostForThisQuery = 1.0;
+	for (unsigned i = 0; i < feedbackInfoForQuery.size(); ++i) {
+		unsigned feedbackRecencyInSecs = queryArrivalTime - feedbackInfoForQuery[i].timestamp;
+		float feedbackBoost = Ranker::computeFeedbackBoost(feedbackRecencyInSecs, feedbackInfoForQuery[i].feedbackFrequency);
+		if (feedbackBoost > maxBoostForThisQuery) {
+			maxBoostForThisQuery = feedbackBoost;
+		}
+	}
+}
+
+float FeedbackRanker::getMaxBoostForThisQuery() {
+	return maxBoostForThisQuery;
 }
 
 float FeedbackRanker::getFeedbackBoostForRecord(unsigned recordId) {
