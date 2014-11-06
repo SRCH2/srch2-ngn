@@ -73,20 +73,22 @@ AnalyzerInternal::AnalyzerInternal(const StemmerContainer *stemmer,
     this->synonyms = synonyms;
 }
 
-string AnalyzerInternal::applyFilters(string input, bool isPrefix) {
-
+void AnalyzerInternal::applyFilters(const string & input,
+        std::vector<std::string> & queryTokens, bool isPrefix) {
+    queryTokens.clear();
     this->tokenStream->fillInCharacters(input, isPrefix);
 
-    string result = "";
+    string currentToken = "";
     while (tokenStream->processToken()) {
         vector<CharType> charVector;
         charVector = tokenStream->getProcessedToken();
-        string tmp;
-        charTypeVectorToUtf8String(charVector, tmp);
-        result += tmp;
-        break; //only returns the first output of filters
+
+        charTypeVectorToUtf8String(charVector, currentToken);
+        queryTokens.push_back(currentToken);
     }
-    return result;
+
+    if (queryTokens.size() == 1 && isEmpty(queryTokens[0]))
+        queryTokens.clear();
 }
 
 

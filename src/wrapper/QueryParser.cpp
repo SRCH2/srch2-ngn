@@ -8,6 +8,7 @@
 #include "util/Assert.h"
 #include "RegexConstants.h"
 #include "QueryFieldBoostParser.h"
+#include "boost/algorithm/string.hpp"
 
 using namespace std;
 using srch2::util::Logger;
@@ -1330,7 +1331,7 @@ bool QueryParser::termParser(string &input) {
         // populate the rawKeyword vector in container
         // input is modified to 'AND algorithms AND java* AND py*^3 AND binary^2~.5'
         this->populateRawKeywords(keywordStr);
-        // separate for each . *, ^ and ~
+        // separate for each : *, ^ and ~
     } else {
         // check if they keyword is just *
         string asteric = "";

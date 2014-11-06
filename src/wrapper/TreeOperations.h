@@ -202,6 +202,22 @@ public:
 		return subTreeRoot;
 	}
 
+	/*
+	 * Append a node to the tree. The node needs to specify the parent node.
+	 */
+    static bool appendToTree(ParseTreeNode * nodeToAppend,
+            ParseTreeNode *& root) {
+        if (nodeToAppend->parent == NULL && root == NULL) { //The node to append is root
+            root = nodeToAppend;
+        } else if (nodeToAppend->parent != NULL && root != NULL){
+            nodeToAppend->parent->children.push_back((nodeToAppend));
+        } else{
+            //Error
+            return false;
+        }
+        return true;
+    }
+
 
 private:
 

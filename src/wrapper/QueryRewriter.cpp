@@ -159,6 +159,7 @@ void QueryRewriter::prepareKeywordInfo() {
 bool QueryRewriter::applyAnalyzer() {
     Analyzer & analyzerNotConst = const_cast<Analyzer &>(analyzer); // because of bad design on analyzer
     vector<ParseTreeNode *> keywordPointersToErase; // stop word indexes, to be removed later
+    vector<ParseTreeNode *> keywordPointersToAppend;   //split word indexes, to be added later
     // first apply the analyzer
 	ParseTreeNode * leafNode;
 	ParseTreeLeafNodeIterator termIterator(paramContainer->parseTreeRoot);
@@ -187,8 +188,50 @@ bool QueryRewriter::applyAnalyzer() {
 			}
 
 		}else{
-			TermType termType = leafNode->termIntermediateStructure->keywordPrefixComplete;
-			keywordAfterAnalyzer = analyzerNotConst.applyFilters(leafNode->termIntermediateStructure->rawQueryKeyword , termType == srch2is::TERM_TYPE_PREFIX);
+		    /*
+		     * For non phrase term, we need to check if the leaf node can be split
+		     * again(e.g. "new york" -> "new" "AND" "york"). If so, we first create
+		     * the "AND" node with same parent of the original node.
+		     * Then, we create the term node "new" and "york", link to the children
+		     * of node "AND". Also, we push the original node into vector
+		     * "keywordPointersToErase" and push the new "AND" node into vector
+		     * "keywordPointersToAppend". After the loop, we do the erase and
+		     * append.
+		     * Note that all the parameters  except the "rawQueryKeyword" of the
+		     * nodes "new" and "york" are same as the original node "new york".
+		     */
+            TermType termType =
+                    leafNode->termIntermediateStructure->keywordPrefixComplete;
+            std::vector<std::string> analyzedQueryTokens;
+            analyzerNotConst.applyFilters(
+                    leafNode->termIntermediateStructure->rawQueryKeyword,
+                    analyzedQueryTokens, termType == srch2is::TERM_TYPE_PREFIX);
+            if (analyzedQueryTokens.size() >= 2) {
+                ParseTreeNode * parent = leafNode->parent;
+                keywordAfterAnalyzer = "";		//To be removed later;
+
+                ParseTreeNode * expressionNode = new ParseTreeNode(
+                        LogicalPlanNodeTypeAnd, parent);
+                for (std::vector<std::string>::iterator analyzedQueryToken =
+                        analyzedQueryTokens.begin();
+                        analyzedQueryToken != analyzedQueryTokens.end();
+                        analyzedQueryToken++) {
+                    ParseTreeNode * termNode = new ParseTreeNode(
+                            LogicalPlanNodeTypeTerm, expressionNode);
+                    termNode->termIntermediateStructure =
+                            new TermIntermediateStructure(
+                                    leafNode->termIntermediateStructure);
+                    termNode->termIntermediateStructure->rawQueryKeyword =
+                            *analyzedQueryToken;
+                    expressionNode->children.push_back(termNode);
+                }
+
+                keywordPointersToAppend.push_back(expressionNode);
+            } else if (analyzedQueryTokens.size() == 1) {
+                keywordAfterAnalyzer = analyzedQueryTokens[0];
+            } else {
+                keywordAfterAnalyzer = "";		//To be removed later;
+            }
 		}
 		if (keywordAfterAnalyzer.compare("") == 0) { // analyzer removed this keyword, it's assumed to be a stop word
 			keywordPointersToErase.push_back(leafNode);
@@ -202,6 +245,16 @@ bool QueryRewriter::applyAnalyzer() {
     for(vector<ParseTreeNode *>::iterator keywordToErase = keywordPointersToErase.begin() ; keywordToErase != keywordPointersToErase.end() ; ++keywordToErase){
     	TreeOperations::removeFromTree(*keywordToErase , paramContainer->parseTreeRoot);
     }
+
+    // now append the splitted keywords
+    for (vector<ParseTreeNode *>::iterator keywordToAppend =
+            keywordPointersToAppend.begin();
+            keywordToAppend != keywordPointersToAppend.end();
+            ++keywordToAppend) {
+        TreeOperations::appendToTree(*keywordToAppend,
+                paramContainer->parseTreeRoot);
+    }
+
     // TODO After removing stop words the parse tree should be validated again
 
     termIterator.init(paramContainer->parseTreeRoot);

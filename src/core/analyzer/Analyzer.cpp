@@ -91,8 +91,9 @@ const std::string& Analyzer::getRecordAllowedSpecialCharacters() const {
     return this->analyzerInternal->getRecordAllowedSpecialCharacters();
 }
 
-std::string Analyzer::applyFilters(std::string input, bool isPrefix = false){
-    return this->analyzerInternal->applyFilters(input, isPrefix);
+void Analyzer::applyFilters(const std::string & input,
+        std::vector<std::string> & queryTokens, bool isPrefix = false) {
+    this->analyzerInternal->applyFilters(input,queryTokens, isPrefix);
 }
 
 void Analyzer::clearFilterStates(){

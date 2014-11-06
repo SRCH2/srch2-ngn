@@ -91,7 +91,7 @@ public:
      *  isPrefix is a way to inform the analyzer that stop filter should not be applied
      *  the passed string.
      */
-	std::string applyFilters(std::string input, bool isPrefix);
+	void applyFilters(const std::string & input, std::vector<std::string> & queryTokens, bool isPrefix);
 
 	// clear the initial states of the filters in the analyzer, e.g.,
 	// for those filters that have an internal buffer to keep tokens.

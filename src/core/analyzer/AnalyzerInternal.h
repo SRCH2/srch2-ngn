@@ -41,7 +41,8 @@ public:
                          const std::string &recordAllowedSpecialCharacters
                          );
 
-	string applyFilters(string input, bool isPrefix) ;
+    void applyFilters(const string & input, std::vector<std::string> & queryTokens,
+            bool isPrefix);
 
 	void clearFilterStates();
 
