@@ -44,6 +44,10 @@ using srch2is::Analyzer;
 namespace srch2 {
 namespace httpwrapper {
 
+// parses input string and decodes url-encoding before writing to output string.
+// e.g input = "trip%20advisor"  output = "trip advisor" ( %20 changed  to " ").
+// All encoding can be found at http://www.w3schools.com/tags/ref_urlencode.asp
+// we use libevent to do the conversion.
 void decodeString(const char *inputStr, string& outputStr);
 
 class QueryParser {

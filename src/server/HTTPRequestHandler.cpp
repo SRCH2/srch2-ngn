@@ -1369,9 +1369,12 @@ bool HTTPRequestHandler::processSingleFeedback(const Json::Value& doc,
 		return false;
 	}
 
+	// cleanup user provided query before inserting into queryIndex
 	evkeyvalq dummyHeader;
 	QueryParser qp(dummyHeader);
+	// convert encoded query to normal query . e.g  "trip%20advisor" -> "trip advisor"
 	decodeString(queryStringTemp.c_str(), qp.originalQueryString);
+	// remove local parameter , fuzzy, boost etc.
 	string queryString = qp.fetchCleanQueryString();
 
 	if (recordId.type() != Json::stringValue) {

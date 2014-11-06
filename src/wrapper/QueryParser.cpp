@@ -2220,7 +2220,12 @@ void QueryParser::tokenizeAndDontBreakParentheses(const string & inputArg , vect
     }
 }
 
-// returns the query string without local parameters, fuzzy modifier, and boost modifiers.
+/*
+ * returns the query string without local parameters, fuzzy modifier, and boost modifiers.
+ *
+ * e.g query string = "{defaultPrefixComplete=COMPLETE}trip~0.3" converted to "trip" after removing
+ *     local parameter {...} and fuzzy modifier "~"
+ */
 string QueryParser::fetchCleanQueryString() {
 	stringstream ss;
 	// first skip over the LocalParameter => {...}
