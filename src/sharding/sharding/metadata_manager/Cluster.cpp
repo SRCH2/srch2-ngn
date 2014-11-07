@@ -13,7 +13,8 @@ namespace srch2 {
 namespace httpwrapper {
 
 
-ClusterResourceMetadata_Readview::ClusterResourceMetadata_Readview(unsigned versionId, string clusterName, vector<CoreInfo_t *> cores){
+ClusterResourceMetadata_Readview::ClusterResourceMetadata_Readview(unsigned versionId,
+		string clusterName, vector<const CoreInfo_t *> cores){
 	this->versionId = versionId;
 	this->clusterName = clusterName;
 	for(unsigned coreIdx = 0; coreIdx < cores.size() ; ++coreIdx){

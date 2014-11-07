@@ -18,7 +18,7 @@ using namespace std;
 namespace srch2 {
 namespace httpwrapper {
 
-class WriteCommandHttp : public Transaction, public ConsumerInterface{
+class WriteCommandHttp : public ReadviewTransaction, public ConsumerInterface{
 public:
 	static void insert(boost::shared_ptr<const ClusterResourceMetadata_Readview> clusterReadview,
 			evhttp_request *req, unsigned coreId){
@@ -41,9 +41,10 @@ public:
 	}
 private:
 	WriteCommandHttp(boost::shared_ptr<const ClusterResourceMetadata_Readview> clusterReadview,
-			evhttp_request *req, unsigned coreId, ClusterRecordOperation_Type code = Insert_ClusterRecordOperation_Type){
+			evhttp_request *req, unsigned coreId,
+			ClusterRecordOperation_Type code = Insert_ClusterRecordOperation_Type): ReadviewTransaction(clusterReadview){
 		this->commandCode = code;
-		this->indexDataContainerConf = clusterReadview->getCore(coreId);
+		this->indexDataContainerConf = this->getReadview()->getCore(coreId);
 		if(this->indexDataContainerConf == NULL){
 			Logger::sharding(Logger::Detail, "InsertUpdate| core id %d not found in cores.", coreId);
 			return;
@@ -51,7 +52,6 @@ private:
 		this->initSession();
 		ASSERT(this->getSession() != NULL);
 		ASSERT(this->getSession()->response != NULL);
-		this->getSession()->clusterReadview = this->clusterReadview = clusterReadview;
 		this->req = req;
 		this->inserter = NULL;
 		this->coreName = indexDataContainerConf->getName();

@@ -23,7 +23,7 @@ namespace httpwrapper {
  * 1. Save the cluster data shards by disabling final release.
  * 2. Shut down the cluster.
  */
-class ShutdownCommand : public Transaction, public ConsumerInterface {
+class ShutdownCommand : public WriteviewTransaction, public ConsumerInterface {
 public:
 	static void runShutdown(evhttp_request *req){
 		ShutdownCommand * command = new ShutdownCommand(req);
@@ -54,7 +54,6 @@ public:
 
 	void initSession(){
 		setSession(new TransactionSession());
-		ShardManager::getShardManager()->getReadview(getSession()->clusterReadview);
 		getSession()->response = new JsonResponseHandler();
 	}
 

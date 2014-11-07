@@ -62,9 +62,46 @@ TransactionSession * Transaction::getSession(){
 	return this->session;
 }
 
+SP(ClusterNodes_Writeview) Transaction::getNodesWriteview_write() const{
+	SP(ClusterNodes_Writeview) nodesWriteview = ShardManager::getShardManager()->
+			getMetadataManager()->getClusterNodesWriteview_write();
+	return nodesWriteview;
+}
+
+SP(ClusterNodes_Writeview) Transaction::getNodesWriteview_read() const{
+	SP(ClusterNodes_Writeview) nodesWriteview = ShardManager::getShardManager()->
+			getMetadataManager()->getClusterNodesWriteview_read();
+	return nodesWriteview;
+}
+
 void Transaction::setSession(TransactionSession * session){
 	ASSERT(session != NULL);
 	this->session = session;
+}
+
+
+ReadviewTransaction::ReadviewTransaction(boost::shared_ptr<const ClusterResourceMetadata_Readview> clusterReadview):
+		Transaction(){
+	this->clusterReadview = clusterReadview;
+}
+
+boost::shared_ptr<const ClusterResourceMetadata_Readview> ReadviewTransaction::getReadview() const{
+	return clusterReadview;
+}
+
+WriteviewTransaction::WriteviewTransaction():Transaction(){
+	writeview = ShardManager::getWriteview_write(xLock);
+	automaticLocking = true;
+}
+void WriteviewTransaction::preProcess(){
+	xLock.lock();
+}
+void WriteviewTransaction::postProcess(){
+	xLock.unlock();
+}
+
+Cluster_Writeview * WriteviewTransaction::getWriteview(){
+	return writeview;
 }
 
 }

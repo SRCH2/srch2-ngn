@@ -26,7 +26,7 @@ PartitionWriter::PartitionWriter(const ClusterPID & pid, // we will use ClusterP
 	initTargets(targets);
 	initRecords(records);
 	this->currentOpId = NodeOperationId(ShardManager::getCurrentNodeId(), OperationState::getNextOperationId());
-	clusterReadview = this->getConsumer()->getTransaction()->getSession()->clusterReadview;
+	this->clusterReadview = ((ReadviewTransaction *)(this->getConsumer()->getTransaction()))->getReadview();
 }
 
 Transaction * PartitionWriter::getTransaction(){
@@ -49,8 +49,6 @@ void PartitionWriter::produce(){
 		this->getTransaction()->setUnattached();
 		return;
 	}
-	// lock the shard manager
-	boost::unique_lock<boost::mutex> shardManagerGlobalLock(ShardManager::getShardManager()->shardManagerGlobalMutex);
 	if(this->clusterOrNodeFlag){
 		// case of cluster shard core write request
 		if(pid == ClusterPID()){
@@ -366,9 +364,9 @@ void PartitionWriter::initTargets(const vector<NodeTargetShardInfo> & targets){
 	}
 }
 bool PartitionWriter::validateAndFixTargets(){
-	Cluster_Writeview * writeview = ShardManager::getWriteview();
+	SP(ClusterNodes_Writeview) nodesWriteview = ShardManager::getNodesWriteview_read();
 	for(vector<NodeTargetShardInfo>::iterator nItr = targets.begin(); nItr != targets.end(); ++nItr){
-		if(! writeview->isNodeAlive(nItr->getNodeId())){
+		if(! nodesWriteview->isNodeAlive(nItr->getNodeId())){
 			nItr = targets.erase(nItr);
 		}
 	}
@@ -396,7 +394,7 @@ WriteCommand::WriteCommand(ConsumerInterface * consumer,
 	ASSERT(this->getConsumer()->getTransaction()->getSession() != NULL);
 	this->currentOpId = NodeOperationId(ShardManager::getCurrentNodeId(), OperationState::getNextOperationId());
 	this->coreInfo = coreInfo;
-	this->clusterReadview = this->getConsumer()->getTransaction()->getSession()->clusterReadview;
+	this->clusterReadview = ((ReadviewTransaction *)(this->getConsumer()->getTransaction()))->getReadview();
 	this->response = (JsonRecordOperationResponse*) (this->getConsumer()->getTransaction()->getSession()->response);
 	initActionType(insertUpdateDelete);
 	ASSERT(this->insertUpdateDelete != Delete_ClusterRecordOperation_Type);
@@ -412,7 +410,7 @@ WriteCommand::WriteCommand(ConsumerInterface * consumer,
 	ASSERT(this->getConsumer()->getTransaction()->getSession() != NULL);
 	this->currentOpId = NodeOperationId(ShardManager::getCurrentNodeId(), OperationState::getNextOperationId());
 	this->coreInfo = coreInfo;
-	this->clusterReadview = this->getConsumer()->getTransaction()->getSession()->clusterReadview;
+	this->clusterReadview = ((ReadviewTransaction *)(this->getConsumer()->getTransaction()))->getReadview();
 	this->response = (JsonRecordOperationResponse*) (this->getConsumer()->getTransaction()->getSession()->response);
 	initActionType(Delete_ClusterRecordOperation_Type);
 	initRecords(primaryKeys);

@@ -139,15 +139,15 @@ void ShardCopyOperation::consume(const ShardMigrationStatus & status){
             this->successFlag = false;
             release();
         }else if(status.status == MM_STATUS_SUCCESS){
-            Cluster_Writeview * writeview = ShardManager::getWriteview();
-
+        	boost::shared_lock<boost::shared_mutex> sLock;
+        	const Cluster_Writeview * writeview = ShardManager::getWriteview_read(sLock);
             string indexDirectory = ShardManager::getShardManager()->getConfigManager()->getShardDir(writeview->clusterName,
                     writeview->cores[unassignedShardId.coreId]->getName(), &unassignedShardId);
             if(indexDirectory.compare("") == 0){
                 indexDirectory = ShardManager::getShardManager()->getConfigManager()->createShardDir(writeview->clusterName,
                         writeview->cores[unassignedShardId.coreId]->getName(), &unassignedShardId);
             }
-
+            sLock.unlock();
             physicalShard = LocalPhysicalShard(status.shard, indexDirectory, "");
             commit();
         }

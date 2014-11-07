@@ -16,15 +16,20 @@ bool CopyToMeNotification::resolveNotification(SP(ShardingNotification) _copyNot
 	SP(CopyToMeNotification) copyNotif = boost::dynamic_pointer_cast<CopyToMeNotification>(_copyNotif);
 	ClusterShardId replicaShardId = copyNotif->getReplicaShardId();
 	ClusterShardId unassignedShardId = copyNotif->getUnassignedShardId();
-	Cluster_Writeview * writeview = ShardManager::getShardManager()->getWriteview();
+	boost::shared_lock<boost::shared_mutex> & writeviewSLock;
+	const Cluster_Writeview * writeview = ShardManager::getWriteview_read(writeviewSLock);
 	if(writeview->localClusterDataShards.find(replicaShardId) == writeview->localClusterDataShards.end()){
 		// NOTE: requested shard does not exist on this node.Notif
 		ASSERT(false);
 		return false;
 	}
+	// srch2Server does not need to be const
+	boost::shared_ptr<Srch2Server> server =
+			const_cast<boost::shared_ptr<Srch2Server> >(writeview->localClusterDataShards.at(replicaShardId).server);
+	writeviewSLock.unlock();
 
 	ShardManager::getShardManager()->getMigrationManager()->migrateShard(
-			replicaShardId, writeview->localClusterDataShards.at(replicaShardId).server, unassignedShardId,
+			replicaShardId, server , unassignedShardId,
 			copyNotif->getDest(), copyNotif->getSrc());
 
 	SP(CopyToMeNotification::ACK) ack = ShardingNotification::create<CopyToMeNotification::ACK>();
@@ -96,8 +101,11 @@ double LoadBalancingReport::getLoad() const{
 
 
 bool LoadBalancingReport::REQUEST::resolveNotification(SP(ShardingNotification) _notif){
+	boost::shared_lock<boost::shared_mutex> & writeviewSLock;
+	const Cluster_Writeview * writeview = ShardManager::getWriteview_read(writeviewSLock);
 	SP(LoadBalancingReport) report =
-			SP(LoadBalancingReport)(new LoadBalancingReport(ShardManager::getShardManager()->getWriteview()->getLocalNodeTotalLoad()));
+			SP(LoadBalancingReport)(new LoadBalancingReport(writeview->getLocalNodeTotalLoad()));
+	writeviewSLock.unlock();
 	report->setDest(_notif->getSrc());
 	report->setSrc(NodeOperationId(ShardManager::getCurrentNodeId()));
 	ShardingNotification::send(report);
@@ -108,16 +116,22 @@ bool LoadBalancingReport::REQUEST::resolveNotification(SP(ShardingNotification) 
 bool MoveToMeNotification::resolveNotification(SP(ShardingNotification) _notif){
 
 	SP(MoveToMeNotification) moveNotif = boost::dynamic_pointer_cast<MoveToMeNotification>(_notif);
-	Cluster_Writeview * writeview = ShardManager::getShardManager()->getWriteview();
+	boost::shared_lock<boost::shared_mutex> & writeviewSLock;
+	const Cluster_Writeview * writeview = ShardManager::getWriteview_read(writeviewSLock);
 
 	if(writeview->localClusterDataShards.find(moveNotif->getShardId()) == writeview->localClusterDataShards.end()){
 		// NOTE : requested shard does not exist on this node
 		ASSERT(false);
 		return false;
 	}
+
+	boost::shared_ptr<Srch2Server> server =
+			const_cast<boost::shared_ptr<Srch2Server> >(writeview->localClusterDataShards.at(moveNotif->getShardId()).server);
+
+	writeviewSLock.unlock();
 	// call migration manager to transfer this shard
 	ShardManager::getShardManager()->getMigrationManager()->migrateShard(moveNotif->getShardId(),
-			writeview->localClusterDataShards.at(moveNotif->getShardId()).server, moveNotif->getShardId(),moveNotif->getDest(), moveNotif->getSrc());
+			server , moveNotif->getShardId(),moveNotif->getDest(), moveNotif->getSrc());
 
 	SP(MoveToMeNotification::ACK) ack = ShardingNotification::create<MoveToMeNotification::ACK>();
 	ack->setSrc(moveNotif->getDest());

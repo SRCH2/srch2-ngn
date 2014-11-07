@@ -52,6 +52,7 @@ NodeJoiner::NodeJoiner(){
 	this->metadataChange = NULL;
 	this->committer = NULL;
 	this->currentOperation = PreStart;
+	initSession();
 }
 
 
@@ -61,7 +62,6 @@ Transaction * NodeJoiner::getTransaction() {
 
 void NodeJoiner::initSession(){
 	TransactionSession * session = new TransactionSession();
-	ShardManager::getReadview(session->clusterReadview);
 	session->response = new JsonResponseHandler();
 	this->setSession(session);
 }
@@ -138,7 +138,7 @@ void NodeJoiner::readMetadata(){ // read the metadata of the cluster
 	Logger::sharding(Logger::Step,"NodeJoiner| Reading metadata writeview ...");
 	// send read_metadata notification to the smallest node id
 	vector<NodeId> olderNodes;
-	getOlderNodesList(olderNodes);
+	this->getOlderNodesList(olderNodes);
 
 	if(olderNodes.size() == 0){
 		Logger::info("New node booting up a fresh cluster ...");
@@ -158,6 +158,9 @@ void NodeJoiner::readMetadata(){ // read the metadata of the cluster
 	// pointer. Before deleting committer, state-machine calls it's getMainTransactionId()
 	// which calls lastCallback from its consumer
 	ShardManager::getShardManager()->getStateMachine()->registerOperation(reader);
+	/********** Leaving this thread ***********/
+	this->postProcess();
+	/********** Leaving this thread ***********/
 }
 
 bool NodeJoiner::shouldAbort(const NodeId & failedNode){
@@ -185,14 +188,16 @@ void NodeJoiner::end_(map<NodeOperationId, SP(ShardingNotification) > & replies)
 		finalize(false);
 		return;
 	}
-	Cluster_Writeview * currentWriteview = ShardManager::getWriteview();
+	Cluster_Writeview * currentWriteview = this->getWriteview();
 	// attach data pointers of current writeview to the new writeview coming from
 	// the minID node.
 	currentWriteview->fixClusterMetadataOfAnotherNode(clusterWriteview);
-
 	// new writeview is ready, replace current writeview with the new one
-	ShardManager::getShardManager()->getMetadataManager()->setWriteview(clusterWriteview);
-	ShardManager::getShardManager()->getMetadataManager()->commitClusterMetadata();
+	ShardManager::getShardManager()->getMetadataManager()->getNodesMutex().lock();
+	ShardManager::getShardManager()->getMetadataManager()->setWriteview(clusterWriteview, false);
+	// update the readview
+	ShardManager::getShardManager()->getMetadataManager()->commitClusterMetadata(false);
+	ShardManager::getShardManager()->getMetadataManager()->getNodesMutex().unlock();
 	Logger::sharding(Logger::Detail, "NodeJoiner| Metadata initialized from the cluster.");
 	// ready to commit.
 	commit();
@@ -202,7 +207,7 @@ void NodeJoiner::commit(){
 	__FUNC_LINE__
 	Logger::sharding(Logger::Step, "NodeJoiner| Committing the new node change to the cluster ...");
 	// prepare the commit operation
-	Cluster_Writeview * writeview = ShardManager::getWriteview();
+	const Cluster_Writeview * writeview = this->getWriteview();
 	vector<ClusterShardId> localClusterShards;
 	vector<NodeShardId> nodeShardIds;
 	ClusterShardId id;
@@ -262,10 +267,10 @@ void NodeJoiner::finalize(bool result){
 }
 
 void NodeJoiner::getOlderNodesList(vector<NodeId> & olderNodes){
-	Cluster_Writeview * currentWriteview = ShardManager::getWriteview();
-	for(map<NodeId, std::pair<ShardingNodeState, Node *> >::const_iterator nodeItr = currentWriteview->nodes.begin();
-			nodeItr != currentWriteview->nodes.end(); ++nodeItr){
-		if(nodeItr->first >= currentWriteview->currentNodeId){
+	SP(ClusterNodes_Writeview) nodeWriteview = this->getNodesWriteview_read();
+	for(map<NodeId, std::pair<ShardingNodeState, Node *> >::const_iterator nodeItr = nodeWriteview->getNodes().begin();
+			nodeItr != nodeWriteview->getNodes().end(); ++nodeItr){
+		if(nodeItr->first >= nodeWriteview->currentNodeId){
 			continue;
 		}
 		if(nodeItr->second.first == ShardingNodeStateFailed){

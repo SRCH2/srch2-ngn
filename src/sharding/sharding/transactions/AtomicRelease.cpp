@@ -76,7 +76,8 @@ Transaction * AtomicRelease::getTransaction(){
 void AtomicRelease::produce(){
     Logger::sharding(Logger::Detail, "AtomicRelease| starts. Consumer is %s", this->getConsumer() == NULL ? "NULL" : this->getConsumer()->getName().c_str());
 
-    Cluster_Writeview * writeview = ShardManager::getWriteview();
+	boost::shared_lock<boost::shared_mutex> & writeviewSLock;
+    const Cluster_Writeview * writeview = ShardManager::getWriteview_read(writeviewSLock);
     bool participantsChangedFlag = false;
     for(int nodeIdx = 0; nodeIdx < participants.size(); ++nodeIdx){
     	if(! writeview->isNodeAlive(participants.at(nodeIdx))){
@@ -85,6 +86,7 @@ void AtomicRelease::produce(){
     		participantsChangedFlag = true;
     	}
     }
+    writeviewSLock.unlock();
     if(participants.empty()){
     	this->getTransaction()->setUnattached();
         Logger::sharding(Logger::Detail, "AtomicLock| ends unattached, no participant found.");

@@ -84,7 +84,8 @@ void * dispatchMasterMessageHandler(void *arg);
 
 void SyncManager::startDiscovery() {
 
-	Cluster_Writeview * clusterWriteView = ShardManager::getWriteview();
+	boost::unique_lock<boost::mutex> xLock;
+	Cluster_Writeview * clusterWriteView = ShardManager::getWriteview_write(xLock);
 
 	ASSERT(clusterWriteView->getTotalNumberOfNodes() == 0);
 
@@ -157,7 +158,8 @@ void SyncManager::joinExistingCluster(Node& node, bool isDiscoveryPhase) {
 
 		if (isDiscoveryPhase){
 			// if discovery phase then write to CM directly. There is no shard manager yet.
-			Cluster_Writeview * clusterWriteView = ShardManager::getWriteview();
+			boost::unique_lock<boost::mutex> xLock;
+			Cluster_Writeview * clusterWriteView = ShardManager::getWriteview_write(xLock);
 			clusterWriteView->addNode(masterNode);
 			// Todo : move this inside addNode call above.
 			clusterWriteView->setNodeState(masterNode.getId(), ShardingNodeStateArrived);

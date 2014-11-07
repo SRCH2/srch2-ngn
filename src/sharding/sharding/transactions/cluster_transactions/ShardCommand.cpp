@@ -15,13 +15,10 @@ namespace httpwrapper {
 ShardCommand::ShardCommand(ConsumerInterface * consumer,
 		unsigned coreId, ShardCommandCode commandCode,
 		const string & filePath):coreId(coreId), commandCode(commandCode), ProducerInterface(consumer){
+	ASSERT(this->getTransaction() != NULL);
 	this->filePath = filePath;
 	this->dataSavedFlag = false;
-	if(this->getTransaction() != NULL){
-		clusterReadview = this->getTransaction()->getSession()->clusterReadview;
-	}else{
-		ShardManager::getReadview(clusterReadview);
-	}
+	clusterReadview = ((ReadviewTransaction *)(this->getTransaction()))->getReadview();
 }
 
 ShardCommand::~ShardCommand(){}
@@ -43,8 +40,6 @@ void ShardCommand::produce(){
 }
 
 bool ShardCommand::partition(vector<NodeTargetShardInfo> & targets){
-	boost::shared_ptr<const ClusterResourceMetadata_Readview> clusterReadview;
-	ShardManager::getReadview(clusterReadview);
 	if(coreId == (unsigned)-1){
 		ASSERT(false); // we don't support this for now.
 		vector<const CoreInfo_t *> cores;
@@ -170,9 +165,7 @@ void ShardCommand::finalize(map<NodeOperationId , SP(ShardingNotification)> & re
 	}
 
 	// call callback from the consumer
-	if(this->getConsumer() != NULL){
-		this->getConsumer()->consume(result);
-	}
+	this->getConsumer()->consume(result);
 }
 
 }

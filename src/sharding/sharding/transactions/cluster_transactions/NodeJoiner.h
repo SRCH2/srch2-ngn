@@ -33,7 +33,7 @@ class AtomicMetadataCommit;
  */
 
 
-class NodeJoiner : public Transaction, public NodeIteratorListenerInterface{
+class NodeJoiner : public WriteviewTransaction, public NodeIteratorListenerInterface{
 public:
 
 	static void join();

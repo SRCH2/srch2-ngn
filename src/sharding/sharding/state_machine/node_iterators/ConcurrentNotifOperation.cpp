@@ -28,13 +28,15 @@ ConcurrentNotifOperation::ConcurrentNotifOperation(SP(ShardingNotification) requ
 		NodeId participant,
 		NodeIteratorListenerInterface * consumer, bool expectResponse):
 		OperationState(this->getNextOperationId()),resType(resType), expectResponse(expectResponse){
-	Cluster_Writeview * writeview = ShardManager::getShardManager()->getWriteview();
+	boost::shared_lock<boost::shared_mutex> & writeviewSLock;
+	const Cluster_Writeview * writeview = ShardManager::getWriteview_read(writeviewSLock);
 	if(! writeview->isNodeAlive(participant)){
 		ASSERT(false);
 	}else{
 		this->participants.push_back(NodeOperationId(participant));
 		this->requests.push_back(request);
 	}
+	writeviewSLock.unlock();
 	this->consumer = consumer;
 	Logger::sharding(Logger::Detail, "NodeAggregator(opid=%s)| sending request(%s) to nodes %s and aggregating response(%s). Consumer is %s. ExpectResponse(%s)"
 			, NodeOperationId(ShardManager::getCurrentNodeId(), this->getOperationId()).toString().c_str()
@@ -47,7 +49,8 @@ ConcurrentNotifOperation::ConcurrentNotifOperation(SP(ShardingNotification) requ
 		vector<NodeId> participants,
 		NodeIteratorListenerInterface * consumer , bool expectResponse):
 			OperationState(this->getNextOperationId()),resType(resType), expectResponse(expectResponse){
-	Cluster_Writeview * writeview = ShardManager::getShardManager()->getWriteview();
+	boost::shared_lock<boost::shared_mutex> & writeviewSLock;
+	const Cluster_Writeview * writeview = ShardManager::getWriteview_read(writeviewSLock);
 	stringstream ss;
 	for(unsigned p = 0 ; p < participants.size(); p++){
 		if(p != 0){
@@ -61,6 +64,7 @@ ConcurrentNotifOperation::ConcurrentNotifOperation(SP(ShardingNotification) requ
 			ss << NodeOperationId(participants.at(p)).toString();
 		}
 	}
+	writeviewSLock.unlock();
 	this->consumer = consumer;
 	Logger::sharding(Logger::Detail, "NodeAggregator(opid=%s)| Sending %s to %s . Consumer is %s. ExpectResponse(%s)"
 			, NodeOperationId(ShardManager::getCurrentNodeId(), this->getOperationId()).toString().c_str()
@@ -70,7 +74,9 @@ ConcurrentNotifOperation::ConcurrentNotifOperation(ShardingMessageType resType,
 		vector<std::pair<SP(ShardingNotification) , NodeId> > participants,
 		NodeIteratorListenerInterface * consumer , bool expectResponse ):
 			OperationState(this->getNextOperationId()),resType(resType), expectResponse(expectResponse){
-	Cluster_Writeview * writeview = ShardManager::getShardManager()->getWriteview();
+
+	boost::shared_lock<boost::shared_mutex> & writeviewSLock;
+	const Cluster_Writeview * writeview = ShardManager::getWriteview_read(writeviewSLock);
 	stringstream ss;
 	for(unsigned p = 0 ; p < participants.size(); p++){
 		if(p != 0){
@@ -84,6 +90,7 @@ ConcurrentNotifOperation::ConcurrentNotifOperation(ShardingMessageType resType,
 			ss << NodeOperationId(participants.at(p).second).toString() << " to " << getShardingMessageTypeStr(participants.at(p).first->messageType()) ;
 		}
 	}
+	writeviewSLock.unlock();
 	this->consumer = consumer;
 	Logger::sharding(Logger::Detail, "NodeAggregator(opid=%s)| Sending %s . Consumer is %s. ExpectResponse(%s)"
 			, NodeOperationId(ShardManager::getCurrentNodeId(), this->getOperationId()).toString().c_str()
@@ -114,13 +121,15 @@ OperationState * ConcurrentNotifOperation::entry(){
 		ASSERT(false);
 		return NULL;
 	}
-	Cluster_Writeview * writeview = ShardManager::getShardManager()->getWriteview();
+	boost::shared_lock<boost::shared_mutex> & writeviewSLock;
+	const Cluster_Writeview * writeview = ShardManager::getWriteview_read(writeviewSLock);
 	for(unsigned p = 0 ; p < this->participants.size(); ++p){
 		if(! writeview->isNodeAlive(this->participants.at(p).nodeId)){
 			ASSERT(false);
 			return NULL;
 		}
 	}
+	writeviewSLock.unlock();
 	for(unsigned p = 0 ; p < this->participants.size(); ++p){
 		// 1. send the request to the target
 		send(this->requests.at(p), this->participants.at(p));

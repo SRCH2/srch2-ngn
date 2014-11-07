@@ -25,7 +25,8 @@ AtomicMetadataCommit::AtomicMetadataCommit(const vector<NodeId> & exceptions,
 	ASSERT(this->getConsumer() != NULL);
 	ASSERT(this->getConsumer()->getTransaction() != NULL);
 	this->metadataChange = metadataChange;
-	Cluster_Writeview * writeview = ShardManager::getShardManager()->getWriteview();
+	boost::shared_lock<boost::shared_mutex> & writeviewSLock;
+	const Cluster_Writeview * writeview = ShardManager::getWriteview_read(writeviewSLock);
 	vector<NodeId> allNodes;
 	writeview->getArrivedNodes(allNodes, true);
 	for(unsigned i = 0;  i < allNodes.size(); ++i){
@@ -33,6 +34,7 @@ AtomicMetadataCommit::AtomicMetadataCommit(const vector<NodeId> & exceptions,
 			this->participants.push_back(allNodes.at(i));
 		}
 	}
+	writeviewSLock.unlock();
 	this->selfOperationId = NodeOperationId(ShardManager::getCurrentNodeId(), OperationState::getNextOperationId());
 	this->atomicLock = NULL;
 	this->atomicRelease = NULL;
@@ -47,7 +49,8 @@ AtomicMetadataCommit::AtomicMetadataCommit(const NodeId & exception,
 	ASSERT(this->getConsumer() != NULL);
 	ASSERT(this->getConsumer()->getTransaction() != NULL);
 	this->metadataChange = metadataChange;
-	Cluster_Writeview * writeview = ShardManager::getShardManager()->getWriteview();
+	boost::shared_lock<boost::shared_mutex> & writeviewSLock;
+	const Cluster_Writeview * writeview = ShardManager::getWriteview_read(writeviewSLock);
 	vector<NodeId> allNodes;
 	writeview->getArrivedNodes(allNodes);
 	for(unsigned i = 0;  i < allNodes.size(); ++i){
@@ -55,6 +58,7 @@ AtomicMetadataCommit::AtomicMetadataCommit(const NodeId & exception,
 			this->participants.push_back(allNodes.at(i));
 		}
 	}
+	writeviewSLock.unlock();
 	this->selfOperationId = NodeOperationId(ShardManager::getCurrentNodeId(), OperationState::getNextOperationId());
 	this->atomicLock = NULL;
 	this->atomicRelease = NULL;
@@ -68,12 +72,14 @@ AtomicMetadataCommit::AtomicMetadataCommit(MetadataChange * metadataChange,
 	ASSERT(this->getConsumer() != NULL);
 	ASSERT(this->getConsumer()->getTransaction() != NULL);
 	this->metadataChange = metadataChange;
-	Cluster_Writeview * writeview = ShardManager::getWriteview();
+	boost::shared_lock<boost::shared_mutex> & writeviewSLock;
+	const Cluster_Writeview * writeview = ShardManager::getWriteview_read(writeviewSLock);
 	for(unsigned i = 0 ; i < participants.size(); ++i){
 		if(! writeview->isNodeAlive(participants.at(i))){
 			this->participants.push_back(participants.at(i));
 		}
 	}
+	writeviewSLock.unlock();
 	this->selfOperationId = NodeOperationId(ShardManager::getCurrentNodeId(), OperationState::getNextOperationId());
 	this->atomicLock = NULL;
 	this->atomicRelease = NULL;
@@ -99,13 +105,15 @@ Transaction * AtomicMetadataCommit::getTransaction(){
 
 void AtomicMetadataCommit::produce(){
     Logger::sharding(Logger::Detail, "Atomic Metadata Commit : starting ...");
-	Cluster_Writeview * writeview = ShardManager::getWriteview();
+	boost::shared_lock<boost::shared_mutex> & writeviewSLock;
+    const Cluster_Writeview * writeview = ShardManager::getWriteview_read(writeviewSLock);
 	for(int i = 0 ; i < participants.size(); ++i){
 		if(! writeview->isNodeAlive(participants.at(i))){
 			participants.erase(participants.begin() + i);
 			i--;
 		}
 	}
+	writeviewSLock.unlock();
     if(participants.empty()){
         // no participant exists
     	this->getTransaction()->setUnattached();

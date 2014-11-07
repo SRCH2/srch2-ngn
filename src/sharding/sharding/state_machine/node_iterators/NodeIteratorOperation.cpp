@@ -42,13 +42,15 @@ OperationState * OrderedNodeIteratorOperation::entry(){
 		return NULL;
 	}
 	// Consistency check : all participants must be alive
-	Cluster_Writeview * writeview = ShardManager::getShardManager()->getWriteview();
+	boost::shared_lock<boost::shared_mutex> sLock;
+	Cluster_Writeview * writeview = ShardManager::getWriteview_read(sLock);
 	for(unsigned i = 0 ; i < this->participants.size(); ++i){
 		if(! writeview->isNodeAlive(this->participants.at(i).nodeId)){
 			ASSERT(false);
 			return NULL;
 		}
 	}
+	sLock.unlock();
 	// ask the first node.
 	this->participantsIndex = 0;
 	return askNode(	this->participantsIndex);
@@ -143,14 +145,15 @@ void OrderedNodeIteratorOperation::setParticipants(vector<NodeId> & participants
 	}
 
 	// Consistency check : all participants must be alive
-	Cluster_Writeview * writeview = ShardManager::getShardManager()->getWriteview();
+	boost::shared_lock<boost::shared_mutex> sLock;
+	Cluster_Writeview * writeview = ShardManager::getWriteview_read(sLock);
 	for(int nodeIdx = 0; participants.size(); ++nodeIdx){
 		if(! writeview->isNodeAlive(participants.at(nodeIdx))){
 			ASSERT(false);
 			return;
 		}
 	}
-
+	sLock.unlock();
 
 	// we can continue with this set of participants
 	std::sort(participants.begin(), participants.end());
@@ -209,12 +212,15 @@ OperationState * OrderedNodeIteratorOperation::askNode(const unsigned nodeIndex)
 		}
 		return NULL;
 	}
-	Cluster_Writeview * writeview = ShardManager::getWriteview();
+	boost::shared_lock<boost::shared_mutex> sLock;
+	Cluster_Writeview * writeview = ShardManager::getWriteview_read(sLock);
 	if(! writeview->isNodeAlive(this->participants.at(nodeIndex).nodeId)){
+		sLock.unlock();
 		Logger::sharding(Logger::Detail, "Ordered Node Iterator (opid=%s) : next node to ask is failed.",
 				NodeOperationId(ShardManager::getCurrentNodeId(), this->getOperationId()).toString().c_str());
 		return handle(SP(NodeFailureNotification)(new NodeFailureNotification(this->participants.at(nodeIndex).nodeId)));
 	}
+	sLock.unlock();
 	Logger::sharding(Logger::Detail, "NodeIterator(opid=%s)| : asking the next node : %s",
 			NodeOperationId(ShardManager::getCurrentNodeId(), this->getOperationId()).toString().c_str(),
 			this->participants.at(nodeIndex).toString().c_str());

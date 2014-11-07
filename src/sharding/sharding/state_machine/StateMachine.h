@@ -13,10 +13,18 @@ using namespace std;
 namespace srch2 {
 namespace httpwrapper {
 
-
+#define ACTIVE_OPERATINS_GROUP_COUNT 1000
 class StateMachine{
 public:
 
+	StateMachine();
+
+	~StateMachine();
+
+	/*
+	 * No preProcess or postProcess of transaction will be called in
+	 * start.
+	 */
 	void registerOperation(OperationState * operation);
 	// goes to srcOpId target
 	void handle(SP(ShardingNotification) notification);
@@ -24,15 +32,21 @@ public:
 	void handle(SP(Notification) notification);
 
 	void print() const;
+	void lockStateMachine();
+	void unlockStateMachine();
 
 private:
-	map<unsigned, OperationState *> activeOperations;
+	vector<pair<boost::mutex *, map<unsigned, OperationState *> > > activeOpertationGroups;
 
 	bool addActiveOperation(OperationState * operation);
 
 	void startOperation(OperationState * operation);
-	void stateTransit(OperationState * operation, OperationState * nextState);
+	void stateTransit(OperationState * operation,
+			OperationState * nextState, const bool shouldCallPostProcess);
 
+	void lockOperationGroup(unsigned opid);
+	void unlockOperationGroup(unsigned opid);
+	map<unsigned, OperationState *> & getOperationGroup(unsigned opid);
 };
 
 }

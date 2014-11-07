@@ -62,11 +62,27 @@ ShardManager * ShardManager::getShardManager(){
 }
 
 NodeId ShardManager::getCurrentNodeId(){
-	return ShardManager::getWriteview()->currentNodeId;
+	boost::shared_lock<boost::shared_mutex> sLock(shardManagerMembersMutex);
+	return ShardManager::getShardManager()->currentNodeId;
 }
-Cluster_Writeview * ShardManager::getWriteview(){
-	return ShardManager::getShardManager()->getMetadataManager()->getClusterWriteview();
+
+
+Cluster_Writeview * ShardManager::getWriteview_write(boost::unique_lock<boost::mutex> & xLock){
+	return ShardManager::getShardManager()->getMetadataManager()->getClusterWriteview_write(xLock);
 }
+
+SP(ClusterNodes_Writeview) ShardManager::getNodesWriteview_write(){
+	return ShardManager::getShardManager()->getMetadataManager()->getClusterNodesWriteview_write();
+}
+
+SP(ClusterNodes_Writeview) ShardManager::getNodesWriteview_read(){
+	return ShardManager::getShardManager()->getMetadataManager()->getClusterNodesWriteview_read();
+}
+
+//const Cluster_Writeview * ShardManager::getWriteview_read(boost::shared_lock<boost::shared_mutex> & sLock){
+//	return ShardManager::getShardManager()->getMetadataManager()->getClusterWriteview_read(sLock);
+//}
+
 void ShardManager::getReadview(boost::shared_ptr<const ClusterResourceMetadata_Readview> & readview) {
 	ShardManager::getShardManager()->getMetadataManager()->getClusterReadView(readview);
 }
@@ -84,6 +100,7 @@ ShardManager::ShardManager(ConfigManager * configManager,ResourceMetadataManager
 	this->joinedFlag = false;
 	this->cancelledFlag = false;
 	this->loadBalancingThread = new pthread_t;
+	updateCurrentNodeId();
 
 }
 
@@ -92,16 +109,43 @@ void ShardManager::attachToTransportManager(TransportManager * tm){
 	this->transportManager->registerCallbackForShardingMessageHandler(this);
 }
 
-void ShardManager::initFirstNode(){
+void ShardManager::initFirstNode(const bool shouldLock){
 	// assign primary shards to this node :
-	MetadataInitializer nodeInitializer(configManager, this->metadataManager);
-	nodeInitializer.initializeCluster();
-	this->getMetadataManager()->commitClusterMetadata();
-	this->setJoined();
+	// X lock on writeviewMutex and nodesMutex must be obtained
+	if(shouldLock){
+		boost::unique_lock<boost::mutex> xLock;
+		Cluster_Writeview * writeview = ShardManager::getWriteview_write(xLock);
+		SP(ClusterNodes_Writeview) nodesWriteview = ShardManager::getNodesWriteview_write();
+		MetadataInitializer nodeInitializer(configManager, this->metadataManager);
+		nodeInitializer.initializeCluster();
+		this->getMetadataManager()->commitClusterMetadata(false);
+		this->setJoined();
+	}else{
+		MetadataInitializer nodeInitializer(configManager, this->metadataManager);
+		nodeInitializer.initializeCluster();
+		this->getMetadataManager()->commitClusterMetadata(false);
+		this->setJoined();
+	}
+}
+
+void ShardManager::updateCurrentNodeId(Cluster_Writeview * writeviewLocked){
+	if(writeviewLocked == NULL){
+		boost::unique_lock<boost::mutex> xLock;
+		Cluster_Writeview * writeview = getWriteview_write(xLock);
+		SP(ClusterNodes_Writeview) nodesWriteview = ShardManager::getNodesWriteview_write();
+		// xlock on writeview and nodesWriteview both
+		boost::unique_lock<boost::mutex> xLock(shardManagerMembersMutex);
+		this->currentNodeId = writeview->currentNodeId;
+	}else{
+		boost::unique_lock<boost::mutex> xLock(shardManagerMembersMutex);
+		this->currentNodeId = writeviewLocked->currentNodeId;
+	}
 }
 
 ShardManager::~ShardManager(){
 	setCancelled();
+	// waiting for all transactions to leave before dying ...
+	boost::unique_lock<boost::mutex> xLock(ShardManager::singleInstanceLock);
 	delete this->loadBalancingThread;
 	delete this->_lockManager;
 }
@@ -142,29 +186,34 @@ void ShardManager::initMigrationManager(){
 }
 
 void ShardManager::setJoined(){
+	boost::unique_lock<boost::mutex> xLock(shardManagerMembersMutex);
     joinedFlag = true;
 }
 
-bool ShardManager::isJoined() const{
+bool ShardManager::isJoined() {
+	boost::shared_lock<boost::shared_mutex> sLock(shardManagerMembersMutex);
     return joinedFlag;
 }
 
 void ShardManager::setCancelled(){
-	boost::unique_lock<boost::mutex> bouncedNotificationsLock(shardManagerGlobalMutex);
+	boost::unique_lock<boost::mutex> xLock(shardManagerMembersMutex);
 	this->cancelledFlag = true;
 }
 bool ShardManager::isCancelled() {
-	boost::unique_lock<boost::mutex> bouncedNotificationsLock(shardManagerGlobalMutex);
+	boost::shared_lock<boost::shared_mutex> sLock(shardManagerMembersMutex);
 	return this->cancelledFlag;
 }
 
 void ShardManager::setLoadBalancing(){
+	boost::unique_lock<boost::mutex> xLock(shardManagerMembersMutex);
 	this->loadBalancingFlag = true;
 }
 void ShardManager::resetLoadBalancing(){
+	boost::unique_lock<boost::mutex> xLock(shardManagerMembersMutex);
 	this->loadBalancingFlag = false;
 }
-bool ShardManager::isLoadBalancing() const{
+bool ShardManager::isLoadBalancing() {
+	boost::shared_lock<boost::shared_mutex> sLock(shardManagerMembersMutex);
 	return this->loadBalancingFlag;
 }
 
@@ -173,38 +222,38 @@ pthread_t * ShardManager::getLoadbalancingThread() {
 }
 
 void ShardManager::print(){
+	// lock writeview
+	boost::unique_lock<boost::mutex> xLock;
+	metadataManager->getClusterWriteview_write(xLock);
 	metadataManager->print();
+	xLock.unlock();
 
+
+	// TODO : lock manager mutex lock?
 	_lockManager->print();
 
+	stateMachine->lockStateMachine();
 	stateMachine->print();
+	stateMachine->unlockStateMachine();
 
 	// bounced notifications
-	if(bouncedNotifications.empty()){
-		return;
-	}
-	cout << "**************************************************************************************************" << endl;
-	cout << "Bounced notifications' source addresses : " ;
-	if(bouncedNotifications.size() == 0 ){
-		cout << "empty." << endl;
-	}else{
-		cout << endl;
-	}
-	cout << "**************************************************************************************************" << endl;
-	for(unsigned i = 0; i < bouncedNotifications.size(); ++i){
-		SP(ShardingNotification) notif = bouncedNotifications.at(i);
-		cout << notif->getDest().toString() << endl;
-	}
+	boost::shared_lock<boost::shared_mutex> sLock(shardManagerMembersMutex);
+	printBouncedNotifications();
 
 }
 
 void ShardManager::start(){
 	Logger::info("Starting data processor ...");
-    boost::unique_lock<boost::mutex> shardManagerGlobalLock(ShardManager::getShardManager()->shardManagerGlobalMutex);
-
+	// lock the ShardManager root pointer to avoid its deletion before we are done.
+//	boost::shared_lock<boost::shared_mutex> sLock(shardManagerLock);
+//	boost::unique_lock<boost::mutex> xLock(shardManagerLock);
 	// insert this node and all older nodes in the lock manager in the beginning.
 	ShardManager::getShardManager()->_lockManager->initialize();
-	unsigned numberOfNodes = this->metadataManager->getClusterWriteview()->getNumberOfAliveNodes();
+
+	SP(ClusterNodes_Writeview) nodesWriteview = ShardManager::getNodesWriteview_read();
+	unsigned numberOfNodes = nodesWriteview->getNumberOfAliveNodes();
+	nodesWriteview.reset(); // unlock nodes writeview
+
 	if(numberOfNodes == 1){ // we are the first node:
 		// assign primary shards to this node :
 		initFirstNode();
@@ -241,38 +290,16 @@ void ShardManager::_shutdown(){
 }
 
 
-/// TODO : not needed now, later when we refactor DP, this function will
-///        evolve to the info() request.
-void ShardManager::nodesInfo(evhttp_request *req){
-	boost::shared_ptr<const ClusterResourceMetadata_Readview> readview;
-	this->getReadview(readview);
-
-	JsonResponseHandler httpResponse(req);
-
-	httpResponse.setResponseAttribute(c_cluster_name, Json::Value(readview->getClusterName()));
-	Json::Value nodes(Json::arrayValue);
-	this->getNodeInfoJson(nodes);
-	httpResponse.setResponseAttribute(c_nodes, nodes);
-
-	httpResponse.finalizeOK();
-
-}
-
-
 bool ShardManager::resolveMessage(Message * msg, NodeId senderNode){
 	if(msg == NULL){
 		return false;
 	}
 
-	// Global mutex lock which will last as long as we are in this scope.
-	boost::unique_lock<boost::mutex> shardManagerGlobalLock(shardManagerGlobalMutex);
-
-
-	Cluster_Writeview * writeview = ShardManager::getWriteview();
+	SP(ClusterNodes_Writeview) nodesWriteview = ShardManager::getNodesWriteview_read();
 
 	// if a node fails, we don't accept any more messages from it.
-	if(writeview->nodes.find(senderNode) != writeview->nodes.end() &&
-			writeview->nodes[senderNode].first == ShardingNodeStateFailed){
+	if(nodesWriteview->getNodes().find(senderNode) != nodesWriteview->getNodes().end() &&
+			nodesWriteview->getNodes().at(senderNode).first == ShardingNodeStateFailed){
 		Logger::sharding(Logger::Error, "SHM| !!! Warning: Message with type %s was", msg->getDescription().c_str());
 		Logger::sharding(Logger::Error, "     ignored because source node had failed before.!!!");
 		return true;
@@ -370,8 +397,6 @@ bool ShardManager::resolveMessage(Message * msg, NodeId senderNode){
 void * ShardManager::resolveReadviewRelease(void * vidPtr){
 	unsigned metadataVersion = *(unsigned *)vidPtr;
 	delete (unsigned *)vidPtr;
-    // Global mutex lock which will last as long as we are in this scope.
-	boost::unique_lock<boost::mutex> shardManagerGlobalLock(ShardManager::getShardManager()->shardManagerGlobalMutex);
 
 	Logger::sharding(Logger::Detail, "SHM| Metadata release VID=%d", metadataVersion);
 	ShardManager::getShardManager()->_getLockManager()->resolve(metadataVersion);
@@ -388,7 +413,6 @@ void ShardManager::resolveMMNotification(const ShardMigrationStatus & migrationS
 
 	Logger::sharding(Logger::Detail, "SHM| MM (%d => %d) was %s", migrationStatus.sourceNodeId, migrationStatus.destinationNodeId,
 			(migrationStatus.status == MM_STATUS_SUCCESS)? "Done."  : "Failed.");
-	boost::unique_lock<boost::mutex> shardManagerGlobalLock(shardManagerGlobalMutex);
 
 	if(mmSessionListeners.find(migrationStatus.dstOperationId) == mmSessionListeners.end()){
 		return;
@@ -421,8 +445,8 @@ void ShardManager::registerMMSessionListener(const unsigned operationId, Consume
 
 void ShardManager::resolveSMNodeArrival(const Node & newNode){
 	Logger::sharding(Logger::Detail, "SHM| SM Node %d arrival.", newNode.getId());
-    boost::unique_lock<boost::mutex> shardManagerGlobalLock(shardManagerGlobalMutex);
-    Cluster_Writeview * writeview = this->getWriteview();
+	boost::unique_lock<boost::mutex> xLock;
+	Cluster_Writeview * writeview = ShardManager::getWriteview_write(xLock);
     writeview->addNode(newNode);
 	Logger::sharding(Logger::Detail, "SHM| SM Node %d arrival. Processed.", newNode.getId());
 //    cout << "Shard Manager status after arrival of node " << newNode.getId() << ":" << endl;
@@ -432,7 +456,6 @@ void ShardManager::resolveSMNodeArrival(const Node & newNode){
 
 void ShardManager::resolveSMNodeFailure(const NodeId failedNodeId){
 	Logger::sharding(Logger::Detail, "SHM| SM Node %d failure.", failedNodeId);
-	boost::unique_lock<boost::mutex> shardManagerGlobalLock(shardManagerGlobalMutex);
 	SP(Notification) nodeFailureNotif(new NodeFailureNotification(failedNodeId));
 	// 1. metadata manager
 	this->metadataManager->resolve(boost::dynamic_pointer_cast<NodeFailureNotification>(nodeFailureNotif));
@@ -469,7 +492,6 @@ bool ShardManager::resolveLocal(SP(ShardingNotification) request){
 }
 
 void * ShardManager::_resolveLocal(void * _args){
-	boost::unique_lock<boost::mutex> shardManagerGlobalLock(ShardManager::getShardManager()->shardManagerGlobalMutex);
 	ResolveLocalArgs * args = (ResolveLocalArgs *)_args;
 	SP(ShardingNotification) request = args->notif;
 	delete args;
@@ -491,14 +513,8 @@ void * ShardManager::periodicWork(void *args) {
 		//
 		sleep(2);
 
-		boost::unique_lock<boost::mutex> shardManagerGlobalLock(ShardManager::getShardManager()->shardManagerGlobalMutex);
-
 		// 1. Resend bounced notifications.
-		for(unsigned i = 0 ; i < ShardManager::getShardManager()->bouncedNotifications.size() ; ++i){
-			SP(ShardingNotification) notif = ShardManager::getShardManager()->bouncedNotifications.at(i);
-			ShardingNotification::send(notif);
-		}
-		ShardManager::getShardManager()->bouncedNotifications.clear();
+		ShardManager::getShardManager()->resendBouncedNotifications();
 
 		/*
 		 * TODO : we must implement a method with periodically goes through all data structures and
@@ -522,15 +538,42 @@ void * ShardManager::periodicWork(void *args) {
 }
 
 void ShardManager::saveBouncedNotification(SP(ShardingNotification) notif){
+	boost::unique_lock<boost::mutex> xLock(shardManagerMembersMutex);
 	notif->resetBounced();
 	notif->swapSrcDest();
 	bouncedNotifications.push_back(notif);
+}
+void ShardManager::resendBouncedNotifications(){
+	boost::unique_lock<boost::mutex> xLock(shardManagerMembersMutex);
+	for(unsigned i = 0 ; i < bouncedNotifications.size() ; ++i){
+		SP(ShardingNotification) notif = bouncedNotifications.at(i);
+		ShardingNotification::send(notif);
+	}
+	bouncedNotifications.clear();
 }
 
 void ShardManager::bounceNotification(SP(ShardingNotification) notif){
 	notif->setBounced();
 	notif->swapSrcDest();
 	ShardingNotification::send(notif);
+}
+
+void ShardManager::printBouncedNotifications(){
+	if(bouncedNotifications.empty()){
+		return;
+	}
+	cout << "**************************************************************************************************" << endl;
+	cout << "Bounced notifications' source addresses : " ;
+	if(bouncedNotifications.size() == 0 ){
+		cout << "empty." << endl;
+	}else{
+		cout << endl;
+	}
+	cout << "**************************************************************************************************" << endl;
+	for(unsigned i = 0; i < bouncedNotifications.size(); ++i){
+		SP(ShardingNotification) notif = bouncedNotifications.at(i);
+		cout << notif->getDest().toString() << endl;
+	}
 }
 
 void ShardManager::getNodeInfoJson(Json::Value & nodeInfo){
@@ -542,14 +585,13 @@ void ShardManager::getNodeInfoJson(Json::Value & nodeInfo){
 		ASSERT(false);
 		return;
 	}
-	boost::shared_ptr<const ClusterResourceMetadata_Readview> readview;
-	this->getReadview(readview);
-	vector<Node> nodes;
-	readview->getAllNodes(nodes);
+	SP(ClusterNodes_Writeview) nodesWriteview = ShardManager::getNodesWriteview_read();
+	vector<const Node *> nodes;
+	nodesWriteview->getAllNodes(nodes);
 	for(unsigned i = 0; i < nodes.size(); ++i){
 		nodeInfo[i] = Json::Value(Json::objectValue);
-		nodeInfo[i][c_node_name] = nodes.at(i).getName();
-		nodeInfo[i][c_node_listening_host_name] = nodes.at(i).getIpAddress();
+		nodeInfo[i][c_node_name] = nodes.at(i)->getName();
+		nodeInfo[i][c_node_listening_host_name] = nodes.at(i)->getIpAddress();
 	}
 
 }

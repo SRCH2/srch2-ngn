@@ -29,7 +29,7 @@ namespace httpwrapper {
 
 class ClusterResourceMetadata_Readview{
 public:
-	ClusterResourceMetadata_Readview(unsigned versionId, string clusterName, vector<CoreInfo_t *> cores);
+	ClusterResourceMetadata_Readview(unsigned versionId, string clusterName, vector<const CoreInfo_t *> cores);
 	ClusterResourceMetadata_Readview(const ClusterResourceMetadata_Readview & copy);
 	~ClusterResourceMetadata_Readview();
 
@@ -61,7 +61,7 @@ private:
 	string clusterName;
 
 	// coreId => core *
-	map<unsigned, CoreInfo_t *> allCores;
+	map<unsigned, const CoreInfo_t *> allCores;
 	// coreId => core partitions
 	map<unsigned, CorePartitionContianer *> corePartitioners;
 	// coreId => local core shards

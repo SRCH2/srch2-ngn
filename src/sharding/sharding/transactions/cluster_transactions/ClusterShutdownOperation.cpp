@@ -51,18 +51,17 @@ void ShutdownCommand::clusterShutdown(){
 	// 1. send shut down message to every body.
 	// a) prepare list of nodes that we must send shutdown to them
 	vector<NodeId> arrivedNodes;
-	Cluster_Writeview * writeview = ShardManager::getWriteview();
-	writeview->getArrivedNodes(arrivedNodes, false);
-
+	SP(ClusterNodes_Writeview) nodesWriteview = this->getNodesWriteview_read();
+	nodesWriteview->getArrivedNodes(arrivedNodes, false);
 	// b) send shut down message to everybody
 	shutdownNotif = SP(ShutdownNotification)(new ShutdownNotification());
 
 	ConcurrentNotifOperation * commandSender = new ConcurrentNotifOperation(shutdownNotif, NULLType, arrivedNodes, NULL, false);
 	ShardManager::getShardManager()->getStateMachine()->registerOperation(commandSender);
 
-	ShardManager::getShardManager()->_shutdown();
 	this->setFinished();
 	getSession()->response->printHTTP(req);
+	ShardManager::getShardManager()->_shutdown();
 	return; // it never reaches this point because before that the engine dies.
 }
 

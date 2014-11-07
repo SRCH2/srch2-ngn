@@ -34,7 +34,7 @@ class ShardAssignOperation;
 class ShardCopyOperation;
 class ShardMoveOperation;
 
-class LoadBalancer : public Transaction, public NodeIteratorListenerInterface{
+class LoadBalancer : public WriteviewTransaction, public NodeIteratorListenerInterface{
 public:
 	static void runLoadBalancer();
 

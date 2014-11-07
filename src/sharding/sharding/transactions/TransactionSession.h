@@ -31,8 +31,6 @@ public:
 
 	JsonResponseHandler * response;
 
-	boost::shared_ptr<const ClusterResourceMetadata_Readview> clusterReadview;
-
 private:
 };
 

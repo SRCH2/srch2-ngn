@@ -104,7 +104,8 @@ Transaction * AtomicLock::getTransaction(){
 
 void AtomicLock::produce(){
     Logger::sharding(Logger::Detail, "AtomicLock| starts.");
-    Cluster_Writeview * writeview = ShardManager::getWriteview();
+	boost::shared_lock<boost::shared_mutex> writeviewSLock;
+    const Cluster_Writeview * writeview = ShardManager::getWriteview_read(writeviewSLock);
     bool participantsChangedFlag = false;
     for(int nodeIdx = 0; nodeIdx < participants.size(); ++nodeIdx){
     	if(! writeview->isNodeAlive(participants.at(nodeIdx))){
@@ -113,6 +114,7 @@ void AtomicLock::produce(){
     		participantsChangedFlag = true;
     	}
     }
+    writeviewSLock.unlock();
     if(participants.empty()){
     	this->getTransaction()->setUnattached();
         Logger::sharding(Logger::Detail, "AtomicLock| ends unattached, no participant found.");

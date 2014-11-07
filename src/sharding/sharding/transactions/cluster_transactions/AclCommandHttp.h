@@ -8,7 +8,6 @@
 #include "core/util/Logger.h"
 #include "core/util/Assert.h"
 #include "server/HTTPJsonResponse.h"
-#include "AclCommand.h"
 
 namespace srch2is = srch2::instantsearch;
 using namespace srch2is;
@@ -23,7 +22,7 @@ namespace httpwrapper {
  * 2. When all nodes saved their indices, request all nodes to save their cluster metadata
  * 3. When all nodes acked metadata save, write the metadata on disk and done.
  */
-class AclCommandHttpHandler: public Transaction, public ConsumerInterface {
+class AclCommandHttpHandler: public ReadviewTransaction, public ConsumerInterface {
 public:
 
     static void runCommand(boost::shared_ptr<const ClusterResourceMetadata_Readview> clusterReadview,
@@ -37,10 +36,9 @@ public:
     }
 private:
     AclCommandHttpHandler(boost::shared_ptr<const ClusterResourceMetadata_Readview> clusterReadview,
-            evhttp_request *req, unsigned coreId /*, and maybe other arguments */){
+            evhttp_request *req, unsigned coreId /*, and maybe other arguments */):ReadviewTransaction(clusterReadview){
         // initializas the session object that can be accessed through this communication
         initSession();
-        this->getSession()->clusterReadview = clusterReadview;
         aclCommand = NULL;
 
     }
@@ -55,7 +53,6 @@ private:
      */
     void initSession(){
         TransactionSession * session = new TransactionSession();
-
         // used to save Json messages throughout the process, json messages
         // can be printed to HTTP channel by using the print method of this class.
         session->response = new JsonResponseHandler();
@@ -74,8 +71,8 @@ private:
 
         // When query parameters are parsed successfully, we must create and run AclCommand class and get back
         // its response in a 'consume' callback function.
-        aclCommand = new AclCommand(this/*, and maybe other arguments */);
-        aclCommand->produce();
+//        aclCommand = new AclCommand(this/*, and maybe other arguments */);//TODO
+//        aclCommand->produce();
         if(this->getTransaction() != NULL && ! this->getTransaction()->isAttached()){
         	return false;
         }
@@ -120,7 +117,7 @@ private:
 
 
 private:
-    AclCommand * aclCommand;
+    WriteCommand * aclCommand;
 };
 
 

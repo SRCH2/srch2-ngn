@@ -24,7 +24,7 @@ namespace httpwrapper {
  * 2. When all nodes saved their indices, request all nodes to save their cluster metadata
  * 3. When all nodes acked metadata save, write the metadata on disk and done.
  */
-class ShardCommandHttpHandler: public Transaction, public ConsumerInterface {
+class ShardCommandHttpHandler: public ReadviewTransaction, public ConsumerInterface {
 public:
 
 	static void runCommand(boost::shared_ptr<const ClusterResourceMetadata_Readview> clusterReadview,
@@ -35,14 +35,15 @@ public:
 	}
 private:
 	ShardCommandHttpHandler(boost::shared_ptr<const ClusterResourceMetadata_Readview> clusterReadview,
-			evhttp_request *req, unsigned coreId , ShardCommandCode commandCode){
+			evhttp_request *req, unsigned coreId , ShardCommandCode commandCode):
+			ReadviewTransaction(clusterReadview){
 		initSession();
 		this->brokerSideInformationJson = (ShardOperationJsonResponse *)this->getSession()->response;
-		this->getSession()->clusterReadview = this->clusterReadview = clusterReadview;
 		this->req = req;
 		this->coreId = coreId;
 		this->commandCode = commandCode;
 		this->shardCommand = NULL;
+		this->clusterReadview = this->getReadview();
 		initActionName();
 	}
 

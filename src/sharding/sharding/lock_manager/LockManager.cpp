@@ -115,7 +115,8 @@ void LockManager::resolveLock(LockBatch * lockBatch){
 
 	// specific to node arrival, nodes must join in ascending nodeId order
 	if(lockBatch->batchType == LockRequestType_Metadata && lockBatch->olderNodes.size() > 0){
-		Cluster_Writeview * writeview = ShardManager::getWriteview();
+		boost::unique_lock<boost::mutex> xLock;
+		Cluster_Writeview * writeview = ShardManager::getWriteview_write(xLock);
 		for(unsigned i = 0 ; i < lockBatch->olderNodes.size() ; ++i){
 			// 1. is this node in the writeview of this node ?
 			if(writeview->nodes.find(lockBatch->olderNodes.at(i)) == writeview->nodes.end()){
@@ -123,7 +124,7 @@ void LockManager::resolveLock(LockBatch * lockBatch){
 				writeview->setNodeState(lockBatch->olderNodes.at(i), ShardingNodeStateNotArrived);
 			}
 		}
-	}
+	} // xLock goes out of scope
 
 	// first check if it's blocking or not
 	if(! lockBatch->blocking){
@@ -349,7 +350,9 @@ bool LockManager::moveLockBatchForward(LockBatch * lockBatch){
 					// one more token was granted.
 					lockBatch->lastGrantedItemIndex++;
 					if(lockBatch->lastGrantedItemIndex == lockBatch->tokens.size() - 1){
-						lockBatch->versionId = ShardManager::getWriteview()->versionId;
+
+						boost::shared_lock<boost::shared_mutex> sLock;
+						lockBatch->versionId = ShardManager::getWriteview_read(sLock)->versionId;
 						ASSERT(lockBatch->isReadviewPending());
 						return false; // because we should still wait for the release of readview
 					}else{
@@ -440,7 +443,8 @@ void LockManager::finalize(LockBatch * lockBatch, bool result ){
 }
 
 bool LockManager::isNodePassedInitialization(const NodeId & nodeId){
-	if(! ShardManager::getWriteview()->isNodeAlive(nodeId)){
+	boost::shared_lock<boost::shared_mutex> sLock;
+	if(! ShardManager::getWriteview_read(sLock)->isNodeAlive(nodeId)){
 		return true; // failed nodes are assumed to have passed the initialization step
 	}
 	if(passedInitialization.find(nodeId) == passedInitialization.end()){
@@ -454,8 +458,10 @@ void LockManager::setNodePassedInitialization(const NodeId & nodeId){
 }
 
 void LockManager::initialize(){
-    map<NodeId, std::pair<ShardingNodeState, Node *> > & nodes = ShardManager::getShardManager()->getWriteview()->nodes;
-    for(map<NodeId, std::pair<ShardingNodeState, Node *> >::iterator nodeItr = nodes.begin(); nodeItr != nodes.end(); ++nodeItr){
+	boost::shared_lock<boost::shared_mutex> sLock;
+    const map<NodeId, std::pair<ShardingNodeState, Node *> > & nodes =
+    		ShardManager::getShardManager()->getWriteview_read(sLock)->nodes;
+    for(map<NodeId, std::pair<ShardingNodeState, Node *> >::const_iterator nodeItr = nodes.begin(); nodeItr != nodes.end(); ++nodeItr){
     	if(nodeItr->second.first == ShardingNodeStateArrived){
 			setNodePassedInitialization(nodeItr->second.second->getId());
     	}

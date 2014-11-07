@@ -80,13 +80,15 @@ void ShardAssignOperation::commit(){
 	Logger::sharding(Logger::Detail, "ShardAssign(opid=%s, shardid=%s)| Committing shard assign change.", currentOpId.toString().c_str(), shardId.toString().c_str());
 	// start metadata commit
 	// prepare the shard change
-	Cluster_Writeview * writeview = ShardManager::getWriteview();
+	boost::shared_lock<boost::shared_mutex> sLock;
+	const Cluster_Writeview * writeview = ShardManager::getWriteview_read(sLock);
 	string indexDirectory = ShardManager::getShardManager()->getConfigManager()->getShardDir(writeview->clusterName,
 			writeview->cores[shardId.coreId]->getName(), &shardId);
 	if(indexDirectory.compare("") == 0){
 		indexDirectory = ShardManager::getShardManager()->getConfigManager()->createShardDir(writeview->clusterName,
 				writeview->cores[shardId.coreId]->getName(), &shardId);
 	}
+	sLock.unlock();
 	EmptyShardBuilder emptyShard(new ClusterShardId(shardId), indexDirectory);
 	emptyShard.prepare();
 	LocalPhysicalShard physicalShard(emptyShard.getShardServer(), emptyShard.getIndexDirectory(), "");

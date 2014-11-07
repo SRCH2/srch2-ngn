@@ -445,7 +445,8 @@ LockRequestType LockingNotification::getType() const{
 
 void LockingNotification::getInvolvedNodes(vector<NodeId> & participants) const{
 	participants.clear();
-	Cluster_Writeview * writeview = ShardManager::getShardManager()->getWriteview();
+	boost::shared_lock<boost::shared_mutex> & writeviewSLock;
+	const Cluster_Writeview * writeview = ShardManager::getWriteview_read(writeviewSLock);
 	if(lockRequestType == LockRequestType_PrimaryKey){
 		writeview->getPatitionInvolvedNodes(pid, participants);
 		return;

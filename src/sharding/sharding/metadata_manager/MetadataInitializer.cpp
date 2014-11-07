@@ -264,7 +264,7 @@ void MetadataInitializer::saveToDisk(const string & clusterName){
 	if(clusterFileDirectoryPath.compare("") == 0){
 		clusterFileDirectoryPath = configManager->createClusterDir(clusterName);
 	}
-	metadataManager->getClusterWriteview()->saveWriteviewOnDisk(clusterFileDirectoryPath);
+	metadataManager->writeview->saveWriteviewOnDisk(clusterFileDirectoryPath);
 }
 
 

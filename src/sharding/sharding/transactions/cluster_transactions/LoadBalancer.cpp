@@ -72,8 +72,9 @@ LoadBalancer::~LoadBalancer(){
 
 void LoadBalancer::initSession(){
 	TransactionSession * session = new TransactionSession();
-	// TODO : we don't give response or readview to shard copy an#include "../state_machine/State.h"d shard move
 	setSession(session);
+	// TODO : here is the place of initialization of response object in case we want to receive some messages from
+	//        shard copy and shard messages
 }
 
 // tries to balance the shard placement on cluster nodes
@@ -86,13 +87,16 @@ bool LoadBalancer::run(){
 void LoadBalancer::collectInfo(){
     Logger::sharding(Logger::Step, "LoadBalancer| collecting information.");
 	reportReq = SP(LoadBalancingReport::REQUEST)(new LoadBalancingReport::REQUEST());
-	Cluster_Writeview * writeview = ShardManager::getWriteview();
+	SP(ClusterNodes_Writeview) nodesWriteview = ShardManager::getNodesWriteview_read();
 	vector<NodeId> allNodes;
-	writeview->getArrivedNodes(allNodes, true);
+	nodesWriteview->getArrivedNodes(allNodes, true);
 	ConcurrentNotifOperation * commandSender =
 			new ConcurrentNotifOperation(reportReq, ShardingLoadBalancingReportMessageType, allNodes, this);
 	this->currentOp = CollectInfo;
 	ShardManager::getShardManager()->getStateMachine()->registerOperation(commandSender);
+	/*********** Thread Exit Point **************/
+	this->postProcess();
+	/*********** Thread Exit Point **************/
 }
 void LoadBalancer::end_(map<NodeOperationId, SP(ShardingNotification) > & replies){
 
@@ -203,7 +207,6 @@ void LoadBalancer::tryShardMove(){
 	if(candidateSrcShards.size() == 0){
 		return;
 	}
-	Cluster_Writeview * writeview = ShardManager::getWriteview();
 	srand(ShardManager::getCurrentNodeId());
 	unsigned moveOptionIndex = rand() % candidateSrcShards.size();
 
@@ -212,7 +215,6 @@ void LoadBalancer::tryShardMove(){
 }
 
 void LoadBalancer::tryShardAssginmentAndShardCopy(bool assignOnly){
-	Cluster_Writeview * writeview = ShardManager::getWriteview();
 	/*
 	 * 1. UNASSIGNED shards
 	 *  First, get a list of pairs of <ClusterShardId,<list of nodes>>
@@ -296,7 +298,7 @@ void LoadBalancer::tryShardAssginmentAndShardCopy(bool assignOnly){
  *  		     *** if that vector is empty, this partition is UNASSIGNED
  */
 void LoadBalancer::prepareAssignmentCandidates(vector<AssignCandidatePartition *> & assignCandidates){
-	Cluster_Writeview * writeview = ShardManager::getWriteview();
+	const Cluster_Writeview * writeview = this->getWriteview();
 
 
 	map<ClusterPID, AssignCandidatePartition *> partitionCandidates;
@@ -365,7 +367,7 @@ void LoadBalancer::deleteAssignmentCandidates(vector<AssignCandidatePartition *>
  * V)   The srcNodeId must have a load greater than or equal to 2 + local load
  */
 void LoadBalancer::prepareMoveCandidates(vector<std::pair<NodeId, ClusterShardId> > & candidateSrcShards){
-	Cluster_Writeview * writeview = ShardManager::getWriteview();
+	const Cluster_Writeview * writeview = this->getWriteview();
 
 
 	ClusterShardId id;
@@ -426,7 +428,6 @@ void LoadBalancer::prepareMoveCandidates(vector<std::pair<NodeId, ClusterShardId
 }
 
 bool LoadBalancer::canAcceptMoreShards(NodeId nodeId){
-	Cluster_Writeview * writeview = ShardManager::getWriteview();
 	double loadAvg = 0;
 	for(map<NodeId, double>::iterator nodeLoadItr = nodeLoads.begin(); nodeLoadItr != nodeLoads.end(); ++nodeLoadItr){
 		loadAvg += nodeLoadItr->second;

@@ -17,6 +17,7 @@ class InitialShardLoader;
 class Cluster_Writeview;
 /*
  * This class is responsible of joining a new node to the cluster
+ * NOTE : we must not lock writeview in this class
  */
 class MetadataInitializer{
 public:
@@ -34,6 +35,7 @@ public:
 	// 1. assigns the primary shard of each partition to this node
 	// 2. starts empty search engines for all primary shards.
 	void initializeCluster();
+	// NOTE: assumes the caller thread has sLock on the writeview
 	void saveToDisk(const string & clusterName);
 private:
 	ResourceMetadataManager * metadataManager;
