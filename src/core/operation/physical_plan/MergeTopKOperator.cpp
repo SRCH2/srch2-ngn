@@ -129,8 +129,9 @@ bool MergeTopKOperator::open(QueryEvaluatorInternal * queryEvaluator, PhysicalPl
 				// nextRecord->setRecordStaticScore() Should we set static score as well ?
 				float runtimeScore = params.ranker->computeAggregatedRuntimeScoreForAnd( runTimeTermRecordScores);
 				if (this->feedbackRanker) {
-					runtimeScore *= this->feedbackRanker->getFeedbackBoostForRecord(
+					float feedbackBoost = this->feedbackRanker->getFeedbackBoostForRecord(
 							mergeTopKCacheEntry->candidatesList.at(i)->getRecordId());
+					runtimeScore = Ranker::computeFeedbackBoostedScore(runtimeScore, feedbackBoost);
 				}
 				mergeTopKCacheEntry->candidatesList.at(i)->setRecordRuntimeScore(runtimeScore);
 
@@ -281,7 +282,9 @@ PhysicalPlanRecordItem * MergeTopKOperator::getNext(const PhysicalPlanExecutionP
 		// nextRecord->setRecordStaticScore() Should we set static score as well ?
 		float runtimeScore = params.ranker->computeAggregatedRuntimeScoreForAnd( runTimeTermRecordScores);
 		if (this->feedbackRanker) {
-			runtimeScore *= this->feedbackRanker->getFeedbackBoostForRecord(nextRecord->getRecordId());
+			float feedbackBoost = this->feedbackRanker->getFeedbackBoostForRecord(
+					nextRecord->getRecordId());
+			runtimeScore = Ranker::computeFeedbackBoostedScore(runtimeScore, feedbackBoost);
 		}
 		nextRecord->setRecordRuntimeScore(runtimeScore);
 
@@ -453,7 +456,7 @@ bool MergeTopKOperator::getMaximumScoreOfUnvisitedRecords(float & score, float m
 		}
 		score += (*nextRecord)->getRecordRuntimeScore();
 	}
-	score *= maxFeedbackBoostForQuery;
+	score = Ranker::computeFeedbackBoostedScore(score, maxFeedbackBoostForQuery);
 	return true;
 }
 

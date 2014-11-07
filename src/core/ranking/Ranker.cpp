@@ -168,6 +168,10 @@ namespace srch2
 		return feedbackBoost;
     }
 
+    float DefaultTopKRanker::computeFeedbackBoostedScore(float score, float boost) {
+    	return score * boost;
+    }
+
     /*float DefaultTopKRanker::computeOverallRecordScore(const Query *query, const vector<float> &queryResultTermScores, unsigned recordLength) const
       {
       const vector<Term *> *queryTerms = query->getQueryTerms();

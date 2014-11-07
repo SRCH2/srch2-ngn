@@ -92,6 +92,7 @@ namespace srch2 {
         virtual ~Ranker() {};
 
         static float computeFeedbackBoost(unsigned feedbackRecencyInSecs, unsigned feedbackFrequency);
+        static float computeFeedbackBoostedScore(float score, float boost);
     };
     
     typedef Ranker DefaultTopKRanker;

@@ -37,7 +37,8 @@ bool SortByScoreOperator::open(QueryEvaluatorInternal * queryEvaluator, Physical
 
 		if (this->feedbackRanker) {
 			float runtimeScore = nextRecord->getRecordRuntimeScore();
-			runtimeScore *= feedbackRanker->getFeedbackBoostForRecord(nextRecord->getRecordId());
+			float feedbackBoost = feedbackRanker->getFeedbackBoostForRecord(nextRecord->getRecordId());
+			runtimeScore = Ranker::computeFeedbackBoostedScore(runtimeScore, feedbackBoost);
 			nextRecord->setRecordRuntimeScore(runtimeScore);
 		}
 
