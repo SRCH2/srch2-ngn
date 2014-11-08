@@ -24,6 +24,7 @@ public:
 	virtual void consume(const map<string, bool> & recordResults){};
 	virtual void consume(const map<string, bool> & results,
 			map<string, map<ShardId * ,vector<JsonMessageCode>, ShardPtrComparator > > & messageCodes){};
+	virtual void consume(bool booleanResult, vector<JsonMessageCode> & messageCodes){};
 	virtual Transaction * getTransaction() = 0;
 	virtual string getName() const = 0;
 };

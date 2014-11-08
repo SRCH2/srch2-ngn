@@ -108,6 +108,7 @@ Json::Value JsonResponseHandler::getJsonSingleMessage(const JsonMessageCode code
 	case HTTP_JSON_ResetLogger_Reopen_Failed_Error:
 	case HTTP_JSON_Search_Res_Format_Wrong_Error:
 	case HTTP_JSON_Cluster_Not_Ready_Error:
+	case HTTP_JSON_Core_Does_Not_Exist:
 		msgValue[c_error] = getJsonSingleMessageStr(code);
 		break;
 	case HTTP_JSON_Existing_Record_Update_Info:
@@ -178,6 +179,8 @@ const string JsonResponseHandler::getJsonSingleMessageStr(const JsonMessageCode 
 		return "The corresponding partition of data is not usable now. Please try again later.";
 	case HTTP_Json_No_Data_Shard_Available_For_Write:
 		return "No data shard is currently available for this record. This is mostly caused by node failure. Please try again later.";
+	case HTTP_JSON_Core_Does_Not_Exist:
+		return "Core name is not recognized.";
 	case HTTP_Json_General_Error:
 		return "Unknown Error.";
 	default:

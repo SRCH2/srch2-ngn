@@ -37,7 +37,10 @@ public:
 private:
     AclCommandHttpHandler(boost::shared_ptr<const ClusterResourceMetadata_Readview> clusterReadview,
             evhttp_request *req, unsigned coreId /*, and maybe other arguments */):ReadviewTransaction(clusterReadview){
-        // initializas the session object that can be accessed through this communication
+    	this->req = req;
+    	this->coreInfo = clusterReadview->getCore(coreId);
+    	ASSERT(this->coreInfo != NULL);
+    	// initializas the session object that can be accessed through this communication
         initSession();
         aclCommand = NULL;
 
@@ -46,6 +49,9 @@ private:
     ~AclCommandHttpHandler(){
         if(aclCommand != NULL){
             delete aclCommand;
+        }
+        if(req != NULL){
+        	delete req;
         }
     }
     /*
@@ -62,8 +68,19 @@ private:
     /*
      * The main work of AclCommandHttpHandler starts in this function
      * Example of this work : parsing req object and get HTTP req information.
+     *
      */
     bool run(){
+    	if(coreInfo == NULL){
+    		this->getTransaction()->getSession()->response->addError(JsonResponseHandler::getJsonSingleMessage(HTTP_JSON_Core_Does_Not_Exist));
+    		this->getTransaction()->getSession()->response->finalizeOK();
+    		this->getTransaction()->getSession()->response->printHTTP(req);
+    		// to make the caller of this function deallocate this object
+    		// because it's not going to wait for a notification from another node as it was
+    		// expected.
+    		this->getTransaction()->setUnattached();
+    		return false;
+    	}
         //return false; // returns false if when we return from this function
                        // no callback function is supposed to be called and we can be
                        // lost. When it returns false, startTransaction() will just delete this transaction
@@ -72,8 +89,20 @@ private:
         // When query parameters are parsed successfully, we must create and run AclCommand class and get back
         // its response in a 'consume' callback function.
 //        aclCommand = new AclCommand(this/*, and maybe other arguments */);//TODO
-//        aclCommand->produce();
-        if(this->getTransaction() != NULL && ! this->getTransaction()->isAttached()){
+    	/*
+			// WriteCommand(ConsumerInterface * consumer, //this
+			//      	 map<string, vector<string> >, // map from primaryKey to list of roleIds
+			//	 ClusterACLOperation_Type aclOperationType,
+			//	 const CoreInfo_t * coreInfo);
+			// WriteCommand(ConsumerInterface * consumer, //this
+			//      	 vector<string> , // list of attributes
+			//      	 vector<string> , // list of roleIds
+			//	 ClusterACLOperation_Type aclOperationType,
+			//	 const CoreInfo_t * coreInfo);
+    	 */
+
+        aclCommand->produce();
+        if(! this->getTransaction()->isAttached()){
         	return false;
         }
         return true;
@@ -86,7 +115,7 @@ private:
      * added to ConsumerInterface, it must be overridden here to process the results of AclCommand
      * and it must be called in finalize method of AclCommand to return back to this consumer.
      */
-    void consume(bool booleanResult){
+    void consume(bool booleanResult, vector<JsonMessageCode> & messageCodes){
 
     }
 
@@ -118,6 +147,8 @@ private:
 
 private:
     WriteCommand * aclCommand;
+    evhttp_request *req;
+    const CoreInfo_t * coreInfo;
 };
 
 
