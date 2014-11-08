@@ -41,11 +41,7 @@ public:
                          const std::string &recordAllowedSpecialCharacters
                          );
 
-    void applyFilters(const string & input, std::vector<std::string> & queryTokens,
-            bool isPrefix);
-
 	void clearFilterStates();
-
 
     void setTokenStream(TokenStream* stream){
         this->tokenStream = stream;

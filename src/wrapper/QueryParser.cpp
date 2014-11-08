@@ -8,7 +8,6 @@
 #include "util/Assert.h"
 #include "RegexConstants.h"
 #include "QueryFieldBoostParser.h"
-#include "boost/algorithm/string.hpp"
 
 using namespace std;
 using srch2::util::Logger;

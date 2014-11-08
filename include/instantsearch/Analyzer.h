@@ -87,12 +87,6 @@ public:
 
 	const std::string& getRecordAllowedSpecialCharacters() const ;
 
-    /*
-     *  isPrefix is a way to inform the analyzer that stop filter should not be applied
-     *  the passed string.
-     */
-	void applyFilters(const std::string & input, std::vector<std::string> & queryTokens, bool isPrefix);
-
 	// clear the initial states of the filters in the analyzer, e.g.,
 	// for those filters that have an internal buffer to keep tokens.
 	// Such an internal buffer can have leftover tokens from
