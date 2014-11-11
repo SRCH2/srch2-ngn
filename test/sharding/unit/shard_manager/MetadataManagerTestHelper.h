@@ -55,7 +55,7 @@ MetadataChange * createMetadataChange(const MetadataChangeTestCaseCode caseCode)
 		vector<ClusterShardId> localClusterShardIds;
 		vector<NodeShardId> localNodeShardIds;
 		localNodeShardIds.push_back(NodeShardId(0, 0, 6));
-		localNodeShardIds.push_back(NodeShardId(1, 0, 3));
+		localNodeShardIds.push_back(NodeShardId(0, 0, 3));
 		return new NodeAddChange(newNodeId, localClusterShardIds, localNodeShardIds);
 	}
 	case MetadataChangeTestCaseCode_ShardAssignChange0:
@@ -118,23 +118,26 @@ void clean(ConfigManager * serverConf, const string & clusterName){
 void testFreshClusterInit(ConfigManager * serverConf , ResourceMetadataManager * metadataManager){
 
 	serverConf->loadConfigFile(metadataManager);
-	clean(serverConf, metadataManager->getClusterWriteview()->clusterName);
+	boost::unique_lock<boost::shared_mutex> xLock;
+	Cluster_Writeview * writeview = metadataManager->getClusterWriteview_write(xLock);
+	SP(ClusterNodes_Writeview) nodesWriteview = metadataManager->getClusterNodesWriteview_write();
+	clean(serverConf, writeview->clusterName);
 	srch2http::MetadataInitializer nodeInitializer(serverConf, metadataManager);
 	nodeInitializer.initializeNode();
 
 	// set the current node ID, and add this node.
 	Node * currentNode = new Node("currentNode", "192.168.0.0" , 5050, true, 4, true);
 	currentNode->setId(0);
-	metadataManager->getClusterWriteview()->setCurrentNodeId(currentNode->getId());
-	metadataManager->getClusterWriteview()->addNode(*currentNode);
-	metadataManager->getClusterWriteview()->setNodeState(currentNode->getId(), ShardingNodeStateArrived);
+	writeview->setCurrentNodeId(currentNode->getId());
+	nodesWriteview->addNode(*currentNode);
+	nodesWriteview->setNodeState(currentNode->getId(), ShardingNodeStateArrived);
 
 	nodeInitializer.initializeCluster();
 	// validate :
 	// 1. only one shard of each partition must be assigned to this node and the rest of
 	//    shards must be unassigned.
 	ClusterShardId id;double load;ShardState state;bool isLocal;NodeId nodeId;NodeShardId nodeShardId;
-    ClusterShardIterator cShardItr(metadataManager->getClusterWriteview());
+    ClusterShardIterator cShardItr(writeview);
     cShardItr.beginClusterShardsIteration();
 	while(cShardItr.getNextClusterShard(id, load, state, isLocal, nodeId)){
 		if(id.replicaId == 0){
@@ -147,36 +150,38 @@ void testFreshClusterInit(ConfigManager * serverConf , ResourceMetadataManager *
 		}
 	}
 	// 2. we must have two node shards in the current node
-    NodeShardIterator nShardItr(metadataManager->getClusterWriteview());
+    NodeShardIterator nShardItr(writeview);
 	nShardItr.beginNodeShardsIteration();
 	while(nShardItr.getNextNodeShard(nodeShardId, isLocal)){
-		ASSERT(nodeShardId.coreId == 1); // core id in this test is 1
+		ASSERT(nodeShardId.coreId == 0); // core id in this test is 0
 		ASSERT(nodeShardId.partitionId > 3); // we have 4 partitions
 		ASSERT(nodeShardId.nodeId == currentNode->getId());
 		ASSERT(isLocal);
 	}
 	// 3. we must have four local cluster shards
-	ASSERT(metadataManager->getClusterWriteview()->localClusterDataShards.size() == 4);
+	ASSERT(writeview->localClusterDataShards.size() == 4);
 	// 4. we must have 2 local shards both local
-	ASSERT(metadataManager->getClusterWriteview()->localNodeDataShards.size() == 2);
+	ASSERT(writeview->localNodeDataShards.size() == 3);
 
 }
 
 void testNode1FirstArrival(NodeId currentNodeId, ResourceMetadataManager * metadataManager){
 
-	Cluster_Writeview * writeview = metadataManager->getClusterWriteview();
+	boost::unique_lock<boost::shared_mutex> xLock;
+	Cluster_Writeview * writeview = metadataManager->getClusterWriteview_write(xLock);
+	SP(ClusterNodes_Writeview) nodesWriteview = metadataManager->getClusterNodesWriteview_write();
 	// new node
 	Node * newNode = new Node("node1", "192.168.0.1", 5051, false);
 	newNode->setId(1);
 	// this node has 2 node shards : (1,1,16) , (1,1,17)
 	vector<NodeShardId> nodeShards;
-	nodeShards.push_back(NodeShardId(1,1,16));
-	nodeShards.push_back(NodeShardId(1,1,17));
+	nodeShards.push_back(NodeShardId(0,1,16));
+	nodeShards.push_back(NodeShardId(0,1,17));
 	vector<ClusterShardId> clusterShards;
 	NodeAddChange * nodeAddChange = new NodeAddChange(newNode->getId(), clusterShards, nodeShards);
 
 	// SM comes first
-	writeview->addNode(*newNode);
+	nodesWriteview->addNode(*newNode);
 	nodeAddChange->doChange(writeview);
 
 
@@ -184,20 +189,20 @@ void testNode1FirstArrival(NodeId currentNodeId, ResourceMetadataManager * metad
 	/// validate
 	// 1. we must have 2 nodes, both of them in arrived state
 	vector<const Node *> allNodes;
-	writeview->getAllNodes(allNodes);
+	nodesWriteview->getAllNodes(allNodes);
 	ASSERT(allNodes.size() == 2);
 	vector<NodeId> arrivedNodes;
-	writeview->getArrivedNodes(arrivedNodes);
+	nodesWriteview->getArrivedNodes(arrivedNodes);
 	ASSERT(arrivedNodes.size() == 1);
 	arrivedNodes.clear();
-	writeview->getArrivedNodes(arrivedNodes, true);
+	nodesWriteview->getArrivedNodes(arrivedNodes, true);
 	ASSERT(arrivedNodes.size() == 2);
 
 
 	// 2. we must have no non local cluster shards
 	ClusterShardId id;double load;ShardState state;bool isLocal;
 	NodeId nodeId;NodeShardId nodeShardId;LocalPhysicalShard localPhysicalShard;
-    ClusterShardIterator cShardItr(metadataManager->getClusterWriteview());
+    ClusterShardIterator cShardItr(writeview);
     cShardItr.beginClusterShardsIteration();
 	while(cShardItr.getNextClusterShard(id, load, state, isLocal, nodeId)){
 		if(id.replicaId == 0){
@@ -217,15 +222,15 @@ void testNode1FirstArrival(NodeId currentNodeId, ResourceMetadataManager * metad
 	}
 	ASSERT(counter == 4);
 	// 3. we must have 4 node shards, 2 of them local, 2 of them from node
-    NodeShardIterator nShardItr(metadataManager->getClusterWriteview());
+    NodeShardIterator nShardItr(writeview);
 	nShardItr.beginNodeShardsIteration();
 	while(nShardItr.getNextNodeShard(nodeShardId, isLocal)){
 		if(nodeShardId.nodeId == currentNodeId){
-			ASSERT(nodeShardId.coreId == 1); // core id in this test is 1
+			ASSERT(nodeShardId.coreId == 0); // core id in this test is 0
 			ASSERT(nodeShardId.partitionId > 3); // we have 4 partitions
 			ASSERT(isLocal);
 		}else if(nodeShardId.nodeId == 1){
-			ASSERT(nodeShardId.coreId == 1); // core id in this test is 1
+			ASSERT(nodeShardId.coreId == 0); // core id in this test is 0
 			ASSERT(nodeShardId.partitionId == 16 || nodeShardId.partitionId == 17); // we have 4 partitions
 			ASSERT(! isLocal);
 		}else{
@@ -234,24 +239,26 @@ void testNode1FirstArrival(NodeId currentNodeId, ResourceMetadataManager * metad
 	}
 
 	// 3. we must have four local cluster shards
-	ASSERT(metadataManager->getClusterWriteview()->localClusterDataShards.size() == 4);
+	ASSERT(writeview->localClusterDataShards.size() == 4);
 	// 4. we must have 2 local shards
-	ASSERT(metadataManager->getClusterWriteview()->localNodeDataShards.size() == 2);
+	ASSERT(writeview->localNodeDataShards.size() == 3);
 
 
 }
 
 void testNode1LoadBalancing(NodeId currentNodeId, ResourceMetadataManager * metadataManager){
-	Cluster_Writeview * writeview = metadataManager->getClusterWriteview();
+	boost::unique_lock<boost::shared_mutex> xLock;
+	Cluster_Writeview * writeview = metadataManager->getClusterWriteview_write(xLock);
+	SP(ClusterNodes_Writeview) nodesWriteview = metadataManager->getClusterNodesWriteview_write();
 	//  current node has 4 cluster shards,
 	//  we must assign 4 cluster shards to the second node
-	ShardAssignChange * assignChange = new ShardAssignChange(ClusterShardId(1,0,1), 1, 0);
+	ShardAssignChange * assignChange = new ShardAssignChange(ClusterShardId(0,0,1), 1, 0);
 	assignChange->doChange(writeview);
-	assignChange = new ShardAssignChange(ClusterShardId(1,1,1), 1, 0);
+	assignChange = new ShardAssignChange(ClusterShardId(0,1,1), 1, 0);
 	assignChange->doChange(writeview);
-	assignChange = new ShardAssignChange(ClusterShardId(1,2,1), 1, 0);
+	assignChange = new ShardAssignChange(ClusterShardId(0,2,1), 1, 0);
 	assignChange->doChange(writeview);
-	assignChange = new ShardAssignChange(ClusterShardId(1,3,1), 1, 0);
+	assignChange = new ShardAssignChange(ClusterShardId(0,3,1), 1, 0);
 	assignChange->doChange(writeview);
 
 	// validate
@@ -295,12 +302,14 @@ void testNode1LoadBalancing(NodeId currentNodeId, ResourceMetadataManager * meta
 			ASSERT(false);
 		}
 	}
-	ASSERT(writeview->localNodeDataShards.size() == 2);
+	ASSERT(writeview->localNodeDataShards.size() == 3);
 
 }
 
 void testNode2FirstArrival(NodeId currentNodeId, ResourceMetadataManager * metadataManager){
-	Cluster_Writeview * writeview = metadataManager->getClusterWriteview();
+	boost::unique_lock<boost::shared_mutex> xLock;
+	Cluster_Writeview * writeview = metadataManager->getClusterWriteview_write(xLock);
+	SP(ClusterNodes_Writeview) nodesWriteview = metadataManager->getClusterNodesWriteview_write();
 	// new node
 	Node * newNode = new Node("node2", "192.168.0.2", 5052, false);
 	newNode->setId(2);
@@ -311,33 +320,35 @@ void testNode2FirstArrival(NodeId currentNodeId, ResourceMetadataManager * metad
 
 	nodeAddChange->doChange(writeview);
 	// SM comes late
-	writeview->addNode(*newNode);
+	nodesWriteview->addNode(*newNode);
 
 
 
 	/// validate
 	// 1. we must have 3 nodes, all of them in arrived state
 	vector<const Node *> allNodes;
-	writeview->getAllNodes(allNodes);
+	nodesWriteview->getAllNodes(allNodes);
 	ASSERT(allNodes.size() == 3);
 	vector<NodeId> arrivedNodes;
-	writeview->getArrivedNodes(arrivedNodes);
+	nodesWriteview->getArrivedNodes(arrivedNodes);
 	ASSERT(arrivedNodes.size() == 2);
 	arrivedNodes.clear();
-	writeview->getArrivedNodes(arrivedNodes, true);
+	nodesWriteview->getArrivedNodes(arrivedNodes, true);
 	ASSERT(arrivedNodes.size() == 3);
 
 
 
 	// 3. we must have four local cluster shards
-	ASSERT(metadataManager->getClusterWriteview()->localClusterDataShards.size() == 4);
+	ASSERT(writeview->localClusterDataShards.size() == 4);
 	// 4. we must have 2 local shards
-	ASSERT(metadataManager->getClusterWriteview()->localNodeDataShards.size() == 2);
+	ASSERT(writeview->localNodeDataShards.size() == 3);
 }
 
 void validateRestart(ConfigManager * serverConf, ResourceMetadataManager * metadataManager,
 		NodeStatusAfterRestart * nodeState){
-	Cluster_Writeview * writeview = metadataManager->getClusterWriteview();
+	boost::unique_lock<boost::shared_mutex> xLock;
+	Cluster_Writeview * writeview = metadataManager->getClusterWriteview_write(xLock);
+	SP(ClusterNodes_Writeview) nodesWriteview = metadataManager->getClusterNodesWriteview_write();
 	// validate :
 
 	// 1. We must have 4 local cluster shards which are ready and 4 pending shards
@@ -352,18 +363,18 @@ void validateRestart(ConfigManager * serverConf, ResourceMetadataManager * metad
 			ASSERT(nodeState[nodeId] == NodeStatus_Ready);
 			ASSERT(state == SHARDSTATE_READY);
 			ASSERT(id.replicaId == 0);
-			ASSERT(id.coreId == 1);
+			ASSERT(id.coreId == 0);
 			ASSERT(isLocal);
 		}else if(nodeId == 1 || nodeId == 2){
 			ASSERT(nodeState[nodeId] == NodeStatus_Ready);
 			ASSERT(id.replicaId == nodeId); // we give all same number replicas to one node in this test
-			ASSERT(id.coreId == 1);
+			ASSERT(id.coreId == 0);
 			ASSERT(! isLocal);
 			break;
 
 		}else if (nodeId == (unsigned)-1){
 			ASSERT(state == SHARDSTATE_PENDING || state == SHARDSTATE_UNASSIGNED);
-			ASSERT(id.coreId == 1);
+			ASSERT(id.coreId == 0);
 			ASSERT(! isLocal);
 		}else{
 			ASSERT(false);
@@ -372,54 +383,56 @@ void validateRestart(ConfigManager * serverConf, ResourceMetadataManager * metad
 	}
 
 	// 2. we must have 2 node shards which are local
-	NodeShardIterator nShardItr(metadataManager->getClusterWriteview());
+	NodeShardIterator nShardItr(writeview);
 	nShardItr.beginNodeShardsIteration();
 	while(nShardItr.getNextNodeShard(nodeShardId, isLocal)){
 		if(nodeState[2] == NodeStatus_Ready){
 			if(nodeShardId.nodeId == writeview->currentNodeId){
 				ASSERT(isLocal);
-				ASSERT(nodeShardId.coreId == 1); // core id in this test is 1
+				ASSERT(nodeShardId.coreId == 0); // core id in this test is 0
 				ASSERT(nodeShardId.partitionId > 3); // we have 4 partitions
 			}else{
 				ASSERT(nodeShardId.nodeId == 2);
-				ASSERT(nodeShardId.coreId == 1); // core id in this test is 1
+				ASSERT(nodeShardId.coreId == 0); // core id in this test is 0
 				ASSERT(nodeShardId.partitionId > 15); // we have 4 partitions
 			}
 		}else{
 			ASSERT(nodeShardId.nodeId == writeview->currentNodeId);
 			ASSERT(isLocal);
-			ASSERT(nodeShardId.coreId == 1); // core id in this test is 1
+			ASSERT(nodeShardId.coreId == 0); // core id in this test is 0
 			ASSERT(nodeShardId.partitionId > 3); // we have 4 partitions
 		}
 	}
 	// 3. we must have four local cluster shards
-	ASSERT(metadataManager->getClusterWriteview()->localClusterDataShards.size() == 4);
+	ASSERT(writeview->localClusterDataShards.size() == 4);
 
 	// 4. we must have 2 local shards both local
-	ASSERT(metadataManager->getClusterWriteview()->localNodeDataShards.size() == 2);
+	ASSERT(writeview->localNodeDataShards.size() == 3);
 }
 
 
 void testNode1Reclaim(NodeId currentNodeId, ResourceMetadataManager * metadataManager){
 
-	Cluster_Writeview * writeview = metadataManager->getClusterWriteview();
+	boost::unique_lock<boost::shared_mutex> xLock;
+	Cluster_Writeview * writeview = metadataManager->getClusterWriteview_write(xLock);
+	SP(ClusterNodes_Writeview) nodesWriteview = metadataManager->getClusterNodesWriteview_write();
 	// new node
 	Node * newNode = new Node("node1", "192.168.0.1", 5051, false);
 	newNode->setId(1);
 	// this node has 2 node shards : (1,2,16) , (1,2,17)
 	vector<NodeShardId> nodeShards;
-	nodeShards.push_back(NodeShardId(1,1,16));
-	nodeShards.push_back(NodeShardId(1,1,17));
+	nodeShards.push_back(NodeShardId(0,1,16));
+	nodeShards.push_back(NodeShardId(0,1,17));
 	// this node has 4 cluster shards (1,0,1), (1,1,1), (1,2,1) , (1,3,1)
 	vector<ClusterShardId> clusterShards;
-	clusterShards.push_back(ClusterShardId(1,0,1));
-	clusterShards.push_back(ClusterShardId(1,1,1));
-	clusterShards.push_back(ClusterShardId(1,2,1));
-	clusterShards.push_back(ClusterShardId(1,3,1));
+	clusterShards.push_back(ClusterShardId(0,0,1));
+	clusterShards.push_back(ClusterShardId(0,1,1));
+	clusterShards.push_back(ClusterShardId(0,2,1));
+	clusterShards.push_back(ClusterShardId(0,3,1));
 	NodeAddChange * nodeAddChange = new NodeAddChange(newNode->getId(), clusterShards, nodeShards);
 
 	// SM comes first
-	writeview->addNode(*newNode);
+	nodesWriteview->addNode(*newNode);
 	nodeAddChange->doChange(writeview);
 
 
@@ -427,20 +440,20 @@ void testNode1Reclaim(NodeId currentNodeId, ResourceMetadataManager * metadataMa
 	/// validate
 	// 1. we must have 2 nodes, both of them in arrived state
 	vector<const Node *> allNodes;
-	writeview->getAllNodes(allNodes);
+	nodesWriteview->getAllNodes(allNodes);
 	ASSERT(allNodes.size() == 2);
 	vector<NodeId> arrivedNodes;
-	writeview->getArrivedNodes(arrivedNodes);
+	nodesWriteview->getArrivedNodes(arrivedNodes);
 	ASSERT(arrivedNodes.size() == 1);
 	arrivedNodes.clear();
-	writeview->getArrivedNodes(arrivedNodes, true);
+	nodesWriteview->getArrivedNodes(arrivedNodes, true);
 	ASSERT(arrivedNodes.size() == 2);
 
 
 	// 2. we must have 4 local cluster shards and 4 on node 2
 	ClusterShardId id;double load;ShardState state;bool isLocal;
 	NodeId nodeId;NodeShardId nodeShardId;LocalPhysicalShard localPhysicalShard;
-	ClusterShardIterator cShardItr(metadataManager->getClusterWriteview());
+	ClusterShardIterator cShardItr(writeview);
 	cShardItr.beginClusterShardsIteration();
 	while(cShardItr.getNextClusterShard(id, load, state, isLocal, nodeId)){
 		if(id.replicaId == 0){
@@ -465,15 +478,15 @@ void testNode1Reclaim(NodeId currentNodeId, ResourceMetadataManager * metadataMa
 	}
 	ASSERT(counter == 4);
 	// 3. we must have 4 node shards, 2 of them local, 2 of them from node
-    NodeShardIterator nShardItr(metadataManager->getClusterWriteview());
+    NodeShardIterator nShardItr(writeview);
     nShardItr.beginNodeShardsIteration();
 	while(nShardItr.getNextNodeShard(nodeShardId, isLocal)){
 		if(nodeShardId.nodeId == currentNodeId){
-			ASSERT(nodeShardId.coreId == 1); // core id in this test is 1
+			ASSERT(nodeShardId.coreId == 0); // core id in this test is 0
 			ASSERT(nodeShardId.partitionId > 3); // we have 4 partitions
 			ASSERT(isLocal);
 		}else if(nodeShardId.nodeId == 1){
-			ASSERT(nodeShardId.coreId == 1); // core id in this test is 1
+			ASSERT(nodeShardId.coreId == 0); // core id in this test is 0
 			ASSERT(nodeShardId.partitionId == 16 || nodeShardId.partitionId == 17); // we have 4 partitions
 			ASSERT(! isLocal);
 		}else{
@@ -482,25 +495,27 @@ void testNode1Reclaim(NodeId currentNodeId, ResourceMetadataManager * metadataMa
 	}
 
 	// 3. we must have four local cluster shards
-	ASSERT(metadataManager->getClusterWriteview()->localClusterDataShards.size() == 4);
+	ASSERT(writeview->localClusterDataShards.size() == 4);
 	// 4. we must have 2 local shards
-	ASSERT(metadataManager->getClusterWriteview()->localNodeDataShards.size() == 2);
+	ASSERT(writeview->localNodeDataShards.size() == 3);
 
 
 }
 
 void testNode2LoadBalancing(NodeId currentNodeId, ResourceMetadataManager * metadataManager){
-	Cluster_Writeview * writeview = metadataManager->getClusterWriteview();
+	boost::unique_lock<boost::shared_mutex> xLock;
+	Cluster_Writeview * writeview = metadataManager->getClusterWriteview_write(xLock);
+	SP(ClusterNodes_Writeview) nodesWriteview = metadataManager->getClusterNodesWriteview_write();
 	//  current node has 4 cluster shards,
 	//  we must assign 4 cluster shards to the second node
 	ShardAssignChange * assignChange = NULL;
-	assignChange = new ShardAssignChange(ClusterShardId(1,0,2), 2, 0);
+	assignChange = new ShardAssignChange(ClusterShardId(0,0,2), 2, 0);
 	assignChange->doChange(writeview);
-	assignChange = new ShardAssignChange(ClusterShardId(1,1,2), 2, 0);
+	assignChange = new ShardAssignChange(ClusterShardId(0,1,2), 2, 0);
 	assignChange->doChange(writeview);
-	assignChange = new ShardAssignChange(ClusterShardId(1,2,2), 2, 0);
+	assignChange = new ShardAssignChange(ClusterShardId(0,2,2), 2, 0);
 	assignChange->doChange(writeview);
-	assignChange = new ShardAssignChange(ClusterShardId(1,3,2), 2, 0);
+	assignChange = new ShardAssignChange(ClusterShardId(0,3,2), 2, 0);
 	assignChange->doChange(writeview);
 
 	// validate
@@ -546,27 +561,29 @@ void testNode2LoadBalancing(NodeId currentNodeId, ResourceMetadataManager * meta
 			ASSERT(false);
 		}
 	}
-	ASSERT(writeview->localNodeDataShards.size() == 2);
+	ASSERT(writeview->localNodeDataShards.size() == 3);
 
 }
 
 
 void testNode1Failure(ResourceMetadataManager * metadataManager){
 	// node id 2 is going to die
-	Cluster_Writeview * writeview = metadataManager->getClusterWriteview();
+	boost::unique_lock<boost::shared_mutex> xLock;
+	Cluster_Writeview * writeview = metadataManager->getClusterWriteview_write(xLock);
+	SP(ClusterNodes_Writeview) nodesWriteview = metadataManager->getClusterNodesWriteview_write();
 	writeview->removeNode(1);
 
 	// validate
 
 	// 1. we must have two arrived nodes and three nodes in total.
 	vector<const Node *> allNodes;
-	writeview->getAllNodes(allNodes);
+	nodesWriteview->getAllNodes(allNodes);
 	ASSERT(allNodes.size() == 3);
 	vector<NodeId> arrivedNodes;
-	writeview->getArrivedNodes(arrivedNodes);
+	nodesWriteview->getArrivedNodes(arrivedNodes);
 	ASSERT(arrivedNodes.size() == 1);
 	arrivedNodes.clear();
-	writeview->getArrivedNodes(arrivedNodes, true);
+	nodesWriteview->getArrivedNodes(arrivedNodes, true);
 	ASSERT(arrivedNodes.size() == 2);
 
 
@@ -606,60 +623,65 @@ void testNode1Failure(ResourceMetadataManager * metadataManager){
 
 	// 4. we must have 4 local cluster shards and two local node shards
 	ASSERT(writeview->localClusterDataShards.size() == 4);
-	ASSERT(writeview->localNodeDataShards.size() == 2);
+	ASSERT(writeview->localNodeDataShards.size() == 3);
 
 }
 
 
 void testNode2Reclaim(NodeId currentNodeId, ResourceMetadataManager * metadataManager){
-	Cluster_Writeview * writeview = metadataManager->getClusterWriteview();
+	boost::unique_lock<boost::shared_mutex> xLock;
+	Cluster_Writeview * writeview = metadataManager->getClusterWriteview_write(xLock);
+	SP(ClusterNodes_Writeview) nodesWriteview = metadataManager->getClusterNodesWriteview_write();
 	// new node
 	Node * newNode = new Node("node2", "192.168.0.2", 5052, false);
 	newNode->setId(2);
 	// this node has no node shards
 	vector<NodeShardId> nodeShards;
 	vector<ClusterShardId> clusterShards;
-	clusterShards.push_back(ClusterShardId(1,0,2));
-	clusterShards.push_back(ClusterShardId(1,1,2));
-	clusterShards.push_back(ClusterShardId(1,2,2));
-	clusterShards.push_back(ClusterShardId(1,3,2));
+	clusterShards.push_back(ClusterShardId(0,0,2));
+	clusterShards.push_back(ClusterShardId(0,1,2));
+	clusterShards.push_back(ClusterShardId(0,2,2));
+	clusterShards.push_back(ClusterShardId(0,3,2));
 	NodeAddChange * nodeAddChange = new NodeAddChange(newNode->getId(), clusterShards, nodeShards);
 
 	nodeAddChange->doChange(writeview);
 	// SM comes late
-	writeview->addNode(*newNode);
+	nodesWriteview->addNode(*newNode);
 
 
 
 	/// validate
 	// 1. we must have 3 nodes, all of them in arrived state
 	vector<const Node *> allNodes;
-	writeview->getAllNodes(allNodes);
+	nodesWriteview->getAllNodes(allNodes);
 	ASSERT(allNodes.size() == 2);
 	vector<NodeId> arrivedNodes;
-	writeview->getArrivedNodes(arrivedNodes);
+	nodesWriteview->getArrivedNodes(arrivedNodes);
 	ASSERT(arrivedNodes.size() == 1);
 	arrivedNodes.clear();
-	writeview->getArrivedNodes(arrivedNodes, true);
+	nodesWriteview->getArrivedNodes(arrivedNodes, true);
 	ASSERT(arrivedNodes.size() == 2);
 
 
 
 	// 3. we must have four local cluster shards
-	ASSERT(metadataManager->getClusterWriteview()->localClusterDataShards.size() == 4);
+	ASSERT(writeview->localClusterDataShards.size() == 4);
 	// 4. we must have 2 local shards
-	ASSERT(metadataManager->getClusterWriteview()->localNodeDataShards.size() == 2);
+	ASSERT(writeview->localNodeDataShards.size() == 3);
 }
 
 void restart(const string & confPath, ConfigManager * & serverConf, ResourceMetadataManager * metadataManager){
 	// save and kill
+	boost::unique_lock<boost::shared_mutex> xLock;
+	Cluster_Writeview * writeview = metadataManager->getClusterWriteview_write(xLock);
+	SP(ClusterNodes_Writeview) nodesWriteview = metadataManager->getClusterNodesWriteview_write();
 	MetadataInitializer initializer(serverConf, metadataManager);
-	initializer.saveToDisk(metadataManager->getClusterWriteview()->clusterName);
+	initializer.saveToDisk(writeview->clusterName);
 	delete serverConf;
 	serverConf = new ConfigManager(confPath);
 
-	Cluster_Writeview * writeviewOld = new Cluster_Writeview(*(metadataManager->getClusterWriteview()));
-	ASSERT(*(metadataManager->getClusterWriteview()) == *writeviewOld);
+	Cluster_Writeview * writeviewOld = new Cluster_Writeview(*(writeview));
+	ASSERT(*(writeview) == *writeviewOld);
 
 	serverConf->loadConfigFile(metadataManager);
 	srch2http::MetadataInitializer nodeInitializer(serverConf, metadataManager);
@@ -669,9 +691,9 @@ void restart(const string & confPath, ConfigManager * & serverConf, ResourceMeta
 	// set the current node ID, and add this node.
 	Node * currentNode = new Node("currentNode", "192.168.0.0" , 5050, true, 4, true);
 	currentNode->setId(0);
-	metadataManager->getClusterWriteview()->setCurrentNodeId(currentNode->getId());
-	metadataManager->getClusterWriteview()->addNode(*currentNode);
-	metadataManager->getClusterWriteview()->setNodeState(currentNode->getId(), ShardingNodeStateArrived);
+	writeview->setCurrentNodeId(currentNode->getId());
+	nodesWriteview->addNode(*currentNode);
+	nodesWriteview->setNodeState(currentNode->getId(), ShardingNodeStateArrived);
 
 }
 
@@ -688,35 +710,38 @@ Cluster_Writeview * createWriteview(const unsigned code, const string & confPath
 	testFreshClusterInit(serverConf, metadataManager);
 	nodeState[0] = NodeStatus_Ready;
 
-	if(code == codeCounter++){
-		delete serverConf;
-		ShardManager::deleteShardManager();
-		return new Cluster_Writeview(*(metadataManager->getClusterWriteview()));
-	}
-
-	testNode1FirstArrival(metadataManager->getClusterWriteview()->currentNodeId, metadataManager);
+	boost::unique_lock<boost::shared_mutex> xLock;
+	Cluster_Writeview * writeview = metadataManager->getClusterWriteview_write(xLock);
+	SP(ClusterNodes_Writeview) nodesWriteview = metadataManager->getClusterNodesWriteview_write();
 
 	if(code == codeCounter++){
 		delete serverConf;
 		ShardManager::deleteShardManager();
-		return new Cluster_Writeview(*(metadataManager->getClusterWriteview()));
+		return new Cluster_Writeview(*(writeview));
+	}
+	testNode1FirstArrival(writeview->currentNodeId, metadataManager);
+
+	if(code == codeCounter++){
+		delete serverConf;
+		ShardManager::deleteShardManager();
+		return new Cluster_Writeview(*(writeview));
 	}
 
-	testNode1LoadBalancing(metadataManager->getClusterWriteview()->currentNodeId, metadataManager);
+	testNode1LoadBalancing(writeview->currentNodeId, metadataManager);
 	nodeState[1] = NodeStatus_Ready;
 
 	if(code == codeCounter++){
 		delete serverConf;
 		ShardManager::deleteShardManager();
-		return new Cluster_Writeview(*(metadataManager->getClusterWriteview()));
+		return new Cluster_Writeview(*(writeview));
 	}
 
-	testNode2FirstArrival(metadataManager->getClusterWriteview()->currentNodeId, metadataManager);
+	testNode2FirstArrival(writeview->currentNodeId, metadataManager);
 
 	if(code == codeCounter++){
 		delete serverConf;
 		ShardManager::deleteShardManager();
-		return new Cluster_Writeview(*(metadataManager->getClusterWriteview()));
+		return new Cluster_Writeview(*(writeview));
 	}
 
 	restart(confPath, serverConf, metadataManager);
@@ -725,32 +750,32 @@ Cluster_Writeview * createWriteview(const unsigned code, const string & confPath
 	if(code == codeCounter++){
 		delete serverConf;
 		ShardManager::deleteShardManager();
-		return new Cluster_Writeview(*(metadataManager->getClusterWriteview()));
+		return new Cluster_Writeview(*(writeview));
 	}
 
 	validateRestart(serverConf, metadataManager, nodeState);
 
 	// start adding nodes and and reclaim the shards.
 	// first node comes back to reclaim its shards
-	testNode1Reclaim(metadataManager->getClusterWriteview()->currentNodeId, metadataManager);
+	testNode1Reclaim(writeview->currentNodeId, metadataManager);
 	nodeState[1] = NodeStatus_Ready;
 
 	if(code == codeCounter++){
 		delete serverConf;
 		ShardManager::deleteShardManager();
-		return new Cluster_Writeview(*(metadataManager->getClusterWriteview()));
+		return new Cluster_Writeview(*(writeview));
 	}
 	// second node comes again
-	testNode2FirstArrival(metadataManager->getClusterWriteview()->currentNodeId, metadataManager);
+	testNode2FirstArrival(writeview->currentNodeId, metadataManager);
 
 	// move 4 last shards to the second arrived node
-	testNode2LoadBalancing(metadataManager->getClusterWriteview()->currentNodeId, metadataManager);
+	testNode2LoadBalancing(writeview->currentNodeId, metadataManager);
 	nodeState[2] = NodeStatus_Ready;
 
 	if(code == codeCounter++){
 		delete serverConf;
 		ShardManager::deleteShardManager();
-		return new Cluster_Writeview(*(metadataManager->getClusterWriteview()));
+		return new Cluster_Writeview(*(writeview));
 	}
 
 	// now the first arrived node fails
@@ -760,7 +785,7 @@ Cluster_Writeview * createWriteview(const unsigned code, const string & confPath
 	if(code == codeCounter++){
 		delete serverConf;
 		ShardManager::deleteShardManager();
-		return new Cluster_Writeview(*(metadataManager->getClusterWriteview()));
+		return new Cluster_Writeview(*(writeview));
 	}
 
 	// save and kill
@@ -771,7 +796,7 @@ Cluster_Writeview * createWriteview(const unsigned code, const string & confPath
 	if(code == codeCounter++){
 		delete serverConf;
 		ShardManager::deleteShardManager();
-		return new Cluster_Writeview(*(metadataManager->getClusterWriteview()));
+		return new Cluster_Writeview(*(writeview));
 	}
 
 
@@ -781,17 +806,17 @@ Cluster_Writeview * createWriteview(const unsigned code, const string & confPath
 	if(code == codeCounter++){
 		delete serverConf;
 		ShardManager::deleteShardManager();
-		return new Cluster_Writeview(*(metadataManager->getClusterWriteview()));
+		return new Cluster_Writeview(*(writeview));
 	}
 
 	// second node comes again
-	testNode2Reclaim(metadataManager->getClusterWriteview()->currentNodeId, metadataManager);
+	testNode2Reclaim(writeview->currentNodeId, metadataManager);
 	nodeState[2] = NodeStatus_Ready;
 
 	if(code == codeCounter++){
 		delete serverConf;
 		ShardManager::deleteShardManager();
-		return new Cluster_Writeview(*(metadataManager->getClusterWriteview()));
+		return new Cluster_Writeview(*(writeview));
 	}
 
 	restart(confPath, serverConf, metadataManager);
@@ -801,14 +826,14 @@ Cluster_Writeview * createWriteview(const unsigned code, const string & confPath
 	if(code == codeCounter++){
 		delete serverConf;
 		ShardManager::deleteShardManager();
-		return new Cluster_Writeview(*(metadataManager->getClusterWriteview()));
+		return new Cluster_Writeview(*(writeview));
 	}
 
 	// second node comes again
-	testNode2Reclaim(metadataManager->getClusterWriteview()->currentNodeId, metadataManager);
+	testNode2Reclaim(writeview->currentNodeId, metadataManager);
 	nodeState[2] = NodeStatus_Ready;
 
 	delete serverConf;
 	ShardManager::deleteShardManager();
-	return new Cluster_Writeview(*(metadataManager->getClusterWriteview()));
+	return new Cluster_Writeview(*(writeview));
 }

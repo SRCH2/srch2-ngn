@@ -45,7 +45,6 @@ public:
     {
         this->indexer = NULL;
         this->indexDataConfig = indexDataConfig;
-        this->roleCore = NULL;
     }
 
     void save() {
@@ -88,16 +87,11 @@ public:
     Indexer * getIndexer();
     const CoreInfo_t * getCoreInfo();
 
-    Srch2Server* getRoleCore() {
-    	return roleCore;
-    }
     string getDataFilePath(){
         return jsonFilePath;
     }
 
     virtual ~Srch2Server(){}
-    vector<Srch2Server*> resourceCores;
-    Srch2Server* roleCore;
 
  private:
     Indexer *indexer;

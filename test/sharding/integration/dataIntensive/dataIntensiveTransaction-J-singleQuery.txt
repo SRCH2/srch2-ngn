@@ -1,0 +1,26 @@
+#This tests queryById. After sharding engine is availabe only single node should be queried.
+A||start
+B||start
+C||start
+D||start
+E||start
+F||start
+-||sleep||10
+A||bulkInsertFromBeginning||./dataIntensive/stackoverflow-1M-A.json||1||50
+B||bulkInsert||./dataIntensive/stackoverflow-1M-A.json||1||50
+C||bulkInsert||./dataIntensive/stackoverflow-1M-A.json||1||50
+D||bulkInsert||./dataIntensive/stackoverflow-1M-A.json||1||50
+E||bulkInsert||./dataIntensive/stackoverflow-1M-A.json||1||50
+F||bulkInsert||./dataIntensive/stackoverflow-1M-A.json||1||50
+A||queryID||1||"id":"1"||"results_found":1
+B||queryID||52||"id":"52"||"results_found":1
+C||queryID||103||"id":"103"||"results_found":1
+D||queryID||155||"id":"155"||"results_found":1
+E||queryID||207||"id":"207"||"results_found":1
+F||queryID||258||"id":"258"||"results_found":1
+A||kill
+B||kill
+C||kill
+D||kill
+E||kill
+F||kill

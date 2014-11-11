@@ -9,7 +9,7 @@ echo "Desktop size detected : ($desktop_W,$desktop_H)"
 cd $root
 #for i in `seq 0 7`
 
-for i in `seq 4 7`
+for i in `seq 1 3`
 do
    echo "Preparing Node "$i" ..."
    gnome-terminal --title Node__$i -x sh -c 'cd workspace-srch2-'$i'/srch2-ngn/build;\

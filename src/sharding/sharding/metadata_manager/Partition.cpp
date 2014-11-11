@@ -147,6 +147,24 @@ const unsigned CorePartitionContianer::getTotalNumberOfPartitions() const	{
 const unsigned CorePartitionContianer::getReplicationDegree() const{
 	return replicationDegree;
 }
+
+void CorePartitionContianer::getInvolvedNodes(const ClusterPID pid, vector<NodeId> & nodes) const{
+	nodes.clear();
+	for(map<unsigned, ClusterPartition *>::const_iterator clusterPartitionsItr = this->clusterPartitions.begin() ;
+			clusterPartitionsItr != this->clusterPartitions.end(); ++clusterPartitionsItr){
+		if(clusterPartitionsItr->second->getPartitionId() != pid.partitionId){
+			continue;
+		}
+		vector<NodeId> involvedNodes;
+		clusterPartitionsItr->second->getShardLocations(involvedNodes);
+		for(unsigned i = 0 ; i < involvedNodes.size(); ++i){
+			if(std::find(nodes.begin(), nodes.end(), involvedNodes.at(i)) == nodes.end()){
+				nodes.push_back(involvedNodes.at(i));
+			}
+		}
+	}
+}
+
 void CorePartitionContianer::addClusterShard(NodeId nodeId, ClusterShardId shardId){
 	if(shardId.coreId != coreId){
 		return;
@@ -175,6 +193,14 @@ void CorePartitionContianer::setPartitionLock(unsigned partitionId, PartitionLoc
 	clusterPartition->setPartitionLock(lockValue);
 }
 
+bool CorePartitionContianer::isCoreLocked() const{
+	for(map<unsigned, ClusterPartition *>::const_iterator cItr = clusterPartitions.begin(); cItr != clusterPartitions.end(); ++cItr){
+		if(cItr->second->isPartitionLocked()){
+			return true;
+		}
+	}
+	return false;
+}
 
 void CorePartitionContianer::getClusterPartitionsForRead(vector<const ClusterPartition *> & clusterPartitions) const{
 	for(map<unsigned, ClusterPartition *>::const_iterator clusterPartitionsItr = this->clusterPartitions.begin() ;
@@ -194,13 +220,13 @@ const ClusterPartition * CorePartitionContianer::getClusterPartitionForWrite(uns
 		return NULL;
 	}
 	unsigned partitionId = hashKey % totalNumberOfPartitions;
-	return clusterPartitions.find(partitionId)->second;
+	return getClusterPartition(partitionId);
 }
 const NodePartition * CorePartitionContianer::getNodePartitionForWrite(unsigned hashKey, NodeId nodeId) const{
 	if(nodePartitions.find(nodeId) == nodePartitions.end()){
 		return NULL;
 	}
-	return nodePartitions.find(nodeId)->second;
+	return getNodePartition(nodeId);
 }
 
 

@@ -59,14 +59,14 @@ public:
     }
 
     //given a byte stream recreate the original object
-    static SearchCommand * deserialize(void* buffer){
+    static SearchCommand * deserialize(void* buffer, const Schema * schema = NULL){
         SearchCommand * searchInput = new SearchCommand(NULL);
 
         bool isNotNull = false;
         buffer = srch2::util::deserializeFixedTypes(buffer, isNotNull);
         if(isNotNull){
             searchInput->logicalPlan = new LogicalPlan();
-            buffer = LogicalPlan::deserializeForNetwork(*searchInput->logicalPlan, buffer);
+            buffer = LogicalPlan::deserializeForNetwork(*searchInput->logicalPlan, buffer, schema);
             return searchInput;
         }else{
             return searchInput;

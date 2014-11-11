@@ -1,0 +1,24 @@
+#Trying to mimic real world scenarios, add sufficient delay
+A||sleep|10
+A||delete||1||"rid":"1","delete":"success"
+A||delete||2||"rid":"2","delete":"success"
+B||delete||3||"rid":"3","delete":"success"
+B||delete||4||"rid":"4","delete":"success"
+C||delete||5||"rid":"5","delete":"success"
+C||delete||6||"rid":"6","delete":"success"
+D||delete||7||"rid":"7","delete":"success"
+D||delete||8||"rid":"8","delete":"success"
+E||delete||9||"rid":"9","delete":"success"
+E||delete||10||"rid":"10","delete":"success"
+F||delete||11||"rid":"11","delete":"success"
+F||delete||12||"rid":"12","delete":"success"
+G||delete||13||"rid":"13","delete":"success"
+H||delete||14||"rid":"14","delete":"success"
+I||delete||15||"rid":"15","delete":"success"
+I||delete||16||"rid":"16","delete":"success"
+J||delete||17||"rid":"17","delete":"success"
+J||delete||18||"rid":"18","delete":"success"
+K||delete||19||"rid":"19","delete":"success"
+L||delete||20||"rid":"20","delete":"success"
+A||stressQuery||./dataIntensive/1-term-prefix.csv
+B||stressQuery||./dataIntensive/2-term-prefix.csv

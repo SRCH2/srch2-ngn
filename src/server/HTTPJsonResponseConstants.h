@@ -41,9 +41,13 @@ static const char* c_action_insert = "insert";
 static const char* c_action_delete = "delete";
 static const char* c_action_update = "update";
 static const char* c_action_save   = "save";
+static const char* c_action_save_data   = "save_data";
+static const char* c_action_save_metadata   = "save_metadata";
 static const char* c_action_export = "export";
 static const char* c_action_commit = "commit";
 static const char* c_action_merge = "merge";
+static const char* c_action_merge_on = "merge_on";
+static const char* c_action_merge_off = "merge_off";
 static const char* c_action_reset_logger = "reset_logger";
 static const char* c_logger_file = "logger_file";
 

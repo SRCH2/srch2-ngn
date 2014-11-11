@@ -17,7 +17,9 @@
 #include <boost/thread/locks.hpp>
 
 #include "serializables/SerializableSearchResults.h"
-#include "serializables/SerializableCommandStatus.h"
+#include "sharding/sharding/notifications/CommandStatusNotification.h"
+#include "sharding/sharding/notifications/CommandNotification.h"
+#include "sharding/sharding/notifications/Write2PCNotification.h"
 #include "serializables/SerializableGetInfoResults.h"
 
 #include "server/HTTPJsonResponse.h"
@@ -31,12 +33,6 @@ namespace httpwrapper {
 class ConfigManager;
 class Srch2Server;
 class SearchCommand;
-class InsertUpdateCommand;
-class DeleteCommand;
-class SerializeCommand;
-class ResetLogCommand;
-class CommitCommand;
-class MergeCommand;
 class GetInfoCommand;
 
 
@@ -69,24 +65,6 @@ public:
 
 
     /*
-     * This call back is always called for insert and update, it will use
-     * internalInsertCommand and internalUpdateCommand
-     */
-    CommandStatus * internalInsertUpdateCommand(const NodeTargetShardInfo & target,
-    		boost::shared_ptr<const ClusterResourceMetadata_Readview> clusterReadview, InsertUpdateCommand * insertUpdateData);
-
-    /*
-     * 1. Receives a delete request from a shard and makes sure this
-     *    shard is the correct reponsible of this record using Partitioner
-     * 2. Uses core execute this delete query
-     * 3. Sends the results to the shard which initiated this delete request (Failure or Success)
-     */
-    CommandStatus *  internalDeleteCommand(const NodeTargetShardInfo & target,
-    		boost::shared_ptr<const ClusterResourceMetadata_Readview> clusterReadview, DeleteCommand * deleteData);
-
-
-
-    /*
      * 1. Receives a GetInfo request from a shard
      * 2. Uses core to get info
      * 3. Sends the results to the shard which initiated this getInfo request (Failure or Success)
@@ -99,26 +77,32 @@ public:
      * This call back function is called for serialization. It uses internalSerializeIndexCommand
      * and internalSerializeRecordsCommand for our two types of serialization.
      */
-    CommandStatus * internalSerializeCommand(const NodeTargetShardInfo & target,
-    		boost::shared_ptr<const ClusterResourceMetadata_Readview> clusterReadview, SerializeCommand * seralizeData);
+    SP(CommandStatusNotification) internalSerializeCommand(const NodeTargetShardInfo & target,
+    		boost::shared_ptr<const ClusterResourceMetadata_Readview> clusterReadview,
+    		ShardCommandCode commandCode, const string & fileName);
 
     /*
      * 1. Receives a ResetLog request from a shard
      * 2. Uses core to reset log
      * 3. Sends the results to the shard which initiated this reset-log request(Failure or Success)
      */
-    CommandStatus * internalResetLogCommand(const NodeTargetShardInfo & target,
-    		boost::shared_ptr<const ClusterResourceMetadata_Readview> clusterReadview, ResetLogCommand * resetData);
+    SP(CommandStatusNotification) internalResetLogCommand(const NodeTargetShardInfo & target,
+    		boost::shared_ptr<const ClusterResourceMetadata_Readview> clusterReadview);
 
 
     /*
      * Receives a commit command and commits the index
      */
-    CommandStatus * internalCommitCommand(const NodeTargetShardInfo & target,
-    		boost::shared_ptr<const ClusterResourceMetadata_Readview> clusterReadview, CommitCommand * resetData);
+    SP(CommandStatusNotification) internalCommitCommand(const NodeTargetShardInfo & target,
+    		boost::shared_ptr<const ClusterResourceMetadata_Readview> clusterReadview);
 
-    CommandStatus * internalMergeCommand(const NodeTargetShardInfo & target,
-    		boost::shared_ptr<const ClusterResourceMetadata_Readview> clusterReadview, MergeCommand * mergeData);
+    SP(CommandStatusNotification) internalMergeCommand(const NodeTargetShardInfo & target,
+    		boost::shared_ptr<const ClusterResourceMetadata_Readview> clusterReadview, bool mainAction = true, bool flagValue = true);
+
+
+    SP(CommandStatusNotification) resolveShardCommand(SP(CommandNotification) notif);
+
+    SP(Write2PCNotification::ACK) resolveWrite2PC(SP(Write2PCNotification) notif);
 
 private:
 
@@ -143,41 +127,17 @@ private:
     static void * searchInShardThreadWork(void *);
 
 
-    struct ShardInsertUpdateArgs{
-    	ShardInsertUpdateArgs(Record * record, Srch2Server * server, string shardIdentifier):record(record){
-    		this->server = server;
-    		this->shardResults = new CommandStatus::ShardResults(shardIdentifier);
-    	}
-    	~ShardInsertUpdateArgs(){
-    		if(record != NULL){
-    			delete record;
-    		}
-    	}
-    	Record * record;
-    	Srch2Server * server;
-    	CommandStatus::ShardResults * shardResults;
-    };
-
-    struct ShardDeleteArgs{
-    	ShardDeleteArgs(const string primaryKey, unsigned shardingKey, Srch2Server * server, string shardIdentifier):primaryKey(primaryKey){
-    		this->shardingKey = shardingKey;
-    		this->server = server;
-    		this->shardResults = new CommandStatus::ShardResults(shardIdentifier);
-    	}
-    	const string primaryKey;
-    	unsigned shardingKey;
-    	Srch2Server * server;
-    	CommandStatus::ShardResults * shardResults;
-    };
-
-    static void insertInShard(const Record * record, Srch2Server * server, Json::Value & messages , bool & statusValue);
-    static void * insertInShardThreadWork(void *);
-    static void updateInShard(const Record * record, Srch2Server * server, Json::Value & messages , bool & statusValue);
-    static void * updateInShardThreadWork(void * args);
-
-    static void deleteInShard(const string primaryKey, unsigned shardingKey,
-    		Srch2Server * server, Json::Value & messages, bool & statusValue);
-    static void * deleteInShardThreadWork(void * args);
+    static void insertInShard(const Record * record, Srch2Server * server, vector<JsonMessageCode> & messageCodes , bool & statusValue);
+    static void insertInShardTest(const string & primaryKey, Srch2Server * server, vector<JsonMessageCode> & messageCodes , bool & statusValue);
+    static void updateInShard(const Record * record, Srch2Server * server, vector<JsonMessageCode> & messageCodes , bool & statusValue);
+    static void updateInShardTest(const string & primaryKey, Srch2Server * server, vector<JsonMessageCode> & messageCodes , bool & statusValue){
+    	statusValue = true;
+    }
+    static void deleteInShard(const string primaryKey,
+    		Srch2Server * server, vector<JsonMessageCode> & messageCodes, bool & statusValue);
+    static void deleteInShardTest(const string primaryKey, Srch2Server * server, vector<JsonMessageCode> & messageCodes , bool & statusValue){
+    	statusValue = true;
+    }
 
 //    GetInfoShardResult
     struct ShardGetInfoArgs{
@@ -194,29 +154,40 @@ private:
 
     struct ShardSerializeArgs{
     	ShardSerializeArgs(const string dataFileName, Srch2Server * server,
-    			const string & shardIdentifier,
+    			ShardId * shardIdentifier,
     			const string & shardIndexDirectory):
     				dataFileName(dataFileName),
     				shardIndexDirectory(shardIndexDirectory){
     		this->server = server;
-    		this->shardResults = new CommandStatus::ShardResults(shardIdentifier);
+    		this->shardResults = new CommandStatusNotification::ShardStatus(shardIdentifier);
     	}
     	const string dataFileName;
     	const string shardIndexDirectory;
     	Srch2Server * server;
-    	CommandStatus::ShardResults * shardResults;
+    	CommandStatusNotification::ShardStatus * shardResults;
     };
 
     static void * serializeIndexInShardThreadWork(void * args);
     static void * serializeRecordsInShardThreadWork(void * args);
 
+	enum MergeActionType{
+		DoMerge,
+		SetMergeON,
+		SetMergeOFF
+	};
     struct ShardStatusOnlyArgs{
-    	ShardStatusOnlyArgs(Srch2Server * server, string shardIdentifier){
+    	ShardStatusOnlyArgs(Srch2Server * server, ShardId * shardId, MergeActionType mergeAction = DoMerge){
     		this->server = server;
-    		this->shardResults = new CommandStatus::ShardResults(shardIdentifier);
+    		this->shardResults = new CommandStatusNotification::ShardStatus(shardId);
+    		// 0 is merge
+    		// 1 is set ON
+    		// 2 is set OFF
+    		this->mergeAction = mergeAction;
+
     	}
     	Srch2Server * server;
-    	CommandStatus::ShardResults * shardResults;
+    	CommandStatusNotification::ShardStatus * shardResults;
+    	MergeActionType mergeAction;
     };
 
     void handleStatusOnlyCommands();

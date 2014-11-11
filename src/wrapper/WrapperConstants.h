@@ -93,6 +93,7 @@ typedef enum {
 
 typedef enum {
 	HTTP_JSON_Parse_Error,
+	HTTP_JSON_Empty_Body,
 	HTTP_JSON_All_Shards_Down_Error,
 	HTTP_JSON_Custom_Error,
 	HTTP_JSON_Node_Timeout_Warning,
@@ -106,9 +107,18 @@ typedef enum {
 	HTTP_JSON_PK_NOT_PROVIDED,
 	HTTP_JSON_Search_Res_Format_Wrong_Error,
 	HTTP_JSON_Merge_Already_Done_Info,
+	HTTP_JSON_Merge_DISABLED,
 	HTTP_JSON_Commit_Already_Done_Info,
-	HTTP_JSON_Cluster_Not_Ready_Error
-} HTTPJsonMessageCode;
+	HTTP_JSON_Cluster_Not_Ready_Error,
+	HTTP_JSON_Merge_Parameter_Not_Recognized,
+	HTTP_JSON_Request_Rejected_Due_To_Load_Balancing,
+	HTTP_JSON_Request_ACL_Not_Available,
+	HTTP_Json_DUP_PRIMARY_KEY,
+	HTTP_Json_Partition_Is_Locked,
+	HTTP_Json_No_Data_Shard_Available_For_Write,
+	HTTP_JSON_Core_Does_Not_Exist,
+	HTTP_Json_General_Error
+} JsonMessageCode;
 
 }
 

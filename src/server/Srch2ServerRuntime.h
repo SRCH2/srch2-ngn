@@ -91,7 +91,7 @@ public:
 	}
 
 	//
-	int initializeHttpServerMetadata() ;
+	int initializeHttpServerMetadata();
 	//
 	int initializeThreadsAndServers();
 	//

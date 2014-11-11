@@ -82,7 +82,6 @@ const char* const ConfigManager::pingNodeTag = "ping";
 const char* const ConfigManager::pingIntervalTag = "ping-interval";
 const char* const ConfigManager:: pingTimeoutTag= "ping-timeout";
 const char* const ConfigManager::retryCountTag = "retry-count";
-const char* const ConfigManager::coreIdTag = "coreid";
 static unsigned defaultCoreId = 0;
 const char* const ConfigManager::accessLogFileString = "accesslogfile";
 const char* const ConfigManager::analyzerString = "analyzer";
@@ -320,6 +319,8 @@ bool ConfigManager::loadConfigFile(srch2http::ResourceMetadataManager * metadata
 
     if(metadataManager != NULL){
 		metadataManager->setWriteview(new Cluster_Writeview(0, clusterNameStr, allCores));
+		// writeview is set, update the currentNodeId of shard manager
+		ShardManager::getShardManager()->updateCurrentNodeId();
     }
 
     if (!configSuccess) {
@@ -884,16 +885,7 @@ void ConfigManager::parseSingleCore(const xml_node &parentNode, CoreInfo_t *core
         return;
     }
 
-//    xml_node childNode = parentNode.child(coreIdTag);
-//    if(childNode && childNode.text()){
-//        string temp = string(childNode.text().get());
-//        trimSpacesFromValue(temp, coreIdTag, parseWarnings);
-//        coreInfo->setCoreId((uint)atol(temp.c_str()));
-//    }else{
-        // TODO: to be deleted in V1
-//        Logger::console("!!!!!CoreId is not provided in core %s, engine will use the default value!!!!!", coreInfo->name.c_str());
     coreInfo->setCoreId(defaultCoreId++);
-//    }
 
     // Solr compatability - dataDir can be an attribute: <core dataDir="core0/data"
     if (parentNode.attribute(dataDirString) && string(parentNode.attribute(dataDirString).value()).compare("") != 0) {
@@ -1494,12 +1486,14 @@ void ConfigManager::parseFacetFields(const xml_node &schemaNode, CoreInfo_t *cor
 								coreInfo->facetEnabled = false;
 								break;
 							}
-							if (!srch2is::DateAndTimeHandler::verifyDateTimeString(
-									gapTextValue,
-									srch2is::DateTimeTypeDurationOfTime)) {
-								Logger::error("In core %s : Facet attribute end value is in wrong format. Facet disabled.", coreInfo->name.c_str());
-								coreInfo->facetEnabled = false;
-								break;
+							if(facetAttributeType == srch2is::ATTRIBUTE_TYPE_TIME){
+                                if (! srch2is::DateAndTimeHandler::verifyDateTimeString(
+                                        gapTextValue,
+                                        srch2is::DateTimeTypeDurationOfTime)) {
+                                    Logger::error("In core %s : Facet attribute end value is in wrong format. Facet disabled.", coreInfo->name.c_str());
+                                    coreInfo->facetEnabled = false;
+                                    break;
+                                }
 							}
 							coreInfo->facetGaps.push_back(gapTextValue);
                         } else {
@@ -2442,13 +2436,6 @@ void ConfigManager::parse(const pugi::xml_document& configDoc,
         return;
     }
 
-    if (defaultCoreInfo->supportAttributeBasedSearch && defaultCoreInfo->searchableAttributesInfo.size() > 31) {
-        parseError
-            << "To support attribute-based search, the number of searchable attributes cannot be bigger than 31.\n";
-        configSuccess = false;
-        return;
-    }
-
     // TODO - move to individual cores?
     this->ordering = 0;
 
@@ -2556,7 +2543,7 @@ bool ConfigManager::getSupportSwapInEditDistance(const string &coreName) const
     return clusterReadview->getCoreByName(coreNameTmp)->getSupportSwapInEditDistance();
 }
 
-const string& ConfigManager::getAttributeLatitude(const string &coreName) const
+const string ConfigManager::getAttributeLatitude(const string &coreName) const
 {
 	string coreNameTmp = coreName;
     if (coreNameTmp.compare("") == 0) {
@@ -2567,7 +2554,7 @@ const string& ConfigManager::getAttributeLatitude(const string &coreName) const
     return clusterReadview->getCoreByName(coreNameTmp)->getFieldLatitude();
 }
 
-const string& ConfigManager::getAttributeLongitude(const string &coreName) const
+const string ConfigManager::getAttributeLongitude(const string &coreName) const
 {
 	string coreNameTmp = coreName;
     if (coreNameTmp.compare("") == 0) {
@@ -2706,7 +2693,7 @@ const vector<string> * ConfigManager::getFacetGaps(const string &coreName) const
 }
 
 
-const string &ConfigManager::getSrch2Home() const {
+const string ConfigManager::getSrch2Home() const {
     return srch2Home;
 }
 
@@ -2721,7 +2708,7 @@ bool ConfigManager::getStemmerFlag(const string &coreName) const
     return clusterReadview->getCoreByName(coreNameTmp)->getStemmerFlag();
 }
 
-const string &ConfigManager::getStemmerFile(const string &coreName) const
+const string ConfigManager::getStemmerFile(const string &coreName) const
 {
 	string coreNameTmp = coreName;
     if (coreNameTmp.compare("") == 0) {
@@ -2732,7 +2719,7 @@ const string &ConfigManager::getStemmerFile(const string &coreName) const
     return clusterReadview->getCoreByName(coreNameTmp)->getStemmerFile();
 }
 
-const string &ConfigManager::getSynonymFilePath(const string &coreName) const
+const string ConfigManager::getSynonymFilePath(const string &coreName) const
 {
 	string coreNameTmp = coreName;
     if (coreNameTmp.compare("") == 0) {
@@ -2743,7 +2730,7 @@ const string &ConfigManager::getSynonymFilePath(const string &coreName) const
     return clusterReadview->getCoreByName(coreNameTmp)->getSynonymFilePath();
 }
 
-const string &ConfigManager::getProtectedWordsFilePath(const string &coreName) const
+const string ConfigManager::getProtectedWordsFilePath(const string &coreName) const
 {
 	string coreNameTmp = coreName;
     if (coreNameTmp.compare("") == 0) {
@@ -2765,7 +2752,7 @@ bool ConfigManager::getSynonymKeepOrigFlag(const string &coreName) const
     return clusterReadview->getCoreByName(coreNameTmp)->getSynonymKeepOrigFlag();
 }
 
-const string &ConfigManager::getStopFilePath(const string &coreName) const
+const string ConfigManager::getStopFilePath(const string &coreName) const
 {
 	string coreNameTmp = coreName;
     if (coreNameTmp.compare("") == 0) {
@@ -2776,7 +2763,7 @@ const string &ConfigManager::getStopFilePath(const string &coreName) const
     return clusterReadview->getCoreByName(coreNameTmp)->getStopFilePath();
 }
 
-const string& ConfigManager::getAttributeRecordBoostName(const string &coreName) const
+const string ConfigManager::getAttributeRecordBoostName(const string &coreName) const
 {
 	string coreNameTmp = coreName;
     if (coreNameTmp.compare("") == 0) {
@@ -2787,7 +2774,7 @@ const string& ConfigManager::getAttributeRecordBoostName(const string &coreName)
     return clusterReadview->getCoreByName(coreNameTmp)->getrecordBoostField();
 }
 
-const string& ConfigManager::getRecordAllowedSpecialCharacters(const string &coreName) const {
+const string ConfigManager::getRecordAllowedSpecialCharacters(const string &coreName) const {
 	string coreNameTmp = coreName;
     if (coreNameTmp.compare("") == 0) {
         coreNameTmp = getDefaultCoreName();
@@ -3282,9 +3269,11 @@ string ConfigManager::createSRCH2Home()
 {
 	boost::filesystem::path dir = this->getSrch2Home();
     boost::system::error_code ec;
-	if(! boost::filesystem::create_directory(dir,ec)){
-	    srch2::util::Logger::error("Error in opening srch2Home directory. Error : %s", ec.message().c_str());
-	}
+    if (!boost::filesystem::exists(dir)) {
+    	if(! boost::filesystem::create_directory(dir,ec)){
+    		srch2::util::Logger::error("Error in creating directory = %s . Error : %s", dir.c_str(), ec.message().c_str());
+    	}
+    }
 	return this->getSrch2Home();
 }
 
@@ -3293,9 +3282,11 @@ string ConfigManager::createClusterDir(const string& clusterName)
     boost::filesystem::path path = this->getSrch2Home() +clusterName;
 	createSRCH2Home();
 	boost::system::error_code ec;
-	if ( ! boost::filesystem::create_directory(path,ec) ) {
-        srch2::util::Logger::error("Error in opening srch2Home directory. Error : %s", ec.message().c_str());
-	}
+    if (!boost::filesystem::exists(path)) {
+    	if ( ! boost::filesystem::create_directory(path,ec) ) {
+    		srch2::util::Logger::error("Error in creating directory = %s. Error : %s", path.c_str(), ec.message().c_str());
+    	}
+    }
 	return path.string();
 }
 
@@ -3304,9 +3295,11 @@ string ConfigManager::createNodeDir(const string& clusterName)
     boost::filesystem::path path = this->getSrch2Home() + clusterName + "/" + this->getCurrentNodeName();
 	createClusterDir(clusterName);
     boost::system::error_code ec;
-	if( ! boost::filesystem::create_directory(path, ec)){
-        srch2::util::Logger::error("Error in opening srch2Home directory. Error : %s", ec.message().c_str());
-	}
+    if (!boost::filesystem::exists(path)) {
+    	if( ! boost::filesystem::create_directory(path, ec)){
+    		srch2::util::Logger::error("Error in creating directory = %s. Error : %s", path.c_str(), ec.message().c_str());
+    	}
+    }
 	return path.string();
 }
 
@@ -3315,9 +3308,11 @@ string ConfigManager::createCoreDir(const string& clusterName, const string& cor
     boost::filesystem::path  path = this->getSrch2Home() + clusterName + "/" + this->getCurrentNodeName() + "/" + coreName;
 	createNodeDir(clusterName);
     boost::system::error_code ec;
-	if( ! boost::filesystem::create_directory(path,ec)){
-        srch2::util::Logger::error("Error in opening srch2Home directory. Error : %s", ec.message().c_str());
-	}
+    if (!boost::filesystem::exists(path)) {
+    	if( ! boost::filesystem::create_directory(path,ec)){
+    		srch2::util::Logger::error("Error in creating directory = %s. Error : %s", path.c_str(), ec.message().c_str());
+    	}
+    }
 	return path.string();
 }
 
@@ -3326,9 +3321,11 @@ string ConfigManager::createShardDir(const string& clusterName, const string& co
     boost::filesystem::path path = this->getSrch2Home() + clusterName + "/" + this->getCurrentNodeName() + "/" + coreName + "/" + shardId->toString();
 	createCoreDir(clusterName, coreName);
     boost::system::error_code ec;
-	if( ! boost::filesystem::create_directory(path,ec)){
-        srch2::util::Logger::error("Error in opening srch2Home directory. Error : %s", ec.message().c_str());
-	}
+    if (!boost::filesystem::exists(path)) {
+    	if( ! boost::filesystem::create_directory(path,ec)){
+    		srch2::util::Logger::error("Error in creating directory = %s. Error : %s", path.c_str(), ec.message().c_str());
+    	}
+    }
 	return path.string();
 }
 
@@ -3343,8 +3340,7 @@ string ConfigManager::getSRCH2HomeDir()
 	if(boost::filesystem::is_directory(path,ec))
 		return path.string();
 	else{
-        srch2::util::Logger::error("Error in opening srch2Home directory. Error : %s", ec.message().c_str());
-		return "";
+		return createSRCH2Home();
 	}
 }
 
@@ -3355,8 +3351,7 @@ string ConfigManager::getClusterDir(const string& clusterName)
 	if(boost::filesystem::is_directory(path,ec))
 		return path.string();
 	else{
-        srch2::util::Logger::error("Error in opening srch2Home directory. Error : %s", ec.message().c_str());
-		return "";
+		return createClusterDir(clusterName);
 	}
 
 }
@@ -3368,8 +3363,7 @@ string ConfigManager::getNodeDir(const string& clusterName)
 	if(boost::filesystem::is_directory(path,ec))
 		return path.string();
 	else{
-        srch2::util::Logger::error("Error in opening srch2Home directory. Error : %s", ec.message().c_str());
-        return "";
+		return createNodeDir(clusterName);
 	}
 
 }
@@ -3381,8 +3375,7 @@ string ConfigManager::getCoreDir(const string& clusterName, const string& coreNa
 	if(boost::filesystem::is_directory(path,ec))
 		return path.string();
 	else{
-        srch2::util::Logger::error("Error in opening srch2Home directory. Error : %s", ec.message().c_str());
-	    return "";
+		return createCoreDir(clusterName, coreName);
 	}
 }
 
@@ -3393,8 +3386,7 @@ string ConfigManager::getShardDir(const string& clusterName, const string& coreN
 	if(boost::filesystem::is_directory(path,ec))
 		return path.string();
 	else{
-        srch2::util::Logger::error("Error in opening srch2Home directory. Error : %s", ec.message().c_str());
-		return "";
+		return createShardDir(clusterName, coreName, shardId);
 	}
 }
 

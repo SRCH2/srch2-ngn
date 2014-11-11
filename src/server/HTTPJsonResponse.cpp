@@ -94,7 +94,7 @@ Json::Value wrap_with_json_array2(Json::Value value){
 }
 
 
-Json::Value HTTPJsonResponse::getJsonSingleMessage(const HTTPJsonMessageCode code){
+Json::Value JsonResponseHandler::getJsonSingleMessage(const JsonMessageCode code){
 	Json::Value msgValue(Json::objectValue);
 	msgValue[c_message_code] = (unsigned) (code);
 	switch (code) {
@@ -108,15 +108,21 @@ Json::Value HTTPJsonResponse::getJsonSingleMessage(const HTTPJsonMessageCode cod
 	case HTTP_JSON_ResetLogger_Reopen_Failed_Error:
 	case HTTP_JSON_Search_Res_Format_Wrong_Error:
 	case HTTP_JSON_Cluster_Not_Ready_Error:
+	case HTTP_JSON_Core_Does_Not_Exist:
 		msgValue[c_error] = getJsonSingleMessageStr(code);
 		break;
 	case HTTP_JSON_Existing_Record_Update_Info:
 	case HTTP_JSON_Merge_Already_Done_Info:
 	case HTTP_JSON_Commit_Already_Done_Info:
+	case HTTP_JSON_Merge_DISABLED:
+	case HTTP_JSON_Request_Rejected_Due_To_Load_Balancing:
 		msgValue[c_info] = getJsonSingleMessageStr(code);
 		break;
 	case HTTP_JSON_Node_Timeout_Warning:
 		msgValue[c_warning] = getJsonSingleMessageStr(code);
+		break;
+	case HTTP_JSON_Merge_Parameter_Not_Recognized:
+		msgValue[c_error] = getJsonSingleMessageStr(code);
 		break;
 	default:
 		ASSERT(false);
@@ -125,10 +131,12 @@ Json::Value HTTPJsonResponse::getJsonSingleMessage(const HTTPJsonMessageCode cod
 	return msgValue;
 }
 
-const string HTTPJsonResponse::getJsonSingleMessageStr(const HTTPJsonMessageCode code){
+const string JsonResponseHandler::getJsonSingleMessageStr(const JsonMessageCode code){
 	switch (code) {
 	case HTTP_JSON_Parse_Error:
 		return "JSON object parse error";
+	case HTTP_JSON_Empty_Body:
+		return "Http body is empty.";
 	case HTTP_JSON_All_Shards_Down_Error:
 		return "No data shard is available for this request.";
 	case HTTP_JSON_Node_Timeout_Warning:
@@ -153,17 +161,35 @@ const string HTTPJsonResponse::getJsonSingleMessageStr(const HTTPJsonMessageCode
 		return "The indexed data failed to export to disk, The request need to set search-response-format to be 0 or 2";
 	case HTTP_JSON_Merge_Already_Done_Info:
 		return "No records require merge at this time. Merge is up-to-date.";
+	case HTTP_JSON_Merge_DISABLED:
+		return "Merge is disabled. Use 'set' parameter to enable it.";
 	case HTTP_JSON_Commit_Already_Done_Info:
 		return "Commit is finished. No need to commit anymore.";
 	case HTTP_JSON_Cluster_Not_Ready_Error:
 		return "Cluster is not ready to accept this request now, please try again later.";
+	case HTTP_JSON_Merge_Parameter_Not_Recognized:
+		return "Parameter not recognized.";
+	case HTTP_JSON_Request_Rejected_Due_To_Load_Balancing:
+		return "Request rejected due to ongoing load-balancing task.";
+	case HTTP_JSON_Request_ACL_Not_Available:
+		return "does not have record-based access control.";
+	case HTTP_Json_DUP_PRIMARY_KEY:
+		return "Primary key repeats in the same batch, first one is used.";
+	case HTTP_Json_Partition_Is_Locked:
+		return "The corresponding partition of data is not usable now. Please try again later.";
+	case HTTP_Json_No_Data_Shard_Available_For_Write:
+		return "No data shard is currently available for this record. This is mostly caused by node failure. Please try again later.";
+	case HTTP_JSON_Core_Does_Not_Exist:
+		return "Core name is not recognized.";
+	case HTTP_Json_General_Error:
+		return "Unknown Error.";
 	default:
 		ASSERT(false);
 		return "Unknown error.";
 	}
 }
 
-void HTTPJsonResponse::appendDetails(Json::Value & destinationRoot, const Json::Value & sourceRoot, const char * destListRootName ){
+void JsonResponseHandler::appendDetails(Json::Value & destinationRoot, const Json::Value & sourceRoot, const char * destListRootName ){
 	if(sourceRoot == nullJsonValue || destinationRoot == nullJsonValue ||
 			sourceRoot.type() != Json::arrayValue ){
 		ASSERT(false);
@@ -181,7 +207,7 @@ void HTTPJsonResponse::appendDetails(Json::Value & destinationRoot, const Json::
 	}
 }
 
-void HTTPJsonResponse::mergeMessageLists(Json::Value & destinationList, const Json::Value & sourceList){
+void JsonResponseHandler::mergeMessageLists(Json::Value & destinationList, const Json::Value & sourceList){
 
 	if(sourceList == nullJsonValue){
 		ASSERT(false);
@@ -201,7 +227,7 @@ void HTTPJsonResponse::mergeMessageLists(Json::Value & destinationList, const Js
 				continue;
 			}
 			if(destinationList[i][c_message_code].asUInt() == sourceList[j][c_message_code].asUInt() ){
-				if((HTTPJsonMessageCode)(destinationList[i][c_message_code].asUInt()) == HTTP_JSON_Custom_Error){
+				if((JsonMessageCode)(destinationList[i][c_message_code].asUInt()) == HTTP_JSON_Custom_Error){
 					if(destinationList[i][c_error].asString().compare(sourceList[j][c_error].asString()) != 0){
 						continue;
 					}
@@ -218,44 +244,53 @@ void HTTPJsonResponse::mergeMessageLists(Json::Value & destinationList, const Js
 	}
 }
 
-HTTPJsonResponse::HTTPJsonResponse(evhttp_request* req) :
+JsonResponseHandler::JsonResponseHandler() :
 		jsonResponse(Json::objectValue) {
-	ASSERT(req != NULL);
-	this->req = req;
 	this->code = HTTP_OK;
 	this->reason = NULL;
 	this->headers = NULL;
+	this->req = NULL;
 }
 
-HTTPJsonResponse::~HTTPJsonResponse() {
-	if (this->headers != NULL) {
+JsonResponseHandler::JsonResponseHandler(evhttp_request *req) :
+		jsonResponse(Json::objectValue) {
+	ASSERT(req != NULL);
+	this->code = HTTP_OK;
+	this->reason = NULL;
+	this->headers = NULL;
+	this->req = req;
+}
+
+
+void JsonResponseHandler::printHTTP(evhttp_request *req, evkeyvalq * headers ) {
+	if (headers != NULL) {
 		bmhelper_evhttp_send_reply2(req, code, reason,
-				global_customized_writer.write(HTTPJsonResponse::getRoot()), *headers);
+				global_customized_writer.write(JsonResponseHandler::getRoot()), *headers);
 	} else {
 		bmhelper_evhttp_send_reply2(req, code, reason,
-				global_customized_writer.write(HTTPJsonResponse::getRoot()));
+				global_customized_writer.write(JsonResponseHandler::getRoot()));
 	}
 }
 
-void HTTPJsonResponse::setResponseAttribute(const char * attributeName,
+void JsonResponseHandler::setResponseAttribute(const char * attributeName,
 		const Json::Value & resAttr){
 	if(resAttr == nullJsonValue){
 		ASSERT(false);
 		return;
 	}
-	HTTPJsonResponse::getRoot()[attributeName] = resAttr;
+	JsonResponseHandler::getRoot()[attributeName] = resAttr;
 }
 
-void HTTPJsonResponse::finalizeInvalid() {
-	HTTPJsonResponse::getRoot()[JSON_ERROR] = HTTP_INVALID_REQUEST_MESSAGE;
+void JsonResponseHandler::finalizeInvalid() {
+	JsonResponseHandler::getRoot()[JSON_ERROR] = HTTP_INVALID_REQUEST_MESSAGE;
 	this->code = HTTP_BADREQUEST;
 	this->reason = "Invalid Request";
 	srch2::util::Logger::error (HTTP_INVALID_REQUEST_MESSAGE);
 }
 
-void HTTPJsonResponse::finalizeError(const string& msg, int code) {
+void JsonResponseHandler::finalizeError(const string& msg, int code) {
 	if (msg.compare("") != 0) {
-		HTTPJsonResponse::getRoot()[JSON_ERROR] = msg;
+		JsonResponseHandler::getRoot()[JSON_ERROR] = msg;
 	}
 	this->code = code;
 	switch (this->code) {
@@ -278,68 +313,64 @@ void HTTPJsonResponse::finalizeError(const string& msg, int code) {
 	srch2::util::Logger::error("Error : %s", msg.c_str());
 }
 
-void HTTPJsonResponse::finalizeOK(const string& details) {
+void JsonResponseHandler::finalizeOK(const string& details) {
 	if (details.compare("") != 0) {
-		HTTPJsonResponse::getRoot()[JSON_DETAILS] = details;
+		JsonResponseHandler::getRoot()[JSON_DETAILS] = details;
 	}
 	this->code = HTTP_OK;
 	this->reason = "OK";
 }
 
-void HTTPJsonResponse::addWarning(const string& warnings) {
+void JsonResponseHandler::addWarning(const string& warnings) {
 	if (warnings.compare("") == 0) {
 		return;
 	}
 	addWarning(Json::Value(warnings));
 }
 
-void HTTPJsonResponse::addWarning(const Json::Value& warningNode) {
+void JsonResponseHandler::addWarning(const Json::Value& warningNode) {
 	if (warningNode == nullJsonValue) {
 		return;
 	}
-	if (HTTPJsonResponse::getRoot().get(JSON_WARNING, nullJsonValue) == nullJsonValue) {
-		HTTPJsonResponse::getRoot()[JSON_WARNING] = Json::Value(Json::arrayValue);
+	if (JsonResponseHandler::getRoot().get(JSON_WARNING, nullJsonValue) == nullJsonValue) {
+		JsonResponseHandler::getRoot()[JSON_WARNING] = Json::Value(Json::arrayValue);
 	}
-	HTTPJsonResponse::getRoot()[JSON_WARNING].append(warningNode);
+	JsonResponseHandler::getRoot()[JSON_WARNING].append(warningNode);
 }
 
-void HTTPJsonResponse::addError(const string & error){
+void JsonResponseHandler::addError(const string & error){
 	if (error.compare("") == 0) {
 		return;
 	}
 	addError(Json::Value(error));
 }
-void HTTPJsonResponse::addError(const Json::Value & errorNode){
+void JsonResponseHandler::addError(const Json::Value & errorNode){
 	if (errorNode == nullJsonValue) {
 		return;
 	}
-	if (HTTPJsonResponse::getRoot().get(JSON_ERROR, nullJsonValue) == nullJsonValue) {
-		HTTPJsonResponse::getRoot()[JSON_ERROR] = Json::Value(Json::arrayValue);
+	if (JsonResponseHandler::getRoot().get(JSON_ERROR, nullJsonValue) == nullJsonValue) {
+		JsonResponseHandler::getRoot()[JSON_ERROR] = Json::Value(Json::arrayValue);
 	}
-	HTTPJsonResponse::getRoot()[JSON_ERROR].append(errorNode);
+	JsonResponseHandler::getRoot()[JSON_ERROR].append(errorNode);
 }
 
-void HTTPJsonResponse::addMessage(const string& msg) {
+void JsonResponseHandler::addMessage(const string& msg) {
 	if (msg.compare("") == 0) {
 		return;
 	}
-	if (HTTPJsonResponse::getRoot().get(JSON_MESSAGE, nullJsonValue) == nullJsonValue) {
-		HTTPJsonResponse::getRoot()[JSON_MESSAGE] = Json::Value(Json::arrayValue);
+	if (JsonResponseHandler::getRoot().get(JSON_MESSAGE, nullJsonValue) == nullJsonValue) {
+		JsonResponseHandler::getRoot()[JSON_MESSAGE] = Json::Value(Json::arrayValue);
 	}
-	HTTPJsonResponse::getRoot()[JSON_MESSAGE].append(Json::Value(msg));
+	JsonResponseHandler::getRoot()[JSON_MESSAGE].append(Json::Value(msg));
 }
 
-void HTTPJsonResponse::setHeaders(evkeyvalq* headers) {
-	this->headers = headers;
-}
-
-Json::Value& HTTPJsonResponse::getRoot() {
+Json::Value& JsonResponseHandler::getRoot() {
 	return this->jsonResponse;
 }
 
-const char * HTTPJsonRecordOperationResponse::c_items = "items";
+const char * JsonRecordOperationResponse::c_items = "items";
 
-Json::Value HTTPJsonRecordOperationResponse::getRecordJsonResponse(
+Json::Value JsonRecordOperationResponse::getRecordJsonResponse(
 		const string& primaryKey, const char* action, bool status,
 		const string& coreName) {
 	Json::Value res(Json::objectValue);
@@ -350,22 +381,35 @@ Json::Value HTTPJsonRecordOperationResponse::getRecordJsonResponse(
 	return res;
 }
 
-void HTTPJsonRecordOperationResponse::addRecordError(Json::Value& recordRoot,
-		const HTTPJsonMessageCode code, const string& message) {
+void JsonRecordOperationResponse::addRecordError(Json::Value& recordRoot,
+		const JsonMessageCode code, const string& message ) {
 	if (recordRoot.get(c_detail, nullJsonValue) == nullJsonValue) {
 		recordRoot[c_detail] = Json::Value(Json::arrayValue);
 	}
-	if (code == HTTP_JSON_Custom_Error) {
+	if (code == HTTP_JSON_Custom_Error && message.compare("") != 0) {
 		Json::Value errValue(Json::objectValue);
 		errValue[c_message_code] = (unsigned) (code);
 		errValue[c_error] = message;
 		recordRoot[c_detail].append(errValue);
 	}else{
-		recordRoot[c_detail].append(HTTPJsonResponse::getJsonSingleMessage(code));
+		recordRoot[c_detail].append(JsonResponseHandler::getJsonSingleMessage(code));
 	}
 }
 
-void HTTPJsonRecordOperationResponse::addRecordShardResponse(Json::Value recordShardResponse){
+void JsonRecordOperationResponse::addRecordMessage(Json::Value & recordRoot, const Json::Value & msgObj){
+	if (recordRoot.get(c_detail, nullJsonValue) == nullJsonValue) {
+		recordRoot[c_detail] = Json::Value(Json::arrayValue);
+	}
+	recordRoot[c_detail].append(msgObj);
+}
+
+void JsonRecordOperationResponse::addRecordMessages(Json::Value & responseRoot, const vector<JsonMessageCode> & msgCode){
+	for(unsigned i = 0 ; i < msgCode.size(); ++i){
+		addRecordError(responseRoot, msgCode.at(i));
+	}
+}
+
+void JsonRecordOperationResponse::addRecordShardResponse(Json::Value recordShardResponse){
 
 	// first, extract new information
 	Json::Value pkValue = recordShardResponse.get(c_rid, nullJsonValue);
@@ -401,7 +445,7 @@ void HTTPJsonRecordOperationResponse::addRecordShardResponse(Json::Value recordS
 
 	Json::Value & recordRoot = findItemRoot(primaryKey, action);
 
-	Json::Value & root = HTTPJsonRecordOperationResponse::getRoot();
+	Json::Value & root = JsonRecordOperationResponse::getRoot();
 
 	if(recordRoot == nullJsonValue){
 		if(newRecordDetails == nullJsonValue){
@@ -413,7 +457,7 @@ void HTTPJsonRecordOperationResponse::addRecordShardResponse(Json::Value recordS
 
 	// aggregate details messages
 	if(newRecordDetails != nullJsonValue){
-		HTTPJsonResponse::mergeMessageLists(recordRoot[c_detail], newRecordDetails);
+		JsonResponseHandler::mergeMessageLists(recordRoot[c_detail], newRecordDetails);
 	}
 
 
@@ -426,13 +470,13 @@ void HTTPJsonRecordOperationResponse::addRecordShardResponse(Json::Value recordS
 }
 
 
-Json::Value & HTTPJsonRecordOperationResponse::getRoot(){
+Json::Value & JsonRecordOperationResponse::getRoot(){
 	return jsonResponse[c_items];
 }
 
-Json::Value & HTTPJsonRecordOperationResponse::findItemRoot(const string & primaryKey, const string & action){
+Json::Value & JsonRecordOperationResponse::findItemRoot(const string & primaryKey, const string & action){
 
-	Json::Value & root = HTTPJsonRecordOperationResponse::getRoot();
+	Json::Value & root = JsonRecordOperationResponse::getRoot();
 
 	for(int i = 0 ; i < root.size(); ++i){
 		if(root[i][c_rid].compare(primaryKey) == 0 &&
@@ -444,7 +488,7 @@ Json::Value & HTTPJsonRecordOperationResponse::findItemRoot(const string & prima
 }
 
 
-void HTTPJsonShardOperationResponse::addShardResponse(const char * action, const bool status, const Json::Value & shardMessages) {
+void ShardOperationJsonResponse::addShardResponse(const char * action, const bool status, const Json::Value & shardMessages) {
 
 	if(getRoot().get(c_action, nullJsonValue) == nullJsonValue){
 		getRoot()[c_action] = Json::Value(action);
@@ -464,41 +508,41 @@ void HTTPJsonShardOperationResponse::addShardResponse(const char * action, const
 	if(getRoot().get(c_detail, nullJsonValue) == nullJsonValue){
 		getRoot()[c_detail] = shardMessages;
 	}else{
-		HTTPJsonResponse::mergeMessageLists(getRoot()[c_detail],shardMessages);
+		JsonResponseHandler::mergeMessageLists(getRoot()[c_detail],shardMessages);
 	}
 }
 
-Json::Value & HTTPJsonShardOperationResponse::getRoot(){
-	return HTTPJsonResponse::getRoot();
+Json::Value & ShardOperationJsonResponse::getRoot(){
+	return JsonResponseHandler::getRoot();
 }
 
-Json::Value & HTTPJsonGetInfoResponse::getRoot(){
-	return HTTPJsonResponse::getRoot();
+Json::Value & GetInfoJsonResponse::getRoot(){
+	return JsonResponseHandler::getRoot();
 }
 
-Json::Value & HTTPJsonGetInfoResponse::getCoresRoot(){
-	if(HTTPJsonGetInfoResponse::getRoot().get(c_cores, nullJsonValue) == nullJsonValue){
-		HTTPJsonGetInfoResponse::getRoot()[c_cores] = Json::Value(Json::arrayValue);
+Json::Value & GetInfoJsonResponse::getCoresRoot(){
+	if(GetInfoJsonResponse::getRoot().get(c_cores, nullJsonValue) == nullJsonValue){
+		GetInfoJsonResponse::getRoot()[c_cores] = Json::Value(Json::arrayValue);
 	}
-	return HTTPJsonGetInfoResponse::getRoot()[c_cores];
+	return GetInfoJsonResponse::getRoot()[c_cores];
 
 }
 
-Json::Value & HTTPJsonGetInfoResponse::getNodesRoot(){
-	if(HTTPJsonGetInfoResponse::getRoot().get(c_nodes, nullJsonValue) == nullJsonValue){
-		HTTPJsonGetInfoResponse::getRoot()[c_nodes] = Json::Value(Json::arrayValue);
+Json::Value & GetInfoJsonResponse::getNodesRoot(){
+	if(GetInfoJsonResponse::getRoot().get(c_nodes, nullJsonValue) == nullJsonValue){
+		GetInfoJsonResponse::getRoot()[c_nodes] = Json::Value(Json::arrayValue);
 	}
-	return HTTPJsonGetInfoResponse::getRoot()[c_nodes];
+	return GetInfoJsonResponse::getRoot()[c_nodes];
 }
 
-Json::Value & HTTPJsonGetInfoResponse::getNodeShardsRoot(){
-	if(HTTPJsonGetInfoResponse::getRoot().get(c_shards_of_node, nullJsonValue) == nullJsonValue){
-		HTTPJsonGetInfoResponse::getRoot()[c_shards_of_node] = Json::Value(Json::arrayValue);
+Json::Value & GetInfoJsonResponse::getNodeShardsRoot(){
+	if(GetInfoJsonResponse::getRoot().get(c_shards_of_node, nullJsonValue) == nullJsonValue){
+		GetInfoJsonResponse::getRoot()[c_shards_of_node] = Json::Value(Json::arrayValue);
 	}
-	return HTTPJsonGetInfoResponse::getRoot()[c_shards_of_node];
+	return GetInfoJsonResponse::getRoot()[c_shards_of_node];
 }
 
-void HTTPJsonGetInfoResponse::addCoreInfo(const CoreInfo_t * coreInfo,
+void GetInfoJsonResponse::addCoreInfo(const CoreInfo_t * coreInfo,
 		const srch2::instantsearch::IndexHealthInfo & info,
 		const vector<std::pair<GetInfoCommandResults::ShardResults * , IndexHealthInfo > > & primaryShardsInfo,
 		const vector<std::pair<GetInfoCommandResults::ShardResults * , IndexHealthInfo > > & partitionsInfo,
@@ -533,7 +577,7 @@ void HTTPJsonGetInfoResponse::addCoreInfo(const CoreInfo_t * coreInfo,
 }
 
 
-void HTTPJsonGetInfoResponse::addShardResultGroup(Json::Value & root , bool debugRequest,
+void GetInfoJsonResponse::addShardResultGroup(Json::Value & root , bool debugRequest,
 		const vector<std::pair<GetInfoCommandResults::ShardResults * , IndexHealthInfo > > & nodeShardsInfo){
 	for(unsigned i = 0 ; i < nodeShardsInfo.size(); ++i){
 		Json::Value shardJson(Json::objectValue);
@@ -545,16 +589,6 @@ void HTTPJsonGetInfoResponse::addShardResultGroup(Json::Value & root , bool debu
 			shardJson[c_shard_last_merg_time] = nodeShardsInfo.at(i).second.lastMergeTimeString;
 		}
 		root.append(shardJson);
-	}
-}
-
-void HTTPJsonGetInfoResponse::print(){
-	if (this->headers != NULL) {
-		bmhelper_evhttp_send_reply2(req, code, reason,
-				global_customized_writer.write(HTTPJsonResponse::getRoot()), *headers);
-	} else {
-		bmhelper_evhttp_send_reply2(req, code, reason,
-				global_customized_writer.write(HTTPJsonResponse::getRoot()));
 	}
 }
 

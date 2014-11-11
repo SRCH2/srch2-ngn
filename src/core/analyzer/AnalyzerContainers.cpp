@@ -416,6 +416,15 @@ bool ProtectedWordsContainer::isProtected(const string& val) const
     return protectedWords.count(val) > 0; 
 }
 
+void ProtectedWordsContainer::loadProtectedWordsContainer(boost::archive::binary_iarchive& ia) {
+    ia >> this->protectedWords;
+}
+
+void ProtectedWordsContainer::saveProtectedWordsContainer(boost::archive::binary_oarchive& oa) {
+    oa << this->protectedWords;
+}
+
+
 ChineseDictionaryContainer* ChineseDictionaryContainer::getInstance(const std::string &filePath){
     ChineseDictionaryContainer *chineseDictionaryContainer= NULL;
     const string key = string("ChineseDictionaryContainer:") + filePath;

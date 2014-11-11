@@ -3,7 +3,12 @@
 #include "HTTPJsonResponse.h"
 #include "sharding/processor/DistributedProcessorExternal.h"
 #include "sharding/configuration/ConfigManager.h"
+#include "sharding/sharding/transactions/cluster_transactions/ShardCommandHttp.h"
+#include "sharding/sharding/transactions/cluster_transactions/WriteCommandHttp.h"
+#include "sharding/sharding/transactions/cluster_transactions/AclCommandHttp.h"
+#include "sharding/sharding/transactions/cluster_transactions/ClusterShutdownOperation.h"
 #include <exception>
+
 
 namespace srch2
 {
@@ -14,7 +19,9 @@ Srch2ServerGateway::PortInfo * Srch2ServerGateway::coreSpecificPorts = NULL;
 Srch2ServerGateway::PortInfo * Srch2ServerGateway::globalPorts = NULL;
 
 void Srch2ServerGateway::init(ConfigManager * serverConf){
-
+	// Ready to take off.
+	// We are going open to the outside world.
+	// Connecting to the Sharding core API_a (coreSpecificPorts[portType].callback)
 
 	coreSpecificPorts = new PortInfo[(unsigned)GlobalPortsStart + 1];
 	for (srch2http::PortType_t portType = (srch2http::PortType_t) 0;
@@ -73,43 +80,47 @@ void Srch2ServerGateway::cb_coreSpecificOperations(struct evhttp_request * req, 
     		break;
     	case srch2http::DocsPort:
     	    if(req->type == EVHTTP_REQ_PUT){
-                dpExternal->externalInsertCommand(clusterReadview, req, coreId);
+        		WriteCommandHttp::insert(clusterReadview, req, coreId);
     	    }else if(req->type == EVHTTP_REQ_DELETE){
     	    	Logger::console("Delete request came ...");
-    	    	dpExternal->externalDeleteCommand(clusterReadview, req, coreId);
+    	    	WriteCommandHttp::deleteRecord(clusterReadview, req, coreId);
     	    }
     		break;
     	case srch2http::UpdatePort:
-    		dpExternal->externalUpdateCommand(clusterReadview, req, coreId);
+    		WriteCommandHttp::update(clusterReadview, req, coreId);
     		break;
     	case srch2http::SavePort:
-    		srch2http::ShardManager::getShardManager()->save(req);
+    		ShardCommandHttpHandler::runCommand(clusterReadview, req, coreId, ShardCommandCode_SaveData_SaveMetadata);
     		break;
     	case srch2http::ExportPort:
-    		dpExternal->externalSerializeRecordsCommand(clusterReadview, req, coreId);
+    		ShardCommandHttpHandler::runCommand(clusterReadview, req, coreId, ShardCommandCode_Export);
     		break;
     	case srch2http::ResetLoggerPort:
-    		dpExternal->externalResetLogCommand(clusterReadview, req, coreId);
+    		ShardCommandHttpHandler::runCommand(clusterReadview, req, coreId, ShardCommandCode_ResetLogger);
     		break;
     	case srch2http::CommitPort:
-    		dpExternal->externalCommitCommand(clusterReadview, req, coreId);
+    		ShardCommandHttpHandler::runCommand(clusterReadview, req, coreId, ShardCommandCode_Commit);
     		break;
-    	case srch2http::MergePort:
-    		dpExternal->externalMergeCommand(clusterReadview, req, coreId);
+    	case srch2http::MergePort: // also includes mergeSetOn and mergeSetOff
+    		ShardCommandHttpHandler::runCommand(clusterReadview, req, coreId, ShardCommandCode_Merge);
     		break;
     	case srch2http::AttributeAclAdd:
     	case srch2http::AttributeAclDelete:
     	case srch2http::AttributeAclAppend:
-    		//dpExternal->externalAclAttributeModifyCommand(clusterReadview, req, coreId);
+    	    AclCommandHttpHandler::runCommand(clusterReadview, req, coreId /*, and probably some other
+    	    arguments lie the type of acl command. Look at Export, Merge, ResetLogger and Commit to see a similar example*/);
     		break;
     	case srch2http::RecordAclAdd:
-    		//dpExternal->externalAclRecordAddRolesCommand(clusterReadview, req, coreId);
+            AclCommandHttpHandler::runCommand(clusterReadview, req, coreId /*, and probably some other
+            arguments lie the type of acl command. Look at Export, Merge, ResetLogger and Commit to see a similar example*/);
     		break;
     	case srch2http::RecordAclAppend:
-    		//dpExternal->externalAclRecordAppendRolesCommand(clusterReadview, req, coreId);
+            AclCommandHttpHandler::runCommand(clusterReadview, req, coreId /*, and probably some other
+            arguments lie the type of acl command. Look at Export, Merge, ResetLogger and Commit to see a similar example*/);
     		break;
     	case srch2http::RecordAclDelete:
-    		//dpExternal->externalAclRecordDeleteRolesCommand(clusterReadview, req, coreId);
+            AclCommandHttpHandler::runCommand(clusterReadview, req, coreId /*, and probably some other
+            arguments lie the type of acl command. Look at Export, Merge, ResetLogger and Commit to see a similar example*/);
     		break;
     	default:
     		cb_notfound(req, NULL);
@@ -158,7 +169,7 @@ void Srch2ServerGateway::cb_globalOperations(struct evhttp_request * req, void *
     		dpExternal->externalGetInfoCommand(clusterReadview, req, (unsigned) -1, portType);
     		break;
     	case srch2http::ShutdownPort:
-    		srch2http::ShardManager::getShardManager()->shutdown(req);
+    		srch2http::ShutdownCommand::runShutdown(req);
     		break;
     	case srch2http::NodeShutdownPort:
     		srch2http::ShardManager::getShardManager()->_shutdown();

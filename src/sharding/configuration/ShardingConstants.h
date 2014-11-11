@@ -4,6 +4,7 @@
 namespace srch2 {
 namespace httpwrapper {
 
+
 ///////////////////////////////////////// TEMPORARY ////////////////////////////////////////////
 typedef unsigned TimeoutValue;
 typedef unsigned NodeId;
@@ -24,15 +25,12 @@ enum ShardingMessageType{
     NULLType,
     SearchCommandMessageType, // -> for LogicalPlan object
     SearchResultsMessageType, // -> for SerializedQueryResults object
-    InsertUpdateCommandMessageType, // -> for Record object (used for insert and update)
     DeleteCommandMessageType, // -> for DeleteCommandInput object (used for delete)
-    SerializeCommandMessageType, // -> for SerializeCommandInput object (used for serializing index and records)
-    GetInfoCommandMessageType, // -> for GetInfoCommandInput object (used for getInfo)
-    GetInfoResultsMessageType, // -> for GetInfoResults object
-    CommitCommandMessageType, // -> for CommitCommandInput object
-    MergeCommandMessageType, // -> for MergeCommandInput object
-    ResetLogCommandMessageType, // -> for ResetLogCommandInput (used for resetting log)
+    GetInfoCommandMessageType,
+    GetInfoResultsMessageType,
     StatusMessageType, // -> for CommandStatus object (object returned from insert, delete, update)
+    RecordWriteCommandMessageType,
+
 
 
     // For SM
@@ -56,13 +54,9 @@ enum ShardingMessageType{
     MigrationCompleteAckMessage,
 
     // For SHM
-    ShardingNewNodeLockMessageType,
-    ShardingNewNodeLockACKMessageType,
     ShardingMoveToMeMessageType,
-    ShardingMoveToMeStartMessageType,
     ShardingMoveToMeACKMessageType,
-    ShardingMoveToMeFinishMessageType,
-    ShardingMoveToMeAbortMessageType,
+    ShardingMoveToMeCleanupMessageType,
     ShardingNewNodeReadMetadataRequestMessageType,
     ShardingNewNodeReadMetadataReplyMessageType,
     ShardingLockMessageType,
@@ -71,20 +65,26 @@ enum ShardingMessageType{
     ShardingLoadBalancingReportMessageType,
     ShardingLoadBalancingReportRequestMessageType,
     ShardingCopyToMeMessageType,
+    ShardingCopyToMeACKMessageType,
+    ShardingShardCommandMessageType,
+
     ShardingCommitMessageType,
     ShardingCommitACKMessageType,
-    ShardingSaveDataMessageType,
-    ShardingSaveDataACKMessageType,
-    ShardingSaveMetadataMessageType,
-    ShardingSaveMetadataACKMessageType,
-    ShardingMergeMessageType,
     ShardingShutdownMessageType,
-    ShardingMergeACKMessageType,
+
+    ShardingRecordLockMessageType,
+    ShardingRecordLockACKMessageType,
+
+    InsertUpdateCommandMessageType,
+    ShardingWriteCommand2PCMessageType,
+    ShardingWriteCommand2PCACKMessageType,
+
     // just notifications
     ShardingMMNotificationMessageType,
     ShardingNodeFailureNotificationMessageType
 };
 
+const char * getShardingMessageTypeStr(ShardingMessageType shardingMessageType);
 
 //Adding portions of new header file, beginning from here
 enum ShardState {
@@ -124,7 +124,7 @@ enum PortType_t {
     SearchAllPort,
 	ShutdownPort,
 	NodeShutdownPort,
-	EndOfPortType, // stop value - not valid (also used to indicate all/default ports)
+	EndOfPortType // stop value - not valid (also used to indicate all/default ports)
 };
 
 enum CLUSTERSTATE {
@@ -138,17 +138,13 @@ enum PartitionLockValue{
 	PartitionLock_Unlocked
 };
 
-enum ResourceLockType{
-	ResourceLockType_S,
-	ResourceLockType_X,
-	ResourceLockType_U
-};
-
 enum ResourceLockRequestType{
 	ResourceLockRequestTypeLock,
 	ResourceLockRequestTypeRelease,
 	ResourceLockRequestTypeUpgrade,
-	ResourceLockRequestTypeDowngrade
+	ResourceLockRequestTypeDowngrade,
+	RecordLockRequestType,
+	RecordReleaseRequestType
 };
 
 enum MultipleResourceLockRequestType{
@@ -219,6 +215,62 @@ enum GetInfoAggregateCriterion{
 	// TODO : ...
 };
 
+
+enum ClusterRecordOperation_Type{
+	Insert_ClusterRecordOperation_Type,
+	Update_ClusterRecordOperation_Type,
+	Delete_ClusterRecordOperation_Type
+};
+
+
+enum LockLevel{
+	LockLevel_S,
+	LockLevel_X
+};
+
+enum LockRequestType{
+	LockRequestType_Copy,
+	LockRequestType_Move,
+	LockRequestType_Metadata,
+	LockRequestType_PrimaryKey,
+	LockRequestType_GeneralPurpose,
+	LockRequestType_ShardIdList
+};
+
+enum ShardCommandCode{
+	ShardCommandCode_SaveData_SaveMetadata,
+	ShardCommandCode_SaveData,
+	ShardCommandCode_SaveMetadata,
+	ShardCommandCode_Export,
+    ShardCommandCode_Commit,
+    ShardCommandCode_Merge,
+    ShardCommandCode_MergeSetOn,
+    ShardCommandCode_MergeSetOff,
+    ShardCommandCode_ResetLogger
+};
+
+//enum RecordWriteCommandCode{ // TODO : Delete if system is stable.
+//	RecordWriteCommand_InsertUpdate,
+//	RecordWriteCommand_Delete,
+//	RecordWriteCommand_AclAttrAdd,
+//	RecordWriteCommand_AclAttrAppend,
+//	RecordWriteCommand_AclAttrDelete
+//};
+
+enum ShardingTransactionType{
+	ShardingTransactionType_Loadbalancing,
+	ShardingTransactionType_NodeJoin,
+	ShardingTransactionType_ShardCommandCode,
+	ShardingTransactionType_AclCommandCode,
+	ShardingTransactionType_InsertUpdateCommand,
+	ShardingTransactionType_Shutdown
+};
+
+const char * getTransTypeStr(ShardingTransactionType type);
+
+
+typedef unsigned TRANS_ID;
+const TRANS_ID TRANS_ID_NULL = 0;
 
 }
 }

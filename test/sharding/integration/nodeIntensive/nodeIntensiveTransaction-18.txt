@@ -1,0 +1,42 @@
+#This tests query by field, boolean AND and OR on query keywords
+A||start
+-||sleep||10
+B||start
+C||start
+D||start
+E||start
+-||sleep||60
+A||insert||{"body": "aaaaaa 111111 zzzzzz  There are different ways to tackle it, you can use ATI commands in .Net for this purpose and use GsmComm.dll library to send message, also PDU knowledge is required, you can also see a ready made  library  its name is rapidsmsserver and can ask them how did they implement it or if they could give you some developer license free of cost so you can use it in .net and study it. I dont know much about it, and you can also see many other ready made libraries because most of ATI commands are no more working. \n", "last_activity_date": "04/20/2012", "accepted_answer_id": "0", "creation_date": "04/20/2012", "votes_count": 1, "last_edit_date": "01/01/1970", "id": "2", "favorite_count": 0, "last_editor_display_name": "", "closed_date": "01/01/1970", "view_count": 0, "title": "send and receive SMS and developing a SMS panel", "parent_id": "7976753", "comment_count": 0, "score": 1, "last_editor_user_id": "0", "post_type_id": "2", "community_owned_date": "01/01/1970", "tags": "", "answer_count": 0, "author_name": "Muhammad Atif Agha", "owner_user_id": "727794"}||"rid":"2","status":true
+B||insert||{"body": "aaaaaa 111111 zzzzzz  If you don&#39t need the header, set  CURLOPT_HEADER  to  false . \n", "last_activity_date": "04/22/2012", "accepted_answer_id": "0", "creation_date": "04/22/2012", "votes_count": 4, "last_edit_date": "01/01/1970", "id": "3", "favorite_count": 0, "last_editor_display_name": "", "closed_date": "01/01/1970", "view_count": 0, "title": "parse XML from curl POST response", "parent_id": "10266742", "comment_count": 1, "score": 3, "last_editor_user_id": "0", "post_type_id": "2", "community_owned_date": "01/01/1970", "tags": "", "answer_count": 0, "author_name": "lafor", "owner_user_id": "1341059"}||"rid":"3","status":true
+C||insert||{"body": "aaaaaa 111111 zzzzzz  JSON is not really meant for serializing arbitrary Python objects.  It&#39s great for serializing  dict  objects, but the  pickle  module is really what you should be using in general.  Output from  pickle  is not really human-readable, but it should unpickle just fine.  If you insist on using JSON, you could check out the  jsonpickle  module, which is an interesting hybrid approach. \n\n  https://github.com/jsonpickle/jsonpickle  \n", "last_activity_date": "04/20/2012", "accepted_answer_id": "0", "creation_date": "04/20/2012", "votes_count": 2, "last_edit_date": "01/01/1970", "id": "1", "favorite_count": 0, "last_editor_display_name": "", "closed_date": "01/01/1970", "view_count": 0, "title": "Serializing python object instance to JSON", "parent_id": "10252010", "comment_count": 0, "score": 2, "last_editor_user_id": "0", "post_type_id": "2", "community_owned_date": "01/01/1970", "tags": "", "answer_count": 0, "author_name": "Brendan Wood", "owner_user_id": "126751"}||"rid":"1","status":true
+A||merge
+A||nodeCount||5
+B||nodeCount||5
+C||nodeCount||5
+D||nodeCount||5
+E||nodeCount||5
+A||query||q=title:Serializing||"id":"1"||"results_found":1
+A||query||q=zzzzzz%20AND%20serializing||"id":"1"||"results_found":1
+A||query||q=python%20OR%20atif||"id":"1" "id":"2"||"results_found":2
+A||query||q=atiq~||"id":"2"||"results_found":1
+B||query||q=title:Serializing||"id":"1"||"results_found":1
+B||query||q=zzzzzz%20AND%20serializing||"id":"1"||"results_found":1
+B||query||q=python%20OR%20atif||"id":"1" "id":"2"||"results_found":2
+B||query||q=atiq~||"id":"2"||"results_found":1
+C||query||q=title:Serializing||"id":"1"||"results_found":1
+C||query||q=zzzzzz%20AND%20serializing||"id":"1"||"results_found":1
+C||query||q=python%20OR%20atif||"id":"1" "id":"2"||"results_found":2
+C||query||q=atiq~||"id":"2"||"results_found":1
+D||query||q=title:Serializing||"id":"1"||"results_found":1
+D||query||q=zzzzzz%20AND%20serializing||"id":"1"||"results_found":1
+D||query||q=python%20OR%20atif||"id":"1" "id":"2"||"results_found":2
+D||query||q=atiq~||"id":"2"||"results_found":1
+E||query||q=title:Serializing||"id":"1"||"results_found":1
+E||query||q=zzzzzz%20AND%20serializing||"id":"1"||"results_found":1
+E||query||q=python%20OR%20atif||"id":"1" "id":"2"||"results_found":2
+E||query||q=atiq~||"id":"2"||"results_found":1
+A||kill
+B||kill
+C||kill
+D||kill
+E||kill

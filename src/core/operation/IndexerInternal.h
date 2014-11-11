@@ -192,6 +192,10 @@ public:
     // commit after bulk load  == merge.
     INDEXWRITE_RETVAL merge(){
         pthread_mutex_lock(&lockForWriters);
+        if(! this->mergeEnabledFlag){
+            pthread_mutex_unlock(&lockForWriters);
+        	return OP_FAIL;
+        }
         bool updateHistogramFlag = shouldUpdateHistogram();
         if(updateHistogramFlag == true){
         	this->resetMergeCounterForHistogram();
@@ -199,6 +203,19 @@ public:
         INDEXWRITE_RETVAL result = this->merge(updateHistogramFlag);
         pthread_mutex_unlock(&lockForWriters);
         return result;
+    }
+
+    INDEXWRITE_RETVAL disableMerge(){
+        pthread_mutex_lock(&lockForWriters);
+        this->mergeEnabledFlag = false;
+        pthread_mutex_unlock(&lockForWriters);
+    	return OP_SUCCESS;
+    }
+    INDEXWRITE_RETVAL enableMerge(){
+        pthread_mutex_lock(&lockForWriters);
+        this->mergeEnabledFlag = true;
+        pthread_mutex_unlock(&lockForWriters);
+    	return OP_SUCCESS;
     }
 
     boost::shared_ptr<QuadTreeRootNodeAndFreeLists> getQuadTree_ReadView(){
@@ -223,6 +240,7 @@ private:
 
 	pthread_t mergerThread;  // stores thread identifier.
 	pthread_attr_t mergeThreadAttributes;  // store thread attributes
+	bool mergeEnabledFlag;
 
     volatile unsigned writesCounterForMerge;
     bool needToSaveIndexes;

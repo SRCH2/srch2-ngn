@@ -5,15 +5,10 @@
 #include "util/FileOps.h"
 #include "server/Srch2Server.h"
 
-#include "serializables/SerializableInsertUpdateCommandInput.h"
-#include "serializables/SerializableSerializeCommandInput.h"
-#include "serializables/SerializableDeleteCommandInput.h"
 #include "serializables/SerializableSearchCommandInput.h"
 #include "serializables/SerializableGetInfoCommandInput.h"
-#include "serializables/SerializableResetLogCommandInput.h"
-#include "serializables/SerializableCommitCommandInput.h"
-#include "serializables/SerializableMergeCommandInput.h"
-
+#include "sharding/sharding/notifications/Write2PCNotification.h"
+#include "sharding/sharding/metadata_manager/ResourceMetadataManager.h"
 #include "QueryExecutor.h"
 #include "instantsearch/LogicalPlan.h"
 #include <instantsearch/QueryResults.h>
@@ -116,73 +111,8 @@ void * DPInternalRequestHandler::searchInShardThreadWork(void * args){
 	return NULL;
 }
 
-/*
- * This call back is always called for insert and update, it will use
- * internalInsertCommand and internalUpdateCommand
- */
-CommandStatus * DPInternalRequestHandler::internalInsertUpdateCommand(const NodeTargetShardInfo & target,
-		boost::shared_ptr<const ClusterResourceMetadata_Readview> clusterReadview, InsertUpdateCommand * insertUpdateData){
-
-    if(insertUpdateData == NULL){
-        CommandStatus * status = NULL;
-    	if(insertUpdateData->getInsertOrUpdate() == InsertUpdateCommand::DP_INSERT){ // insert case
-    		status = new CommandStatus(CommandStatus::DP_INSERT);
-    	}else{
-    		status = new CommandStatus(CommandStatus::DP_UPDATE);
-    	}
-        return status;
-    }
-
-	// 0. use target and readview to get Srch2Server pointers
-	vector<const Shard *> shards;
-	clusterReadview->getLocalShardContainer(target.getCoreId())->getShards(target,shards);
-
-	vector<ShardInsertUpdateArgs *> allShardsInsertArguments;
-    pthread_t * shardInsertUpdateThreads = new pthread_t[shards.size()];
-	for(unsigned shardIdx = 0; shardIdx < shards.size(); ++shardIdx){
-		const Shard * shard = shards.at(shardIdx);
-		ShardInsertUpdateArgs * shardInsertUpdateArgs = new ShardInsertUpdateArgs(new Record(*(insertUpdateData->getRecord())),
-				shard->getSrch2Server().get(), shard->getShardIdentifier());
-		allShardsInsertArguments.push_back(shardInsertUpdateArgs);
-		if(insertUpdateData->getInsertOrUpdate() == InsertUpdateCommand::DP_INSERT){ // insert case
-			if (pthread_create(&shardInsertUpdateThreads[shardIdx], NULL, insertInShardThreadWork , shardInsertUpdateArgs) != 0){
-				perror("Cannot create thread for handling local message");
-				return NULL;
-			}
-		}else{
-			if (pthread_create(&shardInsertUpdateThreads[shardIdx], NULL, updateInShardThreadWork , shardInsertUpdateArgs) != 0){
-				perror("Cannot create thread for handling local message");
-				return NULL;
-			}
-		}
-	}
-
-    CommandStatus * status = NULL;
-	if(insertUpdateData->getInsertOrUpdate() == InsertUpdateCommand::DP_INSERT){ // insert case
-		status = new CommandStatus(CommandStatus::DP_INSERT);
-	}else{
-		status = new CommandStatus(CommandStatus::DP_UPDATE);
-	}
-
-	Json::Value allOutputs(Json::arrayValue);
-	allOutputs.resize(shards.size());
-	for(unsigned shardIdx = 0; shardIdx < shards.size(); ++shardIdx){
-		pthread_join(shardInsertUpdateThreads[shardIdx], NULL);
-		ShardInsertUpdateArgs * insertResults = allShardsInsertArguments.at(shardIdx);
-		status->addShardResult(insertResults->shardResults);
-		allOutputs[shardIdx] = insertResults->shardResults->messages;
-		delete insertResults;
-	}
-	delete shardInsertUpdateThreads;
-
-    Logger::info("%s", global_customized_writer.write(allOutputs).c_str());
-    return status;
-
-}
-
-
 void DPInternalRequestHandler::insertInShard(const Record * record,
-		Srch2Server * server, Json::Value & messages , bool & statusValue){
+		Srch2Server * server, vector<JsonMessageCode> & messageCodes , bool & statusValue){
     //add the record to the index
     if ( server->getIndexer()->getNumberOfDocumentsInIndex() < server->getCoreInfo()->getDocumentLimit() )
     {
@@ -200,30 +130,36 @@ void DPInternalRequestHandler::insertInShard(const Record * record,
         }
         case srch2::instantsearch::OP_FAIL:
         {
-            messages.append(HTTPJsonResponse::getJsonSingleMessage(HTTP_JSON_PK_Exists_Error));
+            messageCodes.push_back(HTTP_JSON_PK_Exists_Error);
             statusValue = false;
             return;
         }
+        default:
+        	ASSERT(false);
+        	return;
         };
     }
     else
     {
-        messages.append(HTTPJsonResponse::getJsonSingleMessage(HTTP_JSON_Doc_Limit_Reached_Error));
+        messageCodes.push_back(HTTP_JSON_Doc_Limit_Reached_Error);
         statusValue = false;
         return;
     }
 }
 
-void * DPInternalRequestHandler::insertInShardThreadWork(void * args){
-	ShardInsertUpdateArgs * shardArgs = (ShardInsertUpdateArgs *) args;
-	insertInShard(shardArgs->record, shardArgs->server, shardArgs->shardResults->messages, shardArgs->shardResults->statusValue);
-
-	//
-	return NULL;
+void DPInternalRequestHandler::insertInShardTest(const string & primaryKey, Srch2Server * server,
+		vector<JsonMessageCode> & messageCodes , bool & statusValue){
+    if ( server->getIndexer()->getNumberOfDocumentsInIndex() < server->getCoreInfo()->getDocumentLimit() )
+    {
+    	statusValue = true;
+    }else{
+        messageCodes.push_back(HTTP_JSON_Doc_Limit_Reached_Error);
+        statusValue = false;
+    }
 }
 
 void DPInternalRequestHandler::updateInShard(const Record * record,
-		Srch2Server * server, Json::Value & messages , bool & statusValue){
+		Srch2Server * server, vector<JsonMessageCode> & messageCodes , bool & statusValue){
 	unsigned deletedInternalRecordId;
 	std::string primaryKeyStringValue;
 	primaryKeyStringValue = record->getPrimaryKey();
@@ -260,7 +196,7 @@ void DPInternalRequestHandler::updateInShard(const Record * record,
 		case srch2::instantsearch::OP_SUCCESS:
 		{
 			if (! recordExisted){
-		        messages.append(HTTPJsonResponse::getJsonSingleMessage(HTTP_JSON_Existing_Record_Update_Info));
+		        messageCodes.push_back(HTTP_JSON_Existing_Record_Update_Info);
 			}
 
 			statusValue = true;
@@ -268,15 +204,18 @@ void DPInternalRequestHandler::updateInShard(const Record * record,
 		}
 		case srch2::instantsearch::OP_FAIL:
 		{
-	        messages.append(HTTPJsonResponse::getJsonSingleMessage(HTTP_JSON_Update_Failed_Error));
+	        messageCodes.push_back(HTTP_JSON_Update_Failed_Error);
 			statusValue = false;
 			break;
 		}
+		default:
+			ASSERT(false);
+			break;
 		};
 	}
 	else
 	{
-        messages.append(HTTPJsonResponse::getJsonSingleMessage(HTTP_JSON_Update_Failed_Error));
+        messageCodes.push_back(HTTP_JSON_Update_Failed_Error);
 		statusValue = false;
 	}
 
@@ -288,14 +227,13 @@ void DPInternalRequestHandler::updateInShard(const Record * record,
 	{
 	case srch2::instantsearch::OP_FAIL:
 	{
-        messages.append(HTTPJsonResponse::getJsonSingleMessage(HTTP_JSON_Update_Failed_Error));
+        messageCodes.push_back(HTTP_JSON_Update_Failed_Error);
 		statusValue = false;
-		Logger::error("%s" , global_customized_writer.write(messages).c_str());
 		return;
 	}
 	default: // OP_SUCCESS.
 	{
-        messages.append(HTTPJsonResponse::getJsonSingleMessage(HTTP_JSON_Update_Failed_Error));
+        messageCodes.push_back(HTTP_JSON_Update_Failed_Error);
 		statusValue = false;
 		return;
 	}
@@ -303,75 +241,14 @@ void DPInternalRequestHandler::updateInShard(const Record * record,
 
 }
 
-void * DPInternalRequestHandler::updateInShardThreadWork(void * args){
-	ShardInsertUpdateArgs * updateArgs = (ShardInsertUpdateArgs  *) args;
 
-	updateInShard(updateArgs->record, updateArgs->server, updateArgs->shardResults->messages, updateArgs->shardResults->statusValue);
-
-	//
-	return NULL;
-}
-
-
-/*
- * 1. Receives a delete request from a shard and makes sure this
- *    shard is the correct reponsible of this record using Partitioner
- * 2. Uses core execute this delete query
- * 3. Sends the results to the shard which initiated this delete request (Failure or Success)
- */
-CommandStatus * DPInternalRequestHandler::internalDeleteCommand(const NodeTargetShardInfo & target,
-		boost::shared_ptr<const ClusterResourceMetadata_Readview> clusterReadview, DeleteCommand * deleteData){
-
-    if(deleteData == NULL){
-        CommandStatus * status =
-                new CommandStatus(CommandStatus::DP_DELETE);
-        return status;
-    }
-
-	// 0. use target and readview to get Srch2Server pointers
-	vector<const Shard *> shards;
-	clusterReadview->getLocalShardContainer(target.getCoreId())->getShards(target,shards);
-
-	vector<ShardDeleteArgs *> allShardsDeleteArguments;
-    pthread_t * shardDeleteThreads = new pthread_t[shards.size()];
-	for(unsigned shardIdx = 0; shardIdx < shards.size(); ++shardIdx){
-		const Shard * shard = shards.at(shardIdx);
-		ShardDeleteArgs * shardDeleteArgs = new ShardDeleteArgs(deleteData->getPrimaryKey(),
-				deleteData->getShardingKey(),
-				shard->getSrch2Server().get(), shard->getShardIdentifier());
-		allShardsDeleteArguments.push_back(shardDeleteArgs);
-		if (pthread_create(&shardDeleteThreads[shardIdx], NULL, deleteInShardThreadWork , shardDeleteArgs) != 0){
-			perror("Cannot create thread for handling local message");
-			return NULL;
-		}
-	}
-
-    CommandStatus * status = new CommandStatus(CommandStatus::DP_DELETE);
-
-	Json::Value allOutputs(Json::arrayValue);
-	allOutputs.resize(shards.size());
-	for(unsigned shardIdx = 0; shardIdx < shards.size(); ++shardIdx){
-		pthread_join(shardDeleteThreads[shardIdx], NULL);
-		ShardDeleteArgs * deleteResults = allShardsDeleteArguments.at(shardIdx);
-		status->addShardResult(deleteResults->shardResults);
-		allOutputs[shardIdx] = deleteResults->shardResults->messages;
-		delete deleteResults;
-	}
-	delete shardDeleteThreads;
-
-    Logger::info("%s", global_customized_writer.write(allOutputs).c_str());
-    return status;
-
-}
-
-
-void DPInternalRequestHandler::deleteInShard(const string primaryKey, unsigned shardingKey,
-		Srch2Server * server, Json::Value & messages, bool & statusValue){
+void DPInternalRequestHandler::deleteInShard(const string primaryKey,
+		Srch2Server * server, vector<JsonMessageCode> & messageCodes, bool & statusValue){
     //delete the record from the index
     switch(server->getIndexer()->deleteRecord(primaryKey)){
     case OP_FAIL:
     {
-        messages.append(HTTPJsonResponse::getJsonSingleMessage(HTTP_JSON_Delete_Record_Not_Found_Error));
+        messageCodes.push_back(HTTP_JSON_Delete_Record_Not_Found_Error);
         statusValue = false;
         return;
     }
@@ -381,15 +258,6 @@ void DPInternalRequestHandler::deleteInShard(const string primaryKey, unsigned s
         return;
     }
     };
-}
-
-void * DPInternalRequestHandler::deleteInShardThreadWork(void * args){
-	ShardDeleteArgs * deleteArgs = (ShardDeleteArgs  *) args;
-
-	deleteInShard(deleteArgs->primaryKey,deleteArgs->shardingKey, deleteArgs->server, deleteArgs->shardResults->messages, deleteArgs->shardResults->statusValue);
-
-	//
-	return NULL;
 }
 
 /*
@@ -452,17 +320,9 @@ void * DPInternalRequestHandler::getInfoInShardThreadWork(void * args){
  * This call back function is called for serialization. It uses internalSerializeIndexCommand
  * and internalSerializeRecordsCommand for our two types of serialization.
  */
-CommandStatus * DPInternalRequestHandler::internalSerializeCommand(const NodeTargetShardInfo & target,
-		boost::shared_ptr<const ClusterResourceMetadata_Readview> clusterReadview, SerializeCommand * serailizeData){
-	if(serailizeData == NULL){
-        CommandStatus * status = NULL;
-        if(serailizeData->getIndexOrRecord() == SerializeCommand::SERIALIZE_INDEX){ // serialize index
-        	status = new CommandStatus(CommandStatus::DP_SERIALIZE_INDEX);
-        }else{ // serialize records
-        	status = new CommandStatus(CommandStatus::DP_SERIALIZE_RECORDS);
-        }
-        return status;
-    }
+SP(CommandStatusNotification) DPInternalRequestHandler::internalSerializeCommand(const NodeTargetShardInfo & target,
+		boost::shared_ptr<const ClusterResourceMetadata_Readview> clusterReadview,
+		ShardCommandCode commandCode, const string & fileName){
 
 	// 0. use target and readview to get Srch2Server pointers
 	vector<const Shard *> shards;
@@ -473,28 +333,29 @@ CommandStatus * DPInternalRequestHandler::internalSerializeCommand(const NodeTar
 	for(unsigned shardIdx = 0; shardIdx < shards.size(); ++shardIdx){
 		const Shard * shard = shards.at(shardIdx);
 		ShardSerializeArgs * shardSerializeArgs =
-				new ShardSerializeArgs(serailizeData->getDataFileName(),
-						shard->getSrch2Server().get(), shard->getShardIdentifier(), shard->getIndexDirectory());
+				new ShardSerializeArgs(fileName,
+						shard->getSrch2Server().get(), shard->cloneShardId(), shard->getIndexDirectory());
 		allShardsSerializeArguments.push_back(shardSerializeArgs);
 
-		if(serailizeData->getIndexOrRecord() == SerializeCommand::SERIALIZE_INDEX){ // insert case
+		if(commandCode == ShardCommandCode_SaveData || commandCode == ShardCommandCode_SaveData_SaveMetadata){ // insert case
 			if (pthread_create(&shardSerializeThreads[shardIdx], NULL, serializeIndexInShardThreadWork , shardSerializeArgs) != 0){
 				perror("Cannot create thread for handling local message");
-				return NULL;
+				return SP(CommandStatusNotification)();
 			}
 		}else{
+			ASSERT(commandCode == ShardCommandCode_Export);
 			if (pthread_create(&shardSerializeThreads[shardIdx], NULL, serializeRecordsInShardThreadWork , shardSerializeArgs) != 0){
 				perror("Cannot create thread for handling local message");
-				return NULL;
+				return SP(CommandStatusNotification)();
 			}
 		}
 	}
-    CommandStatus * status = NULL;
-	if(serailizeData->getIndexOrRecord() == SerializeCommand::SERIALIZE_INDEX){ // insert case
-		status = new CommandStatus(CommandStatus::DP_SERIALIZE_INDEX);
+    SP(CommandStatusNotification) status ;
+	if(commandCode == ShardCommandCode_SaveData || commandCode == ShardCommandCode_SaveData_SaveMetadata){ // insert case
+		status = SP(CommandStatusNotification)( new CommandStatusNotification(commandCode));
 		Logger::info("%s", "{\"save\":\"success\"}");
 	}else{
-		status = new CommandStatus(CommandStatus::DP_SERIALIZE_RECORDS);
+		status = SP(CommandStatusNotification)( new CommandStatusNotification(commandCode));
 		Logger::info("%s", "{\"export\":\"success\"}");
 	}
 
@@ -512,7 +373,7 @@ CommandStatus * DPInternalRequestHandler::internalSerializeCommand(const NodeTar
 void * DPInternalRequestHandler::serializeIndexInShardThreadWork(void * args){
 	ShardSerializeArgs * serializeIndexArgs = (ShardSerializeArgs *) args;
 	serializeIndexArgs->server->getIndexer()->save();
-	serializeIndexArgs->shardResults->statusValue = true;
+	serializeIndexArgs->shardResults->setStatusValue(true);
     //
     return NULL;
 }
@@ -524,7 +385,7 @@ void * DPInternalRequestHandler::serializeRecordsInShardThreadWork(void * args){
         exportedDataFileName = serializeRecordsArgs->shardIndexDirectory + "/" + string("export_data.json");
     }
     serializeRecordsArgs->server->getIndexer()->exportData(exportedDataFileName);
-    serializeRecordsArgs->shardResults->statusValue = true;
+    serializeRecordsArgs->shardResults->setStatusValue(true);
     //
     return NULL;
 }
@@ -534,14 +395,8 @@ void * DPInternalRequestHandler::serializeRecordsInShardThreadWork(void * args){
  * 2. Uses core to reset log
  * 3. Sends the results to the shard which initiated this reset-log request(Failure or Success)
  */
-CommandStatus * DPInternalRequestHandler::internalResetLogCommand(const NodeTargetShardInfo & target,
-		boost::shared_ptr<const ClusterResourceMetadata_Readview> clusterReadview, ResetLogCommand * resetData){
-
-    if(resetData == NULL ){
-        CommandStatus * status =
-                new CommandStatus(CommandStatus::DP_RESET_LOG);
-        return status;
-    }
+SP(CommandStatusNotification) DPInternalRequestHandler::internalResetLogCommand(const NodeTargetShardInfo & target,
+		boost::shared_ptr<const ClusterResourceMetadata_Readview> clusterReadview){
 
 	// 0. use target and readview to get Srch2Server pointers
 	vector<const Shard *> shards;
@@ -552,16 +407,16 @@ CommandStatus * DPInternalRequestHandler::internalResetLogCommand(const NodeTarg
 	for(unsigned shardIdx = 0; shardIdx < shards.size(); ++shardIdx){
 		const Shard * shard = shards.at(shardIdx);
 		ShardStatusOnlyArgs * shardResetLogsArgs =
-				new ShardStatusOnlyArgs(shard->getSrch2Server().get(), shard->getShardIdentifier());
+				new ShardStatusOnlyArgs(shard->getSrch2Server().get(), shard->cloneShardId());
 		allShardsResetLogsArguments.push_back(shardResetLogsArgs);
 
 		if (pthread_create(&shardResetLogsThreads[shardIdx], NULL, resetLogInShardThreadWork, shardResetLogsArgs) != 0){
 			perror("Cannot create thread for handling local message");
-			return NULL;
+			return SP(CommandStatusNotification)();
 		}
 	}
 
-    CommandStatus * status = new CommandStatus(CommandStatus::DP_RESET_LOG);
+    SP(CommandStatusNotification) status = SP(CommandStatusNotification)(new CommandStatusNotification(ShardCommandCode_ResetLogger));
 
     for(unsigned shardIdx = 0; shardIdx < shards.size(); ++shardIdx){
 		pthread_join(shardResetLogsThreads[shardIdx], NULL);
@@ -577,14 +432,8 @@ CommandStatus * DPInternalRequestHandler::internalResetLogCommand(const NodeTarg
 }
 
 
-CommandStatus * DPInternalRequestHandler::internalCommitCommand(const NodeTargetShardInfo & target,
-		boost::shared_ptr<const ClusterResourceMetadata_Readview> clusterReadview, CommitCommand * commitData){
-
-	if(commitData == NULL ){
-        CommandStatus * status =
-                new CommandStatus(CommandStatus::DP_COMMIT);
-        return status;
-    }
+SP(CommandStatusNotification) DPInternalRequestHandler::internalCommitCommand(const NodeTargetShardInfo & target,
+		boost::shared_ptr<const ClusterResourceMetadata_Readview> clusterReadview){
 
 	// 0. use target and readview to get Srch2Server pointers
 	vector<const Shard *> shards;
@@ -595,16 +444,16 @@ CommandStatus * DPInternalRequestHandler::internalCommitCommand(const NodeTarget
 	for(unsigned shardIdx = 0; shardIdx < shards.size(); ++shardIdx){
 		const Shard * shard = shards.at(shardIdx);
 		ShardStatusOnlyArgs * shardCommitArgs =
-				new ShardStatusOnlyArgs(shard->getSrch2Server().get(), shard->getShardIdentifier());
+				new ShardStatusOnlyArgs(shard->getSrch2Server().get(), shard->cloneShardId());
 		allShardsCommitArguments.push_back(shardCommitArgs);
 
 		if (pthread_create(&shardCommitThreads[shardIdx], NULL, commitInShardThreadWork, shardCommitArgs) != 0){
 			perror("Cannot create thread for handling local message");
-			return NULL;
+			return SP(CommandStatusNotification)();
 		}
 	}
 
-    CommandStatus * status = new CommandStatus(CommandStatus::DP_COMMIT);
+	SP(CommandStatusNotification) status = SP(CommandStatusNotification)(new CommandStatusNotification(ShardCommandCode_Commit));
 
     for(unsigned shardIdx = 0; shardIdx < shards.size(); ++shardIdx){
 		pthread_join(shardCommitThreads[shardIdx], NULL);
@@ -620,14 +469,8 @@ CommandStatus * DPInternalRequestHandler::internalCommitCommand(const NodeTarget
 }
 
 
-CommandStatus * DPInternalRequestHandler::internalMergeCommand(const NodeTargetShardInfo & target,
-		boost::shared_ptr<const ClusterResourceMetadata_Readview> clusterReadview, MergeCommand * mergeData){
-
-	if(mergeData == NULL ){
-        CommandStatus * status =
-                new CommandStatus(CommandStatus::DP_MERGE);
-        return status;
-    }
+SP(CommandStatusNotification) DPInternalRequestHandler::internalMergeCommand(const NodeTargetShardInfo & target,
+		boost::shared_ptr<const ClusterResourceMetadata_Readview> clusterReadview, bool mainAction , bool flagValue ){
 
 	// 0. use target and readview to get Srch2Server pointers
 	vector<const Shard *> shards;
@@ -637,17 +480,25 @@ CommandStatus * DPInternalRequestHandler::internalMergeCommand(const NodeTargetS
     pthread_t * shardMergeThreads = new pthread_t[shards.size()];
 	for(unsigned shardIdx = 0; shardIdx < shards.size(); ++shardIdx){
 		const Shard * shard = shards.at(shardIdx);
+		MergeActionType mergeAction = DoMerge;
+		if(! mainAction){
+			if(flagValue){
+				mergeAction = SetMergeON;
+			}else{
+				mergeAction = SetMergeOFF;
+			}
+		}
 		ShardStatusOnlyArgs * shardMergeArgs =
-				new ShardStatusOnlyArgs(shard->getSrch2Server().get(), shard->getShardIdentifier());
+				new ShardStatusOnlyArgs(shard->getSrch2Server().get(), shard->cloneShardId(), mergeAction);
 		allShardsMergeArguments.push_back(shardMergeArgs);
 
 		if (pthread_create(&shardMergeThreads[shardIdx], NULL, mergeInShardThreadWork, shardMergeArgs) != 0){
 			perror("Cannot create thread for handling local message");
-			return NULL;
+			return SP(CommandStatusNotification)();
 		}
 	}
 
-    CommandStatus * status = new CommandStatus(CommandStatus::DP_MERGE);
+	SP(CommandStatusNotification) status = SP(CommandStatusNotification)(new CommandStatusNotification(ShardCommandCode_Merge));
 
     for(unsigned shardIdx = 0; shardIdx < shards.size(); ++shardIdx){
 		pthread_join(shardMergeThreads[shardIdx], NULL);
@@ -673,15 +524,15 @@ void * DPInternalRequestHandler::resetLogInShardThreadWork(void * args){
         srch2::util::Logger::error("Reopen Log file %s failed.",
         		shardArgs->server->getCoreInfo()->getHTTPServerAccessLogFile().c_str());
 
-        Json::Value errValue = HTTPJsonResponse::getJsonSingleMessage(HTTP_JSON_ResetLogger_Reopen_Failed_Error);
+        Json::Value errValue = JsonResponseHandler::getJsonSingleMessage(HTTP_JSON_ResetLogger_Reopen_Failed_Error);
         errValue[c_logger_file] = shardArgs->server->getCoreInfo()->getHTTPServerAccessLogFile();
         shardArgs->shardResults->messages.append(errValue);
-        shardArgs->shardResults->statusValue = false;
+        shardArgs->shardResults->setStatusValue(false);
         Logger::info("%s", global_customized_writer.write(shardArgs->shardResults->messages).c_str());
     } else {
         FILE * oldLogger = srch2::util::Logger::swapLoggerFile(logFile);
         fclose(oldLogger);
-        shardArgs->shardResults->statusValue = true;
+        shardArgs->shardResults->setStatusValue(true);
     }
 
 	//
@@ -695,17 +546,17 @@ void * DPInternalRequestHandler::commitInShardThreadWork(void * args){
 	INDEXWRITE_RETVAL commitReturnValue = shardArgs->server->getIndexer()->commit();
     if ( commitReturnValue == srch2::instantsearch::OP_SUCCESS)
     {
-        shardArgs->shardResults->statusValue = true;
+        shardArgs->shardResults->setStatusValue(true);
     }
     else if(commitReturnValue == srch2::instantsearch::OP_NOTHING_TO_DO)
     {
-        Json::Value infoValue = HTTPJsonResponse::getJsonSingleMessage(HTTP_JSON_Commit_Already_Done_Info);
+        Json::Value infoValue = JsonResponseHandler::getJsonSingleMessage(HTTP_JSON_Commit_Already_Done_Info);
         shardArgs->shardResults->messages.append(infoValue);
-    	shardArgs->shardResults->statusValue = true;
+    	shardArgs->shardResults->setStatusValue(true);
     }
     else
     {
-         shardArgs->shardResults->statusValue = false;
+         shardArgs->shardResults->setStatusValue(false);
     }
 
 	//
@@ -716,33 +567,136 @@ void * DPInternalRequestHandler::commitInShardThreadWork(void * args){
 void * DPInternalRequestHandler::mergeInShardThreadWork(void * args){
 	ShardStatusOnlyArgs * shardArgs = (ShardStatusOnlyArgs * )args;
 
+	if(shardArgs->mergeAction != DoMerge){
+		if(shardArgs->mergeAction == SetMergeON){
+			shardArgs->server->getIndexer()->enableMerge();
+		}else if (shardArgs->mergeAction == SetMergeOFF){
+			shardArgs->server->getIndexer()->disableMerge();
+		}
+        shardArgs->shardResults->setStatusValue(true);
+		return NULL;
+	}
     //merge the index.
 	INDEXWRITE_RETVAL mergeReturnValue = shardArgs->server->getIndexer()->merge();
     if ( mergeReturnValue == srch2::instantsearch::OP_SUCCESS)
     {
-        shardArgs->shardResults->statusValue = true;
+        shardArgs->shardResults->setStatusValue(true);
     }
     else if(mergeReturnValue == srch2::instantsearch::OP_NOTHING_TO_DO)
     {
-        Json::Value infoValue = HTTPJsonResponse::getJsonSingleMessage(HTTP_JSON_Merge_Already_Done_Info);
+        Json::Value infoValue = JsonResponseHandler::getJsonSingleMessage(HTTP_JSON_Merge_Already_Done_Info);
         shardArgs->shardResults->messages.append(infoValue);
-    	shardArgs->shardResults->statusValue = true;
+    	shardArgs->shardResults->setStatusValue(true);
     }
     else
     {
-         shardArgs->shardResults->statusValue = false;
+        Json::Value infoValue = JsonResponseHandler::getJsonSingleMessage(HTTP_JSON_Merge_DISABLED);
+        shardArgs->shardResults->messages.append(infoValue);
+         shardArgs->shardResults->setStatusValue(false);
     }
 
 	//
 	return NULL;
 }
-//void * DPInternalRequestHandler::aclAttributeModifyShardThreadWork(void * args){
-//
-//}
-//
-//void * DPInternalRequestHandler::aclRecordModifyShardThreadWork(void * args){
-//
-//}
+
+SP(CommandStatusNotification) DPInternalRequestHandler::resolveShardCommand(SP(CommandNotification) notif){
+	if(! notif){
+		return SP(CommandStatusNotification)(new CommandStatusNotification(ShardCommandCode_Merge));
+	}
+	boost::shared_ptr<const ClusterResourceMetadata_Readview> clusterReadview = notif->getReadview();
+	switch (notif->getCommandCode()) {
+		case ShardCommandCode_SaveData_SaveMetadata:
+		case ShardCommandCode_SaveData:
+			Logger::sharding(Logger::Step, "DP-Internal| Saving the shards on disk ... ");
+			return internalSerializeCommand(notif->getTarget(), clusterReadview, notif->getCommandCode(), notif->getNewLogFilePath());
+		case ShardCommandCode_SaveMetadata:
+			Logger::sharding(Logger::Step, "DP-Internal| Saving the metadata on disk ... ");
+			ShardManager::getShardManager()->getMetadataManager()->saveMetadata(ShardManager::getShardManager()->getConfigManager());
+			return SP(CommandStatusNotification)(new CommandStatusNotification(notif->getCommandCode()));
+		case ShardCommandCode_Export:
+			Logger::sharding(Logger::Step, "DP-Internal| Exporting shards ...");
+			return internalSerializeCommand(notif->getTarget(), clusterReadview, notif->getCommandCode(), notif->getNewLogFilePath());
+		case ShardCommandCode_Commit:
+			Logger::sharding(Logger::Step, "DP-Internal| Committing shards ...");
+			return internalCommitCommand(notif->getTarget(), clusterReadview);
+		case ShardCommandCode_Merge:
+			Logger::sharding(Logger::Step, "DP-Internal| Doing merge operation");
+			return internalMergeCommand(notif->getTarget(), clusterReadview);
+		case ShardCommandCode_MergeSetOn:
+			Logger::sharding(Logger::Step, "DP-Internal| Setting merge flag to ON");
+			return internalMergeCommand(notif->getTarget(), clusterReadview, false, true);
+		case ShardCommandCode_MergeSetOff:
+			Logger::sharding(Logger::Step, "DP-Internal| Setting merge flag to OFF");
+			return internalMergeCommand(notif->getTarget(), clusterReadview, false, false);
+		case ShardCommandCode_ResetLogger:
+			Logger::sharding(Logger::Step, "DP-Internal| Resetting logger");
+			return internalResetLogCommand(notif->getTarget(), clusterReadview);
+	}
+	ASSERT(false);
+	return SP(CommandStatusNotification)(); // NULL
+
+}
+
+SP(Write2PCNotification::ACK) DPInternalRequestHandler::resolveWrite2PC(SP(Write2PCNotification) notif){
+
+
+	SP(Write2PCNotification::ACK) result = ShardingNotification::create<Write2PCNotification::ACK>();
+
+	vector<RecordWriteOpHandle *> & recordHanldes = notif->getRecordHandles();
+
+	for(unsigned recIdx = 0; recIdx < recordHanldes.size(); ++recIdx){
+		const string & primaryKey = recordHanldes.at(recIdx)->getPrimaryKey();
+		Record * recordCloneObj = NULL;
+		if(notif->shouldPerformWrite()){
+			recordCloneObj = new Record(*(recordHanldes.at(recIdx)->getRecordObj()));
+		}
+		if(primaryKey == ""){
+			return SP(Write2PCNotification::ACK)();
+		}
+		// 0. use target and readview to get Srch2Server pointers
+		vector<const Shard *> shards;
+		notif->getClusterReadview()->getLocalShardContainer(notif->getTargets().getCoreId())->getShards(notif->getTargets(),shards);
+		// prepare the result containers
+		for(unsigned shardIdx = 0; shardIdx < shards.size(); ++shardIdx){
+			const Shard * shard = shards.at(shardIdx);
+			Write2PCNotification::ACK::ShardResult * shardPKResult =
+					new Write2PCNotification::ACK::ShardResult(shard->cloneShardId(), false, vector<JsonMessageCode>());
+			switch (notif->getCommandType()) {
+			case Insert_ClusterRecordOperation_Type:
+			{
+				if(notif->shouldPerformWrite()){
+					insertInShard(recordCloneObj, shard->getSrch2Server().get(), shardPKResult->messageCodes, shardPKResult->statusValue);
+				}else{
+					insertInShardTest(primaryKey, shard->getSrch2Server().get(), shardPKResult->messageCodes, shardPKResult->statusValue);
+				}
+				break;
+			}
+			case Update_ClusterRecordOperation_Type:
+			{
+				if(notif->shouldPerformWrite()){
+					updateInShard(recordCloneObj, shard->getSrch2Server().get(), shardPKResult->messageCodes, shardPKResult->statusValue);
+				}else{
+					updateInShardTest(primaryKey, shard->getSrch2Server().get(), shardPKResult->messageCodes, shardPKResult->statusValue);
+				}
+				break;
+			}
+			case Delete_ClusterRecordOperation_Type:
+				if(notif->shouldPerformWrite()){
+					deleteInShard(primaryKey ,shard->getSrch2Server().get(), shardPKResult->messageCodes, shardPKResult->statusValue);
+				}else{
+					deleteInShardTest(primaryKey, shard->getSrch2Server().get(), shardPKResult->messageCodes, shardPKResult->statusValue);
+				}
+				break;
+			}
+			result->addPrimaryKeyShardResult(primaryKey, shardPKResult);
+		}
+		if(recordCloneObj != NULL){
+			delete recordCloneObj;
+		}
+	}
+
+	return result;
+}
 
 }
 }

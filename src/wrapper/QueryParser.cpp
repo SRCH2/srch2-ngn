@@ -188,7 +188,7 @@ bool QueryParser::parseForSuggestions(string & keyword, float & fuzzyMatchPenalt
 
 // parses the URL to a query object
 // TODO: change this to bool
-bool QueryParser::parse() {
+bool QueryParser::parse(const Schema * schema) {
 
     /*
      * parses the URL to a query object , fills out the container
@@ -230,7 +230,7 @@ bool QueryParser::parse() {
         this->timeAllowedParameterParser();
         this->omitHeaderParameterParser();
         this->responseWriteTypeParameterParser();
-        this->filterQueryParameterParser();
+        this->filterQueryParameterParser(schema);
         this->queryFieldBoostParser();
         this->lengthBoostParser();
         this->prefixMatchPenaltyParser();
@@ -483,7 +483,8 @@ void QueryParser::attributeAclFlagParser(){
 			this->container->attrAclOn = true;
 		}
 	} else {
-		this->container->attrAclOn = true;
+//		this->container->attrAclOn = true;
+	    this->container->attrAclOn = false; // TODO : must change back to true when ACL is fixed.
 	}
 }
 
@@ -917,7 +918,7 @@ void QueryParser::responseWriteTypeParameterParser() {
     Logger::debug("returning from responseWriteTypeParameterParser function");
 }
 
-bool QueryParser::filterQueryParameterParser() {
+bool QueryParser::filterQueryParameterParser(const Schema * schema) {
     /*
      * it looks to see if there is any post processing filter
      * if there is then it fills up the container accordingly
@@ -937,7 +938,7 @@ bool QueryParser::filterQueryParameterParser() {
         FilterQueryContainer* filterQueryContainer = new FilterQueryContainer();
         // create FilterQueryEvaluator object, this will parse the fq string
         FilterQueryEvaluator* fqe = new FilterQueryEvaluator(
-                &this->container->messages);
+                &this->container->messages , schema);
         filterQueryContainer->evaluator = fqe;
         this->container->filterQueryContainer = filterQueryContainer;
         this->container->parametersInQuery.push_back(FilterQueryEvaluatorFlag);

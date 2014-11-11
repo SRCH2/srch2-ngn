@@ -76,18 +76,19 @@ public:
 	void addClusterShard(NodeId nodeId, ClusterShardId shardId);
 	void addNodeShard(NodeId nodeId, unsigned nodeInternalPartitionId);
 	void setPartitionLock(unsigned partitionLock, PartitionLockValue lockValue);
+	bool isCoreLocked() const; // if at least one partition is locked
 
 	const ClusterPartition * getClusterPartition(unsigned partitionId) const;
 	const NodePartition * getNodePartition(unsigned nodeId) const;
 	const unsigned getCoreId() const	;
 	const unsigned getTotalNumberOfPartitions() const;
 	const unsigned getReplicationDegree() const;
+	void getInvolvedNodes(const ClusterPID pid, vector<NodeId> & nodes) const;
 
 	void getClusterPartitionsForRead(vector<const ClusterPartition *> & clusterPartitions) const;
 	void getNodePartitionsForRead(vector<const NodePartition *> & nodePartitions) const;
 	const ClusterPartition * getClusterPartitionForWrite(unsigned hashKey) const;
 	const NodePartition * getNodePartitionForWrite(unsigned hashKey, NodeId nodeId) const;
-
 	void print() const;
 
 private:

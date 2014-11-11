@@ -6,6 +6,8 @@
 #include "wrapper/WrapperConstants.h"
 #include "core/operation/IndexHealthInfo.h"
 #include "sharding/processor/serializables/SerializableGetInfoResults.h"
+#include "sharding/transactions/Transaction.h"
+#include "sharding/transactions/TransactionSession.h"
 #include "string"
 #include <event.h>
 #include <evhttp.h>
@@ -43,18 +45,21 @@ void response_to_invalid_request2 (evhttp_request *req, Json::Value &response);
 Json::Value wrap_with_json_array2(Json::Value value);
 
 
-class HTTPJsonResponse{
+class JsonResponseHandler{
 public:
 
-	static Json::Value getJsonSingleMessage(const HTTPJsonMessageCode code);
-	static const string getJsonSingleMessageStr(const HTTPJsonMessageCode code);
+	static Json::Value getJsonSingleMessage(const JsonMessageCode code);
+	static const string getJsonSingleMessageStr(const JsonMessageCode code);
 	static void mergeMessageLists(Json::Value & destinationList, const Json::Value & sourceList);
 
 	static void appendDetails(Json::Value & destinationRoot, const Json::Value & sourceRoot, const char * destListRootName = c_detail);
 
-	HTTPJsonResponse(evhttp_request *req);
-
-	virtual ~HTTPJsonResponse();
+	JsonResponseHandler(evhttp_request *req);
+	JsonResponseHandler();
+	virtual ~JsonResponseHandler(){
+		printHTTP(req, headers);
+	};
+	void printHTTP(evhttp_request *req, evkeyvalq * headers = NULL);
 
 	void setResponseAttribute(const char * attributeName, const Json::Value & resAttr);
 
@@ -72,34 +77,39 @@ public:
 
 	void addMessage(const string & msg);
 
-	void setHeaders(evkeyvalq * headers);
+	void setHeaders(evkeyvalq * headers){
+		this->headers = headers;
+	}
 
 protected:
-	evhttp_request *req;
-
 	// HTTP reply properties
 	int code;
     const char *reason;
     Json::Value jsonResponse;
+
+    evhttp_request *req;
     evkeyvalq * headers;
 
 	virtual Json::Value & getRoot();
 
 };
 
-class HTTPJsonRecordOperationResponse : public HTTPJsonResponse{
+class JsonRecordOperationResponse : public JsonResponseHandler{
 public:
 	static const char * c_items;
 
 
 public:
-	static Json::Value getRecordJsonResponse(const string & primaryKey, const char * action, bool status, const string & coreName);
-	static void addRecordError(Json::Value & responseRoot, const HTTPJsonMessageCode code, const string & message = "");
-
-	HTTPJsonRecordOperationResponse(evhttp_request *req):HTTPJsonResponse(req){
+	JsonRecordOperationResponse(evhttp_request *req):JsonResponseHandler(req){};
+	JsonRecordOperationResponse():JsonResponseHandler(){
 		jsonResponse[c_items] = Json::Value(Json::arrayValue);
 	};
-	virtual ~HTTPJsonRecordOperationResponse(){};
+	static Json::Value getRecordJsonResponse(const string & primaryKey, const char * action, bool status, const string & coreName);
+	static void addRecordError(Json::Value & responseRoot, const JsonMessageCode code, const string & message = "");
+	static void addRecordMessage(Json::Value & responseRoot, const Json::Value & msgObj);
+	static void addRecordMessages(Json::Value & responseRoot, const vector<JsonMessageCode> & msgCode);
+
+	virtual ~JsonRecordOperationResponse(){};
 
 	virtual Json::Value & getRoot();
 
@@ -111,12 +121,11 @@ private:
 };
 
 
-class HTTPJsonShardOperationResponse : public HTTPJsonResponse{
+class ShardOperationJsonResponse : public JsonResponseHandler{
 public:
 
-	HTTPJsonShardOperationResponse(evhttp_request *req):HTTPJsonResponse(req){};
-	virtual ~HTTPJsonShardOperationResponse(){};
-
+	ShardOperationJsonResponse(evhttp_request *req):JsonResponseHandler(req){};
+	ShardOperationJsonResponse(){};
 	virtual Json::Value & getRoot();
 
 
@@ -128,12 +137,10 @@ private:
 };
 
 
-class HTTPJsonGetInfoResponse : public HTTPJsonResponse{
+class GetInfoJsonResponse : public JsonResponseHandler{
 public:
 
-	HTTPJsonGetInfoResponse(evhttp_request *req):HTTPJsonResponse(req){};
-	virtual ~HTTPJsonGetInfoResponse(){};
-
+	GetInfoJsonResponse(evhttp_request *req):JsonResponseHandler(req){};
 	virtual Json::Value & getRoot();
 
 	Json::Value & getCoresRoot();
@@ -150,8 +157,6 @@ public:
 
 	void addShardResultGroup(Json::Value & coreInfoJsonRoot , bool debugRequest,
 			const vector<std::pair<GetInfoCommandResults::ShardResults * , srch2::instantsearch::IndexHealthInfo > > & nodeShardsInfo);
-
-	void print();
 
 private:
 

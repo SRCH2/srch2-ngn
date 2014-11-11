@@ -55,7 +55,7 @@ public:
     unsigned getNumberOfBytes() const;
     //serializes the object to a byte array and places array into the region
     //allocated by given allocator
-    void* serialize(void * buffer);
+    void* serialize(void * buffer) const;
 
     IndexHealthInfo(const IndexHealthInfo & info);
     IndexHealthInfo();

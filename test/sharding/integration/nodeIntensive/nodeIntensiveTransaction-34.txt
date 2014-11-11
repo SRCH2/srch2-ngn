@@ -1,0 +1,11 @@
+This tests single delete query.
+A||start
+B||start
+A||bulkInsert||./nodeIntensive/stackoverflow-2k-1.json||1||50
+A||merge
+A||delete||1||"rid":"1","status":true
+A||merge
+A||queryID||1||"results":[]||"results_found":0
+B||queryID||1||"results":[]||"results_found":0
+A||kill
+B||kill

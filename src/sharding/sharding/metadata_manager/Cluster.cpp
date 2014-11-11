@@ -13,7 +13,8 @@ namespace srch2 {
 namespace httpwrapper {
 
 
-ClusterResourceMetadata_Readview::ClusterResourceMetadata_Readview(unsigned versionId, string clusterName, vector<CoreInfo_t *> cores){
+ClusterResourceMetadata_Readview::ClusterResourceMetadata_Readview(unsigned versionId,
+		string clusterName, vector<const CoreInfo_t *> cores){
 	this->versionId = versionId;
 	this->clusterName = clusterName;
 	for(unsigned coreIdx = 0; coreIdx < cores.size() ; ++coreIdx){
@@ -47,7 +48,7 @@ ClusterResourceMetadata_Readview::~ClusterResourceMetadata_Readview(){
 	pthread_t rvReleaseThread;
 	unsigned * vid = new unsigned;
 	*vid = this->versionId;
-    if (pthread_create(&rvReleaseThread, NULL, ShardManager::resolveReadviewRelease_ThreadChange , vid) != 0){
+    if (pthread_create(&rvReleaseThread, NULL, ShardManager::resolveReadviewRelease , vid) != 0){
         // Logger::console("Cannot create thread for handling local message");
         perror("Cannot create thread for handling local message");
         return;
@@ -71,7 +72,10 @@ const LocalShardContainer * ClusterResourceMetadata_Readview::getLocalShardConta
 }
 
 void ClusterResourceMetadata_Readview::getAllCores(vector<const CoreInfo_t *> & cores) const{
-	for(map<unsigned, CoreInfo_t *>::const_iterator coreItr = allCores.begin(); coreItr != allCores.end(); ++coreItr){
+	for(map<unsigned, const CoreInfo_t *>::const_iterator coreItr = allCores.begin(); coreItr != allCores.end(); ++coreItr){
+//		if(coreItr->second->isAclCore()){
+//			continue;
+//		}
 		cores.push_back(coreItr->second);
 	}
 }
@@ -84,7 +88,7 @@ const CoreInfo_t * ClusterResourceMetadata_Readview::getCore(unsigned coreId) co
 }
 
 const CoreInfo_t * ClusterResourceMetadata_Readview::getCoreByName(const string & coreName) const{
-	for(map<unsigned, CoreInfo_t *>::const_iterator coreItr = allCores.begin(); coreItr != allCores.end(); ++coreItr){
+	for(map<unsigned, const CoreInfo_t *>::const_iterator coreItr = allCores.begin(); coreItr != allCores.end(); ++coreItr){
 		if(coreItr->second->getName().compare(coreName) == 0){
 			return coreItr->second;
 		}
@@ -135,7 +139,7 @@ void ClusterResourceMetadata_Readview::print() const{
 	cout << "Number of nodes : " << allNodes.size() << endl;
 	cout << "Current node id : " << currentNodeId << endl;
 
-	for(map<unsigned, CoreInfo_t *>::const_iterator coreItr = allCores.begin(); coreItr != allCores.end(); ++coreItr){
+	for(map<unsigned, const CoreInfo_t *>::const_iterator coreItr = allCores.begin(); coreItr != allCores.end(); ++coreItr){
 		unsigned coreId = coreItr->first;
 		//
 		cout << "Partition info : =======================" << endl;

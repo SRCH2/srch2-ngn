@@ -4,6 +4,7 @@
 #include "Notification.h"
 #include "../metadata_manager/Shard.h"
 #include "core/util/SerializationHelper.h"
+#include "sharding/transport/Message.h"
 
 namespace srch2is = srch2::instantsearch;
 using namespace srch2is;
@@ -21,19 +22,23 @@ public:
     }
 	MoveToMeNotification(){};
 
-	void * serialize(void * buffer) const{
-        buffer = ShardingNotification::serialize(buffer);
+
+	bool resolveNotification(SP(ShardingNotification) _notif);
+
+	bool hasResponse() const {
+		return true;
+	}
+
+	void * serializeBody(void * buffer) const{
         buffer = shardId.serialize(buffer);
         return buffer;
     }
-    unsigned getNumberOfBytes() const{
+    unsigned getNumberOfBytesBody() const{
         unsigned numberOfBytes = 0;
-        numberOfBytes += ShardingNotification::getNumberOfBytes();
         numberOfBytes += shardId.getNumberOfBytes();
         return numberOfBytes;
     }
-    void * deserialize(void * buffer){
-        buffer = ShardingNotification::deserialize(buffer);
+    void * deserializeBody(void * buffer){
         buffer = shardId.deserialize(buffer);
         return buffer;
     }
@@ -49,33 +54,33 @@ private:
     ClusterShardId shardId;
 
 public:
-	class START : public ShardingNotification {
+	class CleanUp : public ShardingNotification {
 	public:
-		START(const ClusterShardId & shardId){
+		CleanUp(const ClusterShardId & shardId){
 			this->shardId = shardId;
 		}
-		START(){};
+		CleanUp(){};
+
+		bool resolveNotification(SP(ShardingNotification) _notif);
+
 		ShardingMessageType messageType() const{
-			return ShardingMoveToMeStartMessageType;
+			return ShardingMoveToMeCleanupMessageType;
 		}
-		void * serialize(void * buffer) const{
-			buffer = ShardingNotification::serialize(buffer);
+		void * serializeBody(void * buffer) const{
 			buffer = shardId.serialize(buffer);
 			return buffer;
 		}
-		unsigned getNumberOfBytes() const{
+		unsigned getNumberOfBytesBody() const{
 			unsigned numberOfBytes = 0;
-			numberOfBytes += ShardingNotification::getNumberOfBytes();
 			numberOfBytes += shardId.getNumberOfBytes();
 			return numberOfBytes;
 		}
-		void * deserialize(void * buffer){
-			buffer = ShardingNotification::deserialize(buffer);
+		void * deserializeBody(void * buffer){
 			buffer = shardId.deserialize(buffer);
 			return buffer;
 		}
 
-		bool operator==(const MoveToMeNotification::START & right){
+		bool operator==(const MoveToMeNotification::CleanUp & right){
 			return shardId == right.shardId;
 		}
 
@@ -90,18 +95,8 @@ public:
 		ShardingMessageType messageType() const{
 			return ShardingMoveToMeACKMessageType;
 		}
-	};
-	class FINISH : public ShardingNotification {
-	public:
-		ShardingMessageType messageType() const{
-			return ShardingMoveToMeFinishMessageType;
-		}
-	};
-	class ABORT : public ShardingNotification {
-	public:
-		ShardingMessageType messageType() const{
-			return ShardingMoveToMeAbortMessageType;
-		}
+
+		bool resolveNotification(SP(ShardingNotification) _notif);
 	};
 };
 

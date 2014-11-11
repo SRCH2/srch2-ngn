@@ -1,0 +1,6 @@
+#Trying to mimic real world scenarios
+E||start
+F||start
+E||bulkInsertFromBeginning||./dataIntensive/stackoverflow-1M-A.json||1||50
+F||bulkInsertFromBeginning||./dataIntensive/stackoverflow-1M-B.json||1||50
+A||sleep||100

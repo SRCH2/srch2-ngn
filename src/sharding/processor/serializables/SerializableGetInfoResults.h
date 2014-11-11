@@ -74,7 +74,7 @@ public:
 	    }
 	    //serializes the object to a byte array and places array into the region
 	    //allocated by given allocator
-	    void* serialize(void * buffer){
+	    void* serialize(void * buffer) const{
 	        // copy data
 	    	buffer = srch2::util::serializeFixedTypes(isClusterShard, buffer);
 	    	if(this->isClusterShard){

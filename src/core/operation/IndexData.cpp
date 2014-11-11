@@ -386,30 +386,34 @@ INDEXWRITE_RETVAL IndexData::_deleteRecord(const std::string &externalRecordId)
 	bool hasRecord = this->forwardIndex->getInternalRecordIdFromExternalRecordId(externalRecordId, internalRecordId);
 	if(hasRecord){
 		const ForwardList* forwardList = this->forwardIndex->getForwardList_ForCommit(internalRecordId);
-		StoredRecordBuffer buffer = forwardList->getInMemoryData();
+//		this->permissionMap->deleteResourceFromRoles(externalRecordId, forwardList->getAccessList()->getRoles());
+		if (this->schemaInternal->getIndexType()
+						== srch2::instantsearch::LocationIndex) {
+			StoredRecordBuffer buffer = forwardList->getInMemoryData();
 
-		Schema * storedSchema = Schema::create();
-		srch2::util::RecordSerializerUtil::populateStoredSchema(storedSchema, this->getSchema());
-		srch2::util::RecordSerializer compactRecDeserializer = srch2::util::RecordSerializer(*storedSchema);
+			Schema * storedSchema = Schema::create();
+			srch2::util::RecordSerializerUtil::populateStoredSchema(storedSchema, this->getSchema());
+			srch2::util::RecordSerializer compactRecDeserializer = srch2::util::RecordSerializer(*storedSchema);
 #if 0
-		if(record->hasRoleIds()){
-			this->permissionMap->appendResourceToRoles(record->getPrimaryKey(), *(record->getRoleIds()));
-		}
+			if(record->hasRoleIds()){
+				this->permissionMap->appendResourceToRoles(record->getPrimaryKey(), *(record->getRoleIds()));
+			}
 #endif
 
-		// get the name of the attributes
-		const string* nameOfLatitudeAttribute = this->getSchema()->getNameOfLatituteAttribute();
-		const string* nameOfLongitudeAttribute = this->getSchema()->getNameOfLongitudeAttribute();
+			// get the name of the attributes
+			const string* nameOfLatitudeAttribute = this->getSchema()->getNameOfLatituteAttribute();
+			const string* nameOfLongitudeAttribute = this->getSchema()->getNameOfLongitudeAttribute();
 
-		unsigned idLat = storedSchema->getRefiningAttributeId(*nameOfLatitudeAttribute);
-		unsigned latOffset = compactRecDeserializer.getRefiningOffset(idLat);
+			unsigned idLat = storedSchema->getRefiningAttributeId(*nameOfLatitudeAttribute);
+			unsigned latOffset = compactRecDeserializer.getRefiningOffset(idLat);
 
-		unsigned idLong = storedSchema->getRefiningAttributeId(*nameOfLongitudeAttribute);
-		unsigned longOffset = compactRecDeserializer.getRefiningOffset(idLong);
-		Point point;
-		point.x = *((float *)(buffer.start.get() + latOffset));
-		point.y = *((float *)(buffer.start.get() + longOffset));
-		this->quadTree->remove_ThreadSafe(point, internalRecordId);
+			unsigned idLong = storedSchema->getRefiningAttributeId(*nameOfLongitudeAttribute);
+			unsigned longOffset = compactRecDeserializer.getRefiningOffset(idLong);
+			Point point;
+			point.x = *((float *)(buffer.start.get() + latOffset));
+			point.y = *((float *)(buffer.start.get() + longOffset));
+			this->quadTree->remove_ThreadSafe(point, internalRecordId);
+		}
 	}
 
     INDEXWRITE_RETVAL success = this->forwardIndex->deleteRecord(externalRecordId)  ? OP_SUCCESS: OP_FAIL;
@@ -462,25 +466,28 @@ INDEXWRITE_RETVAL IndexData::_deleteRecordGetInternalId(const std::string &exter
 	bool hasRecord = this->forwardIndex->getInternalRecordIdFromExternalRecordId(externalRecordId, internalRecordId);
 	if(hasRecord){
 		const ForwardList* forwardList = this->forwardIndex->getForwardList_ForCommit(internalRecordId);
-		StoredRecordBuffer buffer = forwardList->getInMemoryData();
+		if (this->schemaInternal->getIndexType()
+								== srch2::instantsearch::LocationIndex) {
+			StoredRecordBuffer buffer = forwardList->getInMemoryData();
 
-		Schema * storedSchema = Schema::create();
-		srch2::util::RecordSerializerUtil::populateStoredSchema(storedSchema, this->getSchema());
-		srch2::util::RecordSerializer compactRecDeserializer = srch2::util::RecordSerializer(*storedSchema);
+			Schema * storedSchema = Schema::create();
+			srch2::util::RecordSerializerUtil::populateStoredSchema(storedSchema, this->getSchema());
+			srch2::util::RecordSerializer compactRecDeserializer = srch2::util::RecordSerializer(*storedSchema);
 
-		// get the name of the attributes
-		const string* nameOfLatitudeAttribute = this->getSchema()->getNameOfLatituteAttribute();
-		const string* nameOfLongitudeAttribute = this->getSchema()->getNameOfLongitudeAttribute();
+			// get the name of the attributes
+			const string* nameOfLatitudeAttribute = this->getSchema()->getNameOfLatituteAttribute();
+			const string* nameOfLongitudeAttribute = this->getSchema()->getNameOfLongitudeAttribute();
 
-		unsigned idLat = storedSchema->getRefiningAttributeId(*nameOfLatitudeAttribute);
-		unsigned latOffset = compactRecDeserializer.getRefiningOffset(idLat);
+			unsigned idLat = storedSchema->getRefiningAttributeId(*nameOfLatitudeAttribute);
+			unsigned latOffset = compactRecDeserializer.getRefiningOffset(idLat);
 
-		unsigned idLong = storedSchema->getRefiningAttributeId(*nameOfLongitudeAttribute);
-		unsigned longOffset = compactRecDeserializer.getRefiningOffset(idLong);
-		Point point;
-		point.x = *((float *)(buffer.start.get() + latOffset));
-		point.y = *((float *)(buffer.start.get() + longOffset));
-		this->quadTree->remove_ThreadSafe(point, internalRecordId);
+			unsigned idLong = storedSchema->getRefiningAttributeId(*nameOfLongitudeAttribute);
+			unsigned longOffset = compactRecDeserializer.getRefiningOffset(idLong);
+			Point point;
+			point.x = *((float *)(buffer.start.get() + latOffset));
+			point.y = *((float *)(buffer.start.get() + longOffset));
+			this->quadTree->remove_ThreadSafe(point, internalRecordId);
+		}
 	}
 
     INDEXWRITE_RETVAL success = this->forwardIndex->deleteRecordGetInternalId(externalRecordId, internalRecordId)  ? OP_SUCCESS: OP_FAIL;
@@ -502,25 +509,28 @@ INDEXWRITE_RETVAL IndexData::_recoverRecord(const std::string &externalRecordId,
     if(success == OP_SUCCESS){
     	this->forwardIndex->getInternalRecordIdFromExternalRecordId(externalRecordId, internalRecordId);
     	const ForwardList* forwardList = this->forwardIndex->getForwardList_ForCommit(internalRecordId);
-    	StoredRecordBuffer buffer = forwardList->getInMemoryData();
+    	if (this->schemaInternal->getIndexType()
+    							== srch2::instantsearch::LocationIndex) {
+			StoredRecordBuffer buffer = forwardList->getInMemoryData();
 
-    	Schema * storedSchema = Schema::create();
-    	srch2::util::RecordSerializerUtil::populateStoredSchema(storedSchema, this->getSchema());
-    	srch2::util::RecordSerializer compactRecDeserializer = srch2::util::RecordSerializer(*storedSchema);
+			Schema * storedSchema = Schema::create();
+			srch2::util::RecordSerializerUtil::populateStoredSchema(storedSchema, this->getSchema());
+			srch2::util::RecordSerializer compactRecDeserializer = srch2::util::RecordSerializer(*storedSchema);
 
-    	// get the name of the attributes
-    	const string* nameOfLatitudeAttribute = this->getSchema()->getNameOfLatituteAttribute();
-    	const string* nameOfLongitudeAttribute = this->getSchema()->getNameOfLongitudeAttribute();
+			// get the name of the attributes
+			const string* nameOfLatitudeAttribute = this->getSchema()->getNameOfLatituteAttribute();
+			const string* nameOfLongitudeAttribute = this->getSchema()->getNameOfLongitudeAttribute();
 
-    	unsigned idLat = storedSchema->getRefiningAttributeId(*nameOfLatitudeAttribute);
-    	unsigned latOffset = compactRecDeserializer.getRefiningOffset(idLat);
+			unsigned idLat = storedSchema->getRefiningAttributeId(*nameOfLatitudeAttribute);
+			unsigned latOffset = compactRecDeserializer.getRefiningOffset(idLat);
 
-    	unsigned idLong = storedSchema->getRefiningAttributeId(*nameOfLongitudeAttribute);
-    	unsigned longOffset = compactRecDeserializer.getRefiningOffset(idLong);
-    	Point point;
-    	point.x = *((float *)(buffer.start.get() + latOffset));
-    	point.y = *((float *)(buffer.start.get() + longOffset));
-    	this->quadTree->insert_ThreadSafe(point, internalRecordId);
+			unsigned idLong = storedSchema->getRefiningAttributeId(*nameOfLongitudeAttribute);
+			unsigned longOffset = compactRecDeserializer.getRefiningOffset(idLong);
+			Point point;
+			point.x = *((float *)(buffer.start.get() + latOffset));
+			point.y = *((float *)(buffer.start.get() + longOffset));
+			this->quadTree->insert_ThreadSafe(point, internalRecordId);
+    	}
     }
 
     if (success == OP_SUCCESS) {

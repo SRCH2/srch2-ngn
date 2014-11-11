@@ -242,7 +242,7 @@ void * ResultsPostProcessingInfo::serializeForNetwork(void * buffer){
  * Serialization scheme :
  * | isNULL | isNULL | isNULL | isNULL | facetInfo | sortEvaluator | filterQueryEvaluator | phraseSearchInfoContainer |
  */
-void * ResultsPostProcessingInfo::deserializeForNetwork(ResultsPostProcessingInfo & info, void * buffer){
+void * ResultsPostProcessingInfo::deserializeForNetwork(ResultsPostProcessingInfo & info, void * buffer, const Schema * schema){
 
 	bool isFacetInfoNotNull = false;
 	buffer = srch2::util::deserializeFixedTypes(buffer, isFacetInfoNotNull);
@@ -263,7 +263,7 @@ void * ResultsPostProcessingInfo::deserializeForNetwork(ResultsPostProcessingInf
 	}
 	if(isFilterQueryEvaluatorInfoNotNull){
 		info.filterQueryEvaluator = new srch2::httpwrapper::FilterQueryEvaluator(NULL); // we don't serialize message and don't use it after deserialization ...
-		buffer = srch2::httpwrapper::FilterQueryEvaluator::deserializeForNetwork(*(info.filterQueryEvaluator), buffer);
+		buffer = srch2::httpwrapper::FilterQueryEvaluator::deserializeForNetwork(*(info.filterQueryEvaluator), buffer, schema);
 	}
 	if(isPhraseSearchInfoContainerNotNull){
 		info.phraseSearchInfoContainer = new PhraseSearchInfoContainer();

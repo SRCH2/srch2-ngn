@@ -1,0 +1,5 @@
+#This thread runs concurrently with the NIT-14 and queries the engine
+A||time||20
+T||start
+T||stressQuery||./nodeIntensive/1-term-prefix.csv
+T||kill

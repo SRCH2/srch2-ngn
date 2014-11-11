@@ -17,6 +17,25 @@
  * Copyright © 2010 SRCH2 Inc. All rights reserved
  */
 
+#ifndef __FUNC_LINE__
+
+#ifndef NDEBUG
+#define __FUNC_LINE__ \
+	{\
+	string fileName(__FILE__);\
+	fileName = fileName.substr(fileName.find_last_of('/'));\
+	stringstream callInfo;\
+	callInfo << fileName << "/" << __func__ << "/" << __LINE__ ;\
+	const char * __func_line__ = callInfo.str().c_str();\
+	Logger::sharding(Logger::FuncLine, "%s", __func_line__);\
+	}\
+
+#else
+#define __FUNC_LINE__
+#endif
+
+#endif
+
 #ifndef __SRCH2_UTIL_LOG_H__
 #define __SRCH2_UTIL_LOG_H__
 
@@ -59,11 +78,19 @@ public:
 		return _logLevel;
 	}
 
+	enum ShardingLogLevel{
+		Error,
+		Step,
+		Detail,
+		Info,
+		FuncLine
+	};
 	static void console(const char *format, ...);
 	static void error(const char *format, ...);
 	static void warn(const char *format, ...);
 	static void info(const char *format, ...);
 	static void debug(const char *format, ...);
+	static void sharding(ShardingLogLevel logLevel, const char *format, ...);
 	static FILE* swapLoggerFile(FILE * newLogger);
 
         static void close() { if (_out_file != NULL) { fclose(_out_file);} }

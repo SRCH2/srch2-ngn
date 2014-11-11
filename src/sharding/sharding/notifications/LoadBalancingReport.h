@@ -3,6 +3,7 @@
 
 #include "Notification.h"
 #include "core/util/SerializationHelper.h"
+#include "sharding/transport/Message.h"
 
 
 namespace srch2is = srch2::instantsearch;
@@ -18,28 +19,13 @@ public:
 		this->load = load;
 	};
 
-    ShardingMessageType messageType() const{
-    	return ShardingLoadBalancingReportMessageType;
-    }
-	void * serialize(void * buffer) const{
-		buffer = ShardingNotification::serialize(buffer);
-		buffer = srch2::util::serializeFixedTypes(load, buffer);
-		return buffer;
-	}
-	unsigned getNumberOfBytes() const{
-		unsigned numberOfBytes = 0;
-		numberOfBytes += ShardingNotification::getNumberOfBytes();
-		numberOfBytes += sizeof(double);
-		return numberOfBytes;
-	}
-	void * deserialize(void * buffer){
-		buffer = ShardingNotification::deserialize(buffer);
-		buffer = srch2::util::deserializeFixedTypes(buffer, load);
-		return buffer;
-	}
-    double getLoad() const{
-    	return this->load;
-    }
+	bool resolveNotification(SP(ShardingNotification) _notif);
+
+    ShardingMessageType messageType() const;
+	void * serializeBody(void * buffer) const;
+	unsigned getNumberOfBytesBody() const;
+	void * deserializeBody(void * buffer);
+    double getLoad() const;
 
 private:
 	// this load might not be consistent with other loads
@@ -54,6 +40,10 @@ public:
 	    ShardingMessageType messageType() const{
 	    	return ShardingLoadBalancingReportRequestMessageType;
 	    }
+		bool resolveNotification(SP(ShardingNotification) _notif);
+	    bool hasResponse() const {
+				return true;
+		}
 	};
 };
 

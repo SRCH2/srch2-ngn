@@ -12,7 +12,7 @@ namespace httpwrapper {
 
 
 GetInfoResponseAggregator::GetInfoResponseAggregator(ConfigManager * configurationManager,
-		boost::shared_ptr<HTTPJsonGetInfoResponse > brokerSideShardInfo,
+		boost::shared_ptr<GetInfoJsonResponse > brokerSideShardInfo,
 		boost::shared_ptr<const ClusterResourceMetadata_Readview> clusterReadview, unsigned coreId, bool debugRequest):
 		DistributedProcessorAggregator<GetInfoCommand,GetInfoCommandResults>(clusterReadview, coreId){
 	this->debugRequest = debugRequest;
@@ -38,7 +38,7 @@ void GetInfoResponseAggregator::processTimeout(PendingMessage<GetInfoCommand,
         return;
     }
 	boost::unique_lock< boost::shared_mutex > lock(_access);
-	Json::Value warinigNode = HTTPJsonResponse::getJsonSingleMessage(HTTP_JSON_Node_Timeout_Warning);
+	Json::Value warinigNode = JsonResponseHandler::getJsonSingleMessage(HTTP_JSON_Node_Timeout_Warning);
 	warinigNode[c_node_name] = getClusterReadview()->getNode(message->getNodeId()).getName();
 	this->brokerSideInformationJson->addWarning(warinigNode);
 }

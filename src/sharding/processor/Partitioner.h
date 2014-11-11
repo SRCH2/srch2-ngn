@@ -25,6 +25,7 @@ public:
 
 	void getAllReadTargets(vector<NodeTargetShardInfo> & targets) const;
 	void getAllWriteTargets(unsigned hashKey, NodeId currentNodeId, vector<NodeTargetShardInfo> & targets) const;
+	void getAllWriteTargets(const ClusterPID & pid, NodeId currentNodeId, vector<NodeTargetShardInfo> & targets) const;
 	void getAllTargets(vector<NodeTargetShardInfo> & target) const;
 	void getAllShardIds(vector<ClusterShardId> & allShardIds) const;
 	const unsigned getCoreId() const	;
@@ -32,6 +33,9 @@ public:
 	const unsigned getReplicationDegree() const;
     // computes the hash value of a string
     unsigned hashDJB2(const char *str) const;
+    // returns false if this core does not have any cluster shards (only nodes shards)
+    // otherwise returns true and sets pid
+    bool getClusterPartitionId(const string & primaryKey, ClusterPID & pid) const;
 
 private:
 	const CorePartitionContianer * partitionContainer;

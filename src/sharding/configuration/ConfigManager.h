@@ -416,21 +416,21 @@ public:
 	const map<string, RefiningAttributeInfoContainer > * getRefiningAttributes(const string &coreName) const;
 
 	//const vector<unsigned>* getAttributesBoosts() const;
-	const std::string& getAttributeRecordBoostName(const string &coreName) const;
+	const std::string getAttributeRecordBoostName(const string &coreName) const;
 	//string getDefaultAttributeRecordBoost() const;
 
-	const std::string& getRecordAllowedSpecialCharacters(const string &coreName) const;
+	const std::string getRecordAllowedSpecialCharacters(const string &coreName) const;
 	int getSearchType(const string &coreName) const;
 	int getIsPrimSearchable(const string &coreName) const;
 	bool getIsFuzzyTermsQuery() const;
 	bool getQueryTermPrefixType() const;
 	bool getStemmerFlag(const string &coreName) const;
-	const string &getSynonymFilePath(const string &coreName) const;
-	const string &getProtectedWordsFilePath(const string &coreName) const;
+	const string getSynonymFilePath(const string &coreName) const;
+	const string getProtectedWordsFilePath(const string &coreName) const;
 	bool getSynonymKeepOrigFlag(const string &coreName) const; // Synonym: if we want to keep the original word or replace the synonym with it.
-	const string &getStopFilePath(const string &coreName) const; // StopFilter File Path
-	const string &getStemmerFile(const string &coreName) const; // stemmer file
-	const string &getSrch2Home() const; // Srch2Home Directory
+	const string getStopFilePath(const string &coreName) const; // StopFilter File Path
+	const string getStemmerFile(const string &coreName) const; // stemmer file
+	const string getSrch2Home() const; // Srch2Home Directory
 	unsigned getQueryTermBoost(const string &coreName) const;
 	bool getSupportAttributeBasedSearch(const string &coreName) const;
 
@@ -455,8 +455,8 @@ public:
 
 	int getIndexType(const string &coreName) const;
 	bool getSupportSwapInEditDistance(const string &coreName) const;
-	const std::string& getAttributeLatitude(const string &coreName) const;
-	const std::string& getAttributeLongitude(const string &coreName) const;
+	const std::string getAttributeLatitude(const string &coreName) const;
+	const std::string getAttributeLongitude(const string &coreName) const;
 	float getDefaultSpatialQueryBoundingBox() const;
 
 	bool isFacetEnabled(const string &coreName) const;
@@ -541,7 +541,6 @@ private:
 	static const char* const pingIntervalTag;
 	static const char* const pingTimeoutTag;
 	static const char* const retryCountTag;
-	static const char* const coreIdTag;
 	static const char* const accessLogFileString;
 	static const char* const authorizationKeyTag;
 	static const char* const analyzerString;

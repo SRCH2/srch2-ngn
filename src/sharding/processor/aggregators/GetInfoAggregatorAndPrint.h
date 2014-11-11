@@ -18,7 +18,7 @@ namespace httpwrapper {
 class GetInfoResponseAggregator : public DistributedProcessorAggregator<GetInfoCommand,GetInfoCommandResults> {
 public:
     GetInfoResponseAggregator(ConfigManager * configurationManager,
-    		boost::shared_ptr<HTTPJsonGetInfoResponse > brokerSideShardInfo,
+    		boost::shared_ptr<GetInfoJsonResponse > brokerSideShardInfo,
     		boost::shared_ptr<const ClusterResourceMetadata_Readview> clusterReadview,
     		unsigned coreId, bool debugRequest = false);
 
@@ -62,7 +62,7 @@ private:
     bool debugRequest;
 
     ConfigManager * configurationManager;
-	boost::shared_ptr<HTTPJsonGetInfoResponse > brokerSideInformationJson ;
+	boost::shared_ptr<GetInfoJsonResponse > brokerSideInformationJson ;
 	GetInfoAggregateCriterion criterion;
 
 

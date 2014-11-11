@@ -137,6 +137,10 @@ public:
 		return this->numberOfReplicas;
 	}
 
+	bool isDistributedCore() const{
+		return (this->getNumberOfPrimaryShards() > 0);
+	}
+
 	ClusterShardId getPrimaryShardId(unsigned partitionId) const;
 
 	CoreInfo_t(class ConfigManager *manager) : configManager(manager),  accessControlInfo(NULL)  {
@@ -251,7 +255,7 @@ public:
 
 	AnalyzerType getAnalyzerType() const {	return analyzerType;};
 
-	const string& getChineseDictionaryPath() const { return chineseDictionaryFilePath;	}
+	const string getChineseDictionaryPath() const { return chineseDictionaryFilePath;	}
 
 	uint32_t getDocumentLimit() const;
 	uint64_t getMemoryLimit() const;
@@ -263,9 +267,9 @@ public:
 	uint32_t getUpdateHistogramEveryQWrites() const;
 
 	// **** accessors for settings in ConfigManager (global to all cores) ****
-			const string &getSrch2Home() const ;
-	const string& getLicenseKeyFileName() const ;
-	const string& getHTTPServerAccessLogFile() const ;
+	const string getSrch2Home() const ;
+	const string getLicenseKeyFileName() const ;
+	const string getHTTPServerAccessLogFile() const ;
 	const Logger::LogLevel& getHTTPServerLogLevel() const;
 
 	bool getIsFuzzyTermsQuery() const;
@@ -370,7 +374,7 @@ protected:
 	// can do it in V0 or after V1. SRCH2 will take care about load
 	// balancing, relocating, gathering the results from nodes, etc.
 	// ES: core.number_of_replicas: 1 // index.number_of_replicas: 1
-	unsigned numberOfReplicas; // always 0 for V0
+	unsigned numberOfReplicas;
 
 	ConfigManager *configManager;
 

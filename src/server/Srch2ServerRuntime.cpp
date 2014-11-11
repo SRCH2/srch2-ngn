@@ -3,6 +3,7 @@
 #include "core/analyzer/AnalyzerContainers.h"
 #include <event2/event-config.h>
 #include <event2/thread.h>
+#include "sharding/sharding/ShardManager.h"
 
 namespace srch2
 {
@@ -25,10 +26,11 @@ int Srch2ServerRuntime::initializeHttpServerMetadata() {
 		ports.insert(globalDefaultPort);
 	}
 
-	Cluster_Writeview * writeview = srch2::httpwrapper::ShardManager::getWriteview();
+	boost::shared_lock<boost::shared_mutex> sLock;
+	const Cluster_Writeview * writeview = srch2::httpwrapper::ShardManager::getWriteview_read(sLock);
 	unsigned short port;
 	// loop over cores and extract all port numbers of current node to use
-	for(map<unsigned, CoreInfo_t *>::iterator coresItr = writeview->cores.begin();
+	for(map<unsigned, CoreInfo_t *>::const_iterator coresItr = writeview->cores.begin();
 			coresItr != writeview->cores.end(); ++coresItr){
 		const CoreInfo_t * coreInfo = coresItr->second;
 		for (srch2http::PortType_t portType = (srch2http::PortType_t) 0;
@@ -42,6 +44,7 @@ int Srch2ServerRuntime::initializeHttpServerMetadata() {
 			}
 		}
 	}
+	sLock.unlock();
 
 	// bind once each port defined for use by this core
 	for(std::set<short>::const_iterator port = ports.begin();
@@ -149,6 +152,7 @@ void Srch2ServerRuntime::initializeDataProcessorUnits(){
 
 	// create DP external
 	dpExternal = new srch2http::DPExternalRequestHandler(*serverConf, *transportManager, *dpInternal);
+	ShardManager::getShardManager()->setDPInternal(dpInternal);
 }
 
 int Srch2ServerRuntime::startInternalCommunication(){
@@ -248,6 +252,7 @@ void Srch2ServerRuntime::gracefulExit(){
 //    //Call the save function implemented by each database connector.
 //    DataConnectorThread::saveConnectorTimestamps();
 
+	ShardManager::deleteShardManager();
     if (synchronizerThread != NULL){
         delete synchronizerThread;
         synchronizerThread = NULL;

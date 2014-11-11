@@ -84,9 +84,11 @@ void * dispatchMasterMessageHandler(void *arg);
 
 void SyncManager::startDiscovery() {
 
-	Cluster_Writeview * clusterWriteView = ShardManager::getWriteview();
+	boost::unique_lock<boost::shared_mutex> xLock;
+	Cluster_Writeview * clusterWriteView = ShardManager::getWriteview_write(xLock);
 
-	ASSERT(clusterWriteView->getTotalNumberOfNodes() == 0);
+	SP(ClusterNodes_Writeview) nodesWriteview = ShardManager::getNodesWriteview_write();
+	ASSERT(nodesWriteview->getTotalNumberOfNodes() == 0);
 
 	Logger::console("running discovery");
 
@@ -101,6 +103,10 @@ void SyncManager::startDiscovery() {
 	isCurrentNodeMaster = (masterNodeId == currentNodeId);
 
 	clusterWriteView->setCurrentNodeId(currentNodeId);
+	nodesWriteview.reset();
+	nodesWriteview = ShardManager::getNodesWriteview_write();
+	// Also notify shard manager to update its current node id
+	ShardManager::getShardManager()->updateCurrentNodeId(clusterWriteView);
 
 
 	Node node(config.getCurrentNodeName(), transport.getPublisedInterfaceAddress(), transport.getCommunicationPort(), true);
@@ -120,8 +126,8 @@ void SyncManager::startDiscovery() {
 	transport.setListeningThread(listenThread);
 
 	// Add new node in CM
-	clusterWriteView->addNode(node);
-	clusterWriteView->setNodeState(node.getId(), ShardingNodeStateArrived);
+	nodesWriteview->addNode(node);
+	nodesWriteview->setNodeState(node.getId(), ShardingNodeStateArrived);
 
 	localNodesCopyMutex.lock();
 	localNodesCopy.push_back(node);
@@ -157,10 +163,10 @@ void SyncManager::joinExistingCluster(Node& node, bool isDiscoveryPhase) {
 
 		if (isDiscoveryPhase){
 			// if discovery phase then write to CM directly. There is no shard manager yet.
-			Cluster_Writeview * clusterWriteView = ShardManager::getWriteview();
-			clusterWriteView->addNode(masterNode);
+			SP(ClusterNodes_Writeview) nodesWriteview = ShardManager::getNodesWriteview_write();
+			nodesWriteview->addNode(masterNode);
 			// Todo : move this inside addNode call above.
-			clusterWriteView->setNodeState(masterNode.getId(), ShardingNodeStateArrived);
+			nodesWriteview->setNodeState(masterNode.getId(), ShardingNodeStateArrived);
 		} else {
 			Logger::console("shard Manager Notified of new master");
 			// else notify shard manager
@@ -333,7 +339,7 @@ void SyncManager::sendHeartBeatToAllNodesInCluster() {
 
 	localNodesCopyMutex.lock();
 	for(vector<Node>::iterator nodeItr = localNodesCopy.begin(); nodeItr != localNodesCopy.end(); ++nodeItr){
-		if (nodeItr->thisIsMe)
+		if (nodeItr->getId() == currentNodeId)
 			continue;
 		Logger::debug("SM-M%d-sending heart-beat request to node %d",
 				currentNodeId, nodeItr->getId());
@@ -375,6 +381,7 @@ bool SMCallBackHandler::resolveMessage(Message *message, NodeId node){
 	case HeartBeatMessageType:
 	{
 		if (!isMaster) {
+			Logger::debug("SM-CB-getting heart-beat request from node %d", node);
 			boost::mutex::scoped_lock lock(hbLock);
 			heartbeatMessageTimeEntry = time(NULL);
 			memcpy(heartbeatMessage, message, sizeof(Message) + sizeof(NodeId));

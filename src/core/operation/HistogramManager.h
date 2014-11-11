@@ -119,6 +119,7 @@ private:
 
 	void markTermToForceSuggestionPhysicalOperator(LogicalPlanNode * node , bool isFuzzy);
 
+	void freeStatsOfLogicalPlanTree(LogicalPlanNode * node) ;
 	void allocateLogicalPlanNodeAnnotations(LogicalPlanNode * node);
 
 	void annotateWithActiveNodeSets(LogicalPlanNode * node , bool isFuzzy);

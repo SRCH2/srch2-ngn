@@ -70,7 +70,7 @@ public:
 
 	virtual string getUniqueStringForCaching() = 0;
 
-	virtual QueryExpression * getNewCopy()const =  0;
+	virtual QueryExpression * getNewCopy(const Schema * schema)const =  0;
 
     virtual ~QueryExpression() {
     }
@@ -100,11 +100,11 @@ public:
     	this->attributeName = expr.attributeName;
     	this->attributeValueLower = expr.attributeValueLower;
     	this->attributeValueUpper = expr.attributeValueUpper;
-    	this->attributeName = expr.negative;
+    	this->negative = expr.negative;
     	this->messages = new std::vector<std::pair<MessageType, string> > ();
     }
 
-	QueryExpression * getNewCopy() const{
+	QueryExpression * getNewCopy(const Schema * schema) const{
 		RangeQueryExpression * newCopy = new RangeQueryExpression(*this);
 		return newCopy;
 	}
@@ -329,7 +329,7 @@ public:
     	this->messages = new std::vector<std::pair<MessageType, string> > ();
     }
 
-	QueryExpression * getNewCopy() const{
+	QueryExpression * getNewCopy(const Schema * schema) const{
 		EqualityQueryExpression * newCopy = new EqualityQueryExpression(*this);
 		return newCopy;
 	}
@@ -505,8 +505,13 @@ public:
     	this->messages = new std::vector<std::pair<MessageType, string> > ();
     }
 
-	QueryExpression * getNewCopy() const{
-		ComplexQueryExpression * newCopy = new ComplexQueryExpression(*this);
+	QueryExpression * getNewCopy(const Schema * schema) const{
+		ComplexQueryExpression * newCopy = new ComplexQueryExpression(NULL);
+        newCopy->parsedExpression = this->parsedExpression;
+        newCopy->messages = new std::vector<std::pair<MessageType, string> > ();
+		if(schema != NULL){
+		    newCopy->validate(*schema);
+		}
 		return newCopy;
 	}
 
@@ -535,8 +540,55 @@ public:
         return doParse(input, re, output);
     }
 
+    bool validate(const Schema & schema){
+
+        //    bool validate(const Schema & schema) {
+        // insert non-searchable attribute names to the symbol table and let
+        // exprtk library do the validation
+
+        const std::map<std::string, unsigned> * nonSearchableAttributes = schema
+                .getRefiningAttributes();
+
+        for (std::map<std::string, unsigned>::const_iterator nonSearchableAttribute =
+                nonSearchableAttributes->begin();
+                nonSearchableAttribute != nonSearchableAttributes->end();
+                ++nonSearchableAttribute) {
+
+            // Since we only accept integer, long float and double as non-searchable attributes
+            // this if-else statement only inserts these non-searchable-attributes into
+            // the symbol table. This symbol table is passed to exprtk library.
+            if (schema.getTypeOfRefiningAttribute(
+                    nonSearchableAttribute->second)
+                    == srch2::instantsearch::ATTRIBUTE_TYPE_INT
+                    || schema.getTypeOfRefiningAttribute(
+                            nonSearchableAttribute->second)
+                            == srch2::instantsearch::ATTRIBUTE_TYPE_LONG
+                            || schema.getTypeOfRefiningAttribute(
+                                    nonSearchableAttribute->second)
+                                    == srch2::instantsearch::ATTRIBUTE_TYPE_FLOAT
+                                    || schema.getTypeOfRefiningAttribute(
+                                            nonSearchableAttribute->second)
+                                            == srch2::instantsearch::ATTRIBUTE_TYPE_DOUBLE) {
+                symbolVariables.insert(
+                        std::make_pair(nonSearchableAttribute->first, 0)); // zero is just a place holder, so that a variable is allocated in the vector
+                symbolTable.add_variable(nonSearchableAttribute->first,
+                        symbolVariables[nonSearchableAttribute->first], false);
+            }
+        }
+
+        // now register the symbol table in the library
+        expression.register_symbol_table(symbolTable);
+
+        // now parse the string
+        exprtk::parser<double> expressionParser;
+        return expressionParser.compile(parsedExpression, expression);
+
+    }
+
+// TODO : FIX after ACL is fixed.
     bool validate(const Schema & schema, const string& aclRoleValue,
     		const AttributeAccessControl& attributeAcl, bool attrAclOn) {
+//    bool validate(const Schema & schema) {
         // insert non-searchable attribute names to the symbol table and let
         // exprtk library do the validation
 
@@ -625,8 +677,12 @@ public:
      *
      * NOTE: after deserialization, validate should be called.
      */
-	static void * deserializeForNetwork(QueryExpression & info, void * buffer){
-		return srch2::util::deserializeString(buffer, ((ComplexQueryExpression &)info).parsedExpression);
+	static void * deserializeForNetwork(QueryExpression & info, void * buffer, const Schema * schema){
+		buffer = srch2::util::deserializeString(buffer, ((ComplexQueryExpression &)info).parsedExpression);
+		if(schema != NULL){
+            ((ComplexQueryExpression &)info).validate(*schema);
+		}
+		return buffer;
 	}
 
     /*
@@ -651,19 +707,20 @@ class FilterQueryEvaluator: public RefiningAttributeExpressionEvaluator {
 public:
 
     FilterQueryEvaluator(
-            std::vector<std::pair<MessageType, string> > *messages) {
+            std::vector<std::pair<MessageType, string> > *messages, const Schema * schema = NULL) {
         this->isFqBoolOperatorSet = false;
         this->messages = messages;
         this->termFQBooleanOperator = srch2::instantsearch::BooleanOperatorAND;
+        this->schema = schema;
     }
     FilterQueryEvaluator(const FilterQueryEvaluator & evaluator){
     	this->isFqBoolOperatorSet = evaluator.isFqBoolOperatorSet;
     	this->messages = NULL;
     	this->termFQBooleanOperator = evaluator.termFQBooleanOperator;
-
+    	this->schema = evaluator.schema;
     	std::vector<QueryExpression *> expressions;;
     	for(unsigned exprIndx = 0 ; exprIndx < evaluator.expressions.size(); ++exprIndx){
-    		this->expressions.push_back(evaluator.expressions.at(exprIndx)->getNewCopy());
+    		this->expressions.push_back(evaluator.expressions.at(exprIndx)->getNewCopy(schema));
     	}
 
     }
@@ -862,7 +919,7 @@ public:
 	 * NOTE : message is passed from outside this class and is only needed in the
 	 * external layer so we do not serialize messages member
 	 */
-	static void * deserializeForNetwork(RefiningAttributeExpressionEvaluator & info, void * buffer) {
+	static void * deserializeForNetwork(RefiningAttributeExpressionEvaluator & info, void * buffer, const Schema * schema) {
 		FilterQueryEvaluator & filterInfo = (FilterQueryEvaluator &)info;
 		buffer = srch2::util::deserializeFixedTypes(buffer, filterInfo.isFqBoolOperatorSet);
 		buffer = srch2::util::deserializeFixedTypes(buffer, filterInfo.termFQBooleanOperator);
@@ -891,7 +948,7 @@ public:
 				case QueryExpression::Complex:
 				{
 					ComplexQueryExpression * complexQueryExpression = new ComplexQueryExpression(NULL);
-					buffer = ComplexQueryExpression::deserializeForNetwork(*complexQueryExpression, buffer);
+					buffer = ComplexQueryExpression::deserializeForNetwork(*complexQueryExpression, buffer, schema);
 					filterInfo.expressions.push_back(complexQueryExpression);
 					break;
 				}
@@ -930,6 +987,7 @@ private:
     BooleanOperation termFQBooleanOperator; // to store the boolean operator for the filterquery terms.
     std::vector<QueryExpression *> expressions;
     std::vector<std::pair<MessageType, string> > *messages;
+    const Schema * schema;
 
     bool parseFqField(string &input, string &field) {
         boost::regex re(FQ_FIELD_REGEX_STRING); //TODO: compile this regex when the engine starts.

@@ -47,6 +47,7 @@ NodeAddChange::NodeAddChange(const NodeAddChange & copy){
     localNodeShardIds = copy.localNodeShardIds;
 }
 bool NodeAddChange::doChange(Cluster_Writeview * metadata){
+
     if(metadata == NULL){
         ASSERT(false);
         return false;
@@ -74,7 +75,7 @@ bool NodeAddChange::doChange(Cluster_Writeview * metadata){
         metadata->addExternalNodeShard(this->localNodeShardIds.at(i),1);
     }
 
-    Cluster_Writeview * writeview = ShardManager::getWriteview();
+	SP(ClusterNodes_Writeview) writeview = ShardManager::getNodesWriteview_write();
     writeview->setNodeState(newNodeId, ShardingNodeStateArrived);
 
     return true;

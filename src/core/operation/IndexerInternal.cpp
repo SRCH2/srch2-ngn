@@ -55,7 +55,7 @@ unsigned IndexHealthInfo::getNumberOfBytes() const{
 }
 //serializes the object to a byte array and places array into the region
 //allocated by given allocator
-void* IndexHealthInfo::serialize(void * buffer){
+void* IndexHealthInfo::serialize(void * buffer) const{
     // copy data
     buffer = srch2::util::serializeFixedTypes(readCount, buffer);
     buffer = srch2::util::serializeFixedTypes(writeCount, buffer);
@@ -453,6 +453,7 @@ void IndexReaderWriter::initIndexReaderWriter(IndexMetaData* indexMetaData)
      this->needToSaveIndexes = false;
 
      this->mergeThreadStarted = false; // No threads running
+     this->mergeEnabledFlag = true;
      //zero indicates that the lockForWriters is unset
      pthread_mutex_init(&lockForWriters, 0); 
  }

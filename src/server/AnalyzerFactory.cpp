@@ -207,14 +207,14 @@ void AnalyzerHelper::loadAnalyzerResource(const CoreInfo_t* conf) {
             StemmerContainer::getInstance(conf->getStemmerFile())->loadStemmerContainer(ia);
             StopWordContainer::getInstance(conf->getStopFilePath())->loadStopWordContainer(ia);
             ChineseDictionaryContainer::getInstance(conf->getChineseDictionaryPath())->loadDictionaryContainer(ia);
+            ProtectedWordsContainer::getInstance(conf->getProtectedWordsFilePath())->loadProtectedWordsContainer(ia);
+
             ifs.close();
         }else {
             ifs.close();
             initializeAnalyzerResource(conf);
             saveAnalyzerResource(conf);
         }
-                // TODO - Move init() to getInstance() when we refactor this code
-        ProtectedWordsContainer::getInstance(conf->getProtectedWordsFilePath())->init();
     }catch (std::exception& ex){
         Logger::error("Error while loading Analyzer resource files");
         Logger::error(ex.what());
@@ -239,6 +239,7 @@ void AnalyzerHelper::saveAnalyzerResource(const CoreInfo_t* conf) {
             StopWordContainer::getInstance(conf->getStopFilePath())->saveStopWordContainer(oa);
             ChineseDictionaryContainer::getInstance(conf->getChineseDictionaryPath())
                 ->saveDictionaryContainer(oa);
+            ProtectedWordsContainer::getInstance(conf->getProtectedWordsFilePath())->saveProtectedWordsContainer(oa);
         }
         ofs.close();
     }catch(std::exception& ex){

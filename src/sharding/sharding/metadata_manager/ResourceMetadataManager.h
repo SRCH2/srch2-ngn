@@ -25,59 +25,58 @@ using namespace srch2is;
 using namespace std;
 namespace srch2 {
 namespace httpwrapper {
+/*
+ * Thread concurrency conflicts :
+ * Mutexes are :
+ *      writeviewMutex
+ *      nodesMutex
+ * resource    |    write operation  |   read operation
+ * writeview   |	WX,NX				 |	 WS,NS
+ * nodes       |	W TODO				 |	 S
+ *
+ */
 
 class ResourceMetadataManager{
+	friend class MetadataInitializer;
 public:
 
 	ResourceMetadataManager();
 	~ResourceMetadataManager();
-	void resolve(CommitNotification * commitNotification){
-		if(commitNotification == NULL){
-			ASSERT(false);
-			return;
-		}
-		applyAndCommit(commitNotification->getMetadataChange());
-		delete commitNotification->getMetadataChange();
-		// reply ack
-		CommitNotification::ACK * ack = new CommitNotification::ACK();
-		ack->setSrc(NodeOperationId(ShardManager::getCurrentNodeId()));
-		ack->setDest(commitNotification->getSrc());
-		ShardManager::getShardManager()->send(ack);
-		delete ack;
-	}
+	void resolve(SP(CommitNotification) commitNotification);
 
 
-	void resolve(ConfigManager * confManager, SaveMetadataNotification * saveDataNotification);
+	void saveMetadata(ConfigManager * confManager);
+	void resolve(SP(MetadataReport::REQUEST) readRequest);
+	void resolve(SP(NodeFailureNotification) nodeFailureNotif, const bool shouldLock = true);
 
 
-	void resolve(MetadataReport::REQUEST * readRequest){
-		MetadataReport * report = new MetadataReport(this->writeview);
-		report->setSrc(NodeOperationId(ShardManager::getCurrentNodeId()));
-		report->setDest(readRequest->getSrc());
-		ShardManager::getShardManager()->send(report);
-		delete report;
-	}
-
-	void resolve(NodeFailureNotification * nodeFailureNotif){
-		this->writeview->removeNode(nodeFailureNotif->getFailedNodeID());
-		this->commitClusterMetadata();
-	}
-
-
-	void commitClusterMetadata(ClusterResourceMetadata_Readview * newReadview);
-	void commitClusterMetadata();
+	void commitClusterMetadata(const bool shouldLock = true);
 	void getClusterReadView(boost::shared_ptr<const ClusterResourceMetadata_Readview> & clusterReadview) const;
-	void setWriteview(Cluster_Writeview * newWriteview);
-	unsigned applyAndCommit(MetadataChange * shardingChange, Cluster_Writeview * writeview);
+	/*
+	 * if shouldLock is false it assumes we already have both writeview and nodes X locked.
+	 * otherwise it acquires both before operation
+	 */
+	void setWriteview(Cluster_Writeview * newWriteview, const bool shouldLock = true);
 	unsigned applyAndCommit(MetadataChange * metadataChange);
-	Cluster_Writeview * getClusterWriteview() const;
+	Cluster_Writeview * getClusterWriteview_write(boost::unique_lock<boost::shared_mutex> & xLock);
+	const Cluster_Writeview * getClusterWriteview_read(boost::shared_lock<boost::shared_mutex> & sLock);
+	SP(ClusterNodes_Writeview) getClusterNodesWriteview_write();
+	SP(const ClusterNodes_Writeview) getClusterNodesWriteview_read();
 
-	void print();
+	// sLock on writeview and nodes must be acquired before calling this method
+	void print() const;
 
 private:
+	// NOTE : changing this pointer (like assigning it to a new object or deleting
+	// its object) requires writeview X lock and nodes S lock.
 	Cluster_Writeview * writeview;
+	boost::shared_mutex writeviewMutex;
+	boost::shared_mutex nodesMutex;
     boost::shared_ptr< const ClusterResourceMetadata_Readview > metadata_readView;
     mutable pthread_spinlock_t m_spinlock;
+
+	void commitClusterMetadata(ClusterResourceMetadata_Readview * newReadview);
+	unsigned applyAndCommit(MetadataChange * shardingChange, Cluster_Writeview * writeview);
 };
 
 

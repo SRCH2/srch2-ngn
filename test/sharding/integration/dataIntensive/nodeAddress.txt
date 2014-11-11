@@ -1,0 +1,6 @@
+A||127.0.0.1||7001||./nodeIntensive/conf-A.xml
+B||127.0.0.1||7002||./nodeIntensive/conf-B.xml
+C||127.0.0.1||7003||./nodeIntensive/conf-C.xml
+D||127.0.0.1||7004||./nodeIntensive/conf-D.xml
+E||127.0.0.1||7005||./nodeIntensive/conf-E.xml
+F||127.0.0.1||7006||./nodeIntensive/conf-F.xml

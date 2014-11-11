@@ -16,7 +16,8 @@ namespace httpwrapper {
 
 void MetadataInitializer::initializeNode(){
 	// grab writeview for initialization
-	Cluster_Writeview * writeview = metadataManager->getClusterWriteview();
+	boost::unique_lock<boost::shared_mutex> xLock;
+	Cluster_Writeview * writeview = metadataManager->getClusterWriteview_write(xLock);
 
 	// 1. if there is a copy of writeview on the disk, load it and add information to the available writeview
 	Cluster_Writeview * newWriteview;
@@ -42,7 +43,8 @@ void MetadataInitializer::initializeNode(){
 	// 2.2. add new json files
 	addNewJsonFileShards(newWriteview);
 
-	metadataManager->setWriteview(newWriteview);
+	SP(const ClusterNodes_Writeview) nodesWriteview = metadataManager->getClusterNodesWriteview_read();
+	metadataManager->setWriteview(newWriteview, false);
 	return;
 }
 
@@ -50,8 +52,8 @@ void MetadataInitializer::initializeNode(){
 // 1. assigns the primary shard of each partition to this node
 // 2. starts empty search engines for all primary shards.
 void MetadataInitializer::initializeCluster(){
-	Cluster_Writeview * writeview = metadataManager->getClusterWriteview();
-	NodeId currentNodeId = writeview->currentNodeId;
+	boost::unique_lock<boost::shared_mutex> xLock;
+	Cluster_Writeview * writeview = metadataManager->getClusterWriteview_write(xLock);
 	// assign the parimary shard of each partition to this node
 	std::set<ClusterShardId> unassignedPartitions;
 	ClusterShardId id;
@@ -264,7 +266,7 @@ void MetadataInitializer::saveToDisk(const string & clusterName){
 	if(clusterFileDirectoryPath.compare("") == 0){
 		clusterFileDirectoryPath = configManager->createClusterDir(clusterName);
 	}
-	metadataManager->getClusterWriteview()->saveWriteviewOnDisk(clusterFileDirectoryPath);
+	metadataManager->writeview->saveWriteviewOnDisk(clusterFileDirectoryPath);
 }
 
 

@@ -54,9 +54,9 @@ public:
 				body += sizeof(unsigned);
 				node.deserialize(body);
 				node.thisIsMe = false;
-				ShardManager::getWriteview()->addNode(node);
-				ShardManager::getWriteview()->setNodeState(node.getId(), ShardingNodeStateArrived);
-
+				SP(ClusterNodes_Writeview) writeview = ShardManager::getNodesWriteview_write();
+				writeview->addNode(node);
+				writeview->setNodeState(node.getId(), ShardingNodeStateArrived);
 				syncManger.localNodesCopyMutex.lock();
                 bool isPresent = false;
                 for(unsigned i = 0 ; i < syncManger.localNodesCopy.size(); ++i){

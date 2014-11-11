@@ -34,32 +34,10 @@ bool RequestMessageHandler::resolveMessage(Message * msg, NodeId node){
 	switch(msg->getType()){
     case SearchCommandMessageType: // -> for LogicalPlan object
     {
-    	SearchCommand * searchCommand = SearchCommand::deserialize(buffer);
+    	SearchCommand * searchCommand = SearchCommand::deserialize(buffer, clusterReadview->getCore(target.getCoreId())->getSchema());
         resultFlag = resolveMessage(searchCommand, node, msg->getMessageId(), target, msg->getType(), clusterReadview);
         delete searchCommand;
         break;
-    }
-    case InsertUpdateCommandMessageType: // -> for Record object (used for insert and update)
-    {
-    	InsertUpdateCommand* insertUpdateCommand =
-    			InsertUpdateCommand::deserialize(buffer,clusterReadview->getCore(target.getCoreId())->getSchema());
-    	resultFlag = resolveMessage(insertUpdateCommand, node, msg->getMessageId(), target, msg->getType(), clusterReadview);
-    	delete insertUpdateCommand;
-    	break;
-    }
-    case DeleteCommandMessageType: // -> for DeleteCommandInput object (used for delete)
-    {
-    	DeleteCommand* deleteCommand = DeleteCommand::deserialize(buffer);
-    	resultFlag = resolveMessage(deleteCommand, node, msg->getMessageId(), target, msg->getType(), clusterReadview);
-    	delete deleteCommand;
-    	break;
-    }
-    case SerializeCommandMessageType: // -> for SerializeCommandInput object
-    {
-    	SerializeCommand* serializeCommand = SerializeCommand::deserialize(buffer);
-    	resultFlag = resolveMessage(serializeCommand, node, msg->getMessageId(), target, msg->getType(), clusterReadview);
-    	delete serializeCommand;
-    	break;
     }
     case GetInfoCommandMessageType: // -> for GetInfoCommandInput object (used for getInfo)
     {
@@ -67,27 +45,6 @@ bool RequestMessageHandler::resolveMessage(Message * msg, NodeId node){
         resultFlag = resolveMessage(getInfoCommand, node, msg->getMessageId(), target, msg->getType(), clusterReadview);
     	delete getInfoCommand;
     	break;
-    }
-    case CommitCommandMessageType: // -> for CommitCommandInput object
-    {
-    	CommitCommand* commitCommand = CommitCommand::deserialize(buffer);
-        resultFlag = resolveMessage(commitCommand, node, msg->getMessageId(), target, msg->getType(), clusterReadview);
-        delete commitCommand;
-        break;
-    }
-    case ResetLogCommandMessageType: // -> for ResetLogCommandInput (used for resetting log)
-    {
-    	ResetLogCommand* resetLogCommand = ResetLogCommand::deserialize(buffer);
-        resultFlag = resolveMessage(resetLogCommand, node, msg->getMessageId(), target, msg->getType(), clusterReadview);
-        delete resetLogCommand;
-        break;
-    }
-    case MergeCommandMessageType: // -> for ResetLogCommandInput (used for resetting log)
-    {
-    	MergeCommand* mergeCommand = MergeCommand::deserialize(buffer);
-        resultFlag = resolveMessage(mergeCommand, node, msg->getMessageId(), target, msg->getType(), clusterReadview);
-        delete mergeCommand;
-        break;
     }
     default:
     {
@@ -104,32 +61,14 @@ void RequestMessageHandler::deleteResponseRequestObjectBasedOnType(ShardingMessa
     case SearchResultsMessageType: // -> for LogicalPlan object
         delete (SearchCommandResults*)responseObject;
         return;
-    case StatusMessageType: // -> for Record object (used for insert and update)
-        delete (CommandStatus*)responseObject;
-        return;
     case GetInfoResultsMessageType: // -> for DeleteCommandInput object (used for delete)
     	delete (GetInfoCommandResults*)responseObject;
     	return;
     case SearchCommandMessageType:
         delete (SearchCommand*)responseObject;
         return;
-    case InsertUpdateCommandMessageType:
-    	delete (InsertUpdateCommand *)responseObject;
-    	return;
-    case DeleteCommandMessageType:
-    	delete (DeleteCommand *)responseObject;
-    	return;
-    case SerializeCommandMessageType:
-    	delete (SerializeCommand *)responseObject;
-    	return;
     case GetInfoCommandMessageType:
     	delete (GetInfoCommand *)responseObject;
-    	return;
-    case CommitCommandMessageType:
-    	delete (CommitCommand *)responseObject;
-    	return;
-    case ResetLogCommandMessageType:
-    	delete (ResetLogCommand *)responseObject;
     	return;
     default:
         ASSERT(false);

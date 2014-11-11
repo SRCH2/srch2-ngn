@@ -5,6 +5,7 @@
 #include "Notification.h"
 #include "../metadata_manager/ResourceMetadataChange.h"
 #include "core/util/SerializationHelper.h"
+#include "sharding/transport/Message.h"
 
 
 namespace srch2is = srch2::instantsearch;
@@ -19,51 +20,18 @@ public:
 
 	CommitNotification(MetadataChange * metadataChange);
 
-	CommitNotification(){
-		metadataChange = NULL;
-	};
-	~CommitNotification(){
+	CommitNotification();
+	~CommitNotification();
+
+	bool resolveNotification(SP(ShardingNotification) notif);
+    bool hasResponse() const {
+			return true;
 	}
 	MetadataChange * getMetadataChange() const;
 
-	void * serialize(void * buffer) const{
-		buffer = ShardingNotification::serialize(buffer);
-		ASSERT(metadataChange != NULL);
-		buffer = srch2::util::serializeFixedTypes(metadataChange->getType(), buffer);
-		buffer = metadataChange->serialize(buffer);
-		return buffer;
-	}
-	unsigned getNumberOfBytes() const{
-		unsigned numberOfBytes = 0;
-		numberOfBytes += ShardingNotification::getNumberOfBytes();
-		numberOfBytes += sizeof(MetadataChangeType);
-		numberOfBytes += metadataChange->getNumberOfBytes();
-		return numberOfBytes;
-	}
-	void * deserialize(void * buffer){
-		buffer = ShardingNotification::deserialize(buffer);
-		MetadataChangeType type;
-		buffer = srch2::util::deserializeFixedTypes(buffer, type);
-		switch (type) {
-			case ShardingChangeTypeNodeAdd:
-				metadataChange = new NodeAddChange();
-				break;
-			case ShardingChangeTypeShardAssign:
-				metadataChange = new ShardAssignChange();
-				break;
-			case ShardingChangeTypeShardMove:
-				metadataChange = new ShardMoveChange();
-				break;
-			case ShardingChangeTypeLoadChange:
-				metadataChange = new ShardLoadChange();
-				break;
-			default:
-				ASSERT(false);
-				break;
-		}
-		buffer = metadataChange->deserialize(buffer);
-		return buffer;
-	}
+	void * serializeBody(void * buffer) const;
+	unsigned getNumberOfBytesBody() const;
+	void * deserializeBody(void * buffer);
     ShardingMessageType messageType() const;
 
     bool operator==(const CommitNotification & right);
@@ -77,6 +45,8 @@ public:
 	    	return ShardingCommitACKMessageType;
 	    }
 	    bool operator==(const CommitNotification::ACK & right);
+
+		bool resolveNotification(SP(ShardingNotification) _notif);
 	};
 };
 
