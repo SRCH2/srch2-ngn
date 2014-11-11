@@ -82,7 +82,7 @@ const char* const ConfigManager::pingNodeTag = "ping";
 const char* const ConfigManager::pingIntervalTag = "ping-interval";
 const char* const ConfigManager:: pingTimeoutTag= "ping-timeout";
 const char* const ConfigManager::retryCountTag = "retry-count";
-static unsigned defaultCoreId;
+static unsigned defaultCoreId = 0;
 const char* const ConfigManager::accessLogFileString = "accesslogfile";
 const char* const ConfigManager::analyzerString = "analyzer";
 const char* const ConfigManager::cacheSizeString = "cachesize";
@@ -285,8 +285,40 @@ bool ConfigManager::loadConfigFile(srch2http::ResourceMetadataManager * metadata
     Logger::debug("WARNINGS while reading the configuration file:");
     Logger::debug("%s\n", parseWarnings.str().c_str());
 
+
+    for(unsigned coreIdx = 0 ; coreIdx < clusterCores.size() ; ++coreIdx){
+    	CoreInfo_t * coreInfo = clusterCores[coreIdx];
+    	if(coreInfo != NULL){
+
+    		CoreInfo_t *newAclCore = new srch2http::CoreInfo_t(*coreInfo);
+    		newAclCore->setSchema((Schema*)coreInfo->getSchema());
+
+    		newAclCore->name = "acl" + coreInfo->getName();
+    		newAclCore->aclCoreFlag = true;
+    		newAclCore->setCoreId(defaultCoreId++);
+
+    		newAclCore->numberOfPrimaryShards = 20;  // 20 partition
+    		newAclCore->numberOfReplicas = 2;        // 1 primary + 1 replica
+
+    		// as of now. only distributed data structure is srch2Server.
+    		//newAclCore->setDistributedDataStructureId = ACL;
+
+    		// setup relation between real core and acl core.
+    		coreInfo->setAttributeAclCoreId(newAclCore->getCoreId());
+
+    		clusterAclCores.push_back(newAclCore);
+    	} else {
+    		clusterAclCores.push_back(NULL);
+    	}
+    }
+
+    // merge actual cores list and acl cores list.
+    vector<CoreInfo_t *> allCores;
+    allCores.insert(allCores.end(), clusterCores.begin(), clusterCores.end());
+    allCores.insert(allCores.end(), clusterAclCores.begin(), clusterAclCores.end());
+
     if(metadataManager != NULL){
-		metadataManager->setWriteview(new Cluster_Writeview(0, clusterNameStr, clusterCores));
+		metadataManager->setWriteview(new Cluster_Writeview(0, clusterNameStr, allCores));
 		// writeview is set, update the currentNodeId of shard manager
 		ShardManager::getShardManager()->updateCurrentNodeId();
     }
@@ -870,7 +902,7 @@ void ConfigManager::parseSingleCore(const xml_node &parentNode, CoreInfo_t *core
 // only called by parseDataConfiguration()
 void ConfigManager::parseMultipleCores(const xml_node &coresNode, bool &configSuccess, std::stringstream &parseError, std::stringstream &parseWarnings)
 {
-	defaultCoreId = 0;
+	//defaultCoreId = 0;
     if (coresNode) {
 
         // <cores defaultCoreName = "foo">
@@ -1235,6 +1267,7 @@ void ConfigManager::parseAllCoreTags(const xml_node &configNode,
         // create a default core for coreInfo outside of <cores>
 		CoreInfo_t * defaultCoreInfo = new CoreInfo_t(this);
 		defaultCoreInfo->name = getDefaultCoreName();
+		defaultCoreInfo->coreId = defaultCoreId++;
 		clusterCores.push_back(defaultCoreInfo);
 		this->defaultCoreSetFlag = true;
         parseCoreInformationTags(configNode, defaultCoreInfo, configSuccess, parseError, parseWarnings);
