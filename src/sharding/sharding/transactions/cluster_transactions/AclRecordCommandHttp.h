@@ -26,15 +26,26 @@ class AclRecordCommandHttpHandler: public ReadviewTransaction, public ConsumerIn
 public:
 
     static void runCommand(boost::shared_ptr<const ClusterResourceMetadata_Readview> clusterReadview,
-            evhttp_request *req, unsigned coreId, ){
+            evhttp_request *req, unsigned coreId, srch2is::RecordAclCommandType commandType){
 
-        AclCommandHttpHandler * aclCommandHttpHandler = new AclCommandHttpHandler(clusterReadview, req, coreId); //
+    	SP(AclRecordCommandHttpHandler) aclCommandHttpHandler =
+    			SP(AclRecordCommandHttpHandler)( new AclRecordCommandHttpHandler(
+        		clusterReadview, req, coreId, commandType)); //
         Transaction::startTransaction(aclCommandHttpHandler);
         return ;
     }
+
+    ~AclRecordCommandHttpHandler(){
+    	if(aclCommand != NULL){
+    		delete aclCommand;
+    	}
+    	if(req != NULL){
+    		delete req;
+    	}
+    }
 private:
     AclRecordCommandHttpHandler(boost::shared_ptr<const ClusterResourceMetadata_Readview> clusterReadview,
-            evhttp_request *req, unsigned coreId,srch2::instantsearch::RecordAclCommandType commandType /*, and maybe other arguments */):ReadviewTransaction(clusterReadview){
+            evhttp_request *req, unsigned coreId, srch2is::RecordAclCommandType commandType /*, and maybe other arguments */):ReadviewTransaction(clusterReadview){
     	this->req = req;
     	this->coreInfo = clusterReadview->getCore(coreId);
     	ASSERT(this->coreInfo != NULL);
@@ -42,15 +53,6 @@ private:
         aclCommand = NULL;
         recordAclCommandType = commandType;
 
-    }
-
-    ~AclRecordCommandHttpHandler(){
-        if(aclCommand != NULL){
-            delete aclCommand;
-        }
-        if(req != NULL){
-        	delete req;
-        }
     }
     /*
      * Must be implemented for all Transaction classes to initialize the session object.
@@ -68,17 +70,12 @@ private:
      * Example of this work : parsing req object and get HTTP req information.
      *
      */
-    bool run(){
+    void run(){
     	JsonResponseHandler * responseObject = this->getTransaction()->getSession()->response;
     	if(coreInfo == NULL){
     		responseObject->addError(JsonResponseHandler::getJsonSingleMessage(HTTP_JSON_Core_Does_Not_Exist));
     		responseObject->finalizeOK();
-    		responseObject->printHTTP(req);
-    		// to make the caller of this function deallocate this object
-    		// because it's not going to wait for a notification from another node as it was
-    		// expected.
-    		this->getTransaction()->setUnattached();
-    		return false;
+    		return ;
     	}
 
     	vector<std::pair<string, vector<string> > > * recordAclDataForApiLayer =
@@ -93,9 +90,7 @@ private:
     		if (length == 0) {
     			responseObject->addError(JsonResponseHandler::getJsonSingleMessage(HTTP_JSON_Empty_Body));
     			responseObject->finalizeOK();
-    			responseObject->printHTTP(req);
-    			this->getTransaction()->setUnattached();
-    			return false;
+    			return ;
     		}
 
     		const char *post_data = (char *) EVBUFFER_DATA(req->input_buffer);
@@ -108,9 +103,7 @@ private:
     		if (parseSuccess == false) {
     			responseObject->addError(JsonResponseHandler::getJsonSingleMessage(HTTP_JSON_Parse_Error));
     			responseObject->finalizeOK();
-    			responseObject->printHTTP(req);
-    			this->getTransaction()->setUnattached();
-    			return false;
+    			return ;
     		}else{
     			if(root.type() == Json::arrayValue) { // The input is an array of JSON objects.
     				response.resize(root.size());
@@ -138,9 +131,7 @@ private:
     				if(roleIds.size() == 0){
     					responseObject->addMessage("error:" + coreInfo->getName() + " does not have record-based access control.");
     					responseObject->finalizeOK();
-    					responseObject->printHTTP(req);
-    					this->getTransaction()->setUnattached();
-    					return false;
+    					return ;
     				} else {
     					response[0] = log_str.str();
     					recordAclDataForApiLayer->push_back(make_pair(primaryKeyID, roleIds));
@@ -151,9 +142,7 @@ private:
     	}else{
 			responseObject->addMessage("error:" + coreInfo->getName() + " does not have record-based access control.");
 			responseObject->finalizeOK();
-			responseObject->printHTTP(req);
-			this->getTransaction()->setUnattached();
-			return false;
+			return ;
     	}
 
         // When query parameters are parsed successfully, we must create and run AclCommand class and get back
@@ -175,10 +164,7 @@ private:
     	 */
 
         aclCommand->produce();
-        if(! this->getTransaction()->isAttached()){
-        	return false;
-        }
-        return true;
+        return;
     }
 
     /*
@@ -191,16 +177,9 @@ private:
 
     }
 
-
-
-    void finalize(){
-
-        // setFinished() must be called at the very last step of execution of every Transaction class
-        // to notify state-machine that this Transaction is
-        // done and is ok to be deleted now.
-        this->setFinished();
+    void finalizeWork(Transaction::Params * params){
+		this->getTransaction()->getSession()->response->printHTTP(req);
     }
-
 
     /*
      * This function must be overridden for each transaction class so that producers can use the
@@ -211,10 +190,10 @@ private:
     }
 
     ShardingTransactionType getTransactionType(){
-        return ShardingTransactionType_AclCommandCode; // returns the unique type identifier of this transaction
+        return ShardingTransactionType_RecordAclCommandCode; // returns the unique type identifier of this transaction
     }
 
-    string getName() const {return "acl-command-http" ;};
+    string getName() const {return "record-acl-command-http" ;};
 
 
 private:

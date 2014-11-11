@@ -26,7 +26,7 @@ class AclCommandHttpHandler: public ReadviewTransaction, public ConsumerInterfac
 public:
 
     static void runCommand(boost::shared_ptr<const ClusterResourceMetadata_Readview> clusterReadview,
-            evhttp_request *req, unsigned coreId, ){
+            evhttp_request *req, unsigned coreId){
 
         SP(AclCommandHttpHandler) aclCommandHttpHandler =
         		SP(AclCommandHttpHandler)(new AclCommandHttpHandler(clusterReadview, req, coreId)); //
@@ -47,6 +47,7 @@ private:
             evhttp_request *req, unsigned coreId /*, and maybe other arguments */):ReadviewTransaction(clusterReadview){
     	this->req = req;
     	this->coreInfo = clusterReadview->getCore(coreId);
+    	// TODO: get ACL core from coreInfo. Merge ACL core changes first.
     	ASSERT(this->coreInfo != NULL);
         initSession();
         aclCommand = NULL;
@@ -269,7 +270,7 @@ private:
     		string tempString = attribute.asString();
     		boost::algorithm::trim(tempString);
     		if (tempString.size() != 0) {
-    			if (tempString == "*" || schema->isValidAttribute(tempString)) {
+    			if (tempString == "*" || coreInfo->getSchema()->isValidAttribute(tempString)) {
     				attributeList.push_back(tempString);
     			} else {
     				invalidAttributeNames.push_back(tempString);
@@ -390,10 +391,10 @@ private:
     }
 
     ShardingTransactionType getTransactionType(){
-        return ShardingTransactionType_AclCommandCode; // returns the unique type identifier of this transaction
+        return ShardingTransactionType_AttributeAclCommandCode; // returns the unique type identifier of this transaction
     }
 
-    string getName() const {return "acl-command-http" ;};
+    string getName() const {return "attribute-acl-command-http" ;};
 
 
 private:

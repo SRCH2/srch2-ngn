@@ -261,7 +261,8 @@ enum ShardingTransactionType{
 	ShardingTransactionType_Loadbalancing,
 	ShardingTransactionType_NodeJoin,
 	ShardingTransactionType_ShardCommandCode,
-	ShardingTransactionType_AclCommandCode,
+	ShardingTransactionType_AttributeAclCommandCode,
+	ShardingTransactionType_RecordAclCommandCode,
 	ShardingTransactionType_InsertUpdateCommand,
 	ShardingTransactionType_Shutdown
 };
