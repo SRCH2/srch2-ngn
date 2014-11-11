@@ -117,6 +117,7 @@ typedef enum {
 	HTTP_Json_Partition_Is_Locked,
 	HTTP_Json_No_Data_Shard_Available_For_Write,
 	HTTP_JSON_Core_Does_Not_Exist,
+	HTTP_Json_Role_Id_Does_Not_Exist,
 	HTTP_Json_General_Error
 } JsonMessageCode;
 

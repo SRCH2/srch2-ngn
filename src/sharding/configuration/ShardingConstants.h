@@ -67,6 +67,8 @@ enum ShardingMessageType{
     ShardingCopyToMeMessageType,
     ShardingCopyToMeACKMessageType,
     ShardingShardCommandMessageType,
+    ShardingAclAttrReadMessageType,
+    ShardingAclAttrReadACKMessageType,
 
     ShardingCommitMessageType,
     ShardingCommitACKMessageType,
