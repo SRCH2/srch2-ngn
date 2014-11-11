@@ -86,6 +86,10 @@ public:
     	return (mode == WriteNotificationModePerformWrite);
     }
 
+    bool hasResponse() const {
+    		return true;
+	}
+
     boost::shared_ptr<const ClusterResourceMetadata_Readview> getClusterReadview();
 
 private:

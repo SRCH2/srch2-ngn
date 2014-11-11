@@ -27,7 +27,7 @@ public:
 
 	~ShardCopyOperation();
 
-	Transaction * getTransaction() ;
+	SP(Transaction) getTransaction() ;
 
 	void produce();
 

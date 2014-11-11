@@ -9,55 +9,91 @@ namespace srch2 {
 namespace httpwrapper {
 
 class TransactionSession;
-
+class Cluster_Writeview;
+class ClusterNodes_Writeview;
+class ClusterResourceMetadata_Readview;
 /*
  * This class must be implemented by every transaction class
  * which want to connect to the state machine.
  */
 class Transaction {
 public:
-	static void startTransaction(Transaction * trans);
+	static void startTransaction(SP(Transaction) trans);
 public:
+
+	struct Params{
+		Params(){
+			this->needWriteviewLock = false;
+			this->writeviewLock = NULL;
+		}
+		~Params(){
+			if(writeviewLock != NULL){
+				delete writeviewLock;
+			}
+		}
+		Params(bool shouldLock){
+			this->shouldLock = shouldLock;
+			this->needWriteviewLock = false;
+			this->writeviewLock = NULL;
+		}
+		Params(SP(Transaction) sp){
+			this->sp = sp;
+			this->needWriteviewLock = false;
+			this->writeviewLock = NULL;
+		}
+		Params(bool shouldLock, SP(Transaction) sp){
+			this->shouldLock = shouldLock;
+			this->sp = sp;
+			this->needWriteviewLock = false;
+			this->writeviewLock = NULL;
+		}
+
+		void clear(){
+			sp.reset();
+			// mutex is transfered by copy
+		}
+
+		bool shouldLock; // if it's passed to finalize, this boolean is interpreted as finalizeResult
+		SP(Transaction) sp;
+		bool needWriteviewLock;
+		boost::unique_lock<boost::shared_mutex> * writeviewLock;
+
+	};
 
 	Transaction();
 	virtual ~Transaction();
-
-	/*
-	 * these two methods are called by state machine before and after an operation
-	 * 	handles a notification (or executes entry())
-	 * 	NOTE : preProcess is not called before entry() and postProcess() is not called when we are going
-	 * 	to delete the transaction.
-	 */
-	virtual void preProcess() = 0;
-	virtual void postProcess() = 0;
-
+	virtual void finalizeWork(Transaction::Params * arg)= 0 ;
+	virtual bool isReadviewTransaction()= 0 ;
+	void finalize();
+	void setFinalizeArgument(bool arg , bool needWriteviewLock = false);
+	virtual void threadBegin(SP(Transaction) sp){ // sets sharedPointer to sp
+		this->transMutex.lock();
+		this->sharedPointer = sp;
+	}
+	virtual void threadEnd(){ // resets sharedPointer
+		this->transMutex.unlock();
+		this->sharedPointer.reset();
+	}
 	TRANS_ID getTID() const ;
 
 	virtual ShardingTransactionType getTransactionType() = 0 ;
-	virtual bool run() {
-		return false;
-	};
-	virtual void initSession() = 0;
+	virtual void run() = 0;
 
-	void setAttached();
-	void setUnattached();
-	bool isAttached() const;
-
-	bool isFinished() const;
+	virtual void initSession();
 	TransactionSession * getSession();
+
 	SP(ClusterNodes_Writeview) getNodesWriteview_write() const;
-	SP(ClusterNodes_Writeview) getNodesWriteview_read() const;
+	SP(const ClusterNodes_Writeview) getNodesWriteview_read() const;
 private:
 	const TRANS_ID transactionId;
-	bool attachedFlag;
-	bool finishedFlag;
 	TransactionSession * session;
+	bool attachedToThreadFlag; // tells us onThreadAttach is called last or onThreadDetach
+
 protected:
+	Params * finalizeArgument;
 	void setSession(TransactionSession * session);
-	// only this class and its children can call this method
-	void setFinished(){
-		this->finishedFlag = true;
-	}
+	SP(Transaction) sharedPointer;
+	boost::mutex transMutex ;
 };
 
 
@@ -65,26 +101,28 @@ class ReadviewTransaction : public Transaction{
 public:
 
 	// nodesWriteview must come in locked state
-	ReadviewTransaction(boost::shared_ptr<const ClusterResourceMetadata_Readview> clusterReadview);
+	ReadviewTransaction(SP(const ClusterResourceMetadata_Readview) clusterReadview);
 
-	void preProcess(){};
-	void postProcess(){};
-
-	boost::shared_ptr<const ClusterResourceMetadata_Readview> getReadview() const;
+	bool isReadviewTransaction(){
+		return true;
+	}
+	SP(const ClusterResourceMetadata_Readview) getReadview() const;
 private:
-	boost::shared_ptr<const ClusterResourceMetadata_Readview> clusterReadview;
+	SP(const ClusterResourceMetadata_Readview) clusterReadview;
 };
 
 class WriteviewTransaction : public Transaction{
 public:
 	WriteviewTransaction();
-	void preProcess();
-	void postProcess();
+	bool isReadviewTransaction(){
+		return false;
+	}
 	Cluster_Writeview * getWriteview();
+	void threadBegin(SP(Transaction) sp);
+	void threadEnd();
 private:
 	Cluster_Writeview * writeview;
-	boost::unique_lock<boost::mutex> xLock; // when this is destroyed, writeview lock will be released.
-	bool automaticLocking;
+	boost::unique_lock<boost::shared_mutex> * writeviewLock;
 };
 
 }

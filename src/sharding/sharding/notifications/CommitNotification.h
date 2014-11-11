@@ -24,7 +24,9 @@ public:
 	~CommitNotification();
 
 	bool resolveNotification(SP(ShardingNotification) notif);
-
+    bool hasResponse() const {
+			return true;
+	}
 	MetadataChange * getMetadataChange() const;
 
 	void * serializeBody(void * buffer) const;

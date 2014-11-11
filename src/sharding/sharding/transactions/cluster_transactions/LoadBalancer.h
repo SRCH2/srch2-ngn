@@ -43,14 +43,12 @@ public:
 
 	LoadBalancer();
 
-	Transaction * getTransaction(){
-		return this;
+	SP(Transaction) getTransaction(){
+		return sharedPointer;
 	}
 
-	void initSession();
-
 	// tries to balance the shard placement on cluster nodes
-	bool run();
+	void run();
 
 	// asks other nodes about load information
 	void collectInfo();
@@ -64,7 +62,7 @@ public:
 
 	ShardingTransactionType getTransactionType();
 
-	void finalize();
+	void finalizeWork(Transaction::Params * arg);
 
 	string getName() const {return "load-balancer";};
 

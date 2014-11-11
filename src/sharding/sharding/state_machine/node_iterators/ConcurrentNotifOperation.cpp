@@ -28,15 +28,13 @@ ConcurrentNotifOperation::ConcurrentNotifOperation(SP(ShardingNotification) requ
 		NodeId participant,
 		NodeIteratorListenerInterface * consumer, bool expectResponse):
 		OperationState(this->getNextOperationId()),resType(resType), expectResponse(expectResponse){
-	boost::shared_lock<boost::shared_mutex> & writeviewSLock;
-	const Cluster_Writeview * writeview = ShardManager::getWriteview_read(writeviewSLock);
-	if(! writeview->isNodeAlive(participant)){
+	SP(const ClusterNodes_Writeview) nodesWriteview = ShardManager::getShardManager()->getNodesWriteview_read();
+	if(! nodesWriteview->isNodeAlive(participant)){
 		ASSERT(false);
 	}else{
 		this->participants.push_back(NodeOperationId(participant));
 		this->requests.push_back(request);
 	}
-	writeviewSLock.unlock();
 	this->consumer = consumer;
 	Logger::sharding(Logger::Detail, "NodeAggregator(opid=%s)| sending request(%s) to nodes %s and aggregating response(%s). Consumer is %s. ExpectResponse(%s)"
 			, NodeOperationId(ShardManager::getCurrentNodeId(), this->getOperationId()).toString().c_str()
@@ -49,14 +47,13 @@ ConcurrentNotifOperation::ConcurrentNotifOperation(SP(ShardingNotification) requ
 		vector<NodeId> participants,
 		NodeIteratorListenerInterface * consumer , bool expectResponse):
 			OperationState(this->getNextOperationId()),resType(resType), expectResponse(expectResponse){
-	boost::shared_lock<boost::shared_mutex> & writeviewSLock;
-	const Cluster_Writeview * writeview = ShardManager::getWriteview_read(writeviewSLock);
+	SP(const ClusterNodes_Writeview) nodesWriteview = this->getTransaction()->getNodesWriteview_read();
 	stringstream ss;
 	for(unsigned p = 0 ; p < participants.size(); p++){
 		if(p != 0){
 			ss << " | ";
 		}
-		if(! writeview->isNodeAlive(participants.at(p))){
+		if(! nodesWriteview->isNodeAlive(participants.at(p))){
 			ASSERT(false);
 		}else{
 			this->participants.push_back(NodeOperationId(participants.at(p)));
@@ -64,7 +61,6 @@ ConcurrentNotifOperation::ConcurrentNotifOperation(SP(ShardingNotification) requ
 			ss << NodeOperationId(participants.at(p)).toString();
 		}
 	}
-	writeviewSLock.unlock();
 	this->consumer = consumer;
 	Logger::sharding(Logger::Detail, "NodeAggregator(opid=%s)| Sending %s to %s . Consumer is %s. ExpectResponse(%s)"
 			, NodeOperationId(ShardManager::getCurrentNodeId(), this->getOperationId()).toString().c_str()
@@ -75,14 +71,13 @@ ConcurrentNotifOperation::ConcurrentNotifOperation(ShardingMessageType resType,
 		NodeIteratorListenerInterface * consumer , bool expectResponse ):
 			OperationState(this->getNextOperationId()),resType(resType), expectResponse(expectResponse){
 
-	boost::shared_lock<boost::shared_mutex> & writeviewSLock;
-	const Cluster_Writeview * writeview = ShardManager::getWriteview_read(writeviewSLock);
+	SP(const ClusterNodes_Writeview) nodesWriteview = this->getTransaction()->getNodesWriteview_read();
 	stringstream ss;
 	for(unsigned p = 0 ; p < participants.size(); p++){
 		if(p != 0){
 			ss << " | ";
 		}
-		if(! writeview->isNodeAlive(participants.at(p).second)){
+		if(! nodesWriteview->isNodeAlive(participants.at(p).second)){
 			ASSERT(false);
 		}else{
 			this->participants.push_back(NodeOperationId(participants.at(p).second));
@@ -90,7 +85,6 @@ ConcurrentNotifOperation::ConcurrentNotifOperation(ShardingMessageType resType,
 			ss << NodeOperationId(participants.at(p).second).toString() << " to " << getShardingMessageTypeStr(participants.at(p).first->messageType()) ;
 		}
 	}
-	writeviewSLock.unlock();
 	this->consumer = consumer;
 	Logger::sharding(Logger::Detail, "NodeAggregator(opid=%s)| Sending %s . Consumer is %s. ExpectResponse(%s)"
 			, NodeOperationId(ShardManager::getCurrentNodeId(), this->getOperationId()).toString().c_str()
@@ -106,30 +100,25 @@ ConcurrentNotifOperation::~ConcurrentNotifOperation(){
 	}
 };
 
-Transaction * ConcurrentNotifOperation::getTransaction(){
-	if(this->consumer != NULL){
-		return this->consumer->getTransaction();
-	}
-	return OperationState::getTransaction();
-}
-
 OperationState * ConcurrentNotifOperation::entry(){
 	__FUNC_LINE__
+	if(this->consumer != NULL){
+		this->setTransaction(this->consumer->getTransaction());
+	}
 	Logger::sharding(Logger::Detail, "NodeAggregator| entry");
 
 	if(this->participants.empty()){
 		ASSERT(false);
 		return NULL;
 	}
-	boost::shared_lock<boost::shared_mutex> & writeviewSLock;
-	const Cluster_Writeview * writeview = ShardManager::getWriteview_read(writeviewSLock);
+	SP(const ClusterNodes_Writeview) nodesWriteview = this->getTransaction()->getNodesWriteview_read();
 	for(unsigned p = 0 ; p < this->participants.size(); ++p){
-		if(! writeview->isNodeAlive(this->participants.at(p).nodeId)){
+		if(! nodesWriteview->isNodeAlive(this->participants.at(p).nodeId)){
 			ASSERT(false);
 			return NULL;
 		}
 	}
-	writeviewSLock.unlock();
+	nodesWriteview.reset();
 	for(unsigned p = 0 ; p < this->participants.size(); ++p){
 		// 1. send the request to the target
 		send(this->requests.at(p), this->participants.at(p));
@@ -170,9 +159,20 @@ OperationState * ConcurrentNotifOperation::handle(SP(NodeFailureNotification)  n
 	NodeId failedNode = notif->getFailedNodeID();
 
 	if(consumer != NULL){
-		if(consumer->shouldAbort(failedNode, this->getOperationId())){
+		if(! this->getTransaction()){
+			this->getTransaction()->threadBegin(this->getTransaction());
+		}
+		bool shouldAbortResult =
+				consumer->shouldAbort(failedNode, this->getOperationId());
+		if(! this->getTransaction()){
+			this->getTransaction()->threadEnd();
+		}
+		if(shouldAbortResult){
 			Logger::sharding(Logger::Detail, "NodeAggregator(opid=%s)| consumer(%s) asked for abort due to node failure."
-					, NodeOperationId(ShardManager::getCurrentNodeId(), this->getOperationId()).toString().c_str(), consumer->getName().c_str());
+					, NodeOperationId(ShardManager::getCurrentNodeId(),
+							this->getOperationId()).toString().c_str(), consumer->getName().c_str());
+			this->setTransaction(SP(Transaction)());
+			/***************** Thread Exit Point *************/
 			return NULL;
 		}
 	}
@@ -223,11 +223,20 @@ string ConcurrentNotifOperation::getOperationStatus() const {
 
 OperationState * ConcurrentNotifOperation::finalize(){
 
-	Logger::sharding(Logger::Detail, "NodeAggregator(opid=%s)| Done." , NodeOperationId(ShardManager::getCurrentNodeId(), this->getOperationId()).toString().c_str());
+	Logger::sharding(Logger::Detail, "NodeAggregator(opid=%s)| Done." ,
+			NodeOperationId(ShardManager::getCurrentNodeId(), this->getOperationId()).toString().c_str());
     if(consumer == NULL){
 		return NULL;
 	}
+	if(! this->getTransaction()){
+		this->getTransaction()->threadBegin(this->getTransaction());
+	}
 	this->consumer->end_(this->targetResponsesMap, this->getOperationId());
+	if(! this->getTransaction()){
+		this->getTransaction()->threadEnd();
+	}
+	this->setTransaction(SP(Transaction)());
+	/***************** Thread Exit Point *************/
 	return NULL;
 }
 

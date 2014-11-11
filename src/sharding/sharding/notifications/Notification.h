@@ -64,6 +64,11 @@ public:
 
 	static bool send(SP(ShardingNotification) notification, const vector<NodeOperationId> & destinations );
 
+
+	virtual bool hasResponse() const {
+		return false;
+	}
+
 	void swapSrcDest();
 	string getDescription();
 	NodeOperationId getSrc() const;

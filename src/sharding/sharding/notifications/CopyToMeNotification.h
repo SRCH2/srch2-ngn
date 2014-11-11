@@ -31,6 +31,9 @@ public:
     ClusterShardId getReplicaShardId() const;
     ClusterShardId getUnassignedShardId() const;
 	bool operator==(const CopyToMeNotification & right);
+    bool hasResponse() const {
+			return true;
+	}
 private:
 	ClusterShardId replicaShardId;
 	ClusterShardId unassignedShardId;

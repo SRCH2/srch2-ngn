@@ -43,8 +43,6 @@ public:
 
 	virtual ~ConcurrentNotifOperation();
 
-	Transaction * getTransaction();
-
 	OperationState * entry();
 	// it returns this, or next state or NULL.
 	// if it returns NULL, we delete the object.

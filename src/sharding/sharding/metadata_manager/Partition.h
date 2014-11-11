@@ -83,12 +83,12 @@ public:
 	const unsigned getCoreId() const	;
 	const unsigned getTotalNumberOfPartitions() const;
 	const unsigned getReplicationDegree() const;
+	void getInvolvedNodes(const ClusterPID pid, vector<NodeId> & nodes) const;
 
 	void getClusterPartitionsForRead(vector<const ClusterPartition *> & clusterPartitions) const;
 	void getNodePartitionsForRead(vector<const NodePartition *> & nodePartitions) const;
 	const ClusterPartition * getClusterPartitionForWrite(unsigned hashKey) const;
 	const NodePartition * getNodePartitionForWrite(unsigned hashKey, NodeId nodeId) const;
-
 	void print() const;
 
 private:

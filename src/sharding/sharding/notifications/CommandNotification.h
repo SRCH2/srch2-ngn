@@ -25,7 +25,9 @@ public:
 
 
 	bool resolveNotification(SP(ShardingNotification) _notif);
-
+    bool hasResponse() const {
+			return true;
+	}
     ShardingMessageType messageType() const;
 	void * serializeBody(void * buffer) const;
 	unsigned getNumberOfBytesBody() const;

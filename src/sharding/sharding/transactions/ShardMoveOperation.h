@@ -26,7 +26,7 @@ public:
 
 	~ShardMoveOperation();
 
-	Transaction * getTransaction() ;
+	SP(Transaction) getTransaction() ;
 
 	void produce();
 

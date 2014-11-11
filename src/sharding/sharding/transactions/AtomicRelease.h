@@ -44,7 +44,7 @@ public:
 
 	~AtomicRelease();
 
-	Transaction * getTransaction();
+	SP(Transaction) getTransaction();
 
 	void produce();
 	bool updateParticipants();

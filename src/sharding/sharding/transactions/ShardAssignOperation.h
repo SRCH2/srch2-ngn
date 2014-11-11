@@ -36,9 +36,9 @@ public:
 
 	string getName() const {return "shard-assign";};
 
-	Transaction * getTransaction(){
+	SP(Transaction) getTransaction(){
 		if(this->getConsumer() == NULL){
-			return NULL;
+			return SP(Transaction)();
 		}
 		return this->getConsumer()->getTransaction();
 	}

@@ -28,9 +28,19 @@ public:
     static void runCommand(boost::shared_ptr<const ClusterResourceMetadata_Readview> clusterReadview,
             evhttp_request *req, unsigned coreId, ){
 
-        AclCommandHttpHandler * aclCommandHttpHandler = new AclCommandHttpHandler(clusterReadview, req, coreId); //
+        SP(AclCommandHttpHandler) aclCommandHttpHandler =
+        		SP(AclCommandHttpHandler)(new AclCommandHttpHandler(clusterReadview, req, coreId)); //
         Transaction::startTransaction(aclCommandHttpHandler);
         return ;
+    }
+
+    ~AclCommandHttpHandler(){
+        if(aclCommand != NULL){
+            delete aclCommand;
+        }
+        if(req != NULL){
+        	delete req;
+        }
     }
 private:
     AclCommandHttpHandler(boost::shared_ptr<const ClusterResourceMetadata_Readview> clusterReadview,
@@ -41,15 +51,6 @@ private:
         initSession();
         aclCommand = NULL;
 
-    }
-
-    ~AclCommandHttpHandler(){
-        if(aclCommand != NULL){
-            delete aclCommand;
-        }
-        if(req != NULL){
-        	delete req;
-        }
     }
     /*
      * Must be implemented for all Transaction classes to initialize the session object.
@@ -67,17 +68,12 @@ private:
      * Example of this work : parsing req object and get HTTP req information.
      *
      */
-    bool run(){
+    void run(){
     	JsonResponseHandler * responseObject = this->getTransaction()->getSession()->response;
     	if(coreInfo == NULL){
     		responseObject->addError(JsonResponseHandler::getJsonSingleMessage(HTTP_JSON_Core_Does_Not_Exist));
     		responseObject->finalizeOK();
-    		responseObject->printHTTP(req);
-    		// to make the caller of this function deallocate this object
-    		// because it's not going to wait for a notification from another node as it was
-    		// expected.
-    		this->getTransaction()->setUnattached();
-    		return false;
+    		return;
     	}
 
     	vector<std::pair<vector<string>, vector<string> > > * attributeAclDataForApiLayer =
@@ -90,12 +86,7 @@ private:
     	        if (length == 0) {
     	        	responseObject->addError(JsonResponseHandler::getJsonSingleMessage(HTTP_JSON_Empty_Body));
     	        	responseObject->finalizeOK();
-    	        	responseObject->printHTTP(req);
-    	        	// to make the caller of this function deallocate this object
-    	        	// because it's not going to wait for a notification from another node as it was
-    	        	// expected.
-    	        	this->getTransaction()->setUnattached();
-    	        	return false;
+    	        	return;
     	        }
 
     	        // Identify the type of access control request.
@@ -126,9 +117,7 @@ private:
     	        else {
     	        	responseObject->addError(JsonResponseHandler::getJsonSingleMessage(HTTP_JSON_Core_Does_Not_Exist));
     	        	responseObject->finalizeOK();
-    	        	responseObject->printHTTP(req);
-    	        	this->getTransaction()->setUnattached();
-    	        	return false;
+    	        	return;
     	        }
     	        // get input JSON
     	        const char *post_data = (char *) EVBUFFER_DATA(req->input_buffer);
@@ -142,9 +131,7 @@ private:
     	        if (parseSuccess == false) {
     	        	responseObject->addError(JsonResponseHandler::getJsonSingleMessage(HTTP_JSON_Parse_Error));
     	        	responseObject->finalizeOK();
-    	        	responseObject->printHTTP(req);
-    	        	this->getTransaction()->setUnattached();
-    	            return false;
+    	            return;
     	        } else {
     	        	if (root.type() == Json::arrayValue) {
     	        		aclAttributeResponses.resize(root.size());
@@ -183,9 +170,7 @@ private:
     	        				responseObject->addError(aclAttributeResponses[index]);
     	        			}
     	        			responseObject->finalizeOK();
-    	        			responseObject->printHTTP(req);
-    	        			this->getTransaction()->setUnattached();
-    	        			return false;
+    	        			return;
     	        		}
     	        	} else {
     	        		aclAttributeResponses.resize(1);
@@ -198,9 +183,7 @@ private:
     	        		if (status == false) {
     	        			responseObject->addError(aclAttributeResponses[0]);
     	        			responseObject->finalizeOK();
-    	        			responseObject->printHTTP(req);
-    	        			this->getTransaction()->setUnattached();
-    	        			return false;
+    	        			return;
     	        		} else {
     	        			attributeAclDataForApiLayer->push_back(make_pair(roleIdList, atributeList));
     	        			// if the response is empty then add success message.
@@ -216,8 +199,7 @@ private:
     	    }
     	    default:
     	    	this->getSession()->response->finalizeInvalid();
-    	    	this->getTransaction()->setUnattached();
-    	    	return false;
+    	    	return;
 
     	}
 
@@ -240,10 +222,7 @@ private:
     	 */
 
         aclCommand->produce();
-        if(! this->getTransaction()->isAttached()){
-        	return false;
-        }
-        return true;
+        return;
     }
 
     bool processSingleJSONAttributeAcl(const Json::Value& doc, AclActionType action,
@@ -396,21 +375,18 @@ private:
 
 
 
-    void finalize(){
-
-        // setFinished() must be called at the very last step of execution of every Transaction class
-        // to notify state-machine that this Transaction is
-        // done and is ok to be deleted now.
-        this->setFinished();
+    void finalizeWork(Transaction::Params * params){
+		this->getTransaction()->getSession()->response->printHTTP(req);
     }
+
 
 
     /*
      * This function must be overridden for each transaction class so that producers can use the
      * transaction and it's getSession() inteface.
      */
-    Transaction * getTransaction() {
-        return this;
+    SP(Transaction) getTransaction() {
+        return sharedPointer;
     }
 
     ShardingTransactionType getTransactionType(){

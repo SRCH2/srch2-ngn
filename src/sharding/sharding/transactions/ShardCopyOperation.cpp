@@ -21,6 +21,7 @@ ShardCopyOperation::ShardCopyOperation(const ClusterShardId & unassignedShard,
 		NodeId srcNodeId, const ClusterShardId & shardToReplicate,
 		ConsumerInterface * consumer):ProducerInterface(consumer),
 		unassignedShardId(unassignedShard),replicaShardId(shardToReplicate),srcNodeId(srcNodeId){
+	ASSERT(this->getTransaction());
 	this->currentOpId = NodeOperationId(ShardManager::getCurrentNodeId(), OperationState::getNextOperationId());
 	this->locker = NULL;
 	this->releaser = NULL;
@@ -43,9 +44,9 @@ ShardCopyOperation::~ShardCopyOperation(){
 	}
 }
 
-Transaction * ShardCopyOperation::getTransaction() {
+SP(Transaction) ShardCopyOperation::getTransaction() {
 	if(this->getConsumer() == NULL){
-		return NULL;
+		return SP(Transaction)();
 	}
 	return this->getConsumer()->getTransaction();
 }
@@ -139,15 +140,13 @@ void ShardCopyOperation::consume(const ShardMigrationStatus & status){
             this->successFlag = false;
             release();
         }else if(status.status == MM_STATUS_SUCCESS){
-        	boost::shared_lock<boost::shared_mutex> sLock;
-        	const Cluster_Writeview * writeview = ShardManager::getWriteview_read(sLock);
+        	const Cluster_Writeview * writeview = ((WriteviewTransaction *)(this->getTransaction().get()))->getWriteview();
             string indexDirectory = ShardManager::getShardManager()->getConfigManager()->getShardDir(writeview->clusterName,
-                    writeview->cores[unassignedShardId.coreId]->getName(), &unassignedShardId);
+                    writeview->cores.at(unassignedShardId.coreId)->getName(), &unassignedShardId);
             if(indexDirectory.compare("") == 0){
                 indexDirectory = ShardManager::getShardManager()->getConfigManager()->createShardDir(writeview->clusterName,
-                        writeview->cores[unassignedShardId.coreId]->getName(), &unassignedShardId);
+                        writeview->cores.at(unassignedShardId.coreId)->getName(), &unassignedShardId);
             }
-            sLock.unlock();
             physicalShard = LocalPhysicalShard(status.shard, indexDirectory, "");
             commit();
         }

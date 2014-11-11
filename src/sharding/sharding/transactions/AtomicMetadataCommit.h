@@ -29,7 +29,7 @@ public:
 			const vector<NodeId> & participants, ConsumerInterface * consumer, const bool skipLock = false);
 	~AtomicMetadataCommit();
 
-	Transaction * getTransaction();
+	SP(Transaction) getTransaction();
 
 	void produce();
 
@@ -56,8 +56,6 @@ private:
 	AtomicRelease * atomicRelease;
 	SP(CommitNotification) commitNotification;
 	MetadataChange * metadataChange;
-
-	bool finalizedFlag ;
 
 	void finalize(bool result);
 };

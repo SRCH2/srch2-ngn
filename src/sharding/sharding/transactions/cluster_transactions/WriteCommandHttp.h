@@ -6,7 +6,6 @@
 #include "../../state_machine/State.h"
 #include "../../notifications/Notification.h"
 #include "../../notifications/CommandStatusNotification.h"
-#include "../../notifications/InsertUpdateNotification.h"
 
 #include "core/util/Logger.h"
 #include "core/util/Assert.h"
@@ -22,23 +21,36 @@ class WriteCommandHttp : public ReadviewTransaction, public ConsumerInterface{
 public:
 	static void insert(boost::shared_ptr<const ClusterResourceMetadata_Readview> clusterReadview,
 			evhttp_request *req, unsigned coreId){
-		WriteCommandHttp * insertUpdateCmd = new WriteCommandHttp(clusterReadview, req, coreId, Insert_ClusterRecordOperation_Type);
+		SP(WriteCommandHttp) insertUpdateCmd =
+				SP(WriteCommandHttp)(new WriteCommandHttp(clusterReadview, req, coreId, Insert_ClusterRecordOperation_Type));
 		Transaction::startTransaction(insertUpdateCmd);
 		return;
 	}
 	static void update(boost::shared_ptr<const ClusterResourceMetadata_Readview> clusterReadview,
 			evhttp_request *req, unsigned coreId){
-		WriteCommandHttp * insertUpdateCmd = new WriteCommandHttp(clusterReadview, req, coreId, Update_ClusterRecordOperation_Type);
+		SP(WriteCommandHttp) insertUpdateCmd =
+				SP(WriteCommandHttp)(new WriteCommandHttp(clusterReadview, req, coreId, Update_ClusterRecordOperation_Type));
 		Transaction::startTransaction(insertUpdateCmd);
 		return;
 	}
 
 	static void deleteRecord(boost::shared_ptr<const ClusterResourceMetadata_Readview> clusterReadview,
 			evhttp_request *req, unsigned coreId){
-		WriteCommandHttp * deleteCmd = new WriteCommandHttp(clusterReadview, req, coreId, Delete_ClusterRecordOperation_Type);
+		SP(WriteCommandHttp) deleteCmd =
+				SP(WriteCommandHttp)(new WriteCommandHttp(clusterReadview, req, coreId, Delete_ClusterRecordOperation_Type));
 		Transaction::startTransaction(deleteCmd);
 		return;
 	}
+	~WriteCommandHttp(){
+		for(unsigned i = 0 ; i < recordsToInsert.size(); ++i){
+			if(recordsToInsert.at(i) != NULL){
+				delete recordsToInsert.at(i);
+			}
+		}
+		if(inserter != NULL){
+			delete inserter;
+		}
+	};
 private:
 	WriteCommandHttp(boost::shared_ptr<const ClusterResourceMetadata_Readview> clusterReadview,
 			evhttp_request *req, unsigned coreId,
@@ -57,46 +69,28 @@ private:
 		this->coreName = indexDataContainerConf->getName();
 	}
 
-	~WriteCommandHttp(){
-		for(unsigned i = 0 ; i < recordsToInsert.size(); ++i){
-			if(recordsToInsert.at(i) != NULL){
-				delete recordsToInsert.at(i);
-			}
-		}
-		if(inserter != NULL){
-			delete inserter;
-		}
-	};
-
-	bool run(){
+	void run(){
 		if(this->indexDataContainerConf == NULL){
-			this->setUnattached();
 	        this->getSession()->response->finalizeInvalid();
-	        finalize();
-			return false;
+			return;
 		}
 
 	    if(commandCode == Delete_ClusterRecordOperation_Type){
 	    	if(! parseDelete()){
-	    		this->finalize();
-	    		this->setUnattached();
-	    		return false;
+	    		return;
 	    	}
 			inserter = new WriteCommand(this, primaryKeysToDelete, indexDataContainerConf);
 	    }else {
 	    	if(! parseInsertUpdate()){
-	    		this->finalize();
-	    		this->setUnattached();
-	    		return false;
+	    		return;
 	    	}
 			inserter = new WriteCommand(this, recordsToInsert, commandCode, indexDataContainerConf);
 	    }
 	    inserter->produce();
-	    if(! this->isAttached()){
-	    	finalize();
-	    	return false;
-	    }
-    	return true;
+	}
+
+	SP(Transaction) getTransaction(){
+		return this->sharedPointer;
 	}
 
 	bool parseInsertUpdate(){
@@ -243,7 +237,6 @@ private:
 			JsonRecordOperationResponse * responseChannel = (JsonRecordOperationResponse *) this->getSession()->response;
 			responseChannel->addRecordShardResponse(recordShardResponse);
 		}
-		finalize();
 	};
 
 	Record * parseRecord(const Json::Value & doc, RecordSerializer & recSerializer){
@@ -281,10 +274,6 @@ private:
         return record;
 	}
 
-	Transaction * getTransaction(){
-		return this;
-	}
-
 	void initSession(){
 		TransactionSession * session = new TransactionSession();
 		session->response = new JsonRecordOperationResponse();
@@ -297,11 +286,9 @@ private:
 		return ShardingTransactionType_InsertUpdateCommand;
 	}
 
-	void finalize(){
+	void finalizeWork(Transaction::Params * p){
 		this->getSession()->response->printHTTP(req);
-		this->setFinished();
 	}
-
 
 private:
 	ClusterRecordOperation_Type commandCode;

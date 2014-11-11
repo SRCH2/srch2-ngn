@@ -75,8 +75,7 @@ bool NodeAddChange::doChange(Cluster_Writeview * metadata){
         metadata->addExternalNodeShard(this->localNodeShardIds.at(i),1);
     }
 
-	boost::unique_lock<boost::mutex> xLock;
-	Cluster_Writeview * writeview = ShardManager::getWriteview_write(xLock);
+	SP(ClusterNodes_Writeview) writeview = ShardManager::getNodesWriteview_write();
     writeview->setNodeState(newNodeId, ShardingNodeStateArrived);
 
     return true;

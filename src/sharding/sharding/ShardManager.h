@@ -16,6 +16,7 @@
 #include <boost/thread/locks.hpp>
 #include "boost/shared_ptr.hpp"
 
+#define MAX_NUM_TRANS_GROUPS 1000
 
 namespace srch2is = srch2::instantsearch;
 using namespace srch2is;
@@ -25,6 +26,7 @@ namespace httpwrapper {
 
 class ClusterResourceMetadata_Readview;
 class Cluster_Writeview;
+class ClusterNodes_Writeview;
 class StateMachine;
 class LockManager;
 class ResourceMetadataManager;
@@ -50,12 +52,13 @@ public:
 	 * no lock should be acquired in these methods
 	 */
 	static NodeId getCurrentNodeId();
-	static Cluster_Writeview * getWriteview_write(boost::unique_lock<boost::mutex> & xLock);
+	static Cluster_Writeview * getWriteview_write(boost::unique_lock<boost::shared_mutex> & xLock);
+	static const Cluster_Writeview * getWriteview_read(boost::shared_lock<boost::shared_mutex> & sLock);
 	static SP(ClusterNodes_Writeview) getNodesWriteview_write();
-	static SP(ClusterNodes_Writeview) getNodesWriteview_read();
-	//	static const Cluster_Writeview * getWriteview_read(boost::shared_lock<boost::shared_mutex> & sLock);
+	static SP(const ClusterNodes_Writeview) getNodesWriteview_read();
 	static void getReadview(boost::shared_ptr<const ClusterResourceMetadata_Readview> & readview);
 	static StateMachine * getStateMachine();
+	static boost::shared_mutex & getShardManagerGuard();
 
 
 	/*
@@ -186,6 +189,7 @@ public:
 	bool isLoadBalancing();
 	pthread_t * getLoadbalancingThread() ;
 
+
 	void print();
 private:
 
@@ -221,7 +225,8 @@ private:
 	void printBouncedNotifications();
 
 	// map from operatioId to MM listener
-	map<unsigned , ConsumerInterface *> mmSessionListeners;
+	vector< std::pair< map<unsigned , ConsumerInterface *>, boost::mutex * > > mmSessionListenersGroup;
+	vector< map<unsigned , SP(Transaction) > >mmSessionListenersGroup_TransSharedPointers;
 
 	bool joinedFlag;
 	bool cancelledFlag;

@@ -147,6 +147,24 @@ const unsigned CorePartitionContianer::getTotalNumberOfPartitions() const	{
 const unsigned CorePartitionContianer::getReplicationDegree() const{
 	return replicationDegree;
 }
+
+void CorePartitionContianer::getInvolvedNodes(const ClusterPID pid, vector<NodeId> & nodes) const{
+	nodes.clear();
+	for(map<unsigned, ClusterPartition *>::const_iterator clusterPartitionsItr = this->clusterPartitions.begin() ;
+			clusterPartitionsItr != this->clusterPartitions.end(); ++clusterPartitionsItr){
+		if(clusterPartitionsItr->second->getPartitionId() != pid.partitionId){
+			continue;
+		}
+		vector<NodeId> involvedNodes;
+		clusterPartitionsItr->second->getShardLocations(involvedNodes);
+		for(unsigned i = 0 ; i < involvedNodes.size(); ++i){
+			if(std::find(nodes.begin(), nodes.end(), involvedNodes.at(i)) == nodes.end()){
+				nodes.push_back(involvedNodes.at(i));
+			}
+		}
+	}
+}
+
 void CorePartitionContianer::addClusterShard(NodeId nodeId, ClusterShardId shardId){
 	if(shardId.coreId != coreId){
 		return;

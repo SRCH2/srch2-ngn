@@ -66,6 +66,8 @@ private:
 
 
 	vector<LockBatch *> pendingLockBatches;
+	boost::recursive_mutex lockManagerMutex;
+
 	vector<LockBatch *> rvReleasePendingLockBatches;
 	boost::mutex readviewReleaseMutex;
 

@@ -17,13 +17,11 @@ AtomicLock::AtomicLock(const ClusterShardId & srcShardId,
 		const ClusterShardId & destShardId,
 		const NodeOperationId & copyAgent,
 		ConsumerInterface * consumer): ProducerInterface(consumer){
-	ASSERT(this->getConsumer() != NULL);
-	ASSERT(this->getConsumer()->getTransaction() != NULL);
+	ASSERT(this->getTransaction());
 	// prepare the locker and locking notification
 	lockNotification = SP(LockingNotification)(new LockingNotification(srcShardId, destShardId, copyAgent));
 	releaseNotification = SP(LockingNotification)(new LockingNotification(srcShardId, destShardId, copyAgent, true));
 	lockType = LockRequestType_Copy;
-	this->finalzedFlag = false;
 	init();
 }
 
@@ -32,12 +30,11 @@ AtomicLock::AtomicLock(const ClusterShardId & shardId,
 		const NodeOperationId & srcMoveAgent,
 		const NodeOperationId & destMoveAgent,
 		ConsumerInterface * consumer): ProducerInterface(consumer){
-
+	ASSERT(this->getTransaction());
 	// prepare the locker and locking notification
 	lockNotification = SP(LockingNotification)(new LockingNotification(shardId, srcMoveAgent, destMoveAgent));
 	releaseNotification = SP(LockingNotification)(new LockingNotification(shardId, srcMoveAgent, destMoveAgent, true));
 	lockType = LockRequestType_Move;
-	this->finalzedFlag = false;
 	init();
 }
 
@@ -46,12 +43,11 @@ AtomicLock::AtomicLock(const NodeOperationId & newNodeOpId,
 		ConsumerInterface * consumer,
 		const vector<NodeId> & listOfOlderNodes, const LockLevel & lockLevel,
 		const bool blocking): ProducerInterface(consumer){
-
+	ASSERT(this->getTransaction());
 	// prepare the locker and locking notification
 	lockNotification = SP(LockingNotification)(new LockingNotification(newNodeOpId, listOfOlderNodes, lockLevel));
 	releaseNotification = SP(LockingNotification)(new LockingNotification(newNodeOpId, listOfOlderNodes, lockLevel, true,true));
 	lockType = LockRequestType_Metadata;
-	this->finalzedFlag = false;
 	init();
 }
 
@@ -60,7 +56,7 @@ AtomicLock::AtomicLock(const vector<string> & primaryKeys,
 		const NodeOperationId & writerAgent,
 		const ClusterPID & pid,
 		ConsumerInterface * consumer): ProducerInterface(consumer){
-
+	ASSERT(this->getTransaction());
 	/*
 	 * list of primary keys must be ascending
 	 */
@@ -75,7 +71,6 @@ AtomicLock::AtomicLock(const vector<string> & primaryKeys,
 	releaseNotification = SP(LockingNotification)(new LockingNotification(primaryKeys, writerAgent, pid, true));
 	this->pid = pid;
 	this->lockType = LockRequestType_PrimaryKey;
-	this->finalzedFlag = false;
 	init();
 
 }
@@ -85,12 +80,11 @@ AtomicLock::AtomicLock(const vector<string> & primaryKeys,
 AtomicLock::AtomicLock(const ClusterShardId & shardId,
 		const NodeOperationId & agent, const LockLevel & lockLevel,
 		ConsumerInterface * consumer): ProducerInterface(consumer){
-
+	ASSERT(this->getTransaction());
 	// prepare the locker and locking notification
 	lockNotification = SP(LockingNotification)(new LockingNotification(shardId, agent, lockLevel));
 	releaseNotification = SP(LockingNotification)(new LockingNotification(shardId, agent));
 	lockType = LockRequestType_GeneralPurpose;
-	this->finalzedFlag = false;
 	init();
 }
 
@@ -98,25 +92,26 @@ AtomicLock::AtomicLock(const ClusterShardId & shardId,
 AtomicLock::~AtomicLock(){
 }
 
-Transaction * AtomicLock::getTransaction(){
+SP(Transaction) AtomicLock::getTransaction(){
+	if(this->getConsumer() == NULL){
+		return SP(Transaction)();
+	}
 	return this->getConsumer()->getTransaction();
 }
 
 void AtomicLock::produce(){
     Logger::sharding(Logger::Detail, "AtomicLock| starts.");
-	boost::shared_lock<boost::shared_mutex> writeviewSLock;
-    const Cluster_Writeview * writeview = ShardManager::getWriteview_read(writeviewSLock);
+    SP(const ClusterNodes_Writeview) nodesWriteview = ShardManager::getNodesWriteview_read();
     bool participantsChangedFlag = false;
     for(int nodeIdx = 0; nodeIdx < participants.size(); ++nodeIdx){
-    	if(! writeview->isNodeAlive(participants.at(nodeIdx))){
+    	if(! nodesWriteview->isNodeAlive(participants.at(nodeIdx))){
     		participants.erase(participants.begin() + nodeIdx);
     		nodeIdx --;
     		participantsChangedFlag = true;
     	}
     }
-    writeviewSLock.unlock();
+    nodesWriteview.reset();
     if(participants.empty()){
-    	this->getTransaction()->setUnattached();
         Logger::sharding(Logger::Detail, "AtomicLock| ends unattached, no participant found.");
     	return;
     }else if(participantsChangedFlag){
@@ -130,7 +125,7 @@ void AtomicLock::produce(){
 
 // TODO : using writeview for primaryKey locking is WRONG!!!!
 void AtomicLock::init(){
-	lockNotification->getInvolvedNodes(participants);
+	lockNotification->getInvolvedNodes(this->getTransaction(), participants);
 	participantIndex = -1;
 	locker = new OrderedNodeIteratorOperation(lockNotification, ShardingLockACKMessageType , participants, this);
 }
@@ -138,10 +133,12 @@ void AtomicLock::init(){
 /*
  * This method is called after receiving the response from each participant
  */
-bool AtomicLock::condition(SP(ShardingNotification) reqArg, SP(ShardingNotification) resArg, vector<NodeId> & updatedListOfParticipants){
+bool AtomicLock::condition(SP(ShardingNotification) reqArg,
+		SP(ShardingNotification) resArg,
+		vector<NodeId> & updatedListOfParticipants){
 
 	// get updated list of arrived nodes
-	lockNotification->getInvolvedNodes(updatedListOfParticipants);
+	lockNotification->getInvolvedNodes(this->getTransaction(), updatedListOfParticipants);
 
 	SP(LockingNotification) req = boost::dynamic_pointer_cast<LockingNotification>(reqArg);
 	SP(LockingNotification::ACK) res = boost::dynamic_pointer_cast<LockingNotification::ACK>(resArg);
@@ -167,7 +164,6 @@ bool AtomicLock::condition(SP(ShardingNotification) reqArg, SP(ShardingNotificat
 	}else{
 		Logger::sharding(Logger::Detail, "AtomicLock| node %s rejected lock.", resArg->getSrc().toString().c_str());
 		recover();
-		return false;
 	}
 	return false;
 }
@@ -189,6 +185,7 @@ bool AtomicLock::shouldAbort(const NodeId & failedNode){
 		// all nodes that are involved in lock are now dead, so we should return the
 		// default status.
 		finalize(getDefaultStatusValue());
+		// NOT an exit point
 		return true;
 	}
 	if(this->participantIndex >= failedNodeIndex ){
@@ -224,6 +221,7 @@ void AtomicLock::recover(){
 	OrderedNodeIteratorOperation * releaser =
 			new OrderedNodeIteratorOperation(releaseNotification, ShardingLockACKMessageType , releaseParticipants);
 	ShardManager::getShardManager()->getStateMachine()->registerOperation(releaser);
+	/// NOTE : not an exit point
 	finalize(false);
 }
 
@@ -250,14 +248,11 @@ void AtomicLock::end(map<NodeId, SP(ShardingNotification) > & replies){
 			Logger::sharding(Logger::Detail, "AtomicLock| empty list of participants in primaryKey lock : abort and return false");
 			finalize(false);
 		}
-		finalize(true);
-	}else{
-		finalize(true);
 	}
+	finalize(true);
 }
 
 void AtomicLock::finalize(bool result){
-	this->finalzedFlag = true;
 	Logger::sharding(Logger::Detail, "AtomicLock| lock : %s", result ? "successfull" : "failed");
 	if(lockType == LockRequestType_PrimaryKey){
 		this->getConsumer()->consume(result, pid);

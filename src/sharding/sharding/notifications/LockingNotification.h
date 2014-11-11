@@ -12,6 +12,8 @@ namespace srch2 {
 namespace httpwrapper {
 
 
+class Transaction;
+
 class LockingNotification : public ShardingNotification{
 public:
 
@@ -80,7 +82,7 @@ public:
     LockRequestType getType() const;
 
 
-    void getInvolvedNodes(vector<NodeId> & participants) const;
+    void getInvolvedNodes(SP(Transaction) sp , vector<NodeId> & participants) const;
 
 private:
 
@@ -160,7 +162,9 @@ public:
 
 		bool isGranted() const;
 	    void setGranted(bool granted);
-
+	    bool hasResponse() const {
+				return true;
+		}
 	    unsigned getIndexOfLastGrantedItem() const;
 	    void setIndexOfLastGrantedItem(const unsigned index);
 
