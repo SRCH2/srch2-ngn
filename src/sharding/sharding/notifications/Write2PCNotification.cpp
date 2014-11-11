@@ -16,18 +16,29 @@ RecordWriteOpHandle::RecordWriteOpHandle(Record * record){
 	this->primaryKey = "";
 	this->success = false;
 	this->workDone = false;
+	this->recordAclCommandFlag = false;
 }
 RecordWriteOpHandle::RecordWriteOpHandle(const string & primaryKey){
 	this->record = NULL;
 	this->primaryKey = primaryKey;
 	this->success = false;
 	this->workDone = false;
+	this->recordAclCommandFlag = false;
+}
+RecordWriteOpHandle::RecordWriteOpHandle(const string & primaryKey, const vector<string> & roleIds){
+	this->record = NULL;
+	this->primaryKey = primaryKey;
+	this->roleIds = roleIds;
+	this->success = false;
+	this->workDone = false;
+	this->recordAclCommandFlag = true;
 }
 RecordWriteOpHandle::RecordWriteOpHandle(){
 	this->record = NULL;
 	this->primaryKey = "";
 	this->success = false;
 	this->workDone = false;
+	this->recordAclCommandFlag = false;
 }
 string RecordWriteOpHandle::getPrimaryKey() const{
 	if(record == NULL){
@@ -40,7 +51,9 @@ Record * RecordWriteOpHandle::getRecordObj(){
 	ASSERT(record != NULL);
 	return record;
 }
-
+vector<string> & RecordWriteOpHandle::getRoleIds(){
+	return roleIds;
+}
 void RecordWriteOpHandle::finalize(bool success){
 	ASSERT(!this->workDone);
 	this->workDone = true;
@@ -87,7 +100,16 @@ void * RecordWriteOpHandle::serialize(void * buffer, const WriteNotificationMode
 		{
 			buffer = srch2::util::serializeFixedTypes((bool)(this->record == NULL), buffer );
 			if(record == NULL){
-				buffer = srch2::util::serializeString(this->primaryKey, buffer);
+				// it's now either record delete or record acl command
+				buffer = srch2::util::serializeFixedTypes(recordAclCommandFlag,  buffer );
+				if(recordAclCommandFlag){
+					// acl record
+					// serialize the roleIds
+					buffer = srch2::util::serializeVectorOfString(this->roleIds, buffer);
+				}else{
+					// record delete command
+					buffer = srch2::util::serializeString(this->primaryKey, buffer);
+				}
 			}else{
 				// record exists
 				buffer = this->record->serializeForNetwork(buffer);
@@ -111,7 +133,15 @@ void * RecordWriteOpHandle::deserialize(void * buffer, const WriteNotificationMo
 			bool recordIsNull = false;
 			buffer = srch2::util::deserializeFixedTypes(buffer, recordIsNull);
 			if(recordIsNull){
-				buffer = srch2::util::deserializeString(buffer, this->primaryKey);
+				// it's now either record delete or record acl command
+				buffer = srch2::util::deserializeFixedTypes(buffer, recordAclCommandFlag);
+				if(recordAclCommandFlag){
+					// acl record
+					// serialize the roleIds
+					buffer = srch2::util::deserializeVectorOfString(buffer, this->roleIds);
+				}else{
+					buffer = srch2::util::deserializeString(buffer, this->primaryKey);
+				}
 			}else{
 				this->record = new Record(schema);
 				buffer = Record::deserializeForNetwork(buffer, *(this->record));
@@ -134,7 +164,14 @@ unsigned RecordWriteOpHandle::getNumberOfBytes(const WriteNotificationMode mode)
 		{
 			numberOfBytes += sizeof(bool);
 			if(this->record == NULL){
-				numberOfBytes += sizeof(unsigned) + this->primaryKey.size();
+				numberOfBytes += sizeof(bool);
+				if(recordAclCommandFlag){
+					// acl record
+					// serialize the roleIds
+					numberOfBytes += srch2::util::getNumberOfBytesVectorOfString(roleIds);
+				}else{
+					numberOfBytes += sizeof(unsigned) + this->primaryKey.size();
+				}
 			}else{
 				numberOfBytes += this->record->getNumberOfBytesSize();
 			}

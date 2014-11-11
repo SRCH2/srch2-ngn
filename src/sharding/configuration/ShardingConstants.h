@@ -219,7 +219,10 @@ enum GetInfoAggregateCriterion{
 enum ClusterRecordOperation_Type{
 	Insert_ClusterRecordOperation_Type,
 	Update_ClusterRecordOperation_Type,
-	Delete_ClusterRecordOperation_Type
+	Delete_ClusterRecordOperation_Type,
+	AclRecordAdd_ClusterRecordOperation_Type,
+	AclRecordAppend_ClusterRecordOperation_Type,
+	AclRecordDelete_ClusterRecordOperation_Type
 };
 
 

@@ -647,8 +647,18 @@ SP(Write2PCNotification::ACK) DPInternalRequestHandler::resolveWrite2PC(SP(Write
 	for(unsigned recIdx = 0; recIdx < recordHanldes.size(); ++recIdx){
 		const string & primaryKey = recordHanldes.at(recIdx)->getPrimaryKey();
 		Record * recordCloneObj = NULL;
-		if(notif->shouldPerformWrite()){
+		if(notif->shouldPerformWrite() &&
+				(notif->getCommandType() == Insert_ClusterRecordOperation_Type
+						|| notif->getCommandType() == Update_ClusterRecordOperation_Type)){
 			recordCloneObj = new Record(*(recordHanldes.at(recIdx)->getRecordObj()));
+		}
+		vector<string> roleIds;
+		if(notif->shouldPerformWrite() &&
+				(notif->getCommandType() == AclRecordAdd_ClusterRecordOperation_Type
+						|| notif->getCommandType() == AclRecordAdd_ClusterRecordOperation_Type
+						|| notif->getCommandType() == AclRecordAppend_ClusterRecordOperation_Type
+						|| notif->getCommandType() == AclRecordDelete_ClusterRecordOperation_Type)){
+			roleIds = recordHanldes.at(recIdx)->getRoleIds();
 		}
 		if(primaryKey == ""){
 			return SP(Write2PCNotification::ACK)();
@@ -685,6 +695,28 @@ SP(Write2PCNotification::ACK) DPInternalRequestHandler::resolveWrite2PC(SP(Write
 					deleteInShard(primaryKey ,shard->getSrch2Server().get(), shardPKResult->messageCodes, shardPKResult->statusValue);
 				}else{
 					deleteInShardTest(primaryKey, shard->getSrch2Server().get(), shardPKResult->messageCodes, shardPKResult->statusValue);
+				}
+				break;
+			case AclRecordAdd_ClusterRecordOperation_Type:
+				// we can use "primaryKey" and "roleIds"
+				if(notif->shouldPerformWrite()){
+					// TODO : handle record add
+				}else{
+					// TODO : handle record add test
+				}
+				break;
+			case AclRecordAppend_ClusterRecordOperation_Type:
+				if(notif->shouldPerformWrite()){
+					// TODO : handle record append
+				}else{
+					// TODO : handle record append test
+				}
+				break;
+			case AclRecordAppend_ClusterRecordOperation_Type:
+				if(notif->shouldPerformWrite()){
+					// TODO : handle record delete
+				}else{
+					// TODO : handle record delete test
 				}
 				break;
 			}

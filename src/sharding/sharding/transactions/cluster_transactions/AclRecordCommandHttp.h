@@ -49,20 +49,9 @@ private:
     	this->req = req;
     	this->coreInfo = clusterReadview->getCore(coreId);
     	ASSERT(this->coreInfo != NULL);
-        initSession();
         aclCommand = NULL;
         recordAclCommandType = commandType;
 
-    }
-    /*
-     * Must be implemented for all Transaction classes to initialize the session object.
-     */
-    void initSession(){
-        TransactionSession * session = new TransactionSession();
-        // used to save Json messages throughout the process, json messages
-        // can be printed to HTTP channel by using the print method of this class.
-        session->response = new JsonResponseHandler();
-        this->setSession(session);
     }
 
     /*

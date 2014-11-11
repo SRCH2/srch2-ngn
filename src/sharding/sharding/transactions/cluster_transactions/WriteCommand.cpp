@@ -413,6 +413,35 @@ WriteCommand::WriteCommand(ConsumerInterface * consumer,
 	this->nodeWriter = NULL;
 }
 
+WriteCommand::WriteCommand(ConsumerInterface * consumer,
+		map<string, vector<string> > & primaryKeyRoleIds,
+		RecordAclCommandType commandType,
+		const CoreInfo_t * coreInfo):ProducerInterface(consumer){
+	ASSERT(coreInfo != NULL);
+	ASSERT(this->getConsumer() != NULL);
+	ASSERT(this->getConsumer()->getTransaction() != NULL);
+	ASSERT(this->getConsumer()->getTransaction()->getSession() != NULL);
+	this->currentOpId = NodeOperationId(ShardManager::getCurrentNodeId(), OperationState::getNextOperationId());
+	this->coreInfo = coreInfo;
+	this->clusterReadview = ((ReadviewTransaction *)(this->getConsumer()->getTransaction().get()))->getReadview();
+	this->response = (JsonRecordOperationResponse*) (this->getConsumer()->getTransaction()->getSession()->response);
+	ClusterRecordOperation_Type recOpType;
+	switch (commandType) {
+		case Acl_Record_Add:
+			recOpType = AclRecordAdd_ClusterRecordOperation_Type;
+			break;
+		case Acl_Record_Append:
+			recOpType = AclRecordAppend_ClusterRecordOperation_Type;
+			break;
+		case Acl_Record_Delete:
+			recOpType = AclRecordDelete_ClusterRecordOperation_Type;
+			break;
+	}
+	initActionType(recOpType);
+	initRecords(primaryKeyRoleIds);
+	this->nodeWriter = NULL;
+}
+
 
 void WriteCommand::produce(){
 	if(records.empty()){
@@ -602,6 +631,15 @@ void WriteCommand::initActionType(ClusterRecordOperation_Type insertUpdateDelete
 		case Delete_ClusterRecordOperation_Type:
 			actionNameStr = string(c_action_delete);
 			break;
+		case AclRecordAdd_ClusterRecordOperation_Type:
+			actionNameStr = string(c_action_acl_record_add);
+			break;
+		case AclRecordAppend_ClusterRecordOperation_Type:
+			actionNameStr = string(c_action_acl_record_append);
+			break;
+		case AclRecordDelete_ClusterRecordOperation_Type:
+			actionNameStr = string(c_action_acl_record_delete);
+			break;
 	}
 }
 
@@ -634,6 +672,24 @@ void WriteCommand::initRecords(vector<string> & recordsVector){
 		}
 	}
 }
+
+
+void WriteCommand::initRecords(map<string, vector<string> > & primaryKeyRoleIds){
+	for(map<string, vector<string> >::iterator pkItr = primaryKeyRoleIds.begin();
+			pkItr != primaryKeyRoleIds.end(); ++pkItr){
+		if(records.find(pkItr->first) == records.end()){
+			records[pkItr->first] = new RecordWriteOpHandle(pkItr->first, pkItr->second);
+		}else{
+			// we must give an error because you cannot have to similar primary keys in the same batch
+        	Json::Value recordJsonResponse = JsonRecordOperationResponse::getRecordJsonResponse(
+        			pkItr->first, actionNameStr.c_str(), true , coreInfo->getName());
+        	JsonRecordOperationResponse::addRecordError(recordJsonResponse, HTTP_JSON_Custom_Error,
+        			JsonResponseHandler::getJsonSingleMessageStr(HTTP_Json_DUP_PRIMARY_KEY) );
+        	response->addRecordShardResponse(recordJsonResponse);
+		}
+	}
+}
+
 
 }
 }

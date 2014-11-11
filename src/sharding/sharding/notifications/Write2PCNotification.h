@@ -25,9 +25,11 @@ enum WriteNotificationMode{
 struct RecordWriteOpHandle{
 	RecordWriteOpHandle(Record * record);
 	RecordWriteOpHandle(const string & primaryKey);
+	RecordWriteOpHandle(const string & primaryKey, const vector<string> & roleIds);
 	RecordWriteOpHandle();
 	string getPrimaryKey() const;
 	Record * getRecordObj();
+	vector<string> & getRoleIds();
 	void finalize(bool success);
 	bool isSuccessful() const;
 	bool isWorkDone() const;
@@ -43,7 +45,10 @@ private:
 	bool workDone;
 	Record * record;
 	string primaryKey;
-
+	// in case it's a record acl operation, primaryKey holds the pk and this
+	// vector holds the roleids
+	vector<string> roleIds;
+	bool recordAclCommandFlag;
 	// null pointer means general messages
 	map<ShardId * ,vector<JsonMessageCode>, ShardPtrComparator >messageCodes;
 };

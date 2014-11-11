@@ -124,6 +124,10 @@ public:
 	WriteCommand(ConsumerInterface * consumer,
 			vector<string> & primaryKeys,
 			const CoreInfo_t * coreInfo);
+	WriteCommand(ConsumerInterface * consumer,
+			map<string, vector<string> > & primaryKeyRoleIds,
+			RecordAclCommandType commandType,
+			const CoreInfo_t * coreInfo);
 
 	void produce();
 
@@ -169,6 +173,8 @@ private:
 	void initRecords(vector<Record *> & recordsVector);
 
 	void initRecords(vector<string> & recordsVector);
+
+	void initRecords(map<string, vector<string> > & primaryKeyRoleIds);
 };
 
 }
