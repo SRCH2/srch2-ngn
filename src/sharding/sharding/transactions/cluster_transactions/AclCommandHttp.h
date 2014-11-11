@@ -47,7 +47,9 @@ private:
             evhttp_request *req, unsigned coreId /*, and maybe other arguments */):ReadviewTransaction(clusterReadview){
     	this->req = req;
     	this->coreInfo = clusterReadview->getCore(coreId);
-    	// TODO: get ACL core from coreInfo. Merge ACL core changes first.
+    	unsigned aclCoreId = this->coreInfo->getAttributeAclCoreId();
+		this->aclCoreInfo = clusterReadview->getCore(aclCoreId);
+    	ASSERT(this->aclCoreInfo != NULL);
     	ASSERT(this->coreInfo != NULL);
         initSession();
         aclCommand = NULL;
@@ -207,7 +209,7 @@ private:
         // When query parameters are parsed successfully, we must create and run AclCommand class and get back
         // its response in a 'consume' callback function.
 
-    	//*** USE: attributeAclDataForApiLayer, action as an argument data  ***.
+    	//*** USE: attributeAclDataForApiLayer, action, aclCoreInfo as an argument for ACLCommand API  ***.
 
 //        aclCommand = new AclCommand(this/*, and maybe other arguments */);//TODO
     	/*
@@ -401,6 +403,7 @@ private:
     WriteCommand * aclCommand;
     evhttp_request *req;
     const CoreInfo_t * coreInfo;
+    const CoreInfo_t * aclCoreInfo;
 };
 
 
