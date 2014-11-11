@@ -20,6 +20,7 @@
 #include "sharding/sharding/notifications/CommandStatusNotification.h"
 #include "sharding/sharding/notifications/CommandNotification.h"
 #include "sharding/sharding/notifications/Write2PCNotification.h"
+#include "sharding/sharding/notifications/AclAttributeReadNotification.h"
 #include "serializables/SerializableGetInfoResults.h"
 
 #include "server/HTTPJsonResponse.h"
@@ -196,6 +197,15 @@ private:
     static void * resetLogInShardThreadWork(void * args);
     static void * commitInShardThreadWork(void * args);
     static void * mergeInShardThreadWork(void * args);
+
+    void _aclRecordModifyRoles(Indexer *indexer,
+    		const string &primaryKeyID, vector<string> &roleIds,
+    		srch2::instantsearch::RecordAclCommandType commandType,
+    		vector<JsonMessageCode> & messageCodes, bool & statusValue);
+    void attributeAclModify(Indexer *indexer,
+    		const string &roleId, const vector<string> &attributes,
+    		srch2::instantsearch::AclActionType commandType,
+    		vector<JsonMessageCode> & messageCodes, bool & statusValue);
 };
 
 

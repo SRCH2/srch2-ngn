@@ -104,10 +104,12 @@ private:
     					string primaryKeyID;
     					std::stringstream log_str;
     					// extract all the role ids from the query
-    					JSONRecordParser::_extractResourceAndRoleIds(roleIds, primaryKeyID,
+    					bool success = JSONRecordParser::_extractResourceAndRoleIds(roleIds, primaryKeyID,
     							doc, coreInfo, log_str);
     					response[index] = log_str.str();
-    					//recordAclDataForApiLayer->push_back(make_pair(primaryKeyID, roleIds));
+    					if (success) {
+    						prepareAclDataForApiLayer(*recordAclDataForApiLayer, primaryKeyID, roleIds);
+    					}
     				}
     			}else{ // The input is only one JSON object.
     				response.resize(1);
@@ -116,14 +118,14 @@ private:
     				string primaryKeyID;
     				std::stringstream log_str;
     				// extract all the role ids from the query
-    				JSONRecordParser::_extractResourceAndRoleIds(roleIds, primaryKeyID, doc, coreInfo, log_str);
-    				if(roleIds.size() == 0){
+    				bool success = JSONRecordParser::_extractResourceAndRoleIds(roleIds, primaryKeyID, doc, coreInfo, log_str);
+    				if(!success){
     					responseObject->addMessage("error:" + coreInfo->getName() + " does not have record-based access control.");
     					responseObject->finalizeOK();
     					return ;
     				} else {
     					response[0] = log_str.str();
-    					//recordAclDataForApiLayer->push_back(make_pair(primaryKeyID, roleIds));
+    					prepareAclDataForApiLayer(*recordAclDataForApiLayer, primaryKeyID, roleIds);
     				}
     			}
     		}
@@ -137,13 +139,28 @@ private:
         // When query parameters are parsed successfully, we must create and run AclCommand class and get back
         // its response in a 'consume' callback function.
 
-    	// **** USE: recordAclDataForApiLayer, recordAclCommandType as an argument data ***.
     	aclCommand = new WriteCommand(this, *recordAclDataForApiLayer, recordAclCommandType, coreInfo);
 
         aclCommand->produce();
+
+        delete recordAclDataForApiLayer;
+
         return;
     }
 
+    void prepareAclDataForApiLayer(std::map< string, vector<string> > &recordAclDataForApiLayer,
+    		const string primaryKey, const vector<string>& roleIdsList) {
+    	std::map< string, vector<string> >::iterator iter =
+    			recordAclDataForApiLayer.find(primaryKey);
+    	if (iter != recordAclDataForApiLayer.end()) {
+    		vector<string> unionList;
+    		std::set_union(iter->second.begin(), iter->second.end(), roleIdsList.begin(),
+    				roleIdsList.end(), back_inserter(unionList));
+    		iter->second.assign(unionList.begin(), unionList.end());
+    	} else {
+    		recordAclDataForApiLayer.insert(make_pair(primaryKey, roleIdsList));
+    	}
+    }
     /*
      * One example of consume callback that will be called by the producer class
      * If another set of arguments is needed for this module, a new consume method must be

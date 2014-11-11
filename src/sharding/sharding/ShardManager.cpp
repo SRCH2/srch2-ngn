@@ -18,6 +18,7 @@
 #include "./notifications/MoveToMeNotification.h"
 #include "./notifications/CopyToMeNotification.h"
 #include "./notifications/CommandNotification.h"
+#include "./notifications/AclAttributeReadNotification.h"
 #include "./transactions/cluster_transactions/LoadBalancer.h"
 #include "./transactions/ShardMoveOperation.h"
 #include "./transactions/cluster_transactions/NodeJoiner.h"

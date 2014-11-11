@@ -44,7 +44,7 @@ private:
 public:
 	class ACK : public ShardingNotification{
 	public:
-		ACK(const vector<string> & listOfAttributes);
+		ACK(const vector<unsigned> & refiningAttrs, const vector<unsigned> & searchableAttrs);
 		ACK(){};
 
 		void * serializeBody(void * buffer) const;
@@ -54,9 +54,15 @@ public:
 	    ShardingMessageType messageType() const{
 	    	return ShardingAclAttrReadACKMessageType;
 	    }
-	    vector<string> & getListOfAttributes();
+	    vector<unsigned> & getListOfRefiningAttributes();
+	    vector<unsigned> & getListOfSearchableAttributes();
+
+	    void setListOfRefiningAttributes(vector<unsigned> & list);
+	    void setListOfSearchableAttributes(vector<unsigned> & list);
+
 	private:
-		vector<string> listOfAttributes;
+		vector<unsigned> listOfRefiningAttributes;
+		vector<unsigned> listOfSearchableAttributes;
 	};
 };
 

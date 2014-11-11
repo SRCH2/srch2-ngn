@@ -669,6 +669,16 @@ void WriteCommand::initActionType(ClusterRecordOperation_Type insertUpdateDelete
 		case AclRecordDelete_ClusterRecordOperation_Type:
 			actionNameStr = string(c_action_acl_record_delete);
 			break;
+		case AclAttrReplace_ClusterRecordOperation_Type:
+			actionNameStr = string(c_action_acl_attribute_replace);
+			break;
+		case AclAttrAppend_ClusterRecordOperation_Type:
+			actionNameStr = string(c_action_acl_attribute_append);
+			break;
+		case AclAttrDelete_ClusterRecordOperation_Type:
+			actionNameStr = string(c_action_acl_attribute_delete);
+			break;
+
 	}
 }
 

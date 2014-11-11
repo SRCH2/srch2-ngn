@@ -172,7 +172,7 @@ const string JsonResponseHandler::getJsonSingleMessageStr(const JsonMessageCode 
 	case HTTP_JSON_Request_Rejected_Due_To_Load_Balancing:
 		return "Request rejected due to ongoing load-balancing task.";
 	case HTTP_JSON_Request_ACL_Not_Available:
-		return "does not have record-based access control.";
+		return "Core does not have record-based access control.";
 	case HTTP_Json_DUP_PRIMARY_KEY:
 		return "Primary key repeats in the same batch, first one is used.";
 	case HTTP_Json_Partition_Is_Locked:
@@ -181,6 +181,8 @@ const string JsonResponseHandler::getJsonSingleMessageStr(const JsonMessageCode 
 		return "No data shard is currently available for this record. This is mostly caused by node failure. Please try again later.";
 	case HTTP_JSON_Core_Does_Not_Exist:
 		return "Core name is not recognized.";
+	case HTTP_JSON_PK_Does_Not_Exist:
+		return "Primary key provided does not exist.";
 	case HTTP_Json_General_Error:
 		return "Unknown Error.";
 	default:

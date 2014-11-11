@@ -93,6 +93,9 @@ public:
 	// Helper function to validate whether refining field is accessible for given role-id
 	bool isRefiningFieldAccessibleForRole(const string& roleId, const string& fieldName) const;
 
+	// process acl request
+	bool processAclRequest(vector<string>& fields, vector<string>& roleValues, AclActionType action) const;
+
 private:
 	mutable AttributeAclLock attrAclLock;
 	// This is the data structure which stores the mapping from acl-role to
@@ -110,9 +113,6 @@ private:
 	// Helper function to validate whether field is accessible for given role-id
 	bool isFieldAccessibleForRole(const string& roleId, const string& fieldName,
 			bool isFieldSearchable = true) const;
-
-	// process acl request
-	bool processAclRequest(vector<string>& fields, vector<string>& roleValues, AclActionType action) const;
 
 	//Internal API which loads attribute acl JSON file. This API is called from wrapper API bulkLoadAttributeAclJSON
 	void _bulkLoadAttributeAclJSON(const std::string& aclLoadFileName) const;

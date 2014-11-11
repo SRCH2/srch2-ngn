@@ -133,19 +133,19 @@ private:
     	        			const Json::Value doc = root.get(index,
     	        					defaultValueToReturn);
 
-    	        			vector<string> atributeList;
+    	        			vector<string> attributeList;
     	        			vector<string> roleIdList;
     	        			bool  status = processSingleJSONAttributeAcl(doc, action, apiName,
-    	        					aclAttributeResponses[index], roleIdList, atributeList);
+    	        					aclAttributeResponses[index], roleIdList, attributeList);
     	        			if (status == false) {
     	        				// there is an error with the current acl entry. Do not error out
     	        				// because we want to process other valid entries.
-    	        				atributeList.clear();
+    	        				attributeList.clear();
     	        				roleIdList.clear();
-    	        				//attributeAclDataForApiLayer->insert(make_pair(roleIdList, atributeList));
     	        			} else {
     	        				atleastOnValidEntry = true;
-    	        				//attributeAclDataForApiLayer->push_back(make_pair(roleIdList, atributeList));
+    	        				prepareAclDataForApiLayer(*attributeAclDataForApiLayer,
+    	        						roleIdList, attributeList);
     	        				// if the response is empty then add success message.
     	        				if (aclAttributeResponses[index].asString().size() == 0){
     	        					stringstream ss;
@@ -167,16 +167,17 @@ private:
     	        		aclAttributeResponses.resize(1);
     	        		// the record parameter is a single json object
     	        		const Json::Value doc = root;
-    	        		vector<string> atributeList;
+    	        		vector<string> attributeList;
     	        		vector<string> roleIdList;
     	        		bool  status = processSingleJSONAttributeAcl(doc, action, apiName,
-    	        				aclAttributeResponses[0], roleIdList, atributeList);
+    	        				aclAttributeResponses[0], roleIdList, attributeList);
     	        		if (status == false) {
     	        			responseObject->addError(aclAttributeResponses[0]);
     	        			responseObject->finalizeOK();
     	        			return;
     	        		} else {
-    	        			//attributeAclDataForApiLayer->push_back(make_pair(roleIdList, atributeList));
+    	        			prepareAclDataForApiLayer(*attributeAclDataForApiLayer,
+    	        					roleIdList, attributeList);
     	        			// if the response is empty then add success message.
     	        			if (aclAttributeResponses[0].asString().size() == 0){
     	        				stringstream ss;
@@ -199,9 +200,27 @@ private:
     	aclCommand = new WriteCommand(this, *attributeAclDataForApiLayer, action, aclCoreInfo);
 
         aclCommand->produce();
+
+        delete attributeAclDataForApiLayer;
         return;
     }
 
+    void prepareAclDataForApiLayer(std::map< string, vector<string> > &attributeAclDataForApiLayer,
+    		const vector<string> &roleIdList, const vector<string>& attributeList) {
+
+    	for (unsigned i = 0; i < roleIdList.size(); ++i) {
+    		std::map< string, vector<string> >::iterator iter =
+    				attributeAclDataForApiLayer.find(roleIdList[i]);
+    		if (iter != attributeAclDataForApiLayer.end()) {
+    			vector<string> unionList;
+    			std::set_union(iter->second.begin(), iter->second.end(), attributeList.begin(),
+    					attributeList.end(), back_inserter(unionList));
+    			iter->second.assign(unionList.begin(), unionList.end());
+    		} else {
+    			attributeAclDataForApiLayer.insert(make_pair(roleIdList[i], attributeList));
+    		}
+    	}
+    }
     bool processSingleJSONAttributeAcl(const Json::Value& doc, AclActionType action,
     		const string& apiName, Json::Value& aclAttributeResponse, vector<string>& roleIds,
         	vector<string>& attributeList) const{

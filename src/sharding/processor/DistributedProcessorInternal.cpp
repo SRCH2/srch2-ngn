@@ -655,9 +655,11 @@ SP(Write2PCNotification::ACK) DPInternalRequestHandler::resolveWrite2PC(SP(Write
 		vector<string> roleIds;
 		if(notif->shouldPerformWrite() &&
 				(notif->getCommandType() == AclRecordAdd_ClusterRecordOperation_Type
-						|| notif->getCommandType() == AclRecordAdd_ClusterRecordOperation_Type
 						|| notif->getCommandType() == AclRecordAppend_ClusterRecordOperation_Type
-						|| notif->getCommandType() == AclRecordDelete_ClusterRecordOperation_Type)){
+						|| notif->getCommandType() == AclRecordDelete_ClusterRecordOperation_Type
+						|| notif->getCommandType() == AclAttrAppend_ClusterRecordOperation_Type
+						|| notif->getCommandType() == AclAttrDelete_ClusterRecordOperation_Type
+						|| notif->getCommandType() == AclAttrReplace_ClusterRecordOperation_Type)){
 			roleIds = recordHanldes.at(recIdx)->getRoleIds();
 		}
 		if(primaryKey == ""){
@@ -706,44 +708,56 @@ SP(Write2PCNotification::ACK) DPInternalRequestHandler::resolveWrite2PC(SP(Write
 				 * The final boolean result of this primary key : shardPKResult->statusValue
 				 */
 				if(notif->shouldPerformWrite()){
-					// TODO : handle record add
+					_aclRecordModifyRoles(shard->getSrch2Server()->getIndexer(),
+							primaryKey, roleIds, Acl_Record_Add, shardPKResult->messageCodes,
+							shardPKResult->statusValue);
 				}else{
-					// TODO : handle record add test
+					shardPKResult->statusValue = true;
 				}
 				break;
 			case AclRecordAppend_ClusterRecordOperation_Type:
 				if(notif->shouldPerformWrite()){
-					// TODO : handle record append
+					_aclRecordModifyRoles(shard->getSrch2Server()->getIndexer(),
+							primaryKey, roleIds, Acl_Record_Append, shardPKResult->messageCodes,
+							shardPKResult->statusValue);
 				}else{
-					// TODO : handle record append test
+					shardPKResult->statusValue = true;
 				}
 				break;
 			case AclRecordDelete_ClusterRecordOperation_Type:
 				if(notif->shouldPerformWrite()){
-					// TODO : handle record delete
+					_aclRecordModifyRoles(shard->getSrch2Server()->getIndexer(),
+							primaryKey, roleIds, Acl_Record_Delete, shardPKResult->messageCodes,
+							shardPKResult->statusValue);
 				}else{
-					// TODO : handle record delete test
+					shardPKResult->statusValue = true;
 				}
 				break;
 			case AclAttrReplace_ClusterRecordOperation_Type:
 				if(notif->shouldPerformWrite()){
-					// TODO : handle acl replace
+					attributeAclModify(shard->getSrch2Server()->getIndexer(),
+							primaryKey, roleIds, ACL_REPLACE, shardPKResult->messageCodes,
+							shardPKResult->statusValue);
 				}else{
-					// TODO : handle acl replace test
+					shardPKResult->statusValue = true;
 				}
 				break;
 			case AclAttrDelete_ClusterRecordOperation_Type:
 				if(notif->shouldPerformWrite()){
-					// TODO : handle acl delete
+					attributeAclModify(shard->getSrch2Server()->getIndexer(),
+							primaryKey, roleIds, ACL_DELETE, shardPKResult->messageCodes,
+							shardPKResult->statusValue);
 				}else{
-					// TODO : handle acl delete test
+					shardPKResult->statusValue = true;
 				}
 				break;
 			case AclAttrAppend_ClusterRecordOperation_Type:
 				if(notif->shouldPerformWrite()){
-					// TODO : handle acl append
+					attributeAclModify(shard->getSrch2Server()->getIndexer(),
+							primaryKey, roleIds, ACL_APPEND, shardPKResult->messageCodes,
+							shardPKResult->statusValue);
 				}else{
-					// TODO : handle acl append test
+					shardPKResult->statusValue = true;
 				}
 				break;
 			}
@@ -757,6 +771,78 @@ SP(Write2PCNotification::ACK) DPInternalRequestHandler::resolveWrite2PC(SP(Write
 	return result;
 }
 
+void DPInternalRequestHandler::_aclRecordModifyRoles(Indexer *indexer,
+		const string &primaryKeyID, vector<string> &roleIds,
+		srch2::instantsearch::RecordAclCommandType commandType,
+		vector<JsonMessageCode> & messageCodes, bool & statusValue) {
+
+	srch2::instantsearch::INDEXWRITE_RETVAL returnValue = indexer->aclRecordModifyRoles(
+			primaryKeyID, roleIds, commandType);
+
+	switch (commandType) {
+	case srch2::instantsearch::Acl_Record_Add:
+		switch (returnValue) {
+		case srch2::instantsearch::OP_SUCCESS:
+			statusValue = true;
+			break;
+		case srch2::instantsearch::OP_FAIL:
+			statusValue = false;
+			messageCodes.push_back(HTTP_JSON_PK_Does_Not_Exist);
+			break;
+		default :
+			ASSERT(false);
+			break;
+		}
+		;
+		break;
+		case srch2::instantsearch::Acl_Record_Append:
+			switch (returnValue) {
+			case srch2::instantsearch::OP_SUCCESS:
+				statusValue = true;
+				break;
+			case srch2::instantsearch::OP_FAIL:
+				statusValue = false;
+				messageCodes.push_back(HTTP_JSON_PK_Does_Not_Exist);
+				break;
+			default :
+				ASSERT(false);
+				break;
+			}
+			;
+			break;
+			case srch2::instantsearch::Acl_Record_Delete:
+				switch (returnValue) {
+				case srch2::instantsearch::OP_SUCCESS:
+					statusValue =  true;
+					break;
+				case srch2::instantsearch::OP_FAIL:
+					statusValue = false;
+					messageCodes.push_back(HTTP_JSON_PK_Does_Not_Exist);
+					break;
+				default :
+					ASSERT(false);
+					break;
+				}
+				;
+				break;
+				default:
+					ASSERT(false);
+					break;
+	};
+}
+
+void DPInternalRequestHandler::attributeAclModify(Indexer *indexer,
+		const string &roleId, const vector<string> &attributes,
+		AclActionType commandType,
+		vector<JsonMessageCode> & messageCodes, bool & statusValue) {
+
+	vector<string> roleIds;
+	roleIds.push_back(roleId);
+	vector<string> attributeList = attributes;
+	indexer->getAttributeAcl().processAclRequest(attributeList, roleIds, commandType);
+	statusValue = true;
+}
+
 SP(AclAttributeReadNotification::ACK) DPInternalRequestHandler::
 		resolveAclAttributeListRead(SP(AclAttributeReadNotification) notif){
 	if(! notif){
@@ -764,20 +850,27 @@ SP(AclAttributeReadNotification::ACK) DPInternalRequestHandler::
 	}
 	AclAttributeReadNotification * aclNotif = notif.get();
 
+	AclAttributeReadNotification::ACK * response =  new AclAttributeReadNotification::ACK();
 
 	// 0. use target and readview to get Srch2Server pointers
 	vector<const Shard *> shards;
 	notif->getReadview()->getLocalShardContainer(notif->getTarget().getCoreId())->getShards(notif->getTarget(),shards);
 	// prepare the result containers
+	const string& roleId = notif->getRoleId();
 	for(unsigned shardIdx = 0; shardIdx < shards.size(); ++shardIdx){
 		const Shard * shard = shards.at(shardIdx);
-		/*
-		 * TODO : get the list of attributes and put it in an ACK notification and return
-		 */
+		const AttributeAccessControl & acl = shard->getSrch2Server()->getIndexer()->getAttributeAcl();
+		boost::shared_ptr<vector<unsigned> > attrList;
+		acl.fetchRefiningAttrsAcl(roleId, attrList);
+		response->setListOfRefiningAttributes(*attrList.get());
+		attrList.reset();
+		acl.fetchSearchableAttrsAcl(roleId, attrList);
+		response->setListOfSearchableAttributes(*attrList.get());
 
-		//
 		break; // only one target is enough, it gives us the list
 	}
+
+	return SP(AclAttributeReadNotification::ACK)(response);
 }
 
 }

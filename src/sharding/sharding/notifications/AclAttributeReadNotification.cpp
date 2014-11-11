@@ -2,6 +2,8 @@
 #include "core/util/Assert.h"
 #include "core/util/Logger.h"
 #include "../../sharding/ShardManager.h"
+#include "sharding/processor/DistributedProcessorInternal.h"
+#include "../state_machine/StateMachine.h"
 
 using namespace std;
 namespace srch2 {
@@ -64,30 +66,41 @@ boost::shared_ptr<const ClusterResourceMetadata_Readview> AclAttributeReadNotifi
 }
 
 
-AclAttributeReadNotification::ACK::ACK(const vector<string> & listOfAttributes){
-	this->listOfAttributes = listOfAttributes;
-}
 
 void * AclAttributeReadNotification::ACK::serializeBody(void * buffer) const{
-	buffer = srch2::util::serializeVectorOfString(listOfAttributes, buffer);
+	buffer = srch2::util::serializeVectorOfFixedTypes(listOfRefiningAttributes, buffer);
+	buffer = srch2::util::serializeVectorOfFixedTypes(listOfSearchableAttributes, buffer);
 	return buffer;
 }
 unsigned AclAttributeReadNotification::ACK::getNumberOfBytesBody() const{
 	unsigned numberOfBytes = 0;
-	numberOfBytes += srch2::util::getNumberOfBytesVectorOfString(listOfAttributes);
+	numberOfBytes += srch2::util::getNumberOfBytesVectorOfFixedTypes(listOfRefiningAttributes);
+	numberOfBytes += srch2::util::getNumberOfBytesVectorOfFixedTypes(listOfSearchableAttributes);
 	return numberOfBytes;
 }
 void * AclAttributeReadNotification::ACK::deserializeBody(void * buffer) {
-	buffer = srch2::util::deserializeVectorOfString(buffer, listOfAttributes);
+	buffer = srch2::util::deserializeVectorOfFixedTypes(buffer, listOfRefiningAttributes);
+	buffer = srch2::util::deserializeVectorOfFixedTypes(buffer, listOfSearchableAttributes);
 	return buffer;
 }
 bool AclAttributeReadNotification::ACK::resolveNotification(SP(ShardingNotification) _notif){
 	ShardManager::getStateMachine()->handle(_notif);
 	return true;
 }
-vector<string> & AclAttributeReadNotification::ACK::getListOfAttributes(){
-	return listOfAttributes;
+vector<unsigned> & AclAttributeReadNotification::ACK::getListOfRefiningAttributes(){
+	return listOfRefiningAttributes;
 }
+vector<unsigned> & AclAttributeReadNotification::ACK::getListOfSearchableAttributes(){
+	return listOfSearchableAttributes;
+}
+
+void AclAttributeReadNotification::ACK::setListOfRefiningAttributes(vector<unsigned> & list) {
+	listOfRefiningAttributes.assign(list.begin(), list.end());
+}
+void AclAttributeReadNotification::ACK::setListOfSearchableAttributes(vector<unsigned> & list) {
+	listOfSearchableAttributes.assign(list.begin(), list.end());
+}
+
 
 }
 }
