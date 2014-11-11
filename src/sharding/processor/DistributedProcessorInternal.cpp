@@ -698,7 +698,13 @@ SP(Write2PCNotification::ACK) DPInternalRequestHandler::resolveWrite2PC(SP(Write
 				}
 				break;
 			case AclRecordAdd_ClusterRecordOperation_Type:
-				// we can use "primaryKey" and "roleIds"
+				/*
+				 * NOTE :
+				 * Here we can use "primaryKey" and "roleIds"
+				 * Srch2Server * object : shard->getSrch2Server().get()
+				 * Output log messages : must be pushed back to shardPKResult->messageCodes
+				 * The final boolean result of this primary key : shardPKResult->statusValue
+				 */
 				if(notif->shouldPerformWrite()){
 					// TODO : handle record add
 				}else{
@@ -712,11 +718,32 @@ SP(Write2PCNotification::ACK) DPInternalRequestHandler::resolveWrite2PC(SP(Write
 					// TODO : handle record append test
 				}
 				break;
-			case AclRecordAppend_ClusterRecordOperation_Type:
+			case AclRecordDelete_ClusterRecordOperation_Type:
 				if(notif->shouldPerformWrite()){
 					// TODO : handle record delete
 				}else{
 					// TODO : handle record delete test
+				}
+				break;
+			case AclAttrReplace_ClusterRecordOperation_Type:
+				if(notif->shouldPerformWrite()){
+					// TODO : handle acl replace
+				}else{
+					// TODO : handle acl replace test
+				}
+				break;
+			case AclAttrDelete_ClusterRecordOperation_Type:
+				if(notif->shouldPerformWrite()){
+					// TODO : handle acl delete
+				}else{
+					// TODO : handle acl delete test
+				}
+				break;
+			case AclAttrAppend_ClusterRecordOperation_Type:
+				if(notif->shouldPerformWrite()){
+					// TODO : handle acl append
+				}else{
+					// TODO : handle acl append test
 				}
 				break;
 			}

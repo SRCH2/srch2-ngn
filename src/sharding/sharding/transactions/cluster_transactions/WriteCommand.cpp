@@ -443,6 +443,35 @@ WriteCommand::WriteCommand(ConsumerInterface * consumer,
 }
 
 
+WriteCommand::WriteCommand(ConsumerInterface * consumer,
+		map<string, vector<string> > & primaryKeyRoleIds,
+		AclActionType commandType,
+		const CoreInfo_t * coreInfo):ProducerInterface(consumer){
+	ASSERT(coreInfo != NULL);
+	ASSERT(this->getConsumer() != NULL);
+	ASSERT(this->getConsumer()->getTransaction() != NULL);
+	ASSERT(this->getConsumer()->getTransaction()->getSession() != NULL);
+	this->currentOpId = NodeOperationId(ShardManager::getCurrentNodeId(), OperationState::getNextOperationId());
+	this->coreInfo = coreInfo;
+	this->clusterReadview = ((ReadviewTransaction *)(this->getConsumer()->getTransaction().get()))->getReadview();
+	this->response = (JsonRecordOperationResponse*) (this->getConsumer()->getTransaction()->getSession()->response);
+	ClusterRecordOperation_Type recOpType;
+	switch (commandType) {
+		case ACL_REPLACE:
+			recOpType = AclAttrReplace_ClusterRecordOperation_Type;
+			break;
+		case ACL_DELETE:
+			recOpType = AclAttrDelete_ClusterRecordOperation_Type;
+			break;
+		case ACL_APPEND:
+			recOpType = AclAttrAppend_ClusterRecordOperation_Type;
+			break;
+	}
+	initActionType(recOpType);
+	initRecords(primaryKeyRoleIds);
+	this->nodeWriter = NULL;
+}
+
 void WriteCommand::produce(){
 	if(records.empty()){
 		return;

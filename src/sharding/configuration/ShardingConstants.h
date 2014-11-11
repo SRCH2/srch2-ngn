@@ -222,7 +222,10 @@ enum ClusterRecordOperation_Type{
 	Delete_ClusterRecordOperation_Type,
 	AclRecordAdd_ClusterRecordOperation_Type,
 	AclRecordAppend_ClusterRecordOperation_Type,
-	AclRecordDelete_ClusterRecordOperation_Type
+	AclRecordDelete_ClusterRecordOperation_Type,
+	AclAttrReplace_ClusterRecordOperation_Type,
+	AclAttrDelete_ClusterRecordOperation_Type,
+	AclAttrAppend_ClusterRecordOperation_Type,
 };
 
 

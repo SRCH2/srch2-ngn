@@ -87,7 +87,6 @@ private:
     	        // Otherwise it should be /corename/aclAttributeRoleDelete etc.
     	        string uriString = req->uri;
     	        string apiName;
-    	        AclActionType action;
     	        string corename = this->coreInfo->getName();
     	        if (corename == ConfigManager::defaultCore) {
     	        	corename.clear();
@@ -197,21 +196,7 @@ private:
 
         // When query parameters are parsed successfully, we must create and run AclCommand class and get back
         // its response in a 'consume' callback function.
-
-    	//*** USE: attributeAclDataForApiLayer, action, aclCoreInfo as an argument for ACLCommand API  ***.
-
-//        aclCommand = new AclCommand(this/*, and maybe other arguments */);//TODO
-    	/*
-			// WriteCommand(ConsumerInterface * consumer, //this
-			//      	 map<string, vector<string> >, // map from primaryKey to list of roleIds
-			//	 ClusterACLOperation_Type aclOperationType,
-			//	 const CoreInfo_t * coreInfo);
-			// WriteCommand(ConsumerInterface * consumer, //this
-			//      	 vector<string> , // list of attributes
-			//      	 vector<string> , // list of roleIds
-			//	 ClusterACLOperation_Type aclOperationType,
-			//	 const CoreInfo_t * coreInfo);
-    	 */
+    	aclCommand = new WriteCommand(this, *attributeAclDataForApiLayer, action, aclCoreInfo);
 
         aclCommand->produce();
         return;
@@ -361,8 +346,9 @@ private:
      * added to ConsumerInterface, it must be overridden here to process the results of AclCommand
      * and it must be called in finalize method of AclCommand to return back to this consumer.
      */
-    void consume(bool booleanResult, vector<JsonMessageCode> & messageCodes){
-
+    void consume(const map<string, bool> & results,
+			map<string, map<ShardId * ,vector<JsonMessageCode>, ShardPtrComparator > > & messageCodes){
+    	// TODO : must use this consume function to print to HTTP channel
     }
 
 
@@ -393,6 +379,7 @@ private:
     evhttp_request *req;
     const CoreInfo_t * coreInfo;
     const CoreInfo_t * aclCoreInfo;
+    AclActionType action;
 };
 
 

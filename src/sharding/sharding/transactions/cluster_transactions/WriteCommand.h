@@ -128,6 +128,10 @@ public:
 			map<string, vector<string> > & primaryKeyRoleIds,
 			RecordAclCommandType commandType,
 			const CoreInfo_t * coreInfo);
+	WriteCommand(ConsumerInterface * consumer,
+			map<string, vector<string> > & primaryKeyRoleIds,
+			AclActionType commandType,
+			const CoreInfo_t * coreInfo);
 
 	void produce();
 

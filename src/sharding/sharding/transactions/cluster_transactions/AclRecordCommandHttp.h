@@ -138,19 +138,7 @@ private:
         // its response in a 'consume' callback function.
 
     	// **** USE: recordAclDataForApiLayer, recordAclCommandType as an argument data ***.
-
-//        aclCommand = new AclCommand(this/*, and maybe other arguments */);//TODO
-    	/*
-			// WriteCommand(ConsumerInterface * consumer, //this
-			//      	 map<string, vector<string> >, // map from primaryKey to list of roleIds
-			//	 ClusterACLOperation_Type aclOperationType,
-			//	 const CoreInfo_t * coreInfo);
-			// WriteCommand(ConsumerInterface * consumer, //this
-			//      	 vector<string> , // list of attributes
-			//      	 vector<string> , // list of roleIds
-			//	 ClusterACLOperation_Type aclOperationType,
-			//	 const CoreInfo_t * coreInfo);
-    	 */
+    	aclCommand = new WriteCommand(this, *recordAclDataForApiLayer, recordAclCommandType, coreInfo);
 
         aclCommand->produce();
         return;
@@ -162,8 +150,9 @@ private:
      * added to ConsumerInterface, it must be overridden here to process the results of AclCommand
      * and it must be called in finalize method of AclCommand to return back to this consumer.
      */
-    void consume(bool booleanResult, vector<JsonMessageCode> & messageCodes){
-
+    void consume(const map<string, bool> & results,
+			map<string, map<ShardId * ,vector<JsonMessageCode>, ShardPtrComparator > > & messageCodes){
+    	// TODO : must use this consume function to print to HTTP channel
     }
 
     void finalizeWork(Transaction::Params * params){
