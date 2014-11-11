@@ -26,30 +26,30 @@ namespace httpwrapper {
 class ShutdownCommand : public WriteviewTransaction, public ConsumerInterface {
 public:
 	static void runShutdown(evhttp_request *req){
-		ShutdownCommand * command = new ShutdownCommand(req);
+		SP(ShutdownCommand) command = SP(ShutdownCommand)(new ShutdownCommand(req));
 		Transaction::startTransaction(command);
-	}
-public:
-
-	ShutdownCommand(evhttp_request *req){
-		this->saveOperation = NULL;
-		this->req = req;
-		initSession();
 	}
 	~ShutdownCommand(){
 		if(saveOperation != NULL){
 			delete saveOperation;
 		}
 	}
+private:
+
+	ShutdownCommand(evhttp_request *req){
+		this->saveOperation = NULL;
+		this->req = req;
+		initSession();
+	}
 
 	ShardingTransactionType getTransactionType(){
 		return ShardingTransactionType_Shutdown;
 	}
 
-	bool run();
+	void run();
 
-	Transaction * getTransaction(){
-		return this;
+	SP(Transaction) getTransaction(){
+		return sharedPointer;
 	}
 
 	void initSession(){
@@ -61,6 +61,8 @@ public:
 	void consume(map<NodeId, vector<CommandStatusNotification::ShardStatus *> > & result) ;
 	void clusterShutdown();
 	string getName() const {return "shutdown-command";};
+
+	void finalizeWork(Transaction::Params * arg);
 
 private:
 

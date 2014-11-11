@@ -21,7 +21,7 @@ AtomicRelease::AtomicRelease(const ClusterShardId & srcShardId,
 		const ClusterShardId & destShardId,
 		const NodeOperationId & copyAgent,
 		ConsumerInterface * consumer) : ProducerInterface(consumer){
-
+	ASSERT(this->getTransaction() != NULL);
 	// prepare the locker and locking notification
 	this->releaseNotification = SP(LockingNotification)(new LockingNotification(srcShardId, destShardId, copyAgent, true));
 	this->lockType = LockRequestType_Copy;
@@ -32,9 +32,10 @@ AtomicRelease::AtomicRelease(const ClusterShardId & srcShardId,
 /// node arrival
 AtomicRelease::AtomicRelease(const NodeOperationId & newNodeOpId,
 		ConsumerInterface * consumer): ProducerInterface(consumer){ // releases the metadata
-
+	ASSERT(this->getTransaction() != NULL);
 	// prepare the locker and locking notification
-	this->releaseNotification = SP(LockingNotification)(new LockingNotification(newNodeOpId, vector<NodeId>(), LockLevel_X, true, true));
+	this->releaseNotification = SP(LockingNotification)(new LockingNotification(newNodeOpId, vector<NodeId>(),
+			LockLevel_X, true, true));
 	// LockLevel_X is just a place holder,
 	this->lockType = LockRequestType_Metadata;
 	this->finalizeFlag = false;
@@ -44,7 +45,7 @@ AtomicRelease::AtomicRelease(const NodeOperationId & newNodeOpId,
 /// record releasing
 AtomicRelease::AtomicRelease(const vector<string> & primaryKeys, const NodeOperationId & writerAgent, const ClusterPID & pid,
 		ConsumerInterface * consumer): ProducerInterface(consumer){
-
+	ASSERT(this->getTransaction() != NULL);
 	// prepare the locker and locking notification
 	this->releaseNotification = SP(LockingNotification)(new LockingNotification(primaryKeys, writerAgent, pid, true));
 	this->lockType = LockRequestType_PrimaryKey;
@@ -57,7 +58,7 @@ AtomicRelease::AtomicRelease(const vector<string> & primaryKeys, const NodeOpera
 /// general purpose cluster shard releasing
 AtomicRelease::AtomicRelease(const ClusterShardId & shardId, const NodeOperationId & agent,
 		ConsumerInterface * consumer): ProducerInterface(consumer){
-
+	ASSERT(this->getTransaction() != NULL);
 	// prepare the locker and locking notification
 	this->releaseNotification = SP(LockingNotification)(new LockingNotification(shardId, agent));
 	this->lockType = LockRequestType_GeneralPurpose;
@@ -69,26 +70,28 @@ AtomicRelease::AtomicRelease(const ClusterShardId & shardId, const NodeOperation
 AtomicRelease::~AtomicRelease(){
 }
 
-Transaction * AtomicRelease::getTransaction(){
+SP(Transaction) AtomicRelease::getTransaction(){
+	if(this->getConsumer() == NULL){
+		return SP(Transaction)();
+	}
 	return this->getConsumer()->getTransaction();
 }
 
 void AtomicRelease::produce(){
-    Logger::sharding(Logger::Detail, "AtomicRelease| starts. Consumer is %s", this->getConsumer() == NULL ? "NULL" : this->getConsumer()->getName().c_str());
+    Logger::sharding(Logger::Detail, "AtomicRelease| starts. Consumer is %s",
+    		this->getConsumer() == NULL ? "NULL" : this->getConsumer()->getName().c_str());
 
-	boost::shared_lock<boost::shared_mutex> & writeviewSLock;
-    const Cluster_Writeview * writeview = ShardManager::getWriteview_read(writeviewSLock);
+    SP(const ClusterNodes_Writeview) nodesWriteview = ShardManager::getNodesWriteview_read();
     bool participantsChangedFlag = false;
     for(int nodeIdx = 0; nodeIdx < participants.size(); ++nodeIdx){
-    	if(! writeview->isNodeAlive(participants.at(nodeIdx))){
+    	if(! nodesWriteview->isNodeAlive(participants.at(nodeIdx))){
     		participants.erase(participants.begin() + nodeIdx);
     		nodeIdx --;
     		participantsChangedFlag = true;
     	}
     }
-    writeviewSLock.unlock();
+    nodesWriteview.reset();
     if(participants.empty()){
-    	this->getTransaction()->setUnattached();
         Logger::sharding(Logger::Detail, "AtomicLock| ends unattached, no participant found.");
     	return;
     }else if(participantsChangedFlag){
@@ -101,6 +104,7 @@ void AtomicRelease::produce(){
 void AtomicRelease::end(map<NodeId, SP(ShardingNotification) > & replies){
 	finalize();
 }
+
 void AtomicRelease::finalize(){
     Logger::sharding(Logger::Detail, "AtomicRelease| ends ...");
 	this->finalizeFlag = true;
@@ -121,7 +125,7 @@ void AtomicRelease::setParticipants(vector<NodeId> & participants){
 }
 
 bool AtomicRelease::updateParticipants(){
-	releaseNotification->getInvolvedNodes(participants);
+	releaseNotification->getInvolvedNodes(this->getTransaction(), participants);
 	if(participants.empty()){
 		return false;
 	}
@@ -131,7 +135,7 @@ bool AtomicRelease::updateParticipants(){
 
 void AtomicRelease::init(){
 	// participants are all node
-	releaseNotification->getInvolvedNodes(participants);
+	releaseNotification->getInvolvedNodes(this->getTransaction(), participants);
 	releaser = new OrderedNodeIteratorOperation(releaseNotification, ShardingLockACKMessageType , participants, this);
 }
 

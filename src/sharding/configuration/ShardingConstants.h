@@ -4,6 +4,7 @@
 namespace srch2 {
 namespace httpwrapper {
 
+
 ///////////////////////////////////////// TEMPORARY ////////////////////////////////////////////
 typedef unsigned TimeoutValue;
 typedef unsigned NodeId;

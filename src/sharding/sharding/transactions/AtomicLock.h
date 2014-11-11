@@ -58,14 +58,15 @@ public:
 
 	~AtomicLock();
 
-	Transaction * getTransaction();
+	SP(Transaction) getTransaction();
 
 	void produce();
 
 	/*
 	 * This method is called after receiving the response from each participant
 	 */
-	bool condition(SP(ShardingNotification) req, SP(ShardingNotification) res, vector<NodeId> & updatedListOfParticipants);
+	bool condition(SP(ShardingNotification) req, SP(ShardingNotification) res,
+			vector<NodeId> & updatedListOfParticipants);
 
 	bool shouldAbort(const NodeId & failedNode);
 
@@ -90,8 +91,6 @@ private:
 	int participantIndex;
 
 	ClusterPID pid;// only valid and meaningful value if primary key lock
-
-	bool finalzedFlag ;
 
 	void recover();
 

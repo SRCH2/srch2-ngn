@@ -40,6 +40,9 @@ public:
     public:
         ShardingMessageType messageType() const;
 		bool resolveNotification(SP(ShardingNotification) _notif);
+		bool hasResponse() const {
+				return true;
+		}
     };
 };
 

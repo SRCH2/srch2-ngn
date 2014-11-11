@@ -132,6 +132,7 @@ int main(int argc, char** argv) {
 	/*****************
 	 * Constructing the ShardManager
 	 */
+	// The writeview is not initialized yet at this point
 	runtime->initializeShardManager();
 
 	/*****************

@@ -43,7 +43,7 @@ public:
 	indexDirectory(indexDirectory){};
 	void prepare(){
 		boost::shared_lock<boost::shared_mutex> sLock;
-		const CoreInfo_t * indexDataConfig = ShardManager::getWriteview_read(sLock)->cores[shardId->coreId];
+		const CoreInfo_t * indexDataConfig = ShardManager::getWriteview_read(sLock)->cores.at(shardId->coreId);
 
 		server = boost::shared_ptr<Srch2Server>(new Srch2Server(indexDataConfig, indexDirectory, ""));
 
@@ -76,7 +76,7 @@ public:
 		indexDirectory(indexDirectory), jsonFileCompletePath(jsonFileCompletePath){};
 	void prepare(){
 		boost::shared_lock<boost::shared_mutex> sLock;
-		const CoreInfo_t * indexDataConfig = ShardManager::getWriteview_read(sLock)->cores[shardId->coreId];
+		const CoreInfo_t * indexDataConfig = ShardManager::getWriteview_read(sLock)->cores.at(shardId->coreId);
 
 		server = boost::shared_ptr<Srch2Server>(new Srch2Server(indexDataConfig, indexDirectory, jsonFileCompletePath));
 
@@ -115,7 +115,7 @@ public:
 		indexDirectory(indexDirectory){};
 	void prepare(){
 		boost::shared_lock<boost::shared_mutex> sLock;
-		const CoreInfo_t * indexDataConfig = ShardManager::getWriteview_read(sLock)->cores[shardId->coreId];
+		const CoreInfo_t * indexDataConfig = ShardManager::getWriteview_read(sLock)->cores.at(shardId->coreId);
 
 		server = boost::shared_ptr<Srch2Server>(new Srch2Server(indexDataConfig, indexDirectory, ""));
 

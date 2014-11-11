@@ -32,9 +32,10 @@ public:
 			const string & filePath = "");
 	~ShardCommand();
 
-	Transaction * getTransaction(){
+	SP(Transaction) getTransaction(){
 		if(this->getConsumer() == NULL){
-			return NULL;
+			ASSERT(false);
+			return SP(Transaction)();
 		}
 		return this->getConsumer()->getTransaction();
 	}

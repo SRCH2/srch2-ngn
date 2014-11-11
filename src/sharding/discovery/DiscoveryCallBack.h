@@ -54,11 +54,9 @@ public:
 				body += sizeof(unsigned);
 				node.deserialize(body);
 				node.thisIsMe = false;
-				boost::unique_lock<boost::mutex> xLock;
-				Cluster_Writeview * writeview = ShardManager::getWriteview_write(xLock);
+				SP(ClusterNodes_Writeview) writeview = ShardManager::getNodesWriteview_write();
 				writeview->addNode(node);
 				writeview->setNodeState(node.getId(), ShardingNodeStateArrived);
-				xLock.unlock();
 				syncManger.localNodesCopyMutex.lock();
                 bool isPresent = false;
                 for(unsigned i = 0 ; i < syncManger.localNodesCopy.size(); ++i){

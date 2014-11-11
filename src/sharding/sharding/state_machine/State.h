@@ -18,7 +18,9 @@ namespace httpwrapper {
 class OperationState{
 public:
 
-	OperationState(unsigned operationId):operationId(operationId){}
+	OperationState(unsigned operationId):operationId(operationId){
+		transaction.reset();
+	}
 
 	virtual ~OperationState(){};
 
@@ -35,8 +37,12 @@ public:
 	void setOperationId(unsigned operationId) ;
 
 	void send(SP(ShardingNotification) notification, const NodeOperationId & dest) const;
-	virtual Transaction * getTransaction(){
-		return NULL;
+
+	SP(Transaction) getTransaction(){
+		return transaction;
+	}
+	void setTransaction(SP(Transaction) sp){
+		this->transaction = sp;
 	}
 
 	// what's returned doesn't need to be started but it might be NULL
@@ -49,6 +55,7 @@ public:
 private:
 	unsigned operationId;
 	static unsigned nextOperationId;
+	SP(Transaction) transaction;
 };
 
 }

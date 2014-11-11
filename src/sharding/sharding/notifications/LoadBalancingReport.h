@@ -41,6 +41,9 @@ public:
 	    	return ShardingLoadBalancingReportRequestMessageType;
 	    }
 		bool resolveNotification(SP(ShardingNotification) _notif);
+	    bool hasResponse() const {
+				return true;
+		}
 	};
 };
 

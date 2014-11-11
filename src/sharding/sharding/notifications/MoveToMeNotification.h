@@ -25,6 +25,10 @@ public:
 
 	bool resolveNotification(SP(ShardingNotification) _notif);
 
+	bool hasResponse() const {
+		return true;
+	}
+
 	void * serializeBody(void * buffer) const{
         buffer = shardId.serialize(buffer);
         return buffer;

@@ -8,7 +8,7 @@
 #include "../metadata_manager/Cluster.h"
 #include "../metadata_manager/ResourceMetadataManager.h"
 #include "../lock_manager/LockManager.h"
-
+#include "../transactions/Transaction.h"
 
 #include <sstream>
 
@@ -443,15 +443,49 @@ LockRequestType LockingNotification::getType() const{
 }
 
 
-void LockingNotification::getInvolvedNodes(vector<NodeId> & participants) const{
+void LockingNotification::getInvolvedNodes(SP(Transaction) sp, vector<NodeId> & participants) const{
 	participants.clear();
-	boost::shared_lock<boost::shared_mutex> & writeviewSLock;
-	const Cluster_Writeview * writeview = ShardManager::getWriteview_read(writeviewSLock);
+	// It's always safe to use the writeview because
+	// no transaction can change the writeview until this readview is released.
+
+
+	SP(const ClusterNodes_Writeview) nodesWriteview = ShardManager::getNodesWriteview_read();
 	if(lockRequestType == LockRequestType_PrimaryKey){
+		const Cluster_Writeview * writeview = NULL;
+
+		if(sp->isReadviewTransaction()){
+			// readview transaction
+			boost::shared_lock<boost::shared_mutex> sLock;
+			writeview = ShardManager::getWriteview_read(sLock);
+		}else{
+			// writeview transaction
+			writeview = ((WriteviewTransaction *)(sp.get()))->getWriteview();
+		}
 		writeview->getPatitionInvolvedNodes(pid, participants);
 		return;
+	}else{
+		nodesWriteview->getArrivedNodes(participants, true);
 	}
-	writeview->getArrivedNodes(participants, true);
+//	if(sp->isReadviewTransaction()){
+//		SP(const ClusterResourceMetadata_Readview) readview = ((ReadviewTransaction *)(sp.get()))->getReadview();
+//		// TODO : find list of participants from the readview
+//		if(lockRequestType == LockRequestType_PrimaryKey){
+//			readview->getCorePartitionContianer(pid.coreId)->getInvolvedNodes(pid, participants);
+//			if(participants.empty()){
+//				// now get all nodes
+//				readview->getAllNodeIds(participants);
+//			}
+//			return;
+//		}
+//		readview->getAllNodeIds(participants);
+//	}else{
+//		/*
+//		 * Writeview transaction, there is no readview, just use writeview, since we
+//		 * are within a transaction, writeview is already locked in X mode
+//		 */
+//		SP(const ClusterNodes_Writeview) nodesWriteview = ShardManager::getNodesWriteview_read();
+//
+//	}
 }
 
 LockingNotification::ACK::ACK(bool grantedFlag){

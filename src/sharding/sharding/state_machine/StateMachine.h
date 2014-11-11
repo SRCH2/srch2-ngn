@@ -22,12 +22,19 @@ public:
 	~StateMachine();
 
 	/*
-	 * No preProcess or postProcess of transaction will be called in
-	 * start.
+	 * This is NOT a thread entry point
 	 */
 	void registerOperation(OperationState * operation);
-	// goes to srcOpId target
+
+	/*
+	 * This is a thread entry point
+	 * Goes to dest operation
+	 */
 	void handle(SP(ShardingNotification) notification);
+
+	/*
+	 * This is a thread entry point
+	 */
 	// goes to everybody
 	void handle(SP(Notification) notification);
 
@@ -36,13 +43,12 @@ public:
 	void unlockStateMachine();
 
 private:
-	vector<pair<boost::mutex *, map<unsigned, OperationState *> > > activeOpertationGroups;
+	vector<pair<boost::recursive_mutex *, map<unsigned, OperationState *> > > activeOpertationGroups;
 
 	bool addActiveOperation(OperationState * operation);
 
 	void startOperation(OperationState * operation);
-	void stateTransit(OperationState * operation,
-			OperationState * nextState, const bool shouldCallPostProcess);
+	void stateTransit(OperationState * operation, OperationState * nextState);
 
 	void lockOperationGroup(unsigned opid);
 	void unlockOperationGroup(unsigned opid);

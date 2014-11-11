@@ -19,7 +19,7 @@ namespace httpwrapper {
 
 
 void NodeJoiner::join(){
-	NodeJoiner * joiner = new NodeJoiner();
+	SP(NodeJoiner) joiner = SP(NodeJoiner)(new NodeJoiner());
 	Transaction::startTransaction(joiner);
 }
 
@@ -41,7 +41,6 @@ NodeJoiner::~NodeJoiner(){
 }
 
 NodeJoiner::NodeJoiner(){
-	this->finalizedFlag = false;
 	this->selfOperationId = NodeOperationId(ShardManager::getCurrentNodeId(), this->getTID());
 	__FUNC_LINE__
 	Logger::sharding(Logger::Detail, "NodeJoiner| Join operation ID : %s", this->selfOperationId.toString().c_str());
@@ -52,28 +51,21 @@ NodeJoiner::NodeJoiner(){
 	this->metadataChange = NULL;
 	this->committer = NULL;
 	this->currentOperation = PreStart;
-	initSession();
 }
 
 
-Transaction * NodeJoiner::getTransaction() {
-	return this;
-}
-
-void NodeJoiner::initSession(){
-	TransactionSession * session = new TransactionSession();
-	session->response = new JsonResponseHandler();
-	this->setSession(session);
+SP(Transaction) NodeJoiner::getTransaction() {
+	return sharedPointer;
 }
 
 ShardingTransactionType NodeJoiner::getTransactionType(){
 	return ShardingTransactionType_NodeJoin;
 }
-bool NodeJoiner::run(){
+void NodeJoiner::run(){
 	__FUNC_LINE__
 	Logger::sharding(Logger::Step, "NodeJoiner| Starting to join this node ...");
 	lock();
-	return true;
+	return;
 }
 
 
@@ -97,7 +89,7 @@ void NodeJoiner::consume(bool granted){
             if(! granted){
                 ASSERT(false);
                 Logger::error("New node could not join the cluster.");
-                finalize(false);
+                this->setFinalizeArgument(false, true);
             }else{
                 readMetadata();
             }
@@ -109,8 +101,7 @@ void NodeJoiner::consume(bool granted){
             if(! granted){
                 Logger::sharding(Logger::Step, "NodeJoiner| New node booting a fresh cluster because commit operation failed.");
                 ASSERT(false);
-                finalize(false);
-                return;
+                this->setFinalizeArgument(false, true);
             }else{
                 release();
             }
@@ -119,16 +110,15 @@ void NodeJoiner::consume(bool granted){
             if(! granted){
                 Logger::sharding(Logger::Step, "NodeJoiner| New node booting a fresh cluster because release operation failed.");
                 ASSERT(false);
-                finalize(false);
-                return;
+                this->setFinalizeArgument(false, true);
             }else{
-                finalize();
+                this->setFinalizeArgument(true, true);
             }
             break;
         default:
             Logger::sharding(Logger::Step, "NodeJoiner| New node booting a fresh cluster because of unknown reason.");
             ASSERT(false); //
-            finalize(false);
+            this->setFinalizeArgument(false, true);
             break;
     }
 }
@@ -143,7 +133,7 @@ void NodeJoiner::readMetadata(){ // read the metadata of the cluster
 	if(olderNodes.size() == 0){
 		Logger::info("New node booting up a fresh cluster ...");
 		Logger::sharding(Logger::Step, "NodeJoiner| no other nodes are left.");
-		finalize(false);
+		this->setFinalizeArgument(false, true);
 		return;
 	}
 
@@ -158,9 +148,6 @@ void NodeJoiner::readMetadata(){ // read the metadata of the cluster
 	// pointer. Before deleting committer, state-machine calls it's getMainTransactionId()
 	// which calls lastCallback from its consumer
 	ShardManager::getShardManager()->getStateMachine()->registerOperation(reader);
-	/********** Leaving this thread ***********/
-	this->postProcess();
-	/********** Leaving this thread ***********/
 }
 
 bool NodeJoiner::shouldAbort(const NodeId & failedNode){
@@ -175,7 +162,7 @@ bool NodeJoiner::shouldAbort(const NodeId & failedNode){
 void NodeJoiner::end_(map<NodeOperationId, SP(ShardingNotification) > & replies){
 	if(replies.size() != 1){
 		ASSERT(false);
-		finalize(false);
+		this->setFinalizeArgument(false, true);
 		return;
 	}
 	ASSERT(replies.begin()->first == randomNodeToReadFrom);
@@ -185,7 +172,7 @@ void NodeJoiner::end_(map<NodeOperationId, SP(ShardingNotification) > & replies)
 	if(clusterWriteview == NULL){
 		ASSERT(false);
 		//use metadata initializer to make sure no partition remains unassigned.
-		finalize(false);
+		this->setFinalizeArgument(false, true);
 		return;
 	}
 	Cluster_Writeview * currentWriteview = this->getWriteview();
@@ -193,11 +180,11 @@ void NodeJoiner::end_(map<NodeOperationId, SP(ShardingNotification) > & replies)
 	// the minID node.
 	currentWriteview->fixClusterMetadataOfAnotherNode(clusterWriteview);
 	// new writeview is ready, replace current writeview with the new one
-	ShardManager::getShardManager()->getMetadataManager()->getNodesMutex().lock();
+	SP(ClusterNodes_Writeview) nodesWriteview = ShardManager::getNodesWriteview_write();
 	ShardManager::getShardManager()->getMetadataManager()->setWriteview(clusterWriteview, false);
 	// update the readview
 	ShardManager::getShardManager()->getMetadataManager()->commitClusterMetadata(false);
-	ShardManager::getShardManager()->getMetadataManager()->getNodesMutex().unlock();
+	nodesWriteview.reset();
 	Logger::sharding(Logger::Detail, "NodeJoiner| Metadata initialized from the cluster.");
 	// ready to commit.
 	commit();
@@ -241,7 +228,7 @@ void NodeJoiner::commit(){
 void NodeJoiner::release(){ // releases the lock on metadata
 	__FUNC_LINE__
 	if(! this->releaser->updateParticipants()){
-		finalize(false);
+		this->setFinalizeArgument(false, true);
 		return;
 	}
 	this->currentOperation = Release;
@@ -249,27 +236,29 @@ void NodeJoiner::release(){ // releases the lock on metadata
 	this->releaser->produce();
 }
 
-void NodeJoiner::finalize(bool result){
+void NodeJoiner::finalizeWork(Transaction::Params * arg){
+	bool result = false;
+	if(arg != NULL){
+		result = arg->shouldLock; // if it's passed to finalize, this boolean is interpreted as finalizeResult
+	}
 	if(! result){
-		ShardManager::getShardManager()->initFirstNode();
+		SP(ClusterNodes_Writeview) nodesWriteview = ShardManager::getNodesWriteview_write();
+		ShardManager::getShardManager()->initFirstNode(false);
 		Logger::error("New node booting up as a single node to form a cluster.");
 		Logger::sharding(Logger::Error, "NodeJoiner| New node booting up as a single node to form a cluster.");
 	}else{
-	// release is also done.
-	// just setJoined and done.
-	this->finalizedFlag = true;
-	ShardManager::getShardManager()->setJoined();
-	Logger::info("Joined to the cluster.");
-	Logger::sharding(Logger::Step, "NodeJoiner| Joined. Done.");
+		// release is also done.
+		// just setJoined and done.
+		ShardManager::getShardManager()->setJoined();
+		Logger::info("Joined to the cluster.");
+		Logger::sharding(Logger::Step, "NodeJoiner| Joined. Done.");
 	}
-	// so state machine will deallocate this transaction
-	this->setFinished();
 }
 
 void NodeJoiner::getOlderNodesList(vector<NodeId> & olderNodes){
-	SP(ClusterNodes_Writeview) nodeWriteview = this->getNodesWriteview_read();
-	for(map<NodeId, std::pair<ShardingNodeState, Node *> >::const_iterator nodeItr = nodeWriteview->getNodes().begin();
-			nodeItr != nodeWriteview->getNodes().end(); ++nodeItr){
+	SP(const ClusterNodes_Writeview) nodeWriteview = this->getNodesWriteview_read();
+	for(map<NodeId, std::pair<ShardingNodeState, Node *> >::const_iterator nodeItr = nodeWriteview->getNodes_read().begin();
+			nodeItr != nodeWriteview->getNodes_read().end(); ++nodeItr){
 		if(nodeItr->first >= nodeWriteview->currentNodeId){
 			continue;
 		}

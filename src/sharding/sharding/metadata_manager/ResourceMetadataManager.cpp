@@ -117,9 +117,13 @@ void ResourceMetadataManager::resolve(SP(MetadataReport::REQUEST) readRequest){
 	ShardingNotification::send(report);
 }
 
-void ResourceMetadataManager::resolve(SP(NodeFailureNotification) nodeFailureNotif){
-	boost::unique_lock<boost::mutex> xLockWriteview(writeviewMutex); // locks writeview
-	boost::unique_lock<boost::mutex> xLockWriteview(nodesMutex); // locks nodes
+void ResourceMetadataManager::resolve(SP(NodeFailureNotification) nodeFailureNotif, const bool shouldLock){
+	boost::unique_lock<boost::shared_mutex> xLockWriteview;
+	boost::unique_lock<boost::shared_mutex> xNodeLockWriteview;
+	if(shouldLock){
+		xLockWriteview = boost::unique_lock<boost::shared_mutex>(writeviewMutex); // locks writeview
+		xNodeLockWriteview = boost::unique_lock<boost::shared_mutex>(nodesMutex); // locks nodes
+	}
 	// makes changes both to nodes structure and nodeShards structure in writeview
 	writeview->removeNode(nodeFailureNotif->getFailedNodeID());
 	this->commitClusterMetadata(false);
@@ -140,6 +144,7 @@ void ResourceMetadataManager::commitClusterMetadata(const bool shouldLock){
 		writeviewMutex.lock_shared();
 		nodesMutex.lock();
 	}
+	this->writeview->versionId++;
 	ClusterResourceMetadata_Readview * newReadview = this->writeview->getNewReadview();
 	if(shouldLock){
 		writeviewMutex.unlock_shared();
@@ -190,6 +195,7 @@ unsigned ResourceMetadataManager::applyAndCommit(MetadataChange * metadataChange
 	}
 	metadataChange->doChange(writeview);
     Logger::sharding(Logger::Detail, "MetadataManager| Applying the change : %s", metadataChange->toString().c_str() );
+    this->writeview->versionId++;
 	this->commitClusterMetadata(writeview->getNewReadview());
 	return writeview->versionId - 1;
 }
@@ -200,25 +206,31 @@ unsigned ResourceMetadataManager::applyAndCommit(MetadataChange * metadataChange
 	this->writeviewMutex.unlock();
 }
 
-Cluster_Writeview * ResourceMetadataManager::getClusterWriteview_write(boost::unique_lock<boost::mutex> & xLock) const{
-	xLock = boost::unique_lock<boost::mutex>(writeviewMutex);
+Cluster_Writeview * ResourceMetadataManager::
+				getClusterWriteview_write(boost::unique_lock<boost::shared_mutex> & xLock){
+	xLock = boost::unique_lock<boost::shared_mutex>(writeviewMutex);
 	return writeview;
 }
 
-//const Cluster_Writeview * ResourceMetadataManager::getClusterWriteview_read(boost::shared_lock<boost::shared_mutex> & sLock) const{
-//	sLock = boost::shared_lock<boost::shared_mutex>(writeviewMutex);
-//	return writeview;
-//}
+const Cluster_Writeview * ResourceMetadataManager::
+				getClusterWriteview_read(boost::shared_lock<boost::shared_mutex> & sLock){
+	sLock = boost::shared_lock<boost::shared_mutex>(writeviewMutex);
+	return writeview;
+}
 
 SP(ClusterNodes_Writeview) ResourceMetadataManager::getClusterNodesWriteview_write(){
 	nodesMutex.lock();
+	if(writeview == NULL){
+		ASSERT(false);
+		return SP(ClusterNodes_Writeview)();
+	}
 	return SP(ClusterNodes_Writeview)
 			(new ClusterNodes_Writeview(nodesMutex, writeview->getNodes(), writeview->currentNodeId, true));
 }
 
-SP(ClusterNodes_Writeview) ResourceMetadataManager::getClusterNodesWriteview_read(){
+SP(const ClusterNodes_Writeview) ResourceMetadataManager::getClusterNodesWriteview_read(){
 	nodesMutex.lock_shared();
-	return SP(ClusterNodes_Writeview)
+	return SP(const ClusterNodes_Writeview)
 			(new ClusterNodes_Writeview(nodesMutex, writeview->getNodes(), writeview->currentNodeId, false));
 }
 

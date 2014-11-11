@@ -26,10 +26,10 @@ PartitionWriter::PartitionWriter(const ClusterPID & pid, // we will use ClusterP
 	initTargets(targets);
 	initRecords(records);
 	this->currentOpId = NodeOperationId(ShardManager::getCurrentNodeId(), OperationState::getNextOperationId());
-	this->clusterReadview = ((ReadviewTransaction *)(this->getConsumer()->getTransaction()))->getReadview();
+	this->clusterReadview = ((ReadviewTransaction *)(this->getConsumer()->getTransaction().get()))->getReadview();
 }
 
-Transaction * PartitionWriter::getTransaction(){
+SP(Transaction) PartitionWriter::getTransaction(){
 	return this->getConsumer()->getTransaction();
 }
 
@@ -41,19 +41,16 @@ void PartitionWriter::produce(){
 	 */
 	if(targets.empty()){
 		// we should not do anything.
-		this->getTransaction()->setUnattached();
 		return;
 	}
 	if(records.empty()){
 		// just call consume
-		this->getTransaction()->setUnattached();
 		return;
 	}
 	if(this->clusterOrNodeFlag){
 		// case of cluster shard core write request
 		if(pid == ClusterPID()){
 			ASSERT(false);
-			this->getTransaction()->setUnattached();
 			return;
 		}
 		lock();
@@ -61,7 +58,6 @@ void PartitionWriter::produce(){
 		// case of node shard core write request
 		if(pid != ClusterPID()){
 			ASSERT(false);
-			this->getTransaction()->setUnattached();
 			return;
 		}
 		performWrite();
@@ -364,7 +360,7 @@ void PartitionWriter::initTargets(const vector<NodeTargetShardInfo> & targets){
 	}
 }
 bool PartitionWriter::validateAndFixTargets(){
-	SP(ClusterNodes_Writeview) nodesWriteview = ShardManager::getNodesWriteview_read();
+	SP(const ClusterNodes_Writeview) nodesWriteview = ShardManager::getNodesWriteview_read();
 	for(vector<NodeTargetShardInfo>::iterator nItr = targets.begin(); nItr != targets.end(); ++nItr){
 		if(! nodesWriteview->isNodeAlive(nItr->getNodeId())){
 			nItr = targets.erase(nItr);
@@ -394,7 +390,7 @@ WriteCommand::WriteCommand(ConsumerInterface * consumer,
 	ASSERT(this->getConsumer()->getTransaction()->getSession() != NULL);
 	this->currentOpId = NodeOperationId(ShardManager::getCurrentNodeId(), OperationState::getNextOperationId());
 	this->coreInfo = coreInfo;
-	this->clusterReadview = ((ReadviewTransaction *)(this->getConsumer()->getTransaction()))->getReadview();
+	this->clusterReadview = ((ReadviewTransaction *)(this->getConsumer()->getTransaction().get()))->getReadview();
 	this->response = (JsonRecordOperationResponse*) (this->getConsumer()->getTransaction()->getSession()->response);
 	initActionType(insertUpdateDelete);
 	ASSERT(this->insertUpdateDelete != Delete_ClusterRecordOperation_Type);
@@ -410,7 +406,7 @@ WriteCommand::WriteCommand(ConsumerInterface * consumer,
 	ASSERT(this->getConsumer()->getTransaction()->getSession() != NULL);
 	this->currentOpId = NodeOperationId(ShardManager::getCurrentNodeId(), OperationState::getNextOperationId());
 	this->coreInfo = coreInfo;
-	this->clusterReadview = ((ReadviewTransaction *)(this->getConsumer()->getTransaction()))->getReadview();
+	this->clusterReadview = ((ReadviewTransaction *)(this->getConsumer()->getTransaction().get()))->getReadview();
 	this->response = (JsonRecordOperationResponse*) (this->getConsumer()->getTransaction()->getSession()->response);
 	initActionType(Delete_ClusterRecordOperation_Type);
 	initRecords(primaryKeys);
@@ -420,7 +416,6 @@ WriteCommand::WriteCommand(ConsumerInterface * consumer,
 
 void WriteCommand::produce(){
 	if(records.empty()){
-		this->getTransaction()->setUnattached();
 		return;
 	}
 	// 1. first check if core is cluster core or node core
@@ -428,7 +423,6 @@ void WriteCommand::produce(){
 		// cluster core
 		// partition the records and prepare the PartitionWriters
 		if(! partitionRecords()){
-			this->getTransaction()->setUnattached();
 			return;
 		}
 		// check if we are done, return.
@@ -440,18 +434,10 @@ void WriteCommand::produce(){
 		// start writers
 		if(partitionWriters.empty()){
 			ASSERT(false);
-			this->getTransaction()->setUnattached();
 			return;
 		}
-		bool attached = false;
 		for(map<ClusterPID, PartitionWriter * >::iterator pItr = partitionWriters.begin();
 				pItr != partitionWriters.end(); ++pItr){
-			pItr->second->produce();
-			attached = attached || this->getTransaction()->isAttached();
-		}
-		if(! attached){
-			this->getTransaction()->setUnattached();
-			return;
 		}
 	}else{
 		// node core
@@ -470,7 +456,6 @@ void WriteCommand::produce(){
 		const CorePartitionContianer * corePartContainer = clusterReadview->getPartitioner(coreInfo->getCoreId());
 		if(corePartContainer == NULL){
 			ASSERT(false);
-			this->getTransaction()->setUnattached();
 			return;
 		}
 		CorePartitioner * partitioner = new CorePartitioner(corePartContainer);
@@ -478,9 +463,6 @@ void WriteCommand::produce(){
 		partitioner->getAllWriteTargets(0,ShardManager::getCurrentNodeId(), targets);
 		this->nodeWriter = new PartitionWriter(ClusterPID(), insertUpdateDelete, recordsVector, targets, this);
 		this->nodeWriter->produce();
-		if(! this->getTransaction()->isAttached()){
-			return;
-		}
 	}
 }
 
@@ -599,7 +581,7 @@ void WriteCommand::finalize(){
 	this->getConsumer()->consume(results, messageCodes);
 }
 
-Transaction * WriteCommand::getTransaction(){
+SP(Transaction) WriteCommand::getTransaction(){
 	return this->getConsumer()->getTransaction();
 }
 

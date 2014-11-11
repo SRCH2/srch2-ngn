@@ -2,6 +2,7 @@
 #define __SHARDING_SHARDING_CONSUMER_PRODUCER_H__
 
 #include "../notifications/CommandStatusNotification.h"
+#include "../transactions/Transaction.h"
 
 namespace srch2is = srch2::instantsearch;
 using namespace srch2is;
@@ -25,7 +26,7 @@ public:
 	virtual void consume(const map<string, bool> & results,
 			map<string, map<ShardId * ,vector<JsonMessageCode>, ShardPtrComparator > > & messageCodes){};
 	virtual void consume(bool booleanResult, vector<JsonMessageCode> & messageCodes){};
-	virtual Transaction * getTransaction() = 0;
+	virtual SP(Transaction) getTransaction() = 0;
 	virtual string getName() const = 0;
 };
 
@@ -35,7 +36,6 @@ public:
 		ASSERT(consumer != NULL);
 		this->consumer = consumer;
 	}
-
 	virtual ~ProducerInterface(){};
 
 	virtual void produce() = 0;
@@ -102,7 +102,9 @@ public:
 	virtual ~OrderedNodeIteratorListenerInterface(){};
 	// This method, is called after each response is retreived and before we move to the next participant,
 	// if it returns false, the iterator will abort. (still, getTransIdToDelete() will be called after.)
-	virtual bool condition(SP(ShardingNotification) req, SP(ShardingNotification) res, vector<NodeId> & updatedListOfParticipants){
+	virtual bool condition(SP(ShardingNotification) req,
+			SP(ShardingNotification) res,
+			vector<NodeId> & updatedListOfParticipants){
 		return true;
 	}
 };

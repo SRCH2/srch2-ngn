@@ -36,56 +36,6 @@ namespace httpwrapper {
  *
  */
 
-class ClusterNodes_Writeview{
-public:
-	// assumes nodesMutex X lock is acquited before passing it to constructor.
-	ClusterNodes_Writeview(boost::shared_mutex & nodesMutex,
-			map<NodeId, std::pair<ShardingNodeState, Node *> > & nodes,
-			const NodeId currentNodeId, const bool xLockedByDefault):
-				nodesMutex(nodesMutex),nodes(nodes),
-				currentNodeId(currentNodeId), xLockedByDefault(xLockedByDefault){
-		// assumes caller aquired S lock and then passes mutex to here ...
-	}
-
-	~ClusterNodes_Writeview(){
-		if(xLockedByDefault){
-			unlock();
-		}else{
-			unlock_shared();
-		}
-	}
-	void lock(){
-		nodesMutex.lock();
-	}
-	void unlock(){
-		nodesMutex.unlock();
-	}
-
-	void lock_shared(){
-		nodesMutex.lock_shared();
-	}
-	void unlock_shared(){
-		nodesMutex.unlock_shared();
-	}
-
-	void getArrivedNodes(vector<NodeId> & allNodes, bool returnThisNode = false) const;
-	void getAllNodes(std::vector<const Node *> & localCopy) const;
-	unsigned getNumberOfAliveNodes() const;
-	bool isNodeAlive(const NodeId & nodeId) const;
-	void addNode(const Node & node);
-	void setNodeState(NodeId nodeId, ShardingNodeState state);
-	unsigned getTotalNumberOfNodes() const{return nodes.size();};
-	map<NodeId, std::pair<ShardingNodeState, Node *> > & getNodes(){
-		return nodes;
-	}
-
-private:
-	map<NodeId, std::pair<ShardingNodeState, Node *> > & nodes;
-	const NodeId currentNodeId;
-	const bool xLockedByDefault;
-	boost::shared_mutex & nodesMutex;
-};
-
 class ResourceMetadataManager{
 	friend class MetadataInitializer;
 public:
@@ -97,7 +47,7 @@ public:
 
 	void saveMetadata(ConfigManager * confManager);
 	void resolve(SP(MetadataReport::REQUEST) readRequest);
-	void resolve(SP(NodeFailureNotification) nodeFailureNotif);
+	void resolve(SP(NodeFailureNotification) nodeFailureNotif, const bool shouldLock = true);
 
 
 	void commitClusterMetadata(const bool shouldLock = true);
@@ -108,20 +58,17 @@ public:
 	 */
 	void setWriteview(Cluster_Writeview * newWriteview, const bool shouldLock = true);
 	unsigned applyAndCommit(MetadataChange * metadataChange);
-	Cluster_Writeview * getClusterWriteview_write(boost::unique_lock<boost::mutex> & xLock) const;
-//	const Cluster_Writeview * getClusterWriteview_read(boost::shared_lock<boost::shared_mutex> & sLock) const;
+	Cluster_Writeview * getClusterWriteview_write(boost::unique_lock<boost::shared_mutex> & xLock);
+	const Cluster_Writeview * getClusterWriteview_read(boost::shared_lock<boost::shared_mutex> & sLock);
 	SP(ClusterNodes_Writeview) getClusterNodesWriteview_write();
-	SP(ClusterNodes_Writeview) getClusterNodesWriteview_read();
-	boost::shared_mutex & getNodesMutex() const{
-		return nodesMutex;
-	}
-
-
+	SP(const ClusterNodes_Writeview) getClusterNodesWriteview_read();
 
 	// sLock on writeview and nodes must be acquired before calling this method
 	void print() const;
 
 private:
+	// NOTE : changing this pointer (like assigning it to a new object or deleting
+	// its object) requires writeview X lock and nodes S lock.
 	Cluster_Writeview * writeview;
 	boost::shared_mutex writeviewMutex;
 	boost::shared_mutex nodesMutex;

@@ -17,6 +17,7 @@ namespace httpwrapper {
 
 ShardAssignOperation::ShardAssignOperation(const ClusterShardId & unassignedShard,
 		ConsumerInterface * consumer):ProducerInterface(consumer), shardId(unassignedShard){
+	ASSERT(this->getTransaction());
 	this->locker = NULL;
 	this->releaser = NULL;
 	this->committer = NULL;
@@ -38,7 +39,8 @@ ShardAssignOperation::~ShardAssignOperation(){
 }
 
 void ShardAssignOperation::produce(){
-	Logger::sharding(Logger::Step, "ShardAssign(opid=%s, shardId=%s)| Starting ...", currentOpId.toString().c_str(), shardId.toString().c_str());
+	Logger::sharding(Logger::Step, "ShardAssign(opid=%s, shardId=%s)| Starting ...",
+			currentOpId.toString().c_str(), shardId.toString().c_str());
 	lock();
 }
 
@@ -77,18 +79,17 @@ void ShardAssignOperation::consume(bool granted){
 }
 // ** if (granted)
 void ShardAssignOperation::commit(){
-	Logger::sharding(Logger::Detail, "ShardAssign(opid=%s, shardid=%s)| Committing shard assign change.", currentOpId.toString().c_str(), shardId.toString().c_str());
+	Logger::sharding(Logger::Detail, "ShardAssign(opid=%s, shardid=%s)| Committing shard assign change.",
+			currentOpId.toString().c_str(), shardId.toString().c_str());
 	// start metadata commit
 	// prepare the shard change
-	boost::shared_lock<boost::shared_mutex> sLock;
-	const Cluster_Writeview * writeview = ShardManager::getWriteview_read(sLock);
+	const Cluster_Writeview * writeview = ((WriteviewTransaction *)(this->getTransaction().get()))->getWriteview();
 	string indexDirectory = ShardManager::getShardManager()->getConfigManager()->getShardDir(writeview->clusterName,
-			writeview->cores[shardId.coreId]->getName(), &shardId);
+			writeview->cores.at(shardId.coreId)->getName(), &shardId);
 	if(indexDirectory.compare("") == 0){
 		indexDirectory = ShardManager::getShardManager()->getConfigManager()->createShardDir(writeview->clusterName,
-				writeview->cores[shardId.coreId]->getName(), &shardId);
+				writeview->cores.at(shardId.coreId)->getName(), &shardId);
 	}
-	sLock.unlock();
 	EmptyShardBuilder emptyShard(new ClusterShardId(shardId), indexDirectory);
 	emptyShard.prepare();
 	LocalPhysicalShard physicalShard(emptyShard.getShardServer(), emptyShard.getIndexDirectory(), "");

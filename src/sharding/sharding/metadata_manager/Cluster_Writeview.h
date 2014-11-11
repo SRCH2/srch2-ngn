@@ -144,7 +144,58 @@ struct DataShardBackup{
 	ClusterShardId shardId;
 	NodeId newNodeLocation;
 };
-class ClusterNodes_Writeview;
+class ClusterNodes_Writeview{
+public:
+	// assumes nodesMutex X lock is acquited before passing it to constructor.
+	ClusterNodes_Writeview(boost::shared_mutex & nodesMutex,
+			map<NodeId, std::pair<ShardingNodeState, Node *> > & nodes,
+			const NodeId currentNodeId, const bool xLockedByDefault):
+				nodesMutex(nodesMutex),nodes(nodes),
+				currentNodeId(currentNodeId), xLockedByDefault(xLockedByDefault){
+		// assumes caller aquired S lock and then passes mutex to here ...
+	}
+
+	~ClusterNodes_Writeview(){
+		if(xLockedByDefault){
+			unlock();
+		}else{
+			unlock_shared();
+		}
+	}
+	void lock(){
+		nodesMutex.lock();
+	}
+	void unlock(){
+		nodesMutex.unlock();
+	}
+
+	void lock_shared(){
+		nodesMutex.lock_shared();
+	}
+	void unlock_shared(){
+		nodesMutex.unlock_shared();
+	}
+
+	void getArrivedNodes(vector<NodeId> & allNodes, bool returnThisNode = false) const;
+	void getAllNodes(std::vector<const Node *> & localCopy) const;
+	unsigned getNumberOfAliveNodes() const;
+	bool isNodeAlive(const NodeId & nodeId) const;
+	void addNode(const Node & node);
+	void setNodeState(NodeId nodeId, ShardingNodeState state);
+	unsigned getTotalNumberOfNodes() const{return nodes.size();};
+	map<NodeId, std::pair<ShardingNodeState, Node *> > & getNodes(){
+		return nodes;
+	}
+	const map<NodeId, std::pair<ShardingNodeState, Node *> > & getNodes_read() const{
+		return nodes;
+	}
+	const NodeId currentNodeId;
+
+private:
+	map<NodeId, std::pair<ShardingNodeState, Node *> > & nodes;
+	const bool xLockedByDefault;
+	boost::shared_mutex & nodesMutex;
+};
 class Cluster_Writeview{
     friend class ClusterShardIterator;
     friend class NodeShardIterator;
@@ -200,6 +251,7 @@ public:
 	void fixClusterMetadataOfAnotherNode(Cluster_Writeview * cluster) const;
 	ClusterResourceMetadata_Readview * getNewReadview() const;
 
+	// this function also required nodesMutex to be acquired before invocation
 	void getPatitionInvolvedNodes(const ClusterShardId & shardId, vector<NodeId> & participants) const;
 	// these partitions don't have write access yet.
 	void getFullUnassignedPartitions(vector<ClusterPID> & fullUnassignedPartitions ) const;
@@ -227,6 +279,8 @@ public:
 //	vector<NodeShard_Writeview *> & getNodeShards(){
 //		return nodeShards;
 //	}
+	void removeNode(const NodeId & failedNodeId);
+	void setCurrentNodeId(NodeId currentNodeId);
 private:
 	unsigned clusterShardsCursor;
 	vector<ClusterShard_Writeview *> clusterShards;
@@ -235,11 +289,9 @@ private:
 
 	map<NodeId, std::pair<ShardingNodeState, Node *> > nodes;
 	// Does not return this node by default
-	map<NodeId, std::pair<ShardingNodeState, Node *> > & getNodes() const{
+	map<NodeId, std::pair<ShardingNodeState, Node *> > & getNodes(){
 		return nodes;
 	}
-	void removeNode(const NodeId & failedNodeId);
-	void setCurrentNodeId(NodeId currentNodeId);
 
 	// cluster shard id => array index
 	unsigned INDEX(const ClusterShardId & shardId);

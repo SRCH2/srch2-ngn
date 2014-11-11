@@ -32,7 +32,7 @@ public:
 			vector<RecordWriteOpHandle *> & records, const vector<NodeTargetShardInfo> & targets,
 			ConsumerInterface * consumer);
 
-	Transaction * getTransaction();
+	SP(Transaction) getTransaction();
 
 	void produce();
 private:
@@ -146,7 +146,7 @@ public:
 
 	void finalize();
 
-	Transaction * getTransaction();
+	SP(Transaction) getTransaction();
 
 	string getName() const;
 private:

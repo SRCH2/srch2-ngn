@@ -84,10 +84,11 @@ void * dispatchMasterMessageHandler(void *arg);
 
 void SyncManager::startDiscovery() {
 
-	boost::unique_lock<boost::mutex> xLock;
+	boost::unique_lock<boost::shared_mutex> xLock;
 	Cluster_Writeview * clusterWriteView = ShardManager::getWriteview_write(xLock);
 
-	ASSERT(clusterWriteView->getTotalNumberOfNodes() == 0);
+	SP(ClusterNodes_Writeview) nodesWriteview = ShardManager::getNodesWriteview_write();
+	ASSERT(nodesWriteview->getTotalNumberOfNodes() == 0);
 
 	Logger::console("running discovery");
 
@@ -102,6 +103,10 @@ void SyncManager::startDiscovery() {
 	isCurrentNodeMaster = (masterNodeId == currentNodeId);
 
 	clusterWriteView->setCurrentNodeId(currentNodeId);
+	nodesWriteview.reset();
+	nodesWriteview = ShardManager::getNodesWriteview_write();
+	// Also notify shard manager to update its current node id
+	ShardManager::getShardManager()->updateCurrentNodeId(clusterWriteView);
 
 
 	Node node(config.getCurrentNodeName(), transport.getPublisedInterfaceAddress(), transport.getCommunicationPort(), true);
@@ -121,8 +126,8 @@ void SyncManager::startDiscovery() {
 	transport.setListeningThread(listenThread);
 
 	// Add new node in CM
-	clusterWriteView->addNode(node);
-	clusterWriteView->setNodeState(node.getId(), ShardingNodeStateArrived);
+	nodesWriteview->addNode(node);
+	nodesWriteview->setNodeState(node.getId(), ShardingNodeStateArrived);
 
 	localNodesCopyMutex.lock();
 	localNodesCopy.push_back(node);
@@ -158,11 +163,10 @@ void SyncManager::joinExistingCluster(Node& node, bool isDiscoveryPhase) {
 
 		if (isDiscoveryPhase){
 			// if discovery phase then write to CM directly. There is no shard manager yet.
-			boost::unique_lock<boost::mutex> xLock;
-			Cluster_Writeview * clusterWriteView = ShardManager::getWriteview_write(xLock);
-			clusterWriteView->addNode(masterNode);
+			SP(ClusterNodes_Writeview) nodesWriteview = ShardManager::getNodesWriteview_write();
+			nodesWriteview->addNode(masterNode);
 			// Todo : move this inside addNode call above.
-			clusterWriteView->setNodeState(masterNode.getId(), ShardingNodeStateArrived);
+			nodesWriteview->setNodeState(masterNode.getId(), ShardingNodeStateArrived);
 		} else {
 			Logger::console("shard Manager Notified of new master");
 			// else notify shard manager

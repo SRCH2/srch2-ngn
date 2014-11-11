@@ -29,9 +29,15 @@ public:
 
 	static void runCommand(boost::shared_ptr<const ClusterResourceMetadata_Readview> clusterReadview,
 			evhttp_request *req, unsigned coreId , ShardCommandCode commandCode){
-		ShardCommandHttpHandler * commandHttpHandler = new ShardCommandHttpHandler(clusterReadview, req, coreId, commandCode);
+		SP(ShardCommandHttpHandler) commandHttpHandler =
+				SP(ShardCommandHttpHandler) (new ShardCommandHttpHandler(clusterReadview, req, coreId, commandCode));
 		Transaction::startTransaction(commandHttpHandler);
 		return ;
+	}
+	~ShardCommandHttpHandler(){
+		if(shardCommand != NULL){
+			delete shardCommand;
+		}
 	}
 private:
 	ShardCommandHttpHandler(boost::shared_ptr<const ClusterResourceMetadata_Readview> clusterReadview,
@@ -53,23 +59,16 @@ private:
 		this->setSession(session);
 	}
 
-	~ShardCommandHttpHandler(){
-		if(shardCommand != NULL){
-			delete shardCommand;
-		}
+	SP(Transaction) getTransaction() {
+		return sharedPointer;
 	}
 
-	Transaction * getTransaction() {
-		return this;
-	}
-
-	bool run(){
+	void run(){
 		if(! _run()){
-			// print
-			this->brokerSideInformationJson->printHTTP(req);
-			return false;
+			Logger::sharding(Logger::Step, "ShardCommand(%s, core:??)| failed in parsing.", action_name.c_str() );
+			return;
 		}
-		return true;
+		return;
 	}
 
 	bool _run(){
@@ -140,9 +139,6 @@ private:
 					action_name.c_str() , indexDataContainerConf->getName().c_str());
 			shardCommand = new ShardCommand(this, coreId, commandCode, filePath);
 			shardCommand->produce();
-			if(! getTransaction()->isAttached()){
-				return false;
-			}
 	    	return true;
 	    }
 	    default:
@@ -165,10 +161,6 @@ private:
 				delete nodeItr->second.at(i);
 			}
 		}
-
-		this->brokerSideInformationJson->printHTTP(req);
-		Logger::sharding(Logger::Detail, "ShardCommand(%s)| Finalizing.", action_name.c_str());
-		this->setFinished();
 	}
 
 
@@ -177,6 +169,13 @@ private:
 	}
 
 	string getName() const {return "shard-command-http" + action_name;};
+
+	void finalizeWork(Transaction::Params * arg){
+		// print
+		this->brokerSideInformationJson->printHTTP(req);
+		Logger::sharding(Logger::Detail, "ShardCommand(%s)| Finalizing.", action_name.c_str());
+	}
+
 private:
 	ShardOperationJsonResponse * brokerSideInformationJson;
 	boost::shared_ptr<const ClusterResourceMetadata_Readview> clusterReadview;

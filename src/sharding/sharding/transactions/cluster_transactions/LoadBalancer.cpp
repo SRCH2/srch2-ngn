@@ -54,7 +54,7 @@ inline bool AssignCandidatePartition::operator()(const AssignCandidatePartition&
 
 
 void LoadBalancer::runLoadBalancer(){
-	LoadBalancer * loadBalancer = new LoadBalancer();
+	SP(LoadBalancer) loadBalancer = SP(LoadBalancer)(new LoadBalancer());
 	Transaction::startTransaction(loadBalancer);
 }
 
@@ -70,33 +70,24 @@ LoadBalancer::~LoadBalancer(){
 	}
 }
 
-void LoadBalancer::initSession(){
-	TransactionSession * session = new TransactionSession();
-	setSession(session);
-	// TODO : here is the place of initialization of response object in case we want to receive some messages from
-	//        shard copy and shard messages
-}
-
 // tries to balance the shard placement on cluster nodes
-bool LoadBalancer::run(){
+void LoadBalancer::run(){
 	collectInfo();
-	return true;
+	return;
 }
 
 // asks other nodes about load information
 void LoadBalancer::collectInfo(){
     Logger::sharding(Logger::Step, "LoadBalancer| collecting information.");
 	reportReq = SP(LoadBalancingReport::REQUEST)(new LoadBalancingReport::REQUEST());
-	SP(ClusterNodes_Writeview) nodesWriteview = ShardManager::getNodesWriteview_read();
+	SP(const ClusterNodes_Writeview) nodesWriteview = ShardManager::getNodesWriteview_read();
 	vector<NodeId> allNodes;
 	nodesWriteview->getArrivedNodes(allNodes, true);
+	nodesWriteview.reset();
 	ConcurrentNotifOperation * commandSender =
 			new ConcurrentNotifOperation(reportReq, ShardingLoadBalancingReportMessageType, allNodes, this);
 	this->currentOp = CollectInfo;
 	ShardManager::getShardManager()->getStateMachine()->registerOperation(commandSender);
-	/*********** Thread Exit Point **************/
-	this->postProcess();
-	/*********** Thread Exit Point **************/
 }
 void LoadBalancer::end_(map<NodeOperationId, SP(ShardingNotification) > & replies){
 
@@ -117,7 +108,7 @@ void LoadBalancer::end_(map<NodeOperationId, SP(ShardingNotification) > & replie
 // decides on shard copy or shard movements
 void LoadBalancer::balance(){
 	if(nodeLoads.size() == 0){
-		finalize();
+		return;
 	}
 
 	if(nodeLoads.size() == 1){ // only us or not light
@@ -130,13 +121,12 @@ void LoadBalancer::balance(){
 			return;
 		}
 		// only us and no unassigned shard can be assigned to us
-		finalize();
 		return;
 	}
 
 	if(! canAcceptMoreShards(ShardManager::getCurrentNodeId())){
 	    Logger::sharding(Logger::Detail, "LoadBalancer| node is not light loaded enough for load balancing.");
-		finalize();
+		return;
 	}
 
 	tryShardAssginmentAndShardCopy();
@@ -160,7 +150,6 @@ void LoadBalancer::balance(){
 	}
 
     Logger::sharding(Logger::Detail, "LoadBalancer| no load balancing task is required ...");
-	finalize();
 	return;
 }
 
@@ -177,17 +166,14 @@ void LoadBalancer::consume(bool done){
 	}else if (currentOp == Move){
 		Logger::sharding(Logger::Detail, "LoadBalancer| Shard move was %s", done?"successful." : "failed.");
 	}
-	finalize();
 }
 
 ShardingTransactionType LoadBalancer::getTransactionType(){
 	return ShardingTransactionType_Loadbalancing;
 }
 
-void LoadBalancer::finalize(){
-
+void LoadBalancer::finalizeWork(Transaction::Params * arg){
     Logger::sharding(Logger::Step, "LoadBalancer| Load balancer is finalizing.");
-	this->setFinished();
 
 	ShardManager::getShardManager()->resetLoadBalancing();
 	return;

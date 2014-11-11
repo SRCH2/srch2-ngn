@@ -15,11 +15,13 @@ int main(){
 	testFreshClusterInit(serverConf, metadataManager);
 	nodeState[0] = NodeStatus_Ready;
 
-	testNode1FirstArrival(metadataManager->getClusterWriteview()->currentNodeId, metadataManager);
+	boost::unique_lock<boost::shared_mutex> xLock;
+	Cluster_Writeview * writeview = metadataManager->getClusterWriteview_write(xLock);
+	testNode1FirstArrival(writeview->currentNodeId, metadataManager);
 
-	testNode1LoadBalancing(metadataManager->getClusterWriteview()->currentNodeId, metadataManager);
+	testNode1LoadBalancing(writeview->currentNodeId, metadataManager);
 	nodeState[1] = NodeStatus_Ready;
-	testNode2FirstArrival(metadataManager->getClusterWriteview()->currentNodeId, metadataManager);
+	testNode2FirstArrival(writeview->currentNodeId, metadataManager);
 
 	restart(confPath, serverConf, metadataManager);
 	nodeState[1] = NodeStatus_Pending;
@@ -27,14 +29,14 @@ int main(){
 
 	// start adding nodes and and reclaim the shards.
 	// first node comes back to reclaim its shards
-	testNode1Reclaim(metadataManager->getClusterWriteview()->currentNodeId, metadataManager);
+	testNode1Reclaim(writeview->currentNodeId, metadataManager);
 	nodeState[1] = NodeStatus_Ready;
 
 	// second node comes again
-	testNode2FirstArrival(metadataManager->getClusterWriteview()->currentNodeId, metadataManager);
+	testNode2FirstArrival(writeview->currentNodeId, metadataManager);
 
 	// move 4 last shards to the second arrived node
-	testNode2LoadBalancing(metadataManager->getClusterWriteview()->currentNodeId, metadataManager);
+	testNode2LoadBalancing(writeview->currentNodeId, metadataManager);
 	nodeState[2] = NodeStatus_Ready;
 
 	// now the first arrived node fails
@@ -51,7 +53,7 @@ int main(){
 	validateRestart(serverConf, metadataManager, nodeState);
 
 	// second node comes again
-	testNode2Reclaim(metadataManager->getClusterWriteview()->currentNodeId, metadataManager);
+	testNode2Reclaim(writeview->currentNodeId, metadataManager);
 	nodeState[2] = NodeStatus_Ready;
 
 
@@ -60,7 +62,7 @@ int main(){
 	validateRestart(serverConf, metadataManager, nodeState);
 
 	// second node comes again
-	testNode2Reclaim(metadataManager->getClusterWriteview()->currentNodeId, metadataManager);
+	testNode2Reclaim(writeview->currentNodeId, metadataManager);
 	nodeState[2] = NodeStatus_Ready;
 
 	delete serverConf;

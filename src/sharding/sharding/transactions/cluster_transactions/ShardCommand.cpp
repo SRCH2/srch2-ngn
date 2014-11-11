@@ -18,7 +18,7 @@ ShardCommand::ShardCommand(ConsumerInterface * consumer,
 	ASSERT(this->getTransaction() != NULL);
 	this->filePath = filePath;
 	this->dataSavedFlag = false;
-	clusterReadview = ((ReadviewTransaction *)(this->getTransaction()))->getReadview();
+	clusterReadview = ((ReadviewTransaction *)(this->getTransaction().get()))->getReadview();
 }
 
 ShardCommand::~ShardCommand(){}
@@ -57,7 +57,6 @@ bool ShardCommand::partition(vector<NodeTargetShardInfo> & targets){
 		    this->getTransaction()->getSession()->response->finalizeOK();
 			map<NodeOperationId , SP(ShardingNotification)> emptyResult;
 			finalize(emptyResult);
-			this->getTransaction()->setUnattached();
 			delete partitioner;
 			return false;
 		}
@@ -81,7 +80,6 @@ bool ShardCommand::partition(vector<NodeTargetShardInfo> & targets){
     this->getTransaction()->getSession()->response->finalizeOK();
 	map<NodeOperationId , SP(ShardingNotification)> emptyResult;
 	finalize(emptyResult);
-	this->getTransaction()->setUnattached();
 	return false;
 }
 // process coming back from distributed conversation to aggregate the results of

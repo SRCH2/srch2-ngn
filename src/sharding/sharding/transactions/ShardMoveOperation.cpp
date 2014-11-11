@@ -21,6 +21,7 @@ namespace httpwrapper {
 ShardMoveOperation::ShardMoveOperation(const NodeId & srcNodeId,
 		const ClusterShardId & moveShardId, ConsumerInterface * consumer):
 		ProducerInterface(consumer), shardId(moveShardId){
+	ASSERT(this->getTransaction() != NULL);
 	this->srcAddress = NodeOperationId(srcNodeId, OperationState::DataRecoveryOperationId);
 	this->currentOpId = NodeOperationId(ShardManager::getCurrentNodeId(), OperationState::getNextOperationId());
 	this->successFlag = true;
@@ -43,9 +44,9 @@ ShardMoveOperation::~ShardMoveOperation(){
 	}
 }
 
-Transaction * ShardMoveOperation::getTransaction() {
+SP(Transaction) ShardMoveOperation::getTransaction() {
 	if(this->getConsumer() == NULL){
-		return NULL;
+		return SP(Transaction)();
 	}
 	return this->getConsumer()->getTransaction();
 }
@@ -133,7 +134,8 @@ void ShardMoveOperation::end(map<NodeId, SP(ShardingNotification) > & replies){
            consume(transferStatus);
         }else{
             transferAckReceived = true;
-        	Logger::sharding(Logger::Detail, "ShardMove(opid=%s, mv {%s in %d} to self )| MoveToMe Ack received.", currentOpId.toString().c_str(),
+        	Logger::sharding(Logger::Detail, "ShardMove(opid=%s, mv {%s in %d} to self )| MoveToMe Ack received.",
+        			currentOpId.toString().c_str(),
         			shardId.toString().c_str(), srcAddress.toString().c_str());
         }
     }
@@ -144,7 +146,8 @@ void ShardMoveOperation::end(map<NodeId, SP(ShardingNotification) > & replies){
 bool ShardMoveOperation::shouldAbort(const NodeId & failedNode){
 	if(this->currentOp == Transfer){
 		if(failedNode == srcAddress.nodeId){
-			Logger::sharding(Logger::Step, "ShardMove(opid=%s, mv {%s in %d} to self )| src node failed, abort.", currentOpId.toString().c_str(),
+			Logger::sharding(Logger::Step, "ShardMove(opid=%s, mv {%s in %d} to self )| src node failed, abort.",
+					currentOpId.toString().c_str(),
 					shardId.toString().c_str(), srcAddress.toString().c_str());
 			this->successFlag = false;
 			finalize();
@@ -152,6 +155,7 @@ bool ShardMoveOperation::shouldAbort(const NodeId & failedNode){
 		}
 	}else if (this->currentOp == Cleanup){
 		finalize();
+		return false;
 	}
 	return false;
 }
@@ -162,26 +166,27 @@ void ShardMoveOperation::consume(const ShardMigrationStatus & status){
     if(! transferAckReceived){
         transferAckReceived = true;
         transferStatus = status;
-    	Logger::sharding(Logger::Detail, "ShardMove(opid=%s, mv {%s in %d} to self )| MM status received.", currentOpId.toString().c_str(),
+    	Logger::sharding(Logger::Detail, "ShardMove(opid=%s, mv {%s in %d} to self )| MM status received.",
+    			currentOpId.toString().c_str(),
     			shardId.toString().c_str(), srcAddress.toString().c_str());
     }else{
-    	Logger::sharding(Logger::Step, "ShardMove(opid=%s, mv {%s in %d} to self )| Transfer Done. Result : %s", currentOpId.toString().c_str(),
-    			shardId.toString().c_str(), srcAddress.toString().c_str(), status.status == MM_STATUS_FAILURE ? "Failure" : "Success");
+    	Logger::sharding(Logger::Step, "ShardMove(opid=%s, mv {%s in %d} to self )| Transfer Done. Result : %s",
+    			currentOpId.toString().c_str(),
+    			shardId.toString().c_str(), srcAddress.toString().c_str(),
+    			status.status == MM_STATUS_FAILURE ? "Failure" : "Success");
         if(status.status == MM_STATUS_FAILURE){
             this->successFlag = false;
             release();
         }else if(status.status == MM_STATUS_SUCCESS){
-        	boost::shared_lock<boost::shared_mutex> sLock;
-        	const Cluster_Writeview * writeview = ShardManager::getWriteview_read(sLock);
+        	const Cluster_Writeview * writeview = ((WriteviewTransaction *)(this->getTransaction().get()))->getWriteview();
             string indexDirectory = ShardManager::getShardManager()->getConfigManager()->getShardDir(writeview->clusterName,
-                    writeview->cores[shardId.coreId]->getName(), &shardId);
+                    writeview->cores.at(shardId.coreId)->getName(), &shardId);
             if(indexDirectory.compare("") == 0){
                 indexDirectory = ShardManager::getShardManager()->getConfigManager()->createShardDir(writeview->clusterName,
-                        writeview->cores[shardId.coreId]->getName(), &shardId);
+                        writeview->cores.at(shardId.coreId)->getName(), &shardId);
             }
 
             physicalShard = LocalPhysicalShard(status.shard, indexDirectory, "");
-            sLock.unlock();
             commit();
         }
     }
@@ -189,7 +194,8 @@ void ShardMoveOperation::consume(const ShardMigrationStatus & status){
 
 // **** If transfer was successful
 void ShardMoveOperation::commit(){
-	Logger::sharding(Logger::Step, "ShardMove(opid=%s, mv {%s in %d} to self )| committing move change.", currentOpId.toString().c_str(),
+	Logger::sharding(Logger::Step, "ShardMove(opid=%s, mv {%s in %d} to self )| committing move change.",
+			currentOpId.toString().c_str(),
 			shardId.toString().c_str(), srcAddress.toString().c_str());
 	// prepare the shard change
 	ShardMoveChange * shardMoveChange = new ShardMoveChange(shardId, srcAddress.nodeId, ShardManager::getCurrentNodeId());
@@ -221,6 +227,7 @@ void ShardMoveOperation::cleanup(){
 	// 2. send the cleanup command to the srcNode to remove the backed up data shard
 	this->currentOp = Cleanup;
 	ShardManager::getShardManager()->getStateMachine()->registerOperation(cleaner);
+	/// NOTE : not an exit point.
 	finalize();
 }
 

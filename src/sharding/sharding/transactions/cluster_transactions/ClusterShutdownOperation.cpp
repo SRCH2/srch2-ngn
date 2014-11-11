@@ -11,7 +11,7 @@ using namespace std;
 namespace srch2 {
 namespace httpwrapper {
 
-bool ShutdownCommand::run(){
+void ShutdownCommand::run(){
 
 
     switch (req->type) {
@@ -23,12 +23,12 @@ bool ShutdownCommand::run(){
         Logger::error(
                 "The request has an invalid or missing argument. See Srch2 API documentation for details");
     	getSession()->response->finalizeInvalid();
-        return false;
+        return ;
     }
     }
 
 	save();
-	return true;
+	return ;
 }
 
 void ShutdownCommand::save(){
@@ -38,10 +38,10 @@ void ShutdownCommand::save(){
 }
 
 void ShutdownCommand::consume(map<NodeId, vector<CommandStatusNotification::ShardStatus *> > & result) {
-	this->clusterShutdown();
+	// finalizeWork will be called.
 }
 
-void ShutdownCommand::clusterShutdown(){
+void ShutdownCommand::finalizeWork(Transaction::Params * arg){
 	if(saveOperation != NULL){
 		ASSERT(false);
 		return ;
@@ -51,7 +51,7 @@ void ShutdownCommand::clusterShutdown(){
 	// 1. send shut down message to every body.
 	// a) prepare list of nodes that we must send shutdown to them
 	vector<NodeId> arrivedNodes;
-	SP(ClusterNodes_Writeview) nodesWriteview = this->getNodesWriteview_read();
+	SP(const ClusterNodes_Writeview) nodesWriteview = this->getNodesWriteview_read();
 	nodesWriteview->getArrivedNodes(arrivedNodes, false);
 	// b) send shut down message to everybody
 	shutdownNotif = SP(ShutdownNotification)(new ShutdownNotification());
@@ -59,7 +59,6 @@ void ShutdownCommand::clusterShutdown(){
 	ConcurrentNotifOperation * commandSender = new ConcurrentNotifOperation(shutdownNotif, NULLType, arrivedNodes, NULL, false);
 	ShardManager::getShardManager()->getStateMachine()->registerOperation(commandSender);
 
-	this->setFinished();
 	getSession()->response->printHTTP(req);
 	ShardManager::getShardManager()->_shutdown();
 	return; // it never reaches this point because before that the engine dies.

@@ -287,6 +287,8 @@ bool ConfigManager::loadConfigFile(srch2http::ResourceMetadataManager * metadata
 
     if(metadataManager != NULL){
 		metadataManager->setWriteview(new Cluster_Writeview(0, clusterNameStr, clusterCores));
+		// writeview is set, update the currentNodeId of shard manager
+		ShardManager::getShardManager()->updateCurrentNodeId();
     }
 
     if (!configSuccess) {

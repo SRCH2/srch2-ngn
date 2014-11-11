@@ -13,7 +13,7 @@ namespace httpwrapper {
 
 StateMachine::StateMachine(){
 	for(unsigned i = 0 ; i < ACTIVE_OPERATINS_GROUP_COUNT; ++i){
-		activeOpertationGroups.push_back(std::make_pair(new boost::mutex(), map<unsigned, OperationState *>()));
+		activeOpertationGroups.push_back(std::make_pair(new boost::recursive_mutex(), map<unsigned, OperationState *>()));
 	}
 }
 
@@ -23,9 +23,6 @@ StateMachine::~StateMachine(){
 		map<unsigned, OperationState *> & activeOperations = activeOpertationGroups.at(i).second;
 		for(map<unsigned, OperationState *>::iterator opItr = activeOperations.begin();
 				opItr != activeOperations.end(); ++opItr){
-			if(opItr->second->getTransaction() != NULL){
-				delete opItr->second->getTransaction();
-			}
 			delete opItr->second;
 		}
 		activeOperations.clear();
@@ -42,6 +39,7 @@ void StateMachine::registerOperation(OperationState * operation){
 	}
 	lockOperationGroup(operation->getOperationId());
 	if(! addActiveOperation(operation)){
+		unlockOperationGroup(operation->getOperationId());
 		return;
 	}
 	startOperation(operation);
@@ -55,7 +53,7 @@ void StateMachine::handle(SP(ShardingNotification) notification){
 	}
 	// lock the operation group
 	lockOperationGroup(notification->getDest().operationId);
-	map<unsigned, OperationState *> activeOperations = getOperationGroup(notification->getDest().operationId);
+	map<unsigned, OperationState *> & activeOperations = getOperationGroup(notification->getDest().operationId);
 	// find the operation in the map
 	if(activeOperations.find(notification->getDest().operationId) == activeOperations.end()){
 		// notification target is not there
@@ -63,15 +61,11 @@ void StateMachine::handle(SP(ShardingNotification) notification){
 		return;
 	}
 	OperationState * targetOperation = activeOperations[notification->getDest().operationId];
-
-	if(targetOperation->getTransaction() != NULL){
-		targetOperation->getTransaction()->preProcess();
-	}
 	OperationState * nextState = targetOperation->handle(notification);
-
-	stateTransit(targetOperation, nextState, true);
+	stateTransit(targetOperation, nextState);
 
 	unlockOperationGroup(notification->getDest().operationId);
+
 }
 
 // goes to everybody
@@ -80,20 +74,18 @@ void StateMachine::handle(SP(Notification) notification){
 		ASSERT(false);
 		return;
 	}
-
+	//TODO : how can I make sure it doesn't lock it twice ?
+	///////////////////////////////////////////////////////////////////
 	for(unsigned groupId = 0; groupId < activeOpertationGroups.size(); ++groupId){
 		// lock the operation group
 		lockOperationGroup(groupId);
-		map<unsigned, OperationState *> activeOperations = getOperationGroup(groupId);
+		map<unsigned, OperationState *> & activeOperations = getOperationGroup(groupId);
 		map<unsigned, OperationState *> activeOperationsBackup = activeOperations;
 		for(map<unsigned, OperationState *>::iterator activeOpItr = activeOperationsBackup.begin();
 				activeOpItr != activeOperationsBackup.end(); ++activeOpItr){
-			if(activeOpItr->second->getTransaction() != NULL){
-				activeOpItr->second->getTransaction()->preProcess();
-			}
 			OperationState * nextState =
 					activeOpItr->second->handle(notification);
-			stateTransit(activeOpItr->second, nextState, true);
+			stateTransit(activeOpItr->second, nextState);
 		}
 		unlockOperationGroup(groupId);
 	}
@@ -155,8 +147,9 @@ void StateMachine::print() const{
 
 bool StateMachine::addActiveOperation(OperationState * operation){
 	ASSERT(operation != NULL);
+
 	map<unsigned, OperationState *> & activeOperations =
-			getOperationGroup(operation->getNextOperationId());
+			getOperationGroup(operation->getOperationId());
 	if(activeOperations.find(operation->getOperationId()) != activeOperations.end()){
 		ASSERT(false);
 		return false; // operation id is not accepted because it already exists.
@@ -172,11 +165,11 @@ void StateMachine::startOperation(OperationState * operation){
 	}
 	// NOTE : we do not call transaction->preProcess() before entry
 	OperationState * nextState = operation->entry();
-	stateTransit(operation, nextState, false);
+	stateTransit(operation, nextState);
 }
 
 void StateMachine::stateTransit(OperationState * operation,
-		OperationState * nextState, const bool shouldCallPostProcess){
+		OperationState * nextState){
 	if(operation == NULL){
 		ASSERT(false);
 		return;
@@ -186,25 +179,13 @@ void StateMachine::stateTransit(OperationState * operation,
 		return;
 	}
 	if(nextState == operation){
-		if(shouldCallPostProcess && operation->getTransaction() != NULL){
-			operation->getTransaction()->postProcess();
-		}
 		return;
 	}
-	// now, this is where we check this operation to see if there
-	// is any ending transaction to delete
-	if(operation->getTransaction() != NULL && operation->getTransaction()->isFinished()){
-		// postProcess is not called when transaction is going to destruct
-		// the result is that writeview will be locked until destruction.
-		delete operation->getTransaction();
-	}else{
-		if(shouldCallPostProcess && operation->getTransaction() != NULL){
-			operation->getTransaction()->postProcess();
-		}
-	}
+	// nextState == NULL
+	ASSERT(nextState == NULL);
 	// 3. delete the old operation
 	delete operation;
-	map<unsigned, OperationState *> activeOperations;
+	map<unsigned, OperationState *> activeOperations = getOperationGroup(operation->getOperationId());
 	if(activeOperations.find(operation->getOperationId()) !=
 			activeOperations.end()){
 		activeOperations.erase(operation->getOperationId());

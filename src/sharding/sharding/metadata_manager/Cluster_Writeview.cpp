@@ -122,7 +122,7 @@ bool ClusterShardIterator::getNextClusterShard(ClusterShardId & shardId, double 
     if(this->clusterShardsCursor >= writeview->clusterShards.size()){
         return false;
     }
-    const ClusterShard_Writeview * shard = writeview->clusterShards[this->clusterShardsCursor++];
+    const ClusterShard_Writeview * shard = writeview->clusterShards.at(this->clusterShardsCursor++);
     shardId = shard->id;
     // TODO : loads are not handled yet
     load = 1;
@@ -131,18 +131,19 @@ bool ClusterShardIterator::getNextClusterShard(ClusterShardId & shardId, double 
     nodeId = shard->nodeId;
     return true;
 }
-bool ClusterShardIterator::getNextLocalClusterShard(ClusterShardId & shardId, double & load, LocalPhysicalShard & localPhysicalShard ){
+bool ClusterShardIterator::getNextLocalClusterShard(ClusterShardId & shardId, double & load,
+		LocalPhysicalShard & localPhysicalShard ){
     while(true){
         if(this->clusterShardsCursor >= writeview->clusterShards.size()){
             return false;
         }
-        const ClusterShard_Writeview * shard = writeview->clusterShards[this->clusterShardsCursor++];
+        const ClusterShard_Writeview * shard = writeview->clusterShards.at(this->clusterShardsCursor++);
         if(! shard->isLocal){
             continue;
         }
         shardId = shard->id;
         load = shard->load;
-        localPhysicalShard = writeview->localClusterDataShards[shardId];
+        localPhysicalShard = writeview->localClusterDataShards.at(shardId);
         return true;
     }
     return false;
@@ -155,7 +156,7 @@ bool NodeShardIterator::getNextNodeShard(NodeShardId & nodeShardId, bool & isLoc
     if(this->nodeShardsCursor >= writeview->nodeShards.size()){
         return false;
     }
-    const NodeShard_Writeview * shard = writeview->nodeShards[this->nodeShardsCursor++];
+    const NodeShard_Writeview * shard = writeview->nodeShards.at(this->nodeShardsCursor++);
     nodeShardId = shard->id;
     isLocal = shard->isLocal;
     return true;
@@ -165,13 +166,13 @@ bool NodeShardIterator::getNextLocalNodeShard(NodeShardId & nodeShardId, double 
         if(this->nodeShardsCursor >= writeview->nodeShards.size()){
             return false;
         }
-        const NodeShard_Writeview * shard = writeview->nodeShards[this->nodeShardsCursor++];
+        const NodeShard_Writeview * shard = writeview->nodeShards.at(this->nodeShardsCursor++);
         if(! shard->isLocal){
             continue;
         }
         nodeShardId = shard->id;
         load = shard->load;
-        dataInfo = writeview->localNodeDataShards[nodeShardId.partitionId];
+        dataInfo = writeview->localNodeDataShards.at(nodeShardId.partitionId);
         return true;
     }
     return false;
@@ -527,6 +528,45 @@ void Cluster_Writeview::printLocalShards() const{
 	}
 }
 
+void Cluster_Writeview::removeNode(const NodeId & failedNodeId){
+
+	// node part
+	if(this->nodes.find(failedNodeId) == this->nodes.end()){
+		this->nodes[failedNodeId] = std::make_pair(ShardingNodeStateFailed,(Node *) NULL);
+	}else{
+		this->nodes[failedNodeId].first = ShardingNodeStateFailed;
+		if(this->nodes[failedNodeId].second != NULL){
+			delete this->nodes[failedNodeId].second;
+			this->nodes[failedNodeId].second = NULL;
+		}
+	}
+
+	// cluster shard ids
+	for(unsigned i = 0 ; i < clusterShards.size(); ++i){
+		ClusterShard_Writeview * clusterShard = clusterShards.at(i);
+		if(clusterShard->nodeId == failedNodeId && clusterShard->state == SHARDSTATE_READY){
+			clusterShard->state = SHARDSTATE_UNASSIGNED;
+			clusterShard->isLocal = false;
+			clusterShard->load = 0;
+			clusterShard->nodeId = (unsigned)-1;
+		}
+	}
+
+	// node shards
+	vector<NodeShard_Writeview *> nodeShardsNewCopy;
+	for(unsigned i = 0 ; i < nodeShards.size(); ++i){
+		NodeShard_Writeview * nodeShard = nodeShards.at(i);
+		if(nodeShard->id.nodeId == failedNodeId){
+			// we delete this node id.
+			delete nodeShard;
+		}else{
+			nodeShardsNewCopy.push_back(nodeShard);
+		}
+	}
+	nodeShards = nodeShardsNewCopy;
+
+}
+
 void Cluster_Writeview::setCurrentNodeId(NodeId currentNodeId){
 	this->currentNodeId = currentNodeId;
 
@@ -832,7 +872,12 @@ void Cluster_Writeview::getPatitionInvolvedNodes(const ClusterShardId & shardId,
 		}
 	}
 	if(participants.size() == 0){
-		this->getArrivedNodes(participants, true);
+		for(map<NodeId, std::pair<ShardingNodeState, Node *> >::const_iterator nodeItr =
+				nodes.begin(); nodeItr != nodes.end(); ++nodeItr){
+			if(nodeItr->second.first == ShardingNodeStateArrived && nodeItr->second.second != NULL){
+				participants.push_back(nodeItr->first);
+			}
+		}
 	}
 }
 
@@ -955,7 +1000,7 @@ void Cluster_Writeview::fixClusterMetadataOfAnotherNode(Cluster_Writeview * clus
 				}
 			}
 			if(succeed){
-				cluster->localClusterDataShards[shard->id] = this->localClusterDataShards[shard->id];
+				cluster->localClusterDataShards[shard->id] = this->localClusterDataShards.at(shard->id);
 			}
 		}
 	}
@@ -965,7 +1010,7 @@ void Cluster_Writeview::fixClusterMetadataOfAnotherNode(Cluster_Writeview * clus
 		const NodeShard_Writeview * shard = this->nodeShards.at(i);
 		if(shard->isLocal){
 			cluster->nodeShards.push_back(new NodeShard_Writeview(*shard));
-			cluster->localNodeDataShards[shard->id.partitionId] = this->localNodeDataShards[shard->id.partitionId];
+			cluster->localNodeDataShards[shard->id.partitionId] = this->localNodeDataShards.at(shard->id.partitionId);
 		}
 	}
 
@@ -992,13 +1037,13 @@ ClusterResourceMetadata_Readview * Cluster_Writeview::getNewReadview() const{
 	}
 
 	ClusterResourceMetadata_Readview * newReadview =
-			new ClusterResourceMetadata_Readview(++this->versionId, this->clusterName, coresVector);
+			new ClusterResourceMetadata_Readview(this->versionId, this->clusterName, coresVector);
 	newReadview->setCurrentNodeId(this->currentNodeId);
 
 	// add nodes
 	for(map<NodeId, std::pair<ShardingNodeState, Node *> > ::const_iterator nodeItr = this->nodes.begin();
 			nodeItr != this->nodes.end(); ++nodeItr){
-		if(nodeItr->second.first != ShardingNodeStateFailed){
+		if(nodeItr->second.first == ShardingNodeStateArrived ){
 		    if(nodeItr->second.second != NULL){
                 newReadview->addNode(*(nodeItr->second.second));
 		    }

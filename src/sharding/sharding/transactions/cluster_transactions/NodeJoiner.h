@@ -45,12 +45,10 @@ private:
 
 	NodeJoiner();
 
-	Transaction * getTransaction() ;
-	void initSession();
-
+	SP(Transaction) getTransaction() ;
 
 	ShardingTransactionType getTransactionType();
-	bool run();
+	void run();
 
 	void lock();
 
@@ -68,7 +66,7 @@ private:
 
 	void release();
 
-	void finalize(bool result = true);
+	void finalizeWork(Transaction::Params * arg);
 
 	void getOlderNodesList(vector<NodeId> & olderNodes);
 
@@ -86,7 +84,6 @@ private:
 	    Release
 	};
 	CurrentOperation currentOperation;
-	bool finalizedFlag ;
 	bool releaseModeFlag;
 	AtomicLock * locker;
 	AtomicRelease * releaser;

@@ -25,20 +25,18 @@ AtomicMetadataCommit::AtomicMetadataCommit(const vector<NodeId> & exceptions,
 	ASSERT(this->getConsumer() != NULL);
 	ASSERT(this->getConsumer()->getTransaction() != NULL);
 	this->metadataChange = metadataChange;
-	boost::shared_lock<boost::shared_mutex> & writeviewSLock;
-	const Cluster_Writeview * writeview = ShardManager::getWriteview_read(writeviewSLock);
+	SP(const ClusterNodes_Writeview) nodesWriteview = ShardManager::getNodesWriteview_read();
 	vector<NodeId> allNodes;
-	writeview->getArrivedNodes(allNodes, true);
+	nodesWriteview->getArrivedNodes(allNodes, true);
 	for(unsigned i = 0;  i < allNodes.size(); ++i){
 		if(std::find(exceptions.begin(), exceptions.end(), allNodes.at(i)) == exceptions.end()){
 			this->participants.push_back(allNodes.at(i));
 		}
 	}
-	writeviewSLock.unlock();
+	nodesWriteview.reset();
 	this->selfOperationId = NodeOperationId(ShardManager::getCurrentNodeId(), OperationState::getNextOperationId());
 	this->atomicLock = NULL;
 	this->atomicRelease = NULL;
-	this->finalizedFlag = false;
 	this->currentAction = "";
 	this->skipLock = skipLock;
 }
@@ -49,16 +47,15 @@ AtomicMetadataCommit::AtomicMetadataCommit(const NodeId & exception,
 	ASSERT(this->getConsumer() != NULL);
 	ASSERT(this->getConsumer()->getTransaction() != NULL);
 	this->metadataChange = metadataChange;
-	boost::shared_lock<boost::shared_mutex> & writeviewSLock;
-	const Cluster_Writeview * writeview = ShardManager::getWriteview_read(writeviewSLock);
+	SP(const ClusterNodes_Writeview) nodesWriteview = ShardManager::getNodesWriteview_read();
 	vector<NodeId> allNodes;
-	writeview->getArrivedNodes(allNodes);
+	nodesWriteview->getArrivedNodes(allNodes);
 	for(unsigned i = 0;  i < allNodes.size(); ++i){
 		if(exception != allNodes.at(i)){
 			this->participants.push_back(allNodes.at(i));
 		}
 	}
-	writeviewSLock.unlock();
+	nodesWriteview.reset();
 	this->selfOperationId = NodeOperationId(ShardManager::getCurrentNodeId(), OperationState::getNextOperationId());
 	this->atomicLock = NULL;
 	this->atomicRelease = NULL;
@@ -72,14 +69,13 @@ AtomicMetadataCommit::AtomicMetadataCommit(MetadataChange * metadataChange,
 	ASSERT(this->getConsumer() != NULL);
 	ASSERT(this->getConsumer()->getTransaction() != NULL);
 	this->metadataChange = metadataChange;
-	boost::shared_lock<boost::shared_mutex> & writeviewSLock;
-	const Cluster_Writeview * writeview = ShardManager::getWriteview_read(writeviewSLock);
+	SP(const ClusterNodes_Writeview) nodesWriteview = ShardManager::getNodesWriteview_read();
 	for(unsigned i = 0 ; i < participants.size(); ++i){
-		if(! writeview->isNodeAlive(participants.at(i))){
+		if(! nodesWriteview->isNodeAlive(participants.at(i))){
 			this->participants.push_back(participants.at(i));
 		}
 	}
-	writeviewSLock.unlock();
+	nodesWriteview.reset();
 	this->selfOperationId = NodeOperationId(ShardManager::getCurrentNodeId(), OperationState::getNextOperationId());
 	this->atomicLock = NULL;
 	this->atomicRelease = NULL;
@@ -99,24 +95,25 @@ AtomicMetadataCommit::~AtomicMetadataCommit(){
 	}
 }
 
-Transaction * AtomicMetadataCommit::getTransaction(){
+SP(Transaction) AtomicMetadataCommit::getTransaction(){
+	if(this->getConsumer() == NULL){
+		return SP(Transaction)();
+	}
 	return this->getConsumer()->getTransaction();
 }
 
 void AtomicMetadataCommit::produce(){
     Logger::sharding(Logger::Detail, "Atomic Metadata Commit : starting ...");
-	boost::shared_lock<boost::shared_mutex> & writeviewSLock;
-    const Cluster_Writeview * writeview = ShardManager::getWriteview_read(writeviewSLock);
+	SP(const ClusterNodes_Writeview) nodesWriteview = ShardManager::getNodesWriteview_read();
 	for(int i = 0 ; i < participants.size(); ++i){
-		if(! writeview->isNodeAlive(participants.at(i))){
+		if(! nodesWriteview->isNodeAlive(participants.at(i))){
 			participants.erase(participants.begin() + i);
 			i--;
 		}
 	}
-	writeviewSLock.unlock();
+	nodesWriteview.reset();
     if(participants.empty()){
         // no participant exists
-    	this->getTransaction()->setUnattached();
         return ;
     }
     if(metadataChange == NULL){
@@ -209,7 +206,6 @@ void AtomicMetadataCommit::release(){
 
 void AtomicMetadataCommit::finalize(bool result){
 	this->getConsumer()->consume(result);
-	this->finalizedFlag = true;
 	return;
 }
 

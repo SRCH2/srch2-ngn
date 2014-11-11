@@ -22,9 +22,7 @@ public:
 
 	OrderedNodeIteratorOperation(SP(ShardingNotification) request, ShardingMessageType resType,
 			vector<NodeId> & participants, OrderedNodeIteratorListenerInterface * validatorObj = NULL);
-	virtual ~OrderedNodeIteratorOperation();
-
-	Transaction * getTransaction();
+	virtual ~OrderedNodeIteratorOperation(){};
 
 	OperationState * entry();
 	// it returns this, or next state or NULL.
@@ -36,8 +34,6 @@ public:
 	OperationState * handle(SP(NodeFailureNotification) notif);
 
 	void setParticipants(vector<NodeId> & participants);
-
-	bool validateResponse(SP(ShardingNotification) response);
 
 	string getOperationName() const ;
 

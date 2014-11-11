@@ -26,8 +26,8 @@ int Srch2ServerRuntime::initializeHttpServerMetadata() {
 		ports.insert(globalDefaultPort);
 	}
 
-	boost::shared_lock<boost::shared_mutex> writeviewSLock;
-	const Cluster_Writeview * writeview = srch2::httpwrapper::ShardManager::getWriteview_read(writeviewSLock);
+	boost::shared_lock<boost::shared_mutex> sLock;
+	const Cluster_Writeview * writeview = srch2::httpwrapper::ShardManager::getWriteview_read(sLock);
 	unsigned short port;
 	// loop over cores and extract all port numbers of current node to use
 	for(map<unsigned, CoreInfo_t *>::const_iterator coresItr = writeview->cores.begin();
@@ -44,7 +44,7 @@ int Srch2ServerRuntime::initializeHttpServerMetadata() {
 			}
 		}
 	}
-	writeviewSLock.unlock();
+	sLock.unlock();
 
 	// bind once each port defined for use by this core
 	for(std::set<short>::const_iterator port = ports.begin();

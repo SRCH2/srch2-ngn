@@ -23,8 +23,10 @@ void LockManager::resolve(SP(LockingNotification)  notif){
 		ASSERT(false);
 		return;
 	}
+	lockManagerMutex.lock();
 	LockBatch * lockBatch = LockBatch::generateLockBatch(notif);
 	resolve(lockBatch);
+	lockManagerMutex.unlock();
 //	print();
 }
 
@@ -60,7 +62,7 @@ void LockManager::resolveNodeFailure(const NodeId & failedNode){
 		}
 	}
 	readviewReleaseMutex.unlock();
-
+	lockManagerMutex.lock();
 	for(vector<LockBatch *>::iterator lockBItr = pendingLockBatches.begin();
 			lockBItr != pendingLockBatches.end(); ){
 		LockBatch * lockBatch = *lockBItr;
@@ -81,12 +83,16 @@ void LockManager::resolveNodeFailure(const NodeId & failedNode){
 	}
 
 	movePendingLockBatchesForward();
+	lockManagerMutex.unlock();
 
 }
 
 bool LockManager::canAcquireLock(const ClusterShardId & shardId, const LockLevel & lockLevel){
+	lockManagerMutex.lock();
 	LockBatch * lockBatch = LockBatch::generateLockBatch(shardId, lockLevel);
-	return canAcquireAllBatch(lockBatch);
+	bool result = canAcquireAllBatch(lockBatch);
+	lockManagerMutex.unlock();
+	return result;
 }
 
 // entry point of LockBatch to LockManager
@@ -115,13 +121,12 @@ void LockManager::resolveLock(LockBatch * lockBatch){
 
 	// specific to node arrival, nodes must join in ascending nodeId order
 	if(lockBatch->batchType == LockRequestType_Metadata && lockBatch->olderNodes.size() > 0){
-		boost::unique_lock<boost::mutex> xLock;
-		Cluster_Writeview * writeview = ShardManager::getWriteview_write(xLock);
+		SP(ClusterNodes_Writeview) nodesWriteview = ShardManager::getNodesWriteview_write();
 		for(unsigned i = 0 ; i < lockBatch->olderNodes.size() ; ++i){
 			// 1. is this node in the writeview of this node ?
-			if(writeview->nodes.find(lockBatch->olderNodes.at(i)) == writeview->nodes.end()){
+			if(nodesWriteview->getNodes().find(lockBatch->olderNodes.at(i)) == nodesWriteview->getNodes().end()){
 				//add it to the list of nodes in writeview as NotArrived node
-				writeview->setNodeState(lockBatch->olderNodes.at(i), ShardingNodeStateNotArrived);
+				nodesWriteview->setNodeState(lockBatch->olderNodes.at(i), ShardingNodeStateNotArrived);
 			}
 		}
 	} // xLock goes out of scope
@@ -351,8 +356,8 @@ bool LockManager::moveLockBatchForward(LockBatch * lockBatch){
 					lockBatch->lastGrantedItemIndex++;
 					if(lockBatch->lastGrantedItemIndex == lockBatch->tokens.size() - 1){
 
-						boost::shared_lock<boost::shared_mutex> sLock;
-						lockBatch->versionId = ShardManager::getWriteview_read(sLock)->versionId;
+						boost::unique_lock<boost::shared_mutex> xLock;
+						lockBatch->versionId = ShardManager::getWriteview_write(xLock)->versionId;
 						ASSERT(lockBatch->isReadviewPending());
 						return false; // because we should still wait for the release of readview
 					}else{
@@ -443,8 +448,8 @@ void LockManager::finalize(LockBatch * lockBatch, bool result ){
 }
 
 bool LockManager::isNodePassedInitialization(const NodeId & nodeId){
-	boost::shared_lock<boost::shared_mutex> sLock;
-	if(! ShardManager::getWriteview_read(sLock)->isNodeAlive(nodeId)){
+	SP(const ClusterNodes_Writeview) nodesWriteview = ShardManager::getNodesWriteview_read();
+	if(! nodesWriteview->isNodeAlive(nodeId)){
 		return true; // failed nodes are assumed to have passed the initialization step
 	}
 	if(passedInitialization.find(nodeId) == passedInitialization.end()){
@@ -458,9 +463,8 @@ void LockManager::setNodePassedInitialization(const NodeId & nodeId){
 }
 
 void LockManager::initialize(){
-	boost::shared_lock<boost::shared_mutex> sLock;
-    const map<NodeId, std::pair<ShardingNodeState, Node *> > & nodes =
-    		ShardManager::getShardManager()->getWriteview_read(sLock)->nodes;
+	SP(const ClusterNodes_Writeview) nodesWriteview = ShardManager::getNodesWriteview_read();
+    const map<NodeId, std::pair<ShardingNodeState, Node *> > & nodes = nodesWriteview->getNodes_read();
     for(map<NodeId, std::pair<ShardingNodeState, Node *> >::const_iterator nodeItr = nodes.begin(); nodeItr != nodes.end(); ++nodeItr){
     	if(nodeItr->second.first == ShardingNodeStateArrived){
 			setNodePassedInitialization(nodeItr->second.second->getId());
@@ -469,6 +473,7 @@ void LockManager::initialize(){
 }
 
 void LockManager::print(){
+	lockManagerMutex.lock();
 
 	cout << "**************************************************************************************************" << endl;
 	cout << "LockManager : " << endl;
@@ -486,6 +491,7 @@ void LockManager::print(){
 	// print metadata locks
 	printMetadataLocks();
 
+	lockManagerMutex.unlock();
 
 }
 

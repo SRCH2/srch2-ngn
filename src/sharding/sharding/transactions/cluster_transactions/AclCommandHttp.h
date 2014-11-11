@@ -30,9 +30,19 @@ public:
                                                     from Srch2ServerExternalGateway::cb_coreSpecificOperations or
                                                     from Srch2ServerExternalGateway::cb_globalOperations ...*/){
 
-        AclCommandHttpHandler * aclCommandHttpHandler = new AclCommandHttpHandler(clusterReadview, req, coreId); //
+        SP(AclCommandHttpHandler) aclCommandHttpHandler =
+        		SP(AclCommandHttpHandler)(new AclCommandHttpHandler(clusterReadview, req, coreId)); //
         Transaction::startTransaction(aclCommandHttpHandler);
         return ;
+    }
+
+    ~AclCommandHttpHandler(){
+        if(aclCommand != NULL){
+            delete aclCommand;
+        }
+        if(req != NULL){
+        	delete req;
+        }
     }
 private:
     AclCommandHttpHandler(boost::shared_ptr<const ClusterResourceMetadata_Readview> clusterReadview,
@@ -44,15 +54,6 @@ private:
         initSession();
         aclCommand = NULL;
 
-    }
-
-    ~AclCommandHttpHandler(){
-        if(aclCommand != NULL){
-            delete aclCommand;
-        }
-        if(req != NULL){
-        	delete req;
-        }
     }
     /*
      * Must be implemented for all Transaction classes to initialize the session object.
@@ -70,16 +71,14 @@ private:
      * Example of this work : parsing req object and get HTTP req information.
      *
      */
-    bool run(){
+    void run(){
     	if(coreInfo == NULL){
     		this->getTransaction()->getSession()->response->addError(JsonResponseHandler::getJsonSingleMessage(HTTP_JSON_Core_Does_Not_Exist));
     		this->getTransaction()->getSession()->response->finalizeOK();
-    		this->getTransaction()->getSession()->response->printHTTP(req);
     		// to make the caller of this function deallocate this object
     		// because it's not going to wait for a notification from another node as it was
     		// expected.
-    		this->getTransaction()->setUnattached();
-    		return false;
+    		return;
     	}
         //return false; // returns false if when we return from this function
                        // no callback function is supposed to be called and we can be
@@ -102,10 +101,7 @@ private:
     	 */
 
         aclCommand->produce();
-        if(! this->getTransaction()->isAttached()){
-        	return false;
-        }
-        return true;
+        return;
     }
 
 
@@ -121,21 +117,18 @@ private:
 
 
 
-    void finalize(){
-
-        // setFinished() must be called at the very last step of execution of every Transaction class
-        // to notify state-machine that this Transaction is
-        // done and is ok to be deleted now.
-        this->setFinished();
+    void finalizeWork(Transaction::Params * params){
+		this->getTransaction()->getSession()->response->printHTTP(req);
     }
+
 
 
     /*
      * This function must be overridden for each transaction class so that producers can use the
      * transaction and it's getSession() inteface.
      */
-    Transaction * getTransaction() {
-        return this;
+    SP(Transaction) getTransaction() {
+        return sharedPointer;
     }
 
     ShardingTransactionType getTransactionType(){

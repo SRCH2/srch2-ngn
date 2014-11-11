@@ -55,7 +55,10 @@ const char * getTransTypeStr(ShardingTransactionType type){
 			return "insert-update-command";
 		case ShardingTransactionType_Shutdown:
 			return "shutdown-command";
+		case ShardingTransactionType_AclCommandCode:
+			return "acl-command";
 	}
+	return "unknown-command";
 }
 
 
