@@ -235,6 +235,7 @@ private:
     string clusterNameStr ;
     string nodeNameStr;
     vector<CoreInfo_t *> clusterCores;
+    vector<CoreInfo_t *> clusterAclCores;
 
 
 	volatile bool isLocked; //both read / write use this lock.
