@@ -350,7 +350,7 @@ public:
     	this->attributeAclCoreId =  attributeAclCoreId;
     }
 
-    unsigned getAttributeAclCoreId(unsigned attributeAclCoreId) {
+    unsigned getAttributeAclCoreId() const{
     	return this->attributeAclCoreId;
     }
 
