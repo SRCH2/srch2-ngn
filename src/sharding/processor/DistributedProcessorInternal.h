@@ -103,6 +103,7 @@ public:
     SP(CommandStatusNotification) resolveShardCommand(SP(CommandNotification) notif);
 
     SP(Write2PCNotification::ACK) resolveWrite2PC(SP(Write2PCNotification) notif);
+    SP(AclAttributeReadNotification::ACK) resolveAclAttributeListRead(SP(AclAttributeReadNotification) notif);
 
 private:
 

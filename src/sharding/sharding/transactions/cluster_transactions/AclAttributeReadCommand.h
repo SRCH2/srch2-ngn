@@ -75,12 +75,23 @@ public:
 	}
 
 	void readListOfAttributes(NodeTargetShardInfo & target){
+		this->target = target;
 		// send attribute list read notification to target node
 		SP(AclAttributeReadNotification) notif = SP(AclAttributeReadNotification)(
 				new AclAttributeReadNotification(roleId, target, clusterReadview));
 		ConcurrentNotifOperation * listSender =
 				new ConcurrentNotifOperation(notif, ShardingAclAttrReadACKMessageType, ShardManager::getCurrentNodeId(), this);
 		ShardManager::getStateMachine()->registerOperation(listSender);
+	}
+
+
+	bool shouldAbort(const NodeId & failedNode){
+		if(failedNode == this->target.getNodeId()){
+			messageCodes.push_back(HTTP_Json_Failed_Due_To_Node_Failure);
+			finalize();
+			return true;
+		}
+		return false;
 	}
 
 	// response which contains the list of attributes comes to this function
@@ -109,6 +120,7 @@ private:
 	boost::shared_ptr<const ClusterResourceMetadata_Readview> clusterReadview;
 	const CoreInfo_t * coreInfo;
 	const string roleId;
+	NodeTargetShardInfo target;
 
 	vector<JsonMessageCode> messageCodes;
 

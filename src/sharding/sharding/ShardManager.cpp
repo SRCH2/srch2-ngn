@@ -387,6 +387,12 @@ bool ShardManager::resolveMessage(Message * msg, NodeId senderNode){
 		case ShardingShutdownMessageType:
 			notif = ShardingNotification::deserializeAndConstruct<ShutdownNotification>(msg);
 			break;
+		case ShardingAclAttrReadMessageType:
+			notif = ShardingNotification::deserializeAndConstruct<AclAttributeReadNotification>(msg);
+			break;
+		case ShardingAclAttrReadACKMessageType:
+			notif = ShardingNotification::deserializeAndConstruct<AclAttributeReadNotification::ACK>(msg);
+			break;
 		default:
 			ASSERT(false);
 			break;

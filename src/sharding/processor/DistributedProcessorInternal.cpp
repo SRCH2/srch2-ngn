@@ -757,5 +757,28 @@ SP(Write2PCNotification::ACK) DPInternalRequestHandler::resolveWrite2PC(SP(Write
 	return result;
 }
 
+SP(AclAttributeReadNotification::ACK) DPInternalRequestHandler::
+		resolveAclAttributeListRead(SP(AclAttributeReadNotification) notif){
+	if(! notif){
+		return SP(AclAttributeReadNotification::ACK)();
+	}
+	AclAttributeReadNotification * aclNotif = notif.get();
+
+
+	// 0. use target and readview to get Srch2Server pointers
+	vector<const Shard *> shards;
+	notif->getReadview()->getLocalShardContainer(notif->getTarget().getCoreId())->getShards(notif->getTarget(),shards);
+	// prepare the result containers
+	for(unsigned shardIdx = 0; shardIdx < shards.size(); ++shardIdx){
+		const Shard * shard = shards.at(shardIdx);
+		/*
+		 * TODO : get the list of attributes and put it in an ACK notification and return
+		 */
+
+		//
+		break; // only one target is enough, it gives us the list
+	}
+}
+
 }
 }

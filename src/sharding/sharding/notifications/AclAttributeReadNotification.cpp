@@ -20,7 +20,16 @@ AclAttributeReadNotification::AclAttributeReadNotification(){
 }
 
 bool AclAttributeReadNotification::resolveNotification(SP(ShardingNotification) _notif){
-	//TODO : handle attribute list read request
+	SP(AclAttributeReadNotification::ACK) response =
+			ShardManager::getShardManager()->getDPInternal()->
+			resolveAclAttributeListRead(boost::dynamic_pointer_cast<AclAttributeReadNotification>(_notif));
+	if(! response){
+		response = create<AclAttributeReadNotification::ACK>();
+	}
+    response->setSrc(_notif->getDest());
+    response->setDest(_notif->getSrc());
+	send(response);
+	return true;
 }
 
 void * AclAttributeReadNotification::serializeBody(void * buffer) const{
@@ -73,7 +82,8 @@ void * AclAttributeReadNotification::ACK::deserializeBody(void * buffer) {
 	return buffer;
 }
 bool AclAttributeReadNotification::ACK::resolveNotification(SP(ShardingNotification) _notif){
-	// TODO : do something with the ACK
+	ShardManager::getStateMachine()->handle(_notif);
+	return true;
 }
 vector<string> & AclAttributeReadNotification::ACK::getListOfAttributes(){
 	return listOfAttributes;
