@@ -67,8 +67,8 @@ private:
     		return ;
     	}
 
-    	vector<std::pair<string, vector<string> > > * recordAclDataForApiLayer =
-    			new vector<std::pair<string, vector<string> > >();
+    	std::map< string, vector<string> > * recordAclDataForApiLayer =
+    	    			new std::map< string, vector<string> >();
 
     	Json::Value response(Json::arrayValue);
 
@@ -107,7 +107,7 @@ private:
     					JSONRecordParser::_extractResourceAndRoleIds(roleIds, primaryKeyID,
     							doc, coreInfo, log_str);
     					response[index] = log_str.str();
-    					recordAclDataForApiLayer->push_back(make_pair(primaryKeyID, roleIds));
+    					//recordAclDataForApiLayer->push_back(make_pair(primaryKeyID, roleIds));
     				}
     			}else{ // The input is only one JSON object.
     				response.resize(1);
@@ -123,7 +123,7 @@ private:
     					return ;
     				} else {
     					response[0] = log_str.str();
-    					recordAclDataForApiLayer->push_back(make_pair(primaryKeyID, roleIds));
+    					//recordAclDataForApiLayer->push_back(make_pair(primaryKeyID, roleIds));
     				}
     			}
     		}

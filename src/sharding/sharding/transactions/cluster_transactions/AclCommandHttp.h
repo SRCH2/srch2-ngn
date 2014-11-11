@@ -68,8 +68,8 @@ private:
     		return;
     	}
 
-    	vector<std::pair<vector<string>, vector<string> > > * attributeAclDataForApiLayer =
-    			new vector<std::pair<vector<string>, vector<string> > >();
+    	std::map< string, vector<string> > * attributeAclDataForApiLayer =
+    			new std::map< string, vector<string> >();
     	Json::Value response(Json::objectValue);
     	switch (req->type) {
     	    case EVHTTP_REQ_PUT: {
@@ -143,10 +143,10 @@ private:
     	        				// because we want to process other valid entries.
     	        				atributeList.clear();
     	        				roleIdList.clear();
-    	        				attributeAclDataForApiLayer->push_back(make_pair(roleIdList, atributeList));
+    	        				//attributeAclDataForApiLayer->insert(make_pair(roleIdList, atributeList));
     	        			} else {
     	        				atleastOnValidEntry = true;
-    	        				attributeAclDataForApiLayer->push_back(make_pair(roleIdList, atributeList));
+    	        				//attributeAclDataForApiLayer->push_back(make_pair(roleIdList, atributeList));
     	        				// if the response is empty then add success message.
     	        				if (aclAttributeResponses[index].asString().size() == 0){
     	        					stringstream ss;
@@ -177,7 +177,7 @@ private:
     	        			responseObject->finalizeOK();
     	        			return;
     	        		} else {
-    	        			attributeAclDataForApiLayer->push_back(make_pair(roleIdList, atributeList));
+    	        			//attributeAclDataForApiLayer->push_back(make_pair(roleIdList, atributeList));
     	        			// if the response is empty then add success message.
     	        			if (aclAttributeResponses[0].asString().size() == 0){
     	        				stringstream ss;
