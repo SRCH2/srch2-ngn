@@ -26,9 +26,7 @@ class AclCommandHttpHandler: public ReadviewTransaction, public ConsumerInterfac
 public:
 
     static void runCommand(boost::shared_ptr<const ClusterResourceMetadata_Readview> clusterReadview,
-            evhttp_request *req, unsigned coreId /*And maybe other argumets like ACL command type which can be passed
-                                                    from Srch2ServerExternalGateway::cb_coreSpecificOperations or
-                                                    from Srch2ServerExternalGateway::cb_globalOperations ...*/){
+            evhttp_request *req, unsigned coreId, ){
 
         AclCommandHttpHandler * aclCommandHttpHandler = new AclCommandHttpHandler(clusterReadview, req, coreId); //
         Transaction::startTransaction(aclCommandHttpHandler);
@@ -40,7 +38,6 @@ private:
     	this->req = req;
     	this->coreInfo = clusterReadview->getCore(coreId);
     	ASSERT(this->coreInfo != NULL);
-    	// initializas the session object that can be accessed through this communication
         initSession();
         aclCommand = NULL;
 
@@ -71,23 +68,164 @@ private:
      *
      */
     bool run(){
+    	JsonResponseHandler * responseObject = this->getTransaction()->getSession()->response;
     	if(coreInfo == NULL){
-    		this->getTransaction()->getSession()->response->addError(JsonResponseHandler::getJsonSingleMessage(HTTP_JSON_Core_Does_Not_Exist));
-    		this->getTransaction()->getSession()->response->finalizeOK();
-    		this->getTransaction()->getSession()->response->printHTTP(req);
+    		responseObject->addError(JsonResponseHandler::getJsonSingleMessage(HTTP_JSON_Core_Does_Not_Exist));
+    		responseObject->finalizeOK();
+    		responseObject->printHTTP(req);
     		// to make the caller of this function deallocate this object
     		// because it's not going to wait for a notification from another node as it was
     		// expected.
     		this->getTransaction()->setUnattached();
     		return false;
     	}
-        //return false; // returns false if when we return from this function
-                       // no callback function is supposed to be called and we can be
-                       // lost. When it returns false, startTransaction() will just delete this transaction
-                       // to end its work.
+
+    	vector<std::pair<vector<string>, vector<string> > > * attributeAclDataForApiLayer =
+    			new vector<std::pair<vector<string>, vector<string> > >();
+    	Json::Value response(Json::objectValue);
+    	switch (req->type) {
+    	    case EVHTTP_REQ_PUT: {
+    	        size_t length = EVBUFFER_LENGTH(req->input_buffer);
+
+    	        if (length == 0) {
+    	        	responseObject->addError(JsonResponseHandler::getJsonSingleMessage(HTTP_JSON_Empty_Body));
+    	        	responseObject->finalizeOK();
+    	        	responseObject->printHTTP(req);
+    	        	// to make the caller of this function deallocate this object
+    	        	// because it's not going to wait for a notification from another node as it was
+    	        	// expected.
+    	        	this->getTransaction()->setUnattached();
+    	        	return false;
+    	        }
+
+    	        // Identify the type of access control request.
+    	        // req->uri should be "/aclAttributeRoleDelete" or "/aclAttributeRoleAppend"
+    	        // or "/aclAttributeRoleReplace" for default core
+    	        // Otherwise it should be /corename/aclAttributeRoleDelete etc.
+    	        string uriString = req->uri;
+    	        string apiName;
+    	        AclActionType action;
+    	        string corename = this->coreInfo->getName();
+    	        if (corename == ConfigManager::defaultCore) {
+    	        	corename.clear();
+    	        } else {
+    	        	corename = "/" + corename;
+    	        }
+    	        if (uriString == corename + "/aclAttributeRoleReplace") {
+    	        	action = ACL_REPLACE;
+    	        	apiName = "aclAttributeRoleReplace";
+    	        }
+    	        else if (uriString == corename + "/aclAttributeRoleDelete") {
+    	        	apiName = "aclAttributeRoleDelete";
+    	        	action = ACL_DELETE;
+    	        }
+    	        else if (uriString == corename + "/aclAttributeRoleAppend") {
+    	        	apiName = "aclAttributeRoleAppend";
+    	        	action = ACL_APPEND;
+    	        }
+    	        else {
+    	        	responseObject->addError(JsonResponseHandler::getJsonSingleMessage(HTTP_JSON_Core_Does_Not_Exist));
+    	        	responseObject->finalizeOK();
+    	        	responseObject->printHTTP(req);
+    	        	this->getTransaction()->setUnattached();
+    	        	return false;
+    	        }
+    	        // get input JSON
+    	        const char *post_data = (char *) EVBUFFER_DATA(req->input_buffer);
+
+    	        std::stringstream log_str;
+    	        Json::Value root;
+    	        Json::Reader reader;
+    	        bool parseSuccess = reader.parse(post_data, root, false);
+    	        bool error = false;
+            	Json::Value aclAttributeResponses(Json::arrayValue);
+    	        if (parseSuccess == false) {
+    	        	responseObject->addError(JsonResponseHandler::getJsonSingleMessage(HTTP_JSON_Parse_Error));
+    	        	responseObject->finalizeOK();
+    	        	responseObject->printHTTP(req);
+    	        	this->getTransaction()->setUnattached();
+    	            return false;
+    	        } else {
+    	        	if (root.type() == Json::arrayValue) {
+    	        		aclAttributeResponses.resize(root.size());
+    	        		bool atleastOnValidEntry = false;
+    	        		//the record parameter is an array of json objects
+    	        		for(Json::UInt index = 0; index < root.size(); index++) {
+    	        			Json::Value defaultValueToReturn = Json::Value("");
+    	        			const Json::Value doc = root.get(index,
+    	        					defaultValueToReturn);
+
+    	        			vector<string> atributeList;
+    	        			vector<string> roleIdList;
+    	        			bool  status = processSingleJSONAttributeAcl(doc, action, apiName,
+    	        					aclAttributeResponses[index], roleIdList, atributeList);
+    	        			if (status == false) {
+    	        				// there is an error with the current acl entry. Do not error out
+    	        				// because we want to process other valid entries.
+    	        				atributeList.clear();
+    	        				roleIdList.clear();
+    	        				attributeAclDataForApiLayer->push_back(make_pair(roleIdList, atributeList));
+    	        			} else {
+    	        				atleastOnValidEntry = true;
+    	        				attributeAclDataForApiLayer->push_back(make_pair(roleIdList, atributeList));
+    	        				// if the response is empty then add success message.
+    	        				if (aclAttributeResponses[index].asString().size() == 0){
+    	        					stringstream ss;
+    	        					ss << "API : " << apiName << ", Success";
+    	        					aclAttributeResponses[index] = ss.str();
+    	        				}
+    	        			}
+    	        		}
+
+    	        		if (!atleastOnValidEntry) {
+    	        			// all entries in the array were invalid.
+    	        			for(Json::UInt index = 0; index < root.size(); index++) {
+    	        				responseObject->addError(aclAttributeResponses[index]);
+    	        			}
+    	        			responseObject->finalizeOK();
+    	        			responseObject->printHTTP(req);
+    	        			this->getTransaction()->setUnattached();
+    	        			return false;
+    	        		}
+    	        	} else {
+    	        		aclAttributeResponses.resize(1);
+    	        		// the record parameter is a single json object
+    	        		const Json::Value doc = root;
+    	        		vector<string> atributeList;
+    	        		vector<string> roleIdList;
+    	        		bool  status = processSingleJSONAttributeAcl(doc, action, apiName,
+    	        				aclAttributeResponses[0], roleIdList, atributeList);
+    	        		if (status == false) {
+    	        			responseObject->addError(aclAttributeResponses[0]);
+    	        			responseObject->finalizeOK();
+    	        			responseObject->printHTTP(req);
+    	        			this->getTransaction()->setUnattached();
+    	        			return false;
+    	        		} else {
+    	        			attributeAclDataForApiLayer->push_back(make_pair(roleIdList, atributeList));
+    	        			// if the response is empty then add success message.
+    	        			if (aclAttributeResponses[0].asString().size() == 0){
+    	        				stringstream ss;
+    	        				ss << "API : " << apiName << ", Success";
+    	        				aclAttributeResponses[0] = ss.str();
+    	        			}
+    	        		}
+    	        	}
+    	        }
+    	        break;
+    	    }
+    	    default:
+    	    	this->getSession()->response->finalizeInvalid();
+    	    	this->getTransaction()->setUnattached();
+    	    	return false;
+
+    	}
 
         // When query parameters are parsed successfully, we must create and run AclCommand class and get back
         // its response in a 'consume' callback function.
+
+    	//*** USE: attributeAclDataForApiLayer, action as an argument data  ***.
+
 //        aclCommand = new AclCommand(this/*, and maybe other arguments */);//TODO
     	/*
 			// WriteCommand(ConsumerInterface * consumer, //this
@@ -108,6 +246,143 @@ private:
         return true;
     }
 
+    bool processSingleJSONAttributeAcl(const Json::Value& doc, AclActionType action,
+    		const string& apiName, Json::Value& aclAttributeResponse, vector<string>& roleIds,
+        	vector<string>& attributeList) const{
+
+    	Json::Value attributesToAdd = doc.get("attributes", Json::Value(Json::arrayValue));
+    	Json::Value attributesRoles = doc.get("roleId", Json::Value(Json::arrayValue));
+
+    	if (attributesToAdd.type()  != Json::arrayValue) {
+    		std::stringstream log_str;
+    		log_str << "API : " << apiName << ", Error: 'attributes' key is not an array in request JSON.";
+    		aclAttributeResponse = log_str.str();
+    		return false;
+    	}
+    	if (attributesToAdd.size() == 0) {
+    		std::stringstream log_str;
+    		log_str << "API : " << apiName << ", Error: 'attributes' key is empty or missing in request JSON.";
+    		aclAttributeResponse = log_str.str();
+    		return false;
+    	}
+    	if (attributesRoles.type() != Json::arrayValue) {
+    		std::stringstream log_str;
+    		log_str << "API : " << apiName << ", Error: 'roleId' key is not an array in request JSON.";
+    		aclAttributeResponse = log_str.str();
+    		return false;
+    	}
+    	if (attributesRoles.size() == 0) {
+    		std::stringstream log_str;
+    		log_str << "API : " << apiName << ", Error: 'roleId' key is empty or missing in request JSON.";
+    		aclAttributeResponse = log_str.str();
+    		return false;
+    	}
+    	vector<string> invalidAttributeNames;
+    	for (unsigned i = 0; i < attributesToAdd.size(); ++i) {
+    		Json::Value defaultValueToReturn = Json::Value("");
+    		const Json::Value attribute = attributesToAdd.get(i, defaultValueToReturn);
+    		if (attribute.type() != Json::stringValue){
+    			std::stringstream log_str;
+    			log_str << "API : " << apiName << ", Error: 'attributes' key's element at index "<< i << " is not convertible to string";
+    			aclAttributeResponse = log_str.str();
+    			return false;
+    		}
+    		string tempString = attribute.asString();
+    		boost::algorithm::trim(tempString);
+    		if (tempString.size() != 0) {
+    			if (tempString == "*" || schema->isValidAttribute(tempString)) {
+    				attributeList.push_back(tempString);
+    			} else {
+    				invalidAttributeNames.push_back(tempString);
+    			}
+    		}
+    	}
+
+    	if (attributeList.size() == 0) {
+    		// All elements in the attribute list are either empty or have bogus value.
+    		std::stringstream log_str;
+    		log_str << "API : " << apiName << ", Error: 'attributes' key's elements are not valid.";
+    		aclAttributeResponse = log_str.str();
+    		return false;
+    	}
+
+    	// We have some valid attribute names in attributes list. Check whether there are some invalid
+    	// name as well. If there are invalid attribute names, then generate warning log message and proceed
+    	if (invalidAttributeNames.size() > 0) {
+    		std::stringstream log_str;
+    		if (invalidAttributeNames.size() > 1)
+    			log_str << "API : " << apiName << ", Warning: 'attributes' key has bad attributes = '";
+    		else
+    			log_str << "API : " << apiName << ", Warning: 'attributes' key has bad attribute = '";
+    		for (unsigned i = 0; i < invalidAttributeNames.size(); ++i) {
+    			if (i)
+    				log_str << ", ";
+    			log_str << invalidAttributeNames[i];
+    		}
+    		log_str << "'.";
+    		aclAttributeResponse = log_str.str();
+    	}
+
+    	for (unsigned i = 0; i < attributesRoles.size(); ++i) {
+    		Json::Value defaultValueToReturn = Json::Value("");
+    		const Json::Value roleId = attributesRoles.get(i, defaultValueToReturn);
+
+    		switch (roleId.type()) {
+    		case Json::stringValue:
+    		{
+    			string tempString = roleId.asString();
+    			boost::algorithm::trim(tempString);
+    			if (tempString.size() != 0)
+    				roleIds.push_back(tempString);
+    			break;
+    		}
+    		case Json::intValue:
+    		{
+    			// convert int to string instead of returning error to user
+    			stringstream tempString;
+    			tempString << roleId.asInt64();
+    			roleIds.push_back(tempString.str());
+    			break;
+    		}
+    		case Json::uintValue:
+    		{
+    			// convert unsigned int to string instead of returning error to user
+    			stringstream tempString;
+    			tempString << roleId.asUInt64();
+    			roleIds.push_back(tempString.str());
+    			break;
+    		}
+    		case Json::realValue:
+    		{
+    			// convert double to string instead of returning error to user
+    			stringstream tempString;
+    			tempString << roleId.asDouble();
+    			roleIds.push_back(tempString.str());
+    			break;
+    		}
+    		case Json::arrayValue:
+    		case Json::objectValue:
+    		{
+    			// Can't convert to array ..user should fix the input JSON.
+    			std::stringstream log_str;
+    			log_str << "API : " << apiName << ", Error: 'roleId' key's element at index "<< i << " is not convertible to string";
+    			aclAttributeResponse = log_str.str();
+    			return false;
+    		}
+    		default:
+    			ASSERT(false);
+    		}
+    	}
+
+    	if (roleIds.size() == 0) {
+    		std::stringstream log_str;
+    		log_str << "API : " << apiName << ", Error: 'roleId' key's elements are not valid.";
+    		aclAttributeResponse = log_str.str();
+    		return false;
+    	}
+
+    	return true;
+    }
 
     /*
      * One example of consume callback that will be called by the producer class
