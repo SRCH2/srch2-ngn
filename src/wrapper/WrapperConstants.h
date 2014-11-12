@@ -120,6 +120,7 @@ typedef enum {
 	HTTP_Json_Role_Id_Does_Not_Exist,
 	HTTP_Json_Failed_Due_To_Node_Failure,
 	HTTP_JSON_PK_Does_Not_Exist,
+	HTTP_Json_Data_File_Does_Not_Exist,
 	HTTP_Json_General_Error
 } JsonMessageCode;
 
