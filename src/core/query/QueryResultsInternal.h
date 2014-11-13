@@ -30,6 +30,7 @@
 #include "util/Assert.h"
 #include "util/Logger.h"
 #include "util/SerializationHelper.h"
+#include "../highlighter/Highlighter.h"
 
 #include <vector>
 #include <queue>
@@ -57,6 +58,7 @@ public:
     double physicalDistance; // TODO check if there is a better way to structure the "location result"
     TypedValue _score;
     string externalRecordId;
+    bool exactResultFlag;
     std::vector<vector<unsigned> > attributeIdsList;
     std::vector<unsigned> editDistances;
     std::vector<TermType> termTypes;
@@ -67,6 +69,17 @@ public:
     	return _score;
     }
 
+
+    bool isExactResult() const{
+    	return exactResultFlag;
+    }
+
+    ///// changes related to sharding search
+    string inMemoryRecordString;
+    RecordSnippet recordSnippet;
+    // the values of refining attributes that sort operator needs
+    std::map<std::string,TypedValue> valuesOfParticipatingRefiningAttributes;
+
     unsigned getNumberOfBytes();
 
     /*
@@ -74,7 +87,7 @@ public:
      * | internalRecordId | _score | externalRecordId | attributeBitmaps | \
      *   editDistances | termTypes | matchingKeywords | physicalDistance |
      */
-    void * serializeForNetwork(void * buffer);
+    void * serializeForNetwork(void * buffer) const;
     /*
      * Serialization scheme :
      * | physicalDistance | internalRecordId | _score | externalRecordId | attributeBitmaps | \
@@ -86,7 +99,7 @@ public:
      * | internalRecordId | _score | externalRecordId | attributeBitmaps | \
      *   editDistances | termTypes | matchingKeywords | physicalDistance |
      */
-    unsigned getNumberOfBytesForSerializationForNetwork();
+    unsigned getNumberOfBytesForSerializationForNetwork() const;
 
     friend class QueryResultFactoryInternal;
 private:
@@ -99,8 +112,13 @@ private:
     	editDistances = copy_from_me.editDistances;
     	termTypes = copy_from_me.termTypes;
     	matchingKeywordTrieNodes = copy_from_me.matchingKeywordTrieNodes;
+    	this->inMemoryRecordString = copy_from_me.inMemoryRecordString;
+    	this->recordSnippet = copy_from_me.recordSnippet;
+    	this->valuesOfParticipatingRefiningAttributes =
+    			copy_from_me.valuesOfParticipatingRefiningAttributes;
     }
     QueryResult(){
+    	this->inMemoryRecordString = "";
     };
 };
 
@@ -189,7 +207,7 @@ public:
      * Serialization scheme :
      * | resultsApproximated | estimatedNumberOfResults | sortedFinalResults | facetResults |
      */
-    void * serializeForNetwork(void * buffer);
+    void * serializeForNetwork(void * buffer) const;
     void * deserializeForNetwork(void * buffer,QueryResultFactory * resultsFactory);
     unsigned getNumberOfBytesForSerializationForNetwork() const;
 

@@ -185,6 +185,11 @@ public:
 	std::string docIdForRetrieveByIdSearchType;
 	Query *exactQuery;
 	Query *fuzzyQuery;
+	bool facetOnlyFlag;
+	bool highLightingOnFlag;
+	string roleId;
+	vector<unsigned> accessibleSearchableAttributes; // TODO
+	vector<unsigned> accessibleRefiningAttributes; // TODO
 	/// Plan related information
 	ResultsPostProcessorPlan * postProcessingPlan;
 	ResultsPostProcessingInfo * postProcessingInfo;

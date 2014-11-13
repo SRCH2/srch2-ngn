@@ -37,6 +37,7 @@
 #include "physical_plan/SortByRefiningAttributeOperator.h"
 #include "physical_plan/PhraseSearchOperator.h"
 #include "physical_plan/KeywordSearchOperator.h"
+#include "src/server/ServerHighLighter.h"
 
 #include <vector>
 #include <algorithm>
@@ -226,20 +227,20 @@ int QueryEvaluatorInternal::search(LogicalPlan * logicalPlan , QueryResults *que
 
 			topOperator = bottomOfChain =  facetOperatorPtr;
 		}
-		if(logicalPlan->getPostProcessingInfo()->getSortEvaluator() != NULL){
-			sortOperator = new SortByRefiningAttributeOperator(logicalPlan->getPostProcessingInfo()->getSortEvaluator());
-			SortByRefiningAttributeOptimizationOperator * sortOpOperator =
-					new SortByRefiningAttributeOptimizationOperator();
-			sortOperator->setPhysicalPlanOptimizationNode(sortOpOperator);
-			sortOpOperator->setExecutableNode(sortOperator);
-
-			if(bottomOfChain != NULL){
-				bottomOfChain->getPhysicalPlanOptimizationNode()->addChild(sortOpOperator);
-				bottomOfChain = bottomOfChain->getPhysicalPlanOptimizationNode()->getChildAt(0)->getExecutableNode();
-			}else{
-				topOperator = bottomOfChain = sortOperator;
-			}
-		}
+//		if(logicalPlan->getPostProcessingInfo()->getSortEvaluator() != NULL){
+//			sortOperator = new SortByRefiningAttributeOperator(logicalPlan->getPostProcessingInfo()->getSortEvaluator());
+//			SortByRefiningAttributeOptimizationOperator * sortOpOperator =
+//					new SortByRefiningAttributeOptimizationOperator();
+//			sortOperator->setPhysicalPlanOptimizationNode(sortOpOperator);
+//			sortOpOperator->setExecutableNode(sortOperator);
+//
+//			if(bottomOfChain != NULL){
+//				bottomOfChain->getPhysicalPlanOptimizationNode()->addChild(sortOpOperator);
+//				bottomOfChain = bottomOfChain->getPhysicalPlanOptimizationNode()->getChildAt(0)->getExecutableNode();
+//			}else{
+//				topOperator = bottomOfChain = sortOperator;
+//			}
+//		}
 	}
 
 
@@ -282,6 +283,7 @@ int QueryEvaluatorInternal::search(LogicalPlan * logicalPlan , QueryResults *que
 		newRecord->getRecordMatchEditDistances(queryResult->editDistances);
 		//
 		queryResult->_score.setTypedValue(newRecord->getRecordRuntimeScore(),ATTRIBUTE_TYPE_FLOAT);
+		queryResult->exactResultFlag = newRecord->isExactResult();
 
 		newRecord->getRecordMatchingPrefixes(queryResult->matchingKeywordTrieNodes);
 
@@ -303,6 +305,18 @@ int QueryEvaluatorInternal::search(LogicalPlan * logicalPlan , QueryResults *que
 		// the one we got when the search started.
 		this->getForwardIndex()->getExternalRecordIdFromInternalRecordId(this->indexReadToken.forwardIndexReadViewSharedPtr,
 										 queryResult->internalRecordId,queryResult->externalRecordId );
+
+
+
+		/////////////////////////////////////////////////
+		StoredRecordBuffer buffer = this->getForwardIndex()->getInMemoryData(queryResult->internalRecordId);
+		if (buffer.start.get() != NULL)
+			queryResult->inMemoryRecordString = string(buffer.start.get(), buffer.length);
+		else
+			queryResult->inMemoryRecordString = "";
+
+		queryResult->valuesOfParticipatingRefiningAttributes = newRecord->valuesOfParticipatingRefiningAttributes;
+		/////////////////////////////////////////////////
 	}
 
 	if(facetOperatorPtr != NULL){
@@ -330,6 +344,46 @@ int QueryEvaluatorInternal::search(LogicalPlan * logicalPlan , QueryResults *que
 		delete sortOperator->getPhysicalPlanOptimizationNode();
 		delete sortOperator;
 	}
+
+	////////////////////////////////////////////////////////
+    /*
+     *  Do snippet generation only if
+     *  1. There are attributes marked to be highlighted
+     *  2. Query is not facet only
+     *  3. Highlight is not turned off in the query ( default is on )
+     */
+	/*
+	 *
+	 * TODO for Surendra :
+	 * QueryResults contains the list of records which are going to be sent to
+	 * the sharding broker node to be aggregated. QueryResult now has RecordSnippet which is what
+	 * we must populate in highlighting computation ...
+	 *
+	 * How to access needed things in server highlighting :
+	 * The config object: this->getQueryEvaluatorRuntimeParametersContainer()->coreInfo
+	 * The indexer (IndexReaderWriter) object: this->indexer
+	 * facetOnlyFlag and highLighitingOnFlag : logicalPlan->facetOnlyFlag and logicalPlan->highLightingOn
+	 * inMemoryRecordString of a result : queryResults.getInMemoryRecordStr(result index);
+	 * attribute acl roleId : logicalPlan->roleId
+	 * attribute acl list of accessible attributes :
+	 *  	vector<unsigned> accessibleSearchableAttributes;
+	 *      vector<unsigned> accessibleRefiningAttributes;
+	 *
+	 *
+	 */
+//	if (this->getQueryEvaluatorRuntimeParametersContainer()->coreInfo->getHighlightAttributeIdsVector().size() > 0 ) {
+//		srch2::httpwrapper::ServerHighLighter highlighter =
+//				srch2::httpwrapper::ServerHighLighter(queryResults, server, paramContainer,
+//				logicalPlan->getOffset(), logicalPlan->getNumberOfResultsToRetrieve());
+//		for( unsigned i = 0 ; i < queryResults->impl->sortedFinalResults.size() ; i++){
+//			unsigned recordId = queryResults->getInternalRecordId(i);
+//			RecordSnippet& recordSnippet = queryResults->impl->sortedFinalResults.at(i)->recordSnippet;
+//			genSnippetsForSingleRecord(queryResults, i, recordSnippet);
+//			recordSnippet.recordId =recordId;
+//		}
+//	}
+	////////////////////////////////////////////////////////
+
 
 	return queryResults->impl->sortedFinalResults.size();
 }
@@ -361,6 +415,17 @@ void QueryEvaluatorInternal::search(const std::string & primaryKey, QueryResults
 	queryResult->externalRecordId = primaryKey;
 	queryResult->internalRecordId = internalRecordId;
 	queryResult->_score.setTypedValue((float)0.0,ATTRIBUTE_TYPE_FLOAT);
+
+	/////////////////////////////////////////////////
+	StoredRecordBuffer buffer = this->getForwardIndex()->getInMemoryData(queryResult->internalRecordId);
+	if (buffer.start.get() != NULL)
+		queryResult->inMemoryRecordString = string(buffer.start.get(), buffer.length);
+	else
+		queryResult->inMemoryRecordString = "";
+
+//	queryResult->valuesOfParticipatingRefiningAttributes = newRecord->valuesOfParticipatingRefiningAttributes;
+	/////////////////////////////////////////////////
+
 	queryResults->impl->sortedFinalResults.push_back(queryResult);
 	return;
 }

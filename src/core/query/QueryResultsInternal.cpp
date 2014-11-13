@@ -134,7 +134,7 @@ bool QueryResultsInternal::checkCacheHit(
  * Serialization scheme :
  * | resultsApproximated | estimatedNumberOfResults | sortedFinalResults | facetResults |
  */
-void * QueryResultsInternal::serializeForNetwork(void * buffer){
+void * QueryResultsInternal::serializeForNetwork(void * buffer) const{
 
 	buffer = srch2::util::serializeFixedTypes(resultsApproximated , buffer);
 	buffer = srch2::util::serializeFixedTypes(estimatedNumberOfResults , buffer);
@@ -145,13 +145,13 @@ void * QueryResultsInternal::serializeForNetwork(void * buffer){
 	}
 	// 	std::map<std::string , std::pair< FacetType , std::vector<std::pair<std::string, float> > > > facetResults;
 	buffer = srch2::util::serializeFixedTypes(unsigned(facetResults.size()), buffer); // size of map
-	for(std::map<std::string , std::pair< FacetType , std::vector<std::pair<std::string, float> > > >::iterator facetResultItr =
+	for(std::map<std::string , std::pair< FacetType , std::vector<std::pair<std::string, float> > > >::const_iterator facetResultItr =
 			facetResults.begin() ; facetResultItr != facetResults.end() ; ++facetResultItr){
 		buffer = srch2::util::serializeString(facetResultItr->first, buffer); // string
 		buffer = srch2::util::serializeFixedTypes(facetResultItr->second.first, buffer); // FacetType
-		std::vector<std::pair<std::string, float> > & vectorToSerialize = facetResultItr->second.second;
+		const std::vector<std::pair<std::string, float> > & vectorToSerialize = facetResultItr->second.second;
 		buffer = srch2::util::serializeFixedTypes(unsigned(vectorToSerialize.size()), buffer); // vector size
-		for(std::vector<std::pair<std::string, float> >::iterator pairItr = vectorToSerialize.begin();
+		for(std::vector<std::pair<std::string, float> >::const_iterator pairItr = vectorToSerialize.begin();
 				pairItr != vectorToSerialize.end() ; ++pairItr){
 			buffer = srch2::util::serializeString(pairItr->first, buffer); // string
 			buffer = srch2::util::serializeFixedTypes(pairItr->second, buffer); // float
@@ -375,6 +375,7 @@ void QueryResultsInternal::finalizeResults(const ForwardIndex *forwardIndex) {
 unsigned QueryResult::getNumberOfBytes(){
 	unsigned result = sizeof(QueryResult);
 	result += externalRecordId.capacity();
+	result += sizeof(exactResultFlag);
 	result += _score.getNumberOfBytes() - sizeof(TypedValue);
 	for(unsigned i=0 ; i< matchingKeywords.size(); ++i){
 		result += matchingKeywords[i].capacity();
@@ -393,16 +394,24 @@ unsigned QueryResult::getNumberOfBytes(){
  * | internalRecordId | _score | externalRecordId | attributeBitmaps | \
  *   editDistances | termTypes | matchingKeywords | physicalDistance |
  */
-void * QueryResult::serializeForNetwork(void * buffer){
+void * QueryResult::serializeForNetwork(void * buffer) const{
 	buffer = srch2::util::serializeFixedTypes(internalRecordId, buffer);
 	buffer = srch2::util::serializeFixedTypes(physicalDistance, buffer);
 	buffer = _score.serializeForNetwork(buffer);
 	buffer = srch2::util::serializeString(externalRecordId, buffer);
+	buffer = srch2::util::serializeFixedTypes(exactResultFlag, buffer);
 	buffer = srch2::util::serializeVectorOfFixedTypes(attributeIdsList, buffer);
 	buffer = srch2::util::serializeVectorOfFixedTypes(editDistances, buffer);
 	buffer = srch2::util::serializeVectorOfFixedTypes(termTypes, buffer);
 	buffer = srch2::util::serializeVectorOfString(matchingKeywords, buffer);
-
+	buffer = srch2::util::serializeString(inMemoryRecordString, buffer);
+	buffer = recordSnippet.serializeForNetwork(buffer);
+	buffer = srch2::util::serializeFixedTypes((unsigned)valuesOfParticipatingRefiningAttributes.size(), buffer);
+	for(std::map<std::string,TypedValue>::const_iterator attItr =
+			valuesOfParticipatingRefiningAttributes.begin(); attItr != valuesOfParticipatingRefiningAttributes.end(); ++attItr){
+		buffer = srch2::util::serializeString(attItr->first, buffer);
+		buffer = srch2::util::serializeFixedTypes(attItr->second, buffer);
+	}
 	return buffer;
 }
 /*
@@ -416,10 +425,22 @@ void * QueryResult::deserializeForNetwork(QueryResult * &queryResult, void * buf
 	buffer = srch2::util::deserializeFixedTypes(buffer, queryResult->physicalDistance);
 	buffer = TypedValue::deserializeForNetwork(queryResult->_score, buffer);
 	buffer = srch2::util::deserializeString(buffer, queryResult->externalRecordId);
+	buffer = srch2::util::deserializeFixedTypes(buffer, queryResult->exactResultFlag);
 	buffer = srch2::util::deserializeVectorOfFixedTypes(buffer, queryResult->attributeIdsList);
 	buffer = srch2::util::deserializeVectorOfFixedTypes(buffer, queryResult->editDistances);
 	buffer = srch2::util::deserializeVectorOfFixedTypes(buffer, queryResult->termTypes);
 	buffer = srch2::util::deserializeVectorOfString(buffer, queryResult->matchingKeywords);
+
+	buffer = srch2::util::deserializeString(buffer, queryResult->inMemoryRecordString);
+	buffer = RecordSnippet::deserializeForNetwork(buffer, queryResult->recordSnippet);
+	unsigned mapSize = 0;
+	buffer = srch2::util::deserializeFixedTypes(buffer, mapSize);
+	for(unsigned i =0 ; i < mapSize; ++i){
+		string stringKey;
+		TypedValue typedValueValue;
+		buffer = srch2::util::deserializeString(buffer, stringKey);
+		buffer = srch2::util::deserializeFixedTypes(buffer, typedValueValue);
+	}
 
 	return buffer;
 }
@@ -428,16 +449,25 @@ void * QueryResult::deserializeForNetwork(QueryResult * &queryResult, void * buf
  * | internalRecordId | _score | externalRecordId | attributeBitmaps | \
  *   editDistances | termTypes | matchingKeywords | physicalDistance |
  */
-unsigned QueryResult::getNumberOfBytesForSerializationForNetwork(){
+unsigned QueryResult::getNumberOfBytesForSerializationForNetwork() const{
 	unsigned numberOfBytes = 0;
 	numberOfBytes += sizeof(internalRecordId);
 	numberOfBytes += sizeof(physicalDistance);
 	numberOfBytes += _score.getNumberOfBytesForSerializationForNetwork();
 	numberOfBytes += sizeof(unsigned) + externalRecordId.size();
+	numberOfBytes += sizeof(exactResultFlag);
 	numberOfBytes += srch2::util::getNumberOfBytesVectorOfFixedTypes(attributeIdsList);
 	numberOfBytes += srch2::util::getNumberOfBytesVectorOfFixedTypes(editDistances);
 	numberOfBytes += srch2::util::getNumberOfBytesVectorOfFixedTypes(termTypes);
 	numberOfBytes += srch2::util::getNumberOfBytesVectorOfString(matchingKeywords);
+	numberOfBytes += sizeof(unsigned) + inMemoryRecordString.size();
+	numberOfBytes += recordSnippet.getNumberOfBytesOfSnippets();
+	numberOfBytes += sizeof(unsigned);
+	for(std::map<std::string,TypedValue>::const_iterator attItr =
+			valuesOfParticipatingRefiningAttributes.begin(); attItr != valuesOfParticipatingRefiningAttributes.end(); ++attItr){
+		numberOfBytes += sizeof(unsigned) + attItr->first.size();
+		numberOfBytes += sizeof(attItr->second);
+	}
 
 	return numberOfBytes;
 }

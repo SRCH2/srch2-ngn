@@ -5,7 +5,6 @@
 #include "util/FileOps.h"
 #include "server/Srch2Server.h"
 
-#include "serializables/SerializableSearchCommandInput.h"
 #include "serializables/SerializableGetInfoCommandInput.h"
 #include "sharding/sharding/notifications/Write2PCNotification.h"
 #include "sharding/sharding/metadata_manager/ResourceMetadataManager.h"
@@ -36,19 +35,28 @@ DPInternalRequestHandler::DPInternalRequestHandler(ConfigManager * configuration
  * 2. Uses core to evaluate this search query
  * 3. Sends the results to the shard which initiated this search query
  */
-SearchCommandResults * DPInternalRequestHandler::internalSearchCommand(const NodeTargetShardInfo & target,
-		boost::shared_ptr<const ClusterResourceMetadata_Readview> clusterReadview, SearchCommand * searchData){
+SP(SearchCommandResults) DPInternalRequestHandler::internalSearchCommand(SP(SearchCommand) command){
 
+	const NodeTargetShardInfo & target = command->getTarget();
+	boost::shared_ptr<const ClusterResourceMetadata_Readview> clusterReadview = command->getReadview();
+	LogicalPlan * logicalPlan = command->getLogicalPlan();
+	if(logicalPlan == NULL){
+		return SP(SearchCommandResults)();
+	}
 	// 0. use target and readview to get Srch2Server pointers
 	vector<const Shard *> shards;
 	clusterReadview->getLocalShardContainer(target.getCoreId())->getShards(target,shards);
+	if(shards.empty()){
+		return SP(SearchCommandResults)();
+	}
 	// 1. create multiple threads to take care of each shard in target.
 	vector<ShardSearchArgs *> allShardsSearchArguments;
     pthread_t * shardSearchThreads = new pthread_t[shards.size()];
 	struct timespec * tstarts = new timespec[shards.size()];
 	for(unsigned shardIdx = 0; shardIdx < shards.size(); ++shardIdx){
 		const Shard * shard = shards.at(shardIdx);
-		ShardSearchArgs * shardSearchArgs = new ShardSearchArgs(new LogicalPlan(*(searchData->getLogicalPlan())),
+		//// !!!!!!! WARNING !!!!!!! : if these is a bug it might be because of not cloning logical plan
+		ShardSearchArgs * shardSearchArgs = new ShardSearchArgs(logicalPlan, // new LogicalPlan(*logicalPlan)
 				shard->getSrch2Server().get(), shard->getShardIdentifier());
 		allShardsSearchArguments.push_back(shardSearchArgs);
 		clock_gettime(CLOCK_REALTIME, &tstarts[shardIdx]);
@@ -56,7 +64,7 @@ SearchCommandResults * DPInternalRequestHandler::internalSearchCommand(const Nod
 		// it finds the results and gives us the query results in these structures
 	    if (pthread_create(&shardSearchThreads[shardIdx], NULL, searchInShardThreadWork , shardSearchArgs) != 0){
 	        perror("Cannot create thread for handling local message");
-	        return NULL;
+	        return SP(SearchCommandResults)();
 	    }
 	}
 	delete tstarts;
@@ -75,7 +83,7 @@ SearchCommandResults * DPInternalRequestHandler::internalSearchCommand(const Nod
 	// at this point all shard searches are done.
 	// aggregate query results and etc ...
     // search results to be serialized and sent over the network
-    SearchCommandResults * searchResults = new SearchCommandResults();
+    SP(SearchCommandResults) searchResults = SP(SearchCommandResults)(new SearchCommandResults());
 	for(unsigned shardIdx = 0; shardIdx < shards.size(); ++shardIdx){
 		ShardSearchArgs * shardResultsArgs = allShardsSearchArguments.at(shardIdx);
 		searchResults->addShardResults(shardResultsArgs->shardResults);
@@ -92,21 +100,10 @@ void * DPInternalRequestHandler::searchInShardThreadWork(void * args){
     // search in core
     // TODO : is it possible to make executor and planGen singleton ?
     const CoreInfo_t *indexDataContainerConf = shardSearchArgs->server->getCoreInfo();
-    QueryExecutor qe(*(shardSearchArgs->logicalPlan), &(shardSearchArgs->shardResults->resultsFactory), shardSearchArgs->server , indexDataContainerConf);
+    QueryExecutor qe(*(shardSearchArgs->logicalPlan), &(shardSearchArgs->shardResults->resultsFactory),
+    		shardSearchArgs->server , indexDataContainerConf);
     // in here just allocate an empty QueryResults object, it will be initialized in execute.
-    qe.executeForDPInternal(&(shardSearchArgs->shardResults->queryResults), shardSearchArgs->shardResults->inMemoryRecordStrings);
-
-    if (shardSearchArgs->server->getCoreInfo()->getHighlightAttributeIdsVector().size() > 0 ) {
-    	    //TODO: V1 we need these two parameters in DP internal
-    		//!paramContainer.onlyFacets &&
-    		//paramContainer.isHighlightOn) {
-    	ParsedParameterContainer paramContainer; // temp for V0
-
-    	QueryResults *finalResults = &(shardSearchArgs->shardResults->queryResults);
-    	ServerHighLighter highlighter =  ServerHighLighter(finalResults, shardSearchArgs->server, paramContainer,
-    			shardSearchArgs->logicalPlan->getOffset(), shardSearchArgs->logicalPlan->getNumberOfResultsToRetrieve());
-    	highlighter.generateSnippets(shardSearchArgs->shardResults->inMemoryRecordStrings);
-    }
+    qe.execute(&(shardSearchArgs->shardResults->queryResults));
 	//
 	return NULL;
 }

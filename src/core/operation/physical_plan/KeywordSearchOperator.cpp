@@ -75,6 +75,7 @@ bool KeywordSearchOperator::open(QueryEvaluatorInternal * queryEvaluator, Physic
                 continue;
             }
             //
+            newRecord->setExactResult(! logicalPlan->isFuzzy());
             resultIds.push_back(newRecord->getRecordId());
             results.push_back(newRecord);
 

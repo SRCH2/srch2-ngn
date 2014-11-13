@@ -32,13 +32,6 @@ bool RequestMessageHandler::resolveMessage(Message * msg, NodeId node){
 	// 2. Second, based on the type of this message, deserialize Request objects
    	bool resultFlag = true;
 	switch(msg->getType()){
-    case SearchCommandMessageType: // -> for LogicalPlan object
-    {
-    	SearchCommand * searchCommand = SearchCommand::deserialize(buffer, clusterReadview->getCore(target.getCoreId())->getSchema());
-        resultFlag = resolveMessage(searchCommand, node, msg->getMessageId(), target, msg->getType(), clusterReadview);
-        delete searchCommand;
-        break;
-    }
     case GetInfoCommandMessageType: // -> for GetInfoCommandInput object (used for getInfo)
     {
     	GetInfoCommand* getInfoCommand = GetInfoCommand::deserialize(buffer);
@@ -58,15 +51,9 @@ bool RequestMessageHandler::resolveMessage(Message * msg, NodeId node){
 
 void RequestMessageHandler::deleteResponseRequestObjectBasedOnType(ShardingMessageType type, void * responseObject){
     switch (type) {
-    case SearchResultsMessageType: // -> for LogicalPlan object
-        delete (SearchCommandResults*)responseObject;
-        return;
     case GetInfoResultsMessageType: // -> for DeleteCommandInput object (used for delete)
     	delete (GetInfoCommandResults*)responseObject;
     	return;
-    case SearchCommandMessageType:
-        delete (SearchCommand*)responseObject;
-        return;
     case GetInfoCommandMessageType:
     	delete (GetInfoCommand *)responseObject;
     	return;

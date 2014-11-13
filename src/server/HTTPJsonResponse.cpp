@@ -191,6 +191,16 @@ const string JsonResponseHandler::getJsonSingleMessageStr(const JsonMessageCode 
 	}
 }
 
+const string JsonResponseHandler::getCustomMessageStr(const JsonMessageCode code, const string variablePart){
+	switch (code) {
+	case HTTP_Json_Node_Failure:
+		return "Node " + variablePart + " failed. Search results may be incomplete, please retry.";
+	default:
+		ASSERT(false);
+		return "Unknown error.";
+	}
+}
+
 void JsonResponseHandler::appendDetails(Json::Value & destinationRoot, const Json::Value & sourceRoot, const char * destListRootName ){
 	if(sourceRoot == nullJsonValue || destinationRoot == nullJsonValue ||
 			sourceRoot.type() != Json::arrayValue ){
@@ -247,7 +257,7 @@ void JsonResponseHandler::mergeMessageLists(Json::Value & destinationList, const
 }
 
 JsonResponseHandler::JsonResponseHandler() :
-		jsonResponse(Json::objectValue) {
+		jsonResponse(new Json::Value(Json::objectValue)) {
 	this->code = HTTP_OK;
 	this->reason = NULL;
 	this->headers = NULL;
@@ -255,7 +265,7 @@ JsonResponseHandler::JsonResponseHandler() :
 }
 
 JsonResponseHandler::JsonResponseHandler(evhttp_request *req) :
-		jsonResponse(Json::objectValue) {
+		jsonResponse(new Json::Value(Json::objectValue)) {
 	ASSERT(req != NULL);
 	this->code = HTTP_OK;
 	this->reason = NULL;
@@ -281,6 +291,22 @@ void JsonResponseHandler::setResponseAttribute(const char * attributeName,
 		return;
 	}
 	JsonResponseHandler::getRoot()[attributeName] = resAttr;
+}
+
+void JsonResponseHandler::setRoot(Json::Value * root){
+	if(root == NULL){
+		ASSERT(false);
+		return;
+	}
+	for( Json::ValueIterator itr = jsonResponse->begin() ; itr != jsonResponse->end() ; itr++ ) {
+		if(root->get(itr.key().asString(), nullJsonValue) != nullJsonValue ){
+			//TODO : this case is not needed now
+			continue;
+		}
+		(*root)[itr.key().asString()] = (*jsonResponse)[itr.key().asString()];
+	}
+	delete jsonResponse;
+	jsonResponse = root;
 }
 
 void JsonResponseHandler::finalizeInvalid() {
@@ -367,7 +393,7 @@ void JsonResponseHandler::addMessage(const string& msg) {
 }
 
 Json::Value& JsonResponseHandler::getRoot() {
-	return this->jsonResponse;
+	return *(this->jsonResponse);
 }
 
 const char * JsonRecordOperationResponse::c_items = "items";
@@ -473,7 +499,7 @@ void JsonRecordOperationResponse::addRecordShardResponse(Json::Value recordShard
 
 
 Json::Value & JsonRecordOperationResponse::getRoot(){
-	return jsonResponse[c_items];
+	return (*jsonResponse)[c_items];
 }
 
 Json::Value & JsonRecordOperationResponse::findItemRoot(const string & primaryKey, const string & action){

@@ -65,7 +65,7 @@ private:
 
 	void run(){
 		if(! _run()){
-			Logger::sharding(Logger::Step, "ShardCommand(%s, core:??)| failed in parsing.", action_name.c_str() );
+			Logger::sharding(Logger::Step, "ShardCommand(%s, core: -- )| failed in parsing.", action_name.c_str() );
 			return;
 		}
 		return;

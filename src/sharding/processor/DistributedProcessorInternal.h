@@ -16,9 +16,10 @@
 #include <boost/thread/shared_mutex.hpp>
 #include <boost/thread/locks.hpp>
 
-#include "serializables/SerializableSearchResults.h"
 #include "sharding/sharding/notifications/CommandStatusNotification.h"
 #include "sharding/sharding/notifications/CommandNotification.h"
+#include "sharding/sharding/notifications/SearchCommandNotification.h"
+#include "sharding/sharding/notifications/SearchCommandResultsNotification.h"
 #include "sharding/sharding/notifications/Write2PCNotification.h"
 #include "sharding/sharding/notifications/AclAttributeReadNotification.h"
 #include "serializables/SerializableGetInfoResults.h"
@@ -61,8 +62,7 @@ public:
      * 2. Uses core to evaluate this search query
      * 3. Sends the results to the shard which initiated this search query
      */
-    SearchCommandResults * internalSearchCommand(const NodeTargetShardInfo & target,
-    		boost::shared_ptr<const ClusterResourceMetadata_Readview> clusterReadview, SearchCommand * searchData);
+    SP(SearchCommandResults) internalSearchCommand(SP(SearchCommand) command);
 
 
     /*
@@ -117,9 +117,9 @@ private:
     		this->shardResults = new SearchCommandResults::ShardResults(shardIdentifier);
     	}
     	~ShardSearchArgs(){
-    		if(logicalPlan != NULL){
-    			delete logicalPlan;
-    		}
+//    		if(logicalPlan != NULL){
+//    			delete logicalPlan;
+//    		}
     	}
     	LogicalPlan * logicalPlan;
     	Srch2Server * server;

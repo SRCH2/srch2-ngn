@@ -80,6 +80,8 @@ enum ShardingMessageType{
     InsertUpdateCommandMessageType,
     ShardingWriteCommand2PCMessageType,
     ShardingWriteCommand2PCACKMessageType,
+    ShardingSearchCommandMessageType,
+    ShardingSearchResultsMessageType,
 
     // just notifications
     ShardingMMNotificationMessageType,
@@ -272,6 +274,7 @@ enum ShardingTransactionType{
 	ShardingTransactionType_AttributeAclCommandCode,
 	ShardingTransactionType_RecordAclCommandCode,
 	ShardingTransactionType_InsertUpdateCommand,
+	ShardingTransactionType_ReadCommand,
 	ShardingTransactionType_Shutdown
 };
 

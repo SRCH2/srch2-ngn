@@ -73,7 +73,7 @@ QueryResults::~QueryResults(){
 	delete impl;
 }
 
-void * QueryResults::serializeForNetwork(void * buffer){
+void * QueryResults::serializeForNetwork(void * buffer) const{
 	return impl->serializeForNetwork(buffer);
 }
 void * QueryResults::deserializeForNetwork(QueryResults &queryResults, void * buffer,QueryResultFactory * resultsFactory){
@@ -123,6 +123,9 @@ unsigned QueryResults::getInternalRecordId(unsigned position) const {
  *   this function is called from unit test. Do not use it in wrapper layer.
  */
 std::string QueryResults::getInMemoryRecordString(unsigned position) const {
+	if(impl->sortedFinalResults.at(position)->inMemoryRecordString.compare("") != 0){
+		return impl->sortedFinalResults.at(position)->inMemoryRecordString;
+	}
 	if(impl->queryEvaluatorInternal == NULL){
 		return "";// this can only happen in test cases
 	}

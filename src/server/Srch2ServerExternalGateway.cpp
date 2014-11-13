@@ -6,6 +6,7 @@
 #include "sharding/sharding/transactions/cluster_transactions/ShardCommandHttp.h"
 #include "sharding/sharding/transactions/cluster_transactions/WriteCommandHttp.h"
 #include "sharding/sharding/transactions/cluster_transactions/AclCommandHttp.h"
+#include "sharding/sharding/transactions/cluster_transactions/ReadCommandHttp.h"
 #include "sharding/sharding/transactions/cluster_transactions/ClusterShutdownOperation.h"
 #include <exception>
 
@@ -70,7 +71,7 @@ void Srch2ServerGateway::cb_coreSpecificOperations(struct evhttp_request * req, 
     try{
     	switch (portType){
     	case srch2http::SearchPort:
-    		dpExternal->externalSearchCommand(clusterReadview, req, coreId);
+    		ReadCommandHttp::search(clusterReadview, req, coreId);
     		break;
     	case srch2http::SuggestPort:
 //    		dpExternal->externalSuggestCommand(req, coreId); //TODO
