@@ -89,7 +89,8 @@ private:
      */
     void consume(const map<string, bool> & results,
 			map<string, map<ShardId * ,vector<JsonMessageCode>, ShardPtrComparator > > & messageCodes){
-
+    	// TODO
+    	// TODO_FOR_SURENDRA
     	if (!bulkLoader->isBulkLoadDone()) {
     		bulkLoader->produce();
     		return;

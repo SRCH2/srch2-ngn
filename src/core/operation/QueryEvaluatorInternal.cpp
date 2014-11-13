@@ -353,7 +353,7 @@ int QueryEvaluatorInternal::search(LogicalPlan * logicalPlan , QueryResults *que
      *  3. Highlight is not turned off in the query ( default is on )
      */
 	/*
-	 *
+	 * TODO_FOR_SURENDRA
 	 * TODO for Surendra :
 	 * QueryResults contains the list of records which are going to be sent to
 	 * the sharding broker node to be aggregated. QueryResult now has RecordSnippet which is what
