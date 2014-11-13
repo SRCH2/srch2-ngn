@@ -294,19 +294,16 @@ bool ConfigManager::loadConfigFile(srch2http::ResourceMetadataManager * metadata
     for(unsigned coreIdx = 0 ; coreIdx < clusterCores.size() ; ++coreIdx){
     	CoreInfo_t * coreInfo = clusterCores[coreIdx];
     	if(coreInfo != NULL){
-    		if (coreInfo->getNumberOfPrimaryShards() == 0 &&
-    			coreInfo->dataFilePath == "" && coreInfo->dataFilePaths.size() == 0) {
+    		if (coreInfo->getNumberOfPrimaryShards() == 0 && coreInfo->dataFilePath == "") {
     			Logger::error("Either primary shards should be greater than 0 or the data file"
     					" for bulk load should be specified.");
     			return false;
     		}
-    		if (coreInfo->getNumberOfPrimaryShards() > 0 &&
-    				(coreInfo->dataFilePath != "" || coreInfo->dataFilePath.size() != 0)) {
+    		if (coreInfo->getNumberOfPrimaryShards() > 0 && coreInfo->dataFilePath != "") {
     			// It is harsh to error out ..I think best action is to ignore data file.
     			Logger::warn("Primary shard count is greater than 0. Ignoring bulk load file "
     					"mentioned in the config file. For bulk load use HTTP layer API");
     			coreInfo->dataFilePath = "";
-    			coreInfo->dataFilePath.clear();
     		}
     	}
     }
