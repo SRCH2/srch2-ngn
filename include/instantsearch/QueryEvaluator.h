@@ -28,6 +28,7 @@
 #include <instantsearch/LogicalPlan.h>
 #include <instantsearch/QueryResults.h>
 #include <instantsearch/Query.h>
+#include "src/sharding/configuration/ConfigManager.h"
 
 namespace srch2
 {
@@ -41,28 +42,45 @@ public:
 	unsigned keywordPopularityThreshold;
 	unsigned getAllMaximumNumberOfResults;
 	unsigned getAllTopKReplacementK;
+	const srch2::httpwrapper::CoreInfo_t * coreInfo;
 
 	QueryEvaluatorRuntimeParametersContainer(){
 		keywordPopularityThreshold = 50000;
 		getAllMaximumNumberOfResults = 500;
+		this->coreInfo = NULL;
 	}
 
 	QueryEvaluatorRuntimeParametersContainer(unsigned keywordPopularityThreshold){
 		this->keywordPopularityThreshold = keywordPopularityThreshold;
 		this->getAllMaximumNumberOfResults = 500;
 		this->getAllTopKReplacementK = 500;
+		this->coreInfo = NULL;
 	}
 
-	QueryEvaluatorRuntimeParametersContainer(unsigned keywordPopularityThreshold, unsigned getAllMaximumNumberOfResults, unsigned getAllTopKReplacementK){
+	QueryEvaluatorRuntimeParametersContainer(unsigned keywordPopularityThreshold,
+			unsigned getAllMaximumNumberOfResults,
+			unsigned getAllTopKReplacementK){
 		this->keywordPopularityThreshold = keywordPopularityThreshold;
 		this->getAllMaximumNumberOfResults = getAllMaximumNumberOfResults;
 		this->getAllTopKReplacementK = getAllTopKReplacementK;
+		this->coreInfo = NULL;
+	}
+
+	QueryEvaluatorRuntimeParametersContainer(unsigned keywordPopularityThreshold,
+			unsigned getAllMaximumNumberOfResults,
+			unsigned getAllTopKReplacementK,
+			const srch2::httpwrapper::CoreInfo_t * coreInfo){
+		this->keywordPopularityThreshold = keywordPopularityThreshold;
+		this->getAllMaximumNumberOfResults = getAllMaximumNumberOfResults;
+		this->getAllTopKReplacementK = getAllTopKReplacementK;
+		this->coreInfo = coreInfo;
 	}
 
 	QueryEvaluatorRuntimeParametersContainer(const QueryEvaluatorRuntimeParametersContainer & copy){
 		this->keywordPopularityThreshold = copy.keywordPopularityThreshold;
 		this->getAllMaximumNumberOfResults = copy.getAllMaximumNumberOfResults;
 		this->getAllTopKReplacementK = copy.getAllTopKReplacementK;
+		this->coreInfo = copy.coreInfo;
 	}
 };
 
@@ -107,9 +125,6 @@ public:
 
     // for retrieving only one result by having the primary key
     void search(const std::string & primaryKey, QueryResults *queryResults) ;
-
-    /// Get the in memory data stored with the record in the forwardindex. Access through the internal recordid.
-    StoredRecordBuffer getInMemoryData(unsigned internalRecordId) const ;
 
     void cacheClear() ;
     /**

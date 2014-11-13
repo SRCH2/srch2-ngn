@@ -48,12 +48,6 @@ public:
     	}
     	ASSERT(reply->isDPReply());
     	switch (reply->getType()) {
-			case SearchResultsMessageType:
-			{
-				SearchCommandResults * searchResults =
-						SearchCommandResults::deserialize(Message::getBodyPointerFromMessagePointer(reply));
-				return resolveReply(searchResults, nodeId , reply->getRequestMessageId());
-			}
 			case GetInfoResultsMessageType:
 			{
 				GetInfoCommandResults * getInfoResult =

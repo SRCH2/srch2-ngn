@@ -60,7 +60,7 @@ void QueryExecutor::execute(QueryResults * finalResults) {
     // Each time IndexSearcher is created, we container must be made and passed to it as an argument.
     QueryEvaluatorRuntimeParametersContainer runTimeParameters(configuration->getKeywordPopularityThreshold(),
     		configuration->getGetAllResultsNumberOfResultsThreshold() ,
-    		configuration->getGetAllResultsNumberOfResultsToFindInEstimationMode());
+    		configuration->getGetAllResultsNumberOfResultsToFindInEstimationMode(), configuration);
     this->queryEvaluator = new srch2is::QueryEvaluator(server->getIndexer() , &runTimeParameters );
 
     //do the search
@@ -80,66 +80,6 @@ void QueryExecutor::execute(QueryResults * finalResults) {
     // Free objects
     delete queryEvaluator; // Physical plan and physical operators and physicalRecordItems are freed here
 }
-
-void QueryExecutor::executeForDPInternal(QueryResults * finalResults,
-		map<string, std::pair<string, RecordSnippet> > & inMemoryRecordStrings) {
-
-	///////////////////////////////////////////////////////////////////
-	///////////////////////////////////////////////////////////////////
-	/*
-	 * changes:
-	 * 1. GetAll and topK must be merged. The difference must be pushed to the core.
-	 * 2. MapQuery and retrievById will remain unchanged (their search function must change because the names will change)
-	 * 3. LogicalPlan must be passed to QueryEvaluator (which is in core) to be evaluated.
-	 * 4. No exact/fuzzy policy must be applied here.
-	 * 5. Postprocessing framework must be prepared to be applied on the results (its code comes from QueryPlanGen)
-	 * 6. Post processing filters are applied on results list.
-	 */
-	///////////////////////////////////////////////////////////////////
-	///////////////////////////////////////////////////////////////////
-
-    //urlParserHelper.print();
-    //evhttp_clear_headers(&headers);
-    // "IndexSearcherRuntimeParametersContainer" is the class which contains the parameters that we want to send to the core.
-    // Each time IndexSearcher is created, we container must be made and passed to it as an argument.
-    QueryEvaluatorRuntimeParametersContainer runTimeParameters(configuration->getKeywordPopularityThreshold(),
-    		configuration->getGetAllResultsNumberOfResultsThreshold() ,
-    		configuration->getGetAllResultsNumberOfResultsToFindInEstimationMode());
-    this->queryEvaluator = new srch2is::QueryEvaluator(server->getIndexer() , &runTimeParameters );
-
-    //do the search
-    switch (queryPlan.getQueryType()) {
-    case srch2is::SearchTypeTopKQuery: //TopK
-    case srch2is::SearchTypeGetAllResultsQuery: //GetAllResults
-        executeKeywordSearch(finalResults);
-        break;
-    case srch2is::SearchTypeRetrieveById:
-    	executeRetrieveById(finalResults);
-    	break;
-    default:
-        ASSERT(false);
-        break;
-    };
-
-    // get the in memory data of records before we delete queryEvaluator
-    fillInMemoryRecordStrings(finalResults, inMemoryRecordStrings);
-
-    // Free objects
-    delete queryEvaluator; // Physical plan and physical operators and physicalRecordItems are freed here
-}
-
-void QueryExecutor::fillInMemoryRecordStrings(QueryResults * queryResults,
-		map<string, std::pair<string, RecordSnippet> > & inMemoryRecordStrings){
-	if(queryResults == NULL){
-		return;
-	}
-	// iterate on query results and save the inMemoryStrings in the map
-	for(unsigned resultIndex = 0 ; resultIndex < queryResults->getNumberOfResults(); ++resultIndex){
-		inMemoryRecordStrings[queryResults->getRecordId(resultIndex)] =
-				std::make_pair(queryResults->getInMemoryRecordString(resultIndex), RecordSnippet());
-	}
-}
-
 
 void QueryExecutor::executeKeywordSearch(QueryResults * finalResults) {
 
@@ -150,14 +90,7 @@ void QueryExecutor::executeKeywordSearch(QueryResults * finalResults) {
     finalResults->init(this->queryResultFactory, queryEvaluator,
             this->queryPlan.getExactQuery());
 
-    int idsFound = 0;
-
-    idsFound = queryEvaluator->search(&queryPlan,finalResults);
-
-    // this post processing plan will be applied on exactQueryResults object and
-    // the final results will be copied into finalResults
-//    executePostProcessingPlan(this->queryPlan.getExactQuery(),
-//            exactQueryResults, finalResults);
+    int idsFound = queryEvaluator->search(&queryPlan,finalResults);
 
 }
 

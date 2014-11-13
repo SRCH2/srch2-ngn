@@ -43,8 +43,6 @@ public:
 	QueryExecutor(LogicalPlan & queryPlan , QueryResultFactory * resultsFactory ,Srch2Server *server, const CoreInfo_t * configuration );
 
 	void execute(QueryResults * finalResults);
-	void executeForDPInternal(QueryResults * finalResults,
-			map<string, std::pair<string, RecordSnippet> > & inMemoryRecordStrings) ;
 	void executeKeywordSearch(QueryResults * finalResults);
 	void executeRetrieveById(QueryResults * finalResults);
 
@@ -58,8 +56,6 @@ private:
 	QueryEvaluator * queryEvaluator;
 	const CoreInfo_t * configuration;
 
-	void fillInMemoryRecordStrings(QueryResults * queryResults,
-			map<string, std::pair<string, RecordSnippet> > & inMemoryRecordStrings);
 };
 
 }

@@ -145,9 +145,9 @@ namespace srch2
     	 * | | timeTypedMultiValue |
     	 * NOTE : we don't serialize TimeDuration for now because we don't need it
     	 */
-        void * serializeForNetwork(void * buffer);
+        void * serializeForNetwork(void * buffer) const;
         static void * deserializeForNetwork(TypedValue &value, void * buffer);
-        unsigned getNumberOfBytesForSerializationForNetwork();
+        unsigned getNumberOfBytesForSerializationForNetwork() const;
 
     private:
     	FilterType valueType;

@@ -50,15 +50,6 @@ public:
 
 	// Public API which can be used by other modules
 
-	/*
-	 * 1. Receives a search request from a client (not from another shard)
-	 * 2. broadcasts this request to DPInternalRequestHandler objects of other shards
-	 * 3. Gives ResultAggregator object to PendingRequest framework and it's used to aggregate the
-	 * 	  results. Results will be aggregator by another thread since it's not a blocking call.
-	 */
-	void externalSearchCommand(boost::shared_ptr<const ClusterResourceMetadata_Readview> clusterReadview,
-			evhttp_request *req, unsigned coreId);
-
 	void externalSearchAllCommand(boost::shared_ptr<const ClusterResourceMetadata_Readview> clusterReadview,
 			evhttp_request * req);
 

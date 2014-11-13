@@ -190,7 +190,7 @@ public:
      */
     virtual ~QueryResults();
 
-    void * serializeForNetwork(void * buffer);
+    void * serializeForNetwork(void * buffer) const;
     static void * deserializeForNetwork(QueryResults &queryResults, void * buffer,QueryResultFactory * resultsFactory);
     unsigned getNumberOfBytesForSerializationForNetwork() const;
 

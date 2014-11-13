@@ -8,8 +8,9 @@
 
 #include "src/sharding/processor/serializables/SerializableGetInfoCommandInput.h"
 #include "src/sharding/processor/serializables/SerializableGetInfoResults.h"
-#include "src/sharding/processor/serializables/SerializableSearchCommandInput.h"
-#include "src/sharding/processor/serializables/SerializableSearchResults.h"
+#include "include/instantsearch/QueryResults.h"
+#include "include/instantsearch/LogicalPlan.h"
+#include "core/query/QueryResultsInternal.h"
 
 #include "test/core/unit/UnitTestHelper.h"
 
@@ -188,76 +189,6 @@ void testSerializableResetLogCommandInput(){
 	// This class is empty for now
 }
 
-void testSerializableSearchCommandInput(){
-
-    Query *query = new Query(srch2is::SearchTypeTopKQuery);
-    string keywords[3] = { "pink", "floyd", "shine"};
-
-    TermType termType = TERM_TYPE_COMPLETE;
-    Term *term0 = ExactTerm::create(keywords[0], termType, 1, 1);
-    query->add(term0);
-    Term *term1 = ExactTerm::create(keywords[1], termType, 1, 1);
-    query->add(term1);
-    Term *term2 = FuzzyTerm::create(keywords[2],termType, 0.5, 0.5, 2);
-    query->add(term2);
-
-	LogicalPlan * logicalPlan = prepareLogicalPlanForUnitTests(query , NULL, 0, 10, false, srch2::instantsearch::SearchTypeTopKQuery);
-
-	SearchCommand commandInput1(logicalPlan);
-	MessageAllocator * aloc = new MessageAllocator();
-	void * buffer = commandInput1.serialize(aloc);
-	const SearchCommand & deserializedCommandInput1 = *(SearchCommand::deserialize(buffer));
-	ASSERT(deserializedCommandInput1.getLogicalPlan()->getExactQuery()->getQueryTerms()->at(0)->getBoost() == term0->getBoost());
-	ASSERT(deserializedCommandInput1.getLogicalPlan()->getExactQuery()->getQueryTerms()->at(1)->getBoost() == term1->getBoost());
-	ASSERT(deserializedCommandInput1.getLogicalPlan()->getExactQuery()->getQueryTerms()->at(2)->getBoost() == term2->getBoost());
-
-	ASSERT(deserializedCommandInput1.getLogicalPlan()->getExactQuery()->getQueryTerms()->at(0)->getTermType() == term0->getTermType());
-	ASSERT(deserializedCommandInput1.getLogicalPlan()->getExactQuery()->getQueryTerms()->at(1)->getTermType() == term1->getTermType());
-	ASSERT(deserializedCommandInput1.getLogicalPlan()->getExactQuery()->getQueryTerms()->at(2)->getTermType() == term2->getTermType());
-
-	ASSERT(deserializedCommandInput1.getLogicalPlan()->getExactQuery()->getQueryTerms()->at(0)->getSimilarityBoost() == term0->getSimilarityBoost());
-	ASSERT(deserializedCommandInput1.getLogicalPlan()->getExactQuery()->getQueryTerms()->at(1)->getSimilarityBoost() == term1->getSimilarityBoost());
-	ASSERT(deserializedCommandInput1.getLogicalPlan()->getExactQuery()->getQueryTerms()->at(2)->getSimilarityBoost() == term2->getSimilarityBoost());
-
-	ASSERT(deserializedCommandInput1.getLogicalPlan()->getExactQuery()->getQueryTerms()->at(0)->getThreshold() == term0->getThreshold());
-	ASSERT(deserializedCommandInput1.getLogicalPlan()->getExactQuery()->getQueryTerms()->at(1)->getThreshold() == term1->getThreshold());
-	ASSERT(deserializedCommandInput1.getLogicalPlan()->getExactQuery()->getQueryTerms()->at(2)->getThreshold() == term2->getThreshold());
-
-	ASSERT(*(deserializedCommandInput1.getLogicalPlan()->getExactQuery()->getQueryTerms()->at(0)->getKeyword()) == *(term0->getKeyword()));
-	ASSERT(*(deserializedCommandInput1.getLogicalPlan()->getExactQuery()->getQueryTerms()->at(1)->getKeyword()) == *(term1->getKeyword()));
-	ASSERT(*(deserializedCommandInput1.getLogicalPlan()->getExactQuery()->getQueryTerms()->at(2)->getKeyword()) == *(term2->getKeyword()));
-
-
-}
-
-void testSerializableSearchResults(){
-
-	QueryResults * queryResults1 = prepareQueryResults();
-	SearchCommandResults commandInput1;
-	SearchCommandResults::ShardResults * shardResults = new SearchCommandResults::ShardResults("identifier");
-	commandInput1.addShardResults(shardResults);
-	shardResults->searcherTime = 120;
-	shardResults->queryResults = *queryResults1;
-	delete queryResults1;
-	MessageAllocator * aloc = new MessageAllocator();
-	void * buffer = commandInput1.serialize(aloc);
-	const SearchCommandResults & deserializedCommandInput1 = *(SearchCommandResults::deserialize(buffer));
-
-	vector<SearchCommandResults::ShardResults *> allShardResults = deserializedCommandInput1.getShardResults();
-
-	ASSERT(allShardResults.size() == commandInput1.getShardResults().size());
-	for(unsigned resultIndex = 0 ; resultIndex < commandInput1.getShardResults().size() ; ++resultIndex){
-		checkQueryResultContent(commandInput1.getShardResults().at(resultIndex)->queryResults.impl->sortedFinalResults.at(resultIndex),
-				deserializedCommandInput1.getShardResults().at(resultIndex)->queryResults.impl->sortedFinalResults.at(resultIndex));
-	}
-	checkFacetResults(&(commandInput1.getShardResults().at(0)->queryResults) ,
-			&(deserializedCommandInput1.getShardResults().at(0)->queryResults));
-	ASSERT(commandInput1.getShardResults().at(0)->queryResults.impl->estimatedNumberOfResults ==
-			deserializedCommandInput1.getShardResults().at(0)->queryResults.impl->estimatedNumberOfResults);
-	ASSERT(commandInput1.getShardResults().at(0)->queryResults.impl->resultsApproximated ==
-			deserializedCommandInput1.getShardResults().at(0)->queryResults.impl->resultsApproximated);
-
-}
 
 
 int main(){
@@ -265,8 +196,6 @@ int main(){
 	testSerializableGetInfoCommandInput();
 	testSerializableGetInfoResults();
 	testSerializableResetLogCommandInput();
-	testSerializableSearchCommandInput();
-	testSerializableSearchResults();
 
     cout << "Sharding Serialization unit tests: Passed" << endl;
 }

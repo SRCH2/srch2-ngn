@@ -25,8 +25,12 @@ public:
 	virtual void consume(const map<string, bool> & recordResults){};
 	virtual void consume(const map<string, bool> & results,
 			map<string, map<ShardId * ,vector<JsonMessageCode>, ShardPtrComparator > > & messageCodes){};
-	virtual void consume(const vector<string> & attributeIds, const vector<JsonMessageCode> & messages){};
+	virtual void consume(bool status, const vector<unsigned> & searchableAttributeIds,
+			const vector<unsigned> & refiningAttributeIds,
+			const vector<JsonMessageCode> & messages){};
 	virtual void consume(bool booleanResult, vector<JsonMessageCode> & messageCodes){};
+	virtual void consume(bool booleanResult, SP(Json::Value) jsonResponse ,
+			const vector<JsonMessageCode> & messageCodes, const vector<string> & customMessageStrings){};
 	virtual SP(Transaction) getTransaction() = 0;
 	virtual string getName() const = 0;
 };

@@ -11,9 +11,6 @@
 #include "sharding/sharding/ShardManager.h"
 #include "sharding/sharding/metadata_manager/ResourceMetadataManager.h"
 
-#include "processor/serializables/SerializableSearchCommandInput.h"
-#include "processor/serializables/SerializableSearchCommandInput.h"
-#include "processor/serializables/SerializableSearchResults.h"
 #include "processor/serializables/SerializableGetInfoCommandInput.h"
 #include "processor/serializables/SerializableGetInfoResults.h"
 
@@ -75,10 +72,6 @@ public:
 
     	bool resultFlag = true;
     	switch(type){
-        case SearchCommandMessageType: // -> for LogicalPlan object
-        	// give search query to DP internal and pass the result to sendReply
-        	resultFlag = sendReply<SearchCommandResults>(internalDP.internalSearchCommand(target, clusterReadview, (SearchCommand*)requestObj), node, requestMessageId, clusterReadview);
-        	break;
         case GetInfoCommandMessageType: // -> for GetInfoCommandInput object (used for getInfo)
         	resultFlag = sendReply<GetInfoCommandResults>(internalDP.internalGetInfoCommand(target, clusterReadview, (GetInfoCommand*)requestObj), node, requestMessageId, clusterReadview);
         	break;

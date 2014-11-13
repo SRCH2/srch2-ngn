@@ -118,6 +118,15 @@ public:
 	inline void addTermType(const TermType & rTermType){
 		this->termTypes.push_back(rTermType);
 	}
+
+	inline bool isExactResult() const{
+		return this->exactResultFlag;
+	}
+
+	inline void setExactResult(bool exactResultFlag){
+		this->exactResultFlag = exactResultFlag;
+	}
+
     unsigned getNumberOfBytes(){
     	unsigned totalNumberOfBytes = sizeof(PhysicalPlanRecordItem);
 
@@ -179,6 +188,7 @@ private:
 	vector<vector<unsigned> >attributeIdsList;
 	vector<unsigned> positionIndexOffsets;
 	vector<TermType> termTypes;
+	bool exactResultFlag;
 };
 
 

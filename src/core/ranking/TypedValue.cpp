@@ -1092,7 +1092,7 @@ namespace srch2
 	 * | | timeTypedMultiValue |
 	 * NOTE : we don't serialize TimeDuration for now because we don't need it
 	 */
-    void * TypedValue::serializeForNetwork(void * buffer){
+    void * TypedValue::serializeForNetwork(void * buffer) const{
     	buffer = srch2::util::serializeFixedTypes(valueType, buffer);
     	switch (valueType) {
     	case ATTRIBUTE_TYPE_INT:
@@ -1183,7 +1183,7 @@ namespace srch2
 		}
     	return buffer;
     }
-    unsigned TypedValue::getNumberOfBytesForSerializationForNetwork(){
+    unsigned TypedValue::getNumberOfBytesForSerializationForNetwork() const{
     	unsigned numberOfBytes = 0;
 
     	numberOfBytes += sizeof(valueType);

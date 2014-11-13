@@ -10,6 +10,7 @@
 #include "core/util/Logger.h"
 #include "core/util/Assert.h"
 #include "server/HTTPJsonResponse.h"
+#include "../../state_machine/StateMachine.h"
 
 #include <iostream>
 #include <ctime>
@@ -35,7 +36,7 @@ public:
 		ASSERT(this->getConsumer()->getTransaction());
 		clusterReadview = ((ReadviewTransaction *)(this->getTransaction().get()))->getReadview();
 	}
-	~AclAttributeReadCommand();
+	~AclAttributeReadCommand(){};
 
 	SP(Transaction) getTransaction(){
 		if(this->getConsumer() == NULL){
@@ -105,13 +106,15 @@ public:
 
 
 		AclAttributeReadNotification::ACK * listNotif = (AclAttributeReadNotification::ACK *)replies.begin()->second.get();
-		vector<string> listOfAttributes = listNotif->getListOfAttributes();
-		finalize(listOfAttributes);
+		vector<unsigned> listOfSearchableAttributes = listNotif->getListOfSearchableAttributes();
+		vector<unsigned> listOfRefiningAttributes = listNotif->getListOfRefiningAttributes();
+		finalize(true, listOfSearchableAttributes, listOfRefiningAttributes);
 	}
 
-	void finalize(vector<string> attributes = vector<string>()){
+	void finalize(bool status = false, vector<unsigned> listOfRefiningAttributes = vector<unsigned>(),
+			vector<unsigned> listOfSearchableAttributes = vector<unsigned>()){
 		if(this->getConsumer() != NULL){
-			this->getConsumer()->consume(attributes, messageCodes);
+			this->getConsumer()->consume(status, listOfSearchableAttributes, listOfRefiningAttributes, messageCodes);
 		}
 	}
 

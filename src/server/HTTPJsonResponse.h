@@ -50,6 +50,7 @@ public:
 
 	static Json::Value getJsonSingleMessage(const JsonMessageCode code);
 	static const string getJsonSingleMessageStr(const JsonMessageCode code);
+	static const string getCustomMessageStr(const JsonMessageCode code, const string variablePart);
 	static void mergeMessageLists(Json::Value & destinationList, const Json::Value & sourceList);
 
 	static void appendDetails(Json::Value & destinationRoot, const Json::Value & sourceRoot, const char * destListRootName = c_detail);
@@ -62,6 +63,8 @@ public:
 	void printHTTP(evhttp_request *req, evkeyvalq * headers = NULL);
 
 	void setResponseAttribute(const char * attributeName, const Json::Value & resAttr);
+
+	void setRoot(Json::Value * root);
 
 	void finalizeInvalid();
 
@@ -85,7 +88,7 @@ protected:
 	// HTTP reply properties
 	int code;
     const char *reason;
-    Json::Value jsonResponse;
+    Json::Value * jsonResponse;
 
     evhttp_request *req;
     evkeyvalq * headers;
@@ -102,7 +105,7 @@ public:
 public:
 	JsonRecordOperationResponse(evhttp_request *req):JsonResponseHandler(req){};
 	JsonRecordOperationResponse():JsonResponseHandler(){
-		jsonResponse[c_items] = Json::Value(Json::arrayValue);
+		(*jsonResponse)[c_items] = Json::Value(Json::arrayValue);
 	};
 	static Json::Value getRecordJsonResponse(const string & primaryKey, const char * action, bool status, const string & coreName);
 	static void addRecordError(Json::Value & responseRoot, const JsonMessageCode code, const string & message = "");

@@ -221,6 +221,24 @@ private:
 				case Delete_ClusterRecordOperation_Type:
 					actionName = string(c_action_delete);
 					break;
+				case AclRecordAdd_ClusterRecordOperation_Type:
+					actionName = string(c_action_acl_record_add);
+					break;
+				case AclRecordAppend_ClusterRecordOperation_Type:
+					actionName = string(c_action_acl_record_append);
+					break;
+				case AclRecordDelete_ClusterRecordOperation_Type:
+					actionName = string(c_action_acl_record_delete);
+					break;
+				case AclAttrReplace_ClusterRecordOperation_Type:
+					actionName = string(c_action_acl_attribute_replace);
+					break;
+				case AclAttrDelete_ClusterRecordOperation_Type:
+					actionName = string(c_action_acl_attribute_delete);
+					break;
+				case AclAttrAppend_ClusterRecordOperation_Type:
+					actionName = string(c_action_acl_attribute_append);
+					break;
 			}
 			Json::Value recordShardResponse =
 					JsonRecordOperationResponse::getRecordJsonResponse(recItr->first, actionName.c_str(),
