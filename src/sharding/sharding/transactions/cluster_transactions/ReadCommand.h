@@ -62,10 +62,12 @@ public:
 			// we will continue when the result of attribute acl comes
 			return;
 		}
-		//
-		ASSERT(coreInfo->getHasRecordAcl() == false);
-		// TODO for Surendra, There is no acl, initialize attributes list with the list of all
-		// attributes
+		// TODO_FOR_SURENDRA
+		// Maybe even no change is required here, just as a note :
+		// there are two cases for which acl attribute vectors can be empty :
+		// 1. roleId does not have access to any attributes
+		// 2. we do not have acl attribute which is the case if we are in this location of code
+		//    (prepareAttributeAclInfo() has returned false)
 		//TODO
 
 		///
@@ -193,13 +195,14 @@ private:
 	AclAttributeReadCommand * aclAttributeReadCommnad;
 
 	bool prepareAttributeAclInfo(){
-	    if(coreInfo->getHasRecordAcl()){
-	    	paramContainer.hasRoleCore = true;
-	    }else{
-	    	return false;
-	    }
 	    const CoreInfo_t * aclCore =
 	    		clusterReadview->getCore(coreInfo->getAttributeAclCoreId());
+	    /******************************/
+	    // TODO_FOR_SURENDRA
+	    // TODO for Surendra,
+	    // we must check here whether there is any attribute acl or not
+	    // if there is not, we must return false, if there is we continue with AclAttributeReadCommand producer class ....
+	    /******************************/
 	    aclAttributeReadCommnad = new AclAttributeReadCommand(this, paramContainer.roleId, aclCore);
 	    aclAttributeReadCommnad->produce();
 	    return true;
@@ -214,7 +217,7 @@ private:
 
 	    QueryValidator qv(*(coreInfo->getSchema()),
 	            *(coreInfo), &paramContainer,
-	            NULL); // TODO attribute ACL is not available here, constructor must change
+	            NULL); // TODO_FOR_SURENDRA TODO attribute ACL is not available here, constructor must change
 
 	    bool valid = qv.validate();
 	    if (!valid) {
@@ -231,7 +234,7 @@ private:
 	            *(coreInfo->getSchema()),
 	            *(AnalyzerFactory::getCurrentThreadAnalyzer(coreInfo)),
 	            &paramContainer,
-	            NULL); // TODO attribute ACL is not available here, constructor must change
+	            NULL); // TODO_FOR_SURENDRA TODO attribute ACL is not available here, constructor must change
 
 	    if(qr.rewrite(*logicalPlan) == false){
 	        // if the query is not valid, print the error message to the response
@@ -464,6 +467,8 @@ private:
 						//override if field list parameter is given in query
 	                    genRecordJsonString(indexDataConfig->getSchema(), inMemoryData, allResults.at(i)->externalRecordId,
 	                    		sbuffer, attributesToReturnFromQueryPtr);
+	                    /// TODO TODO_FOR_SURENDRA    we need to use two vectors to fix genRecordJsonString
+	                    // TODO                       please make sure to fix all places that this method is called.
 	                    // The class CustomizableJsonWriter allows us to
 	                    // attach the data string to the JSON tree without parsing it.
 	                    (*root)["results"][counter][global_internal_record.first] = sbuffer;

@@ -188,8 +188,8 @@ public:
 	bool facetOnlyFlag;
 	bool highLightingOnFlag;
 	string roleId;
-	vector<unsigned> accessibleSearchableAttributes; // TODO
-	vector<unsigned> accessibleRefiningAttributes; // TODO
+	vector<unsigned> accessibleSearchableAttributes; // TODO TODO_FOR_SURENDRA
+	vector<unsigned> accessibleRefiningAttributes; // TODO TODO_FOR_SURENDRA
 	/// Plan related information
 	ResultsPostProcessorPlan * postProcessingPlan;
 	ResultsPostProcessingInfo * postProcessingInfo;

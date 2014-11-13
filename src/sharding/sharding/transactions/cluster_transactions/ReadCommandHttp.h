@@ -58,6 +58,10 @@ private:
 		// parse and populate the paramContainer
 	    evhttp_parse_query(req->uri, &headers);
 
+
+	    if(coreInfo->getHasRecordAcl()){
+	    	paramContainer.hasRoleCore = true;
+	    }
 	    // simple example for query is : q={boost=2}name:foo~0.5 AND bar^3*&fq=name:"John"
 	    //1. first create query parser to parse the url
 	    QueryParser qp(headers, &paramContainer);

@@ -172,6 +172,7 @@ private:
     void consume(const map<string, bool> & results,
 			map<string, map<ShardId * ,vector<JsonMessageCode>, ShardPtrComparator > > & messageCodes){
     	// TODO : must use this consume function to print to HTTP channel
+    	// TODO TODO_FOR_SURENDRA
     }
 
     void finalizeWork(Transaction::Params * params){
