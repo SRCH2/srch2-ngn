@@ -6,6 +6,8 @@
 #include "sharding/sharding/transactions/cluster_transactions/ShardCommandHttp.h"
 #include "sharding/sharding/transactions/cluster_transactions/WriteCommandHttp.h"
 #include "sharding/sharding/transactions/cluster_transactions/AclCommandHttp.h"
+#include "sharding/sharding/transactions/cluster_transactions/AclRecordCommandHttp.h"
+#include "sharding/sharding/transactions/cluster_transactions/BulkLoadCommandHttp.h"
 #include "sharding/sharding/transactions/cluster_transactions/ClusterShutdownOperation.h"
 #include <exception>
 
@@ -107,20 +109,25 @@ void Srch2ServerGateway::cb_coreSpecificOperations(struct evhttp_request * req, 
     	case srch2http::AttributeAclAdd:
     	case srch2http::AttributeAclDelete:
     	case srch2http::AttributeAclAppend:
-    	    AclCommandHttpHandler::runCommand(clusterReadview, req, coreId /*, and probably some other
-    	    arguments lie the type of acl command. Look at Export, Merge, ResetLogger and Commit to see a similar example*/);
+    	    AclCommandHttpHandler::runCommand(clusterReadview, req, coreId);
     		break;
     	case srch2http::RecordAclAdd:
-            AclCommandHttpHandler::runCommand(clusterReadview, req, coreId /*, and probably some other
-            arguments lie the type of acl command. Look at Export, Merge, ResetLogger and Commit to see a similar example*/);
+            AclRecordCommandHttpHandler::runCommand(clusterReadview, req, coreId, Acl_Record_Add);
     		break;
     	case srch2http::RecordAclAppend:
-            AclCommandHttpHandler::runCommand(clusterReadview, req, coreId /*, and probably some other
-            arguments lie the type of acl command. Look at Export, Merge, ResetLogger and Commit to see a similar example*/);
+    		AclRecordCommandHttpHandler::runCommand(clusterReadview, req, coreId, Acl_Record_Append);
     		break;
     	case srch2http::RecordAclDelete:
-            AclCommandHttpHandler::runCommand(clusterReadview, req, coreId /*, and probably some other
-            arguments lie the type of acl command. Look at Export, Merge, ResetLogger and Commit to see a similar example*/);
+    		AclRecordCommandHttpHandler::runCommand(clusterReadview, req, coreId, Acl_Record_Delete);
+    		break;
+    	case srch2http::BulkLoadRecords:
+    		BulkLoadCommandHttpHandler::runCommand(clusterReadview, req, coreId, RecordBulkLoad);
+    		break;
+    	case srch2http::BulkLoadAttributeAcl:
+    		BulkLoadCommandHttpHandler::runCommand(clusterReadview, req, coreId, AclAttributeBulkLoad);
+    		break;
+    	case srch2http::BulkLoadRecordAcl:
+    		BulkLoadCommandHttpHandler::runCommand(clusterReadview, req, coreId, AclRecordBulkLoad);
     		break;
     	default:
     		cb_notfound(req, NULL);

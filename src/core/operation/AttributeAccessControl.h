@@ -67,8 +67,9 @@ public:
 
 	void bulkLoadAttributeAclJSON(const std::string& aclLoadFileName) const;
 
-	bool processSingleJSONAttributeAcl(const Json::Value& doc, AclActionType action,
-			const string& apiName, Json::Value& aclAttributeResponse) const;
+	static bool processSingleJSONAttributeAcl(const Json::Value& doc,
+			const string& apiName, Json::Value& aclAttributeResponse, vector<string>& roleIds,
+	    	vector<string>& attributeList, const Schema& schema) ;
 
 	// replace a new acl for a attribute
 	void replaceFromAcl(vector<string>& aclRoleValue, vector<unsigned>& searchableAttrIdsList,

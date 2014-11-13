@@ -43,6 +43,21 @@ public:
     		delete req;
     	}
     }
+
+    static void prepareAclDataForApiLayer(std::map< string, vector<string> > &recordAclDataForApiLayer,
+    		const string primaryKey, const vector<string>& roleIdsList) {
+    	std::map< string, vector<string> >::iterator iter =
+    			recordAclDataForApiLayer.find(primaryKey);
+    	if (iter != recordAclDataForApiLayer.end()) {
+    		vector<string> unionList;
+    		std::set_union(iter->second.begin(), iter->second.end(), roleIdsList.begin(),
+    				roleIdsList.end(), back_inserter(unionList));
+    		iter->second.assign(unionList.begin(), unionList.end());
+    	} else {
+    		recordAclDataForApiLayer.insert(make_pair(primaryKey, roleIdsList));
+    	}
+    }
+
 private:
     AclRecordCommandHttpHandler(boost::shared_ptr<const ClusterResourceMetadata_Readview> clusterReadview,
             evhttp_request *req, unsigned coreId, srch2is::RecordAclCommandType commandType /*, and maybe other arguments */):ReadviewTransaction(clusterReadview){
@@ -148,19 +163,6 @@ private:
         return;
     }
 
-    void prepareAclDataForApiLayer(std::map< string, vector<string> > &recordAclDataForApiLayer,
-    		const string primaryKey, const vector<string>& roleIdsList) {
-    	std::map< string, vector<string> >::iterator iter =
-    			recordAclDataForApiLayer.find(primaryKey);
-    	if (iter != recordAclDataForApiLayer.end()) {
-    		vector<string> unionList;
-    		std::set_union(iter->second.begin(), iter->second.end(), roleIdsList.begin(),
-    				roleIdsList.end(), back_inserter(unionList));
-    		iter->second.assign(unionList.begin(), unionList.end());
-    	} else {
-    		recordAclDataForApiLayer.insert(make_pair(primaryKey, roleIdsList));
-    	}
-    }
     /*
      * One example of consume callback that will be called by the producer class
      * If another set of arguments is needed for this module, a new consume method must be
@@ -180,8 +182,8 @@ private:
      * This function must be overridden for each transaction class so that producers can use the
      * transaction and it's getSession() inteface.
      */
-    Transaction * getTransaction() {
-        return this;
+    SP(Transaction) getTransaction() {
+        return sharedPointer;
     }
 
     ShardingTransactionType getTransactionType(){

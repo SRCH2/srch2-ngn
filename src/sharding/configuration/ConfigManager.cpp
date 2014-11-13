@@ -72,7 +72,7 @@ const char* const ConfigManager::nodeMasterTag = "node-master";
 const char* const ConfigManager::nodeDataTag = "node-data";
 const char* const ConfigManager::nodeHomeTag = "srch2home";
 const char* const ConfigManager::nodeDataDirTag = "datadir";
-const char* const ConfigManager::primaryShardTag = "core-number_of_shards";
+const char* const ConfigManager::primaryShardTag = "core-number_of_shards";  // Not consistent with other names
 const char* const ConfigManager::replicaShardTag = "core-number_of_replicas";
 const char* const ConfigManager::clusterNameTag = "cluster-name";
 const int ConfigManager::DefaultNumberOfPrimaryShards = 0;
@@ -241,6 +241,9 @@ ConfigManager::PortNameMap_t ConfigManager::portNameMap[] = {
 	{ RecordAclAdd, ConfigManager::aclRecorddRoleAddPortString, "/aclRecordRoleReplace"},
 	{ RecordAclAppend, ConfigManager::aclRecordRoleAppendPortString, "/aclRecordRoleAppend"},
 	{ RecordAclDelete, ConfigManager::aclRecordRoleDeletePortString, "/aclRecordRoleDelete"},
+	{ BulkLoadRecords, "", "/bulkLoadRecords"},
+	{ BulkLoadRecordAcl, "", "/bulkLoadRecordAcl"},
+	{ BulkLoadAttributeAcl, "", "/bulkLoadAttributeAcl"},
     { GlobalPortsStart , NULL , NULL},
     { InfoPort_Nodes_NodeID, ConfigManager::nodesStatsPortString , "/_nodes/nodeId"},
     { InfoPort_Cluster_Stats, ConfigManager::clusterStatsPortString , "/_cluster/stats"},
@@ -284,6 +287,29 @@ bool ConfigManager::loadConfigFile(srch2http::ResourceMetadataManager * metadata
 
     Logger::debug("WARNINGS while reading the configuration file:");
     Logger::debug("%s\n", parseWarnings.str().c_str());
+
+
+    // do validation on cores.
+    // validation1: if  #PS > 0, then data file should not be specified and Vice versa
+    for(unsigned coreIdx = 0 ; coreIdx < clusterCores.size() ; ++coreIdx){
+    	CoreInfo_t * coreInfo = clusterCores[coreIdx];
+    	if(coreInfo != NULL){
+    		if (coreInfo->getNumberOfPrimaryShards() == 0 &&
+    			coreInfo->dataFilePath == "" && coreInfo->dataFilePaths.size() == 0) {
+    			Logger::error("Either primary shards should be greater than 0 or the data file"
+    					" for bulk load should be specified.");
+    			return false;
+    		}
+    		if (coreInfo->getNumberOfPrimaryShards() > 0 &&
+    				(coreInfo->dataFilePath != "" || coreInfo->dataFilePath.size() != 0)) {
+    			// It is harsh to error out ..I think best action is to ignore data file.
+    			Logger::warn("Primary shard count is greater than 0. Ignoring bulk load file "
+    					"mentioned in the config file. For bulk load use HTTP layer API");
+    			coreInfo->dataFilePath = "";
+    			coreInfo->dataFilePath.clear();
+    		}
+    	}
+    }
 
 
     for(unsigned coreIdx = 0 ; coreIdx < clusterCores.size() ; ++coreIdx){
