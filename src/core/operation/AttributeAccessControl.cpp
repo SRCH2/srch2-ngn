@@ -175,7 +175,11 @@ void  AttributeAccessControl::_bulkLoadAttributeAclJSON(const std::string& aclLo
 			continue; // ignore this line
 		}
 		Json::Value response;
-		processSingleJSONAttributeAcl(doc, ACL_APPEND, "bulkLoad", response);
+		vector<string> roleIds;
+		vector<string> attributeList;
+		processSingleJSONAttributeAcl(doc, "bulkLoad", response,
+				roleIds, attributeList, *schema);
+		processAclRequest(attributeList, roleIds, ACL_APPEND);
 		if (response.type() == Json::stringValue && response.asString().size() > 0) {
 			Logger::info(response.asCString());
 		}
@@ -188,8 +192,9 @@ void  AttributeAccessControl::_bulkLoadAttributeAclJSON(const std::string& aclLo
 /*
  *   Helper API to handle a single ACL operation. (insert, delete, or append)
  */
-bool AttributeAccessControl::processSingleJSONAttributeAcl(const Json::Value& doc, AclActionType action,
-		const string& apiName, Json::Value& aclAttributeResponse) const{
+bool AttributeAccessControl::processSingleJSONAttributeAcl(const Json::Value& doc,
+		const string& apiName, Json::Value& aclAttributeResponse, vector<string>& roleIds,
+    	vector<string>& attributeList, const Schema& schema) {
 
 	Json::Value attributesToAdd = doc.get("attributes", Json::Value(Json::arrayValue));
 	Json::Value attributesRoles = doc.get("roleId", Json::Value(Json::arrayValue));
@@ -218,8 +223,6 @@ bool AttributeAccessControl::processSingleJSONAttributeAcl(const Json::Value& do
 		aclAttributeResponse = log_str.str();
 		return false;
 	}
-
-	vector<string> attributeList;
 	vector<string> invalidAttributeNames;
 	for (unsigned i = 0; i < attributesToAdd.size(); ++i) {
 		Json::Value defaultValueToReturn = Json::Value("");
@@ -233,7 +236,7 @@ bool AttributeAccessControl::processSingleJSONAttributeAcl(const Json::Value& do
 		string tempString = attribute.asString();
 		boost::algorithm::trim(tempString);
 		if (tempString.size() != 0) {
-			if (tempString == "*" || schema->isValidAttribute(tempString)) {
+			if (tempString == "*" || schema.isValidAttribute(tempString)) {
 				attributeList.push_back(tempString);
 			} else {
 				invalidAttributeNames.push_back(tempString);
@@ -266,7 +269,6 @@ bool AttributeAccessControl::processSingleJSONAttributeAcl(const Json::Value& do
 		aclAttributeResponse = log_str.str();
 	}
 
-	vector<string> roleIds;
 	for (unsigned i = 0; i < attributesRoles.size(); ++i) {
 		Json::Value defaultValueToReturn = Json::Value("");
 		const Json::Value roleId = attributesRoles.get(i, defaultValueToReturn);
@@ -325,7 +327,7 @@ bool AttributeAccessControl::processSingleJSONAttributeAcl(const Json::Value& do
 		return false;
 	}
 
-	return processAclRequest(attributeList, roleIds, action);
+	return true;
 }
 /*
  *   This API converts attribute names to attribute ids and return sorted attribute ids.

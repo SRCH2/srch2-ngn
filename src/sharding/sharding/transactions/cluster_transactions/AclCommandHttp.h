@@ -42,9 +42,27 @@ public:
         	delete req;
         }
     }
+
+    static void prepareAclDataForApiLayer(std::map< string, vector<string> > &attributeAclDataForApiLayer,
+    		const vector<string> &roleIdList, const vector<string>& attributeList) {
+
+    	for (unsigned i = 0; i < roleIdList.size(); ++i) {
+    		std::map< string, vector<string> >::iterator iter =
+    				attributeAclDataForApiLayer.find(roleIdList[i]);
+    		if (iter != attributeAclDataForApiLayer.end()) {
+    			vector<string> unionList;
+    			std::set_union(iter->second.begin(), iter->second.end(), attributeList.begin(),
+    					attributeList.end(), back_inserter(unionList));
+    			iter->second.assign(unionList.begin(), unionList.end());
+    		} else {
+    			attributeAclDataForApiLayer.insert(make_pair(roleIdList[i], attributeList));
+    		}
+    	}
+    }
+
 private:
     AclCommandHttpHandler(boost::shared_ptr<const ClusterResourceMetadata_Readview> clusterReadview,
-            evhttp_request *req, unsigned coreId /*, and maybe other arguments */):ReadviewTransaction(clusterReadview){
+            evhttp_request *req, unsigned coreId ):ReadviewTransaction(clusterReadview){
     	this->req = req;
     	this->coreInfo = clusterReadview->getCore(coreId);
     	unsigned aclCoreId = this->coreInfo->getAttributeAclCoreId();
@@ -52,7 +70,6 @@ private:
     	ASSERT(this->aclCoreInfo != NULL);
     	ASSERT(this->coreInfo != NULL);
         aclCommand = NULL;
-
     }
 
     /*
@@ -71,6 +88,7 @@ private:
     	std::map< string, vector<string> > * attributeAclDataForApiLayer =
     			new std::map< string, vector<string> >();
     	Json::Value response(Json::objectValue);
+    	AclActionType action;
     	switch (req->type) {
     	    case EVHTTP_REQ_PUT: {
     	        size_t length = EVBUFFER_LENGTH(req->input_buffer);
@@ -135,8 +153,9 @@ private:
 
     	        			vector<string> attributeList;
     	        			vector<string> roleIdList;
-    	        			bool  status = processSingleJSONAttributeAcl(doc, action, apiName,
-    	        					aclAttributeResponses[index], roleIdList, attributeList);
+    	        			bool  status = AttributeAccessControl::processSingleJSONAttributeAcl(
+    	        					doc, apiName, aclAttributeResponses[index], roleIdList,
+    	        					attributeList, *coreInfo->getSchema());
     	        			if (status == false) {
     	        				// there is an error with the current acl entry. Do not error out
     	        				// because we want to process other valid entries.
@@ -169,8 +188,9 @@ private:
     	        		const Json::Value doc = root;
     	        		vector<string> attributeList;
     	        		vector<string> roleIdList;
-    	        		bool  status = processSingleJSONAttributeAcl(doc, action, apiName,
-    	        				aclAttributeResponses[0], roleIdList, attributeList);
+    	        		bool  status = AttributeAccessControl::processSingleJSONAttributeAcl(doc,
+    	        				apiName, aclAttributeResponses[0], roleIdList, attributeList,
+    	        				*coreInfo->getSchema());
     	        		if (status == false) {
     	        			responseObject->addError(aclAttributeResponses[0]);
     	        			responseObject->finalizeOK();
@@ -203,160 +223,6 @@ private:
 
         delete attributeAclDataForApiLayer;
         return;
-    }
-
-    void prepareAclDataForApiLayer(std::map< string, vector<string> > &attributeAclDataForApiLayer,
-    		const vector<string> &roleIdList, const vector<string>& attributeList) {
-
-    	for (unsigned i = 0; i < roleIdList.size(); ++i) {
-    		std::map< string, vector<string> >::iterator iter =
-    				attributeAclDataForApiLayer.find(roleIdList[i]);
-    		if (iter != attributeAclDataForApiLayer.end()) {
-    			vector<string> unionList;
-    			std::set_union(iter->second.begin(), iter->second.end(), attributeList.begin(),
-    					attributeList.end(), back_inserter(unionList));
-    			iter->second.assign(unionList.begin(), unionList.end());
-    		} else {
-    			attributeAclDataForApiLayer.insert(make_pair(roleIdList[i], attributeList));
-    		}
-    	}
-    }
-    bool processSingleJSONAttributeAcl(const Json::Value& doc, AclActionType action,
-    		const string& apiName, Json::Value& aclAttributeResponse, vector<string>& roleIds,
-        	vector<string>& attributeList) const{
-
-    	Json::Value attributesToAdd = doc.get("attributes", Json::Value(Json::arrayValue));
-    	Json::Value attributesRoles = doc.get("roleId", Json::Value(Json::arrayValue));
-
-    	if (attributesToAdd.type()  != Json::arrayValue) {
-    		std::stringstream log_str;
-    		log_str << "API : " << apiName << ", Error: 'attributes' key is not an array in request JSON.";
-    		aclAttributeResponse = log_str.str();
-    		return false;
-    	}
-    	if (attributesToAdd.size() == 0) {
-    		std::stringstream log_str;
-    		log_str << "API : " << apiName << ", Error: 'attributes' key is empty or missing in request JSON.";
-    		aclAttributeResponse = log_str.str();
-    		return false;
-    	}
-    	if (attributesRoles.type() != Json::arrayValue) {
-    		std::stringstream log_str;
-    		log_str << "API : " << apiName << ", Error: 'roleId' key is not an array in request JSON.";
-    		aclAttributeResponse = log_str.str();
-    		return false;
-    	}
-    	if (attributesRoles.size() == 0) {
-    		std::stringstream log_str;
-    		log_str << "API : " << apiName << ", Error: 'roleId' key is empty or missing in request JSON.";
-    		aclAttributeResponse = log_str.str();
-    		return false;
-    	}
-    	vector<string> invalidAttributeNames;
-    	for (unsigned i = 0; i < attributesToAdd.size(); ++i) {
-    		Json::Value defaultValueToReturn = Json::Value("");
-    		const Json::Value attribute = attributesToAdd.get(i, defaultValueToReturn);
-    		if (attribute.type() != Json::stringValue){
-    			std::stringstream log_str;
-    			log_str << "API : " << apiName << ", Error: 'attributes' key's element at index "<< i << " is not convertible to string";
-    			aclAttributeResponse = log_str.str();
-    			return false;
-    		}
-    		string tempString = attribute.asString();
-    		boost::algorithm::trim(tempString);
-    		if (tempString.size() != 0) {
-    			if (tempString == "*" || coreInfo->getSchema()->isValidAttribute(tempString)) {
-    				attributeList.push_back(tempString);
-    			} else {
-    				invalidAttributeNames.push_back(tempString);
-    			}
-    		}
-    	}
-
-    	if (attributeList.size() == 0) {
-    		// All elements in the attribute list are either empty or have bogus value.
-    		std::stringstream log_str;
-    		log_str << "API : " << apiName << ", Error: 'attributes' key's elements are not valid.";
-    		aclAttributeResponse = log_str.str();
-    		return false;
-    	}
-
-    	// We have some valid attribute names in attributes list. Check whether there are some invalid
-    	// name as well. If there are invalid attribute names, then generate warning log message and proceed
-    	if (invalidAttributeNames.size() > 0) {
-    		std::stringstream log_str;
-    		if (invalidAttributeNames.size() > 1)
-    			log_str << "API : " << apiName << ", Warning: 'attributes' key has bad attributes = '";
-    		else
-    			log_str << "API : " << apiName << ", Warning: 'attributes' key has bad attribute = '";
-    		for (unsigned i = 0; i < invalidAttributeNames.size(); ++i) {
-    			if (i)
-    				log_str << ", ";
-    			log_str << invalidAttributeNames[i];
-    		}
-    		log_str << "'.";
-    		aclAttributeResponse = log_str.str();
-    	}
-
-    	for (unsigned i = 0; i < attributesRoles.size(); ++i) {
-    		Json::Value defaultValueToReturn = Json::Value("");
-    		const Json::Value roleId = attributesRoles.get(i, defaultValueToReturn);
-
-    		switch (roleId.type()) {
-    		case Json::stringValue:
-    		{
-    			string tempString = roleId.asString();
-    			boost::algorithm::trim(tempString);
-    			if (tempString.size() != 0)
-    				roleIds.push_back(tempString);
-    			break;
-    		}
-    		case Json::intValue:
-    		{
-    			// convert int to string instead of returning error to user
-    			stringstream tempString;
-    			tempString << roleId.asInt64();
-    			roleIds.push_back(tempString.str());
-    			break;
-    		}
-    		case Json::uintValue:
-    		{
-    			// convert unsigned int to string instead of returning error to user
-    			stringstream tempString;
-    			tempString << roleId.asUInt64();
-    			roleIds.push_back(tempString.str());
-    			break;
-    		}
-    		case Json::realValue:
-    		{
-    			// convert double to string instead of returning error to user
-    			stringstream tempString;
-    			tempString << roleId.asDouble();
-    			roleIds.push_back(tempString.str());
-    			break;
-    		}
-    		case Json::arrayValue:
-    		case Json::objectValue:
-    		{
-    			// Can't convert to array ..user should fix the input JSON.
-    			std::stringstream log_str;
-    			log_str << "API : " << apiName << ", Error: 'roleId' key's element at index "<< i << " is not convertible to string";
-    			aclAttributeResponse = log_str.str();
-    			return false;
-    		}
-    		default:
-    			ASSERT(false);
-    		}
-    	}
-
-    	if (roleIds.size() == 0) {
-    		std::stringstream log_str;
-    		log_str << "API : " << apiName << ", Error: 'roleId' key's elements are not valid.";
-    		aclAttributeResponse = log_str.str();
-    		return false;
-    	}
-
-    	return true;
     }
 
     /*
@@ -398,7 +264,6 @@ private:
     evhttp_request *req;
     const CoreInfo_t * coreInfo;
     const CoreInfo_t * aclCoreInfo;
-    AclActionType action;
 };
 
 

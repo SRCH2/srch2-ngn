@@ -819,6 +819,7 @@ void HTTPRequestHandler::writeCommand(evhttp_request *req,
 
 }
 
+#if 0
 // this function gets the acl command and does the appropriate operations
 // the acl command could be add, append or delete
 void HTTPRequestHandler::aclModifyRolesForRecord(evhttp_request *req, Srch2Server *server, srch2::instantsearch::RecordAclCommandType commandType){
@@ -903,7 +904,6 @@ void HTTPRequestHandler::aclModifyRolesForRecord(evhttp_request *req, Srch2Serve
 
 // gets the acl command from the role view and modifies the access list.
 // curl "http://localhost:8081/product/AclAddRecordsForRoles" -i -X PUT -d '{"roleId": “1234", “resourceId”: ["33", "45"]}'
-#if 0
 void HTTPRequestHandler::aclModifyRecordsForRole(evhttp_request *req, Srch2Server *server, srch2::instantsearch::RecordAclCommandType commandType){
 
 	Json::Value response(Json::objectValue);
@@ -1031,7 +1031,6 @@ void HTTPRequestHandler::aclModifyRecordsForRole(evhttp_request *req, Srch2Serve
         bmhelper_evhttp_send_reply(req, HTTP_BADREQUEST, "BAD REQUEST", global_customized_writer.write(response));
     }
 }
-#endif
 // overwrites role ids in a record's access list
 // example : Suppose we have a resource core called "product" with a primary key attribute called "pid then the query is like:
 // curl "http://localhost:8081/product/aclRecordRoleAdd" -i -X PUT -d '{"pid": "1234", "roleId": ["33", "45"]}'
@@ -1057,7 +1056,7 @@ void HTTPRequestHandler::aclRecordRoleDelete(evhttp_request *req, Srch2Server *s
 }
 
 
-#if 0
+
 void HTTPRequestHandler::aclAddRecordsForRole(evhttp_request *req, Srch2Server *server){
 	aclModifyRecordsForRole(req, server, srch2::instantsearch::Acl_Record_Add);
 }
@@ -1349,6 +1348,7 @@ void decodeAmpersand(const char *uri, unsigned len, string& decodeUri) {
 	}
 }
 
+#if 0
 /*
  *   Wrapper layer API to handle ACL operations such as insert, delete, and append.
  *   example url :
@@ -1483,6 +1483,7 @@ void HTTPRequestHandler::attributeAclModify(evhttp_request *req, Srch2Server *se
 
 	}
 }
+#endif
 
 void HTTPRequestHandler::searchCommand(evhttp_request *req,
         Srch2Server *server) {
