@@ -13,7 +13,7 @@
 #include "DataConnectorThread.h"
 #include "util/Logger.h"
 #include "json/json.h"
-#include "AnalyzerFactory.h"
+#include "analyzer/AnalyzerFactory.h"
 #include "JSONRecordParser.h"
 #include "boost/algorithm/string.hpp"
 #include <instantsearch/Constants.h>

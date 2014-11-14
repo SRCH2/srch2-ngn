@@ -27,7 +27,6 @@
 #include "util/ParserUtility.h"
 #include <event2/http.h>
 #include "util/FileOps.h"
-#include "ServerHighLighter.h"
 #include "util/RecordSerializer.h"
 #include "util/RecordSerializerUtil.h"
 #include "DataConnectorThread.h"

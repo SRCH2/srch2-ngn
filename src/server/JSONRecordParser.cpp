@@ -18,7 +18,7 @@
 #include "util/Logger.h"
 #include "util/ParserUtility.h"
 #include <instantsearch/Analyzer.h>
-#include "AnalyzerFactory.h"
+#include "analyzer/AnalyzerFactory.h"
 #include "util/DateAndTimeHandler.h"
 
 #include "boost/algorithm/string/split.hpp"

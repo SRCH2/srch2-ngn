@@ -6,8 +6,9 @@
  */
 
 #include "ServerHighLighter.h"
-#include "Srch2Server.h"
-#include "AnalyzerFactory.h"
+//#include "Srch2Server.h"
+#include "operation/IndexerInternal.h"
+#include "analyzer/AnalyzerFactory.h"
 #include <instantsearch/QueryResults.h>
 #include "ParsedParameterContainer.h"
 #include "util/RecordSerializer.h"
