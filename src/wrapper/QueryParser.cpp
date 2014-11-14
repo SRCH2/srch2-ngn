@@ -1322,7 +1322,13 @@ bool QueryParser::termParser(string &input) {
         }
 
     } else {
-        hasParsedParameter = parseKeyword(input, keywordStr); // keywordStr will contain the parsed keyword, input will be modified
+    	/*
+    	 * Extract the keyword from the input,
+    	 * keywordStr will contain the parsed keyword, input will be modified.
+    	 * For example: input = "py*^3", after parsing the input, input = "*^3"
+    	 * keywordStr = "py"
+    	 */
+        hasParsedParameter = parseKeyword(input, keywordStr);
     }
     this->isPhraseKeywordFlags.push_back(isPhraseKeyword);
     if (hasParsedParameter) {

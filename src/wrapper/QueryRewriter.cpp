@@ -158,7 +158,7 @@ void QueryRewriter::prepareKeywordInfo() {
 
 bool QueryRewriter::applyAnalyzer() {
     Analyzer & analyzerNotConst = const_cast<Analyzer &>(analyzer); // because of bad design on analyzer
-    vector<ParseTreeNode *> keywordPointersToErase; // stop word indexes, to be removed later
+    vector<ParseTreeNode *> keywordPointersToErase; //Nodes in this vector will be removed after the iteration.
     // first apply the analyzer
 	ParseTreeNode * leafNode;
 	ParseTreeLeafNodeIterator termIterator(paramContainer->parseTreeRoot);
@@ -188,16 +188,16 @@ bool QueryRewriter::applyAnalyzer() {
 
 		} else {
 			/*
-			 * For non phrase term, we need to check if the leaf node can be split
-			 * again(e.g. "new york" -> "new" "AND" "york"). If so, we first create
-			 * the "AND" node with same parent of the original node.
-			 * Then, we create the term node "new" and "york", link to the children
-			 * of node "AND". Also, we push the original node into vector
-			 * "keywordPointersToErase" and push the new "AND" node into vector
-			 * "keywordPointersToAppend". After the loop, we do the erase and
-			 * append.
-			 * Note that all the parameters  except the "rawQueryKeyword" of the
-			 * nodes "new" and "york" are same as the original node "new york".
+			 * For a non-phrase term, we need to check if the leaf node can be split
+			 * again (e.g. "new york" -> "new" "AND" "york"). If so, we first create
+			 * an "AND" node with same parent of the original node.
+			 * Then, we create two term nodes for "new" and "york",
+			 * link them (as children) to the "AND" node. Then we append the "AND" node
+			 * to the parent of the node "new york"(Or set as root if the parent is null).
+			 * Also, we push the original node into a vector "keywordPointersToErase".
+			 * After the loop, we do the erase operation.
+			 * Note that all the parameters except "rawQueryKeyword" of the
+			 * nodes "new" and "york" are the same as the original node of "new york".
 			 */
 			TermType termType =
 					leafNode->termIntermediateStructure->keywordPrefixComplete;
