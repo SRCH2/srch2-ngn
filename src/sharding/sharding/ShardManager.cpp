@@ -43,8 +43,9 @@ ShardManager * ShardManager::createShardManager(ConfigManager * configManager, R
 		return singleInstance;
 	}
 	// only shard manager must be singleton. ConfigManager must be accessed from shard manager
-
 	singleInstance = new ShardManager(configManager, metadataManager);
+	xLock.unlock();
+	singleInstance->updateCurrentNodeId();
 	return singleInstance;
 }
 
@@ -80,6 +81,9 @@ NodeId ShardManager::getCurrentNodeId(){
 Cluster_Writeview * ShardManager::getWriteview_write(boost::unique_lock<boost::shared_mutex> & xLock){
 	return ShardManager::getShardManager()->getMetadataManager()->getClusterWriteview_write(xLock);
 }
+Cluster_Writeview * ShardManager::getWriteview_nolock(){
+	return ShardManager::getShardManager()->getMetadataManager()->getClusterWriteview_nolock();
+}
 
 const Cluster_Writeview * ShardManager::getWriteview_read(boost::shared_lock<boost::shared_mutex> & sLock){
 	return ShardManager::getShardManager()->getMetadataManager()->getClusterWriteview_read(sLock);
@@ -114,7 +118,6 @@ ShardManager::ShardManager(ConfigManager * configManager,ResourceMetadataManager
 	this->joinedFlag = false;
 	this->cancelledFlag = false;
 	this->loadBalancingThread = new pthread_t;
-	updateCurrentNodeId();
 
 	for(unsigned i = 0 ; i < MAX_NUM_TRANS_GROUPS; ++i){
 		mmSessionListenersGroup.push_back(std::make_pair(map<unsigned , ConsumerInterface *>(), new boost::mutex()));
@@ -136,12 +139,12 @@ void ShardManager::initFirstNode(const bool shouldLock){
 		Cluster_Writeview * writeview = ShardManager::getWriteview_write(xLock);
 		SP(ClusterNodes_Writeview) nodesWriteview = ShardManager::getNodesWriteview_write();
 		MetadataInitializer nodeInitializer(configManager, this->metadataManager);
-		nodeInitializer.initializeCluster();
+		nodeInitializer.initializeCluster(false);
 		this->getMetadataManager()->commitClusterMetadata(false);
 		this->setJoined();
 	}else{
 		MetadataInitializer nodeInitializer(configManager, this->metadataManager);
-		nodeInitializer.initializeCluster();
+		nodeInitializer.initializeCluster(false); // since shouldLock is false
 		this->getMetadataManager()->commitClusterMetadata(false);
 		this->setJoined();
 	}

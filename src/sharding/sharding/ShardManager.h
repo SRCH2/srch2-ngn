@@ -53,6 +53,7 @@ public:
 	 */
 	static NodeId getCurrentNodeId();
 	static Cluster_Writeview * getWriteview_write(boost::unique_lock<boost::shared_mutex> & xLock);
+	static Cluster_Writeview * getWriteview_nolock();
 	static const Cluster_Writeview * getWriteview_read(boost::shared_lock<boost::shared_mutex> & sLock);
 	static SP(ClusterNodes_Writeview) getNodesWriteview_write();
 	static SP(const ClusterNodes_Writeview) getNodesWriteview_read();

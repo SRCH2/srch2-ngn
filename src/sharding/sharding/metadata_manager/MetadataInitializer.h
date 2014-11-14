@@ -34,7 +34,7 @@ public:
 
 	// 1. assigns the primary shard of each partition to this node
 	// 2. starts empty search engines for all primary shards.
-	void initializeCluster();
+	void initializeCluster(bool shouldLock = true);
 	// NOTE: assumes the caller thread has sLock on the writeview
 	void saveToDisk(const string & clusterName);
 private:

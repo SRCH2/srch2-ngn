@@ -51,9 +51,14 @@ void MetadataInitializer::initializeNode(){
 
 // 1. assigns the primary shard of each partition to this node
 // 2. starts empty search engines for all primary shards.
-void MetadataInitializer::initializeCluster(){
+void MetadataInitializer::initializeCluster(bool shouldLock){
 	boost::unique_lock<boost::shared_mutex> xLock;
-	Cluster_Writeview * writeview = metadataManager->getClusterWriteview_write(xLock);
+	Cluster_Writeview * writeview = NULL;
+	if(shouldLock){
+		writeview = metadataManager->getClusterWriteview_write(xLock);
+	}else{
+		writeview = metadataManager->getClusterWriteview_nolock();
+	}
 	// assign the parimary shard of each partition to this node
 	std::set<ClusterShardId> unassignedPartitions;
 	ClusterShardId id;
@@ -88,7 +93,7 @@ void MetadataInitializer::initializeCluster(){
 				writeview->cores[pidItr->coreId]->getName(), &shardId);
 		}
 		EmptyShardBuilder emptyShard(new ClusterShardId(shardId), indexDirectory);
-		emptyShard.prepare();
+		emptyShard.prepare(shouldLock);
 		writeview->assignLocalClusterShard(*pidItr, LocalPhysicalShard(emptyShard.getShardServer(), indexDirectory, ""));
 	}
 
@@ -162,7 +167,7 @@ void MetadataInitializer::addNewJsonFileShards(Cluster_Writeview * newWriteview)
 										newWriteview->cores[coreItr->first]->getName(), &shardId);
 			}
 			InitialShardBuilder shardBuilder(new NodeShardId(shardId), indexDirectory, coreItr->second.at(jsonFileIdx));
-			shardBuilder.prepare();
+			shardBuilder.prepare(false);
 			updateWriteviewForJsonFileShard(newWriteview, shardId, &shardBuilder);
 		}
 	}

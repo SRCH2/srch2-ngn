@@ -35,6 +35,9 @@ public:
 			NodeIteratorListenerInterface * consumer = NULL, bool expectResponse = true);
 	ConcurrentNotifOperation(SP(ShardingNotification) request,
 			ShardingMessageType resType,
+			NodeIteratorListenerInterface * consumer = NULL, bool expectResponse = true);
+	ConcurrentNotifOperation(SP(ShardingNotification) request,
+			ShardingMessageType resType,
 			vector<NodeId> participants,
 			NodeIteratorListenerInterface * consumer = NULL, bool expectResponse = true);
 	ConcurrentNotifOperation(ShardingMessageType resType,

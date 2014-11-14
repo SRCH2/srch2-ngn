@@ -59,7 +59,9 @@ public:
 	void setWriteview(Cluster_Writeview * newWriteview, const bool shouldLock = true);
 	unsigned applyAndCommit(MetadataChange * metadataChange);
 	Cluster_Writeview * getClusterWriteview_write(boost::unique_lock<boost::shared_mutex> & xLock);
+	Cluster_Writeview * getClusterWriteview_nolock();
 	const Cluster_Writeview * getClusterWriteview_read(boost::shared_lock<boost::shared_mutex> & sLock);
+
 	SP(ClusterNodes_Writeview) getClusterNodesWriteview_write();
 	SP(const ClusterNodes_Writeview) getClusterNodesWriteview_read();
 

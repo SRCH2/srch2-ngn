@@ -212,6 +212,10 @@ Cluster_Writeview * ResourceMetadataManager::
 	return writeview;
 }
 
+Cluster_Writeview * ResourceMetadataManager::getClusterWriteview_nolock(){
+	return writeview;
+}
+
 const Cluster_Writeview * ResourceMetadataManager::
 				getClusterWriteview_read(boost::shared_lock<boost::shared_mutex> & sLock){
 	sLock = boost::shared_lock<boost::shared_mutex>(writeviewMutex);

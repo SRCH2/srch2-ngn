@@ -24,7 +24,7 @@ public:
 		this->shardId = shardId;
 		successFlag = false;
 	}
-	virtual void prepare() = 0 ;
+	virtual void prepare(bool shouldLockWriteview = true) = 0 ;
 	virtual ~InitialShardHandler(){};
 	bool isSuccessful() const{
 		return this->successFlag;
@@ -41,9 +41,14 @@ class InitialShardLoader : public InitialShardHandler{
 public:
 	InitialShardLoader(ShardId * shardId, const string & indexDirectory):InitialShardHandler(shardId),
 	indexDirectory(indexDirectory){};
-	void prepare(){
+	void prepare(bool shouldLockWriteview = true){
 		boost::shared_lock<boost::shared_mutex> sLock;
-		const CoreInfo_t * indexDataConfig = ShardManager::getWriteview_read(sLock)->cores.at(shardId->coreId);
+		const CoreInfo_t * indexDataConfig = NULL;
+		if(shouldLockWriteview){
+			indexDataConfig = ShardManager::getWriteview_read(sLock)->cores.at(shardId->coreId);
+		}else{
+			indexDataConfig = ShardManager::getWriteview_nolock()->cores.at(shardId->coreId);
+		}
 
 		server = boost::shared_ptr<Srch2Server>(new Srch2Server(indexDataConfig, indexDirectory, ""));
 
@@ -74,9 +79,14 @@ public:
 			const string & jsonFileCompletePath):
 		InitialShardHandler(shardId),
 		indexDirectory(indexDirectory), jsonFileCompletePath(jsonFileCompletePath){};
-	void prepare(){
+	void prepare(bool shouldLockWriteview = true){
 		boost::shared_lock<boost::shared_mutex> sLock;
-		const CoreInfo_t * indexDataConfig = ShardManager::getWriteview_read(sLock)->cores.at(shardId->coreId);
+		const CoreInfo_t * indexDataConfig = NULL;
+		if(shouldLockWriteview){
+			indexDataConfig = ShardManager::getWriteview_read(sLock)->cores.at(shardId->coreId);
+		}else{
+			indexDataConfig = ShardManager::getWriteview_nolock()->cores.at(shardId->coreId);
+		}
 
 		server = boost::shared_ptr<Srch2Server>(new Srch2Server(indexDataConfig, indexDirectory, jsonFileCompletePath));
 
@@ -113,9 +123,14 @@ public:
 	EmptyShardBuilder(ShardId * shardId, const string & indexDirectory):
 		InitialShardHandler(shardId),
 		indexDirectory(indexDirectory){};
-	void prepare(){
+	void prepare(bool shouldLockWriteview = true){
 		boost::shared_lock<boost::shared_mutex> sLock;
-		const CoreInfo_t * indexDataConfig = ShardManager::getWriteview_read(sLock)->cores.at(shardId->coreId);
+		const CoreInfo_t * indexDataConfig = NULL;
+		if(shouldLockWriteview){
+			indexDataConfig = ShardManager::getWriteview_read(sLock)->cores.at(shardId->coreId);
+		}else{
+			indexDataConfig = ShardManager::getWriteview_nolock()->cores.at(shardId->coreId);
+		}
 
 		server = boost::shared_ptr<Srch2Server>(new Srch2Server(indexDataConfig, indexDirectory, ""));
 
