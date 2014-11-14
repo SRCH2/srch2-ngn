@@ -13,7 +13,6 @@
 #include <instantsearch/QueryResults.h>
 #include <core/query/QueryResultsInternal.h>
 #include <core/util/Version.h>
-#include "ServerHighLighter.h"
 #include "wrapper/ParsedParameterContainer.h"
 #include "sharding/sharding/ShardManager.h"
 

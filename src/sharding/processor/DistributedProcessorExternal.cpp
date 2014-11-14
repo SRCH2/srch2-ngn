@@ -36,7 +36,6 @@
 #include "util/ParserUtility.h"
 #include "HTTPRequestHandler.h"
 #include "IndexWriteUtil.h"
-#include "ServerHighLighter.h"
 
 
 

@@ -6,7 +6,7 @@
 #include "json/value.h"
 #include "JSONRecordParser.h"
 #include "src/sharding/configuration/ConfigManager.h"
-#include "AnalyzerFactory.h"
+#include "analyzer/AnalyzerFactory.h"
 #include "evhttp.h"
 #include "thirdparty/snappy-1.0.4/snappy.h"
 #include "URLParser.h"

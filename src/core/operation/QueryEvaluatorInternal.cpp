@@ -37,7 +37,7 @@
 #include "physical_plan/SortByRefiningAttributeOperator.h"
 #include "physical_plan/PhraseSearchOperator.h"
 #include "physical_plan/KeywordSearchOperator.h"
-#include "src/server/ServerHighLighter.h"
+#include "../highlighter/ServerHighLighter.h"
 
 #include <vector>
 #include <algorithm>
