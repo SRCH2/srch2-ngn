@@ -10,6 +10,7 @@
 
 #include <vector>
 #include "highlighter/Highlighter.h"
+#include "../sharding/configuration/CoreInfo.h"
 
 namespace srch2 {
 namespace instantsearch {
@@ -33,24 +34,22 @@ class ParsedParameterContainer;
 
 class ServerHighLighter {
 public:
-	ServerHighLighter(QueryResults * queryResults,Srch2Server *server,
-			ParsedParameterContainer& param, unsigned offset, unsigned count);
+	ServerHighLighter(QueryResults * queryResults, const Indexer *indexer, const CoreInfo_t * coreInfo,
+			const vector<unsigned>& accessibleAttrs);
 	virtual ~ServerHighLighter();
-	void generateSnippets(map<string,std::pair<string, RecordSnippet> > & highlightInfo);
+	void generateSnippets();
 private:
 	void genSnippetsForSingleRecord(const QueryResults *qr, unsigned idx, RecordSnippet& recordSnippets);
 	QueryResults * queryResults;
 	HighlightAlgorithm* highlightAlgorithms;
-	Srch2Server *server;
+	const CoreInfo_t *coreInfo;
+	const Indexer *indexer;
 	RecordSerializer *compactRecDeserializer;
 	Schema * storedAttrSchema;
-	unsigned HighlightRecOffset;
-	unsigned HighlightRecCount;
 	std::string uncompressedInMemoryRecordString;
     std::map<string, vector<unsigned> *> prefixToCompleteStore;
-    //TODO: temp for V0 ..rempve in V1
-    std::map<string, PhraseInfo> PhraseKeyWordsInfoMap;
-    string aclRoleValue;
+    vector<unsigned> accessibleAttributes;
+    std::map<string, PhraseInfo> phraseKeyWordsInfoMap;
 };
 
 } /* namespace httpwrapper */

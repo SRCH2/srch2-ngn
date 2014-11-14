@@ -59,19 +59,12 @@ public:
 		}
 
 		if(prepareAttributeAclInfo()){
-			// we will continue when the result of attribute acl comes
+			// we will continue search from the "consume" function when
+			// the result of attribute acl comes.
 			return;
 		}
-		// TODO_FOR_SURENDRA
-		// Maybe even no change is required here, just as a note :
-		// there are two cases for which acl attribute vectors can be empty :
-		// 1. roleId does not have access to any attributes
-		// 2. we do not have acl attribute which is the case if we are in this location of code
-		//    (prepareAttributeAclInfo() has returned false)
-		//TODO
 
-		///
-		// now just continue with search
+		// If all attributes are non-acl then we just continue with the search.
 		search();
 	}
 
@@ -98,6 +91,10 @@ public:
 	void search(){
 
 		this->logicalPlan = prepareLogicalPlan();
+
+		logicalPlan->accessibleRefiningAttributes = aclApprovedRefiningAttributes;
+		logicalPlan->accessibleSearchableAttributes = aclApprovedSearchAttributes;
+
 		if(this->logicalPlan == NULL){
 			finalize();
 			return;
@@ -195,14 +192,17 @@ private:
 	AclAttributeReadCommand * aclAttributeReadCommnad;
 
 	bool prepareAttributeAclInfo(){
+
+	    if (paramContainer.roleId == "" || (
+	    		coreInfo->getSchema()->getAclRefiningAttrIdsList().size() == 0
+	    		&& coreInfo->getSchema()->getAclSearchableAttrIdsList().size() == 0)) {
+	    	// do not do attribute acl query if
+	    	// 1. role Id is not present.  OR
+	    	// 2. non of the attributes are acl enabled. So attributes acl is implicitly disabled.
+	    	return false;
+	    }
 	    const CoreInfo_t * aclCore =
 	    		clusterReadview->getCore(coreInfo->getAttributeAclCoreId());
-	    /******************************/
-	    // TODO_FOR_SURENDRA
-	    // TODO for Surendra,
-	    // we must check here whether there is any attribute acl or not
-	    // if there is not, we must return false, if there is we continue with AclAttributeReadCommand producer class ....
-	    /******************************/
 	    aclAttributeReadCommnad = new AclAttributeReadCommand(this, paramContainer.roleId, aclCore);
 	    aclAttributeReadCommnad->produce();
 	    return true;
@@ -217,7 +217,7 @@ private:
 
 	    QueryValidator qv(*(coreInfo->getSchema()),
 	            *(coreInfo), &paramContainer,
-	            NULL); // TODO_FOR_SURENDRA TODO attribute ACL is not available here, constructor must change
+	            aclApprovedRefiningAttributes, aclApprovedSearchAttributes);
 
 	    bool valid = qv.validate();
 	    if (!valid) {
@@ -234,7 +234,7 @@ private:
 	            *(coreInfo->getSchema()),
 	            *(AnalyzerFactory::getCurrentThreadAnalyzer(coreInfo)),
 	            &paramContainer,
-	            NULL); // TODO_FOR_SURENDRA TODO attribute ACL is not available here, constructor must change
+	            aclApprovedRefiningAttributes, aclApprovedSearchAttributes);
 
 	    if(qr.rewrite(*logicalPlan) == false){
 	        // if the query is not valid, print the error message to the response
@@ -467,8 +467,6 @@ private:
 						//override if field list parameter is given in query
 	                    genRecordJsonString(indexDataConfig->getSchema(), inMemoryData, allResults.at(i)->externalRecordId,
 	                    		sbuffer, attributesToReturnFromQueryPtr);
-	                    /// TODO TODO_FOR_SURENDRA    we need to use two vectors to fix genRecordJsonString
-	                    // TODO                       please make sure to fix all places that this method is called.
 	                    // The class CustomizableJsonWriter allows us to
 	                    // attach the data string to the JSON tree without parsing it.
 	                    (*root)["results"][counter][global_internal_record.first] = sbuffer;
@@ -813,9 +811,57 @@ private:
 	}
 	void genRecordJsonString(const srch2::instantsearch::Schema * schema, StoredRecordBuffer buffer,
 	        const string& externalRecordId, string& sbuffer, const vector<string>* attrToReturn){
+
+		vector<string>  accessibleAttrsList;
+		// perform access control check on fields to be returned to a user.
+		if (attrToReturn == NULL) {
+			// attributes to return are not specified. Hence, Go over the fields in the schema and check
+			// whether they are accessible .
+			std::map<std::string, unsigned>::const_iterator iter =
+					schema->getSearchableAttribute().begin();
+			// 1. Searchable fields in schema
+			for ( ; iter != schema->getSearchableAttribute().end(); iter++) {
+				if ( AttributeAccessControl::isFieldAccessible(iter->second,
+						aclApprovedSearchAttributes, schema->getNonAclSearchableAttrIdsList())) {
+					accessibleAttrsList.push_back(iter->first);
+				}
+			}
+			// 2. Refining fields in schema
+			iter = schema->getRefiningAttributes()->begin();
+			for ( ; iter != schema->getRefiningAttributes()->end(); iter++) {
+				if (AttributeAccessControl::isFieldAccessible(iter->second,
+						aclApprovedRefiningAttributes, schema->getNonAclRefiningAttrIdsList())) {
+					accessibleAttrsList.push_back(iter->first);
+				}
+			}
+
+		} else {
+			// if attributes to returned are specified then verify whether these attributes are accessible
+			for (unsigned i = 0; i < attrToReturn->size(); ++i) {
+				const string & fieldName = attrToReturn->operator[](i);
+
+				int id = schema->getSearchableAttributeId(fieldName);
+				if (id != -1) {
+					if (AttributeAccessControl::isFieldAccessible(id,
+							aclApprovedSearchAttributes, schema->getNonAclSearchableAttrIdsList())) {
+						accessibleAttrsList.push_back(fieldName);
+					}
+				} else {
+					id = schema->getRefiningAttributeId(fieldName);
+					if (id != -1) {
+						if (AttributeAccessControl::isFieldAccessible(id,
+								aclApprovedRefiningAttributes, schema->getNonAclRefiningAttrIdsList())) {
+							accessibleAttrsList.push_back(fieldName);
+						};
+					}
+				}
+			}
+		}
+
 	    Schema * storedSchema = Schema::create();
 	    srch2::util::RecordSerializerUtil::populateStoredSchema(storedSchema, schema);
-	    srch2::util::RecordSerializerUtil::convertCompactToJSONString(storedSchema, buffer, externalRecordId, sbuffer, attrToReturn);
+	    srch2::util::RecordSerializerUtil::convertCompactToJSONString(storedSchema, buffer,
+	    		externalRecordId, sbuffer, &accessibleAttrsList);
 	    delete storedSchema;
 	}
 

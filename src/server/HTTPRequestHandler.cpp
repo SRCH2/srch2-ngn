@@ -1484,7 +1484,7 @@ void HTTPRequestHandler::attributeAclModify(evhttp_request *req, Srch2Server *se
 	}
 }
 #endif
-
+#if 0
 void HTTPRequestHandler::searchCommand(evhttp_request *req,
         Srch2Server *server) {
     evkeyvalq headers;
@@ -1708,7 +1708,7 @@ void HTTPRequestHandler::searchAllCommand(evhttp_request *req, const CoreNameSer
     }
     evhttp_clear_headers(&headers);
 }
-
+#endif
 
 void HTTPRequestHandler::suggestCommand(evhttp_request *req, Srch2Server *server){
     // start the timer for search

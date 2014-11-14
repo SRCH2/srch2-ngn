@@ -32,8 +32,10 @@ namespace httpwrapper {
 QueryValidator::QueryValidator(const Schema & schema,
         const CoreInfo_t &indexDataContainerConf,
         ParsedParameterContainer * paramContainer,
-        const AttributeAccessControl & attrAcl) :
-        schema(schema), indexDataContainerConf(indexDataContainerConf), attributeAcl(attrAcl){
+        const vector<unsigned> & searchAttrs,
+        const vector<unsigned> & refiningAttrs) :
+        schema(schema), indexDataContainerConf(indexDataContainerConf),
+        accessibleSearchAttrs(searchAttrs), accessibleRefiningAttrs(refiningAttrs){
     this->paramContainer = paramContainer;
 }
 
@@ -156,8 +158,8 @@ bool QueryValidator::validateExistenceOfAttributesInQueryFieldBoost() {
         	if (paramContainer->attrAclOn) {
         		// if the attribute acl switch is ON then check attribute ACL for validity
         		// of this field.
-        		validField = attributeAcl.isSearchableFieldAccessibleForRole(paramContainer->roleId,
-        		        			boostIter->attribute);
+        		validField = isSearchableFieldAccessible(boostIter->attribute);
+
         	} else {
         		// if the attribute acl switch is OFF then check whether the field is searchable
         		validField =  searchableAttributes.count(boostIter->attribute) > 0 ? true : false;
@@ -232,8 +234,8 @@ bool QueryValidator::validateExistenceOfAttributesInSortFiler() {
     	if (paramContainer->attrAclOn) {
     		// if the attribute acl switch is ON then check attribute ACL for validity
     		// of this field.
-    		validField = attributeAcl.isRefiningFieldAccessibleForRole(paramContainer->roleId,
-    				*field);
+    		validField = isRefiningFieldAccessible(*field);
+
     	} else {
     		// if the attribute acl switch is OFF then check whether the field is refining
     		validField =  schema.getRefiningAttributes()->count(*field) > 0 ? true : false;
@@ -295,8 +297,7 @@ bool QueryValidator::validateExistenceOfAttributesInFacetFiler() {
     	if (paramContainer->attrAclOn) {
     		// if the attribute acl switch is ON then check attribute ACL for validity
     		// of this field.
-    		validField = attributeAcl.isRefiningFieldAccessibleForRole(paramContainer->roleId,
-    				*field);
+    		validField = isRefiningFieldAccessible(*field);
     	} else {
     		// if the attribute acl switch is OFF then check whether the field is refining
     		validField =  schema.getRefiningAttributes()->count(*field) > 0 ? true : false;
@@ -477,8 +478,8 @@ bool QueryValidator::validateExistenceOfAttributesInFacetFiler() {
 bool QueryValidator::validateFilterQuery(){
     if(paramContainer->hasParameterInQuery(FilterQueryEvaluatorFlag)){
         FilterQueryContainer * filterQueryContainer = paramContainer->filterQueryContainer;
-        if (! filterQueryContainer->evaluator->validate(schema, paramContainer->roleId,
-        		attributeAcl, paramContainer->attrAclOn)){
+        if (! filterQueryContainer->evaluator->validate(schema, accessibleRefiningAttrs,
+        		 paramContainer->attrAclOn)){
             paramContainer->parametersInQuery.erase(
                     remove(
                             paramContainer->parametersInQuery.begin(),

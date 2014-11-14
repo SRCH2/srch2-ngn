@@ -36,6 +36,20 @@ enum BulkLoadType {
 	AclAttributeBulkLoad,
 };
 
+struct AclRecordBatchInfo{
+	unsigned lineNumber;
+	string primaryKey;
+	bool httpLayerSuccess;
+	string httpLayerMsg;
+};
+
+struct AclAttributeBatchInfo{
+	unsigned lineNumber;
+	vector<string> roleIds;
+	bool httpLayerSuccess;
+	string httpLayerMsg;
+};
+
 class BulkLoadCommand: public ProducerInterface {
 public:
 	BulkLoadCommand(ConsumerInterface * consumer,
@@ -135,6 +149,14 @@ public:
 
 	bool isBulkLoadDone() const { return bulkdLoadFileStream.eof(); }
 
+    const vector<AclRecordBatchInfo>& getRecordAclBatchInfo() {
+    	return recordAclBatchInfo;
+    }
+
+    const vector<AclAttributeBatchInfo>& getAttributeAclBatchInfo() {
+    	return attributeAclBatchInfo;
+    }
+
 private:
 
     ifstream::pos_type getFileSize(const char* filename) {
@@ -151,6 +173,9 @@ private:
     	}
     	recordsToIndex.clear();
     	aclDataForWriteCommand.clear();
+
+    	recordAclBatchInfo.clear();
+    	attributeAclBatchInfo.clear();
     }
 
     WriteCommand * parseRecordsFromFile() {
@@ -195,9 +220,11 @@ private:
         			++successCounter;
         			AclCommandHttpHandler::prepareAclDataForApiLayer(aclDataForWriteCommand,
         			    	        						roleIdList, attributeList);
+        			AclAttributeBatchInfo bi = { lineProcessed, roleIdList, true, "" };
+        			attributeAclBatchInfo.push_back(bi);
         		} else {
-        			Logger::error("BulkLoad : Cannot process line = %d,  error =  %s", lineProcessed,
-        					error.str().c_str());
+        			AclAttributeBatchInfo bi = { lineProcessed, roleIdList, false,  aclAttributeResponse.asString()};
+        			attributeAclBatchInfo.push_back(bi);
         		}
         		break;
         	}
@@ -205,17 +232,18 @@ private:
         		vector<string> roleIdList;
         		string primaryKeyID;
         		Json::Value doc(line);
-        		Json::Value aclAttributeResponse;
         		stringstream log_str;
         		bool success = JSONRecordParser::_extractResourceAndRoleIds(roleIdList,
         				primaryKeyID, doc, coreInfo, log_str);
         		if (success) {
         			++successCounter;
+        			AclRecordBatchInfo bi = { lineProcessed, primaryKeyID, true, "" };
+        			recordAclBatchInfo.push_back(bi);
         			AclRecordCommandHttpHandler::prepareAclDataForApiLayer(aclDataForWriteCommand,
         					primaryKeyID, roleIdList);
         		} else {
-        			Logger::error("BulkLoad : Cannot process line = %d,  error =  %s", lineProcessed,
-        					error.str().c_str());
+        			AclRecordBatchInfo bi = { lineProcessed, primaryKeyID, false,  log_str.str()};
+        			recordAclBatchInfo.push_back(bi);
         		}
         		break;
         	}
@@ -303,6 +331,9 @@ private:  // data
 
     vector<Record *> recordsToIndex;  // for record bulk load
     std::map< string, vector<string> > aclDataForWriteCommand;  // for acl bulk load
+
+    vector<AclRecordBatchInfo> recordAclBatchInfo;
+    vector<AclAttributeBatchInfo> attributeAclBatchInfo;
 };
 
 
