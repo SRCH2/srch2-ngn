@@ -92,7 +92,7 @@ unsigned Shape::getNumberOfBytesForSerializationForNetwork(){
     }
     }
     ASSERT(false);
-    return NULL;
+    return 0;
 }
 
 }

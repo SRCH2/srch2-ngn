@@ -204,6 +204,7 @@ unsigned ResourceMetadataManager::applyAndCommit(MetadataChange * metadataChange
 	this->writeviewMutex.lock();
 	unsigned oldVersionId = applyAndCommit(metadataChange, this->writeview);
 	this->writeviewMutex.unlock();
+	return oldVersionId;
 }
 
 Cluster_Writeview * ResourceMetadataManager::

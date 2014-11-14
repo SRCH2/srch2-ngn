@@ -36,11 +36,11 @@ NodeAddChange::NodeAddChange(NodeId newNodeId, const vector<ClusterShardId> & lo
     this->newNodeId = newNodeId;
     this->localClusterShardIds = localClusterShardIds;
     this->localNodeShardIds = localNodeShardIds;
-};
-NodeAddChange::NodeAddChange(){};
+}
+NodeAddChange::NodeAddChange(){}
 NodeAddChange::NodeAddChange(const NodeId & newNodeId){
     this->newNodeId = newNodeId;
-};
+}
 NodeAddChange::NodeAddChange(const NodeAddChange & copy){
     newNodeId = copy.newNodeId;
     localClusterShardIds = copy.localClusterShardIds;

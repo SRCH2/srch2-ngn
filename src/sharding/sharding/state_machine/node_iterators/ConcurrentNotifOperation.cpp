@@ -113,7 +113,7 @@ ConcurrentNotifOperation::ConcurrentNotifOperation(ShardingMessageType resType,
 	Logger::sharding(Logger::Detail, "NodeAggregator(opid=%s)| Sending %s . Consumer is %s. ExpectResponse(%s)"
 			, NodeOperationId(ShardManager::getCurrentNodeId(), this->getOperationId()).toString().c_str()
 			,ss.str().c_str(),  consumer == NULL ? "NULL" : consumer->getName().c_str(), expectResponse ? "YES" : "NO");
-};
+}
 
 ConcurrentNotifOperation::~ConcurrentNotifOperation(){
 	if(consumer == NULL){
@@ -122,7 +122,7 @@ ConcurrentNotifOperation::~ConcurrentNotifOperation(){
 		}
 		return;
 	}
-};
+}
 
 OperationState * ConcurrentNotifOperation::entry(){
 	__FUNC_LINE__

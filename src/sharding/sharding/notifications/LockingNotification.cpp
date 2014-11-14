@@ -491,7 +491,7 @@ void LockingNotification::getInvolvedNodes(SP(Transaction) sp, vector<NodeId> & 
 LockingNotification::ACK::ACK(bool grantedFlag){
 	this->granted = grantedFlag;
 	this->indexOfLastGrantedItem = 0;
-};
+}
 
 bool LockingNotification::ACK::resolveNotification(SP(ShardingNotification) ack){
 	ShardManager::getShardManager()->getStateMachine()->handle(ack);

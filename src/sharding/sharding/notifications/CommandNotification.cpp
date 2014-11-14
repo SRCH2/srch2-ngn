@@ -33,7 +33,7 @@ CommandNotification::CommandNotification(){
 	ShardManager::getReadview(clusterReadview);
 }
 
-CommandNotification::~CommandNotification(){};
+CommandNotification::~CommandNotification(){}
 
 bool CommandNotification::resolveNotification(SP(ShardingNotification) notif){
 	SP(CommandStatusNotification) response =

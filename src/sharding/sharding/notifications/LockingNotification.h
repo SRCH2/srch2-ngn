@@ -86,9 +86,8 @@ public:
 
 private:
 
-    bool releaseRequestFlag;
-
     LockRequestType lockRequestType;
+    bool releaseRequestFlag;
     bool blocking;
 	/*
 	 * in case of LockRequestType_Copy

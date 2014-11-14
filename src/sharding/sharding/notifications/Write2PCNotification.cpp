@@ -199,7 +199,7 @@ Write2PCNotification::Write2PCNotification(boost::shared_ptr<const ClusterResour
 }
 Write2PCNotification::Write2PCNotification(){
 	ShardManager::getReadview(clusterReadview);
-};
+}
 
 
 bool Write2PCNotification::resolveNotification(SP(ShardingNotification) _notif){
@@ -282,7 +282,7 @@ Write2PCNotification::ACK::ShardResult::~ShardResult(){
 }
 Write2PCNotification::ACK::ShardResult::ShardResult(){
 	shardId = NULL;
-};
+}
 
 void * Write2PCNotification::ACK::ShardResult::serialize(void * buffer) const{
 	ASSERT(shardId != NULL);

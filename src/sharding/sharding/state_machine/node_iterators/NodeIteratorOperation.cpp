@@ -208,7 +208,7 @@ void OrderedNodeIteratorOperation::setParticipants(vector<NodeId> & participants
 
 string OrderedNodeIteratorOperation::getOperationName() const {
 	return "NodeIteratorOperation, request " + string(getShardingMessageTypeStr(request->messageType()));
-};
+}
 
 string OrderedNodeIteratorOperation::getOperationStatus() const {
 	stringstream ss;
@@ -220,7 +220,7 @@ string OrderedNodeIteratorOperation::getOperationStatus() const {
 			this->participants.at(this->participantsIndex).toString().c_str() << " .";
 
 	return ss.str();
-};
+}
 
 OperationState * OrderedNodeIteratorOperation::askNode(const unsigned nodeIndex){
 	// if all nodes are already iterated : call finalize from validator

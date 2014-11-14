@@ -132,6 +132,8 @@ LockBatch * LockBatch::generateLockBatch(SP(LockingNotification) notif){
 			return lockBatch;
 		}
 	}
+	ASSERT(false);
+	return NULL;
 }
 
 LockBatch * LockBatch::generateLockBatch(const ClusterShardId & shardId, const LockLevel & lockLevel){

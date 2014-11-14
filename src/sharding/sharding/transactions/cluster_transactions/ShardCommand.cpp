@@ -14,7 +14,7 @@ namespace httpwrapper {
 
 ShardCommand::ShardCommand(ConsumerInterface * consumer,
 		unsigned coreId, ShardCommandCode commandCode,
-		const string & filePath):coreId(coreId), commandCode(commandCode), ProducerInterface(consumer){
+		const string & filePath):ProducerInterface(consumer), coreId(coreId), commandCode(commandCode){
 	ASSERT(this->getTransaction() != NULL);
 	this->filePath = filePath;
 	this->dataSavedFlag = false;

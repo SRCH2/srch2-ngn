@@ -87,9 +87,9 @@ public:
 
 private:
 
-    DPInternalRequestHandler& internalDP;
     ConfigManager & configManager;
     TransportManager & transportManager;
+    DPInternalRequestHandler& internalDP;
     ReplyMessageHandler & replyHandler;
     void deleteResponseRequestObjectBasedOnType(ShardingMessageType type, void * responseObject);
 };

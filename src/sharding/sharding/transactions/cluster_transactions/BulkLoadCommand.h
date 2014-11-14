@@ -33,7 +33,7 @@ namespace httpwrapper {
 enum BulkLoadType {
 	RecordBulkLoad,
 	AclRecordBulkLoad,
-	AclAttributeBulkLoad,
+	AclAttributeBulkLoad
 };
 
 struct AclRecordBatchInfo{
@@ -249,6 +249,7 @@ private:
         	}
         	default:
         		ASSERT(false);
+        		break;
         	}
 
     		if (successCounter > BULK_LOAD_BATCH_SIZE) {
@@ -260,12 +261,10 @@ private:
     	case RecordBulkLoad:
     	{
     		return new WriteCommand(this->getConsumer(),recordsToIndex, Insert_ClusterRecordOperation_Type, coreInfo);
-    		break;
     	}
     	case AclRecordBulkLoad:
     	{
     		return new WriteCommand(this->getConsumer(), aclDataForWriteCommand, Acl_Record_Add, coreInfo);
-    		break;
     	}
     	case AclAttributeBulkLoad:
     	{
@@ -276,12 +275,13 @@ private:
     			return new WriteCommand(this->getConsumer(), aclDataForWriteCommand, ACL_APPEND, aclCoreInfo);
     		else
     			return NULL;
-    		break;
     	}
     	default:
     		ASSERT(false);
     		return NULL;
     	}
+		ASSERT(false);
+		return NULL;
     }
 
     srch2is::Record* parseRecordsFromString(std::string& line,
@@ -317,10 +317,10 @@ private:
 
 private:  // data
 
+	const CoreInfo_t * coreInfo;
+	const string & filePath;
 	boost::shared_ptr<const ClusterResourceMetadata_Readview> clusterReadview;
 	vector<JsonMessageCode> messageCodes;
-	const string & filePath;
-	const CoreInfo_t * coreInfo;
 
     BulkLoadType bulkLoadType;
     ifstream bulkdLoadFileStream;

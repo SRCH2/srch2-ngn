@@ -22,11 +22,11 @@ public:
 
 	DPMessageHandler(ConfigManager& configurationManager,
 			TransportManager& transportManager, DPInternalRequestHandler& dpInternal):
-				requestMessageHandler(configurationManager, transportManager, dpInternal, replyMessageHandler),
-				replyMessageHandler(transportManager.getMessageAllocator()),
 				configurationManager(configurationManager),
 				transportManager(transportManager),
-				dpInternal(dpInternal){};
+				dpInternal(dpInternal),
+				requestMessageHandler(configurationManager, transportManager, dpInternal, replyMessageHandler),
+				replyMessageHandler(transportManager.getMessageAllocator()){};
 	/*
 	 * This callback is called from TM when a message of type DP is received.
 	 * This message is either passed to DP internal (if it's a request) or

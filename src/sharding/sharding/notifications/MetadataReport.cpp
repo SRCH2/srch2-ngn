@@ -32,7 +32,7 @@ void * MetadataReport::deserializeBody(void * buffer) {
 }
 Cluster_Writeview * MetadataReport::getWriteview() const{
 	return writeview;
-};
+}
 
 bool MetadataReport::operator==(const MetadataReport & report){
 	return *writeview == *(report.writeview);

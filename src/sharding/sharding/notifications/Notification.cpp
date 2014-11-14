@@ -76,7 +76,7 @@ ShardMigrationStatus::ShardMigrationStatus(const ShardMigrationStatus & status){
     this->shard = status.shard;
     this->status = status.status;
 
-};
+}
 ShardMigrationStatus & ShardMigrationStatus::operator=(const ShardMigrationStatus & status){
     if(this == &status){
         return *this;

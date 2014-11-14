@@ -114,8 +114,8 @@ public:
 		return indexDirectory;
 	}
 private:
-	const string jsonFileCompletePath ;
 	const string indexDirectory;
+	const string jsonFileCompletePath ;
 };
 
 class EmptyShardBuilder : public InitialShardHandler{

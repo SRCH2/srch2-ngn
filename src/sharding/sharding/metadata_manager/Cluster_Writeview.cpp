@@ -86,7 +86,7 @@ ClusterShard_Writeview::ClusterShard_Writeview(){
 	isLocal = false;
 	nodeId = 0;
 	load = 0;
-};
+}
 
 void * ClusterShard_Writeview::serialize(void * buffer) const{
 	buffer = id.serialize(buffer);

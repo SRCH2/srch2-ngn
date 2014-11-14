@@ -150,8 +150,10 @@ public:
 	ClusterNodes_Writeview(boost::shared_mutex & nodesMutex,
 			map<NodeId, std::pair<ShardingNodeState, Node *> > & nodes,
 			const NodeId currentNodeId, const bool xLockedByDefault):
-				nodes(nodes),nodesMutex(nodesMutex),
-				currentNodeId(currentNodeId), xLockedByDefault(xLockedByDefault){
+				currentNodeId(currentNodeId),
+				nodes(nodes),
+				xLockedByDefault(xLockedByDefault),
+				nodesMutex(nodesMutex){
 		// assumes caller aquired S lock and then passes mutex to here ...
 	}
 

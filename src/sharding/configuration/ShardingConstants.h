@@ -216,9 +216,6 @@ enum GetInfoRequestType{
 };
 
 enum GetInfoAggregateCriterion{
-//	GetInfoAggregateCriterion_Node, // {"details" : [{""},{},{}]}
-//	GetInfoAggregateCriterion_Core,
-//	GetInfoAggregateCriterion_Core_Partition,
 	GetInfoAggregateCriterion_Core_Shard
 	// TODO : ...
 };
@@ -233,7 +230,7 @@ enum ClusterRecordOperation_Type{
 	AclRecordDelete_ClusterRecordOperation_Type,
 	AclAttrReplace_ClusterRecordOperation_Type,
 	AclAttrDelete_ClusterRecordOperation_Type,
-	AclAttrAppend_ClusterRecordOperation_Type,
+	AclAttrAppend_ClusterRecordOperation_Type
 };
 
 
@@ -262,14 +259,6 @@ enum ShardCommandCode{
     ShardCommandCode_MergeSetOff,
     ShardCommandCode_ResetLogger
 };
-
-//enum RecordWriteCommandCode{ // TODO : Delete if system is stable.
-//	RecordWriteCommand_InsertUpdate,
-//	RecordWriteCommand_Delete,
-//	RecordWriteCommand_AclAttrAdd,
-//	RecordWriteCommand_AclAttrAppend,
-//	RecordWriteCommand_AclAttrDelete
-//};
 
 enum ShardingTransactionType{
 	ShardingTransactionType_Loadbalancing,
