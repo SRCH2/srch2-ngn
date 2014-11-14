@@ -87,8 +87,6 @@ private:
 
     	std::map< string, vector<string> > * attributeAclDataForApiLayer =
     			new std::map< string, vector<string> >();
-    	Json::Value response(Json::objectValue);
-    	AclActionType action;
     	switch (req->type) {
     	    case EVHTTP_REQ_PUT: {
     	        size_t length = EVBUFFER_LENGTH(req->input_buffer);
@@ -233,11 +231,55 @@ private:
      */
     void consume(const map<string, bool> & results,
 			map<string, map<ShardId * ,vector<JsonMessageCode>, ShardPtrComparator > > & messageCodes){
-    	// TODO : must use this consume function to print to HTTP channel
-    	// TODO TODO_FOR_SURENDRA
+    	typedef map<ShardId * ,vector<JsonMessageCode>, ShardPtrComparator > MessageCodes;
+
+		string actionName;
+		switch (action) {
+			case ACL_REPLACE:
+				actionName = string(c_action_acl_attribute_replace);
+				break;
+			case ACL_APPEND:
+				actionName = string(c_action_acl_attribute_append);
+				break;
+			case ACL_DELETE:
+				actionName = string(c_action_acl_attribute_delete);
+				break;
+		}
+
+    	JsonResponseHandler * responseObject = this->getTransaction()->getSession()->response;
+    	for (unsigned i = 0; i < httpPrintInfoInfoArr.size(); ++i) {
+
+			Json::Value recordShardResponse(Json::objectValue);
+			recordShardResponse[c_action] = actionName;
+			recordShardResponse[c_status] = httpPrintInfoInfoArr[i].httpLayerSuccess;
+			recordShardResponse[c_core_name] = coreInfo->getName();
+
+    		if (httpPrintInfoInfoArr[i].httpLayerSuccess) {
+    			const vector<string>& roleIds = httpPrintInfoInfoArr[i].roleIds;
+    			bool success = true;
+    			for (unsigned j = 0; j < roleIds.size(); ++j) {
+    				map<string, bool>::const_iterator iter = results.find(roleIds[i]);
+    				if ( iter != results.end()) {
+    					success &= iter->second;
+    					if(messageCodes.find(iter->first) != messageCodes.end()){
+    						MessageCodes &primaryKeyMessageCode = messageCodes[iter->first];
+    						for(MessageCodes::iterator shardItr =
+    								primaryKeyMessageCode.begin(); shardItr != primaryKeyMessageCode.end(); ++shardItr){
+    							JsonRecordOperationResponse::addRecordMessages(recordShardResponse, shardItr->second);
+    						}
+    					} else { ASSERT(false); }
+    				} else { ASSERT(false);}
+    			}
+    			recordShardResponse[c_status] = success;
+    		} else {
+    			JsonRecordOperationResponse::addRecordError(recordShardResponse,
+    					HTTP_JSON_Custom_Error, httpPrintInfoInfoArr[i].httpLayerMsg);
+    		}
+
+    		JsonRecordOperationResponse * responseChannel = (JsonRecordOperationResponse *) this->getSession()->response;
+    		responseChannel->addRecordShardResponse(recordShardResponse);
+    	}
     }
-
-
 
     void finalizeWork(Transaction::Params * params){
 		this->getTransaction()->getSession()->response->printHTTP(req);
@@ -265,6 +307,13 @@ private:
     evhttp_request *req;
     const CoreInfo_t * coreInfo;
     const CoreInfo_t * aclCoreInfo;
+	AclActionType action;
+	struct HTTPPrintInfo{
+		bool httpLayerSuccess;
+		string httpLayerMsg;
+		vector<string> roleIds;
+	};
+	vector<HTTPPrintInfo> httpPrintInfoInfoArr;
 };
 
 

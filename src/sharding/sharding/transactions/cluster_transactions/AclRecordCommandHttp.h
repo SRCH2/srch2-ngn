@@ -66,7 +66,6 @@ private:
     	ASSERT(this->coreInfo != NULL);
         aclCommand = NULL;
         recordAclCommandType = commandType;
-
     }
 
     /*
@@ -82,10 +81,7 @@ private:
     		return ;
     	}
 
-    	std::map< string, vector<string> > * recordAclDataForApiLayer =
-    	    			new std::map< string, vector<string> >();
-
-    	Json::Value response(Json::arrayValue);
+    	std::map< string, vector<string> > recordAclDataForApiLayer;
 
     	if(coreInfo->getHasRecordAcl()){ // this core has record Acl
 
@@ -110,7 +106,6 @@ private:
     			return ;
     		}else{
     			if(root.type() == Json::arrayValue) { // The input is an array of JSON objects.
-    				response.resize(root.size());
     				for ( int index = 0; index < root.size(); ++index ) {
     					Json::Value defaultValueToReturn = Json::Value("");
     					const Json::Value doc = root.get(index,
@@ -121,26 +116,32 @@ private:
     					// extract all the role ids from the query
     					bool success = JSONRecordParser::_extractResourceAndRoleIds(roleIds, primaryKeyID,
     							doc, coreInfo, log_str);
-    					response[index] = log_str.str();
+    					Logger::console("HTTP Record ACL: %s", log_str.str().c_str());
     					if (success) {
-    						prepareAclDataForApiLayer(*recordAclDataForApiLayer, primaryKeyID, roleIds);
+    						HTTPPrintInfo hpi = { primaryKeyID, true, "" };
+    						inputRecordInfoArr.push_back(hpi);
+    						prepareAclDataForApiLayer(recordAclDataForApiLayer, primaryKeyID, roleIds);
+    					} else {
+    						HTTPPrintInfo hpi = { primaryKeyID, false,  log_str.str()};
+    						inputRecordInfoArr.push_back(hpi);
     					}
     				}
     			}else{ // The input is only one JSON object.
-    				response.resize(1);
     				const Json::Value doc = root;
     				vector<string> roleIds;
     				string primaryKeyID;
     				std::stringstream log_str;
     				// extract all the role ids from the query
     				bool success = JSONRecordParser::_extractResourceAndRoleIds(roleIds, primaryKeyID, doc, coreInfo, log_str);
+    				Logger::console("HTTP Record ACL: %s", log_str.str().c_str());
     				if(!success){
-    					responseObject->addMessage("error:" + coreInfo->getName() + " does not have record-based access control.");
+    					responseObject->addMessage("error:" + coreInfo->getName() + " : "  + log_str.str());
     					responseObject->finalizeOK();
     					return ;
     				} else {
-    					response[0] = log_str.str();
-    					prepareAclDataForApiLayer(*recordAclDataForApiLayer, primaryKeyID, roleIds);
+    					HTTPPrintInfo hpi = { primaryKeyID, true, "" };
+    					inputRecordInfoArr.push_back(hpi);
+    					prepareAclDataForApiLayer(recordAclDataForApiLayer, primaryKeyID, roleIds);
     				}
     			}
     		}
@@ -154,11 +155,9 @@ private:
         // When query parameters are parsed successfully, we must create and run AclCommand class and get back
         // its response in a 'consume' callback function.
 
-    	aclCommand = new WriteCommand(this, *recordAclDataForApiLayer, recordAclCommandType, coreInfo);
+    	aclCommand = new WriteCommand(this, recordAclDataForApiLayer, recordAclCommandType, coreInfo);
 
         aclCommand->produce();
-
-        delete recordAclDataForApiLayer;
 
         return;
     }
@@ -171,8 +170,55 @@ private:
      */
     void consume(const map<string, bool> & results,
 			map<string, map<ShardId * ,vector<JsonMessageCode>, ShardPtrComparator > > & messageCodes){
-    	// TODO : must use this consume function to print to HTTP channel
-    	// TODO TODO_FOR_SURENDRA
+    	//print per record result
+    	typedef map<ShardId * ,vector<JsonMessageCode>, ShardPtrComparator > MessageCodes;
+
+		string actionName;
+		switch (recordAclCommandType) {
+			case Acl_Record_Add:
+				actionName = string(c_action_acl_record_add);
+				break;
+			case Acl_Record_Append:
+				actionName = string(c_action_acl_record_append);
+				break;
+			case Acl_Record_Delete:
+				actionName = string(c_action_acl_record_delete);
+				break;
+		}
+
+    	JsonResponseHandler * responseObject = this->getTransaction()->getSession()->response;
+    	for (unsigned i = 0; i < inputRecordInfoArr.size(); ++i) {
+			const string& pk = inputRecordInfoArr[i].primaryKey;
+			bool httpLayerSuccess = inputRecordInfoArr[i].httpLayerSuccess;
+
+			Json::Value recordShardResponse =
+					JsonRecordOperationResponse::getRecordJsonResponse(pk, actionName.c_str(),
+							httpLayerSuccess, coreInfo->getName());
+
+    		if (httpLayerSuccess) {
+    			map<string, bool>::const_iterator iter = results.find(pk);
+    			if ( iter != results.end()) {
+    				recordShardResponse[c_status] = iter->second;;
+    				if(messageCodes.find(iter->first) != messageCodes.end()){
+    					MessageCodes &primaryKeyMessageCode = messageCodes[iter->first];
+    					for(MessageCodes::iterator shardItr =
+    							primaryKeyMessageCode.begin(); shardItr != primaryKeyMessageCode.end(); ++shardItr){
+    						JsonRecordOperationResponse::addRecordMessages(recordShardResponse, shardItr->second);
+    					}
+    				} else {
+    					ASSERT(false);
+    				}
+    			} else {
+    				ASSERT(false);
+    			}
+    		} else {
+    			JsonRecordOperationResponse::addRecordError(recordShardResponse,
+    					HTTP_JSON_Custom_Error, inputRecordInfoArr[i].httpLayerMsg);
+    		}
+
+    		JsonRecordOperationResponse * responseChannel = (JsonRecordOperationResponse *) this->getSession()->response;
+    		responseChannel->addRecordShardResponse(recordShardResponse);
+    	}
     }
 
     void finalizeWork(Transaction::Params * params){
@@ -199,6 +245,12 @@ private:
     evhttp_request *req;
     const CoreInfo_t * coreInfo;
     srch2::instantsearch::RecordAclCommandType recordAclCommandType;
+    struct HTTPPrintInfo{
+    	string primaryKey;
+    	bool httpLayerSuccess;
+    	string httpLayerMsg;
+    };
+	vector<HTTPPrintInfo> inputRecordInfoArr;
 };
 
 

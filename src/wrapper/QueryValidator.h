@@ -37,7 +37,8 @@ public:
     QueryValidator(const Schema & schema,
             const CoreInfo_t &indexDataContainerConf,
             ParsedParameterContainer * paramContainer,
-            const AttributeAccessControl & attrAcl);
+            const vector<unsigned> & accessibleSearchAttrs,
+            const vector<unsigned> & accessibleRefiningAttrs);
 
     // this function goes through the summary and based on that validates the query.
     bool validate();
@@ -46,7 +47,8 @@ private:
     ParsedParameterContainer * paramContainer;
     const Schema & schema;
     const CoreInfo_t &indexDataContainerConf;
-    const AttributeAccessControl& attributeAcl;
+    const vector<unsigned> & accessibleSearchAttrs;
+    const vector<unsigned> & accessibleRefiningAttrs;
 
     /*
      * This function goes over the field names in Filter List and
@@ -68,6 +70,19 @@ private:
     bool isParseSubtreeComputableRecursive(ParseTreeNode * node);
 
 
+	// Helper function to validate whether searchable field is accessible
+	bool isSearchableFieldAccessible(const string& fieldName) const {
+		unsigned fieldId = schema.getSearchableAttributeId(fieldName);
+		return AttributeAccessControl::isFieldAccessible(fieldId,
+				accessibleSearchAttrs, schema.getNonAclRefiningAttrIdsList());
+	}
+
+	// Helper function to validate whether refining field is accessible
+	bool isRefiningFieldAccessible(const string& fieldName) const {
+		unsigned fieldId = schema.getRefiningAttributeId(fieldName);
+		return AttributeAccessControl::isFieldAccessible(fieldId,
+				accessibleRefiningAttrs, schema.getNonAclRefiningAttrIdsList());
+	}
 //    // this function validates the value stored in "value" based on the type which is passed to it by "type"
 //    // for example, if the string is "123rt" and the type is UNSIGNED it returns false
 //    bool validateValueWithType(srch2::instantsearch::FilterType type,

@@ -51,6 +51,8 @@ private:
     	ASSERT(this->coreInfo != NULL);
         bulkLoader = NULL;
         bulkLoadType = type;
+        totalFailedCount = 0;
+        totalSuccessCount = 0;
     }
 
     /*
@@ -89,12 +91,136 @@ private:
      */
     void consume(const map<string, bool> & results,
 			map<string, map<ShardId * ,vector<JsonMessageCode>, ShardPtrComparator > > & messageCodes){
-    	// TODO
-    	// TODO_FOR_SURENDRA
+
+    	typedef map<ShardId * ,vector<JsonMessageCode>, ShardPtrComparator > MessageCodes;
+
+    	switch (bulkLoadType) {
+    	case RecordBulkLoad:
+    	{
+        	for(map<string, bool>::const_iterator recItr = results.begin(); recItr != results.end(); ++recItr){
+        		if (recItr->second == false) {
+        			++ totalFailedCount;
+        			if(messageCodes.find(recItr->first) != messageCodes.end()){
+        				MessageCodes &primaryKeyMessageCode = messageCodes[recItr->first];
+        				for(MessageCodes::iterator shardItr =
+        						primaryKeyMessageCode.begin(); shardItr != primaryKeyMessageCode.end(); ++shardItr){
+        					vector<JsonMessageCode>& msgCode = shardItr->second;
+        					for (unsigned i = 0 ; i < msgCode.size(); ++i){
+        						Logger::console("Record Bulkload error : %s",
+        								JsonResponseHandler::getJsonSingleMessageStr(msgCode.at(i)).c_str());
+        					}
+        				}
+        			} else {
+        				ASSERT(false);
+        			}
+
+        		} else {
+        			++totalSuccessCount;
+        		}
+        	}
+        	break;
+    	}
+    	case AclRecordBulkLoad:
+    	{
+    		const vector<AclRecordBatchInfo>& recordAclBatchInfo = bulkLoader->getRecordAclBatchInfo();
+        	for(unsigned i = 0; i < recordAclBatchInfo.size(); ++i){
+        		const string& pk =  recordAclBatchInfo[i].primaryKey;
+        		bool httpLayerSuccess = recordAclBatchInfo[i].httpLayerSuccess;
+        		if (httpLayerSuccess) {
+        			map<string, bool>::const_iterator iter = results.find(pk);
+        			if ( iter != results.end()) {
+        				if (iter->second) {
+        					++totalSuccessCount;
+        				} else {
+        					++totalFailedCount;
+        					Logger::error("Record ACL bulkload error at line %d : "
+        							"roleIds were not inserted for the primary key due to shard error",
+        							recordAclBatchInfo[i].lineNumber);
+        				}
+        			} else {
+        				ASSERT(false);
+        			}
+        		} else {
+        			++totalFailedCount;
+        			Logger::error("Record ACL bulkload error at line %d : %s",
+        					recordAclBatchInfo[i].lineNumber, recordAclBatchInfo[i].httpLayerMsg.c_str());
+        		}
+        	}
+        	break;
+    	}
+    	case AclAttributeBulkLoad:
+    	{
+    		const vector<AclAttributeBatchInfo>& attributeAclBatchInfo = bulkLoader->getAttributeAclBatchInfo();
+    		for (unsigned i = 0; i < attributeAclBatchInfo.size(); ++i) {
+    			if (attributeAclBatchInfo[i].httpLayerSuccess) {
+    				unsigned failedRoleIds = 0;
+    				stringstream failedRoleIdsStr;
+    				const vector<string>& roleIds = attributeAclBatchInfo[i].roleIds;
+    				for (unsigned j = 0; j < roleIds.size(); ++j) {
+    					map<string, bool>::const_iterator iter = results.find(roleIds[j]);
+    					if( iter != results.end()){
+    						if (!iter->second) {
+    							++failedRoleIds;
+    							failedRoleIdsStr << roleIds[j] << ", ";
+    						}
+    					} else { ASSERT(false); }
+    				}
+
+    				if (failedRoleIds == roleIds.size()) {
+    					++totalFailedCount;
+    					Logger::error("Attribute ACL bulkload error at line %d : "
+    							"All roleIds were not inserted successfully due to shard error",
+    							attributeAclBatchInfo[i].lineNumber);
+    				} else {
+    					++totalSuccessCount;
+    					Logger::warn("Attribute ACL bulkload error at line %d : "
+    							"Following roleId(s) is/were not inserted successfully due to shard error = %s",
+    							attributeAclBatchInfo[i].lineNumber, failedRoleIdsStr.str().c_str());
+    				}
+    			} else {
+    				++totalFailedCount;
+    				Logger::error("Attribute ACL bulkload error at line %d : %s",
+    						attributeAclBatchInfo[i].lineNumber, attributeAclBatchInfo[i].httpLayerMsg.c_str());
+    			}
+    		}
+    	}
+    	}
+
     	if (!bulkLoader->isBulkLoadDone()) {
     		bulkLoader->produce();
     		return;
     	}
+
+		Json::Value recordShardResponse;
+
+    	switch (bulkLoadType) {
+    	case RecordBulkLoad:
+    	{
+    		recordShardResponse["type"] = "Record";
+    		Logger::info("Record bulkload status: success = %u, failed = %u", totalSuccessCount,
+    				totalFailedCount);
+    		break;
+    	}
+    	case AclRecordBulkLoad:
+    	{
+    		recordShardResponse["type"] = "Record Acl";
+    		Logger::info("Record ACL bulkload status: success = %u, failed = %u", totalSuccessCount,
+    				totalFailedCount);
+    		break;
+    	}
+    	case AclAttributeBulkLoad:
+    	{
+    		recordShardResponse["type"] = "Attribute Acl";
+    		Logger::info("Attribute ACL bulkload status: success = %u, failed = %u", totalSuccessCount,
+    				totalFailedCount);
+    		break;
+    	}
+    	}
+		recordShardResponse["success count"] = totalSuccessCount;
+		recordShardResponse["failed count"] = totalFailedCount;
+		JsonRecordOperationResponse * responseChannel = (JsonRecordOperationResponse *) this->getSession()->response;
+		responseChannel->addRecordShardResponse(recordShardResponse);
+
     }
 
     void finalizeWork(Transaction::Params * params){
@@ -121,6 +247,10 @@ private:
     evhttp_request *req;
     const CoreInfo_t * coreInfo;
     BulkLoadType bulkLoadType;
+
+    unsigned totalFailedCount;
+    unsigned totalSuccessCount;
+
 };
 
 }

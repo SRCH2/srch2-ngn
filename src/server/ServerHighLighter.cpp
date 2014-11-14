@@ -24,22 +24,12 @@ namespace httpwrapper {
  *   each query result.
  */
 
-void ServerHighLighter::generateSnippets(map<string,std::pair<string, RecordSnippet> >& highlightInfo){
-
-	unsigned upperLimit = queryResults->getNumberOfResults();
-	if (upperLimit > HighlightRecOffset + HighlightRecCount)
-		upperLimit = HighlightRecOffset + HighlightRecCount;
-	unsigned lowerLimit = HighlightRecOffset;
-	for (unsigned i = lowerLimit; i < upperLimit; ++i) {
-		string key = queryResults->getRecordId(i);
-		map<string,std::pair<string, RecordSnippet> >::iterator iter = highlightInfo.find(key);
-		if (iter == highlightInfo.end())
-			continue;
-		RecordSnippet& recordSnippets = iter->second.second;
+void ServerHighLighter::generateSnippets(){
+	for( unsigned i = 0 ; i < queryResults->impl->sortedFinalResults.size() ; i++){
 		unsigned recordId = queryResults->getInternalRecordId(i);
-		genSnippetsForSingleRecord(queryResults, i, recordSnippets);
-		recordSnippets.recordId =recordId;
-		//highlightInfo.push_back(recordSnippets);
+		RecordSnippet& recordSnippet = queryResults->impl->sortedFinalResults.at(i)->recordSnippet;
+		genSnippetsForSingleRecord(queryResults, i, recordSnippet);
+		recordSnippet.recordId =recordId;
 	}
 }
 
@@ -83,17 +73,18 @@ void ServerHighLighter::genSnippetsForSingleRecord(const QueryResults *qr, unsig
 		vector<keywordHighlightInfo> keywordStrToHighlight;
 		buildKeywordHighlightInfo(qr, recIdx, keywordStrToHighlight);
 
-        StoredRecordBuffer buffer =  server->getIndexer()->getInMemoryData(recordId);
+        StoredRecordBuffer buffer =  indexer->getInMemoryData(recordId);
         if (buffer.start.get() == NULL)
         	return;
-        const vector<std::pair<unsigned, string> >&highlightAttributes = server->getCoreInfo()->getHighlightAttributeIdsVector();
+        const vector<std::pair<unsigned, string> >&highlightAttributes = coreInfo->getHighlightAttributeIdsVector();
         for (unsigned i = 0 ; i < highlightAttributes.size(); ++i) {
     		AttributeSnippet attrSnippet;
         	unsigned id = highlightAttributes[i].first;
         	// check whether the searchable attribute is accessible for current role-id.
         	// snippet is generated for accessible searchable attributes only.
-        	bool isFieldAccessible = server->getIndexer()->getAttributeAcl().isSearchableFieldAccessibleForRole(
-        			aclRoleValue, highlightAttributes[i].second);
+
+        	bool isFieldAccessible = AttributeAccessControl::isFieldAccessible(id,
+        			accessibleAttributes, indexer->getSchema()->getNonAclSearchableAttrIdsList());
         	if (!isFieldAccessible)
         		continue;  // ignore unaccessible attributes. Do not generate snippet.
         	unsigned lenOffset = compactRecDeserializer->getSearchableOffset(id);
@@ -116,21 +107,22 @@ void ServerHighLighter::genSnippetsForSingleRecord(const QueryResults *qr, unsig
         	Logger::warn("could not generate a snippet because search keywords could not be found in any attribute of record!!");
 }
 
-ServerHighLighter::ServerHighLighter(QueryResults * queryResults,Srch2Server *server,
-		ParsedParameterContainer& param, unsigned offset, unsigned count) {
+ServerHighLighter::ServerHighLighter(QueryResults * queryResults,
+		const Indexer *indexer, const CoreInfo_t * coreInfo, const vector<unsigned>& accessibleAttrs) {
 
 	this->queryResults = queryResults;
-
+	this->indexer = indexer;
+	this->coreInfo = coreInfo;
 	HighlightConfig hconf;
 	string pre, post;
-	server->getCoreInfo()->getExactHighLightMarkerPre(pre);
-	server->getCoreInfo()->getExactHighLightMarkerPost(post);
+	coreInfo->getExactHighLightMarkerPre(pre);
+	coreInfo->getExactHighLightMarkerPost(post);
 	hconf.highlightMarkers.push_back(make_pair(pre, post));
-	server->getCoreInfo()->getFuzzyHighLightMarkerPre(pre);
-	server->getCoreInfo()->getFuzzyHighLightMarkerPost(post);
+	coreInfo->getFuzzyHighLightMarkerPre(pre);
+	coreInfo->getFuzzyHighLightMarkerPost(post);
 	hconf.highlightMarkers.push_back(make_pair(pre, post));
-	server->getCoreInfo()->getHighLightSnippetSize(hconf.snippetSize);
-	this->aclRoleValue = param.roleId;
+	coreInfo->getHighLightSnippetSize(hconf.snippetSize);
+	this->accessibleAttributes = accessibleAttrs;
 	/*
 	 *  We have two ways of generating snippets.
 	 *  1. Using term offsets stored in the forward index.
@@ -142,30 +134,18 @@ ServerHighLighter::ServerHighLighter(QueryResults * queryResults,Srch2Server *se
 	 */
 	// Note: check for server schema not the configuration.
 
-	//  Below code is disabled for V0. Without this code phrase search highlighting will not work.
-//	if (isEnabledCharPositionIndex(server->indexer->getSchema()->getPositionIndexType())) {
-//		this->highlightAlgorithms  = new TermOffsetAlgorithm(server->indexer,
-//				 param.PhraseKeyWordsInfoMap, hconf);
-//	} else {
-//		Analyzer *currentAnalyzer = AnalyzerFactory::getCurrentThreadAnalyzer(server->indexDataConfig);
-//		this->highlightAlgorithms  = new AnalyzerBasedAlgorithm(currentAnalyzer,
-//				 param.PhraseKeyWordsInfoMap, hconf);
-//	}
-	if (isEnabledCharPositionIndex(server->getIndexer()->getSchema()->getPositionIndexType())) {
-		this->highlightAlgorithms  = new TermOffsetAlgorithm(server->getIndexer(),
-				PhraseKeyWordsInfoMap, hconf);
+	if (isEnabledCharPositionIndex(indexer->getSchema()->getPositionIndexType())) {
+		this->highlightAlgorithms  = new TermOffsetAlgorithm(indexer,
+				phraseKeyWordsInfoMap, hconf);
 	} else {
-		Analyzer *currentAnalyzer = AnalyzerFactory::getCurrentThreadAnalyzerWithSynonyms(server->getCoreInfo());
+		Analyzer *currentAnalyzer = AnalyzerFactory::getCurrentThreadAnalyzerWithSynonyms(coreInfo);
 		this->highlightAlgorithms  = new AnalyzerBasedAlgorithm(currentAnalyzer,
-				PhraseKeyWordsInfoMap, hconf);
+				phraseKeyWordsInfoMap, hconf);
 	}
 
-	this->server = server;
 	storedAttrSchema = Schema::create();
-	RecordSerializerUtil::populateStoredSchema(storedAttrSchema, server->getIndexer()->getSchema());
+	RecordSerializerUtil::populateStoredSchema(storedAttrSchema, indexer->getSchema());
 	compactRecDeserializer = new RecordSerializer(*storedAttrSchema);
-	this->HighlightRecOffset = offset;
-	this->HighlightRecCount = count;
 	this->uncompressedInMemoryRecordString.reserve(4096);
 }
 

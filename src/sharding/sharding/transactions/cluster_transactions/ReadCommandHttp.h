@@ -14,7 +14,6 @@ using namespace std;
 namespace srch2 {
 namespace httpwrapper {
 
-class srch2::instantsearch::LogicalPlan;
 /*
  * contains the state of write operation per partition
  */

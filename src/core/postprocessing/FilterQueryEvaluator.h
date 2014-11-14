@@ -62,8 +62,8 @@ public:
     std::vector<std::pair<MessageType, string> > *messages;
     virtual bool parse(string &expressionString) = 0;
 
-    virtual bool validate(const Schema & schema, const string& aclRoleValue,
-    		const AttributeAccessControl& attributeAcl, bool attrAclOn) = 0;
+    virtual bool validate(const Schema & schema, const vector<unsigned>& accessibleRefiningAttrs,
+    		 bool attrAclOn) = 0;
 
     virtual bool evaluate(
             std::map<std::string, TypedValue> & nonSearchableAttributeValues)= 0;
@@ -146,15 +146,15 @@ public:
         return doParse(input, re, output);
     }
 
-    bool validate(const Schema & schema, const string& aclRoleValue,
-    		const AttributeAccessControl& attributeAcl, bool attrAclOn) {
+    bool validate(const Schema & schema, const vector<unsigned>& accessibleRefiningAttrs, bool attrAclOn) {
         //1. Check to make sure attributeName is a non-searchable attribute
         int attributeId = schema.getRefiningAttributeId(attributeName);
         if (attributeId < 0)
             return false;
 
         // check whether the attribute is accessible for current role.
-        if (attrAclOn && !attributeAcl.isRefiningFieldAccessibleForRole(aclRoleValue, attributeName))
+        if (attrAclOn && ! AttributeAccessControl::isFieldAccessible(attributeId, accessibleRefiningAttrs,
+        		schema.getNonAclRefiningAttrIdsList()))
         	return false;
 
         //2. Check to make sure lower and upper values are consistent with the type
@@ -362,15 +362,16 @@ public:
         return doParse(input, re, output);
     }
 
-    bool validate(const Schema & schema, const string& aclRoleValue,
-    		const AttributeAccessControl& attributeAcl, bool attrAclOn) {
+    bool validate(const Schema & schema, const vector<unsigned>& accessibleRefiningAttrs,
+    		 bool attrAclOn) {
         //1. Check to make sure attributeName is a non-searchable attribute
         int attributeId = schema.getRefiningAttributeId(attributeName);
         if (attributeId < 0)
             return false;
 
         // check whether the attribute is accessible for current role.
-        if (attrAclOn && !attributeAcl.isRefiningFieldAccessibleForRole(aclRoleValue, attributeName))
+        if (attrAclOn && !AttributeAccessControl::isFieldAccessible(attributeId, accessibleRefiningAttrs,
+        		schema.getNonAclRefiningAttrIdsList()))
         	return false;
 
         //2. Check the value to be consistent with type
@@ -586,8 +587,8 @@ public:
     }
 
 // TODO : FIX after ACL is fixed.
-    bool validate(const Schema & schema, const string& aclRoleValue,
-    		const AttributeAccessControl& attributeAcl, bool attrAclOn) {
+    bool validate(const Schema & schema, const vector<unsigned>& accessibleRefiningAttr,
+    		 bool attrAclOn) {
 //    bool validate(const Schema & schema) {
         // insert non-searchable attribute names to the symbol table and let
         // exprtk library do the validation
@@ -602,7 +603,9 @@ public:
 
         	// check whether the attribute is accessible for current role. The last parameter is false
         	// to indicate that the field is refining.
-            if (attrAclOn && !attributeAcl.isRefiningFieldAccessibleForRole(aclRoleValue, nonSearchableAttribute->first))
+        	unsigned id = schema.getRefiningAttributeId(nonSearchableAttribute->first);
+            if (attrAclOn && !AttributeAccessControl::isFieldAccessible(id, accessibleRefiningAttr,
+            		schema.getNonAclRefiningAttrIdsList()))
             	continue;
 
             // Since we only accept integer, long float and double as non-searchable attributes
@@ -760,11 +763,10 @@ public:
         return false;
     }
 
-    bool validate(const Schema & schema, const string& aclRole,
-    		const AttributeAccessControl& attributeAcl, bool attrAclOn) {
+    bool validate(const Schema & schema, const vector<unsigned>& accessibleRefiningAttrs, bool attrAclOn) {
         for (std::vector<QueryExpression *>::iterator criterion = expressions
                 .begin(); criterion != expressions.end(); ++criterion) {
-            if (!(*criterion)->validate(schema, aclRole, attributeAcl, attrAclOn)) {
+            if (!(*criterion)->validate(schema, accessibleRefiningAttrs, attrAclOn)) {
                 return false;
             }
         }

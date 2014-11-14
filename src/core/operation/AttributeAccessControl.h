@@ -97,6 +97,18 @@ public:
 	// process acl request
 	bool processAclRequest(vector<string>& fields, vector<string>& roleValues, AclActionType action) const;
 
+	//   Static Helper function to validate whether field is accessible
+	static bool isFieldAccessible(unsigned fieldId,
+			const vector<unsigned>& allowedAttributesForRole, const vector<unsigned>& publicAttributes) {
+		// if the filed name is present in a list of attributes for a given roleId OR field is public
+		// field ( non-acl), then it is accessible field otherwise it is unaccessible.
+		bool accessible = (find(allowedAttributesForRole.begin(), allowedAttributesForRole.end(), fieldId)
+					!= allowedAttributesForRole.end()) ||
+				(find(publicAttributes.begin(), publicAttributes.end(), fieldId)
+					!= publicAttributes.end());;
+		return accessible;
+	}
+
 private:
 	mutable AttributeAclLock attrAclLock;
 	// This is the data structure which stores the mapping from acl-role to

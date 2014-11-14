@@ -44,7 +44,8 @@ class QueryRewriter
 public:
 	QueryRewriter(const CoreInfo_t *indexDataConfig,const Schema & schema,
 			const Analyzer & analyzer ,ParsedParameterContainer * paramContainer,
-			const AttributeAccessControl & attrAcl);
+			const vector<unsigned> & accessibleSearchAttrs,
+			const vector<unsigned> & accessibleRefiningAttrs);
 
 	bool rewrite(LogicalPlan & logicalPlan);
 
@@ -53,7 +54,8 @@ private:
 	const Analyzer & analyzer ;
 	ParsedParameterContainer * paramContainer;
 	const CoreInfo_t *indexDataConfig;
-	const AttributeAccessControl&  attributeAcl;
+	const vector<unsigned> & accessibleSearchAttrs;
+	const vector<unsigned> & accessibleRefiningAttrs;
 
 	void prepareKeywordInfo();
 	bool applyAnalyzer();
@@ -71,7 +73,7 @@ private:
 	void createExactAndFuzzyQueriesForGetAllTResults(LogicalPlan & plan) ;
 	void createPostProcessingPlan(LogicalPlan & plan) ;
 	void getFieldFiltersBasedOnAcl(vector<unsigned>& fieldFiltersList,
-			ATTRIBUTES_OP& attributeOperation, vector<unsigned> *allowedAttributesForRole);
+			ATTRIBUTES_OP& attributeOperation, vector<unsigned> allowedAttributesForRole);
 	void addGeoToParseTree();
 };
 

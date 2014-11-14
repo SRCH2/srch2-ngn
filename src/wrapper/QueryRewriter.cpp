@@ -47,8 +47,10 @@ namespace httpwrapper {
 QueryRewriter::QueryRewriter(const CoreInfo_t *config,
         const Schema & schema, const Analyzer & analyzer,
         ParsedParameterContainer * paramContainer,
-        const AttributeAccessControl & attrAcl) :
-        schema(schema), analyzer(analyzer), attributeAcl(attrAcl) {
+        const vector<unsigned> & searchAttrs,
+        const vector<unsigned> & refiningAttrs) :
+        schema(schema), analyzer(analyzer), accessibleSearchAttrs(searchAttrs),
+        accessibleRefiningAttrs(refiningAttrs){
     this->paramContainer = paramContainer;
     indexDataConfig = config;
 }
@@ -236,12 +238,9 @@ void QueryRewriter::prepareFieldFilters() {
     	}
         return;
     }
-    vector<unsigned> *allowedAttributesForRole = NULL;
+    vector<unsigned> allowedAttributesForRole;
     if (paramContainer->attrAclOn) {
-    	boost::shared_ptr<vector<unsigned> > allowedAttributesSharedPtr;
-    	// Fetch list of attributes accessible by this role-id
-    	attributeAcl.fetchSearchableAttrsAcl(paramContainer->roleId, allowedAttributesSharedPtr);
-    	allowedAttributesForRole = allowedAttributesSharedPtr.get();
+    	allowedAttributesForRole = accessibleSearchAttrs;
     }
 
 	const vector<unsigned>& schemaNonAclAttrsList = schema.getNonAclSearchableAttrIdsList();
@@ -290,11 +289,10 @@ void QueryRewriter::prepareFieldFilters() {
                     // no result for when one the filtering attribute is unaccessible and filtering
                     // operation is (AND). This option is not chosen.
                     if ( !paramContainer->attrAclOn ||
-                    	(allowedAttributesForRole &&
-                    	find(allowedAttributesForRole->begin(), allowedAttributesForRole->end(), id)
-                    		!= allowedAttributesForRole->end()) ||
+                    	(find(allowedAttributesForRole.begin(), allowedAttributesForRole.end(), id)
+                    		!= allowedAttributesForRole.end() ||
                     	find (schemaNonAclAttrsList.begin(), schemaNonAclAttrsList.end(), id)
-                    		!= schemaNonAclAttrsList.end())  {
+                    		!= schemaNonAclAttrsList.end()))  {
                     	attributeFilter.push_back(id);
                     }
                 }
@@ -389,23 +387,23 @@ void QueryRewriter::prepareFieldFilters() {
  *   See ForwardIndex.cpp : isValidRecordTermHit() for more detail.
  */
 void QueryRewriter::getFieldFiltersBasedOnAcl(vector<unsigned>& parseNodeFieldFilter,
-		ATTRIBUTES_OP& parseNodeFieldFilterOperaton, vector<unsigned> *allowedAttributesForRole) {
+		ATTRIBUTES_OP& parseNodeFieldFilterOperaton, vector<unsigned> allowedAttributesForRole) {
 
 	const vector<unsigned>& schemaAclAttrsList = schema.getAclSearchableAttrIdsList();
 	const vector<unsigned>& schemaNonAclAttrsList = schema.getNonAclSearchableAttrIdsList();
 
 	vector<unsigned>  accessibleAttrsList;
 	vector<unsigned>  unAccessibleAttrsList;
-	if (allowedAttributesForRole != NULL && allowedAttributesForRole->size() > 0) {
+	if (allowedAttributesForRole.size() > 0) {
 
-		accessibleAttrsList.reserve(schemaNonAclAttrsList.size() + allowedAttributesForRole->size());
+		accessibleAttrsList.reserve(schemaNonAclAttrsList.size() + allowedAttributesForRole.size());
 		set_union(schemaNonAclAttrsList.begin(), schemaNonAclAttrsList.end(),
-				allowedAttributesForRole->begin(), allowedAttributesForRole->end(),
+				allowedAttributesForRole.begin(), allowedAttributesForRole.end(),
 				back_inserter(accessibleAttrsList));
 
 		unAccessibleAttrsList.reserve(schemaAclAttrsList.size());
 		set_difference(schemaAclAttrsList.begin(), schemaAclAttrsList.end(),
-				allowedAttributesForRole->begin(), allowedAttributesForRole->end(),
+				allowedAttributesForRole.begin(), allowedAttributesForRole.end(),
 				back_inserter(unAccessibleAttrsList));
 	} else {
 		// when no role is specified or role is not found in acl map then

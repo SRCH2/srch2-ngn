@@ -345,45 +345,24 @@ int QueryEvaluatorInternal::search(LogicalPlan * logicalPlan , QueryResults *que
 		delete sortOperator;
 	}
 
-	////////////////////////////////////////////////////////
     /*
+     * 	QueryResults contains the list of records which are going to be sent to
+	 *  the sharding broker node to be aggregated. Populate RecordSnippet in
+	 *  QueryResult object.
+	 *
      *  Do snippet generation only if
      *  1. There are attributes marked to be highlighted
      *  2. Query is not facet only
      *  3. Highlight is not turned off in the query ( default is on )
      */
-	/*
-	 * TODO_FOR_SURENDRA
-	 * TODO for Surendra :
-	 * QueryResults contains the list of records which are going to be sent to
-	 * the sharding broker node to be aggregated. QueryResult now has RecordSnippet which is what
-	 * we must populate in highlighting computation ...
-	 *
-	 * How to access needed things in server highlighting :
-	 * The config object: this->getQueryEvaluatorRuntimeParametersContainer()->coreInfo
-	 * The indexer (IndexReaderWriter) object: this->indexer
-	 * facetOnlyFlag and highLighitingOnFlag : logicalPlan->facetOnlyFlag and logicalPlan->highLightingOn
-	 * inMemoryRecordString of a result : queryResults.getInMemoryRecordStr(result index);
-	 * attribute acl roleId : logicalPlan->roleId
-	 * attribute acl list of accessible attributes :
-	 *  	vector<unsigned> accessibleSearchableAttributes;
-	 *      vector<unsigned> accessibleRefiningAttributes;
-	 *
-	 *
-	 */
-//	if (this->getQueryEvaluatorRuntimeParametersContainer()->coreInfo->getHighlightAttributeIdsVector().size() > 0 ) {
-//		srch2::httpwrapper::ServerHighLighter highlighter =
-//				srch2::httpwrapper::ServerHighLighter(queryResults, server, paramContainer,
-//				logicalPlan->getOffset(), logicalPlan->getNumberOfResultsToRetrieve());
-//		for( unsigned i = 0 ; i < queryResults->impl->sortedFinalResults.size() ; i++){
-//			unsigned recordId = queryResults->getInternalRecordId(i);
-//			RecordSnippet& recordSnippet = queryResults->impl->sortedFinalResults.at(i)->recordSnippet;
-//			genSnippetsForSingleRecord(queryResults, i, recordSnippet);
-//			recordSnippet.recordId =recordId;
-//		}
-//	}
-	////////////////////////////////////////////////////////
-
+	const srch2::httpwrapper::CoreInfo_t * coreInfo = this->getQueryEvaluatorRuntimeParametersContainer()->coreInfo;
+	if (coreInfo->getHighlightAttributeIdsVector().size() > 0 && !logicalPlan->facetOnlyFlag
+			&& logicalPlan->highLightingOnFlag) {
+		srch2::httpwrapper::ServerHighLighter highlighter =
+				srch2::httpwrapper::ServerHighLighter(queryResults, indexer, coreInfo,
+						logicalPlan->accessibleSearchableAttributes);
+		highlighter.generateSnippets();
+	}
 
 	return queryResults->impl->sortedFinalResults.size();
 }

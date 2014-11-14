@@ -326,6 +326,13 @@ LogicalPlan::LogicalPlan(const LogicalPlan & logicalPlan){
 	this->shouldRunFuzzyQuery = logicalPlan.shouldRunFuzzyQuery;
 	this->queryType = logicalPlan.queryType;
 	this->docIdForRetrieveByIdSearchType = logicalPlan.docIdForRetrieveByIdSearchType;
+
+	this->facetOnlyFlag = logicalPlan.facetOnlyFlag;
+	this->highLightingOnFlag = logicalPlan.highLightingOnFlag;
+	this->roleId = logicalPlan.roleId;
+	this->accessibleSearchableAttributes = logicalPlan.accessibleSearchableAttributes;
+	this->accessibleRefiningAttributes = logicalPlan.accessibleRefiningAttributes;
+
 	if(logicalPlan.exactQuery != NULL){
 		this->exactQuery = new Query(*(logicalPlan.exactQuery));
 	}else{
@@ -451,6 +458,12 @@ void * LogicalPlan::serializeForNetwork(void * buffer){
 	//NOTE: postProcessingPlan must be removed completely. It's not used anymore
 	buffer = srch2::util::serializeFixedTypes(bool(this->tree != NULL), buffer); // isNULL
 
+	buffer = srch2::util::serializeFixedTypes(facetOnlyFlag, buffer);
+	buffer = srch2::util::serializeFixedTypes(highLightingOnFlag, buffer);
+	buffer = srch2::util::serializeString(roleId, buffer);
+	buffer = srch2::util::serializeVectorOfFixedTypes(accessibleSearchableAttributes, buffer);
+	buffer = srch2::util::serializeVectorOfFixedTypes(accessibleRefiningAttributes, buffer);
+
 	if(exactQuery != NULL){
 		buffer = exactQuery->serializeForNetwork(buffer);
 	}
@@ -491,6 +504,12 @@ void * LogicalPlan::deserializeForNetwork(LogicalPlan & logicalPlan , void * buf
 	buffer = srch2::util::deserializeFixedTypes(buffer, isPostProcessingInfoNotNull);
 	bool isTreeNotNull = false;
 	buffer = srch2::util::deserializeFixedTypes(buffer, isTreeNotNull);
+
+	buffer = srch2::util::deserializeFixedTypes(buffer, logicalPlan.facetOnlyFlag);
+	buffer = srch2::util::deserializeFixedTypes(buffer, logicalPlan.highLightingOnFlag);
+	buffer = srch2::util::deserializeString(buffer, logicalPlan.roleId);
+	buffer = srch2::util::deserializeVectorOfFixedTypes(buffer, logicalPlan.accessibleSearchableAttributes);
+	buffer = srch2::util::deserializeVectorOfFixedTypes(buffer, logicalPlan.accessibleRefiningAttributes);
 
 	if(isExactQueryNotNull){
 		logicalPlan.exactQuery = new Query(SearchTypeTopKQuery);
@@ -538,6 +557,13 @@ unsigned LogicalPlan::getNumberOfBytesForSerializationForNetwork(){
 	numberOfBytes += sizeof(unsigned) + this->docIdForRetrieveByIdSearchType.size();
 
 	numberOfBytes += sizeof(bool)*4; // isNULL
+
+	numberOfBytes += sizeof(this->facetOnlyFlag);
+	numberOfBytes += sizeof(this->highLightingOnFlag);
+	numberOfBytes += sizeof(unsigned) + this->roleId.size();
+	numberOfBytes += srch2::util::getNumberOfBytesVectorOfFixedTypes(accessibleSearchableAttributes);
+	numberOfBytes += srch2::util::getNumberOfBytesVectorOfFixedTypes(accessibleRefiningAttributes);
+
 	// exact query
 	if(this->exactQuery != NULL){
 		numberOfBytes += this->exactQuery->getNumberOfBytesForSerializationForNetwork();
