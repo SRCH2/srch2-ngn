@@ -22,6 +22,7 @@
 #include "sharding/sharding/notifications/SearchCommandResultsNotification.h"
 #include "sharding/sharding/notifications/Write2PCNotification.h"
 #include "sharding/sharding/notifications/AclAttributeReadNotification.h"
+#include "sharding/sharding/notifications/AclAttributeReplaceNotification.h"
 #include "serializables/SerializableGetInfoResults.h"
 
 #include "server/HTTPJsonResponse.h"
@@ -105,6 +106,8 @@ public:
 
     SP(Write2PCNotification::ACK) resolveWrite2PC(SP(Write2PCNotification) notif);
     SP(AclAttributeReadNotification::ACK) resolveAclAttributeListRead(SP(AclAttributeReadNotification) notif);
+
+    SP(AclAttributeReplaceNotification::ACK) resolveAclAttributeReplaceDeletePhase(SP(AclAttributeReplaceNotification) notif);
 
 private:
 

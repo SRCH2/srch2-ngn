@@ -519,6 +519,23 @@ void LocalShardContainer::getShards(const NodeTargetShardInfo & targets, vector<
 	}
 }
 
+void LocalShardContainer::getAllShards(vector<const Shard *> & shards) const{
+	//cluster partitions
+
+	for(map<unsigned, vector<ClusterShard *> >::const_iterator partItr = localClusterShards.begin();
+			partItr != localClusterShards.end(); ++partItr){
+		for(unsigned sIdx = 0; sIdx < partItr->second.size(); ++sIdx){
+			shards.push_back(partItr->second.at(sIdx));
+		}
+	}
+
+	// node shards
+	for(map<unsigned, NodeShard * >::const_iterator nodeItr = localNodeShards.begin();
+			nodeItr != localNodeShards.end(); ++nodeItr){
+		shards.push_back(nodeItr->second);
+	}
+}
+
 void LocalShardContainer::getClusterShards(unsigned partitionId, vector<const ClusterShard *> & clusterShards) const{
 	if(localClusterShards.find(partitionId) == localClusterShards.end()){
 		return;

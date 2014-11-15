@@ -869,5 +869,25 @@ SP(AclAttributeReadNotification::ACK) DPInternalRequestHandler::
 	return SP(AclAttributeReadNotification::ACK)(response);
 }
 
+SP(AclAttributeReplaceNotification::ACK) DPInternalRequestHandler::
+		resolveAclAttributeReplaceDeletePhase(SP(AclAttributeReplaceNotification) notif){
+	const CoreInfo_t * coreInfo = notif->getCoreInfo();
+	if(coreInfo == NULL){
+		return SP(AclAttributeReplaceNotification::ACK)();
+	}
+	// prepare shards which are all shards in this node for this core.
+	const LocalShardContainer * localContainer = notif->getReadview()->getLocalShardContainer(coreInfo->getCoreId());
+	vector<const Shard *> allLocalShards;
+	localContainer->getAllShards(allLocalShards);
+	for(unsigned shardIdx = 0; shardIdx < allLocalShards.size(); ++shardIdx){
+		const Shard * shard = allLocalShards.at(shardIdx);
+		//TODO shard->getSrch2Server() gives the shared pointer to srch2Server object
+	}
+
+
+	//
+	return SP(AclAttributeReplaceNotification::ACK)();
+}
+
 }
 }

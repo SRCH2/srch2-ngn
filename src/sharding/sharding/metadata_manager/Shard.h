@@ -301,6 +301,7 @@ public:
 	unsigned getCoreId() const	;
 	NodeId getNodeId() const;
 	void getShards(const NodeTargetShardInfo & targets, vector<const Shard *> & shards) const;
+	void getAllShards(vector<const Shard *> & shards) const;
 	void getClusterShards(unsigned partitionId, vector<const ClusterShard *> & clusterShards) const;
 	const NodeShard * getNodeShard(unsigned internalPartitionId) const ;
 	void getNodeShards(map<unsigned, const NodeShard * > & localNodeShards) const;

@@ -2,8 +2,11 @@
 #define __SHARDING_SHARDING_ACL_COMMAND_HTTP_H__
 
 #include "../../state_machine/State.h"
+#include "../../state_machine/StateMachine.h"
 #include "../../notifications/Notification.h"
 #include "../../metadata_manager/Shard.h"
+
+#include "../../state_machine/node_iterators/ConcurrentNotifOperation.h"
 
 #include "core/util/Logger.h"
 #include "core/util/Assert.h"
@@ -22,7 +25,7 @@ namespace httpwrapper {
  * 2. When all nodes saved their indices, request all nodes to save their cluster metadata
  * 3. When all nodes acked metadata save, write the metadata on disk and done.
  */
-class AclCommandHttpHandler: public ReadviewTransaction, public ConsumerInterface {
+class AclCommandHttpHandler: public ReadviewTransaction, public NodeIteratorListenerInterface {
 public:
 
     static void runCommand(boost::shared_ptr<const ClusterResourceMetadata_Readview> clusterReadview,
@@ -221,6 +224,26 @@ private:
 
         delete attributeAclDataForApiLayer;
         return;
+    }
+
+
+    void aclReplaceDeletePhase(const vector<string> & attributes, unsigned aclCoreId){
+    	SP(AclAttributeReplaceNotification) request  = SP(AclAttributeReplaceNotification)(
+    			new AclAttributeReplaceNotification(attributes, aclCoreId));
+    	ConcurrentNotifOperation * deleteNotifSender = new ConcurrentNotifOperation(request, ShardingAclAttrReadACKMessageType, this);
+
+    	// This is where this message broadcasting starts ...
+    	ShardManager::getStateMachine()->registerOperation(deleteNotifSender);
+    }
+
+    void end(map<NodeId, SP(ShardingNotification) > & replies){
+    	// the input is a map from nodeId to the shardingNotification which was sent from that node to us
+    	// as the reply of our request.
+    	if(replies.empty()){
+    		// no reply came back because all participants died before replying ...
+    		// maybe we want to abort this transaction ?
+    	}
+    	// TODO : do whatever you want with replies ...
     }
 
     /*

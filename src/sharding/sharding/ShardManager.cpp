@@ -19,6 +19,7 @@
 #include "./notifications/CopyToMeNotification.h"
 #include "./notifications/CommandNotification.h"
 #include "./notifications/AclAttributeReadNotification.h"
+#include "./notifications/AclAttributeReplaceNotification.h"
 #include "./transactions/cluster_transactions/LoadBalancer.h"
 #include "./transactions/ShardMoveOperation.h"
 #include "./transactions/cluster_transactions/NodeJoiner.h"
@@ -396,6 +397,12 @@ bool ShardManager::resolveMessage(Message * msg, NodeId senderNode){
 			break;
 		case ShardingAclAttrReadACKMessageType:
 			notif = ShardingNotification::deserializeAndConstruct<AclAttributeReadNotification::ACK>(msg);
+			break;
+		case ShardingAclAttrReplaceMessageType:
+			notif = ShardingNotification::deserializeAndConstruct<AclAttributeReplaceNotification>(msg);
+			break;
+		case ShardingAclAttrReplaceACKMessageType:
+			notif = ShardingNotification::deserializeAndConstruct<AclAttributeReplaceNotification::ACK>(msg);
 			break;
 		default:
 			ASSERT(false);
