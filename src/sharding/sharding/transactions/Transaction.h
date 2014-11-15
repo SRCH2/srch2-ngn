@@ -62,7 +62,7 @@ public:
 
 	Transaction();
 	virtual ~Transaction();
-	virtual void finalizeWork(Transaction::Params * arg)= 0 ;
+	virtual void finalizeWork(Transaction::Params * arg){} ;
 	virtual bool isReadviewTransaction()= 0 ;
 	void finalize();
 	void setFinalizeArgument(bool arg , bool needWriteviewLock = false);

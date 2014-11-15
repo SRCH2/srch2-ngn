@@ -184,11 +184,11 @@ void StateMachine::stateTransit(OperationState * operation,
 	// nextState == NULL
 	ASSERT(nextState == NULL);
 	// 3. delete the old operation
-	delete operation;
-	map<unsigned, OperationState *> activeOperations = getOperationGroup(operation->getOperationId());
+	map<unsigned, OperationState *> & activeOperations = getOperationGroup(operation->getOperationId());
 	if(activeOperations.find(operation->getOperationId()) !=
 			activeOperations.end()){
 		activeOperations.erase(operation->getOperationId());
+		delete operation;
 	}
 	return ;
 }

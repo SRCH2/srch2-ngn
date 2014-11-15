@@ -394,6 +394,9 @@ void Cluster_Writeview::printClusterShards() const{
 	ClusterShardId id;double load;ShardState state;bool isLocal;NodeId nodeId;NodeShardId nodeShardId;
 	if(clusterShards.size() > 0){
 		for(map<unsigned, CoreInfo_t *>::const_iterator coreItr = cores.begin(); coreItr != cores.end(); ++coreItr){
+			if(coreItr->second->isAclCore()){
+				continue;
+			}
 			vector<string> clusterHeaders;
 			vector<string> clusterLabels;
 			unsigned counter = 0;
@@ -483,12 +486,18 @@ void Cluster_Writeview::printLocalShards() const{
 		vector<string> localClusterShardLabels;
 		localClusterShardLabels.push_back("Shard info:");
 		for(map<ClusterShardId, LocalPhysicalShard >::const_iterator shardItr = localClusterDataShards.begin(); shardItr != localClusterDataShards.end(); ++shardItr){
+			if(this->cores.at(shardItr->first.coreId)->isAclCore()){
+				continue;
+			}
 			localClusterShardHeaders.push_back(shardItr->first.toString());
 		}
 		srch2::util::TableFormatPrinter localClusterShardsTable("Cluster local shards :" , 120, localClusterShardHeaders, localClusterShardLabels);
 		localClusterShardsTable.printColumnHeaders();
 		localClusterShardsTable.startFilling();
 		for(map<ClusterShardId, LocalPhysicalShard >::const_iterator shardItr = localClusterDataShards.begin(); shardItr != localClusterDataShards.end(); ++shardItr){
+			if(this->cores.at(shardItr->first.coreId)->isAclCore()){
+				continue;
+			}
 			stringstream ss;
 			ss << "Index size : " ;
 			if(shardItr->second.server){
