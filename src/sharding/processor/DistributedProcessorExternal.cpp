@@ -71,11 +71,6 @@ DPExternalRequestHandler::DPExternalRequestHandler(ConfigManager & configuration
 };
 
 
-void DPExternalRequestHandler::externalSearchAllCommand(boost::shared_ptr<const ClusterResourceMetadata_Readview> clusterReadview,
-		evhttp_request * req){
-	//TODO
-}
-
 /*
   * 1. Receives a getinfo request from a client (not from another shard)
   * 2. broadcasts this request to DPInternalRequestHandler objects of other shards

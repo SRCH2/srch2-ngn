@@ -45,7 +45,7 @@ private:
 	void printRVPendingRequests();
 
 	void printClusterShardIdLocks();
-
+	void printPrimaryKeyLocks();
 	void printMetadataLocks();
 
 
@@ -63,6 +63,16 @@ private:
 
 	void setPendingForRVRelease(LockBatch * lockBatch);
 	bool isNodePassedInitialization(const NodeId & nodeId);
+
+	bool isLockManagerClean() const{
+		bool result = true;
+		result = result && pendingLockBatches.empty();
+		result = result && rvReleasePendingLockBatches.empty();
+		result = result && clusterShardLocks.isClean();
+		result = result && primaryKeyLocks.isClean();
+		result = result && allNodeSharedInfo.isClean();
+		return result;
+	}
 
 
 	vector<LockBatch *> pendingLockBatches;

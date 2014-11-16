@@ -353,9 +353,7 @@ void Cluster_Writeview::printCores() const{
 void Cluster_Writeview::printNodes() const{
 
 	/// nodes
-	if(nodes.size() == 0){
-		cout << "Nodes : empty." << endl;
-	}else{
+	if(nodes.size() != 0){
 		vector<string> nodeHeaders;
 		for(map<NodeId, std::pair<ShardingNodeState, Node *> >::const_iterator nodeItr = nodes.begin(); nodeItr != nodes.end(); ++nodeItr){
 			stringstream ss;
@@ -478,9 +476,7 @@ void Cluster_Writeview::printNodeShards() const{
 
 
 void Cluster_Writeview::printLocalShards() const{
-	if(localClusterDataShards.size() == 0){
-		cout << "Local cluster shards : empty." << endl;
-	}else{
+	if(localClusterDataShards.size() != 0){
 		//////// Cluster physical shards
 		vector<string> localClusterShardHeaders;
 		vector<string> localClusterShardLabels;
@@ -510,9 +506,7 @@ void Cluster_Writeview::printLocalShards() const{
 
 
 
-	if(localNodeDataShards.size() == 0){
-		cout << "Local node shards : empty." << endl;
-	}else{
+	if(localNodeDataShards.size() != 0){
 		//////// Node physical shards
 		vector<string> localNodeShardHeaders;
 		vector<string> localNodeShardLabels;

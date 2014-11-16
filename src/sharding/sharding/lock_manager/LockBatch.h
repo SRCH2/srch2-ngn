@@ -180,6 +180,7 @@ public:
 		}
 		if(labels.size() == 0){
 			cout << tableName << " is empty." << endl;
+			return;
 		}
 		srch2::util::TableFormatPrinter lockTable(tableName, 120, colomnHeaders, labels );
 		lockTable.printColumnHeaders();
@@ -198,6 +199,16 @@ public:
 			}
 			lockTable.printNextCell(ss.str());
 		}
+	}
+
+	bool isClean() const{
+		for(typename map<Resource, vector<pair<NodeOperationId, LockLevel> > >::const_iterator
+				resItr = grantedLocks.begin(); resItr != grantedLocks.end(); ++resItr){
+			if(! resItr->second.empty()){
+				return false;
+			}
+		}
+		return true;
 	}
 
 private:

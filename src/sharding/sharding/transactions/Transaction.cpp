@@ -22,6 +22,7 @@ void Transaction::startTransaction(SP(Transaction) trans){
 	if(trans->getTransactionType() != ShardingTransactionType_Loadbalancing){
 		Logger::sharding(Logger::Step, "Starting transaction %s", getTransTypeStr(trans->getTransactionType()));
 	}
+	trans->init();
 	trans->threadBegin(trans);
 	trans->run();
 	trans->threadEnd();
@@ -35,7 +36,10 @@ Transaction::Transaction():transactionId(OperationState::getNextOperationId()){
 	session = NULL;
 	attachedToThreadFlag = false;
 	finalizeArgument = NULL;
-	initSession();
+}
+
+void Transaction::init(){
+	this->initSession();
 }
 
 Transaction::~Transaction(){
@@ -58,6 +62,10 @@ void Transaction::setFinalizeArgument(bool arg, bool needWriteviewLock){
 	}
 	this->finalizeArgument = new Params(arg);
 	this->finalizeArgument->needWriteviewLock = needWriteviewLock;
+}
+
+Transaction::Params * Transaction::getFinalizeArgument(){
+	return this->finalizeArgument;
 }
 
 TRANS_ID Transaction::getTID() const {
@@ -87,8 +95,8 @@ SP(const ClusterNodes_Writeview) Transaction::getNodesWriteview_read() const{
 void Transaction::setSession(TransactionSession * session){
 	ASSERT(session != NULL);
 	if(this->session != NULL){
-		delete session;
-		session = NULL;
+		delete this->session;
+		this->session = NULL;
 	}
 	this->session = session;
 }

@@ -42,6 +42,7 @@ public:
 		return;
 	}
 	~WriteCommandHttp(){
+		finalize();
 		for(unsigned i = 0 ; i < recordsToInsert.size(); ++i){
 			if(recordsToInsert.at(i) != NULL){
 				delete recordsToInsert.at(i);
@@ -55,15 +56,13 @@ private:
 	WriteCommandHttp(boost::shared_ptr<const ClusterResourceMetadata_Readview> clusterReadview,
 			evhttp_request *req, unsigned coreId,
 			ClusterRecordOperation_Type code = Insert_ClusterRecordOperation_Type): ReadviewTransaction(clusterReadview){
+		ASSERT(this->getSession() == NULL);
 		this->commandCode = code;
 		this->indexDataContainerConf = this->getReadview()->getCore(coreId);
 		if(this->indexDataContainerConf == NULL){
 			Logger::sharding(Logger::Detail, "InsertUpdate| core id %d not found in cores.", coreId);
 			return;
 		}
-		this->initSession();
-		ASSERT(this->getSession() != NULL);
-		ASSERT(this->getSession()->response != NULL);
 		this->req = req;
 		this->inserter = NULL;
 		this->coreName = indexDataContainerConf->getName();
@@ -293,9 +292,11 @@ private:
 	}
 
 	void initSession(){
-		TransactionSession * session = new TransactionSession();
-		session->response = new JsonRecordOperationResponse();
-		this->setSession(session);
+		this->setSession(new TransactionSession());
+		this->getSession()->response = new JsonRecordOperationResponse();
+	}
+	void finalizeWork(Transaction::Params * p){
+		this->getSession()->response->printHTTP(req);
 	}
 	string getName() const{
 		return "http-write-command";
@@ -303,11 +304,6 @@ private:
 	ShardingTransactionType getTransactionType(){
 		return ShardingTransactionType_InsertUpdateCommand;
 	}
-
-	void finalizeWork(Transaction::Params * p){
-		this->getSession()->response->printHTTP(req);
-	}
-
 private:
 	ClusterRecordOperation_Type commandCode;
 	boost::shared_ptr<const ClusterResourceMetadata_Readview> clusterReadview;

@@ -27,6 +27,24 @@ CustomizableJsonWriter::write( const Value &root )const
     return result;
 }
 
+std::string CustomizableJsonWriter::writeAll(const std::vector<const Json::Value *> & roots) const{
+	 if(roots.empty()){
+		 return "";
+	 }
+	 if(roots.size() == 1){
+		 return write(roots.at(0));
+	 }
+	 std::string result = "[";
+	 for(unsigned rootIdx = 0; rootIdx < roots.size(); ++rootIdx){
+		 if(rootIdx > 0){
+			 result += ",";
+		 }
+		 result += write(*(roots.at(rootIdx)));
+	 }
+	 result += "]";
+	 return result;
+}
+
 std::string 
 CustomizableJsonWriter::write( const Json::Value &root )
 {

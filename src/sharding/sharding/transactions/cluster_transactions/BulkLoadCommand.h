@@ -64,8 +64,8 @@ public:
 		this->bulkLoadType = bulkLoadType;
 		this->isArrayOfJsonRecords = false;
 		this->lineProcessed = 0;
-		bulkLoadWriteCommand = NULL;
-		compactRecSerializer = NULL;
+		this->bulkLoadWriteCommand = NULL;
+		this->compactRecSerializer = NULL;
 	}
 	~BulkLoadCommand() {
 		bulkdLoadFileStream.close();

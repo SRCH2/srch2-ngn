@@ -22,6 +22,8 @@ public:
 
     virtual std::string write( const Json::Value &root ) ;
     std::string write( const Json::Value &root ) const ;
+    std::string writeAll(const std::vector<const Json::Value *> & roots) const;
+
 
 private:
     std::string writeValue( const Json::Value &value ) const ;

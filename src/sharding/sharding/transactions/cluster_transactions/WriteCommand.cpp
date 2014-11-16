@@ -18,7 +18,7 @@ PartitionWriter::PartitionWriter(const ClusterPID & pid, // we will use ClusterP
 		pid(pid),
 		insertUpdateDelete(insertUpdateDelete){
 	ASSERT(consumer != NULL);
-	ASSERT(consumer->getTransaction() != NULL);
+	ASSERT(consumer->getTransaction());
 	ASSERT(consumer->getTransaction()->getSession() != NULL);
 	locker = NULL;
 	releaser = NULL;
@@ -496,6 +496,7 @@ void WriteCommand::produce(){
 		}
 		for(map<ClusterPID, PartitionWriter * >::iterator pItr = partitionWriters.begin();
 				pItr != partitionWriters.end(); ++pItr){
+			pItr->second->produce();
 		}
 	}else{
 		// node core

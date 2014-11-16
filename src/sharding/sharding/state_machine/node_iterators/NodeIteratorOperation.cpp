@@ -151,8 +151,8 @@ OperationState * OrderedNodeIteratorOperation::handle(SP(NodeFailureNotification
 				if(this->getTransaction()){
 					this->getTransaction()->threadBegin(this->getTransaction());
 				}
-
-				this->validatorObj->end(this->getOperationId());
+				map<NodeOperationId, SP(ShardingNotification) > _replies;
+				this->validatorObj->end_(_replies, this->getOperationId());
 
 				if(this->getTransaction()){
 					this->getTransaction()->threadEnd();
@@ -180,7 +180,7 @@ void OrderedNodeIteratorOperation::setParticipants(vector<NodeId> & participants
 
 	// Consistency check : all participants must be alive
 	SP(const ClusterNodes_Writeview) nodesWriteview = ShardManager::getNodesWriteview_read();
-	for(int nodeIdx = 0; participants.size(); ++nodeIdx){
+	for(int nodeIdx = 0; nodeIdx < participants.size(); ++nodeIdx){
 		if(! nodesWriteview->isNodeAlive(participants.at(nodeIdx))){
 			ASSERT(false);
 			return;
@@ -216,8 +216,12 @@ string OrderedNodeIteratorOperation::getOperationStatus() const {
 	for(unsigned i = 0 ; i < this->participants.size() ; ++i){
 	    ss << this->participants.at(i).toString() << " - ";
 	}
-	ss << ", now " <<
-			this->participants.at(this->participantsIndex).toString().c_str() << " .";
+	if(this->participantsIndex >= this->participants.size()){
+		ss << ", now finished.";
+	}else{
+		ss << ", now " <<
+				this->participants.at(this->participantsIndex).toString().c_str() << " .";
+	}
 
 	return ss.str();
 }
@@ -230,7 +234,9 @@ OperationState * OrderedNodeIteratorOperation::askNode(const unsigned nodeIndex)
 			if(this->getTransaction()){
 				this->getTransaction()->threadBegin(this->getTransaction());
 			}
-			this->validatorObj->end(this->getOperationId());
+			// NOTE : OrderedNodeIteratorOperation returns empty reply to the consumer.
+			map<NodeOperationId, SP(ShardingNotification) > _replies;
+			this->validatorObj->end_(_replies, this->getOperationId());
 			if(this->getTransaction()){
 				this->getTransaction()->threadEnd();
 			}

@@ -25,6 +25,7 @@ void NodeJoiner::join(){
 
 
 NodeJoiner::~NodeJoiner(){
+	finalize();
 	if(locker != NULL){
 		delete locker;
 	}

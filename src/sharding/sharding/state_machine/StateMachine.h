@@ -13,7 +13,7 @@ using namespace std;
 namespace srch2 {
 namespace httpwrapper {
 
-#define ACTIVE_OPERATINS_GROUP_COUNT 1000
+#define ACTIVE_OPERATINS_GROUP_COUNT 100
 class StateMachine{
 public:
 
@@ -39,20 +39,29 @@ public:
 	void handle(SP(Notification) notification);
 
 	void print() const;
-	void lockStateMachine();
+	bool lockStateMachine();
 	void unlockStateMachine();
 
 private:
-	vector<pair<boost::recursive_mutex *, map<unsigned, OperationState *> > > activeOpertationGroups;
 
-	bool addActiveOperation(OperationState * operation);
+	struct ActiveOperationGroup{
+		boost::mutex contentMutex;
+		map<unsigned , SP(OperationState)> activeOperations;
+		bool addActiveOperation(OperationState * operation);
+		bool deleteActiveOperation(const unsigned operationId);
+		OperationState * getActiveOperation(const unsigned operationId);
+		void getAllActiveOperations(map<unsigned , SP(OperationState)> & activeOperations);
+		unsigned size();
+		void clear();
 
-	void startOperation(OperationState * operation);
-	void stateTransit(OperationState * operation, OperationState * nextState);
+	};
+
+	ActiveOperationGroup activeOperationGroups[ACTIVE_OPERATINS_GROUP_COUNT];
+
 
 	void lockOperationGroup(unsigned opid);
 	void unlockOperationGroup(unsigned opid);
-	map<unsigned, OperationState *> & getOperationGroup(unsigned opid);
+	ActiveOperationGroup & getOperationGroup(unsigned opid);
 };
 
 }

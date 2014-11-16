@@ -36,6 +36,7 @@ public:
     }
 
     ~AclRecordCommandHttpHandler(){
+    	finalize();
     	if(aclCommand != NULL){
     		delete aclCommand;
     	}

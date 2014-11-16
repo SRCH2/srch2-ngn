@@ -9,7 +9,7 @@
 #include "./metadata_manager/Cluster_Writeview.h"
 #include "./metadata_manager/Cluster.h"
 #include "./metadata_manager/MetadataInitializer.h"
-#include "./transactions/cluster_transactions/ClusterShutdownOperation.h"
+#include "transactions/cluster_transactions/ShutdownCommand.h"
 #include "./notifications/Notification.h"
 #include "./notifications/CommitNotification.h"
 #include "./notifications/LoadBalancingReport.h"
@@ -20,6 +20,7 @@
 #include "./notifications/CommandNotification.h"
 #include "./notifications/AclAttributeReadNotification.h"
 #include "./notifications/AclAttributeReplaceNotification.h"
+#include "./notifications/Write2PCNotification.h"
 #include "./transactions/cluster_transactions/LoadBalancer.h"
 #include "./transactions/ShardMoveOperation.h"
 #include "./transactions/cluster_transactions/NodeJoiner.h"
@@ -173,6 +174,10 @@ ShardManager::~ShardManager(){
 	// waiting for all transactions to leave before dying ...
 	delete this->loadBalancingThread;
 	delete this->_lockManager;
+	delete stateMachine;
+	for(unsigned i = 0 ; i < MAX_NUM_TRANS_GROUPS; ++i){
+		delete mmSessionListenersGroup.at(i).second;
+	}
 }
 
 
@@ -303,15 +308,6 @@ void ShardManager::start(){
     }
 }
 
-void ShardManager::_shutdown(){
-	Logger::console("Shutting down the instance ...");
-	raise(SIGTERM);
-//    kill(getpid(),SIGTERM);
-//	exit(0);
-	//TODO
-}
-
-
 bool ShardManager::resolveMessage(Message * msg, NodeId senderNode){
 	if(msg == NULL){
 		return false;
@@ -403,6 +399,12 @@ bool ShardManager::resolveMessage(Message * msg, NodeId senderNode){
 			break;
 		case ShardingAclAttrReplaceACKMessageType:
 			notif = ShardingNotification::deserializeAndConstruct<AclAttributeReplaceNotification::ACK>(msg);
+			break;
+		case ShardingWriteCommand2PCMessageType:
+			notif = ShardingNotification::deserializeAndConstruct<Write2PCNotification>(msg);
+			break;
+		case ShardingWriteCommand2PCACKMessageType:
+			notif = ShardingNotification::deserializeAndConstruct<Write2PCNotification::ACK>(msg);
 			break;
 		default:
 			ASSERT(false);

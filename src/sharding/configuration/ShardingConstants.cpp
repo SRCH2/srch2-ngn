@@ -36,6 +36,10 @@ const char * getShardingMessageTypeStr(ShardingMessageType shardingMessageType){
 		   return "ShardingMMNotificationMessageType";
 	   case ShardingNodeFailureNotificationMessageType:
 		   return "ShardingNodeFailureNotificationMessageType";
+	   case ShardingWriteCommand2PCMessageType:
+		   return "ShardingWriteCommand2PCMessageType";
+	   case ShardingWriteCommand2PCACKMessageType:
+		   return "ShardingWriteCommand2PCACKMessageType";
 	   default:
 		   return "Message Does Not Have Description";
 		   break;

@@ -405,8 +405,7 @@ bool LockManager::moveLockBatchForward(LockBatch * lockBatch){
 			}
 			case LockRequestType_PrimaryKey:
 			{
-				ASSERT(lockBatch->lastGrantedItemIndex < lockBatch->pkTokens.size());
-				ASSERT(lockBatch->incremental);
+				ASSERT(lockBatch->lastGrantedItemIndex < (int)(lockBatch->pkTokens.size()));
 				pair<string, LockLevel> & nxtToken = lockBatch->pkTokens.at(lockBatch->lastGrantedItemIndex + 1);
 				if(primaryKeyLocks.lock(nxtToken.first, lockBatch->opIds, nxtToken.second)){
 					// one more token was granted.
@@ -474,7 +473,10 @@ void LockManager::initialize(){
 
 void LockManager::print(){
 	lockManagerMutex.lock();
-
+	if(this->isLockManagerClean()){
+		lockManagerMutex.unlock();
+		return;
+	}
 	cout << "**************************************************************************************************" << endl;
 	cout << "LockManager : " << endl;
 	cout << "**************************************************************************************************" << endl;
@@ -487,12 +489,12 @@ void LockManager::print(){
 
 	// print cluster shard locks
 	printClusterShardIdLocks();
-
+	// print primary key locks
+	printPrimaryKeyLocks();
 	// print metadata locks
 	printMetadataLocks();
 
 	lockManagerMutex.unlock();
-
 }
 
 
@@ -532,6 +534,10 @@ void LockManager::printRVPendingRequests(){
 
 void LockManager::printClusterShardIdLocks(){
 	clusterShardLocks.print("ClusterShard Locks");
+}
+
+void LockManager::printPrimaryKeyLocks(){
+	primaryKeyLocks.print("Primary Key Locks");
 }
 
 void LockManager::printMetadataLocks(){

@@ -276,11 +276,23 @@ JsonResponseHandler::JsonResponseHandler(evhttp_request *req) :
 
 void JsonResponseHandler::printHTTP(evhttp_request *req, evkeyvalq * headers ) {
 	if (headers != NULL) {
-		bmhelper_evhttp_send_reply2(req, code, reason,
-				global_customized_writer.write(JsonResponseHandler::getRoot()), *headers);
+		vector<const Json::Value *> allRoots;
+		if(this->hasMultiRoots(allRoots)){
+			bmhelper_evhttp_send_reply2(req, code, reason,
+					global_customized_writer.writeAll(allRoots), *headers);
+		}else{
+			bmhelper_evhttp_send_reply2(req, code, reason,
+					global_customized_writer.write(JsonResponseHandler::getRoot()), *headers);
+		}
 	} else {
-		bmhelper_evhttp_send_reply2(req, code, reason,
-				global_customized_writer.write(JsonResponseHandler::getRoot()));
+		vector<const Json::Value *> allRoots;
+		if(this->hasMultiRoots(allRoots)){
+			bmhelper_evhttp_send_reply2(req, code, reason,
+					global_customized_writer.writeAll(allRoots));
+		}else{
+			bmhelper_evhttp_send_reply2(req, code, reason,
+					global_customized_writer.write(JsonResponseHandler::getRoot()));
+		}
 	}
 }
 
@@ -293,8 +305,9 @@ void JsonResponseHandler::setResponseAttribute(const char * attributeName,
 	JsonResponseHandler::getRoot()[attributeName] = resAttr;
 }
 
+// puts the current jsonResponse in the vector and sets it to this new root
 void JsonResponseHandler::setRoot(Json::Value * root){
-	if(root == NULL){
+	if(root == NULL || jsonResponse == NULL){
 		ASSERT(false);
 		return;
 	}
@@ -306,7 +319,8 @@ void JsonResponseHandler::setRoot(Json::Value * root){
 		(*root)[itr.key().asString()] = (*jsonResponse)[itr.key().asString()];
 	}
 	delete jsonResponse;
-	jsonResponse = root;
+	multiRoots.push_back(root);
+	jsonResponse = new Json::Value(Json::objectValue);
 }
 
 void JsonResponseHandler::finalizeInvalid() {

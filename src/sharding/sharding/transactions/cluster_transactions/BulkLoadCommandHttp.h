@@ -38,6 +38,7 @@ public:
     }
 
     ~BulkLoadCommandHttpHandler(){
+    	finalize();
     	delete bulkLoader;
         delete req;
     }
@@ -183,6 +184,7 @@ private:
     						attributeAclBatchInfo[i].lineNumber, attributeAclBatchInfo[i].httpLayerMsg.c_str());
     			}
     		}
+    		break;
     	}
     	}
 

@@ -22,7 +22,10 @@ public:
 		transaction.reset();
 	}
 
-	virtual ~OperationState(){};
+	// NOTE : OperationState must always be in locked state before destruction
+	//        so that destruction starts in safe
+	virtual ~OperationState(){
+	};
 
 	virtual OperationState * entry() = 0;
 	// it returns this, or next state or NULL.
@@ -38,17 +41,10 @@ public:
 
 	void send(SP(ShardingNotification) notification, const NodeOperationId & dest) const;
 
-	SP(Transaction) getTransaction(){
-		return transaction;
-	}
-	void setTransaction(SP(Transaction) sp){
-		this->transaction = sp;
-	}
-
-	// what's returned doesn't need to be started but it might be NULL
-	static OperationState * startOperation(OperationState * op);
-
-	static void stateTransit(OperationState * & currentState, SP(Notification) notification);
+	SP(Transaction) getTransaction();
+	void setTransaction(SP(Transaction) sp);
+	void lock();
+	void unlock();
 	static unsigned getNextOperationId();
 	static const unsigned DataRecoveryOperationId;
 
@@ -56,6 +52,7 @@ private:
 	unsigned operationId;
 	static unsigned nextOperationId;
 	SP(Transaction) transaction;
+	boost::mutex operationContentLock;
 };
 
 }

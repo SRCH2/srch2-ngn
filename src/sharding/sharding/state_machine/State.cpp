@@ -30,28 +30,19 @@ void OperationState::send(SP(ShardingNotification) notification, const NodeOpera
 	ShardingNotification::send(notification);
 }
 
-// what's returned doesn't need to be started but it might be NULL
-OperationState * OperationState::startOperation(OperationState * op){
-	if(op == NULL){
-		return NULL;
-	}
-	OperationState * nextState = op->entry();
-	if(nextState == op){
-		return op;
-	}else{
-		delete op;
-		return startOperation(nextState);
-	}
+SP(Transaction) OperationState::getTransaction(){
+	return transaction;
+}
+void OperationState::setTransaction(SP(Transaction) sp){
+	this->transaction = sp;
+}
+void OperationState::lock(){
+	this->operationContentLock.lock();
+}
+void OperationState::unlock(){
+	this->operationContentLock.unlock();
 }
 
-void OperationState::stateTransit(OperationState * & currentState, SP(Notification) notification){
-	OperationState * nextState = currentState->handle(notification);
-	if(nextState == currentState){
-		return;
-	}
-	delete currentState;
-	currentState = startOperation(nextState);
-}
 unsigned OperationState::getNextOperationId(){
 	if(nextOperationId + 1 == (unsigned) -1){
 		nextOperationId = 0;

@@ -1,9 +1,11 @@
 
 
-#include "ClusterShutdownOperation.h"
+#include "ShutdownCommand.h"
 #include "../../metadata_manager/Cluster_Writeview.h"
 #include "server/HTTPJsonResponse.h"
 #include "../../state_machine/StateMachine.h"
+#include <pthread.h>
+#include <signal.h>
 
 namespace srch2is = srch2::instantsearch;
 using namespace srch2is;
@@ -16,13 +18,13 @@ void ShutdownCommand::run(){
 
     switch (req->type) {
     case EVHTTP_REQ_PUT: {
-    	getSession()->response->addMessage("Shutting down the cluster...");
+    	this->getTransaction()->getSession()->response->addMessage("Shutting down the cluster...");
         break;
     }
     default: {
         Logger::error(
                 "The request has an invalid or missing argument. See Srch2 API documentation for details");
-    	getSession()->response->finalizeInvalid();
+        this->getTransaction()->getSession()->response->finalizeInvalid();
         return ;
     }
     }
@@ -38,7 +40,8 @@ void ShutdownCommand::save(){
 }
 
 void ShutdownCommand::consume(map<NodeId, vector<CommandStatusNotification::ShardStatus *> > & result) {
-	// finalizeWork will be called.
+	// nothing to do, proceed with shutdown
+	return;
 }
 
 void ShutdownCommand::finalizeWork(Transaction::Params * arg){
@@ -57,11 +60,16 @@ void ShutdownCommand::finalizeWork(Transaction::Params * arg){
 	shutdownNotif = SP(ShutdownNotification)(new ShutdownNotification());
 
 	ConcurrentNotifOperation * commandSender = new ConcurrentNotifOperation(shutdownNotif, NULLType, arrivedNodes, NULL, false);
-	ShardManager::getShardManager()->getStateMachine()->registerOperation(commandSender);
+	ShardManager::getStateMachine()->registerOperation(commandSender);
 
-	getSession()->response->printHTTP(req);
-	ShardManager::getShardManager()->_shutdown();
+	this->getTransaction()->getSession()->response->printHTTP(req);
+	this->_shutdown();
 	return; // it never reaches this point because before that the engine dies.
+}
+
+void ShutdownCommand::_shutdown(){
+	Logger::console("Shutting down the instance ...");
+	raise(SIGTERM);
 }
 
 }

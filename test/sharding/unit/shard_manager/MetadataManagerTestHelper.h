@@ -98,6 +98,8 @@ MetadataChange * createMetadataChange(const MetadataChangeTestCaseCode caseCode)
 		ASSERT(false);
 		return NULL;
 	}
+	ASSERT(false);
+	return NULL;
 }
 
 enum NodeStatusAfterRestart{

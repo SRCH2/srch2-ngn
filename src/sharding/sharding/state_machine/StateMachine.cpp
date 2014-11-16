@@ -12,24 +12,13 @@ namespace httpwrapper {
 
 
 StateMachine::StateMachine(){
-	for(unsigned i = 0 ; i < ACTIVE_OPERATINS_GROUP_COUNT; ++i){
-		activeOpertationGroups.push_back(std::make_pair(new boost::recursive_mutex(), map<unsigned, OperationState *>()));
-	}
 }
 
 StateMachine::~StateMachine(){
-	for(unsigned i = 0 ; i < ACTIVE_OPERATINS_GROUP_COUNT; ++i){
-		activeOpertationGroups.at(i).first->lock();
-		map<unsigned, OperationState *> & activeOperations = activeOpertationGroups.at(i).second;
-		for(map<unsigned, OperationState *>::iterator opItr = activeOperations.begin();
-				opItr != activeOperations.end(); ++opItr){
-			delete opItr->second;
-		}
-		activeOperations.clear();
-		activeOpertationGroups.at(i).first->unlock();
-		delete activeOpertationGroups.at(i).first;
+	for(unsigned groupId = 0; groupId < ACTIVE_OPERATINS_GROUP_COUNT; ++groupId){
+		ActiveOperationGroup & opGroup = getOperationGroup(groupId);
+		opGroup.clear();
 	}
-	activeOpertationGroups.clear();
 }
 
 void StateMachine::registerOperation(OperationState * operation){
@@ -37,13 +26,23 @@ void StateMachine::registerOperation(OperationState * operation){
 		ASSERT(false);
 		return;
 	}
-	lockOperationGroup(operation->getOperationId());
-	if(! addActiveOperation(operation)){
-		unlockOperationGroup(operation->getOperationId());
+	ActiveOperationGroup & opGroup = getOperationGroup(operation->getOperationId());
+	if(! opGroup.addActiveOperation(operation)){
 		return;
 	}
-	startOperation(operation);
-	unlockOperationGroup(operation->getOperationId());
+	operation->lock();
+	OperationState * nextState = operation->entry();
+	operation->unlock();
+	if(nextState == operation){
+		return;
+	}
+	ASSERT(nextState == NULL);
+	const string & targetOpName = operation->getOperationName();
+	const unsigned opid = operation->getOperationId();
+	if(! opGroup.deleteActiveOperation(operation->getOperationId())){
+		Logger::sharding(Logger::Detail, "State Machine | Attempted to delete operation %s (id : %d) more than one time.",
+				targetOpName.c_str(), opid);
+	}
 }
 
 void StateMachine::handle(SP(ShardingNotification) notification){
@@ -51,21 +50,23 @@ void StateMachine::handle(SP(ShardingNotification) notification){
 		ASSERT(false);
 		return;
 	}
-	// lock the operation group
-	lockOperationGroup(notification->getDest().operationId);
-	map<unsigned, OperationState *> & activeOperations = getOperationGroup(notification->getDest().operationId);
-	// find the operation in the map
-	if(activeOperations.find(notification->getDest().operationId) == activeOperations.end()){
-		// notification target is not there
-		unlockOperationGroup(notification->getDest().operationId);
+	ActiveOperationGroup & opGroup = getOperationGroup(notification->getDest().operationId);
+	OperationState * targetOperation = opGroup.getActiveOperation(notification->getDest().operationId);
+	if(targetOperation == NULL){
 		return;
 	}
-	OperationState * targetOperation = activeOperations[notification->getDest().operationId];
+	targetOperation->lock();
 	OperationState * nextState = targetOperation->handle(notification);
-	stateTransit(targetOperation, nextState);
-
-	unlockOperationGroup(notification->getDest().operationId);
-
+	targetOperation->unlock();
+	if(nextState == targetOperation){
+		return;
+	}
+	ASSERT(nextState == NULL);
+	const string & targetOpName = targetOperation->getOperationName();
+	if(! opGroup.deleteActiveOperation(notification->getDest().operationId)){
+		Logger::sharding(Logger::Detail, "State Machine | Attempted to delete operation %s (id : %d) more than one time.",
+				targetOpName.c_str(), notification->getDest().operationId );
+	}
 }
 
 // goes to everybody
@@ -74,22 +75,31 @@ void StateMachine::handle(SP(Notification) notification){
 		ASSERT(false);
 		return;
 	}
-	//TODO : how can I make sure it doesn't lock it twice ?
-	///////////////////////////////////////////////////////////////////
-	for(unsigned groupId = 0; groupId < activeOpertationGroups.size(); ++groupId){
-		// lock the operation group
-		lockOperationGroup(groupId);
-		map<unsigned, OperationState *> & activeOperations = getOperationGroup(groupId);
-		map<unsigned, OperationState *> activeOperationsBackup = activeOperations;
-		for(map<unsigned, OperationState *>::iterator activeOpItr = activeOperationsBackup.begin();
-				activeOpItr != activeOperationsBackup.end(); ++activeOpItr){
-			OperationState * nextState =
-					activeOpItr->second->handle(notification);
-			stateTransit(activeOpItr->second, nextState);
-		}
-		unlockOperationGroup(groupId);
-	}
+	for(unsigned groupId = 0; groupId < ACTIVE_OPERATINS_GROUP_COUNT; ++groupId){
 
+		ActiveOperationGroup & opGroup = getOperationGroup(groupId);
+		map<unsigned , SP(OperationState)> activeOperations;
+		opGroup.getAllActiveOperations(activeOperations);
+
+
+		for(map<unsigned , SP(OperationState)>::iterator activeOpItr = activeOperations.begin();
+				activeOpItr != activeOperations.end(); ++activeOpItr){
+			OperationState * targetOperation = activeOpItr->second.get();
+			targetOperation->lock();
+			OperationState * nextState =
+					targetOperation->handle(notification);
+			targetOperation->unlock();
+			if(nextState == targetOperation){
+				return;
+			}
+			ASSERT(nextState == NULL);
+			const string & targetOpName = targetOperation->getOperationName();
+			if(! opGroup.deleteActiveOperation(targetOperation->getOperationId())){
+				Logger::sharding(Logger::Detail, "State Machine | Attempted to delete operation %s (id : %d) more than one time.",
+						targetOpName.c_str(), targetOperation->getOperationId() );
+			}
+		}
+	}
 }
 
 
@@ -98,9 +108,9 @@ void StateMachine::handle(SP(Notification) notification){
  */
 void StateMachine::print() const{
 	bool isEmpty = true;
-	for(unsigned groupId = 0; groupId < activeOpertationGroups.size(); ++groupId){
-		const map<unsigned, OperationState *> & activeOperations = activeOpertationGroups.at(groupId).second;
-		if(activeOperations.size() > 0){
+	for(unsigned groupId = 0; groupId < ACTIVE_OPERATINS_GROUP_COUNT; ++groupId){
+		const ActiveOperationGroup & activeOperations = activeOperationGroups[groupId];
+		if(activeOperations.activeOperations.size() > 0){
 			isEmpty = false;
 			break;
 		}
@@ -118,10 +128,11 @@ void StateMachine::print() const{
 	operationHeaders.push_back("Status");
 	vector<string> operationLabels;
 
-	for(unsigned groupId = 0; groupId < activeOpertationGroups.size(); ++groupId){
-		const map<unsigned, OperationState *> & activeOperations = activeOpertationGroups.at(groupId).second;
+	for(unsigned groupId = 0; groupId < ACTIVE_OPERATINS_GROUP_COUNT; ++groupId){
+		const ActiveOperationGroup & activeOperationsGroup = activeOperationGroups[groupId];
 
-		for(map<unsigned, OperationState *>::const_iterator opItr = activeOperations.begin();
+		const map<unsigned , SP(OperationState)> & activeOperations = activeOperationsGroup.activeOperations;
+		for(map<unsigned, SP(OperationState)>::const_iterator opItr = activeOperations.begin();
 				opItr != activeOperations.end(); ++opItr){
 			stringstream ss;
 			ss << opItr->first;
@@ -134,9 +145,11 @@ void StateMachine::print() const{
 	operationTable.printColumnHeaders();
 	operationTable.startFilling();
 
-	for(unsigned groupId = 0; groupId < activeOpertationGroups.size(); ++groupId){
-		const map<unsigned, OperationState *> & activeOperations = activeOpertationGroups.at(groupId).second;
-		for(map<unsigned, OperationState *>::const_iterator opItr = activeOperations.begin();
+	for(unsigned groupId = 0; groupId < ACTIVE_OPERATINS_GROUP_COUNT; ++groupId){
+		const ActiveOperationGroup & activeOperationsGroup = activeOperationGroups[groupId];
+
+		const map<unsigned , SP(OperationState)> & activeOperations = activeOperationsGroup.activeOperations;
+		for(map<unsigned, SP(OperationState)>::const_iterator opItr = activeOperations.begin();
 				opItr != activeOperations.end(); ++opItr){
 			operationTable.printNextCell(opItr->second->getOperationName());
 			operationTable.printNextCell(opItr->second->getOperationStatus());
@@ -145,79 +158,95 @@ void StateMachine::print() const{
 
 }
 
-bool StateMachine::addActiveOperation(OperationState * operation){
-	ASSERT(operation != NULL);
 
-	map<unsigned, OperationState *> & activeOperations =
-			getOperationGroup(operation->getOperationId());
+bool StateMachine::lockStateMachine(){
+	for(unsigned groupId = 0; groupId < ACTIVE_OPERATINS_GROUP_COUNT; ++groupId){
+		ActiveOperationGroup & activeOperationsGroup = activeOperationGroups[groupId];
+		if(! activeOperationsGroup.contentMutex.try_lock()){
+			for(unsigned releaseGroupId = 0; releaseGroupId < groupId; ++releaseGroupId){
+				activeOperationsGroup.contentMutex.unlock();
+			}
+			return false;
+		}
+	}
+	return true;
+}
+void StateMachine::unlockStateMachine(){
+	for(unsigned groupId = 0; groupId < ACTIVE_OPERATINS_GROUP_COUNT; ++groupId){
+		ActiveOperationGroup & activeOperationsGroup = activeOperationGroups[groupId];
+		activeOperationsGroup.contentMutex.unlock();
+	}
+}
+
+StateMachine::ActiveOperationGroup & StateMachine::getOperationGroup(unsigned opid){
+	unsigned groupId = opid % ACTIVE_OPERATINS_GROUP_COUNT;
+	return activeOperationGroups[groupId];
+}
+
+bool StateMachine::ActiveOperationGroup::addActiveOperation(OperationState * operation){
+	ASSERT(operation != NULL);
+	contentMutex.lock();
 	if(activeOperations.find(operation->getOperationId()) != activeOperations.end()){
 		ASSERT(false);
+		contentMutex.unlock();
 		return false; // operation id is not accepted because it already exists.
 	}
-	activeOperations[operation->getOperationId()] = operation;
+	activeOperations[operation->getOperationId()] = SP(OperationState)(operation);
+	contentMutex.unlock();
 	return true;
 }
 
-void StateMachine::startOperation(OperationState * operation){
-	if(operation == NULL){
-		ASSERT(false);
-		return;
+
+bool StateMachine::ActiveOperationGroup::deleteActiveOperation(const unsigned operationId){
+	// delete the old operation
+	contentMutex.lock();
+
+	if(activeOperations.find(operationId) != activeOperations.end()){
+		SP(OperationState) operation = activeOperations.at(operationId);
+		activeOperations.erase(operationId);
+		contentMutex.unlock();
+		return true;
 	}
-	// NOTE : we do not call transaction->preProcess() before entry
-	OperationState * nextState = operation->entry();
-	stateTransit(operation, nextState);
+
+	contentMutex.unlock();
+	return false;
 }
 
-void StateMachine::stateTransit(OperationState * operation,
-		OperationState * nextState){
-	if(operation == NULL){
-		ASSERT(false);
-		return;
+
+OperationState * StateMachine::ActiveOperationGroup::getActiveOperation(const unsigned operationId){
+	SP(OperationState) operation;
+	operation.reset();
+	contentMutex.lock();
+	if(activeOperations.find(operationId) != activeOperations.end()){
+		operation = activeOperations.at(operationId);
 	}
-	if(nextState != NULL && nextState != operation){
-		ASSERT(false);
-		return;
-	}
-	if(nextState == operation){
-		return;
-	}
-	// nextState == NULL
-	ASSERT(nextState == NULL);
-	// 3. delete the old operation
-	map<unsigned, OperationState *> & activeOperations = getOperationGroup(operation->getOperationId());
-	if(activeOperations.find(operation->getOperationId()) !=
-			activeOperations.end()){
-		activeOperations.erase(operation->getOperationId());
-		delete operation;
-	}
-	return ;
+	contentMutex.unlock();
+	return operation.get();
 }
 
-void StateMachine::lockStateMachine(){
-	for(unsigned gidx = 0; gidx < ACTIVE_OPERATINS_GROUP_COUNT; ++gidx){
-		activeOpertationGroups.at(gidx).first->lock();
-	}
+void StateMachine::ActiveOperationGroup::getAllActiveOperations(map<unsigned , SP(OperationState)> & activeOperations){
+	contentMutex.lock();
+	activeOperations = this->activeOperations;
+	contentMutex.unlock();
 }
 
-void StateMachine::unlockStateMachine(){
-	for(unsigned gidx = 0; gidx < ACTIVE_OPERATINS_GROUP_COUNT; ++gidx){
-		activeOpertationGroups.at(gidx).first->unlock();
-	}
+unsigned StateMachine::ActiveOperationGroup::size(){
+	unsigned numberActiveOperations = 0;
+	contentMutex.lock();
+	numberActiveOperations = activeOperations.size();
+	contentMutex.unlock();
+	return numberActiveOperations;
 }
 
-void StateMachine::lockOperationGroup(unsigned opid){
-	unsigned groupId = opid % ACTIVE_OPERATINS_GROUP_COUNT;
-	activeOpertationGroups.at(groupId).first->lock();
-}
-void StateMachine::unlockOperationGroup(unsigned opid){
-	unsigned groupId = opid % ACTIVE_OPERATINS_GROUP_COUNT;
-	activeOpertationGroups.at(groupId).first->unlock();
+void StateMachine::ActiveOperationGroup::clear(){
+	contentMutex.lock();
+	activeOperations.clear();
+	contentMutex.unlock();
 }
 
-map<unsigned, OperationState *> & StateMachine::getOperationGroup(unsigned opid){
-	unsigned groupId = opid % ACTIVE_OPERATINS_GROUP_COUNT;
-	return activeOpertationGroups.at(groupId).second;
-}
+
+
+
 
 }
 }

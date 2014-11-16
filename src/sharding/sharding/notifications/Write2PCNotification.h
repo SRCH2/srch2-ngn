@@ -66,7 +66,6 @@ struct RecordComparator
 
 class Write2PCNotification : public ShardingNotification {
 public:
-	ShardingMessageType messageType() const;
 	Write2PCNotification(boost::shared_ptr<const ClusterResourceMetadata_Readview> clusterReadview,
 			ClusterRecordOperation_Type commandType,
 			NodeTargetShardInfo targets,
@@ -86,6 +85,7 @@ public:
     ClusterRecordOperation_Type getCommandType() const;
 
     NodeTargetShardInfo getTargets() const;
+	ShardingMessageType messageType() const;
 
     bool shouldPerformWrite() const{
     	return (mode == WriteNotificationModePerformWrite);

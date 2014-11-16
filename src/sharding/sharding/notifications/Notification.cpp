@@ -2,7 +2,7 @@
 #include "../ShardManager.h"
 //#include "../metadata_manager/ResourceMetadataManager.h"
 #include "../state_machine/StateMachine.h"
-
+#include "../transactions/cluster_transactions/ShutdownCommand.h"
 #include "core/util/SerializationHelper.h"
 
 namespace srch2is = srch2::instantsearch;
@@ -263,7 +263,7 @@ void * ShardingNotification::deserializeHeader(void * buffer) {
 }
 
 bool ShutdownNotification::resolveNotification(SP(ShardingNotification) _notif){
-	ShardManager::getShardManager()->_shutdown();
+	ShutdownCommand::_shutdown();
 	return true;
 }
 

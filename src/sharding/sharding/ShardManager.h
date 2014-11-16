@@ -81,13 +81,6 @@ public:
 	void start();
 
 	/*
-	 * Entry point #2 --
-	 * When this node is going to shutdown, either because of a nodeshutdown or a clustershutdown
-	 * NO LOCK should be acquired here
-	 */
-	void _shutdown();
-
-	/*
 	 * Entry point #3 --
 	 * Thread started for one of the internal communication messages.
 	 * S on singleInstanceMutex

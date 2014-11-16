@@ -24,27 +24,29 @@ namespace httpwrapper {
  * 2. When all nodes saved their indices, request all nodes to save their cluster metadata
  * 3. When all nodes acked metadata save, write the metadata on disk and done.
  */
-class ShardCommandHttpHandler: public ReadviewTransaction, public ConsumerInterface {
+class ShardCommandHttp: public ReadviewTransaction, public ConsumerInterface {
 public:
 
 	static void runCommand(boost::shared_ptr<const ClusterResourceMetadata_Readview> clusterReadview,
 			evhttp_request *req, unsigned coreId , ShardCommandCode commandCode){
-		SP(ShardCommandHttpHandler) commandHttpHandler =
-				SP(ShardCommandHttpHandler) (new ShardCommandHttpHandler(clusterReadview, req, coreId, commandCode));
+		SP(ShardCommandHttp) commandHttpHandler =
+				SP(ShardCommandHttp) (new ShardCommandHttp(clusterReadview, req, coreId, commandCode));
 		Transaction::startTransaction(commandHttpHandler);
 		return ;
 	}
-	~ShardCommandHttpHandler(){
+	~ShardCommandHttp(){
+		finalize();
 		if(shardCommand != NULL){
 			delete shardCommand;
 		}
+		if(req != NULL){
+			delete req;
+		}
 	}
 private:
-	ShardCommandHttpHandler(boost::shared_ptr<const ClusterResourceMetadata_Readview> clusterReadview,
+	ShardCommandHttp(boost::shared_ptr<const ClusterResourceMetadata_Readview> clusterReadview,
 			evhttp_request *req, unsigned coreId , ShardCommandCode commandCode):
 			ReadviewTransaction(clusterReadview){
-		initSession();
-		this->brokerSideInformationJson = (ShardOperationJsonResponse *)this->getSession()->response;
 		this->req = req;
 		this->coreId = coreId;
 		this->commandCode = commandCode;
@@ -64,6 +66,8 @@ private:
 	}
 
 	void run(){
+		//
+		this->brokerSideInformationJson = (ShardOperationJsonResponse *)(this->getSession()->response);
 		if(! _run()){
 			Logger::sharding(Logger::Step, "ShardCommand(%s, core: -- )| failed in parsing.", action_name.c_str() );
 			return;

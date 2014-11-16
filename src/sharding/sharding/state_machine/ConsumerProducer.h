@@ -29,7 +29,7 @@ public:
 			const vector<unsigned> & refiningAttributeIds,
 			const vector<JsonMessageCode> & messages){};
 	virtual void consume(bool booleanResult, vector<JsonMessageCode> & messageCodes){};
-	virtual void consume(bool booleanResult, SP(Json::Value) jsonResponse ,
+	virtual void consume(unsigned coreId, bool booleanResult, SP(Json::Value) jsonResponse ,
 			const vector<JsonMessageCode> & messageCodes, const vector<string> & customMessageStrings){};
 	virtual SP(Transaction) getTransaction() = 0;
 	virtual string getName() const = 0;
@@ -60,7 +60,7 @@ public:
 
 
 	/*
-	 * end functions are calback functions that consumer can override to receive the
+	 * end functions are callback functions that consumer can override to receive the
 	 * result of node iteration.
 	 * NOTE : each class which implements this interface must override one and exactly one
 	 *        end function from this list.

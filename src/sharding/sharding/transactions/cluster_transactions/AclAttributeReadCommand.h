@@ -1,16 +1,13 @@
 #ifndef __SHARDING_SHARDING_ACL_ATTR_READ_COMMAND_H__
 #define __SHARDING_SHARDING_ACL_ATTR_READ_COMMAND_H__
 
-#include "../../state_machine/node_iterators/ConcurrentNotifOperation.h"
 #include "../../state_machine/State.h"
+#include "../../state_machine/ConsumerProducer.h"
 #include "../../notifications/Notification.h"
-#include "../../notifications/CommandStatusNotification.h"
 #include "../../metadata_manager/Shard.h"
 #include "../Transaction.h"
 #include "core/util/Logger.h"
 #include "core/util/Assert.h"
-#include "server/HTTPJsonResponse.h"
-#include "../../state_machine/StateMachine.h"
 
 #include <iostream>
 #include <ctime>
@@ -28,95 +25,23 @@ public:
 	// calls consume(const vector<string> & attributeIds, const vector<JsonMessageCode> & messages); from the consumer
 	AclAttributeReadCommand(ConsumerInterface * consumer,
 			const string & roleId,
-			const CoreInfo_t * coreInfo):ProducerInterface(consumer),
-			coreInfo(coreInfo),
-			roleId(roleId){
-		ASSERT(coreInfo != NULL);
-		ASSERT(this->getConsumer() != NULL);
-		ASSERT(this->getConsumer()->getTransaction());
-		clusterReadview = ((ReadviewTransaction *)(this->getTransaction().get()))->getReadview();
-	}
+			const CoreInfo_t * coreInfo);
 	~AclAttributeReadCommand(){};
 
-	SP(Transaction) getTransaction(){
-		if(this->getConsumer() == NULL){
-			ASSERT(false);
-			return SP(Transaction)();
-		}
-		return this->getConsumer()->getTransaction();
-	}
+	SP(Transaction) getTransaction();
 
-	void produce(){
+	void produce();
 
-		/*
-		 * 1. find one target for this roleId (which is our primary key)
-		 */
-		const CorePartitionContianer * corePartContainer = clusterReadview->getCorePartitionContianer(coreInfo->getCoreId());
-		CorePartitioner * partitioner = new CorePartitioner(corePartContainer);
-		vector<NodeTargetShardInfo> allWriteTargets;
-		partitioner->getAllWriteTargets(partitioner->getRecordValueToHash(roleId), ShardManager::getCurrentNodeId(), allWriteTargets);
-		if(allWriteTargets.empty()){
-			messageCodes.push_back(HTTP_Json_Role_Id_Does_Not_Exist);
-			finalize();
-		}
-		// if current node is among targets choose it otherwise just pick one
-		unsigned chosenTarget = 0;
-		for(chosenTarget = 0; chosenTarget < allWriteTargets.size(); ++chosenTarget){
-			if(allWriteTargets.at(chosenTarget).getNodeId() == ShardManager::getCurrentNodeId()){
-				break;
-			}
-		}
-		if(chosenTarget >= allWriteTargets.size()){
-			srand(time(NULL));
-			chosenTarget = rand() % allWriteTargets.size();
-		}
-		NodeTargetShardInfo & target = allWriteTargets.at(chosenTarget);
-		ASSERT(target.isClusterShardsMode());
-		readListOfAttributes(target);
-	}
-
-	void readListOfAttributes(NodeTargetShardInfo & target){
-		this->target = target;
-		// send attribute list read notification to target node
-		SP(AclAttributeReadNotification) notif = SP(AclAttributeReadNotification)(
-				new AclAttributeReadNotification(roleId, target, clusterReadview));
-		ConcurrentNotifOperation * listSender =
-				new ConcurrentNotifOperation(notif, ShardingAclAttrReadACKMessageType, ShardManager::getCurrentNodeId(), this);
-		ShardManager::getStateMachine()->registerOperation(listSender);
-	}
+	void readListOfAttributes(NodeTargetShardInfo & target);
 
 
-	bool shouldAbort(const NodeId & failedNode){
-		if(failedNode == this->target.getNodeId()){
-			messageCodes.push_back(HTTP_Json_Failed_Due_To_Node_Failure);
-			finalize();
-			return true;
-		}
-		return false;
-	}
+	bool shouldAbort(const NodeId & failedNode);
 
 	// response which contains the list of attributes comes to this function
-	void end(map<NodeId, SP(ShardingNotification) > & replies){
-		if(replies.size() != 1){
-			ASSERT(false);
-			Logger::sharding(Logger::Error, "%d replies are received while waiting for a list of attributes." , replies.size());
-			finalize();
-			return;
-		}
-
-
-		AclAttributeReadNotification::ACK * listNotif = (AclAttributeReadNotification::ACK *)replies.begin()->second.get();
-		vector<unsigned> listOfSearchableAttributes = listNotif->getListOfSearchableAttributes();
-		vector<unsigned> listOfRefiningAttributes = listNotif->getListOfRefiningAttributes();
-		finalize(true, listOfSearchableAttributes, listOfRefiningAttributes);
-	}
+	void end(map<NodeId, SP(ShardingNotification) > & replies);
 
 	void finalize(bool status = false, vector<unsigned> listOfRefiningAttributes = vector<unsigned>(),
-			vector<unsigned> listOfSearchableAttributes = vector<unsigned>()){
-		if(this->getConsumer() != NULL){
-			this->getConsumer()->consume(status, listOfSearchableAttributes, listOfRefiningAttributes, messageCodes);
-		}
-	}
+			vector<unsigned> listOfSearchableAttributes = vector<unsigned>());
 
 	string getName() const {return "acl-attribute-read-command";};
 private:

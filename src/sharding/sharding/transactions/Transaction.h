@@ -61,11 +61,13 @@ public:
 	};
 
 	Transaction();
+	virtual void init();
 	virtual ~Transaction();
 	virtual void finalizeWork(Transaction::Params * arg){} ;
 	virtual bool isReadviewTransaction()= 0 ;
 	void finalize();
 	void setFinalizeArgument(bool arg , bool needWriteviewLock = false);
+	Transaction::Params * getFinalizeArgument();
 	virtual void threadBegin(SP(Transaction) sp){ // sets sharedPointer to sp
 		this->transMutex.lock();
 		this->sharedPointer = sp;

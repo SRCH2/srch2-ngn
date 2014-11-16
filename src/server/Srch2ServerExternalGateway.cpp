@@ -9,7 +9,7 @@
 #include "sharding/sharding/transactions/cluster_transactions/ReadCommandHttp.h"
 #include "sharding/sharding/transactions/cluster_transactions/AclRecordCommandHttp.h"
 #include "sharding/sharding/transactions/cluster_transactions/BulkLoadCommandHttp.h"
-#include "sharding/sharding/transactions/cluster_transactions/ClusterShutdownOperation.h"
+#include "sharding/sharding/transactions/cluster_transactions/ShutdownCommand.h"
 #include <exception>
 
 
@@ -93,19 +93,19 @@ void Srch2ServerGateway::cb_coreSpecificOperations(struct evhttp_request * req, 
     		WriteCommandHttp::update(clusterReadview, req, coreId);
     		break;
     	case srch2http::SavePort:
-    		ShardCommandHttpHandler::runCommand(clusterReadview, req, coreId, ShardCommandCode_SaveData_SaveMetadata);
+    		ShardCommandHttp::runCommand(clusterReadview, req, coreId, ShardCommandCode_SaveData_SaveMetadata);
     		break;
     	case srch2http::ExportPort:
-    		ShardCommandHttpHandler::runCommand(clusterReadview, req, coreId, ShardCommandCode_Export);
+    		ShardCommandHttp::runCommand(clusterReadview, req, coreId, ShardCommandCode_Export);
     		break;
     	case srch2http::ResetLoggerPort:
-    		ShardCommandHttpHandler::runCommand(clusterReadview, req, coreId, ShardCommandCode_ResetLogger);
+    		ShardCommandHttp::runCommand(clusterReadview, req, coreId, ShardCommandCode_ResetLogger);
     		break;
     	case srch2http::CommitPort:
-    		ShardCommandHttpHandler::runCommand(clusterReadview, req, coreId, ShardCommandCode_Commit);
+    		ShardCommandHttp::runCommand(clusterReadview, req, coreId, ShardCommandCode_Commit);
     		break;
     	case srch2http::MergePort: // also includes mergeSetOn and mergeSetOff
-    		ShardCommandHttpHandler::runCommand(clusterReadview, req, coreId, ShardCommandCode_Merge);
+    		ShardCommandHttp::runCommand(clusterReadview, req, coreId, ShardCommandCode_Merge);
     		break;
     	case srch2http::AttributeAclAdd:
     	case srch2http::AttributeAclDelete:
@@ -166,7 +166,7 @@ void Srch2ServerGateway::cb_globalOperations(struct evhttp_request * req, void *
     try{
     	switch (portType){
     	case srch2http::SearchAllPort:
-    		dpExternal->externalSearchAllCommand(clusterReadview, req);
+    		ReadCommandHttp::searchAll(clusterReadview, req);
     		break;
     	case srch2http::InfoPort:
     		dpExternal->externalGetInfoCommand(clusterReadview, req, (unsigned) -1);
@@ -180,7 +180,7 @@ void Srch2ServerGateway::cb_globalOperations(struct evhttp_request * req, void *
     		srch2http::ShutdownCommand::runShutdown(req);
     		break;
     	case srch2http::NodeShutdownPort:
-    		srch2http::ShardManager::getShardManager()->_shutdown();
+    		srch2http::ShutdownCommand::_shutdown();
     		break;
     	default:
     		cb_notfound(req, NULL);

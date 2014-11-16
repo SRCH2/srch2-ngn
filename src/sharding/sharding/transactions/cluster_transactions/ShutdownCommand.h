@@ -7,6 +7,7 @@
 #include "server/HTTPJsonResponse.h"
 
 #include "../Transaction.h"
+#include "../../state_machine/ConsumerProducer.h"
 #include "../TransactionSession.h"
 #include "./ShardCommnad.h"
 #include "core/util/Logger.h"
@@ -30,17 +31,21 @@ public:
 		Transaction::startTransaction(command);
 	}
 	~ShutdownCommand(){
+		finalize();
 		if(saveOperation != NULL){
 			delete saveOperation;
 		}
+		if(req != NULL){
+			delete req;
+		}
 	}
-private:
 
 	ShutdownCommand(evhttp_request *req){
 		this->saveOperation = NULL;
 		this->req = req;
-		initSession();
 	}
+
+public:
 
 	ShardingTransactionType getTransactionType(){
 		return ShardingTransactionType_Shutdown;
@@ -52,23 +57,20 @@ private:
 		return sharedPointer;
 	}
 
-	void initSession(){
-		setSession(new TransactionSession());
-		getSession()->response = new JsonResponseHandler();
-	}
-
 	void save();
 	void consume(map<NodeId, vector<CommandStatusNotification::ShardStatus *> > & result) ;
 	void clusterShutdown();
-	string getName() const {return "shutdown-command";};
+	string getName() const {return "cluster-shutdown-command";};
 
 	void finalizeWork(Transaction::Params * arg);
 
+	static void _shutdown();
 private:
 
 	ShardCommand * saveOperation;
 	SP(ShutdownNotification) shutdownNotif;
 	evhttp_request *req;
+
 
 };
 

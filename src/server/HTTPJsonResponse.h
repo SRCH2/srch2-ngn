@@ -64,6 +64,7 @@ public:
 
 	void setResponseAttribute(const char * attributeName, const Json::Value & resAttr);
 
+	// puts the current jsonResponse in the vector and sets it to this new root
 	void setRoot(Json::Value * root);
 
 	void finalizeInvalid();
@@ -84,11 +85,24 @@ public:
 		this->headers = headers;
 	}
 
+	bool hasMultiRoots(vector<const Json::Value *> & roots){
+		if(multiRoots.size() > 0 && jsonResponse != NULL){
+			roots.insert(roots.begin(), multiRoots.begin(), multiRoots.end());
+			roots.push_back(jsonResponse);
+			return true;
+		}
+		return false;
+	}
+
 protected:
 	// HTTP reply properties
 	int code;
     const char *reason;
     Json::Value * jsonResponse;
+
+    // in the case that we have more than one root and all of them
+    // are going to be direct children of actual printed core (array).
+    std::vector<Json::Value *> multiRoots;
 
     evhttp_request *req;
     evkeyvalq * headers;

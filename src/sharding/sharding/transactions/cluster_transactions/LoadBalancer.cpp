@@ -59,6 +59,7 @@ void LoadBalancer::runLoadBalancer(){
 }
 
 LoadBalancer::~LoadBalancer(){
+	finalize();
 	if(shardAssigner != NULL){
 		delete shardAssigner;
 	}

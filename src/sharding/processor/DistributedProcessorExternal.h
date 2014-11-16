@@ -49,10 +49,6 @@ public:
 			TransportManager& transportManager, DPInternalRequestHandler& dpInternal);
 
 	// Public API which can be used by other modules
-
-	void externalSearchAllCommand(boost::shared_ptr<const ClusterResourceMetadata_Readview> clusterReadview,
-			evhttp_request * req);
-
 	/*
 	 * 1. Receives a getinfo request from a client (not from another shard)
 	 * 2. broadcasts this request to DPInternalRequestHandler objects of other shards
