@@ -128,7 +128,8 @@ void SyncManager::startDiscovery() {
 	// Add new node in CM
 	nodesWriteview->addNode(node);
 	nodesWriteview->setNodeState(node.getId(), ShardingNodeStateArrived);
-
+	nodesWriteview.reset();
+	xLock.unlock();
 	localNodesCopyMutex.lock();
 	localNodesCopy.push_back(node);
 	localNodesCopyMutex.unlock();
