@@ -16,7 +16,7 @@
  
 <config>
     <cluster-name>TEST_CLUSTER</cluster-name>
-    <srch2Home>/home/jamshid/workspace-srch2-v4/srch2-ngn/test/sharding/integration/srch2Home</srch2Home>
+    <srch2Home>/home/jamshid/workspace-srch2-2/srch2-ngn/test/sharding/integration/srch2Home</srch2Home>
     <node-name>node-C</node-name>
         <!-- Make sure to specify the home of your SRCH2 installation.  Example: 
           <srch2Home>/home/joe/srch2</srch2Home>
