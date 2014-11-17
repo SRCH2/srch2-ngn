@@ -966,11 +966,7 @@ double Cluster_Writeview::getLocalNodeTotalLoad() const{
 			ASSERT(false);
 			continue;
 		}else{
-			if(cores.at(nodeShard->id.coreId)->isAclCore()){
-				totalLoad += 0.1 * nodeShard->load;
-			}else{
-				totalLoad += nodeShard->load;
-			}
+			totalLoad += nodeShard->load;
 		}
 	}
 	return totalLoad;
