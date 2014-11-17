@@ -723,13 +723,14 @@ unsigned Cluster_Writeview::INDEX(const ClusterShardId & shardId){
 }
 
 
-void Cluster_Writeview::assignLocalClusterShard(const ClusterShardId & shardId, const LocalPhysicalShard & physicalShardInfo){
+void Cluster_Writeview::assignLocalClusterShard(const ClusterShardId & shardId,
+		const LocalPhysicalShard & physicalShardInfo, const double load){
 	unsigned indexOfShard = INDEX(shardId);
 	ClusterShard_Writeview * shard = this->clusterShards[indexOfShard];
 	ASSERT(shard->id == shardId);
 	shard->isLocal = true;
 	shard->nodeId = this->currentNodeId;
-	shard->load = 0;
+	shard->load = load;
 	shard->state = SHARDSTATE_READY;
 	localClusterDataShards[shardId] = physicalShardInfo;
 }
@@ -932,6 +933,47 @@ bool Cluster_Writeview::isPartitionPending(const ClusterPID & pid) const{
 		}
 	}
 	return false;
+}
+
+double Cluster_Writeview::getLocalNodeTotalLoad() const{
+	double totalLoad = 0;
+	for(unsigned clusterShardIdx = 0; clusterShardIdx < clusterShards.size(); ++clusterShardIdx){
+		ClusterShard_Writeview * clusterShard = clusterShards.at(clusterShardIdx);
+		if(! clusterShard->isLocal){
+			continue;
+		}
+		if(clusterShard->nodeId != currentNodeId){
+			ASSERT(false);
+			continue;
+		}
+		if(cores.find(clusterShard->id.coreId) == cores.end()){
+			ASSERT(false);
+			continue;
+		}else{
+			if(cores.at(clusterShard->id.coreId)->isAclCore()){
+				totalLoad += 0.1 * clusterShard->load;
+			}else{
+				totalLoad += clusterShard->load;
+			}
+		}
+	}
+	for(unsigned nodeShardIdx = 0; nodeShardIdx < nodeShards.size(); ++nodeShardIdx){
+		NodeShard_Writeview * nodeShard = nodeShards.at(nodeShardIdx);
+		if(! nodeShard->isLocal){
+			continue;
+		}
+		if(cores.find(nodeShard->id.coreId) == cores.end()){
+			ASSERT(false);
+			continue;
+		}else{
+			if(cores.at(nodeShard->id.coreId)->isAclCore()){
+				totalLoad += 0.1 * nodeShard->load;
+			}else{
+				totalLoad += nodeShard->load;
+			}
+		}
+	}
+	return totalLoad;
 }
 
 // Reviewed. Don't touch.

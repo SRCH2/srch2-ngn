@@ -158,15 +158,15 @@ public:
 	friend class ConfigManager;
 
 
-	void getJsonFilePaths(vector<string> &paths) const{
-		for(vector<string>::const_iterator pathItr = dataFilePaths.begin(); pathItr != dataFilePaths.end(); ++pathItr){
-			paths.push_back(*pathItr);
-		}
-		if(getDataFilePath().compare("") != 0){
-			paths.push_back(getDataFilePath());
-		}
-	}
-	void setJsonFilePaths(const string & path){ dataFilePaths.push_back(path); }
+//	void getJsonFilePaths(vector<string> &paths) const{
+//		for(vector<string>::const_iterator pathItr = dataFilePaths.begin(); pathItr != dataFilePaths.end(); ++pathItr){
+//			paths.push_back(*pathItr);
+//		}
+//		if(getDataFilePath().compare("") != 0){
+//			paths.push_back(getDataFilePath());
+//		}
+//	}
+//	void setJsonFilePaths(const string & path){ dataFilePaths.push_back(path); }
 
 	// **** accessors for settings in every core ****
 	const string &getName() const { return name; }
@@ -360,7 +360,7 @@ public:
 
 protected:
 
-	vector<string> dataFilePaths;
+//	vector<string> dataFilePaths;
 	string name; // of core
 
 	unsigned coreId; // starting from 0, auto increment

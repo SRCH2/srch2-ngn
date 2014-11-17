@@ -238,7 +238,8 @@ public:
 
 	~Cluster_Writeview();
 
-	void assignLocalClusterShard(const ClusterShardId & shardId, const LocalPhysicalShard & physicalShardInfo);
+	void assignLocalClusterShard(const ClusterShardId & shardId,
+			const LocalPhysicalShard & physicalShardInfo, const double load = 1);
 	void assignExternalClusterShard(const ClusterShardId & shardId, const NodeId & nodeId, const double & load);
 	void unassignClusterShard(const ClusterShardId & shardId);
 	void setClusterShardServer(const ClusterShardId & shardId, boost::shared_ptr<Srch2Server> server);
@@ -263,9 +264,7 @@ public:
 
 
 
-	double getLocalNodeTotalLoad() const{
-		return localClusterDataShards.size()+localNodeDataShards.size();
-	}
+	double getLocalNodeTotalLoad() const;
 
 	// Serialization methods
 	void saveWriteviewOnDisk(const string & absDirectoryPath) const;

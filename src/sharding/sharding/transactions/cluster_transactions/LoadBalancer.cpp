@@ -245,7 +245,7 @@ void LoadBalancer::tryShardAssginmentAndShardCopy(bool assignOnly){
 	vector<AssignCandidatePartition *> assignCandidatesNotOnLocalNode;
 	for(unsigned i = 0 ; i < assignCandidates.size() ; ++i){
 		if(! assignCandidates.at(i)->hasReplicaOnNode(ShardManager::getCurrentNodeId())){
-		    // those replicas that we have a local lock them and
+		    // those replicas that we have a local on lock them and
 		    // we already know we cannot use them...
 			assignCandidates.at(i)->removeUnavailableReadyReplicas();
 			if(assignCandidates.at(i)->readyReplicas.size() > 0){
@@ -258,6 +258,17 @@ void LoadBalancer::tryShardAssginmentAndShardCopy(bool assignOnly){
 		// now, choose a partition randomly.
 		srand(ShardManager::getCurrentNodeId());
 		unsigned partitionAssignCandidIndex = rand() % assignCandidatesNotOnLocalNode.size();
+		for(unsigned i = 0 ; i < assignCandidatesNotOnLocalNode.size(); ++i){
+			Cluster_Writeview * writeview = this->getWriteview();
+			unsigned coreId = assignCandidatesNotOnLocalNode.at(i)->pid.coreId;
+			if(writeview->cores.find(coreId) != writeview->cores.end()){
+				if(writeview->cores[coreId]->isAclCore()){
+					// acl shards are more prior
+					partitionAssignCandidIndex = i;
+					break;
+				}
+			}
+		}
 		AssignCandidatePartition * candidatePartition = assignCandidatesNotOnLocalNode.at(partitionAssignCandidIndex);
 		// and now choose a shard from this partition, and a node
 		// to get copy from.

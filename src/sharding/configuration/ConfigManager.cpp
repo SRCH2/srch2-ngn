@@ -313,25 +313,28 @@ bool ConfigManager::loadConfigFile(srch2http::ResourceMetadataManager * metadata
     	CoreInfo_t * coreInfo = clusterCores[coreIdx];
     	if(coreInfo != NULL){
 
-    		CoreInfo_t *newAclCore = new srch2http::CoreInfo_t(*coreInfo);
-    		newAclCore->setSchema((Schema*)coreInfo->getSchema());
+    		CoreInfo_t *newAclCore = NULL;
+    		if(coreInfo->getNumberOfPrimaryShards() == 0){
+    			// it's a node shard, we use the same core object for attribute acl
+    			newAclCore = coreInfo;
+    			coreInfo->aclCoreFlag = true;
+    			coreInfo->setAttributeAclCoreId(coreInfo->getCoreId());
+    			continue;
+    		};
+    		// it's a cluster shard, we must have a separate acl code
+			newAclCore = new srch2http::CoreInfo_t(*coreInfo);
+			newAclCore->setSchema((Schema*)coreInfo->getSchema());
 
-    		newAclCore->name = "acl" + coreInfo->getName();
-    		newAclCore->aclCoreFlag = true;
-    		newAclCore->setCoreId(defaultCoreId++);
+			newAclCore->name = "acl" + coreInfo->getName();
+			newAclCore->setCoreId(defaultCoreId++);
 
-    		newAclCore->numberOfPrimaryShards = 20;  // 20 partition
-    		newAclCore->numberOfReplicas = 2;        // 1 primary + 1 replica
-
-    		// as of now. only distributed data structure is srch2Server.
-    		//newAclCore->setDistributedDataStructureId = ACL;
-
-    		// setup relation between real core and acl core.
-    		coreInfo->setAttributeAclCoreId(newAclCore->getCoreId());
-
-    		clusterAclCores.push_back(newAclCore);
-    	} else {
-    		clusterAclCores.push_back(NULL);
+			newAclCore->numberOfPrimaryShards = 20;  // 20 partition
+			newAclCore->numberOfReplicas = 2;        // 1 primary + 2 replica
+			newAclCore->dataFilePath = "";
+			newAclCore->aclCoreFlag = true;
+			// setup relation between real core and acl core.
+			coreInfo->setAttributeAclCoreId(newAclCore->getCoreId());
+			clusterAclCores.push_back(newAclCore);
     	}
     }
 
@@ -964,20 +967,20 @@ void ConfigManager::parseCoreInformationTags(const xml_node &parentNode, CoreInf
     CoreConfigParseState_t coreParseState;
     // <config><dataDir>core0/data OR <core><dataDir>
 
-    xml_node multipleDataFile = parentNode.child("multiple-data-file");
-    if(multipleDataFile && multipleDataFile.text()){
-    	string paths = string(multipleDataFile.text().get());
-    	vector<string> path;
-		trimSpacesFromValue(paths, "multiple-data-file", parseWarnings);
-		string delimiterComma = ",";
-		this->splitString(paths,delimiterComma,path);
-		for (int i = 0; i < path.size(); i++){
-		    vector<string> temp;
-			trimSpacesFromValue(path[i], "DataFilePaths", parseWarnings);
-			string str = srch2Home + "/" + this->clusterNameStr + "/" +coreInfo->name + "/" + path[i];
-			coreInfo->setJsonFilePaths(str);
-		}
-    }
+//    xml_node multipleDataFile = parentNode.child("multiple-data-file");
+//    if(multipleDataFile && multipleDataFile.text()){
+//    	string paths = string(multipleDataFile.text().get());
+//    	vector<string> path;
+//		trimSpacesFromValue(paths, "multiple-data-file", parseWarnings);
+//		string delimiterComma = ",";
+//		this->splitString(paths,delimiterComma,path);
+//		for (int i = 0; i < path.size(); i++){
+//		    vector<string> temp;
+//			trimSpacesFromValue(path[i], "DataFilePaths", parseWarnings);
+//			string str = srch2Home + "/" + this->clusterNameStr + "/" +coreInfo->name + "/" + path[i];
+//			coreInfo->setJsonFilePaths(str);
+//		}
+//    }
 
 
     xml_node childNodeOfCores = parentNode.child(primaryShardTag);

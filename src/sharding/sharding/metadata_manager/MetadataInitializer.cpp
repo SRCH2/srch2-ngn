@@ -115,62 +115,71 @@ void MetadataInitializer::updateWriteviewForJsonFileShard(Cluster_Writeview * ne
 void MetadataInitializer::addNewJsonFileShards(Cluster_Writeview * newWriteview){
 	ASSERT(newWriteview != NULL);
 	// coreId to a list of json file paths
-	map<unsigned, vector<string> > jsonFilesToBeUsed;
+	map<unsigned, string > jsonFilesToBeUsed;
 	// I) check all json files, and keep the path if it's a new json file, per core ...
 	map<unsigned, unsigned > nodeShardPartitionIdOffset;
 	for(map<unsigned, CoreInfo_t *>::iterator coreItr = newWriteview->cores.begin(); coreItr != newWriteview->cores.end(); ++coreItr){
 		unsigned coreId = coreItr->first;
 		CoreInfo_t * coreInfo = coreItr->second;
 		nodeShardPartitionIdOffset[coreId] = coreInfo->getNumberOfPrimaryShards();
-		vector<string> jsonFilePaths;
-		coreInfo->getJsonFilePaths(jsonFilePaths);
-		for(unsigned jsonFilePathIdx = 0 ; jsonFilePathIdx < jsonFilePaths.size(); ++jsonFilePathIdx){
-			const string & jsonFilePath = jsonFilePaths.at(jsonFilePathIdx);
+		const string & dataFilePath = coreInfo->getDataFilePath();
+		for(map<unsigned,  LocalPhysicalShard >::iterator nodeShardItr = newWriteview->localNodeDataShards.begin();
+				nodeShardItr != newWriteview->localNodeDataShards.end(); ++nodeShardItr){
+			if(nodeShardPartitionIdOffset[coreId] <= nodeShardItr->first){
+				nodeShardPartitionIdOffset[coreId] = nodeShardItr->first + 1;
+			}
+		}
+		if(dataFilePath.compare("") != 0){
 			bool isNew = true;
 			for(map<unsigned,  LocalPhysicalShard >::iterator nodeShardItr = newWriteview->localNodeDataShards.begin();
 					nodeShardItr != newWriteview->localNodeDataShards.end(); ++nodeShardItr){
-				if(nodeShardPartitionIdOffset[coreId] <= nodeShardItr->first){
-					nodeShardPartitionIdOffset[coreId] = nodeShardItr->first + 1;
-				}
-				if(nodeShardItr->second.jsonFileCompletePath.compare(jsonFilePath) == 0){ // the same json file
+				if(nodeShardItr->second.jsonFileCompletePath.compare(dataFilePath) == 0){ // the same json file
 					isNew = false;
 					break;
 				}
 			}
 			if(isNew){
-				if(jsonFilesToBeUsed.find(coreId) == jsonFilesToBeUsed.end()){
-					jsonFilesToBeUsed[coreId] = vector<string>();
-				}
-				jsonFilesToBeUsed[coreId].push_back(jsonFilePath);
+				jsonFilesToBeUsed[coreId] = dataFilePath;
 			}
 		}
 	}
 
 
-	if(jsonFilesToBeUsed.size() == 0){
-		return;
-	}
-	// II) construct json file shards and add them to the writeview ...
-
-
-	// b) create indexes for json files
-	for(map<unsigned, vector<string> >::iterator coreItr = jsonFilesToBeUsed.begin();
-			coreItr != jsonFilesToBeUsed.end(); ++coreItr){
-
-		for(unsigned jsonFileIdx = 0; jsonFileIdx < coreItr->second.size(); jsonFileIdx++){
-			unsigned newShardPartitionId = coreItr->first * 100 + nodeShardPartitionIdOffset[coreItr->first]+jsonFileIdx;
-			NodeShardId shardId(coreItr->first, newWriteview->currentNodeId, newShardPartitionId);
+	for(map<unsigned, CoreInfo_t *>::iterator coreItr = newWriteview->cores.begin(); coreItr != newWriteview->cores.end(); ++coreItr){
+		unsigned coreId = coreItr->first;
+		CoreInfo_t * coreInfo = coreItr->second;
+		if(jsonFilesToBeUsed.find(coreId) != jsonFilesToBeUsed.end()){
+			ASSERT(coreInfo->getNumberOfPrimaryShards() == 0);
+			unsigned newShardPartitionId = coreId * 100 + nodeShardPartitionIdOffset[coreId];
+			NodeShardId shardId(coreId, newWriteview->currentNodeId, newShardPartitionId);
 			string indexDirectory = configManager->getShardDir(newWriteview->clusterName,
-					newWriteview->cores[coreItr->first]->getName(), &shardId);
+					newWriteview->cores[coreId]->getName(), &shardId);
 			if(indexDirectory.compare("") == 0){
 				indexDirectory = configManager->createShardDir(newWriteview->clusterName,
-										newWriteview->cores[coreItr->first]->getName(), &shardId);
+										newWriteview->cores[coreId]->getName(), &shardId);
 			}
-			InitialShardBuilder shardBuilder(new NodeShardId(shardId), indexDirectory, coreItr->second.at(jsonFileIdx));
+			InitialShardBuilder shardBuilder(new NodeShardId(shardId), indexDirectory, jsonFilesToBeUsed[coreId]);
 			shardBuilder.prepare(false);
 			updateWriteviewForJsonFileShard(newWriteview, shardId, &shardBuilder);
 		}
+//		}else if(coreInfo->isAclCore()){
+//			// Acl core, we must make an empty shard and it will automatically load the acl data if needed.
+//			unsigned newShardPartitionId = coreId * 200 + nodeShardPartitionIdOffset[coreId];
+//			NodeShardId shardId(coreId, newWriteview->currentNodeId, newShardPartitionId);
+//			string indexDirectory = configManager->getShardDir(newWriteview->clusterName,
+//					newWriteview->cores[coreId]->getName(), &shardId);
+//			if(indexDirectory.compare("") == 0){
+//				indexDirectory = configManager->createShardDir(newWriteview->clusterName,
+//										newWriteview->cores[coreId]->getName(), &shardId);
+//			}
+//
+//			EmptyShardBuilder shardBuilder(new NodeShardId(shardId), indexDirectory);
+//			shardBuilder.prepare(false);
+//			updateWriteviewForJsonFileShard(newWriteview, shardId, &shardBuilder);
+//			// TODO : update writeview for acl shards, even needed ?
+//		}
 	}
+
 	return;
 }
 
