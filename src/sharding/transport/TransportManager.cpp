@@ -133,8 +133,11 @@ int TransportManager::readDataFromSocket(int fd, char *buffer, const int byteToR
 		// incomplete read. return status 1 ( come again later)
 		return 1;
 	}
+	if(byteToRead != readByte){
+		ASSERT(false);
+		return -1;
+	}
 
-	ASSERT(byteToRead == readByte);
 	return 0;
 }
 
