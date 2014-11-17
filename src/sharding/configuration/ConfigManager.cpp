@@ -312,7 +312,10 @@ bool ConfigManager::loadConfigFile(srch2http::ResourceMetadataManager * metadata
     for(unsigned coreIdx = 0 ; coreIdx < clusterCores.size() ; ++coreIdx){
     	CoreInfo_t * coreInfo = clusterCores[coreIdx];
     	if(coreInfo != NULL){
-
+    		if(coreInfo->getSchema()->getAclRefiningAttrIdsList().size() == 0
+    	    		&& coreInfo->getSchema()->getAclSearchableAttrIdsList().size() == 0){
+    			continue;
+    		}
     		CoreInfo_t *newAclCore = NULL;
     		if(coreInfo->getNumberOfPrimaryShards() == 0){
     			// it's a node shard, we use the same core object for attribute acl
@@ -328,7 +331,7 @@ bool ConfigManager::loadConfigFile(srch2http::ResourceMetadataManager * metadata
 			newAclCore->name = "acl" + coreInfo->getName();
 			newAclCore->setCoreId(defaultCoreId++);
 
-			newAclCore->numberOfPrimaryShards = 20;  // 20 partition
+			newAclCore->numberOfPrimaryShards = 10;  // 20 partition
 			newAclCore->numberOfReplicas = 2;        // 1 primary + 2 replica
 			newAclCore->dataFilePath = "";
 			newAclCore->aclCoreFlag = true;

@@ -146,6 +146,7 @@ public:
 	CoreInfo_t(class ConfigManager *manager) : configManager(manager),  accessControlInfo(NULL)  {
 		schema = NULL;
 		aclCoreFlag = false;
+		this->attributeAclCoreId = (unsigned) -1;
 	};
 
 	CoreInfo_t(const CoreInfo_t &src);
@@ -351,6 +352,9 @@ public:
     }
 
     unsigned getAttributeAclCoreId() const{
+    	if(this->attributeAclCoreId == (unsigned)-1){
+    		ASSERT(false);
+    	}
     	return this->attributeAclCoreId;
     }
 
