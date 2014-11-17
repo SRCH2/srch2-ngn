@@ -395,6 +395,9 @@ void Cluster_Writeview::printClusterShards() const{
 			if(coreItr->second->isAclCore()){
 				continue;
 			}
+			if(! coreItr->second->isDistributedCore()){
+				continue;
+			}
 			vector<string> clusterHeaders;
 			vector<string> clusterLabels;
 			unsigned counter = 0;
@@ -414,6 +417,8 @@ void Cluster_Writeview::printClusterShards() const{
 			clusterShardsTable.startFilling();
 			ClusterShardIterator cShardItr(this);
 			cShardItr.beginClusterShardsIteration();
+			unsigned numberOfAssignedShardsOfAclCore = 0;
+			unsigned numberOfLocalShardsOfAclCore = 0;
 			while(cShardItr.getNextClusterShard(id, load, state, isLocal, nodeId)){
 				if(id.coreId != coreItr->first){
 					continue;
@@ -438,6 +443,69 @@ void Cluster_Writeview::printClusterShards() const{
 				}
 				clusterShardsTable.printNextCell(ss.str());
 
+			}
+
+
+			// print information about acl cores
+			vector<string> aclHeaders;
+			aclHeaders.push_back("No. of Partitions");
+			aclHeaders.push_back("No. of Replicas");
+			aclHeaders.push_back("No. of Assigned Shards");
+			aclHeaders.push_back("No. of Local Shards");
+			vector<string> aclLabels;
+			for(map<unsigned, CoreInfo_t *>::const_iterator aclCoreItr = cores.begin(); aclCoreItr != cores.end(); ++aclCoreItr){
+				if(! (aclCoreItr->second->isAclCore() && aclCoreItr->second->getCoreId() == coreItr->second->getCoreId())){
+					continue;
+				}
+				aclLabels.push_back(aclCoreItr->second->getName());
+			}
+			srch2::util::TableFormatPrinter helperCoresTable("Core name :%" + coreItr->second->getName() + "%Acl core",
+					120, aclHeaders, aclLabels);
+			helperCoresTable.printColumnHeaders();
+			helperCoresTable.startFilling();
+			for(map<unsigned, CoreInfo_t *>::const_iterator aclCoreItr = cores.begin(); aclCoreItr != cores.end(); ++aclCoreItr){
+				if(! (aclCoreItr->second->isAclCore() && aclCoreItr->second->getCoreId() == coreItr->second->getAttributeAclCoreId())){
+					continue;
+				}
+				const CoreInfo_t * coreInfo = aclCoreItr->second;
+				{
+					stringstream ss;
+					ss << coreInfo->getNumberOfPrimaryShards();
+					helperCoresTable.printNextCell(ss.str());
+				}
+				{
+					stringstream ss;
+					ss << coreInfo->getNumberOfReplicas();
+					helperCoresTable.printNextCell(ss.str());
+				}
+				unsigned numberOfAssignedShardsOfAclCore = 0;
+				unsigned numberOfLocalShardsOfAclCore = 0;
+
+				ClusterShardIterator aclShardItr(this);
+				aclShardItr.beginClusterShardsIteration();
+				while(aclShardItr.getNextClusterShard(id, load, state, isLocal, nodeId)){
+					if(id.coreId != coreInfo->getCoreId()){
+						continue;
+					}
+					if(state != SHARDSTATE_UNASSIGNED){
+						numberOfAssignedShardsOfAclCore ++;
+						if(isLocal){
+							numberOfLocalShardsOfAclCore ++;
+						}
+					}
+
+				}
+
+				{
+					stringstream ss;
+					ss << numberOfAssignedShardsOfAclCore ;
+					helperCoresTable.printNextCell(ss.str());
+				}
+				{
+					stringstream ss;
+					ss << numberOfLocalShardsOfAclCore;
+					helperCoresTable.printNextCell(ss.str());
+				}
 			}
 		}
 	}
