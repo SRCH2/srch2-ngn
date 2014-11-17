@@ -34,6 +34,7 @@ SP(Transaction) OperationState::getTransaction(){
 	return transaction;
 }
 void OperationState::setTransaction(SP(Transaction) sp){
+    this->transaction.reset();
 	this->transaction = sp;
 }
 void OperationState::lock(){

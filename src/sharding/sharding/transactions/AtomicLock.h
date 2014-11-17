@@ -83,7 +83,6 @@ private:
 
 	SP(LockingNotification) lockNotification;
 	LockRequestType lockType;
-	OrderedNodeIteratorOperation * locker; // it will be deleted by state-machine when it returns NULL
 
 	SP(LockingNotification) releaseNotification;
 

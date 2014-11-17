@@ -67,11 +67,11 @@ AtomicMetadataCommit::AtomicMetadataCommit(MetadataChange * metadataChange,
 		const vector<NodeId> & participants, ConsumerInterface * consumer, const bool skipLock): ProducerInterface(consumer){
 	ASSERT(metadataChange != NULL);
 	ASSERT(this->getConsumer() != NULL);
-	ASSERT(this->getConsumer()->getTransaction() != NULL);
+	ASSERT(this->getConsumer()->getTransaction());
 	this->metadataChange = metadataChange;
 	SP(const ClusterNodes_Writeview) nodesWriteview = ShardManager::getNodesWriteview_read();
 	for(unsigned i = 0 ; i < participants.size(); ++i){
-		if(! nodesWriteview->isNodeAlive(participants.at(i))){
+		if(nodesWriteview->isNodeAlive(participants.at(i))){
 			this->participants.push_back(participants.at(i));
 		}
 	}
@@ -121,12 +121,12 @@ void AtomicMetadataCommit::produce(){
         finalize(false);
         return;
     }
-    //lock should be acquired on all nodes
-    atomicLock = new AtomicLock(selfOperationId, this); // X-locks metadata by default
-    atomicRelease = new AtomicRelease(selfOperationId, this);
     if(skipLock){
         commit();
     }else{
+        //lock should be acquired on all nodes
+        atomicLock = new AtomicLock(selfOperationId, this); // X-locks metadata by default
+        atomicRelease = new AtomicRelease(selfOperationId, this);
         lock();
     }
 }

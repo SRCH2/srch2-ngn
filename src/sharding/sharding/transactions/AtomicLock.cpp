@@ -111,8 +111,11 @@ void AtomicLock::produce(){
     	}
     }
     nodesWriteview.reset();
+    OrderedNodeIteratorOperation * locker =
+            new OrderedNodeIteratorOperation(lockNotification, ShardingLockACKMessageType , participants, this);
     if(participants.empty()){
         Logger::sharding(Logger::Detail, "AtomicLock| ends unattached, no participant found.");
+        delete locker;
     	return;
     }else if(participantsChangedFlag){
     	locker->setParticipants(participants);
@@ -127,7 +130,6 @@ void AtomicLock::produce(){
 void AtomicLock::init(){
 	lockNotification->getInvolvedNodes(this->getTransaction(), participants);
 	participantIndex = -1;
-	locker = new OrderedNodeIteratorOperation(lockNotification, ShardingLockACKMessageType , participants, this);
 }
 
 /*
@@ -169,7 +171,7 @@ bool AtomicLock::condition(SP(ShardingNotification) reqArg,
 }
 
 bool AtomicLock::shouldAbort(const NodeId & failedNode){
-	unsigned failedNodeIndex = this->participants.size() ;
+	unsigned failedNodeIndex = 0 ;
 	for(; failedNodeIndex < this->participants.size(); ++failedNodeIndex){
 		if(this->participants.at(failedNodeIndex) == failedNode){
 			break;

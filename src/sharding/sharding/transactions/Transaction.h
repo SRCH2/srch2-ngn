@@ -73,7 +73,10 @@ public:
 		this->sharedPointer = sp;
 	}
 	virtual void threadEnd(){ // resets sharedPointer
-		this->transMutex.unlock();
+	    if(this->finalizeArgument == NULL ||
+	            (this->finalizeArgument != NULL && ! this->finalizeArgument->needWriteviewLock)){
+            this->transMutex.unlock();
+	    }
 		this->sharedPointer.reset();
 	}
 	TRANS_ID getTID() const ;
@@ -120,6 +123,7 @@ public:
 		return false;
 	}
 	Cluster_Writeview * getWriteview();
+	void setWriteview(Cluster_Writeview * newWriteview);
 	void threadBegin(SP(Transaction) sp);
 	void threadEnd();
 private:

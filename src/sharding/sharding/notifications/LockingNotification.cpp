@@ -463,6 +463,8 @@ void LockingNotification::getInvolvedNodes(SP(Transaction) sp, vector<NodeId> & 
 		}
 		writeview->getPatitionInvolvedNodes(pid, participants);
 		return;
+	}else if(lockRequestType == LockRequestType_Metadata){
+	    nodesWriteview->getArrivedNodes(participants, false);
 	}else{
 		nodesWriteview->getArrivedNodes(participants, true);
 	}

@@ -51,6 +51,9 @@ Transaction::~Transaction(){
 void Transaction::finalize(){
 	finalizeWork(finalizeArgument);
 	if(finalizeArgument != NULL){
+	    if(finalizeArgument->needWriteviewLock){
+	        this->transMutex.unlock();
+	    }
 		delete finalizeArgument;
 		finalizeArgument = NULL;
 	}
@@ -126,7 +129,7 @@ void WriteviewTransaction::threadBegin(SP(Transaction) sp){ // sets sharedPointe
 }
 void WriteviewTransaction::threadEnd(){ // resets sharedPointer
 	Transaction::threadEnd();
-	if(finalizeArgument != NULL && finalizeArgument->needWriteviewLock == false){
+	if(finalizeArgument != NULL && finalizeArgument->needWriteviewLock){
 		finalizeArgument->writeviewLock = writeviewLock;
 		writeviewLock = NULL;
 		return;
@@ -139,6 +142,10 @@ void WriteviewTransaction::threadEnd(){ // resets sharedPointer
 
 Cluster_Writeview * WriteviewTransaction::getWriteview(){
 	return writeview;
+}
+
+void WriteviewTransaction::setWriteview(Cluster_Writeview * newWriteview){
+    this->writeview = newWriteview;
 }
 
 }

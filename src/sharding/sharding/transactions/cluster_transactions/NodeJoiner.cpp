@@ -183,6 +183,7 @@ void NodeJoiner::end_(map<NodeOperationId, SP(ShardingNotification) > & replies)
 	// new writeview is ready, replace current writeview with the new one
 	SP(ClusterNodes_Writeview) nodesWriteview = ShardManager::getNodesWriteview_write();
 	ShardManager::getShardManager()->getMetadataManager()->setWriteview(clusterWriteview, false);
+	this->setWriteview(clusterWriteview);
 	// update the readview
 	ShardManager::getShardManager()->getMetadataManager()->commitClusterMetadata(false);
 	nodesWriteview.reset();
