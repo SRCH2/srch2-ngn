@@ -60,8 +60,6 @@ void ShardCopyOperation::produce(){
 void ShardCopyOperation::lock(){ // ** start **
 	this->locker = new AtomicLock(replicaShardId, unassignedShardId, currentOpId, this);
 	// locker calls all methods of LockResultCallbackInterface from us
-	this->releaser = new AtomicRelease(replicaShardId, unassignedShardId, currentOpId, this);
-	// releaser calls all methods of BooleanCallbackInterface from us
 	this->currentAction = "lock";
 	Logger::sharding(Logger::Detail, "ShardCopy(opid=%s, cp {%s in %d} to %s )| acquiring lock", currentOpId.toString().c_str(),
 			replicaShardId.toString().c_str(), srcNodeId, unassignedShardId.toString().c_str());
@@ -74,10 +72,11 @@ void ShardCopyOperation::consume(bool granted){
 			transfer();
 		}else{
 			this->successFlag = false;
-			release();
+			finalize();
 		}
 	}else if(currentAction.compare("release") == 0){
 		if(! granted){
+			ASSERT(false);
 			this->successFlag = false;
 		}
 		finalize();
@@ -171,6 +170,8 @@ void ShardCopyOperation::commit(){
 }
 // ** end if
 void ShardCopyOperation::release(){
+	this->releaser = new AtomicRelease(replicaShardId, unassignedShardId, currentOpId, this);
+	// releaser calls all methods of BooleanCallbackInterface from us
 	// release the locks
 	currentAction = "release";
 	Logger::sharding(Logger::Step, "ShardCopy(opid=%s, cp {%s in %d} to %s )| releasing lock", currentOpId.toString().c_str(),
@@ -181,7 +182,7 @@ void ShardCopyOperation::release(){
 
 void ShardCopyOperation::finalize(){ // ** return **
 	this->finalizedFlag = true;
-	Logger::sharding(Logger::Step, "ShardCopy(opid=%s, cp {%s in %d} to %s )| finalizing.Result : %s", currentOpId.toString().c_str(),
+	Logger::sharding(Logger::Step, "ShardCopy(opid=%s, cp {%s in %d} to %s )| finalizing. Result : %s", currentOpId.toString().c_str(),
 			replicaShardId.toString().c_str(), srcNodeId, unassignedShardId.toString().c_str() , this->successFlag ? "Successful" : "Failed");
 	this->getConsumer()->consume(this->successFlag);
 }

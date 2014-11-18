@@ -199,7 +199,7 @@ bool AtomicLock::shouldAbort(const NodeId & failedNode){
 // if not granted :
 void AtomicLock::recover(){
 
-    Logger::sharding(Logger::Detail, "AtomicLock| Recovery state caused by node failure.");
+    Logger::sharding(Logger::Detail, "AtomicLock| In case we could acquite some locks we must release them here.");
 	if(participantIndex == 0){
 		finalize(false);
 		return;
