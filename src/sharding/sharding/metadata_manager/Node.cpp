@@ -149,6 +149,7 @@ void Node::deserialize(char *serlializedNode) {
 
 string Node::toStringShort() const{
     stringstream ss;
+    ss << "ID(" << nodeId << "),";
     ss << "N(" << nodeName << "),";
     ss << "IP(" << ipAddress << "),";
     ss << "P(" << portNumber << "),";
@@ -172,6 +173,7 @@ string Node::toStringShort() const{
 
 string Node::toString() const{
 	stringstream ss;
+	ss << "ID:" << nodeId << "%";
 	ss << "Name:" << nodeName << "%";
 	ss << "IP:" << ipAddress << "%";
 	ss << "Port:" << portNumber << "%";

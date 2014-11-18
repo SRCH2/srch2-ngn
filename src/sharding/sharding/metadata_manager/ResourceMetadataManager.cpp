@@ -51,7 +51,8 @@ bool ClusterNodes_Writeview::isNodeAlive(const NodeId & nodeId) const{
 void ClusterNodes_Writeview::addNode(const Node & node){
 
     if(nodes.find(node.getId()) == nodes.end()){ // new node.
-		nodes[node.getId()] = std::make_pair(ShardingNodeStateNotArrived, new Node(node));
+		Logger::sharding(Logger::Warning, "DiscoveryCallBack | ClusterInfoReplyMessage adding node %s.", node.toStringShort().c_str());
+    	nodes[node.getId()] = std::make_pair(ShardingNodeStateNotArrived, new Node(node));
 	}else{
 		if(nodes[node.getId()].second != NULL){
 			Logger::sharding(Logger::Warning, "DiscoveryCallBack | ClusterInfoReplyMessage adding node %s although node %s exists.",
