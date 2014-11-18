@@ -250,10 +250,10 @@ public:
 
 	void printSubTree(unsigned indent = 0);
 
-	void setBoosted() { isBoostedFlag = false; }
-	bool isBoosted() { return isBoostedFlag; }
+	void setFeedbackBoosted() { isFeedbackBoostedFlag = true; }
+	bool isFeedbackBoosted() { return isFeedbackBoostedFlag; }
 
-	PhysicalPlanOptimizationNode() { isBoostedFlag = false; }
+	PhysicalPlanOptimizationNode() { isFeedbackBoostedFlag = false; }
 private:
 	PhysicalPlanNode * executableNode;
 	vector<PhysicalPlanOptimizationNode *> children;
@@ -262,7 +262,7 @@ private:
 	PhysicalPlanOptimizationNode * parent;
 
 	LogicalPlanNode * logicalPlanNode;
-	bool isBoostedFlag;
+	bool isFeedbackBoostedFlag;
 };
 
 

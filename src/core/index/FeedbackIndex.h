@@ -28,7 +28,7 @@ typedef cowvector<UserFeedbackInfo> UserFeedbackList;
 
 #define CURRENT_FEEDBACK_LIST_INDEX_VERSION 0
 
-struct DoubleLinkedList {
+struct DoubleLinkedListElement {
 	unsigned queryId;
 	unsigned prevIndexId;
 	unsigned nextIndexId;
@@ -50,17 +50,20 @@ class FeedbackIndex {
     std::set<unsigned> feedBackListsToMerge;
     // flag to indicate whether the index has changed and needs to be saved to disk.
     bool saveIndexFlag;
-    // max feedback queries in the trie
+    // max number of feedback queries in the trie
     unsigned maxCountOfFeedbackQueries;
     // Linked list to track the age/recency of the queries.
-    DoubleLinkedList * queryAgeOrder;
+    DoubleLinkedListElement * queryAgeOrder;
     // Head of the list points to oldest query
     unsigned headId;
     // Tail of the list points to recent query
     unsigned tailId;
 
-    // running count of queries in index;
+    // Existing count of queries in query trie index;
     unsigned totalQueryCount;
+
+    // flag to indicate wether merge is required.
+    bool mergeRequired;
 
 
 public:
@@ -93,7 +96,18 @@ public:
     		Indexer *indexer);
     // destructor
     virtual ~FeedbackIndex();
+
+    bool isTermialNodeValid(const TrieNode *terminalNode) {
+    	return terminalNode->getInvertedListOffset() != -1;
+    }
+
+    void finalize() {
+    	queryTrie->finalCommit_finalizeHistogramInformation(NULL, NULL,0);
+    }
+
 private:
+    // private merge function. Writer lock should be acquired before calling it.
+    void _merge();
 	void mergeFeedbackList(UserFeedbackList *feedbackList);
 };
 

@@ -32,6 +32,7 @@ INDEXWRITE_RETVAL IndexReaderWriter::commit()
     INDEXWRITE_RETVAL commitReturnValue;
     if (!this->index->isBulkLoadDone()) {
     	commitReturnValue = this->index->finishBulkLoad();
+    	this->userFeedbackIndex->finalize();
     } else {
     	/*
     	 *  If bulk load is done, then we are in past bulk load stage. We should call merge function

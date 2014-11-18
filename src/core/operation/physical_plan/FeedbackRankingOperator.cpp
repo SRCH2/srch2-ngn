@@ -23,6 +23,9 @@ void FeedbackRanker::init() {
 	queryArrivalTime = time(NULL);
 
 	maxBoostForThisQuery = 1.0;
+	// Get the max feedback boost possible for all the feedback records of current query.
+	// This max feedback boost is used in tok-k merge operator for setting upper bound.
+	// See top-k merge operator's getNext function for more details.
 	for (unsigned i = 0; i < feedbackInfoForQuery.size(); ++i) {
 		unsigned feedbackRecencyInSecs = queryArrivalTime - feedbackInfoForQuery[i].timestamp;
 		float feedbackBoost = Ranker::computeFeedbackBoost(feedbackRecencyInSecs, feedbackInfoForQuery[i].feedbackFrequency);

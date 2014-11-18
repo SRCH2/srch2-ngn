@@ -47,8 +47,9 @@ FeedbackIndex::FeedbackIndex(unsigned maxFeedbackInfoCountPerQuery,
 	feedbackListIndexVector = new cowvector<UserFeedbackList *>();
 	feedbackListIndexVector->commit();
 	saveIndexFlag = false;
-	queryAgeOrder = new DoubleLinkedList[this->maxCountOfFeedbackQueries];
+	queryAgeOrder = new DoubleLinkedListElement[this->maxCountOfFeedbackQueries];
 	headId = tailId = -1;
+	mergeRequired = true;
 }
 
 void FeedbackIndex::addFeedback(const string& query, const string& externalRecordId, unsigned timestamp) {
@@ -84,12 +85,12 @@ void FeedbackIndex::addFeedback(const string& query, unsigned recordId, unsigned
 		 *       |------V      V--------------|
 		 *
 		 *
-		 *   Now query Q5 will replace Q1 and Q1's slot "1" will be used for Q6.  Q0 becomes the
+		 *   Now query Q5 will replace Q1 and Q1's slot "1" will be used for Q5.  Q0 becomes the
 		 *   oldest query and Q6 becomes the latest query.
 		 *
 		 *       ^ ------------|      |-------^
 		 *       |             V      V       |
-		 *       Q0  |  Q6  |  Q2  |  Q3  |  Q4
+		 *       Q0  |  Q5  |  Q2  |  Q3  |  Q4
 		 *              ^      |      |       ^
 		 *              |      V------|-------|
 		 *              |-------------V
@@ -112,8 +113,7 @@ void FeedbackIndex::addFeedback(const string& query, unsigned recordId, unsigned
 						queryAgeOrder[headId].queryId, &tp);
 
 				if (tp.path->size()) {
-					unsigned lastElement = tp.path->size() - 1;
-					tp.path->at(lastElement)->setInvertedListOffset(-1);
+					tp.path->back()->setInvertedListOffset(-1);
 
 					// free feedback list
 					delete feedbackListIndexVector->getWriteView()->at(headId);
@@ -201,6 +201,7 @@ void FeedbackIndex::addFeedback(const string& query, unsigned recordId, unsigned
 	}
 	feedBackListsToMerge.insert(feedbackListOffset);
 	saveIndexFlag = true;
+	mergeRequired = true;
 }
 
 void FeedbackIndex::addFeedback(const string& query, unsigned recordId) {
@@ -227,7 +228,7 @@ bool FeedbackIndex::hasFeedbackDataForQuery(const string& query) {
 	}
 
 	// Query exists in the trie but it is logically deleted. Trie will be cleaned up later.
-	if (terminalNode->getInvertedListOffset() == -1)
+	if (!isTermialNodeValid(terminalNode))
 		return false;
 
 	return true;
@@ -271,6 +272,11 @@ void FeedbackIndex::retrieveUserFeedbackInfoForQuery(const string& query,
 }
 
 void FeedbackIndex::merge() {
+	boost::unique_lock<boost::mutex> lock(writerLock);
+	_merge();
+}
+
+void FeedbackIndex::_merge() {
 	/*
 	 *  Conceptual view of query feedback indexing
 	 *
@@ -299,7 +305,9 @@ void FeedbackIndex::merge() {
 	 *  merge data structure starting from low-level towards top-level.
 	 */
 
-	boost::unique_lock<boost::mutex> lock(writerLock);
+	if (!mergeRequired)
+		return;
+
 	//1. merge each feedback list from the feedBackListsToMerge set.
 	std::set<unsigned>::iterator iter = feedBackListsToMerge.begin();
 	while (iter != feedBackListsToMerge.end()) {
@@ -311,6 +319,10 @@ void FeedbackIndex::merge() {
 	//2. Now merge feedbackListIndexVector
 	feedbackListIndexVector->merge();
 
+	// if query Trie's keywordIds need reassignment due to Id collision, then we need to
+	// reassign keywordIds in the trie (See Trie.cpp for more detail) . When some keywordIds
+	// are reassigned then those keywords ids should also be fixed in the query recency linked
+	// list
 	if (queryTrie->needToReassignKeywordIds()) {
 
 		// reassign id is not thread safe so we need to grab an exclusive lock
@@ -321,8 +333,10 @@ void FeedbackIndex::merge() {
 				iter != trieNodeIdMapper.end(); ++iter) {
 			TrieNode *node = iter->first;
 			unsigned newKeywordId = iter->second;
+			// fix keywordIds in query Trie
 			node->setId(newKeywordId);
 
+			// fix keywordIds in recency list.
 			if (node->getInvertedListOffset() < maxCountOfFeedbackQueries)
 				queryAgeOrder[node->getInvertedListOffset()].queryId =  newKeywordId;
 			else
@@ -332,6 +346,8 @@ void FeedbackIndex::merge() {
 
 	//3. Trie should be merged last because it is a top level data structure.
 	queryTrie->merge(NULL, NULL, 0, false);
+
+	mergeRequired = false;
 }
 
 void FeedbackIndex::mergeFeedbackList(UserFeedbackList *feedbackList) {
@@ -422,8 +438,13 @@ FeedbackIndex::~FeedbackIndex() {
 
 void FeedbackIndex::save(const string& directoryName) {
 
-	if (this->queryTrie->isMergeRequired())
-		this->queryTrie->merge(NULL, NULL, 0, false);
+	// take a writer lock to block writers while saving the index.
+	boost::unique_lock<boost::mutex> lock(writerLock);
+
+	// if merge is required then call merge first.
+	if (mergeRequired) {
+		_merge();
+	}
 
 	// serialize the data structures to disk
 	Serializer serializer;
@@ -490,7 +511,7 @@ void FeedbackIndex::load(const string& directoryName) {
 		ia >> headId;
 		ia >> tailId;
 		delete queryAgeOrder;
-		queryAgeOrder = new DoubleLinkedList[this->maxCountOfFeedbackQueries];
+		queryAgeOrder = new DoubleLinkedListElement[this->maxCountOfFeedbackQueries];
 		ASSERT(totalQueryCount <= maxCountOfFeedbackQueries);
 		for (unsigned i = 0; i < totalQueryCount; ++i) {
 			ia >> queryAgeOrder[i].nextIndexId;
@@ -509,6 +530,8 @@ void FeedbackIndex::load(const string& directoryName) {
 				" of the engine or copied from a different machine/architecture.");
 		throw exception();
 	}
+
+	mergeRequired = true;
 }
 
 } /* namespace instantsearch */

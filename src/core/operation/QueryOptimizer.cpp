@@ -115,7 +115,8 @@ void QueryOptimizer::buildIncompleteTreeOptions(vector<PhysicalPlanOptimizationN
 
     if(logicalPlan->getPostProcessingInfo() == NULL ||
     		logicalPlan->getPostProcessingInfo()->getSortEvaluator() == NULL){
-    	// If only sort is not specified by the user we will do feedback boosting.
+    	// If external sort criteria is not specified by the user, only then we will do feedback boosting.
+    	// e.g if sort-by-refining-attribute is present in query then ignore feedback boosting.
     	for(vector<PhysicalPlanOptimizationNode *>::iterator treeOption = treeOptions.begin();
     			treeOption != treeOptions.end(); ++treeOption){
     		if (!isLogicalPlanBoosted(*treeOption))
@@ -305,7 +306,7 @@ void QueryOptimizer::buildIncompleteSubTreeOptionsGeo(LogicalPlanNode * root, ve
 bool QueryOptimizer::isLogicalPlanBoosted(PhysicalPlanOptimizationNode *node) {
 
 	if (isNodeFeedbackCapable(node)){
-		node->setBoosted();
+		node->setFeedbackBoosted();
 		return true;
 	}
 
@@ -316,11 +317,14 @@ bool QueryOptimizer::isLogicalPlanBoosted(PhysicalPlanOptimizationNode *node) {
 
 	bool isAllChildBoosted = true;
 	for (unsigned i = 0; i < node->getChildrenCount(); ++i) {
-		isAllChildBoosted &= isLogicalPlanBoosted(node->getChildAt(i));
+		if (!isLogicalPlanBoosted(node->getChildAt(i))) {
+			isAllChildBoosted = false;
+			break;
+		}
 	}
 
 	if (isAllChildBoosted) {
-		node->setBoosted();
+		node->setFeedbackBoosted();
 		return true;
 	} else {
 		return false;
@@ -330,16 +334,19 @@ bool QueryOptimizer::isLogicalPlanBoosted(PhysicalPlanOptimizationNode *node) {
 void QueryOptimizer::injectSortOperatorsForFeedback(PhysicalPlanOptimizationNode **root,
 		PhysicalPlanOptimizationNode *node, unsigned childOffset){
 
-	bool atLeastOneChildBoost = false;
+	bool atLeastOneChildBoosted = false;
 	for(unsigned i = 0 ; i < node->getChildrenCount() ; ++i){
-		atLeastOneChildBoost |= node->getChildAt(i)->isBoosted();
+		if (node->getChildAt(i)->isFeedbackBoosted()) {
+			atLeastOneChildBoosted = true;
+			break;
+		}
 	}
 
-	if (atLeastOneChildBoost) {
-		// There are some child which are boosted and some are not boosted.
+	if (atLeastOneChildBoosted) {
+		// There are some children which are boosted and some are not boosted.
 		// traverse to the non-boosted children and fix them by inserting sort operator..
 		for(unsigned i = 0 ; i < node->getChildrenCount() ; ++i) {
-			if (node->getChildAt(i)->isBoosted()) {
+			if (node->getChildAt(i)->isFeedbackBoosted() == false) {
 				injectSortOperatorsForFeedback(root, node->getChildAt(i), i);
 			}
 		}

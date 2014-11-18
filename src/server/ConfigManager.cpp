@@ -1207,13 +1207,13 @@ void ConfigManager::parseDataFieldSettings(const xml_node &parentNode,
         if (maxFeedbackRecordsPerQuery <= 0) {
         	coreInfo->userFeedbackEnabledFlag = false;
         	Logger::console("In core %s: 'maxFeedbackRecordsPerQuery' attribute of"
-        			" 'userFeedback' tag is missing or has invalid value. User feedback is disabled.",
+        			" 'userFeedback' tag is missing or has an invalid value. User feedback is disabled.",
         			coreInfo->getName().c_str());
         }
         else if (maxFeedbackQueriesCount <= 0) {
     		coreInfo->userFeedbackEnabledFlag = false;
     		Logger::console("In core %s: 'maxfeedbackQueries' attribute of"
-    				" 'userFeedback' tag is missing or has invalid value. User feedback is disabled.",
+    				" 'userFeedback' tag is missing or has an invalid value. User feedback is disabled.",
     				coreInfo->getName().c_str());
     	}
         else {

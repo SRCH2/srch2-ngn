@@ -168,6 +168,7 @@ namespace srch2
 		return feedbackBoost;
     }
 
+    // compute the boosted score. original score * feedback boost.
     float DefaultTopKRanker::computeFeedbackBoostedScore(float score, float boost) {
     	return score * boost;
     }

@@ -581,14 +581,14 @@ bool Trie::needToReassignKeywordIds()
 
 void Trie::printTriePath(vector<TrieNode* > *pathTrace)
 {
-    /* cout << "trie path = "; */
-    /* if (pathTrace == NULL) */
-    /*   cout << " NULL "; */
-    /* else { */
-    /*   for (unsigned i = 0; i < pathTrace->size(); i ++) */
-    /*     cout << pathTrace->at(i)->character; */
-    /*   cout << ". Leaf node id = " << pathTrace->at(pathTrace->size() - 1)->getId() << "\n"; */
-    /* } */
+//     cout << "trie path = ";
+//     if (pathTrace == NULL)
+//       cout << " NULL ";
+//     else {
+//       for (unsigned i = 0; i < pathTrace->size(); i ++)
+//         cout << (char)pathTrace->at(i)->character << " , ";
+//       cout << ". Leaf node id = " << pathTrace->at(pathTrace->size() - 1)->getId() << "\n";
+//     }
 }
 
 unsigned Trie::computeIdForNewKeyword(TrieNode* prevNode, TrieNode* nextNode)
@@ -813,7 +813,7 @@ unsigned Trie::addKeyword_ThreadSafe(const std::vector<CharType> &keyword,
     // Flip the dummy root node to the newly created path
     // this->root.reset(trieRootNode_WriteView);
 
-    if (terminalNode)
+    if (terminalNode)  // return terminal node pointer.
     	*terminalNode = node;
     return node->getId();
 }
@@ -825,6 +825,7 @@ unsigned Trie::addKeyword_ThreadSafe(const std::string &keyword, unsigned &inver
     return addKeyword_ThreadSafe(getCharTypeVector(keyword), invertedListOffset, isNewTrieNode, isNewInternalTerminalNode);
 }
 
+// addKeyword_ThreadSafe overload which returns terminal node pointer. It is used by feedback index.
 unsigned Trie::addKeyword_ThreadSafe(const std::string &keyword, TrieNodePtr *terminalNode) {
 	bool isNewTrieNode = false;
 	bool isNewInternalTerminalNode = false;
