@@ -1,0 +1,18 @@
+currentDir=`pwd`
+cd /home/jamshid/workspace-srch2-v4/srch2-ngn/test/sharding/integration/srch2Home
+cp ./logs/node-A-log.txt ./logs/node-A-log.txt.backup
+truncate --size 0k ./logs/node-A-log.txt
+
+cd /home/jamshid/workspace-srch2-1/srch2-ngn/test/sharding/integration/srch2Home
+cp ./logs/node-B-log.txt ./logs/node-B-log.txt.backup
+truncate --size 0k ./logs/node-B-log.txt
+
+cd /home/jamshid/workspace-srch2-2/srch2-ngn/test/sharding/integration/srch2Home
+cp ./logs/node-C-log.txt ./logs/node-C-log.txt.backup
+truncate --size 0k ./logs/node-C-log.txt
+
+cd /home/jamshid/workspace-srch2-3/srch2-ngn/test/sharding/integration/srch2Home
+cp ./logs/node-D-log.txt ./logs/node-D-log.txt.backup
+truncate --size 0k ./logs/node-D-log.txt
+
+cd $currentDir
