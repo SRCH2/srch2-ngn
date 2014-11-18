@@ -1,0 +1,18 @@
+{
+   uninitialized_value1
+   Memcheck:Cond
+   ...
+   fun:*
+}
+{
+   uninitialized_value2
+   Memcheck:Value8
+   ...
+   fun:*
+}
+{
+   uninitialized_value3
+   Memcheck:Param
+   ...
+   fun:*
+}
