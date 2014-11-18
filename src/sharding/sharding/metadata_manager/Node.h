@@ -92,7 +92,10 @@ public:
 
     string serialize();
 	void deserialize(char *serlializedNode) ;
+	string toStringShort() const;
 	string toString() const;
+
+
 
 private:
 	unsigned nodeId;

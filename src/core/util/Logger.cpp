@@ -152,6 +152,9 @@ void Logger::sharding(ShardingLogLevel logLevel, const char *format, ...){
 			case Error:
 				ss << "ERROR";
 				break;
+            case Warning:
+                ss << "WARNING";
+                break;
 			case Step:
 				ss << "STEP";
 				break;

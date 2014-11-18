@@ -147,6 +147,29 @@ void Node::deserialize(char *serlializedNode) {
 	buffer += sizeof(nodeMasterEligible);
 }
 
+string Node::toStringShort() const{
+    stringstream ss;
+    ss << "N(" << nodeName << "),";
+    ss << "IP(" << ipAddress << "),";
+    ss << "P(" << portNumber << "),";
+    if(thisIsMe){
+        ss << "ME,";
+    }
+    if(nodeMaster){
+        ss << "MATR,";
+    }else{
+        ss << "CLNT,";
+    }
+
+    if(nodeMasterEligible){
+        ss << "MELGBL,";
+    }else{
+        ss << "MNONELGBL";
+    }
+    return ss.str();
+}
+
+
 string Node::toString() const{
 	stringstream ss;
 	ss << "Name:" << nodeName << "%";

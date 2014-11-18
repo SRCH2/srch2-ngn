@@ -124,10 +124,7 @@ void LockManager::resolveLock(LockBatch * lockBatch){
 		SP(ClusterNodes_Writeview) nodesWriteview = ShardManager::getNodesWriteview_write();
 		for(unsigned i = 0 ; i < lockBatch->olderNodes.size() ; ++i){
 			// 1. is this node in the writeview of this node ?
-			if(nodesWriteview->getNodes().find(lockBatch->olderNodes.at(i)) == nodesWriteview->getNodes().end()){
-				//add it to the list of nodes in writeview as NotArrived node
-				nodesWriteview->setNodeState(lockBatch->olderNodes.at(i), ShardingNodeStateNotArrived);
-			}
+            nodesWriteview->setNodeState(lockBatch->olderNodes.at(i), ShardingNodeStateNotArrived);
 		}
 	} // xLock goes out of scope
 

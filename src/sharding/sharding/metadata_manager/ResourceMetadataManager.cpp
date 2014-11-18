@@ -54,7 +54,8 @@ void ClusterNodes_Writeview::addNode(const Node & node){
 		nodes[node.getId()] = std::make_pair(ShardingNodeStateNotArrived, new Node(node));
 	}else{
 		if(nodes[node.getId()].second != NULL){
-			ASSERT(false);
+			Logger::sharding(Logger::Warning, "DiscoveryCallBack | ClusterInfoReplyMessage adding node %s although node %s exists.",
+			        node.toStringShort().c_str(), nodes[node.getId()].second->toStringShort().c_str());
 			delete nodes[node.getId()].second;
 		}
         nodes[node.getId()].second = new Node(node);

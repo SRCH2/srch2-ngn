@@ -80,6 +80,7 @@ public:
 
 	enum ShardingLogLevel{
 		Error,
+		Warning,
 		Step,
 		Detail,
 		Info,
