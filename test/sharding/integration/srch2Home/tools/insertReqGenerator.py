@@ -5,10 +5,10 @@
 import sys
 import json
 
-
+CULR_MAX_ARG_CHAR_SIZE=10000
 port = "7049"
 hostname = "localhost"
-corename = "core1"
+corename = "stackoverflow"
 
 if len(sys.argv) < 2:
    print "Source file not given."
@@ -19,17 +19,19 @@ sourceFile = open(sourceName, 'r')
 lineNum = 0
 recordBatch = "["
 for line in sourceFile:
-   lineNum = lineNum + 1
-   if lineNum % 1000 == 0:
-      #print "Line number " + str(lineNum)
+   line = line.replace("'" , "")
+   if len(line.strip()) > CULR_MAX_ARG_CHAR_SIZE:
+      continue 
+   if recordBatch == "[":
+      newRecordBatch = recordBatch +  line.strip()
+   else:
+      newRecordBatch = recordBatch + "," +  line.strip()
+   if len(newRecordBatch) > CULR_MAX_ARG_CHAR_SIZE:
       recordBatch = recordBatch + "]"
       print "curl \"http://"+hostname+":"+port+"/"+corename+"/docs\" -i -X PUT -d '" + recordBatch + "'"
-      recordBatch = "["
-   line = line.replace("'" , "")
-   if recordBatch == "[":
-      recordBatch = recordBatch +  line.strip()
-   else:
-      recordBatch = recordBatch + "," +  line.strip()
+      recordBatch = "[" + line.strip()
+   else:      
+      recordBatch = newRecordBatch
 if recordBatch[-1] != ']':
    recordBatch = recordBatch + "]"   
 print "curl \"http://"+hostname+":"+port+"/"+corename+"/docs\" -i -X PUT -d '" + recordBatch + "'"

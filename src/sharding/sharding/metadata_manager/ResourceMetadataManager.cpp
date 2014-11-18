@@ -53,6 +53,10 @@ void ClusterNodes_Writeview::addNode(const Node & node){
     if(nodes.find(node.getId()) == nodes.end()){ // new node.
 		nodes[node.getId()] = std::make_pair(ShardingNodeStateNotArrived, new Node(node));
 	}else{
+		if(nodes[node.getId()].second != NULL){
+			ASSERT(false);
+			delete nodes[node.getId()].second;
+		}
         nodes[node.getId()].second = new Node(node);
 	}
 }
@@ -230,13 +234,13 @@ SP(ClusterNodes_Writeview) ResourceMetadataManager::getClusterNodesWriteview_wri
 		return SP(ClusterNodes_Writeview)();
 	}
 	return SP(ClusterNodes_Writeview)
-			(new ClusterNodes_Writeview(nodesMutex, writeview->getNodes(), writeview->currentNodeId, true));
+			(new ClusterNodes_Writeview(nodesMutex, writeview->nodes, writeview->currentNodeId, true));
 }
 
 SP(const ClusterNodes_Writeview) ResourceMetadataManager::getClusterNodesWriteview_read(){
 	nodesMutex.lock_shared();
 	return SP(const ClusterNodes_Writeview)
-			(new ClusterNodes_Writeview(nodesMutex, writeview->getNodes(), writeview->currentNodeId, false));
+			(new ClusterNodes_Writeview(nodesMutex, writeview->nodes, writeview->currentNodeId, false));
 }
 
 void ResourceMetadataManager::print() const{

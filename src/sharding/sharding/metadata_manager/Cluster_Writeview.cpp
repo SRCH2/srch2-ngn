@@ -206,7 +206,7 @@ Cluster_Writeview::Cluster_Writeview(unsigned versionId, string clusterName, vec
 		}
 	}
 	// this node id will change by discovery module later ...
-	this->currentNodeId = (unsigned)-1 ;
+	this->currentNodeId = 0 ;
 }
 
 Cluster_Writeview::Cluster_Writeview(const Cluster_Writeview & copy){
@@ -381,6 +381,8 @@ void Cluster_Writeview::printNodes() const{
 
 			if(nodeItr->second.second != NULL){
 				ss << nodeItr->second.second->toString();
+			}else{
+				ss << "Node object not arrived yet.";
 			}
 			nodesTable.printNextCell(ss.str());
 		}
@@ -675,7 +677,7 @@ void Cluster_Writeview::fixAfterDiskLoad(Cluster_Writeview * oldWrireview){
 		ClusterShard_Writeview * shard = this->clusterShards.at(cShardItr.clusterShardsCursor-1);
 		if(! isLocal ){
 			shard->state = SHARDSTATE_PENDING;
-			shard->load = 0;
+			shard->load = 1;
 			shard->nodeId = (unsigned)-1;
 		}else{
 			shard->nodeId = oldWrireview->currentNodeId;
@@ -700,6 +702,19 @@ void Cluster_Writeview::fixAfterDiskLoad(Cluster_Writeview * oldWrireview){
 	this->currentNodeId = oldWrireview->currentNodeId;
 	// and cores ...
 	this->cores = oldWrireview->cores;
+	if(! this->nodes.empty() || ! oldWrireview->nodes.empty()){
+		ASSERT(false);
+		for(map<NodeId, std::pair<ShardingNodeState, Node *> >::iterator nodeItr = this->nodes.begin();
+				nodeItr != this->nodes.end(); ++nodeItr){
+			delete nodeItr->second.second;
+		}
+		for(map<NodeId, std::pair<ShardingNodeState, Node *> >::iterator nodeItr = oldWrireview->nodes.begin();
+						nodeItr != oldWrireview->nodes.end(); ++nodeItr){
+			delete nodeItr->second.second;
+		}
+		this->nodes.clear();
+		oldWrireview->nodes.clear();
+	}
 
 }
 
