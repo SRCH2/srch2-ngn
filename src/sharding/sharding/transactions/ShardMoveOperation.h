@@ -48,8 +48,6 @@ public:
 
 	// **** end if
 	void release();
-	// if data transfer was successful
-	void cleanup();
 
 	void end(map<NodeId, SP(ShardingNotification) > & replies);
 

@@ -139,11 +139,6 @@ public:
     bool getNextLocalNodeShard(NodeShardId & nodeShardId, double & load,  LocalPhysicalShard & dataInfo) ;
 };
 
-struct DataShardBackup{
-	LocalPhysicalShard localPhysicalShard;
-	ClusterShardId shardId;
-	NodeId newNodeLocation;
-};
 class ClusterNodes_Writeview{
 public:
 	// assumes nodesMutex X lock is acquited before passing it to constructor.
@@ -212,7 +207,6 @@ public:
 	// with server information.
 	// ShardId on this node => server info
 	map<ClusterShardId, LocalPhysicalShard > localClusterDataShards;
-	vector<DataShardBackup *> localClusterDataShardBackups;
 
 	// Server information for those independent shards that are on the current node
 	// NodeShardId{currentNodeId, coreId, int-partitionId} => server information

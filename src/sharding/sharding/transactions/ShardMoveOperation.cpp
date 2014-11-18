@@ -98,7 +98,7 @@ void ShardMoveOperation::consume(bool granted){
 			break;
 		case Release:
 			if(granted){
-				cleanup();
+				finalize();
 			}else{
 				ASSERT(false);
 				this->successFlag = false;
@@ -214,21 +214,6 @@ void ShardMoveOperation::release(){
 			shardId.toString().c_str(), srcAddress.toString().c_str());
 	this->currentOp = Release;
 	this->releaser->produce();
-}
-// if data transfer was successful
-void ShardMoveOperation::cleanup(){
-	Logger::sharding(Logger::Step, "ShardMove(opid=%s, mv {%s in %d} to self )| Cleanup", currentOpId.toString().c_str(),
-			shardId.toString().c_str(), srcAddress.toString().c_str());
-	// 1. prepare cleanup command
-	cleaupNotif = SP(MoveToMeNotification::CleanUp)(new MoveToMeNotification::CleanUp(shardId));
-
-	// NOTE : this is deallocated by the state machine
-	ConcurrentNotifOperation * cleaner = new ConcurrentNotifOperation(cleaupNotif, NULLType, srcAddress.nodeId, NULL, false);
-	// 2. send the cleanup command to the srcNode to remove the backed up data shard
-	this->currentOp = Cleanup;
-	ShardManager::getShardManager()->getStateMachine()->registerOperation(cleaner);
-	/// NOTE : not an exit point.
-	finalize();
 }
 
 void ShardMoveOperation::finalize(){ // ***** END *****

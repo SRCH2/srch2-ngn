@@ -858,14 +858,7 @@ void Cluster_Writeview::moveClusterShard(const ClusterShardId & shardId, const N
 		ASSERT(shard->state == SHARDSTATE_READY);
 		// erase the physical shard
 		if(localClusterDataShards.find(shardId) != localClusterDataShards.end()){
-			localClusterDataShardBackups.push_back(new DataShardBackup());
-			localClusterDataShardBackups.at(
-					localClusterDataShardBackups.size()-1)->localPhysicalShard =
-							localClusterDataShards.find(shardId)->second;
-			localClusterDataShardBackups.at(localClusterDataShardBackups.size()-1)->shardId = shardId;
-			localClusterDataShardBackups.at(localClusterDataShardBackups.size()-1)->newNodeLocation = destNodeId;
 			localClusterDataShards.erase(shardId);
-
 		}else{
 		    ASSERT(false);
 		}
