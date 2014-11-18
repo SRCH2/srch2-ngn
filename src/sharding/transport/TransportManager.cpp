@@ -113,15 +113,19 @@ int TransportManager::readDataFromSocket(int fd, char *buffer, const int byteToR
 
 	if(readByte == 0) {
 		// the connection is closed by peer. return status -1 (error)
+		Logger::sharding(Logger::Error, "TM | readDataFromSocket the connection is closed by peer. return status -1 (error)");
 		return -1;
 	}
 
 	if(readByte == -1) {
 		if(errno == EAGAIN || errno == EWOULDBLOCK) {
 			// socket is not ready for read. return status 1 ( come again later)
+			Logger::sharding(Logger::Detail, "TM | readDataFromSocket socket not ready. readByte = %d , byteToRead = %d"
+					, readByte, byteToRead);
 			return 1;
 		} else {
 			perror("Error while reading data from socket : ");
+			Logger::sharding(Logger::Error, "TM | readDataFromSocket Error while reading data from socket");
 			//some socket error. return status -1 (error)
 			return -1;
 		}
@@ -131,9 +135,13 @@ int TransportManager::readDataFromSocket(int fd, char *buffer, const int byteToR
 
 	if(readByte < byteToRead) {
 		// incomplete read. return status 1 ( come again later)
+		Logger::sharding(Logger::Detail, "TM | readDataFromSocket incomplete read, will come back later. readByte = %d , byteToRead = %d"
+				, readByte, byteToRead);
 		return 1;
 	}
 	if(byteToRead != readByte){
+		Logger::sharding(Logger::Error, "TM | readDataFromSocket readByte is larger than byteToRead. readByte = %d , byteToRead = %d"
+				, readByte, byteToRead);
 		ASSERT(false);
 		return -1;
 	}
@@ -167,12 +175,14 @@ int TransportManager::readMessageHeader(const Message * message,  int fd) {
 		buffer += byteReadCount;
 		// check socket is ready for write operation
 		if (checkSocketIsReadyForRead(fd) == -1) {
+			Logger::sharding(Logger::Error, "TM | Read. Msg. Hdr. Socket is not ready.");
 			break;
 		}
 		--retryCount;
 	}
 	if (byteToRead) {
 		// if we still have some bytes to read after max trial, then it is an error
+		Logger::sharding(Logger::Error, "TM | Read. Msg. Hdr. There is still some bytes to read (%d) even after max trial. Error.", byteToRead);
 		return -1;
 	}
 	return 0;
@@ -228,6 +238,7 @@ bool TransportManager::receiveMessage(int fd, TransportCallback *cb) {
 
 		if(status != 0){
 			// there was an error. We cannot continue to read on this socket.
+			Logger::sharding(Logger::Error, "TM | Rec.Msg. Failed to read message header, status %d", status);
 			readBuffer.lock = false;
 			return false;
 		}
@@ -262,10 +273,14 @@ bool TransportManager::receiveMessage(int fd, TransportCallback *cb) {
 
 			if(status == 1) {
 				// we will come back again for the remaining data. See else section below.
+				Logger::sharding(Logger::Detail, "TM | Rec.Msg. Message body is read partially. It was going to be %d bytes. %d bytes read so far."
+						, status, msgHeader.getBodySize(), readBuffer.readCount);
 				readBuffer.lock = false;
 				return true;
 			} else if (status == -1) {
 				// there was an error. We cannot continue to read on this socket.
+				Logger::sharding(Logger::Error, "TM | Rec.Msg. Failed to read message body, status %d. It was going to be %d bytes. %d bytes read so far."
+						, status, msgHeader.getBodySize(), readBuffer.readCount);
 				readBuffer.lock = false;
 				return false;
 			}
@@ -278,15 +293,26 @@ bool TransportManager::receiveMessage(int fd, TransportCallback *cb) {
 		 */
 
 		int byteToRead = readBuffer.msg->getBodySize() - readBuffer.readCount;
+		if(readBuffer.msg->getBodySize() < readBuffer.readCount){
+			ASSERT(false);
+			Logger::sharding(Logger::Error, "TM | Rec.Msg. Read count %d is larger than message body size %d. Returning false",
+					readBuffer.msg->getBodySize() , readBuffer.readCount);
+			readBuffer.lock = false;
+			return false;
+		}
 		if(byteToRead > 0) {
 
 			int status = readMessageBody(fd, readBuffer);
 			if(status == 1) {
 				// we will come back again for the remaining data.
+				Logger::sharding(Logger::Detail, "TM | Rec.Msg. Message body is read partially. It was going to be %d bytes. %d bytes read so far."
+						, status, readBuffer.msg->getBodySize(), readBuffer.readCount);
 				readBuffer.lock = false;
 				return true;
 			} else if (status == -1) {
 				// there was an error. We cannot continue to read on this socket.
+				Logger::sharding(Logger::Error, "TM | Rec.Msg. Failed to read message body, status %d. It was going to be %d bytes. %d bytes read so far."
+						, status, readBuffer.msg->getBodySize(), readBuffer.readCount);
 				readBuffer.lock = false;
 				return false;
 			}
