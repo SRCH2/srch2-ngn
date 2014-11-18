@@ -454,7 +454,7 @@ void Cluster_Writeview::printClusterShards() const{
 			aclHeaders.push_back("No. of Local Shards");
 			vector<string> aclLabels;
 			for(map<unsigned, CoreInfo_t *>::const_iterator aclCoreItr = cores.begin(); aclCoreItr != cores.end(); ++aclCoreItr){
-				if(! (aclCoreItr->second->isAclCore() && aclCoreItr->second->getCoreId() == coreItr->second->getCoreId())){
+				if(! (aclCoreItr->second->isAclCore() && aclCoreItr->second->getCoreId() == coreItr->second->getAttributeAclCoreId())){
 					continue;
 				}
 				aclLabels.push_back(aclCoreItr->second->getName());
