@@ -413,6 +413,7 @@ void * multicastListener(void * arg) {
 
 					unsigned byteToCopy = discovery->clusterIdentifier.size() > 99 ? 99 : discovery->clusterIdentifier.size();
 					strncpy(ackMessage.clusterIdent, discovery->clusterIdentifier.c_str(), byteToCopy);
+                    ackMessage.clusterIdent[byteToCopy] = '\0';
 
 					tryAckAgain:
 					// send multicast acknowledgment
@@ -480,6 +481,7 @@ void MulticastDiscoveryService::sendJoinRequest() {
 
 	unsigned byteToCopy = this->clusterIdentifier.size() > 99 ? 99 : this->clusterIdentifier.size();
 	strncpy(message.clusterIdent, this->clusterIdentifier.c_str(), byteToCopy);
+	message.clusterIdent[byteToCopy] = '\0';
 
 	int retry = 3;
 	//Logger::console("sending MC UDP to %s , %d",discoveryConfig.multiCastAddress.c_str(),  getMulticastPort());

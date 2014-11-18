@@ -85,6 +85,7 @@ void UnicastDiscoveryService::sendJoinRequest(const string& knownHost, unsigned 
 
 	unsigned byteToCopy = this->clusterIdentifier.size() > 99 ? 99 : this->clusterIdentifier.size();
 	strncpy(message.clusterIdent, this->clusterIdentifier.c_str(), byteToCopy);
+	message.clusterIdent[byteToCopy] = '\0';
 
 	struct sockaddr_in destinationAddress;
 	memset(&destinationAddress, 0, sizeof(destinationAddress));
@@ -275,6 +276,7 @@ InitialDiscovery:
 
 							unsigned byteToCopy = discovery->clusterIdentifier.size() > 99 ? 99 : discovery->clusterIdentifier.size();
 							strncpy(yeildMessage.clusterIdent, discovery->clusterIdentifier.c_str(), byteToCopy);
+							yeildMessage.clusterIdent[byteToCopy] = '\0';
 
 							tryYieldMsgAgain:
 							int sendStatus = sendUDPPacketToDestination(discovery->sendSocket, (char *)&yeildMessage,
@@ -399,6 +401,7 @@ InitialDiscovery:
 
 					unsigned byteToCopy = discovery->clusterIdentifier.size() > 99 ? 99 : discovery->clusterIdentifier.size();
 					strncpy(ackMessage.clusterIdent, discovery->clusterIdentifier.c_str(), byteToCopy);
+					ackMessage.clusterIdent[byteToCopy] = '\0';
 
 					tryAckAgain:
 					// send multicast acknowledgment
