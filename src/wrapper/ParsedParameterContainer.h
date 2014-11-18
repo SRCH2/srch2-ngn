@@ -52,7 +52,7 @@ public:
 		fieldFilterAttrOperation = ATTRIBUTES_OP_OR;
 	}
 
-	//Copy constructor. Create A new node with same value of Object "input".
+	//Copy constructor. Create a new node with same value of Object "input".
 	TermIntermediateStructure(TermIntermediateStructure * input) {
 		this->termQueryString = input->termQueryString;
 		this->rawQueryKeyword = input->rawQueryKeyword;
