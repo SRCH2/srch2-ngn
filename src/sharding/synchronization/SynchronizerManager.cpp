@@ -156,9 +156,11 @@ void SyncManager::joinExistingCluster(const Node& node, bool isDiscoveryPhase) {
 		Logger::console("Master node %d destination address is not found", masterNodeId);
 		exit(-1);
 	}
-	if (sendConnectionRequest(&transport, masterNodeId, node, destinationAddress)) {
+	NodeInfo masterNodeInfo;
+	if (sendConnectionRequest(&transport, masterNodeId, masterNodeInfo, node, destinationAddress)) {
 		std::string masterIp(inet_ntoa(destinationAddress.sin_addr));
-		Node masterNode(config.getCurrentNodeName(), masterIp, ntohs(destinationAddress.sin_port), false);
+		string masterNodeName = string(masterNodeInfo.nodeName);
+		Node masterNode(masterNodeName , masterIp, ntohs(destinationAddress.sin_port), false);
 		masterNode.setId(this->masterNodeId);
 		masterNode.setMaster(true);
 
@@ -214,7 +216,8 @@ void SyncManager::joinExistingCluster(const Node& node, bool isDiscoveryPhase) {
 		}
 		inet_aton(localCopy[i].getIpAddress().c_str(), &destinationAddress.sin_addr);
 		destinationAddress.sin_port = htons(localCopy[i].getPortNumber());
-		if (!sendConnectionRequest(&transport, destinationNodeId, node, destinationAddress)) {
+		NodeInfo destinationNodeInfo;
+		if (!sendConnectionRequest(&transport, destinationNodeId, destinationNodeInfo, node, destinationAddress)) {
 			Logger::console( "Could not connect to the node %d", destinationNodeId);
 			//TODO:
 		}

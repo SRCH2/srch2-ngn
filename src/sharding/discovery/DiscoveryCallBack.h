@@ -54,9 +54,6 @@ public:
 				body += sizeof(unsigned);
 				node.deserialize(body);
 				node.thisIsMe = false;
-				SP(ClusterNodes_Writeview) writeview = ShardManager::getNodesWriteview_write();
-				writeview->addNode(node);
-				writeview->setNodeState(node.getId(), ShardingNodeStateArrived);
 				syncManger.localNodesCopyMutex.lock();
                 bool isPresent = false;
                 for(unsigned i = 0 ; i < syncManger.localNodesCopy.size(); ++i){
@@ -69,6 +66,11 @@ public:
                     syncManger.localNodesCopy.push_back(node);
                 }
 				syncManger.localNodesCopyMutex.unlock();
+                if(! isPresent){
+					SP(ClusterNodes_Writeview) writeview = ShardManager::getNodesWriteview_write();
+					writeview->addNode(node);
+					writeview->setNodeState(node.getId(), ShardingNodeStateArrived);
+                }
 
 				body += nodeSerializedSize;
 			}

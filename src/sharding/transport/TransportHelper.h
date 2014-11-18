@@ -119,7 +119,7 @@ void* listenForIncomingConnection(void* arg) {
 /*
  *   Every time a new node is detected send connection request.
  */
-bool sendConnectionRequest(TransportManager *transport, unsigned destinationNodeId,
+bool sendConnectionRequest(TransportManager *transport, unsigned destinationNodeId, NodeInfo & remoteNodeInfo,
 		const Node& currentNode, struct sockaddr_in destinationAddress) {
 
 	if (transport->getConnectionMap().isConnectionExist(destinationNodeId)) {
@@ -149,7 +149,7 @@ bool sendConnectionRequest(TransportManager *transport, unsigned destinationNode
 		inet_aton(currentNode.getIpAddress().c_str(), &currentAddr);
 		NodeInfo currentNodeInfo = {currentNode.getId(), currentAddr.s_addr, currentNode.getPortNumber()};
 		memcpy(currentNodeInfo.nodeName, currentNode.getName().c_str(), currentNode.getName().size());
-		NodeInfo remoteNodeInfo;
+//		NodeInfo remoteNodeInfo;
 		trySendingAgain:  // label
 		if (!sendGreeting(fd, true, currentNodeInfo)){
 			close(fd);

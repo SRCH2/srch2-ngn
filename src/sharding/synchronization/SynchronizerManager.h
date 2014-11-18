@@ -100,6 +100,7 @@ public:
 	bool isThisNodeMaster() { return isCurrentNodeMaster; }
 
 	TransportManager* getTransport() { return &transport; }
+	ConfigManager* getConfigManager() { return &config; }
 
 	void setNodeIsMaster(bool flag) { isCurrentNodeMaster = flag; }
 
