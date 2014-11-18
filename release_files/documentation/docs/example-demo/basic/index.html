@@ -1,59 +1,214 @@
-<!--DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 1.0 Transitional//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd"-->
-<html>
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd">
+<!--
+Design by Free CSS Templates
+http://www.freecsstemplates.org
+Released for free under a Creative Commons Attribution 2.5 License
+
+Name       : Simple Passage
+Description: A three-column, fixed-width blog design.
+Version    : 1.0
+Released   : 20090327
+
+-->
+<html xmlns="http://www.w3.org/1999/xhtml">
     <head>
-        <title>SRCH2</title>
+        <meta http-equiv="content-type" content="text/html; charset=utf-8" />
+        <title>SRCH2 Demo Dashboard</title>
+        <meta name="keywords" content="" />
+        <meta name="Simple Passage" content="" />
+        <link href="default.css" rel="stylesheet" type="text/css" media="screen" />
         <script type="text/javascript" src="jquery-1.7.1.min.js"></script>
-        <link href="srch2.css" rel="stylesheet" type="text/css" media="screen" />
+        <script>
+            function removeHistory() {
+                localStorage.setItem('facetFilter', "NULL");
+            }
+
+
+            window.onload = removeHistory();
+        </script>
+        <script type="text/javascript" src="srch2lib.js"></script>
+        <script language="javascript" src="index.js"></script>
     </head>
-    <body onload="document.getElementById('input').focus();">
-        <div align="center">
-            <div>
-                <h1>SRCH2 Engine</h1>
+    <body>
+        <!-- start header -->
+        <div id="header">
+            <div id="logo" >
+                <div style="margin-top:20px">
+                    <a href="#"><img style="width:50%" src="images/LogoTitle.png"></img></a>
+                </div>
             </div>
-            <div>
-                <table>
-                    <tr>
-                        <td colspan=3>
-                        <input type='text' style="height:40px; width:800px; font-size:25px;" class='inputTextfield' autocomplete='off' id='input'><br/><br/>
-                        </td>
-                    </tr>
-                </table>
+
+        </div>
+        <!-- end header -->
+        <div id="wrapper" style="margin-top:-20px">
+            <!-- start page -->
+            <div id="page">
+                <div id="page-bgtop">
+                    <div id="page-bgbtm">
+                        <div id="sidebar1" class="sidebar">
+                            <ul>
+                                <li>
+                                    <h2>Sort The Results</h2>
+                                    <ul>
+                                        <div style="overflow:auto;padding:10px">
+                                            <!-- Sort -->
+                                            <b> Year</b>
+                                            <form action="" method="get">
+                                                <input type="radio" name="sort_filter_order" value="asc" disabled/>
+                                                Ascending
+                                                <br />
+                                                <input type="radio" name="sort_filter_order" value="desc" disabled/>
+                                                Descending
+                                                <br />
+                                                <input type="radio" name="sort_filter_order" value="none" disabled/>
+                                                None
+                                                <br />
+                                            </form>
+
+                                            <div id="sort_model" style="float:left;width:30%">
+
+                                                <form action="" method="get">
+                                                    <!--input type="radio" name="sort_model_priority" value="ignore" checked/> Ignore<br /-->
+                                                </form>
+                                            </div>
+                                    </ul>
+                                </li>
+                                <li>
+                                    <h2>Filter the results</h2>
+                                    <ul>
+                                        <div style="overflow:auto;padding:5px">
+                                            <!-- Filter Query -->
+                                            <form action="" method="get">
+                                                <input type="radio" name="filter_op" value="AND" checked disabled/>
+                                                AND
+                                                <input type="radio" name="filter_op" value="OR" disabled/>
+                                                OR
+                                                <br />
+                                                <span style="font-size:70%">Refining Field: </span>
+                                                <br/>
+                                                <select id="filter_assignment_field" disabled/>
+                                                   <option value="genre">Genre</option>
+                                                   <option value="year">Year</option>
+                                                </select><br/>
+                                                <span style="font-size:70%">Refining Value: </span><br/>
+                                                <input type="text" size="10" id="filter_assignment_value" disabled/>
+                                                <br/>
+                                                <br/>
+                                                
+                                                <span style="font-size:70%">Refining Field: </span>
+                                                <br/>
+                                                <select id="filter_range_field" disabled/>
+                                                   <option value="genre">Genre</option>
+                                                   <option value="year">Year</option>
+                                                </select><br/>
+                                                <span style="font-size:70%">Refining Value: </span><br/>
+                                                [
+                                                <input type="text" size="2" id="filter_range_start" disabled/>
+                                                TO
+                                                <input type="text" size="2" id="filter_range_end" disabled/>
+                                                ]
+                                                <br/>
+                                                <span style="font-size:70%">Example: boolexp$ (price - discount)*rate < 100 $</span>
+                                                <br/>
+                                                boolexp <br/>$
+                                                <input type="text" size="15" id="filter_complex" disabled/>
+                                                $
+                                            </form>
+                                        </div>
+                                        <!-- Filter Query -->
+                                    </ul>
+                                </li>
+                            </ul>
+                        </div>
+                        <!-- start content -->
+                        <div id="content">
+                            <div class="flower"></div>
+                            <div class="post">
+                                <div class="entry">
+                                    <div>
+                                        <!-- Search box -->
+                                        <h3>Search</h3>
+                                        <form>
+                                            <input type="text" id="query_box" size="47"  />
+                                        </form>
+                                        <hr/>
+                                        <div id="resultContainer">
+                                            <!-- Results Container -->
+
+                                        </div>
+
+                                    </div><!-- Search box -->
+                                </div>
+                            </div>
+                        </div>
+                        <!-- end content -->
+                        <!-- start sidebars -->
+                        <div id="sidebar2" class="sidebar" style="width:320px">
+                            <ul>
+                                <li>
+                                    <h2>Facets</h2>
+
+                                    <div style="overflow:auto;padding:5px">
+                                        <!-- Facets -->
+                                        <form action="" method="get">
+                                            <b>Year</b>
+                                            <br/>
+                                            From
+                                            <input type="text" size="3" id="facet_year_start" disabled/>
+                                            To
+                                            <input type="text" size="3" id="facet_year_end" disabled/>
+                                            ,
+                                            <br/>
+                                            Gap
+                                            <input type="text" size="3" id="facet_year_gap" disabled/>
+                                            <br/>
+                                        </form>
+                                        <hr/>
+                                        <div  style="float:left;width:40%">
+                                            <b>Genre</b>
+                                            <br/>
+
+                                        </div>
+
+                                        <div style="float:right;width:40%">
+                                            <b>Year</b>
+                                            <br/>
+
+                                        </div>
+                                        <br/>
+                                        <div id="facet_genre" style="float:left;width:40%">
+
+                                        </div>
+
+                                        <div id="facet_year" style="float:right;width:40%">
+
+                                        </div>
+                                    </div>
+                                    <!-- Facets -->
+                                    <hr/>
+                                    <div id="facet_remove_filter"></div>
+                                </li>
+
+                            </ul>
+                        </div>
+                        <!-- end sidebars -->
+                        <div style="clear: both;">
+                            &nbsp;
+                        </div>
+                    </div>
+                </div>
             </div>
+            <!-- end page -->
         </div>
-        <div id='results'>
-            &nbsp;
+        <div id="footer">
+            <p class="copyright">
+                &copy;&nbsp;&nbsp;2013 All Rights Reserved &nbsp;&bull;&nbsp;
+                <br />
+            </p>
         </div>
-        <hr>
-        <div align="center">
-            Powered by SRCH2
-        </div>
-        <style type="text/css">
-            span.fuzzy {
-                color: #ff00ff;
-                font-weight: bold;
-            }
-            span.exact {
-                color: red;
-                font-weight: bold;
-            }
-        </style>
-        <script type="text/javascript" src="srch2service.js"></script>
         <script type="text/javascript">
-            var config = {
-                enableLog : true, // true / false
-                logType : "console", // console or alert. Note: console.log might not work on IE.
-                jsonPsrc : "http://127.0.0.1:8081/search?", 
-                inputElementId : "input",
-                // getQueryString : _srch2_this.getQueryString, // should be a function, not string
-                debug : true, // true /false
-                evenNameToBindInputElement : "keyup",
-                searchType : "topK",
-                isFuzzy : true,
-                resultContainer : 'results',
-                responseHandler : 'srch2service.responseHandlerDefault', // should a string
-                //cleanup : _srch2_this.cleanup, // should be a function, not string
-            };
-            srch2service.init(config);
+            client.init();
         </script>
     </body>
 </html>
+

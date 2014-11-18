@@ -1,129 +1,201 @@
-var pending = false;
-var old_q = "";
-var old_page = 0;
-var busy=false;
-
-function check(value) {
-        var regex=/\+|\s/gi;
-        if (value.length==0)
-        {
-                busy = false;
-                document.getElementById('results').innerHTML="";
+/*
+ * This is the basic demo for srch2 javascript library.
+ * To use the srch2lib, it basically include the following steps:
+ *
+ * 1. Initilize the src2lib. For example, set the serverUrl, set if enable the
+ *  debug mode, etc. One way to initilize the srch2lib is to use a config object which contains 
+ *  the key value pairs of the parameters. The other way is to call the "setter" function
+ *  such as "setSearchType", "setEnableFuzzySearch" and "setServerUrl".
+ *  To use the library, the serverUrl is required.
+ *
+ * 2. Send query.
+ *  A general way to send query is to call the function 
+ *  "srch2lib.sendQuery(keyword, responseHandler);", "keyword" is the string keyword to 
+ * be searched and "responseHandler" is the function handling the response (JSON Object).
+ * 
+ * 3. Get response.
+ *  The response is caught by "responseHandler". User must define their own "responseHandler"
+ *  function to display or analysis the response.
+ *
+ * For more information about Search API, please visit: 
+ *  http://srch2.com/releases/4.4.2/docs/restful-search/
+ */
+client = {
+    init : function() {
+        /*
+         * Initilize the srch2lib, serverUrl must be set.
+         */ 
+        var config = {
+            serverUrl : "http://simpson.calit2.uci.edu/srch2_movies_engine/",
+            debug : true, // enable the debug mode which will display the debug msg to the console. 
+                            //IE may not have "console.log" function. If you are using IE, please set it to false.
+        };
+        srch2lib.init(config);  //Initilize the srch2lib with config.
+        srch2lib.setSearchType("getAll");   //Set the search type to "getAll"
+        srch2lib.setEnablePrefixSearch(true);   //Enable the prefix search 
+        srch2lib.setEnableFuzzySearch(true);    //Enable the fuzzy search
+        this.bindInput();
+    },
+    log : function(msg, debug) {
+        /*
+         handy debug function. use this instead of using alers or console.log
+         */
+        if (debug == "debug") {
+            console.log(msg);
         }
-        else if(value.replace(regex,"").length >= 3){
-                if(busy)pending = true;
-                else query(value);
+    },
+    /*
+     * Bind the event "type" to the HTTP element "element",
+     * if the "type" event is triggered, call the function "handler".
+     */
+    bindEvent : function(element, type, handler) {
+        if (element.addEventListener) {
+            element.addEventListener(type, handler, false);
+        } else {
+            element.attachEvent('on' + type, handler);
         }
-}
-
-function query(value) {
-        var regex=/\+/gi;
-        value = value.replace(regex,"");
-        value = value.replace(/ +(?= )/g,'');
-        var valuestmp = value.split(' ');
-        var values = valuestmp;
-        for (var i = 0; i < valuestmp.length; i++ )
-        {
-                if (valuestmp[i]=="")
-                values.splice(i,i+1);
-        }
-        var url = "http://localhost:8081/search?q=";
-        var first = 1;
-        var q = "";
-        for(var i = 0; i < values.length; i++) {
-                if(values[i]!=''){
-                if(!first)q += "+";
-                q += values[i].toLowerCase();
-                        first = 0;
-                }
-        }
-        url += q;
-        // if any option's value changes
-        if( q != old_q  ){
-                url += "&fuzzy=true";
-                busy = true;
-                self.scrollTo(0, 0);
-                url += "&callback=?";
-                $.getJSON(url,
-                  function (data) {
-                   display(data);
-                  });
-                old_q = q;
-        }
-
-}
-
-function display(response) {
-        busy = false;
-        var time = response.searcher_time;
-        var data = response.results;
-        html = "Searcher Time: "+time+" ms<br>";
-        html += "<hr>";
-        for(var i = 0; i < data.length; i++) {
-                var regex = prepareRegex(data[i].matching_prefix, data[i].edit_dist);
-                if(data[i].record){
-                        html += highlight("\""+data[i].record.name+"\"", regex, "exact", "fuzzy")+"<br>";
-                        html += highlight(JSON.stringify(data[i].record), regex, "exact", "fuzzy");
-                        html += "<br>";
-                        html += "<i>Overall Score:"+data[i].score+"</i><hr>";
-                }
-                else{
-                        html += "Record Id: "
-                        html += highlight(data[i].record_id.toString(), regex, "exact", "fuzzy")+"<br>";
-                        html += "Score: "
-                        html += highlight(data[i].score.toString(), regex, "exact", "fuzzy")+"<br>";
-                        html += "Edit Distances: "
-                        html += highlight(data[i].edit_dist.toString(), regex, "exact", "fuzzy")+"<br>";
-                        html += "Matching Prefixes: "
-                        html += highlight(data[i].matching_prefix.toString(), regex, "exact", "fuzzy")+"<br>";
-                }
-                html += "<br>";
-        }
-
-        document.getElementById('results').innerHTML=html;
-        if(pending) {
-                pending = false;
-                query(document.getElementById('input').value);
-        }
-
-}
-
-function prepareRegex(keys, ed) {
-        var regex1 = "([^A-Za-z0-9_&])(";
-        var regex2 = "([^A-Za-z0-9_&])(";
-        var j1 = 0;
-        var j2 = 0;
-        for(var k = 0; k < keys.length; k++)
-        if(keys[k].length)
-                if(ed[k] == 0) {
-                if(j1)regex1 += "|";
-                regex1 += keys[k].replace(/\W/g, 
-                    function(sub){return "\\" + sub;});
-                j1++;
-                }
-                else {
-                if(j2)regex2 += "|";
-                regex2 += keys[k].replace(/\W/g, 
-                    function(sub){return "\\" + sub;});
-                j2++;
-                }
-        regex1 += ")";
-        regex2 += ")";
-        return [ (j1)?new RegExp(regex1, "gi"):null, (j2)?new RegExp(regex2, "gi"):null ];
-}
-
-function highlight(string, regexp, stylec1, stylec2) {
-        var str = " " + string.replace(/</g, "&lt;");
-        if(regexp == null)
-                return str;
-        if(regexp[0] != null)
-                str = str.replace(regexp[0], function(sub, m1, m2) {
-                        return m1 + "<span class='" + stylec1 + "'>" + m2 + "</span>";
-                    });
-        if(regexp[1] != null)
-            str = str.replace(regexp[1], function(sub, m1, m2) {
-            return m1 + "<span class='" + stylec2 + "'>" + m2 + "</span>";
+    },
+    /*
+     * Bind the input box "query_box" key up operation with 
+     * a function which sending the query to the server. 
+     */
+    bindInput : function() {
+        var element = document.getElementById("query_box");
+        this.bindEvent(element, "keyup", function(event) {
+            if (event.keyCode == 13) {
+                return;
+            }
+            var query = client.sendQuery();
         });
-        return str.replace(/^\s+/, '');;
-}
+    },
+    /*
+     * "sendQuery" is called by "bindInput".
+     * This function gets the keyword from the "query_box"
+     * and send it to the server. The response results 
+     * will trigger the function "this.responseHandler".
+     */
+    sendQuery : function() {
+        var keyword = document.getElementById('query_box').value;
+        srch2lib.sendQuery(keyword, this.responseHandler);
+    },
+    /*
+     * "responseHandler" is called by the server response.
+     * The "responseText" contains all the results in JSON format. 
+     */
+    responseHandler : function(responseText) {
+        if (responseText) {
+            var output = "";
+            var results = responseText.results;
+            output += "<table width='450px'>";
+            output += "<tr>";
+            output += "<td style='border-bottom:thick;font-weight:bold;'>" + 'Title' + "</td>";
+            output += "<td style='border-bottom:thick;font-weight:bold;'>" + 'Genre' + "</td>";
+            output += "<td style='border-bottom:thick;font-weight:bold;'>" + 'Director' + "</td>";
+            output += "<td style='border-bottom:thick;font-weight:bold;'>" + 'Year' + "</td>";
+            output += "</tr>";
+            client.queryKeywords = responseText.query_keywords;
+            for (var i = 0; i < results.length; i++) {
+                output += "<tr class='result_row'>";
+                var record = results[i].record;
+                var prefix = results[i].matching_prefix;
+                output += "<td style='border-bottom:thin dotted'>" + client.addHighlighting(prefix, record.title) + "</td>";
+                output += "<td style='border-bottom:thin dotted '>" + client.addHighlighting(prefix, record.genre) + "</td>";
+                output += "<td style='border-bottom:thin dotted '>" + client.addHighlighting(prefix, record.director) + "</td>";
+                output += "<td style='border-bottom:thin dotted '>" + client.addHighlighting(prefix, record.year) + "</td>";
+                output += "</tr>";
+            }
+            output += "</table>";
+            client.log("got it", "debug");
+            client.log(JSON.stringify(responseText), "debug");
+            var element = document.getElementById("resultContainer");
+            if (output == "") {
+                element.innerHTML = "No results mate!";
+            } else {
+                element.innerHTML = output;
+            }
+        } else {
+            var element = document.getElementById("resultContainer");
+            element.innerHTML = "No results mate!";
+            client.log("empty response", "debug");
+        }
+    },    
+    /*
+     * Highlight the prefix in the search results.
+     */
+    addHighlighting : function(prefix, input) {
+        if (input) {
+            input = input.toString();
+            var words = input.split(/[ ]+/);
+            // split by space(s)
+            var output = "";
+            for (var wordIndex in words) {
+                var word = words[wordIndex];
+                var tempWord = word.toLocaleLowerCase();
+                var match = this.regexMatch(prefix, word);
+                var space = "";
+                if (wordIndex > 0) {
+                    space = " ";
+                }
+                if (match.success) {
+                    var first_part = match.first;
+                    var second_part = match.second;
+                    var classStr = match.class;
+                    output += space + "<span class='" + classStr + "'>" + first_part + "</span>" + second_part;
+                } else {
+                    output += space + word;
+                }
+            }
+            return output;
+        }
+        return input;
+    },
+    regexMatch : function(prefixArray, word) {
+        var prefixStr = prefixArray.join("|^");
+        var re = new RegExp('^' + prefixStr, 'i');
+        var m = re.exec(word);
+        var returnObj = {};
+        if (m == null) {
+            this.log("no match", "debug");
+            returnObj.success = false;
+            return returnObj;
+        } else {
+            var first_part = word.substring(0, m[0].length);
+            var second_part = word.substring(m[0].length);
+            returnObj.success = true;
+            returnObj.first = first_part;
+            returnObj.second = second_part;
+            returnObj.matched = m[0];
+
+            if (this.findPrefix(this.queryKeywords, returnObj.matched)) {
+                // exact
+                if (word.length == m[0].length) {
+                    // exact complete
+                    returnObj.class = 'exact_complete';
+                } else {
+                    // exact prefix
+                    returnObj.class = 'exact_prefix';
+                }
+            } else {
+                // fuzzy
+                if (word.length == m[0].length) {
+                    // fuzzy complete
+                    returnObj.class = 'fuzzy_complete';
+                } else {
+                    // fuzzy prefix
+                    returnObj.class = 'fuzzy_prefix';
+                }
+            }
+            return returnObj; facet_remove_filter
+        }
+    },
+    findPrefix : function(keywords, prefix) {
+        prefix = prefix.toLocaleLowerCase();
+        for (var index in keywords) {
+            if (keywords[index].localeCompare(prefix) == 0) {
+                return true
+            }
+        }
+        return false;
+    },
+};
 
