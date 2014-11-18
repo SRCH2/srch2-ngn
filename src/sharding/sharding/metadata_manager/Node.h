@@ -54,6 +54,19 @@ public:
 		this->thisIsMe = node.thisIsMe;
 	}
 
+	Node & operator=(const Node & node){
+		if(this == &node){
+			return *this;
+		}
+		this->nodeId = node.nodeId;
+		this->ipAddress = node.ipAddress;
+		this->portNumber = node.portNumber;
+		this->nodeName = node.nodeName;
+		this->nodeMaster = node.nodeMaster;
+		this->nodeMasterEligible = node.nodeMasterEligible;
+		this->thisIsMe = node.thisIsMe;
+		return *this;
+	}
 	bool isMasterEligible() const;
 	bool isMaster() const;
 	std::string getName() const;

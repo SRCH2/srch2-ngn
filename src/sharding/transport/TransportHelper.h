@@ -120,7 +120,7 @@ void* listenForIncomingConnection(void* arg) {
  *   Every time a new node is detected send connection request.
  */
 bool sendConnectionRequest(TransportManager *transport, unsigned destinationNodeId,
-		Node& currentNode, struct sockaddr_in destinationAddress) {
+		const Node& currentNode, struct sockaddr_in destinationAddress) {
 
 	if (transport->getConnectionMap().isConnectionExist(destinationNodeId)) {
 		Logger::console("Connection to node id = %d already exist", destinationNodeId);

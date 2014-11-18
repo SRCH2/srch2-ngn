@@ -119,7 +119,7 @@ private:
 	 *
 	 *  Called from :1.  Discovery Phase  2. Master relection phase.
 	 */
-	void joinExistingCluster(Node& node, bool isDiscoveryPhase = false);
+	void joinExistingCluster(const Node& node, bool isDiscoveryPhase = false);
 
 	NodeId getNextMasterEligbleNode();
 

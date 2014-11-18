@@ -283,10 +283,6 @@ private:
 	vector<NodeShard_Writeview *> nodeShards;
 
 	map<NodeId, std::pair<ShardingNodeState, Node *> > nodes;
-	// Does not return this node by default
-	map<NodeId, std::pair<ShardingNodeState, Node *> > & getNodes(){
-		return nodes;
-	}
 
 	// cluster shard id => array index
 	unsigned INDEX(const ClusterShardId & shardId);

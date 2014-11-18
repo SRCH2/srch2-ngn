@@ -113,6 +113,10 @@ void SyncManager::startDiscovery() {
 	node.thisIsMe = true;
 	node.setId(this->currentNodeId);
 	node.setMaster(this->currentNodeId == this->masterNodeId);
+	// Add new node in CM
+	nodesWriteview->addNode(node);
+	nodesWriteview->setNodeState(node.getId(), ShardingNodeStateArrived);
+	nodesWriteview.reset();
 
 	// Pass this node to transport manager's connection map object.
 	transport.getConnectionMap().setCurrentNode(node);
@@ -125,10 +129,6 @@ void SyncManager::startDiscovery() {
 	// give thread id to transport manger so that it can reap it later.
 	transport.setListeningThread(listenThread);
 
-	// Add new node in CM
-	nodesWriteview->addNode(node);
-	nodesWriteview->setNodeState(node.getId(), ShardingNodeStateArrived);
-	nodesWriteview.reset();
 	xLock.unlock();
 	localNodesCopyMutex.lock();
 	localNodesCopy.push_back(node);
@@ -144,7 +144,7 @@ void SyncManager::startDiscovery() {
 
 }
 
-void SyncManager::joinExistingCluster(Node& node, bool isDiscoveryPhase) {
+void SyncManager::joinExistingCluster(const Node& node, bool isDiscoveryPhase) {
 	/*
 	 * if this node is not master then
 	 * 1. Connect to master and fetch all cluster information.

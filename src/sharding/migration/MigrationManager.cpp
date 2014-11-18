@@ -271,6 +271,7 @@ bool MMCallBackForTM::resolveMessage(Message * incomingMessage, NodeId remoteNod
 	}
 	default :
 		ASSERT(false);
+		break;
 
 	}
 	return true;
