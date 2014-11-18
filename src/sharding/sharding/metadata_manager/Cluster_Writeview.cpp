@@ -1134,7 +1134,6 @@ void Cluster_Writeview::fixClusterMetadataOfAnotherNode(Cluster_Writeview * clus
 	// 4.
 	cluster->currentNodeId = currentNodeId;
 	// 5.
-	cluster->nodes = nodes;
 	for(map<NodeId, std::pair<ShardingNodeState, Node *> >::const_iterator nodeItr = this->nodes.begin();
 	        nodeItr != nodes.end(); ++nodeItr){
 	    Node * nodePtr = NULL;
