@@ -21,7 +21,7 @@
 
 #ifndef NDEBUG
 #define __FUNC_LINE__
-//#define __FUNC_LINE__ \
+/* #define __FUNC_LINE__ \
 //	{\
 //	string fileName(__FILE__);\
 //	fileName = fileName.substr(fileName.find_last_of('/'));\
@@ -29,7 +29,7 @@
 //	callInfo << fileName << "/" << __func__ << "/" << __LINE__ ;\
 //	const char * __func_line__ = callInfo.str().c_str();\
 //	Logger::sharding(Logger::FuncLine, "%s", __func_line__);\\
-//	}\
+//	}\ */
 
 #else
 #define __FUNC_LINE__
