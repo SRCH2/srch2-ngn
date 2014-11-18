@@ -69,7 +69,13 @@ public:
                 if(! isPresent){
 					SP(ClusterNodes_Writeview) writeview = ShardManager::getNodesWriteview_write();
 					writeview->addNode(node);
-					writeview->setNodeState(node.getId(), ShardingNodeStateArrived);
+					if(node.getId() < syncManger.currentNodeId){
+						writeview->setNodeState(node.getId(), ShardingNodeStateArrived);
+					}else{
+						Logger::sharding(Logger::Warning, "DiscoveryCallback | ClusterInfoReplyMessage : cluster info contains \
+								a node with larger nodeId : %s ", node.toStringShort().c_str());
+						writeview->setNodeState(node.getId(), ShardingNodeStateNotArrived);
+					}
                 }
 
 				body += nodeSerializedSize;
@@ -79,6 +85,7 @@ public:
 		}
 		default:
 			ASSERT(false);
+			break;
 		}
 		return true;
 	}

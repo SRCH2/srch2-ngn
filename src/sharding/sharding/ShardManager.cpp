@@ -502,11 +502,11 @@ void ShardManager::registerMMSessionListener(const unsigned operationId, Consume
 }
 
 void ShardManager::resolveSMNodeArrival(const Node & newNode){
-	Logger::sharding(Logger::Detail, "SHM| SM Node %d arrival.", newNode.getId());
 	boost::shared_lock<boost::shared_mutex> sLock(singleInstanceLock);
 	boost::unique_lock<boost::shared_mutex> xLock;
 	Cluster_Writeview * writeview = ShardManager::getWriteview_write(xLock);
 	SP(ClusterNodes_Writeview) nodesWriteview = ShardManager::getNodesWriteview_write();
+	Logger::sharding(Logger::Detail, "SHM| SM Node %d arrival.", newNode.getId());
     nodesWriteview->addNode(newNode);
 	Logger::sharding(Logger::Detail, "SHM| SM Node %d arrival. Processed.", newNode.getId());
 //    cout << "Shard Manager status after arrival of node " << newNode.getId() << ":" << endl;
