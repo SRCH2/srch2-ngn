@@ -47,8 +47,6 @@ void ShardAssignOperation::produce(){
 void ShardAssignOperation::lock(){ // ** start **
 	this->locker = new AtomicLock(shardId , currentOpId, LockLevel_X, this);
 	// locker calls all methods of LockResultCallbackInterface from us
-	this->releaser = new AtomicRelease(shardId, currentOpId , this);
-	// releaser calls all methods of BooleanCallbackInterface from us
 	currentAction = Lock;
 	this->locker->produce();
 }
@@ -60,19 +58,28 @@ void ShardAssignOperation::consume(bool granted){
 				commit();
 			}else{
 				this->successFlag = false;
-				release();
+				finalize();
 			}
 			break;
 		case Commit:
 			ASSERT(granted);
+			if(! granted){
+				this->successFlag = granted;
+			}
 			release();
 			break;
 		case Release:
 			ASSERT(granted);
+			if(! granted){
+				this->successFlag = granted;
+			}
 			finalize();
 			break;
 		default:
 			ASSERT(false);
+			if(! granted){
+				this->successFlag = granted;
+			}
 			finalize();
 			break;
 	}
@@ -102,6 +109,7 @@ void ShardAssignOperation::commit(){
 }
 // ** end if
 void ShardAssignOperation::release(){
+	this->releaser = new AtomicRelease(shardId, currentOpId , this);
 	// release the locks
 	Logger::sharding(Logger::Detail, "ShardAssign(opid=%s, shardId=%s)| Releasing lock.", currentOpId.toString().c_str(), shardId.toString().c_str());
 	currentAction = Release;

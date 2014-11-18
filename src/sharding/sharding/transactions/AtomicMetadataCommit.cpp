@@ -124,14 +124,12 @@ void AtomicMetadataCommit::produce(){
     if(skipLock){
         commit();
     }else{
-        //lock should be acquired on all nodes
-        atomicLock = new AtomicLock(selfOperationId, this); // X-locks metadata by default
-        atomicRelease = new AtomicRelease(selfOperationId, this);
         lock();
     }
 }
 
 void AtomicMetadataCommit::lock(){
+    atomicLock = new AtomicLock(selfOperationId, this); // X-locks metadata by default
 	this->currentAction = "lock";
     Logger::sharding(Logger::Detail, "Atomic Metadata Commit : locking ...");
 	atomicLock->produce();
@@ -195,10 +193,7 @@ void AtomicMetadataCommit::end_(map<NodeOperationId , SP(ShardingNotification)> 
 }
 
 void AtomicMetadataCommit::release(){
-	if(atomicRelease == NULL){
-		ASSERT(false);
-		return;
-	}
+    atomicRelease = new AtomicRelease(selfOperationId, this);
 	this->currentAction = "release";
     Logger::sharding(Logger::Detail, "Atomic Metadata Commit : releasing locks ...");
 	atomicRelease->produce();

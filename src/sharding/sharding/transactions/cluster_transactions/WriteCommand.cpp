@@ -74,7 +74,6 @@ void PartitionWriter::lock(){
 		primaryKeys.push_back(records.at(i)->getPrimaryKey());
 	}
 	locker = new AtomicLock(primaryKeys, currentOpId, pid, this);
-	releaser = new AtomicRelease(primaryKeys, currentOpId, pid, this);
 	// 2.
 	// b. go over all partitions and start atomic lock and set the current operation
 	currentStep = StepLock;
@@ -222,6 +221,12 @@ void PartitionWriter::processWriteResponse(map<NodeId, SP(ShardingNotification) 
 		finalize(false, HTTP_Json_No_Data_Shard_Available_For_Write);
 		return;
 	}
+
+	vector<string> primaryKeys;
+	for(unsigned i = 0 ; i < records.size(); ++i){
+		primaryKeys.push_back(records.at(i)->getPrimaryKey());
+	}
+	releaser = new AtomicRelease(primaryKeys, currentOpId, pid, this);
 	currentStep = StepRelease;
 	releaser->produce();
 }

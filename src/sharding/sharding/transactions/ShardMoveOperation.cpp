@@ -64,8 +64,6 @@ void ShardMoveOperation::lock(){ // **** START ****
 			shardId.toString().c_str(), srcAddress.toString().c_str());
 	this->locker = new AtomicLock(shardId, currentOpId, LockLevel_X, this);
 	// locker calls all methods of LockResultCallbackInterface from us
-	this->releaser = new AtomicRelease(shardId, currentOpId, this); // we only release out lock, srcAddress lock is released when we ask for cleanup
-	// releaser calls all methods of BooleanCallbackInterface from us
 	this->currentOp = Lock;
 	this->locker->produce();
 }
@@ -210,6 +208,8 @@ void ShardMoveOperation::commit(){
 // **** end if
 void ShardMoveOperation::release(){
 	// release the locks
+	this->releaser = new AtomicRelease(shardId, currentOpId, this);
+	// releaser calls all methods of BooleanCallbackInterface from us
 	Logger::sharding(Logger::Step, "ShardMove(opid=%s, mv {%s in %d} to self )| releasing lock.", currentOpId.toString().c_str(),
 			shardId.toString().c_str(), srcAddress.toString().c_str());
 	this->currentOp = Release;

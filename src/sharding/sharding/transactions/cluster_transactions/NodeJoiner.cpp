@@ -77,7 +77,6 @@ void NodeJoiner::lock(){ // locks the metadata to be safe to read it
 	getOlderNodesList(olderNodes);
 	//lock should be acquired on all nodes
 	locker = new AtomicLock(selfOperationId, this, olderNodes); // X-locks metadata by default
-	releaser = new AtomicRelease(selfOperationId, this);
 	this->currentOperation = Lock;
 	locker->produce();
 }
@@ -229,6 +228,7 @@ void NodeJoiner::commit(){
 
 void NodeJoiner::release(){ // releases the lock on metadata
 	__FUNC_LINE__
+	releaser = new AtomicRelease(selfOperationId, this);
 	if(! this->releaser->updateParticipants()){
 		this->setFinalizeArgument(false, true);
 		return;
