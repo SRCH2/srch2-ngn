@@ -72,6 +72,15 @@ void ClusterNodes_Writeview::setNodeState(NodeId nodeId, ShardingNodeState state
     }
 }
 
+bool ClusterNodes_Writeview::getNodeState(const NodeId & nodeId, ShardingNodeState & state){
+    if(nodes.find(nodeId) == nodes.end()){ // not found
+        return false;
+    }else{
+        state = nodes[nodeId].first;
+        return true;
+    }
+}
+
 ResourceMetadataManager::ResourceMetadataManager(){
 	// initialize writeview
 	pthread_spin_init(&m_spinlock, 0);

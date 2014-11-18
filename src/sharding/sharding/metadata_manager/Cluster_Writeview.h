@@ -179,6 +179,7 @@ public:
 	bool isNodeAlive(const NodeId & nodeId) const;
 	void addNode(const Node & node);
 	void setNodeState(NodeId nodeId, ShardingNodeState state);
+	bool getNodeState(const NodeId & nodeId, ShardingNodeState & state);
 	unsigned getTotalNumberOfNodes() const{return nodes.size();};
 	map<NodeId, std::pair<ShardingNodeState, Node *> > & getNodes(){
 		return nodes;
