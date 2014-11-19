@@ -162,7 +162,7 @@ int TransportManager::readMessageHeader(const Message * message,  int fd) {
 	char *buffer = (char *) message;
 	int byteToRead = sizeof(Message);
 	int byteReadCount = 0;
-	int retryCount = 5;
+	int retryCount = 10;
 
 	while(retryCount) {
 		int status = readDataFromSocket(fd, buffer, byteToRead, &byteReadCount);
