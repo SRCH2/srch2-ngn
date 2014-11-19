@@ -251,6 +251,10 @@ void FeedbackIndex::retrieveUserFeedbackInfoForQuery(const string& query,
 	if (!terminalNode) {
 		return;
 	}
+
+	if (!isTermialNodeValid(terminalNode))
+		return;
+
 	boost::shared_ptr<vectorview<UserFeedbackList *> > feedbackListIndexVectorReadView;
 	feedbackListIndexVector->getReadView(feedbackListIndexVectorReadView);
 	UserFeedbackList *feedbackList = NULL;

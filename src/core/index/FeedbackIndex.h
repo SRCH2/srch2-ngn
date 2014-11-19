@@ -97,7 +97,7 @@ public:
     // destructor
     virtual ~FeedbackIndex();
 
-    bool isTermialNodeValid(const TrieNode *terminalNode) {
+    bool isTermialNodeValid(const TrieNode *terminalNode) const{
     	return terminalNode->getInvertedListOffset() != -1;
     }
 
