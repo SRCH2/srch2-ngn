@@ -26,7 +26,7 @@ Released   : 20090327
 
             window.onload = removeHistory();
         </script>
-        <script type="text/javascript" src="srch2service.js"></script>
+        <script type="text/javascript" src="srch2lib.js"></script>
         <script language="javascript" src="index.js"></script>
     </head>
     <body>
@@ -230,21 +230,6 @@ Released   : 20090327
         </div>
         <script type="text/javascript">
             client.init();
-            var config = {
-                enableLog : true, // true / false
-                logType : "console", // console or alert. Note: console.log might not work on IE.
-                jsonPsrc : "http://127.0.0.1:8081/search?",
-                inputElementId : "query_box",
-                getQueryString : client.getQueryString, // should be a function, not string
-                debug : true, // true /false
-                evenNameToBindInputElement : "keyup",
-                searchType : "topK",
-                isFuzzy : true,
-                resultContainer : 'resultContainer',
-                responseHandler : 'client.responseHandler', // should a string
-                //cleanup : _srch2_this.cleanup, // should be a function, not string
-            };
-            srch2service.init(config);
         </script>
     </body>
 </html>

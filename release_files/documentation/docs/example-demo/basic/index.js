@@ -2,8 +2,8 @@
  * This is the basic demo for srch2 javascript library.
  * To use the srch2lib, it basically include the following steps:
  *
- * 1. Initilize the src2lib. For example, set the serverUrl, set if enable the
- *  debug mode, etc. One way to initilize the srch2lib is to use a config object which contains 
+ * 1. Initialize the src2lib. For example, set the serverUrl, set if enable the
+ *  debug mode, etc. One way to Initialize the srch2lib is to use a config object which contains 
  *  the key value pairs of the parameters. The other way is to call the "setter" function
  *  such as "setSearchType", "setEnableFuzzySearch" and "setServerUrl".
  *  To use the library, the serverUrl is required.
@@ -23,14 +23,14 @@
 client = {
     init : function() {
         /*
-         * Initilize the srch2lib, serverUrl must be set.
+         * Initialize the srch2lib, serverUrl must be set.
          */ 
         var config = {
             serverUrl : "http://simpson.calit2.uci.edu/srch2_movies_engine/",
             debug : true, // enable the debug mode which will display the debug msg to the console. 
                             //IE may not have "console.log" function. If you are using IE, please set it to false.
         };
-        srch2lib.init(config);  //Initilize the srch2lib with config.
+        srch2lib.init(config);  //Initialize the srch2lib with config.
         srch2lib.setSearchType("getAll");   //Set the search type to "getAll"
         srch2lib.setEnablePrefixSearch(true);   //Enable the prefix search 
         srch2lib.setEnableFuzzySearch(true);    //Enable the fuzzy search
@@ -56,7 +56,7 @@ client = {
         }
     },
     /*
-     * Bind the input box "query_box" key up operation with 
+     * Bind the input box "query_box" key up event with 
      * a function which sending the query to the server. 
      */
     bindInput : function() {
