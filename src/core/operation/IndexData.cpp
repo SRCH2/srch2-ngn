@@ -733,6 +733,14 @@ INDEXWRITE_RETVAL IndexData::_merge(bool updateHistogram) {
 			this->forwardIndex->getTotalNumberOfForwardLists_ReadView(),
 			updateHistogram);
 
+    // If some leaf nodes have an empty inverted list, we need to get rid of them by shrinking the trie
+    if (this->trie->getEmptyLeafNodeIdSize() > 0) {
+        // we need to acquire the global lock to block all other readers and writers
+        boost::unique_lock<boost::shared_mutex> lock(globalRwMutexForReadersWriters);
+    	this->trie->removeDeletedNodes();
+    }
+
+
 	if (this->schemaInternal->getIndexType()
 			== srch2::instantsearch::LocationIndex) {
 		this->quadTree->merge();

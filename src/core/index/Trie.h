@@ -593,6 +593,9 @@ private:
     		const ForwardIndex * forwardIndex ,
     		const unsigned totalNumberOfRecords );
 
+    // return TRUE if the subtrie of t becomes empty, and FALSE otherwise
+    bool removeDeletedNodes(TrieNode *t);
+
 public:
 
     Trie();
@@ -812,8 +815,9 @@ public:
 
     void print_Trie() const;
 
-   // void emptyLeafNodeIds
     void addEmptyLeafNodeId(unsigned emptyleafNodeId) { this->emptyLeafNodeIds.push_back(emptyleafNodeId);}
+    unsigned getEmptyLeafNodeIdSize() { return this->emptyLeafNodeIds.size();}
+    void removeDeletedNodes();
 };
 
 }

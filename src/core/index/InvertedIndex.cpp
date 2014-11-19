@@ -404,7 +404,7 @@ void InvertedIndex::merge(RankerExpression *rankerExpression, unsigned totalNumb
     	if (finalInvListWriteViewSize == 0) {
             // This inverted list is empty, so we add it to the list
             // of empty leaf node ids to delete later
-    		trie->addEmptyLeafNodeId();
+            // TODO trie->addEmptyLeafNodeId();
     	}
     }
     this->invertedListSetToMerge.clear();
