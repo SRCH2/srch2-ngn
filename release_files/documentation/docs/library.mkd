@@ -1,16 +1,48 @@
 #SRCH2 Library
 
 ##1. Javascript Library
-This instruction shows how to use SRCH2 Javascript library to communicate with the SRCH2 engine. The library is using [RESTful API](restful-search.mkd#restful-api-search) to talk with the server side by [jsonp](http://en.wikipedia.org/wiki/JSONP) communication technique. 
+###1.1. Overview
+This instruction shows how to use SRCH2 Javascript library to communicate with the SRCH2 engine. The library is using [RESTful API](restful-search.mkd#restful-api-search) to talk with the server side by [jsonp](http://en.wikipedia.org/wiki/JSONP) communication technique. Here is a [movie demo](http://demo.srch2.com/movies/) that using the SRCH2 Javascript library. 
 
-<span ><center><img style="float: center" width="60%" src="../images/javascript-library.png" /></center></span>
-###1.1. Sample Code
-The following code is the basic example to use the SRCH2 Javascript library. It binds the input box "input_box" with event "key up" which will send the query to the engine. And the ```responseHandler``` will print the response in the "resultContainer" in JSON format.
+<span ><center><img style="float: center" width="100%" src="../images/javascript-library.png" /></center></span>
+
+There are 6 steps to talk with the SRCH2 server:  
+
+1. Bind event  
+Bind the input box event with the ```inputEvent()``` function so that each event can trigger the function.  
+
+2. Call srch2lib API  
+In the ```inputEvent()``` function, first we set the required parameters(e.g. setServerUrl(url)). Then call the ```srch2lib.sendQuery(keyword, responseHandler)``` function to prepare and send the query to the SRCH2 server. The second parameter is the callback function which will handle the response from the SRCH2 server.  
+
+3. Send RESTful query  
+The srch2lib will make a query based on the previous setting and send the query to the SRCH2 server by using jsonp.  
+
+4. Get JSON Response  
+The server will send the JSON format response to the front-end and the ```srch2ResponseHandler(response)``` will catch the response.  
+
+5. Call responseHandler  
+The ```srch2ResponseHandler(response)``` will call the function ```responseHandler()``` which set in the step 2 and pass the JSON format response to it.  
+
+6. Display results  
+The ```responseHandler()``` will format the JSON response and display the results on the webpage.
+
+###1.2. Basic Movie demo sample Code
+The following code is a basic example to use the SRCH2 Javascript library. It binds the input box "input_box" with event "key up" which will send the query to the engine. And the ```responseHandler``` will print the response in the "resultContainer" in JSON format.
 ```
 client = {
-    init : function() {        
-        srch2lib.init();  //Initialize the srch2lib.
-        srch2lib.setServerUrl("http://simpson.calit2.uci.edu/srch2_movies_engine/");
+    init : function() {
+        /*
+         * Initialize the srch2lib, serverUrl must be set.
+         */ 
+        var config = {
+            serverUrl : "http://127.0.0.1:8081/",
+            debug : true, // enable the debug mode which will display the debug msg to the console. 
+                            //IE may not have "console.log" function. If you are using IE, please set it to false.
+        };
+        srch2lib.init(config);  //Initialize the srch2lib with config.
+        srch2lib.setSearchType("getAll");   //Set the search type to "getAll"
+        srch2lib.setEnablePrefixSearch(true);   //Enable the prefix search 
+        srch2lib.setEnableFuzzySearch(true);    //Enable the fuzzy search
         this.bindInput();
     },
     /*
@@ -18,18 +50,53 @@ client = {
      * a function which sending the query to the server. 
      */
     bindInput : function() {
-        var element = document.getElementById("input_box");
+        var element = document.getElementById("query_box");
         element.addEventListener("keyup", function(event) {
-            srch2lib.sendQuery(document.getElementById("input_box").value, client.responseHandler);
+            srch2lib.sendQuery(document.getElementById("query_box").value, client.responseHandler);
         }, false);
     },
-    /*  
+    /*
      * "responseHandler" is called by the server response.
-     * The "response" contains all the results in JSON format. 
+     * The "responseText" contains all the results in JSON format. 
      */
-    responseHandler : function(response) {
-        document.getElementById("resultContainer").innerHTML = response;
-    },
+    responseHandler : function(responseText) {
+        if (responseText) {
+            var output = "";
+            var results = responseText.results;
+            output += "<table width='450px'>";
+            output += "<tr>";
+            output += "<td style='border-bottom:thick;font-weight:bold;'>" + 'Title' + "</td>";
+            output += "<td style='border-bottom:thick;font-weight:bold;'>" + 'Genre' + "</td>";
+            output += "<td style='border-bottom:thick;font-weight:bold;'>" + 'Director' + "</td>";
+            output += "<td style='border-bottom:thick;font-weight:bold;'>" + 'Year' + "</td>";
+            output += "</tr>";
+            client.queryKeywords = responseText.query_keywords;
+            for (var i = 0; i < results.length; i++) {
+                output += "<tr class='result_row'>";
+                var record = results[i].record;
+                var prefix = results[i].matching_prefix;
+                //Find the prefix in the records to highlight it. 
+                output += "<td style='border-bottom:thin dotted'>" + client.addHighlighting(prefix, record.title) + "</td>";
+                output += "<td style='border-bottom:thin dotted '>" + client.addHighlighting(prefix, record.genre) + "</td>";
+                output += "<td style='border-bottom:thin dotted '>" + client.addHighlighting(prefix, record.director) + "</td>";
+                output += "<td style='border-bottom:thin dotted '>" + client.addHighlighting(prefix, record.year) + "</td>";
+                output += "</tr>";
+            }
+            output += "</table>";
+            client.log("got it", "debug");
+            client.log(JSON.stringify(responseText), "debug");
+            var element = document.getElementById("resultContainer");
+            if (output == "") {
+                element.innerHTML = "No results mate!";
+            } else {
+                element.innerHTML = output;
+            }
+        } else {
+            var element = document.getElementById("resultContainer");
+            element.innerHTML = "No results mate!";
+            client.log("empty response", "debug");
+        }
+    },    
 }
 ```
 There are 3 basic steps to send a query to the server and get the results from it.  
@@ -51,8 +118,9 @@ The response is caught by "responseHandler". User must define their own "respons
 function to display or analysis the response.  
 
 For more example, please see the "movie basic demo" and "movie advanced demo" under the <i>example-demo</i> folder. 
+The advanced demo has more features like "sorting", "filter" and "facet".
 
-###1.2. SRCH2 Javascript library API
+###1.3. SRCH2 Javascript library API
 ```
 //Initialize the SRCH2 library with config object, if no config, the library will use the default config.
 init : function(config)	

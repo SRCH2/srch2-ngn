@@ -47,77 +47,7 @@ Released   : 20090327
                     <div id="page-bgbtm">
                         <div id="sidebar1" class="sidebar">
                             <ul>
-                                <li>
-                                    <h2>Sort The Results</h2>
-                                    <ul>
-                                        <div style="overflow:auto;padding:10px">
-                                            <!-- Sort -->
-                                            <b> Year</b>
-                                            <form action="" method="get">
-                                                <input type="radio" name="sort_filter_order" value="asc" disabled/>
-                                                Ascending
-                                                <br />
-                                                <input type="radio" name="sort_filter_order" value="desc" disabled/>
-                                                Descending
-                                                <br />
-                                                <input type="radio" name="sort_filter_order" value="none" disabled/>
-                                                None
-                                                <br />
-                                            </form>
-
-                                            <div id="sort_model" style="float:left;width:30%">
-
-                                                <form action="" method="get">
-                                                    <!--input type="radio" name="sort_model_priority" value="ignore" checked/> Ignore<br /-->
-                                                </form>
-                                            </div>
-                                    </ul>
-                                </li>
-                                <li>
-                                    <h2>Filter the results</h2>
-                                    <ul>
-                                        <div style="overflow:auto;padding:5px">
-                                            <!-- Filter Query -->
-                                            <form action="" method="get">
-                                                <input type="radio" name="filter_op" value="AND" checked disabled/>
-                                                AND
-                                                <input type="radio" name="filter_op" value="OR" disabled/>
-                                                OR
-                                                <br />
-                                                <span style="font-size:70%">Refining Field: </span>
-                                                <br/>
-                                                <select id="filter_assignment_field" disabled/>
-                                                   <option value="genre">Genre</option>
-                                                   <option value="year">Year</option>
-                                                </select><br/>
-                                                <span style="font-size:70%">Refining Value: </span><br/>
-                                                <input type="text" size="10" id="filter_assignment_value" disabled/>
-                                                <br/>
-                                                <br/>
-                                                
-                                                <span style="font-size:70%">Refining Field: </span>
-                                                <br/>
-                                                <select id="filter_range_field" disabled/>
-                                                   <option value="genre">Genre</option>
-                                                   <option value="year">Year</option>
-                                                </select><br/>
-                                                <span style="font-size:70%">Refining Value: </span><br/>
-                                                [
-                                                <input type="text" size="2" id="filter_range_start" disabled/>
-                                                TO
-                                                <input type="text" size="2" id="filter_range_end" disabled/>
-                                                ]
-                                                <br/>
-                                                <span style="font-size:70%">Example: boolexp$ (price - discount)*rate < 100 $</span>
-                                                <br/>
-                                                boolexp <br/>$
-                                                <input type="text" size="15" id="filter_complex" disabled/>
-                                                $
-                                            </form>
-                                        </div>
-                                        <!-- Filter Query -->
-                                    </ul>
-                                </li>
+                               
                             </ul>
                         </div>
                         <!-- start content -->
@@ -146,47 +76,7 @@ Released   : 20090327
                         <div id="sidebar2" class="sidebar" style="width:320px">
                             <ul>
                                 <li>
-                                    <h2>Facets</h2>
-
-                                    <div style="overflow:auto;padding:5px">
-                                        <!-- Facets -->
-                                        <form action="" method="get">
-                                            <b>Year</b>
-                                            <br/>
-                                            From
-                                            <input type="text" size="3" id="facet_year_start" disabled/>
-                                            To
-                                            <input type="text" size="3" id="facet_year_end" disabled/>
-                                            ,
-                                            <br/>
-                                            Gap
-                                            <input type="text" size="3" id="facet_year_gap" disabled/>
-                                            <br/>
-                                        </form>
-                                        <hr/>
-                                        <div  style="float:left;width:40%">
-                                            <b>Genre</b>
-                                            <br/>
-
-                                        </div>
-
-                                        <div style="float:right;width:40%">
-                                            <b>Year</b>
-                                            <br/>
-
-                                        </div>
-                                        <br/>
-                                        <div id="facet_genre" style="float:left;width:40%">
-
-                                        </div>
-
-                                        <div id="facet_year" style="float:right;width:40%">
-
-                                        </div>
-                                    </div>
-                                    <!-- Facets -->
-                                    <hr/>
-                                    <div id="facet_remove_filter"></div>
+                                    
                                 </li>
 
                             </ul>

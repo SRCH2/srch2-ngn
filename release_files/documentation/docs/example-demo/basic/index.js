@@ -1,21 +1,7 @@
 /*
  * This is the basic demo for srch2 javascript library.
- * To use the srch2lib, it basically include the following steps:
- *
- * 1. Initialize the src2lib. For example, set the serverUrl, set if enable the
- *  debug mode, etc. One way to Initialize the srch2lib is to use a config object which contains 
- *  the key value pairs of the parameters. The other way is to call the "setter" function
- *  such as "setSearchType", "setEnableFuzzySearch" and "setServerUrl".
- *  To use the library, the serverUrl is required.
- *
- * 2. Send query.
- *  A general way to send query is to call the function 
- *  "srch2lib.sendQuery(keyword, responseHandler);", "keyword" is the string keyword to 
- * be searched and "responseHandler" is the function handling the response (JSON Object).
- * 
- * 3. Get response.
- *  The response is caught by "responseHandler". User must define their own "responseHandler"
- *  function to display or analysis the response.
+ * To use the srch2lib, please visit:
+ *  http://srch2.com/releases/4.4.2/docs/library/
  *
  * For more information about Search API, please visit: 
  *  http://srch2.com/releases/4.4.2/docs/restful-search/
@@ -26,7 +12,7 @@ client = {
          * Initialize the srch2lib, serverUrl must be set.
          */ 
         var config = {
-            serverUrl : "http://simpson.calit2.uci.edu/srch2_movies_engine/",
+            serverUrl : "http://127.0.0.1:8081/",
             debug : true, // enable the debug mode which will display the debug msg to the console. 
                             //IE may not have "console.log" function. If you are using IE, please set it to false.
         };
