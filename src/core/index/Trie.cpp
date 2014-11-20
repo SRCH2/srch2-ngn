@@ -1606,27 +1606,27 @@ void Trie::removeDeletedNodes()
 }
 
 // return TRUE if the subtrie of t becomes empty, and FALSE otherwise
-bool Trie::removeDeletedNodes(TrieNode *t)
+bool Trie::removeDeletedNodes(TrieNode *trieNode)
 {
     // [child_0] [child_1] ... [child_k]   --- sorted
     //   /   \     /   \          /  \
     // min   max  min  max       min  max
     //
     // emptyLeafNodeIds:
-    //  [v_1, v_2, v_3, ..., v_n]   --- sorted
+    //  [v_0, v_1, v_2, ..., v_n]   --- sorted
     //
-    // Find a range of t's children [a,b] that need to shrink based on their
+    // Find a range of children [a,b] that need to shrink based on their
     // [min, max] interval and the list emptyLeafNodeIds. A child needs to shrink
     // if its interval overlaps with the id of one of the empty leaf nodes
     unsigned minEmptyNodeId = emptyLeafNodeIds.front();
     unsigned maxEmptyNodeId = emptyLeafNodeIds.back();
 
-    // do a binary search to find the first child to start the scan
-    unsigned low = 0;
-    unsigned high = t->getChildrenCount() - 1;
+    // do a binary search to find the first child "a"
+    int low = 0;
+    int high = trieNode->getChildrenCount() - 1;
     while (low <= high) {
-        unsigned mid = (low + high) / 2;
-        if (t->getChild(mid)->getMinId() >= minEmptyNodeId)
+        int mid = (low + high) / 2;
+        if (trieNode->getChild(mid)->getMinId() >= minEmptyNodeId)
             high = mid - 1;
         else
             low = mid + 1;
@@ -1634,53 +1634,52 @@ bool Trie::removeDeletedNodes(TrieNode *t)
 
     // scan the children whose [min, max] interval
     // overlaps [minEmptyNodeId, maxEmptyNodeId]
-    unsigned childCursor = low;
-    while (childCursor < t->getChildrenCount()
-          && t->getChild(childCursor)->getMinId() <= maxEmptyNodeId) {
-
-        // Relationship:
+    int childCursor = low;
+    while (childCursor < trieNode->getChildrenCount()
+          && trieNode->getChild(childCursor)->getMinId() <= maxEmptyNodeId) {
+        // Interval relationship:
         //             [minId,                  maxId]
     	// [minEmptyNodeId,    maxEmptyNodeId]
-        ASSERT(t->getChild(childCursor)->getMinId() >= minEmptyNodeId);
-        if (removeDeletedNodes(t->getChild(childCursor))) {
+        ASSERT(trieNode->getChild(childCursor)->getMinId() >= minEmptyNodeId);
+        int childCount = trieNode->getChildrenCount();
+        if (removeDeletedNodes(trieNode->getChild(childCursor))) {
            // this subtrie is empty. Then delete this child,
            // shift the children from the right to the left.
-           delete t->getChild(childCursor);
-           for (int i = childCursor; i < t->getChildrenCount() - 1; i++)
-               t->setChild(i, t->getChild(i+1));
+           delete trieNode->getChild(childCursor);
+           for (int i = childCursor; i < trieNode->getChildrenCount() - 1; i++)
+               trieNode->setChild(i, trieNode->getChild(i+1));
         } else {
            childCursor ++;
         }
     }
 
-    if (t->isTerminalNode()) {
+    if (trieNode->isTerminalNode()) {
       // if it is one of the empty leaf nodes, then it should no longer be a terminal node
-      if (std::binary_search(emptyLeafNodeIds.begin(), emptyLeafNodeIds.end(), t->id)) {
-          t->setTerminalFlag(false); // this node is no longer a terminal node
+      if (std::binary_search(emptyLeafNodeIds.begin(), emptyLeafNodeIds.end(), trieNode->id)) {
+          trieNode->setTerminalFlag(false);
       }
     }
 
-    // this subtrie becomes empty if it doesn't have children any more
-    // and it is not a terminal node (e.g., it either doesn't have
-    // an inverted list, or has an empty inverted list)
-    if (t->getChildrenCount() == 0 && t->isTerminalNode() == false) {
+    // This subtrie becomes empty if it doesn't have children any more
+    // and it is not a terminal node
+    if (trieNode->getChildrenCount() == 0 && trieNode->isTerminalNode() == false) {
         return true;
     }
 
     // this subtrie is not empty.
 
     // Set the two pointers
-    if (t->isTerminalNode())
-        t->setLeftMostDescendant(t); // set it to itself
+    if (trieNode->isTerminalNode())
+        trieNode->setLeftMostDescendant(trieNode); // set it to itself
     else // t.leftMostNode = t.firstChild.leftMostNode;
-        t->setLeftMostDescendant(t->getChild(0)->getLeftMostDescendant());
+        trieNode->setLeftMostDescendant(trieNode->getChild(0)->getLeftMostDescendant());
 
     // t.rightMostNode = t.lastChild.rightMostNode
-    if (t->getChildrenCount() > 0) {
-        unsigned childCount = t->getChildrenCount();
-        t->setRightMostDescendant(t->getChild(childCount - 1)->getRightMostDescendant());
+    if (trieNode->getChildrenCount() > 0) {
+        unsigned childCount = trieNode->getChildrenCount();
+        trieNode->setRightMostDescendant(trieNode->getChild(childCount - 1)->getRightMostDescendant());
     } else {
-        t->setRightMostDescendant(t); // set it to itself
+        trieNode->setRightMostDescendant(trieNode); // set it to itself
     }
 
     // tell the caller this subtrie is not empty

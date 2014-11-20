@@ -690,7 +690,6 @@ INDEXWRITE_RETVAL IndexData::_merge(bool updateHistogram) {
 		this->forwardIndex->freeSpaceOfDeletedRecords();
 	}
 
-	// TODO: make sure the trie node ids don't change after reassign-id logic
 	if (this->invertedIndex->mergeWorkersCount <= 1) {
 		this->invertedIndex->merge( this->rankerExpression,
 				this->writeCounter->getNumberOfDocuments(), this->schemaInternal, this->trie);
@@ -739,9 +738,8 @@ INDEXWRITE_RETVAL IndexData::_merge(bool updateHistogram) {
     if (this->trie->getEmptyLeafNodeIdSize() > 0) {
         // we need to acquire the global lock to block all other readers and writers
         boost::unique_lock<boost::shared_mutex> lock(globalRwMutexForReadersWriters);
-    	this->trie->removeDeletedNodes();
+        this->trie->removeDeletedNodes();
     }
-
 
 	if (this->schemaInternal->getIndexType()
 			== srch2::instantsearch::LocationIndex) {
@@ -850,18 +848,8 @@ void IndexData::_exportData(const string &exportedDataFileName) const {
 
 void IndexData::_save(const string &directoryName) const {
 	Serializer serializer;
-	if (this->trie->isMergeRequired())
-		this->trie->merge(NULL, NULL, 0, false);
-	// serialize the data structures to disk
-	try {
-		serializer.save(*this->trie,
-				directoryName + "/" + IndexConfig::trieFileName);
-	} catch (exception &ex) {
-		Logger::error("Error writing trie index file: %s/%s",
-				directoryName.c_str(), IndexConfig::trieFileName);
-		// can keep running - don't rethrow exception
-	}
 
+    // ---------- save forwardIndex -----------
 	if (this->forwardIndex->isMergeRequired()) {
 		this->forwardIndex->merge();
 		if (this->forwardIndex->hasDeletedRecords()) {
@@ -881,6 +869,7 @@ void IndexData::_save(const string &directoryName) const {
 				directoryName.c_str(), IndexConfig::forwardIndexFileName);
 	}
 
+    // ---------- save schema -----------
 	try {
 		serializer.save(*this->schemaInternal,
 				directoryName + "/" + IndexConfig::schemaFileName);
@@ -889,6 +878,7 @@ void IndexData::_save(const string &directoryName) const {
 				directoryName.c_str(), IndexConfig::schemaFileName);
 	}
 
+    // ---------- save invertedIndex -----------
 	if (this->invertedIndex->mergeRequired())
 		this->invertedIndex->merge(this->rankerExpression,
 				this->writeCounter->getNumberOfDocuments(), this->schemaInternal, this->trie);
@@ -900,7 +890,33 @@ void IndexData::_save(const string &directoryName) const {
 				directoryName.c_str(), IndexConfig::invertedIndexFileName);
 	}
 
-	try {
+
+    // ---------- save trie -----------
+    // We save the trie after saving the inverted index since
+    // the later can tell us what leaf nodes have an empty
+    // inverted list, thus become removable.
+    if (this->trie->isMergeRequired()) {
+        this->trie->merge(NULL, NULL, 0, false);
+
+        // shrink the trie if needed
+        if (this->trie->getEmptyLeafNodeIdSize() > 0) {
+            // we need to acquire the global lock to block all other readers and writers
+            boost::unique_lock<boost::shared_mutex> lock(globalRwMutexForReadersWriters);
+            this->trie->removeDeletedNodes();
+        }
+    }
+
+    try {
+        serializer.save(*this->trie,
+                directoryName + "/" + IndexConfig::trieFileName);
+    } catch (exception &ex) {
+        Logger::error("Error writing trie index file: %s/%s",
+                directoryName.c_str(), IndexConfig::trieFileName);
+        // can keep running - don't rethrow exception
+    }
+
+    // ---------- save quadTree -----------
+    try {
 		serializer.save(*this->quadTree,
 				directoryName + "/" + IndexConfig::quadTreeFileName);
 	} catch (exception &ex) {
@@ -908,6 +924,7 @@ void IndexData::_save(const string &directoryName) const {
 				directoryName.c_str(), IndexConfig::quadTreeFileName);
 	}
 
+    // ---------- save index counts file  -----------
 	try {
 		this->saveCounts(
 				directoryName + "/" + IndexConfig::indexCountsFileName);
@@ -916,6 +933,7 @@ void IndexData::_save(const string &directoryName) const {
 				directoryName.c_str(), IndexConfig::indexCountsFileName);
 	}
 
+    // ---------- save permissionMap  -----------
 	try {
 		serializer.save(*this->permissionMap,
 				directoryName + "/" + IndexConfig::permissionMapFileName);
@@ -924,6 +942,7 @@ void IndexData::_save(const string &directoryName) const {
 				directoryName.c_str(), IndexConfig::permissionMapFileName);
 	}
 
+    // ---------- save attributeAcl  -----------
 	try{
 		serializer.save(*(this->attributeAcl), directoryName + "/" + IndexConfig::AccessControlFile);
 	} catch (exception &ex) {

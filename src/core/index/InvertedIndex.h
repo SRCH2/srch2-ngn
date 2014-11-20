@@ -216,15 +216,15 @@ struct MergeWorkersThreadArgs {
 // Queue which holds data for merge workers.
 struct MergeWorkersSharedQueue {
     // Array of pairs of inverted list Id and keyword Id
-	pair<unsigned, unsigned> *invertedListKeywordIds;
-	unsigned dataLen;   // max size of the array.
-	unsigned cursor;    // max value of the array index processed by threads
-	boost::mutex _lock;
-	MergeWorkersSharedQueue() {
-		invertedListKeywordIds = NULL;
-		cursor = 0;
-		dataLen = 0;
-	}
+    pair<unsigned, unsigned> *invertedListKeywordIds;
+    unsigned dataLen;   // max size of the array.
+    unsigned cursor;    // max value of the array index processed by threads
+    boost::mutex _lock;
+    MergeWorkersSharedQueue() {
+        invertedListKeywordIds = NULL;
+        cursor = 0;
+        dataLen = 0;
+    }
 };
 
 class InvertedIndex

@@ -15,7 +15,7 @@
  * OR PROFITS, WHETHER IN AN ACTION OF CONTRACT, NEGLIGENCE OR OTHER ACTION, ARISING OUT OF OR IN CONNECTION
  * WITH THE USE OR PERFORMANCE OF SOFTWARE.
 
- * Copyright �� 2010 SRCH2 Inc. All rights reserved
+ * Copyright 2010 SRCH2 Inc. All rights reserved
  */
 
 #ifndef __TRIE_H__
@@ -594,7 +594,7 @@ private:
     		const unsigned totalNumberOfRecords );
 
     // return TRUE if the subtrie of t becomes empty, and FALSE otherwise
-    bool removeDeletedNodes(TrieNode *t);
+    bool removeDeletedNodes(TrieNode *trieNode);
 
 public:
 
