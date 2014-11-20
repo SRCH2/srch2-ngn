@@ -817,6 +817,7 @@ public:
 
     void addEmptyLeafNodeId(unsigned emptyleafNodeId) { this->emptyLeafNodeIds.push_back(emptyleafNodeId);}
     unsigned getEmptyLeafNodeIdSize() { return this->emptyLeafNodeIds.size();}
+	void applyKeywordIdMapperOnEmptyLeafNodes(map<unsigned, unsigned> &keywordIdMapper);
     void removeDeletedNodes();
 };
 

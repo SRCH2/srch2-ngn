@@ -1585,6 +1585,17 @@ void Trie::finalCommit_finalizeHistogramInformation(const InvertedIndex * invert
     this->commited = true;
 }
 
+
+void Trie::applyKeywordIdMapperOnEmptyLeafNodes(map<unsigned, unsigned> &keywordIdMapper) {
+      for (int i = 0; i < emptyLeafNodeIds.size(); i++) {
+        map<unsigned, unsigned>::const_iterator keywordIdMapperIter =
+           keywordIdMapper.find(emptyLeafNodeIds.at(i));
+        // if this keyword ID is in the mapper, we use the new id
+        if (keywordIdMapperIter != keywordIdMapper.end())
+           emptyLeafNodeIds.at(i) = keywordIdMapperIter->second;
+      }
+ }
+
 void Trie::removeDeletedNodes()
 {
     // sort the ids of the empty leaf nodes
@@ -1593,18 +1604,6 @@ void Trie::removeDeletedNodes()
     TrieNode *writeViewRoot = this->getTrieRootNode_WriteView();
     removeDeletedNodes(writeViewRoot);
 }
-
-// TODO: Delete
-/* ASSERT(std::binary_search(emptyLeafNodeIds.begin(), emptyLeafNodeIds.end(), t->id));
-
-
-if (t->getChildrenCount() == 0) {
-  ASSERT(t->isTerminalNode());
-  // this trie node is a real leaf node, so it should be one of the empty leaf nodes
-  ASSERT(std::binary_search(emptyLeafNodeIds.begin(), emptyLeafNodeIds.end(), t->id));
-  return TRUE; // this subtrie is empty
-}*/
-
 
 // return TRUE if the subtrie of t becomes empty, and FALSE otherwise
 bool Trie::removeDeletedNodes(TrieNode *t)

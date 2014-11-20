@@ -432,7 +432,8 @@ INDEXWRITE_RETVAL IndexData::_deleteRecord(
 			// the inverted-list-ids from the trie.
 			TrieNodePath trieNodePath;
 			trieNodePath.path = new vector<TrieNode *>();
-			vector<unsigned> invertedListIdsToMerge;
+			// first id: invertedListId; second id: keywordId
+			vector<pair<unsigned, unsigned> > invertedListIdsToMerge;
 			for (unsigned i = 0; i < keywordsCount; ++i) {
 				unsigned keywordId = *(listofKeywordIds + i);
 				// get the TrieNode path of the current keyword in write view based on its id.
@@ -444,7 +445,7 @@ INDEXWRITE_RETVAL IndexData::_deleteRecord(
 				}
 				TrieNode * leafNode = trieNodePath.path->back();
 				if(leafNode && leafNode->isTerminalNode()) {
-					invertedListIdsToMerge.push_back(leafNode->invertedListOffset);
+					invertedListIdsToMerge.push_back(make_pair(leafNode->invertedListOffset, leafNode->id));
 				} else {
 					// should not happen.
 					ASSERT(false);
@@ -452,7 +453,7 @@ INDEXWRITE_RETVAL IndexData::_deleteRecord(
 				trieNodePath.path->clear();
 			}
 			delete trieNodePath.path;
-			this->invertedIndex->appendInvertedListIdsForMerge(invertedListIdsToMerge);
+			this->invertedIndex->appendInvertedListKeywordIdsForMerge(invertedListIdsToMerge);
 		}
 
 		this->mergeRequired = true; // need to tell the merge thread to merge
@@ -689,9 +690,10 @@ INDEXWRITE_RETVAL IndexData::_merge(bool updateHistogram) {
 		this->forwardIndex->freeSpaceOfDeletedRecords();
 	}
 
+	// TODO: make sure the trie node ids don't change after reassign-id logic
 	if (this->invertedIndex->mergeWorkersCount <= 1) {
 		this->invertedIndex->merge( this->rankerExpression,
-				this->writeCounter->getNumberOfDocuments(), this->schemaInternal);
+				this->writeCounter->getNumberOfDocuments(), this->schemaInternal, this->trie);
 	} else {
 		this->invertedIndex->parallelMerge();
 	}
@@ -733,7 +735,7 @@ INDEXWRITE_RETVAL IndexData::_merge(bool updateHistogram) {
 			this->forwardIndex->getTotalNumberOfForwardLists_ReadView(),
 			updateHistogram);
 
-    // If some leaf nodes have an empty inverted list, we need to get rid of them by shrinking the trie
+    // If some leaf nodes have an empty inverted list, we need to get rid of them
     if (this->trie->getEmptyLeafNodeIdSize() > 0) {
         // we need to acquire the global lock to block all other readers and writers
         boost::unique_lock<boost::shared_mutex> lock(globalRwMutexForReadersWriters);
@@ -784,6 +786,8 @@ void IndexData::reassignKeywordIds() {
 	changeKeywordIdsOnForwardLists(trieNodeIdMapper, keywordIdMapper,
 			processedRecordIds);
 
+	// apply the ID mapper on the keyword ids of empty leaf nodes
+	this->trie->applyKeywordIdMapperOnEmptyLeafNodes(keywordIdMapper);
 }
 
 /*
@@ -887,7 +891,7 @@ void IndexData::_save(const string &directoryName) const {
 
 	if (this->invertedIndex->mergeRequired())
 		this->invertedIndex->merge(this->rankerExpression,
-				this->writeCounter->getNumberOfDocuments(), this->schemaInternal);
+				this->writeCounter->getNumberOfDocuments(), this->schemaInternal, this->trie);
 	try {
 		serializer.save(*this->invertedIndex,
 				directoryName + "/" + IndexConfig::invertedIndexFileName);
