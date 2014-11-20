@@ -26,7 +26,7 @@ srch2lib = {
         this.rowsStr = null;
         this.coreNameStr = null;
         this.roleIdStr = null;
-
+        this.feedbackQueryStr = "";
         this.jsonpCallbacks = {counter : 0};
         
         if(config != null){
@@ -87,7 +87,8 @@ srch2lib = {
     sendRawQuery : function(keyword, responseHandler){
         if (this.queryWaitingForResponse == 0) {
             if (keyword && keyword.length > 0) {
-                if(this.jsonpCall(this.serverUrlStr + "search?" + encodeURIComponent(keyword), responseHandler)){
+                this.feedbackQueryStr  = keyword;
+                if(this.jsonpCall(this.serverUrlStr + "search?q=" + encodeURIComponent(keyword), responseHandler)){
                     //this.queryWaitingForResponse++;
                     //this.log("Query waiting for response : " + this.queryWaitingForResponse);
                 }            
@@ -496,9 +497,10 @@ srch2lib = {
         // Append keyword
         query += "q=";
 
+        var mainQuery = "";
         // Append search field 
         if(this.searchFieldsStr != null && this.searchFieldsStr != ""){
-            query += encodeURIComponent(this.searchFieldsStr) + ":"
+            mainQuery += encodeURIComponent(this.searchFieldsStr) + ":"
         }
 
         // grab search terms from input control on web page
@@ -515,7 +517,7 @@ srch2lib = {
             return '';
         }
 
-        // append search terms to query, with query syntax
+        // append search terms to mainQuery, with query syntax
         for (var i = 0; i < words.length; i++) {
             //Skip boolean search operator
             //if (words[i] == "AND" || words[i] == "OR" || words[i] == "NOT"){
@@ -526,19 +528,19 @@ srch2lib = {
             if (i == words.length - 1) {
                 words[i] = encodeURIComponent(words[i]);
                 // last word in search terms
-                query += words[i].replace(/[+]/g, '%2B'); // encode here to handle terms like C++
+                mainQuery += words[i].replace(/[+]/g, '%2B'); // encode here to handle terms like C++
                 if (keyword[keyword.length - 1] != ' ') {
                     // prefix search unless input ends in a space
                     if(this.isEnablePrefixSearch == true){
-                        query += '*';
+                        mainQuery += '*';
                     }                
                 }
 
                 if(this.isEnableFuzzySearch == true){
                     if(this.fuzzySimilarityThreshold != null && this.fuzzySimilarityThreshold != ""){
-                        query += '~' + this.fuzzySimilarityThreshold;
+                        mainQuery += '~' + this.fuzzySimilarityThreshold;
                     }else {
-                        query += '~';
+                        mainQuery += '~';
                     }
 
                 }            
@@ -547,16 +549,19 @@ srch2lib = {
                 words[i] = encodeURIComponent(words[i]);
                 if(this.isEnableFuzzySearch == true){
                     if(this.fuzzySimilarityThreshold != null && this.fuzzySimilarityThreshold != ""){
-                        query += words[i].replace(/[+]/g, '%2B') + '~' + this.fuzzySimilarityThreshold + ' AND ';
+                        mainQuery += words[i].replace(/[+]/g, '%2B') + '~' + this.fuzzySimilarityThreshold + ' AND ';
                     }else{
-                        query += words[i].replace(/[+]/g, '%2B') + '~' + ' AND ';
+                        mainQuery += words[i].replace(/[+]/g, '%2B') + '~' + ' AND ';
                     }
 
                 } else {
-                    query += words[i].replace(/[+]/g, '%2B') + ' AND ';
+                    mainQuery += words[i].replace(/[+]/g, '%2B') + ' AND ';
                 }            
             }
         }
+
+        this.feedbackQueryStr = mainQuery;
+        query += mainQuery;
 
         // Append search type
         if(this.searchTypeStr != null){
@@ -797,6 +802,29 @@ srch2lib = {
         }
         return input;
     },
+
+    // sends feedback to SRCH2 engine using HTTP PUT command.
+    // Please visit http://srch2.com/documentation.html to learn about feedback.
+    sendFeedback : function (query, recordPrimaryKey) {
+
+        var jsonData = {};
+        jsonData["query"] = query;
+        jsonData["recordId"] = recordPrimaryKey;         
+        var payload = JSON.stringify(jsonData)
+        this.log(payload);        
+        var feedbackUrl = this.serverUrlStr + "feedback"       
+       	$.ajax({
+		url: feedbackUrl,
+		data:{
+			data : payload
+			},
+        cache:false,
+		dataType:"jsonp",
+		complete: function(data, string) { 
+		  console.log("feedback sent as GET command");
+		}
+	   });
+    }
 }
 
 

@@ -19,8 +19,8 @@ client = {
             debug : true, // true /false
         };        
         this.srch2.init(config);  //Initialize the srch2lib with config.
-                
-        _client_this.srch2.setServerUrl("http://simpson.calit2.uci.edu/srch2_movies_engine/");  //Server URL also can be set by setServerUrl
+        _client_this.srch2.setServerUrl("http://localhost:8081/");  
+        //_client_this.srch2.setServerUrl("http://simpson.calit2.uci.edu/srch2_movies_engine/");  //Server URL also can be set by setServerUrl
         _client_this.srch2.setSearchType("getAll"); //Set the search type to "getAll"
         _client_this.srch2.setEnablePrefixSearch(true); //Enable the prefix search 
         _client_this.srch2.setEnableFuzzySearch(true);  //Enable the fuzzy search
@@ -163,16 +163,21 @@ client = {
             output += "<td style='border-bottom:thick;font-weight:bold;'>" + 'Genre' + "</td>";
             output += "<td style='border-bottom:thick;font-weight:bold;'>" + 'Director' + "</td>";
             output += "<td style='border-bottom:thick;font-weight:bold;'>" + 'Year' + "</td>";
+            output += "<td style='border-bottom:thick;font-weight:bold;'>" + ' ' + "</td>";
             output += "</tr>";
             _client_this.queryKeywords = responseText.query_keywords;
+
+            
             for (var i = 0; i < results.length; i++) {
                 output += "<tr class='result_row'>";
+                var recordPrimaryKey = results[i].record_id;
                 var record = results[i].record;
                 var prefix = results[i].matching_prefix;
                 output += "<td style='border-bottom:thin dotted'>" + _client_this.addHighlighting(prefix, record.title) + "</td>";
                 output += "<td style='border-bottom:thin dotted '>" + _client_this.addHighlighting(prefix, record.genre) + "</td>";
                 output += "<td style='border-bottom:thin dotted '>" + _client_this.addHighlighting(prefix, record.director) + "</td>";
                 output += "<td style='border-bottom:thin dotted '>" + _client_this.addHighlighting(prefix, record.year) + "</td>";
+                output += "<td style='border-bottom:thin dotted '><input type='submit' value='Like' onclick='_client_this.sendFeedback(\""+ recordPrimaryKey + "\")'></td>";
                 output += "</tr>";
             }
             output += "</table>";
@@ -442,6 +447,12 @@ client = {
         var keyword = document.getElementById('query_box').value;
         _client_this.srch2.sendQuery(keyword, _client_this.responseHandler);
        
+    },
+
+    sendFeedback : function(recordPrimaryKey) {        
+        _client_this.log( "sending feedback = { " +  _client_this.srch2.feedbackQueryStr  + "," + recordPrimaryKey + "}", "debug");        
+       _client_this.srch2.sendFeedback(_client_this.srch2.feedbackQueryStr, recordPrimaryKey);
     }
+
 };
 
