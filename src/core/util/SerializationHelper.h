@@ -13,13 +13,13 @@ namespace util {
 template<class FixedType>
 inline void * serializeFixedTypes(const FixedType & obj, void * buffer){
 	memcpy(buffer, (char *)(&obj), sizeof(obj));
-	return (char *)buffer + sizeof(obj);
+	return ((char *)buffer) + sizeof(obj);
 }
 
 template<class FixedType>
 inline void * deserializeFixedTypes(void * buffer, FixedType & obj){
 	obj = *((FixedType *)(buffer));
-	return (char *)buffer + sizeof(obj);
+	return ((char *)buffer) + sizeof(FixedType);
 }
 
 #ifdef ANDROID
@@ -28,7 +28,7 @@ inline void * deserializeFixedTypes(void * buffer, FixedType & obj){
 template<>
 inline void * deserializeFixedTypes<double>(void * buffer, double & obj){
 	memcpy((char *)(&obj), buffer, sizeof(double));
-	return (char *)buffer + sizeof(double);
+	return ((char *)buffer) + sizeof(double);
 }
 #endif
 
@@ -38,19 +38,19 @@ inline void * serializeString(const string & msg, void * buffer){
 	buffer = serializeFixedTypes(msgSize, buffer);
 	// now serialize the body
 	memcpy(buffer, msg.c_str() , msgSize);
-	return (char *)buffer + msgSize;
+	return ((char *)buffer) + msgSize;
 }
 
 inline void * deserializeString(void * buffer, string & msg){
 	// first deserialize size
 	unsigned msgSize = *((unsigned *)buffer);
-	buffer = (char *)buffer + sizeof(unsigned);
+	buffer = ((char *)buffer) + sizeof(unsigned);
 	// now deserialize body
 	char * msgBody = new char[msgSize];
 	memcpy(msgBody , buffer, msgSize);
 	msg = string(msgBody, msgSize);
 	delete msgBody;
-	return (char *)buffer + msgSize;
+	return ((char *)buffer) + msgSize;
 }
 
 template<class FixedType>
