@@ -1656,15 +1656,15 @@ bool Trie::removeDeletedNodes(TrieNode *t)
     if (t->isTerminalNode()) {
       // if it is one of the empty leaf nodes, then it should no longer be a terminal node
       if (std::binary_search(emptyLeafNodeIds.begin(), emptyLeafNodeIds.end(), t->id)) {
-          t->setTerminalFlag(FALSE); // this node is no longer a terminal node
+          t->setTerminalFlag(false); // this node is no longer a terminal node
       }
     }
 
     // this subtrie becomes empty if it doesn't have children any more
     // and it is not a terminal node (e.g., it either doesn't have
     // an inverted list, or has an empty inverted list)
-    if (t->getChildrenCount() == 0 && t->isTerminalNode() == FALSE) {
-        return TRUE;
+    if (t->getChildrenCount() == 0 && t->isTerminalNode() == false) {
+        return true;
     }
 
     // this subtrie is not empty.
@@ -1684,7 +1684,7 @@ bool Trie::removeDeletedNodes(TrieNode *t)
     }
 
     // tell the caller this subtrie is not empty
-    return FALSE;
+    return false;
 }
 
 const std::vector<unsigned> *Trie::getOldIdToNewIdMapVector() const
