@@ -1646,8 +1646,11 @@ bool Trie::removeDeletedNodes(TrieNode *trieNode)
            // this subtrie is empty. Then delete this child,
            // shift the children from the right to the left.
            delete trieNode->getChild(childCursor);
-           for (int i = childCursor; i < trieNode->getChildrenCount() - 1; i++)
+           for (int i = childCursor; i < trieNode->getChildrenCount() - 1; i++) {
                trieNode->setChild(i, trieNode->getChild(i+1));
+           }
+           // remove the last element
+           trieNode->childrenPointerList.pop_back();
         } else {
            childCursor ++;
         }
