@@ -1369,6 +1369,14 @@ bool HTTPRequestHandler::processSingleFeedback(const Json::Value& doc,
 		return false;
 	}
 
+	if (queryStringTemp.size() > srch2is::Trie::TRIE_MAX_DEPTH) {
+		std::stringstream log_str;
+		log_str << "API : feedback, Error: feedback query longer than " <<
+				Trie::TRIE_MAX_DEPTH << " is not allowed";
+		feedbackResponse = log_str.str();
+		return false;
+	}
+
 	// cleanup user provided query before inserting into queryIndex
 	evkeyvalq dummyHeader;
 	QueryParser qp(dummyHeader);
@@ -1422,7 +1430,15 @@ bool HTTPRequestHandler::processSingleFeedback(const Json::Value& doc,
 }
 
 void HTTPRequestHandler::processFeedback(evhttp_request *req, Srch2Server *server) {
+
+	if (!server->indexDataConfig->isUserFeedbackEnabled()){
+		bmhelper_evhttp_send_reply(req, HTTP_OK, "BAD REQUEST",
+				"{\"message\":\"User feedback is NOT enabled in the config file.\"}");
+		Logger::console("User feedback is NOT enabled in the config file.");
+		return;
+	}
 	Json::Value response(Json::objectValue);
+	const char *feedbackData = NULL;
 	switch (req->type) {
 		case EVHTTP_REQ_PUT: {
 	        size_t length = EVBUFFER_LENGTH(req->input_buffer);
@@ -1434,68 +1450,83 @@ void HTTPRequestHandler::processFeedback(evhttp_request *req, Srch2Server *serve
 	            break;
 	        }
 
-	        const char *post_data = (char *) EVBUFFER_DATA(req->input_buffer);
-
-	        std::stringstream log_str;
-	        Json::Value root;
-	        Json::Reader reader;
-	        bool parseSuccess = reader.parse(post_data, root, false);
-	        bool error = false;
-        	Json::Value feedbackResponse(Json::arrayValue);
-	        if (parseSuccess == false) {
-	            log_str << "API : feedback, Error: JSON object parse error";
-	            response[JSON_LOG] = log_str.str();
-	            response[JSON_MESSAGE] = "The request was NOT processed successfully";
-	            bmhelper_evhttp_send_reply(req, HTTP_BADREQUEST, "INVALID DATA",
-	            		global_customized_writer.write(response));
-	            Logger::info("%s", global_customized_writer.write(response).c_str());
-	            return;
-	        } else {
-	        	const AttributeAccessControl& attrAcl = server->indexer->getAttributeAcl();
-	        	if (root.type() == Json::arrayValue) {
-	        		feedbackResponse.resize(root.size());
-	        		//the record parameter is an array of json objects
-	        		for(Json::UInt index = 0; index < root.size(); index++) {
-	        			Json::Value defaultValueToReturn = Json::Value("");
-	        			const Json::Value doc = root.get(index,
-	        					defaultValueToReturn);
-
-	        			bool  status = processSingleFeedback(doc, server, feedbackResponse[index]);
-	        			if (status == false) {
-	        				error = true;
-	        				break;
-	        			} else {
-		        			feedbackResponse[index] = "API : feedback, Success";
-	        			}
-	        		}
-	        	} else {
-	        		feedbackResponse.resize(1);
-	        		// the record parameter is a single json object
-	        		const Json::Value doc = root;
-	        		bool  status = processSingleFeedback(doc, server, feedbackResponse[0]);
-	        		if (status == false) {
-	        			error = true;
-	        		} else {
-	        			feedbackResponse[0] = "API : feedback, Success";
-	        		}
-	        	}
-	        }
-	        response[JSON_LOG] = feedbackResponse;
-	        if (!error) {
-	        	response[JSON_MESSAGE] = "The batch was processed successfully";
-	        	bmhelper_evhttp_send_reply(req, HTTP_OK, "OK",
-	        			global_customized_writer.write(response));
-	        } else {
-	        	response[JSON_MESSAGE] = "The request was NOT processed successfully";
-	        	bmhelper_evhttp_send_reply(req, HTTP_BADREQUEST, "INVALID DATA",
-	        			global_customized_writer.write(response));
-	        }
-	        Logger::info("%s", global_customized_writer.write(response).c_str());
+	        feedbackData = (char *) EVBUFFER_DATA(req->input_buffer);
+			break;
+		}
+		case EVHTTP_REQ_GET:
+		{
+			evkeyvalq headers;
+			evhttp_parse_query(req->uri, &headers);
+			feedbackData = evhttp_find_header(&headers, "data");
+			if (feedbackData == NULL) {
+				bmhelper_evhttp_send_reply(req, HTTP_BADREQUEST, "BAD REQUEST",
+						"{\"message\":\"http body is empty\"}");
+				Logger::warn("http body is empty");
+			}
 			break;
 		}
 		default:
 			response_to_invalid_request(req, response);
 	}
+
+	if (feedbackData == NULL)
+		return;
+
+    std::stringstream log_str;
+    Json::Value root;
+    Json::Reader reader;
+    bool parseSuccess = reader.parse(feedbackData, root, false);
+    bool error = false;
+	Json::Value feedbackResponse(Json::arrayValue);
+    if (parseSuccess == false) {
+        log_str << "API : feedback, Error: JSON object parse error";
+        response[JSON_LOG] = log_str.str();
+        response[JSON_MESSAGE] = "The request was NOT processed successfully";
+        bmhelper_evhttp_send_reply(req, HTTP_BADREQUEST, "INVALID DATA",
+        		global_customized_writer.write(response));
+        Logger::info("%s", global_customized_writer.write(response).c_str());
+        return;
+    } else {
+    	const AttributeAccessControl& attrAcl = server->indexer->getAttributeAcl();
+    	if (root.type() == Json::arrayValue) {
+    		feedbackResponse.resize(root.size());
+    		//the record parameter is an array of json objects
+    		for(Json::UInt index = 0; index < root.size(); index++) {
+    			Json::Value defaultValueToReturn = Json::Value("");
+    			const Json::Value doc = root.get(index,
+    					defaultValueToReturn);
+
+    			bool  status = processSingleFeedback(doc, server, feedbackResponse[index]);
+    			if (status == false) {
+    				error = true;
+    				break;
+    			} else {
+        			feedbackResponse[index] = "API : feedback, Success";
+    			}
+    		}
+    	} else {
+    		feedbackResponse.resize(1);
+    		// the record parameter is a single json object
+    		const Json::Value doc = root;
+    		bool  status = processSingleFeedback(doc, server, feedbackResponse[0]);
+    		if (status == false) {
+    			error = true;
+    		} else {
+    			feedbackResponse[0] = "API : feedback, Success";
+    		}
+    	}
+    }
+    response[JSON_LOG] = feedbackResponse;
+    if (!error) {
+    	response[JSON_MESSAGE] = "The batch was processed successfully";
+    	bmhelper_evhttp_send_reply(req, HTTP_OK, "OK",
+    			global_customized_writer.write(response));
+    } else {
+    	response[JSON_MESSAGE] = "The request was NOT processed successfully";
+    	bmhelper_evhttp_send_reply(req, HTTP_BADREQUEST, "INVALID DATA",
+    			global_customized_writer.write(response));
+    }
+    Logger::info("%s", global_customized_writer.write(response).c_str());
 }
 /*
  *   Wrapper layer API to handle ACL operations such as insert, delete, and append.

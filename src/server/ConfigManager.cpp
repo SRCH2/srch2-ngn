@@ -22,6 +22,7 @@
 
 #include "boost/algorithm/string_regex.hpp"
 #include "boost/filesystem/path.hpp"
+#include "index/Trie.h"
 
 using namespace std;
 namespace srch2is = srch2::instantsearch;
@@ -1218,7 +1219,11 @@ void ConfigManager::parseDataFieldSettings(const xml_node &parentNode,
     	}
         else {
         	coreInfo->maxFeedbackRecordsPerQuery = maxFeedbackRecordsPerQuery;
-        	coreInfo->maxFeedbackQueriesCount = maxFeedbackQueriesCount;
+        	if (maxFeedbackQueriesCount < srch2is::Trie::MAX_ALLOCATED_KEYWORD_ID) {
+        		coreInfo->maxFeedbackQueriesCount = maxFeedbackQueriesCount;
+        	} else {
+        		coreInfo->maxFeedbackQueriesCount = srch2is::Trie::MAX_ALLOCATED_KEYWORD_ID;
+        	}
         }
     } else {
     	coreInfo->userFeedbackEnabledFlag = false;
