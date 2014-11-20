@@ -1,9 +1,9 @@
 #This test is used for shrinking trie.
 #It mainly does 7 steps:
-#1. Insert 1000 records into the engine and save the index onto disk. Then get the size of CL1.idx (trie file)
-#2. Delete 500 records from the engine and save the new index onto disk. Then get the size of trie.
+#1. Insert 400 records into the engine and save the index onto disk. Then get the size of CL1.idx (trie file)
+#2. Delete 100 records from the engine and save the new index onto disk. Then get the size of trie.
 #3. Compare and check the size to see if the size of file is shrinked.
-#4. Delete 400 records from the engine and save the new index onto disk. Then get the size of trie.
+#4. Delete 100 records from the engine and save the new index onto disk. Then get the size of trie.
 #5. Compare and check the size to see if the size of file is shrinked.
 #6. Delete 100 records from the engine and save the new index onto disk. Then get the size of trie.
 #7. Compare and check the size to see if the size of file is shrinked.
@@ -92,12 +92,12 @@ if __name__ == '__main__':
 	startSrch2Engine()
 	triePath = "data/shrinking_trie/CL1.idx"
 	#Start the test cases
-	sizeAfterInsert = insertRecords(1000, triePath)
-	sizeAfterRemove1 = removeRecords(0,500, triePath)
+	sizeAfterInsert = insertRecords(400, triePath)
+	sizeAfterRemove1 = removeRecords(0,100, triePath)
 	compareSize(sizeAfterInsert, sizeAfterRemove1)
-	sizeAfterRemove2 = removeRecords(500,900, triePath)
+	sizeAfterRemove2 = removeRecords(200,300, triePath)
 	compareSize(sizeAfterRemove1, sizeAfterRemove2)
-	sizeAfterRemove3 = removeRecords(900,1000, triePath)
+	sizeAfterRemove3 = removeRecords(300,400, triePath)
 	compareSize(sizeAfterRemove2, sizeAfterRemove3)
 
 	print '=============================='
