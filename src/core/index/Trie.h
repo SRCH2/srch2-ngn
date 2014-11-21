@@ -598,6 +598,10 @@ public:
 
     virtual ~Trie();
 
+    void resetcounterForReassignedKeywordIds() {
+    	this->counterForReassignedKeywordIds = MAX_ALLOCATED_KEYWORD_ID + 1;
+    }
+
     void deleteTrieNode(TrieNode* &trieNode);
 
     void getTrieRootNode_ReadView(boost::shared_ptr<TrieRootNodeAndFreeList >& trieRootNode_ReadView) const;

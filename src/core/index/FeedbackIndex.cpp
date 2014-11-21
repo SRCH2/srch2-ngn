@@ -106,6 +106,10 @@ void FeedbackIndex::addFeedback(const string& query, unsigned recordId, unsigned
 				// take RW lock to block readers.( It is automatically unlocked on scope end)
 				boost::unique_lock<boost::shared_mutex>  writerLock(readerWriterLock);
 
+				// fix queryIds in Trie before calling getKeywordCorrespondingPathToTrieNode_WriteView API.
+				if (queryTrie->needToReassignKeywordIds())
+					fixQueryIdsInFeedbackIndex();
+
 				// Logically delete the oldest query by marked inverted list offset as -1.
 				TrieNodePath tp;
 				tp.path  = new vector<TrieNode *>();
@@ -118,6 +122,8 @@ void FeedbackIndex::addFeedback(const string& query, unsigned recordId, unsigned
 					// free feedback list
 					delete feedbackListIndexVector->getWriteView()->at(headId);
 				} else {
+					Logger::console("headID = %d, tailId = %d, queryId = %u", headId, tailId,
+							queryAgeOrder[headId].queryId);
 					ASSERT(false);
 				}
 			}
@@ -140,13 +146,13 @@ void FeedbackIndex::addFeedback(const string& query, unsigned recordId, unsigned
 			ASSERT(feedbackListOffset == 0);
 			queryAgeOrder[feedbackListOffset].prevIndexId = -1;
 			queryAgeOrder[feedbackListOffset].nextIndexId = -1;
-			queryAgeOrder[feedbackListOffset].queryId = queryId;
+			queryAgeOrder[feedbackListOffset].queryId = terminalNode->getId();
 		} else {
 			// append to end of the tail.
 			queryAgeOrder[tailId].nextIndexId = feedbackListOffset;
 			queryAgeOrder[feedbackListOffset].prevIndexId = tailId;
 			queryAgeOrder[feedbackListOffset].nextIndexId = -1;
-			queryAgeOrder[feedbackListOffset].queryId = queryId;
+			queryAgeOrder[feedbackListOffset].queryId = terminalNode->getId();
 			tailId = feedbackListOffset;
 		}
 
@@ -228,7 +234,7 @@ bool FeedbackIndex::hasFeedbackDataForQuery(const string& query) {
 	}
 
 	// Query exists in the trie but it is logically deleted. Trie will be cleaned up later.
-	if (!isTermialNodeValid(terminalNode))
+	if (!isTerminalNodeValid(terminalNode))
 		return false;
 
 	return true;
@@ -252,7 +258,7 @@ void FeedbackIndex::retrieveUserFeedbackInfoForQuery(const string& query,
 		return;
 	}
 
-	if (!isTermialNodeValid(terminalNode))
+	if (!isTerminalNodeValid(terminalNode))
 		return;
 
 	boost::shared_ptr<vectorview<UserFeedbackList *> > feedbackListIndexVectorReadView;
@@ -331,27 +337,31 @@ void FeedbackIndex::_merge() {
 
 		// reassign id is not thread safe so we need to grab an exclusive lock
 		boost::unique_lock<boost::shared_mutex> lock(readerWriterLock);
-		map<TrieNode *, unsigned> trieNodeIdMapper;
-		queryTrie->reassignKeywordIds(trieNodeIdMapper);
-		for (map<TrieNode *, unsigned>::iterator iter = trieNodeIdMapper.begin();
-				iter != trieNodeIdMapper.end(); ++iter) {
-			TrieNode *node = iter->first;
-			unsigned newKeywordId = iter->second;
-			// fix keywordIds in query Trie
-			node->setId(newKeywordId);
-
-			// fix keywordIds in recency list.
-			if (node->getInvertedListOffset() < maxCountOfFeedbackQueries)
-				queryAgeOrder[node->getInvertedListOffset()].queryId =  newKeywordId;
-			else
-				ASSERT(false);
-		}
+		fixQueryIdsInFeedbackIndex();
 	}
 
 	//3. Trie should be merged last because it is a top level data structure.
 	queryTrie->merge(NULL, NULL, 0, false);
 
 	mergeRequired = false;
+}
+
+void FeedbackIndex::fixQueryIdsInFeedbackIndex() {
+	map<TrieNode *, unsigned> trieNodeIdMapper;
+	queryTrie->reassignKeywordIds(trieNodeIdMapper);
+	for (map<TrieNode *, unsigned>::iterator iter = trieNodeIdMapper.begin();
+			iter != trieNodeIdMapper.end(); ++iter) {
+		TrieNode *node = iter->first;
+		unsigned newKeywordId = iter->second;
+		// fix keywordIds in query Trie
+		node->setId(newKeywordId);
+
+		// fix keywordIds in recency list.
+		if (node->getInvertedListOffset() < maxCountOfFeedbackQueries)
+			queryAgeOrder[node->getInvertedListOffset()].queryId =  newKeywordId;
+	}
+	// once reassignment is done reset the counter for reassign keywordIds
+	queryTrie->resetcounterForReassignedKeywordIds();
 }
 
 void FeedbackIndex::mergeFeedbackList(UserFeedbackList *feedbackList) {
@@ -491,6 +501,7 @@ void FeedbackIndex::load(const string& directoryName) {
 
 	if (::stat(queryTrieFilePath.c_str(), &fileStat) == -1) {
 		Logger::info("query index not found during load.");
+		finalize();
 		return;
 	}
 

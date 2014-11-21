@@ -97,7 +97,7 @@ public:
     // destructor
     virtual ~FeedbackIndex();
 
-    bool isTermialNodeValid(const TrieNode *terminalNode) const{
+    bool isTerminalNodeValid(const TrieNode *terminalNode) const{
     	return terminalNode->getInvertedListOffset() != -1;
     }
 
@@ -109,6 +109,7 @@ private:
     // private merge function. Writer lock should be acquired before calling it.
     void _merge();
 	void mergeFeedbackList(UserFeedbackList *feedbackList);
+	void fixQueryIdsInFeedbackIndex();
 };
 
 struct UserFeedbackInfo{
