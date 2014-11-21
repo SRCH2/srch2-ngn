@@ -1690,7 +1690,7 @@ bool Trie::removeDeletedNodes(TrieNode *trieNode)
                 && trieNode->getChild(first) != NULL)
             first ++;
 
-        // find the next non-nulled child
+        // move the non-null children to the left
         for (int second = first + 1; second < trieNode->getChildrenCount();
                 second ++) {
             if (trieNode->getChild(second) != NULL) {
