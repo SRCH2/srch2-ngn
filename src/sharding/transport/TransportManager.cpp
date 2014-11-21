@@ -290,27 +290,27 @@ bool TransportManager::receiveMessage(int fd, TransportCallback *cb, int comingB
 
 	// acquire lock to avoid interleaved message written to a current socket
 //	readBuffer.lockForRead();
-	cb->conn->lockWrite();
+	cb->conn->lockRead();
 
 	if(readBuffer.getPossibleAvailableDataCount() > 0){
 		readBuffer.setPossibleAvailableDataCount(0);
 	}
 	if(comingBack != 0){
-		if(readBuffer.timeToWait > 10){
-			readBuffer.timeToWait = 10;
-		}
 		int rc = checkSocketIsReadyForRead(cb->conn->fd, readBuffer.timeToWait);
 		if (rc == -1) {
 			// there was an error. We cannot continue to read on this socket.
 			Logger::sharding(Logger::Error, "TM | Read. Msg. Socket is not ready.");
 			readBuffer.timeToWait = 1;
-			cb->conn->unlockWrite();
+			cb->conn->unlockRead();
 			return false;
 		}else if (rc == 0){
 			readBuffer.timeToWait += 2;
-			cb->conn->unlockWrite();
+			if(readBuffer.timeToWait > 12){
+				readBuffer.timeToWait = 12;
+			}
+			cb->conn->unlockRead();
 			if(comingBack != -1 && readBuffer.timeToWait < 12){
-				return receiveMessage(fd, cb, -1);
+				return receiveMessage(fd, cb, comingBack + 1);
 			}else{
 				return true;
 			}
@@ -329,7 +329,7 @@ bool TransportManager::receiveMessage(int fd, TransportCallback *cb, int comingB
 		int status = readMessageInterrupted(&msgHeader, cb->conn->fd, readBuffer);
 		if(status != 0){
 			if(status == 1){ // come back later
-				cb->conn->unlockWrite();
+				cb->conn->unlockRead();
 				if(comingBack != -1){
 					return receiveMessage(fd, cb, comingBack + 1);
 				}else{
@@ -339,7 +339,7 @@ bool TransportManager::receiveMessage(int fd, TransportCallback *cb, int comingB
 			}else if (status == -1){
 				Logger::sharding(Logger::Error, "TM | Rec.Msg. Failed to read message header, status %d", status);
 			}
-			cb->conn->unlockWrite();
+			cb->conn->unlockRead();
 			return false;
 		}
 		/*
@@ -379,7 +379,7 @@ bool TransportManager::receiveMessage(int fd, TransportCallback *cb, int comingB
 		int status = readMessageInterrupted(NULL, cb->conn->fd, readBuffer);
 		if(status != 0){
 			if(status == 1){ // come back later
-				cb->conn->unlockWrite();
+				cb->conn->unlockRead();
 				if(comingBack != -1){
 					return receiveMessage(fd, cb, comingBack + 1);
 				}else{
@@ -389,7 +389,7 @@ bool TransportManager::receiveMessage(int fd, TransportCallback *cb, int comingB
 			}else if (status == -1){
 				Logger::sharding(Logger::Error, "TM | Rec.Msg. Failed to read message body, status %d", status);
 			}
-			cb->conn->unlockWrite();
+			cb->conn->unlockRead();
 			return false;
 		}else{ // status == 0
 			// message is complete, let's give it to upstream
@@ -405,7 +405,7 @@ bool TransportManager::receiveMessage(int fd, TransportCallback *cb, int comingB
 	if(completeMessage != NULL){
 		int possibleDataForReadCount = readBuffer.getPossibleAvailableDataCount();
 		readBuffer.timeToWait = 1;
-		cb->conn->unlockWrite();
+		cb->conn->unlockRead();
 		notifyUpstreamHandlers(completeMessage, fd, cb->conn->nodeId);
 
 		// we could read a message, if it's possible to have data, try
@@ -413,7 +413,7 @@ bool TransportManager::receiveMessage(int fd, TransportCallback *cb, int comingB
 			return receiveMessage(fd, cb, -1);
 		}
 	}else{
-		cb->conn->unlockWrite();
+		cb->conn->unlockRead();
 	}
 
 
