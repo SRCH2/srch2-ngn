@@ -67,13 +67,15 @@ void * LocalPhysicalShard::deserialize(void * buffer){
 }
 
 ClusterShard_Writeview::ClusterShard_Writeview(	const ClusterShardId id, const ShardState & state,
-		const NodeId nodeId, const bool isLocal, const double load):id(id){
+		const NodeId nodeId, const bool isLocal, const double load){
+    this->id = id;
 	this->state = state;
 	this->isLocal = isLocal;
 	this->nodeId = nodeId;
 	this->load = load;
 }
 ClusterShard_Writeview::ClusterShard_Writeview(const ClusterShard_Writeview & copy){
+    this->id = copy.id;
 	this->state = copy.state;
 	this->isLocal = copy.isLocal;
 	this->nodeId = copy.nodeId;
@@ -81,36 +83,36 @@ ClusterShard_Writeview::ClusterShard_Writeview(const ClusterShard_Writeview & co
 }
 
 ClusterShard_Writeview::ClusterShard_Writeview(){
-	id = ClusterShardId(0,0,0);
-	state = SHARDSTATE_UNASSIGNED;
-	isLocal = false;
-	nodeId = 0;
-	load = 0;
+    this->id = ClusterShardId(0,0,0);
+    this->state = SHARDSTATE_UNASSIGNED;
+    this->isLocal = false;
+    this->nodeId = 0;
+    this->load = 0;
 }
 
 void * ClusterShard_Writeview::serialize(void * buffer) const{
 	buffer = id.serialize(buffer);
-	buffer = srch2::util::serializeFixedTypes(state, buffer);
-	buffer = srch2::util::serializeFixedTypes(isLocal, buffer);
-	buffer = srch2::util::serializeFixedTypes(nodeId, buffer);
-	buffer = srch2::util::serializeFixedTypes(load, buffer);
+	buffer = srch2::util::serializeFixedTypes(this->state, buffer);
+	buffer = srch2::util::serializeFixedTypes(this->isLocal, buffer);
+	buffer = srch2::util::serializeFixedTypes(this->nodeId, buffer);
+	buffer = srch2::util::serializeFixedTypes(this->load, buffer);
 	return buffer;
 }
 unsigned ClusterShard_Writeview::getNumberOfBytes() const{
 	unsigned numberOfBytes= 0 ;
-	numberOfBytes += id.getNumberOfBytes();
-	numberOfBytes += sizeof(state);
-	numberOfBytes += sizeof(isLocal);
-	numberOfBytes += sizeof(nodeId);
-	numberOfBytes += sizeof(load);
+	numberOfBytes += this->id.getNumberOfBytes();
+	numberOfBytes += sizeof(this->state);
+	numberOfBytes += sizeof(this->isLocal);
+	numberOfBytes += sizeof(this->nodeId);
+	numberOfBytes += sizeof(this->load);
 	return numberOfBytes;
 }
 void * ClusterShard_Writeview::deserialize(void * buffer){
-	buffer = id.deserialize(buffer);
-	buffer = srch2::util::deserializeFixedTypes(buffer, state);
-	buffer = srch2::util::deserializeFixedTypes(buffer, isLocal);
-	buffer = srch2::util::deserializeFixedTypes(buffer, nodeId);
-	buffer = srch2::util::deserializeFixedTypes(buffer, load);
+	buffer = this->id.deserialize(buffer);
+	buffer = srch2::util::deserializeFixedTypes(buffer, this->state);
+	buffer = srch2::util::deserializeFixedTypes(buffer, this->isLocal);
+	buffer = srch2::util::deserializeFixedTypes(buffer, this->nodeId);
+	buffer = srch2::util::deserializeFixedTypes(buffer, this->load);
 	return buffer;
 }
 
