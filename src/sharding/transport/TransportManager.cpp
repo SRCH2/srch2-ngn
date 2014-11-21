@@ -115,7 +115,7 @@ int TransportManager::readDataFromSocket(int fd, char *buffer, const int byteToR
 		// the connection is closed by peer. return status -1 (error)
 //		Logger::sharding(Logger::Error, "TM | readDataFromSocket the connection is closed by peer. return status -1 (error)");
 		Logger::sharding(Logger::Warning, "TM | readDataFromSocket could read zero bytes from the connection.");
-		return 0;
+		return -1;
 	}
 
 	if(readByte == -1) {
@@ -148,7 +148,7 @@ int TransportManager::readDataFromSocket(int fd, char *buffer, const int byteToR
 		return -1;
 	}
 
-	return 2;
+	return 0;
 }
 
 /*
