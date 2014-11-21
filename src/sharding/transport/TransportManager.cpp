@@ -284,13 +284,14 @@ bool TransportManager::receiveMessage(int fd, TransportCallback *cb, bool coming
 	MessageBuffer& readBuffer = cb->conn->buffer;
 
 	// acquire lock to avoid interleaved message written to a current socket
-	readBuffer.lockForRead();
+//	readBuffer.lockForRead();
+	cb->conn->lockWrite();
 
 	if(comingBack){
 		if (checkSocketIsReadyForRead(cb->conn->fd) == -1) {
 			// there was an error. We cannot continue to read on this socket.
 			Logger::sharding(Logger::Error, "TM | Read. Msg. Socket is not ready.");
-			readBuffer.unlockRead();
+			cb->conn->unlockWrite();
 			return false;
 		}
 	}
@@ -310,13 +311,13 @@ bool TransportManager::receiveMessage(int fd, TransportCallback *cb, bool coming
 		int status = readMessageInterrupted(&msgHeader, cb->conn->fd, readBuffer);
 		if(status != 0){
 			if(status == 1){ // come back later
-				readBuffer.unlockRead();
+				cb->conn->unlockWrite();
 				return receiveMessage(fd, cb, true);
 //				return true;
 			}else if (status == -1){
 				Logger::sharding(Logger::Error, "TM | Rec.Msg. Failed to read message header, status %d", status);
 			}
-			readBuffer.unlockRead();
+			cb->conn->unlockWrite();
 			return false;
 		}
 		/*
@@ -356,13 +357,13 @@ bool TransportManager::receiveMessage(int fd, TransportCallback *cb, bool coming
 		int status = readMessageInterrupted(NULL, cb->conn->fd, readBuffer);
 		if(status != 0){
 			if(status == 1){ // come back later
-				readBuffer.unlockRead();
+				cb->conn->unlockWrite();
 				return receiveMessage(fd, cb, true);
 //				return true;
 			}else if (status == -1){
 				Logger::sharding(Logger::Error, "TM | Rec.Msg. Failed to read message body, status %d", status);
 			}
-			readBuffer.unlockRead();
+			cb->conn->unlockWrite();
 			return false;
 		}else{ // status == 0
 			// message is complete, let's give it to upstream
@@ -375,7 +376,7 @@ bool TransportManager::receiveMessage(int fd, TransportCallback *cb, bool coming
 
 	int possibleDataForReadCount = readBuffer.getPossibleAvailableDataCount();
 
-	readBuffer.unlockRead();
+	cb->conn->unlockWrite();
 
 	if(completeMessage != NULL){
 		notifyUpstreamHandlers(completeMessage, fd, cb->conn->nodeId);
