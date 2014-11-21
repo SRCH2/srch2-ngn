@@ -168,7 +168,7 @@ void LockManager::resolveLock(LockBatch * lockBatch){
 
 
 void LockManager::resolveRelease(LockBatch * lockBatch){
-	Logger::sharding(Logger::Step, "LockManager| resolving RELEASE request : ", lockBatch->toString().c_str());
+	Logger::sharding(Logger::Step, "LockManager| resolving RELEASE request : %s", lockBatch->toString().c_str());
 	bool releaseHappened = false;
 
 	switch (lockBatch->batchType) {

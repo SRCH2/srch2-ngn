@@ -393,6 +393,11 @@ public:
         case LockRequestType_PrimaryKey:
             break;
         }
+        if(ack){
+			ss << ",ACk will go to " << ack->getDest().nodeId;
+        }else{
+			ss << ",no ack is set, possiblly a local check.";
+        }
         return ss.str();
 	}
 
