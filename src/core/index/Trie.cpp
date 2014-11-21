@@ -1607,6 +1607,15 @@ void Trie::removeDeletedNodes()
         cout << "The trie becomes empty!!!\n";
     }
 
+    // similar to the optioners in trie.merge(), we need to "merge"
+    // the read view and the write view
+    writeViewRoot->resetCopyFlag();
+    this->root_readview.reset(new TrieRootNodeAndFreeList(writeViewRoot));
+    if(writeViewRoot) {
+      delete writeViewRoot;
+    }
+    this->root_writeview = new TrieNode(this->root_readview.get()->root);
+
     // remove these empty leaf nodes
     emptyLeafNodeIds.clear();
 }
@@ -1614,6 +1623,9 @@ void Trie::removeDeletedNodes()
 // return TRUE if the subtrie of t becomes empty, and FALSE otherwise
 bool Trie::removeDeletedNodes(TrieNode *trieNode)
 {
+  if (trieNode == NULL)
+    return true;
+
     // [child_0] [child_1] ... [child_k]   --- sorted
     //   /   \     /   \          /  \
     // min   max  min  max       min  max
@@ -1652,7 +1664,6 @@ bool Trie::removeDeletedNodes(TrieNode *trieNode)
            // this subtrie is empty. Then delete this child,
            // shift the children from the right to the left.
            delete trieNode->getChild(childCursor);
-           cout << "Deleted a trie node. childCursor = " << childCursor << "\n";
            for (int i = childCursor; i < trieNode->getChildrenCount() - 1; i++) {
                trieNode->setChild(i, trieNode->getChild(i+1));
            }

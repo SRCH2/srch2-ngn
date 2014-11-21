@@ -401,8 +401,7 @@ void testMultipleReadersMultipleWriters(){
     parm *p;
     int n, i;
 
-    //n = 15;
-    n = 25;
+    n = 15;
 
     addSimpleRecords();
 
@@ -462,13 +461,13 @@ void testMultipleReadersMultipleWriters(){
 
 int main(int argc, char *argv[]){
 	try{
-/*		cout << "Multiple Readers Testing ..." << endl;
+		cout << "Multiple Readers Testing ..." << endl;
 		testMultipleReaders();
 		cout << "Multiple Readers Test Passed" << endl;
 
 		cout << "Multiple Readers and One Writer Testing ..." << endl;
 		testMultipleReadersOneWriter();
-		cout << "Multiple Readers and One Writer Test Passed" << endl;*/
+		cout << "Multiple Readers and One Writer Test Passed" << endl;
 
 		cout << "Multiple Readers and Multiple Writers Testing ..." << endl;
 		testMultipleReadersMultipleWriters();
