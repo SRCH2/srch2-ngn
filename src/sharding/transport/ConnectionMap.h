@@ -38,6 +38,26 @@ public:
     MessageBuffer() : msg(NULL), lock(false), readCount(0), possibleAvailableData(0),
     		partialMessageHeader(new char[sizeof(Message)]), sizeOfPartialMsgHrd(0),
     		numberOfRetriesWithZeroRead(0){}
+    MessageBuffer(const MessageBuffer & msgBfr) : msg(msgBfr.msg), lock(msgBfr.lock), readCount(msgBfr.readCount),
+            possibleAvailableData(msgBfr.possibleAvailableData),
+            partialMessageHeader(new char[sizeof(Message)]), sizeOfPartialMsgHrd(msgBfr.sizeOfPartialMsgHrd),
+            numberOfRetriesWithZeroRead(msgBfr.numberOfRetriesWithZeroRead){
+        memcpy(partialMessageHeader, msgBfr.partialMessageHeader, sizeof(Message));
+    }
+    MessageBuffer & operator=(const MessageBuffer & msgBfr){
+        if(this == &msgBfr){
+            return &this;
+        }
+        msg = msgBfr.msg;
+        lock = msgBfr.lock;
+        readCount = msgBfr.readCount;
+        possibleAvailableData = msgBfr.possibleAvailableData;
+        partialMessageHeader = new char[sizeof(Message)];
+        sizeOfPartialMsgHrd = msgBfr.sizeOfPartialMsgHrd;
+        numberOfRetriesWithZeroRead = msgBfr.numberOfRetriesWithZeroRead;
+        memcpy(partialMessageHeader, msgBfr.partialMessageHeader, sizeof(Message));
+        return &this;
+    }
     ~MessageBuffer(){delete partialMessageHeader;};
     void setReadCount(int readCount){
     	this->readCount = readCount;
