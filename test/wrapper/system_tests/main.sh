@@ -407,6 +407,10 @@ test_case "test Chinese" "python ./chinese/chinese_analyzer.py $SRCH2_ENGINE"
 
 sleep 3
 
+test_case "test Chinese parser" "python chinese_parser/chinese_parser.py $SRCH2_ENGINE chinese_parser/queryResults.txt"
+
+sleep 3
+
 test_case "adapter_mysql" "python ./adapter_mysql/adapter_mysql.py $SRCH2_ENGINE \
     ./adapter_sqlite/testCreateIndexes_sql.txt ./adapter_sqlite/testCreateIndexes.txt \
     ./adapter_sqlite/testRunListener_sql.txt ./adapter_sqlite/testRunListener.txt \
