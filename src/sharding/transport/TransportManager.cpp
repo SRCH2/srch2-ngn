@@ -310,7 +310,7 @@ bool TransportManager::receiveMessage(int fd, TransportCallback *cb, int comingB
 			readBuffer.timeToWait += 2;
 			cb->conn->unlockWrite();
 			if(comingBack != -1 && readBuffer.timeToWait < 12){
-				return receiveMessage(fd, cb, comingBack + 1);
+				return receiveMessage(fd, cb, -1);
 			}else{
 				return true;
 			}
