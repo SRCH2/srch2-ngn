@@ -174,7 +174,7 @@ private:
 			MIGRATION_STATUS migrationResult);
 	void notifySHMAndCleanup(string sessionKey, MIGRATION_STATUS migrationResult);
 	void busyWaitWithTimeOut(const MigrationSessionInfo& currentSessionInfo,
-			MIGRATION_STATE expectedState, int waittime = 5);
+			MIGRATION_STATE expectedState, int waittime = 10);
 	// Hash function for key of type ShardId to be used by boost::unordered_map
 	string getSessionKey( const ClusterShardId& shardId, unsigned node) const
 	{

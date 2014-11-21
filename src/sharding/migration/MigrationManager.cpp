@@ -603,7 +603,7 @@ void MigrationService::sendShard(ClusterShardId shardId, unsigned destinationNod
 	}
 
 	if (currentSessionInfo.status != MM_STATE_INIT_ACK_RCVD ) {
-		Logger::debug("Unable to migrate shard ..destination node did not respond");
+		Logger::debug("Unable to migrate shard ..destination node did not respond to the handshaking.");
 		migrationMgr->notifySHMAndCleanup(sessionKey, MM_STATUS_FAILURE);
 		return;
 	}
@@ -615,6 +615,7 @@ void MigrationService::sendShard(ClusterShardId shardId, unsigned destinationNod
 	int sendSocket = migrationMgr->openTCPSendChannel(currentSessionInfo.remoteAddr,
 			currentSessionInfo.listeningPort);
 	if (sendSocket == -1) {
+		Logger::debug("Unable to open TCP connection to send the shard.");
 		migrationMgr->notifySHMAndCleanup(sessionKey, MM_STATUS_FAILURE);
 		return;
 	}
@@ -628,11 +629,12 @@ void MigrationService::sendShard(ClusterShardId shardId, unsigned destinationNod
 		Logger::debug("Migrating shard component %s", componentName.c_str());
 		migrationMgr->sendComponentInfoAndWaitForAck(currentSessionInfo);
 
-//		if (currentSessionInfo.status != MM_STATE_INFO_ACK_RCVD) {
-//			Logger::console("Unable to migrate shard ..destination node did not respond to begin");
-//			migrationMgr->notifySHMAndCleanup(sessionKey, MM_STATUS_FAILURE);
-//			return;
-//		}
+		migrationMgr->busyWaitWithTimeOut(currentSessionInfo, MM_STATE_INFO_ACK_RCVD);
+		if (currentSessionInfo.status != MM_STATE_INFO_ACK_RCVD) {
+			Logger::console("Unable to migrate shard ..destination node did not respond to begin");
+			migrationMgr->notifySHMAndCleanup(sessionKey, MM_STATUS_FAILURE);
+			return;
+		}
 
 		// read shard from disk and send through.
 		string filename = shard->getIndexer()->getStoredIndexDirectory() + "/" + componentName;

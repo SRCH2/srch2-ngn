@@ -524,6 +524,7 @@ MessageID_t TransportManager::_sendMessage(int fd, Message *message) {
 				"Remaining size of the message is %d", totalbufferSize);
 		// this should not happen often.
 		// Todo : V1: Send an error packet to notify that the message cannot be sent.
+		return 0;
 	}
 
 	return message->getMessageId();
