@@ -1256,7 +1256,7 @@ bool ForwardList::isValidRecordTermHitWithStemmer(const SchemaInternal *schema,
 void ForwardList::getKeywordAttributeIdsList(unsigned keywordOffset, vector<unsigned>& attributeIdsList) const{
 
 	if (attributeIdsIndexSize == 0){
-		Logger::warn("Attribute Index not found in forward index!!");
+		// Logger::warn("Attribute Index not found in forward index!!"); // TODO
 		return;
 	}
 	const uint8_t * piPtr = getKeywordAttributeIdsPointer();  // pointer to position index for the record
@@ -1681,7 +1681,7 @@ bool isAttributesListsMatching(const vector<unsigned>& list1, const vector<unsig
 void ForwardList::getKeywordAttributeIdsByteArray(unsigned keywordOffset, vector<uint8_t>& attributesVLBarray){
 
 	if (attributeIdsIndexSize == 0){
-		Logger::warn("Attribute Index not found in forward index!!");
+		// Logger::warn("Attribute Index not found in forward index!!"); // TODO
 		return;
 	}
 	const uint8_t * piPtr = getKeywordAttributeIdsPointer();  // pointer to position index for the record

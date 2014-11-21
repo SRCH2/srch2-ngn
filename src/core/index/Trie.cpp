@@ -1602,7 +1602,10 @@ void Trie::removeDeletedNodes()
     std::sort(emptyLeafNodeIds.begin(), emptyLeafNodeIds.end());
 
     TrieNode *writeViewRoot = this->getTrieRootNode_WriteView();
-    removeDeletedNodes(writeViewRoot);
+    if (removeDeletedNodes(writeViewRoot)) {
+        // the whole trie becomes empty. TODO
+        cout << "The trie becomes empty!!!\n";
+    }
 
     // remove these empty leaf nodes
     emptyLeafNodeIds.clear();
@@ -1649,6 +1652,7 @@ bool Trie::removeDeletedNodes(TrieNode *trieNode)
            // this subtrie is empty. Then delete this child,
            // shift the children from the right to the left.
            delete trieNode->getChild(childCursor);
+           cout << "Deleted a trie node. childCursor = " << childCursor << "\n";
            for (int i = childCursor; i < trieNode->getChildrenCount() - 1; i++) {
                trieNode->setChild(i, trieNode->getChild(i+1));
            }

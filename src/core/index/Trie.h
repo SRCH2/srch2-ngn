@@ -560,7 +560,6 @@ private:
     bool commited;
     bool mergeRequired;
 
-    // TODO
     vector<unsigned> emptyLeafNodeIds; // ids of leaf nodes that have an empty inverted list
     boost::mutex mutexForEmptyLeafNodeIds;
 

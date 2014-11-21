@@ -893,7 +893,7 @@ void IndexData::_save(const string &directoryName) const {
 
     // ---------- save trie -----------
     // We save the trie after saving the inverted index since
-    // the later can tell us what leaf nodes have an empty
+    // the step of merging inverted index tells us what leaf nodes have an empty
     // inverted list, thus become removable.
     if (this->trie->isMergeRequired()) {
         this->trie->merge(NULL, NULL, 0, false);
