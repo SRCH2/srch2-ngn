@@ -168,7 +168,7 @@ int TransportManager::readMessageInterrupted(Message * message, int fd, MessageB
 		readBuffer = __messageBuffer.partialMessageHeader+__messageBuffer.sizeOfPartialMsgHrd;
 	} else{ // reading message body
 		byteToRead = __messageBuffer.msg->getBodySize() - __messageBuffer.getReadCount();
-		readBuffer = __messageBuffer.msg->getMessageBody();
+		readBuffer = __messageBuffer.msg->getMessageBody() + __messageBuffer.getReadCount();
 	}
 //	char *buffer = (char *) message + __messageBuffer.sizeOfPartialMsgHrd;
 	char * buffer = new char[byteToRead];
@@ -278,7 +278,13 @@ int TransportManager::readMessageInterrupted(Message * message, int fd, MessageB
  *    true : We should keep listening to the event on this socket
  *    false: There was some error and we should not listen to the event on this socket.
  */
-
+/*
+ * Note :
+ * comingBack value is :
+ * 1. == 0 is it's coming from lib event
+ * 2. == -1, when the caller is asking not to call recursively at all.
+ * 3. > 0 , this variable gives the stack depth
+ */
 bool TransportManager::receiveMessage(int fd, TransportCallback *cb, int comingBack) {
 	if( fd != cb->conn->fd) {
 		//major error
@@ -292,30 +298,30 @@ bool TransportManager::receiveMessage(int fd, TransportCallback *cb, int comingB
 //	readBuffer.lockForRead();
 	cb->conn->lockRead();
 
-	if(readBuffer.getPossibleAvailableDataCount() > 0){
-		readBuffer.setPossibleAvailableDataCount(0);
-	}
-	if(comingBack != 0){
-		int rc = checkSocketIsReadyForRead(cb->conn->fd, readBuffer.timeToWait);
-		if (rc == -1) {
-			// there was an error. We cannot continue to read on this socket.
-			Logger::sharding(Logger::Error, "TM | Read. Msg. Socket is not ready.");
-			readBuffer.timeToWait = 1;
-			cb->conn->unlockRead();
-			return false;
-		}else if (rc == 0){
-			readBuffer.timeToWait += 2;
-			if(readBuffer.timeToWait > 12){
-				readBuffer.timeToWait = 12;
-			}
-			cb->conn->unlockRead();
-			if(comingBack != -1 && readBuffer.timeToWait < 12){
-				return receiveMessage(fd, cb, comingBack + 1);
-			}else{
-				return true;
-			}
-		}
-	}
+//	if(readBuffer.getPossibleAvailableDataCount() > 0){
+//		readBuffer.setPossibleAvailableDataCount(0);
+//	}
+//	if(comingBack != 0){
+//		int rc = checkSocketIsReadyForRead(cb->conn->fd, readBuffer.timeToWait);
+//		if (rc == -1) {
+//			// there was an error. We cannot continue to read on this socket.
+//			Logger::sharding(Logger::Error, "TM | Read. Msg. Socket is not ready.");
+//			readBuffer.timeToWait = 1;
+//			cb->conn->unlockRead();
+//			return false;
+//		}else if (rc == 0){
+//			readBuffer.timeToWait += 2;
+//			if(readBuffer.timeToWait > 12){
+//				readBuffer.timeToWait = 12;
+//			}
+//			cb->conn->unlockRead();
+//			if(comingBack != -1 && readBuffer.timeToWait < 12){
+//				return receiveMessage(fd, cb, comingBack + 1);
+//			}else{
+//				return true;
+//			}
+//		}
+//	}
 
 
 
@@ -330,12 +336,12 @@ bool TransportManager::receiveMessage(int fd, TransportCallback *cb, int comingB
 		if(status != 0){
 			if(status == 1){ // come back later
 				cb->conn->unlockRead();
-				if(comingBack != -1){
-					return receiveMessage(fd, cb, comingBack + 1);
-				}else{
-					return true;
-				}
-//				return true;
+//				if(comingBack != -1){
+//					return receiveMessage(fd, cb, comingBack + 1);
+//				}else{
+//					return true;
+//				}
+				return true;
 			}else if (status == -1){
 				Logger::sharding(Logger::Error, "TM | Rec.Msg. Failed to read message header, status %d", status);
 			}
@@ -380,12 +386,12 @@ bool TransportManager::receiveMessage(int fd, TransportCallback *cb, int comingB
 		if(status != 0){
 			if(status == 1){ // come back later
 				cb->conn->unlockRead();
-				if(comingBack != -1){
-					return receiveMessage(fd, cb, comingBack + 1);
-				}else{
-					return true;
-				}
-//				return true;
+//				if(comingBack != -1){
+//					return receiveMessage(fd, cb, comingBack + 1);
+//				}else{
+//					return true;
+//				}
+				return true;
 			}else if (status == -1){
 				Logger::sharding(Logger::Error, "TM | Rec.Msg. Failed to read message body, status %d", status);
 			}
@@ -403,19 +409,17 @@ bool TransportManager::receiveMessage(int fd, TransportCallback *cb, int comingB
 
 
 	if(completeMessage != NULL){
-		int possibleDataForReadCount = readBuffer.getPossibleAvailableDataCount();
 		readBuffer.timeToWait = 1;
 		cb->conn->unlockRead();
 		notifyUpstreamHandlers(completeMessage, fd, cb->conn->nodeId);
 
-		// we could read a message, if it's possible to have data, try
-		if(possibleDataForReadCount > 0){
-			return receiveMessage(fd, cb, -1);
-		}
+//		// we could read a message, if it's possible to have data, try
+//		if(possibleDataForReadCount > 0){
+//			return receiveMessage(fd, cb, -1);
+//		}
 	}else{
 		cb->conn->unlockRead();
 	}
-
 
 	return true;
 }
