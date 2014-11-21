@@ -328,7 +328,7 @@ bool TransportManager::receiveMessage(int fd, TransportCallback *cb) {
 					if(status == 1) {
 						// we will come back again for the remaining data.
 						Logger::sharding(Logger::Detail, "TM | Rec.Msg. Message body is read partially. It was going to be %d bytes. %d bytes read so far."
-								, status, readBuffer.msg->getBodySize(), readBuffer.readCount);
+								, readBuffer.msg->getBodySize(), readBuffer.readCount);
 						break;
 					}else if (status == 2){
 //						continue;
@@ -337,7 +337,7 @@ bool TransportManager::receiveMessage(int fd, TransportCallback *cb) {
 					} else if (status == -1) {
 						// there was an error. We cannot continue to read on this socket.
 						Logger::sharding(Logger::Error, "TM | Rec.Msg. Failed to read message body, status %d. It was going to be %d bytes. %d bytes read so far."
-								, status, readBuffer.msg->getBodySize(), readBuffer.readCount);
+								, readBuffer.msg->getBodySize(), readBuffer.readCount);
 						readBuffer.lock = false;
 						return false;
 					}
