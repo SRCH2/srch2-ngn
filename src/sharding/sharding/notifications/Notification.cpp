@@ -204,7 +204,7 @@ bool ShardingNotification::send(SP(ShardingNotification) notification){
 	}
 	if(notification->messageType() == ShardingNewNodeReadMetadataReplyMessageType ||
 	        notification->messageType() == ShardingNewNodeReadMetadataRequestMessageType){
-	    if(notification->getSrc().nodeId != notification->getDest().nodeId){
+	    if(notification->getSrc().nodeId == notification->getDest().nodeId){
 	        ASSERT(false);
 	        return false;
 	    }
