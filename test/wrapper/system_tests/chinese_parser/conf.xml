@@ -1,0 +1,101 @@
+<?xml version="1.0" encoding="UTF-8" standalone="yes"?>
+<config>
+    <srch2Home>./</srch2Home>
+
+    <listeningHostname>127.0.0.1</listeningHostname>
+    <listeningPort>8087</listeningPort>
+
+    <dataDir>./data/chinese_parser/</dataDir>
+
+    <dataFile>./chinese/data.json</dataFile>
+
+    <maxSearchThreads>2</maxSearchThreads>
+
+
+    <indexConfig>
+
+        <supportSwapInEditDistance>false</supportSwapInEditDistance> 
+
+        <fieldBoost></fieldBoost>
+
+
+        <defaultQueryTermBoost>1</defaultQueryTermBoost>
+
+    </indexConfig>
+
+
+    <query>
+        <rankingAlgorithm>
+            <recordScoreExpression>idf_score*doc_boost</recordScoreExpression>
+        </rankingAlgorithm>
+
+        <fuzzyMatchPenalty>0.5</fuzzyMatchPenalty>
+
+        <queryTermLengthBoost>0.5</queryTermLengthBoost>
+
+        <prefixMatchPenalty>0.95</prefixMatchPenalty>
+
+        <cacheSize>65536000</cacheSize>
+        <rows>10</rows>
+        <fieldBasedSearch>0</fieldBasedSearch>
+
+        <searcherType>0</searcherType>
+
+        <queryTermFuzzyType>0</queryTermFuzzyType>
+
+
+
+        <queryTermPrefixType>0</queryTermPrefixType>
+
+
+        <queryResponseWriter>
+            <responseFormat>0</responseFormat>
+
+
+
+            <responseContent type="0"></responseContent>
+
+        </queryResponseWriter>
+    </query>
+
+    <updatehandler>
+        <maxDocs>15000000</maxDocs>
+
+        <maxMemory>100000</maxMemory>
+
+        <mergePolicy>
+            <mergeEveryNSeconds>1</mergeEveryNSeconds>
+            <mergeEveryMWrites>1</mergeEveryMWrites>
+        </mergePolicy>
+
+    </updatehandler>
+
+    <schema>
+
+        <fields>
+            <field name="title" type="text" searchable="true" />
+        </fields>
+
+        <uniqueKey>id</uniqueKey>
+
+        <facetEnabled>false</facetEnabled>
+
+        <types>
+            <fieldType name="text_chinese" dictionary="./chinese/srch2_dictionary_zh_cn.bin" >
+                <analyzer>
+                    <filter name="StopFilter" words="./chinese/srch2_stop_words_zh_cn.txt" />
+                    <filter name="protectedKeyWordsFilter" words="./chinese/srch2_protected_words.txt" />
+                </analyzer>
+            </fieldType>
+        </types>
+    </schema>
+
+    <updateLog>
+        <logLevel>3</logLevel>
+
+        <accessLogFile>./data/chinese_parser/log.txt</accessLogFile>
+    </updateLog>
+
+</config>
+
+

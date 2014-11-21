@@ -1,0 +1,1 @@
+chinese/srch2_protected_words.txt
