@@ -109,7 +109,7 @@ private:
     // private merge function. Writer lock should be acquired before calling it.
     void _merge();
 	void mergeFeedbackList(UserFeedbackList *feedbackList);
-	void fixQueryIdsInFeedbackIndex();
+	void reassignQueryIdsInFeedbackIndex();
 };
 
 struct UserFeedbackInfo{

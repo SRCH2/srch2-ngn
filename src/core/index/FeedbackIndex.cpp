@@ -108,7 +108,7 @@ void FeedbackIndex::addFeedback(const string& query, unsigned recordId, unsigned
 
 				// fix queryIds in Trie before calling getKeywordCorrespondingPathToTrieNode_WriteView API.
 				if (queryTrie->needToReassignKeywordIds())
-					fixQueryIdsInFeedbackIndex();
+					reassignQueryIdsInFeedbackIndex();
 
 				// Logically delete the oldest query by marked inverted list offset as -1.
 				TrieNodePath tp;
@@ -146,12 +146,14 @@ void FeedbackIndex::addFeedback(const string& query, unsigned recordId, unsigned
 			ASSERT(feedbackListOffset == 0);
 			queryAgeOrder[feedbackListOffset].prevIndexId = -1;
 			queryAgeOrder[feedbackListOffset].nextIndexId = -1;
+			//query keywordIds can be reassigned so it is important to read the correct Id from Terminal node pointer.
 			queryAgeOrder[feedbackListOffset].queryId = terminalNode->getId();
 		} else {
 			// append to end of the tail.
 			queryAgeOrder[tailId].nextIndexId = feedbackListOffset;
 			queryAgeOrder[feedbackListOffset].prevIndexId = tailId;
 			queryAgeOrder[feedbackListOffset].nextIndexId = -1;
+			//query keywordIds can be reassigned so it is important to read the correct Id from Terminal node pointer.
 			queryAgeOrder[feedbackListOffset].queryId = terminalNode->getId();
 			tailId = feedbackListOffset;
 		}
@@ -337,7 +339,7 @@ void FeedbackIndex::_merge() {
 
 		// reassign id is not thread safe so we need to grab an exclusive lock
 		boost::unique_lock<boost::shared_mutex> lock(readerWriterLock);
-		fixQueryIdsInFeedbackIndex();
+		reassignQueryIdsInFeedbackIndex();
 	}
 
 	//3. Trie should be merged last because it is a top level data structure.
@@ -346,7 +348,9 @@ void FeedbackIndex::_merge() {
 	mergeRequired = false;
 }
 
-void FeedbackIndex::fixQueryIdsInFeedbackIndex() {
+// Reassign the QueryIds in Feedback Index.
+// First reassign the keywordIds (queryIds) in trie and then reassign queryIds in the linked list.
+void FeedbackIndex::reassignQueryIdsInFeedbackIndex() {
 	map<TrieNode *, unsigned> trieNodeIdMapper;
 	queryTrie->reassignKeywordIds(trieNodeIdMapper);
 	for (map<TrieNode *, unsigned>::iterator iter = trieNodeIdMapper.begin();
