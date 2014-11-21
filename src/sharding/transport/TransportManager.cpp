@@ -177,6 +177,7 @@ int TransportManager::readMessageInterrupted(Message * message, int fd, MessageB
 	if(status == 1){ // either socket wasn't ready or partial read of the message header
 		if(byteReadCount == 0){ // socket not ready
 			__messageBuffer.numberOfRetriesWithZeroRead ++;
+			__messageBuffer.timeToWait += 2;
 			if(__messageBuffer.numberOfRetriesWithZeroRead >= 10){
 				// if we still have some bytes to read after max trial, then it is an error
 				Logger::sharding(Logger::Error, "TM | Read. Msg. Intrptd. There is still some bytes to read (%d) even after max trial. Error.", byteToRead);
@@ -187,6 +188,7 @@ int TransportManager::readMessageInterrupted(Message * message, int fd, MessageB
 		ASSERT(byteReadCount > 0);
 		// we could at least read one character
 		__messageBuffer.numberOfRetriesWithZeroRead = 0;
+		__messageBuffer.timeToWait = 1;
 		memcpy(readBuffer,
 				buffer, byteReadCount);
 		// because message is not complete we don't write it in message, instead we write it in partial copy in buffer
@@ -213,6 +215,7 @@ int TransportManager::readMessageInterrupted(Message * message, int fd, MessageB
 		ASSERT(byteReadCount == byteToRead);
 		memcpy(readBuffer, buffer, byteReadCount);
 		__messageBuffer.numberOfRetriesWithZeroRead = 0;
+		__messageBuffer.timeToWait = 1;
 		if(message != NULL){
 			__messageBuffer.sizeOfPartialMsgHrd = 0;
 			memcpy((char *)message, __messageBuffer.partialMessageHeader, sizeof(Message));
@@ -223,9 +226,11 @@ int TransportManager::readMessageInterrupted(Message * message, int fd, MessageB
 		}
 		return 1;
 	}else if (status == -1){
+		__messageBuffer.timeToWait = 1;
 		return -1;
 	}
 	ASSERT(false);
+	__messageBuffer.timeToWait = 1;
 	return -1;
 
 
@@ -291,19 +296,20 @@ bool TransportManager::receiveMessage(int fd, TransportCallback *cb, int comingB
 		readBuffer.setPossibleAvailableDataCount(0);
 	}
 	if(comingBack != 0){
-		int timeToWait = 1;
-		if(comingBack > 1){
-			timeToWait = comingBack * 2;
+		if(readBuffer.timeToWait > 10){
+			readBuffer.timeToWait = 10;
 		}
-		int rc = checkSocketIsReadyForRead(cb->conn->fd, timeToWait);
-		if (rc == -1 || (rc == 0 && comingBack > 10)) {
+		int rc = checkSocketIsReadyForRead(cb->conn->fd, readBuffer.timeToWait);
+		if (rc == -1) {
 			// there was an error. We cannot continue to read on this socket.
 			Logger::sharding(Logger::Error, "TM | Read. Msg. Socket is not ready.");
+			readBuffer.timeToWait = 1;
 			cb->conn->unlockWrite();
 			return false;
 		}else if (rc == 0){
+			readBuffer.timeToWait += 2;
 			cb->conn->unlockWrite();
-			if(comingBack != -1){
+			if(comingBack != -1 && readBuffer.timeToWait < 12){
 				return receiveMessage(fd, cb, comingBack + 1);
 			}else{
 				return true;
@@ -394,17 +400,20 @@ bool TransportManager::receiveMessage(int fd, TransportCallback *cb, int comingB
 		}
 	}
 
-	int possibleDataForReadCount = readBuffer.getPossibleAvailableDataCount();
 
-	cb->conn->unlockWrite();
 
 	if(completeMessage != NULL){
+		int possibleDataForReadCount = readBuffer.getPossibleAvailableDataCount();
+		readBuffer.timeToWait = 1;
+		cb->conn->unlockWrite();
 		notifyUpstreamHandlers(completeMessage, fd, cb->conn->nodeId);
 
 		// we could read a message, if it's possible to have data, try
 		if(possibleDataForReadCount > 0){
 			return receiveMessage(fd, cb, -1);
 		}
+	}else{
+		cb->conn->unlockWrite();
 	}
 
 

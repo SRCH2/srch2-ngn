@@ -35,13 +35,14 @@ public:
     char * partialMessageHeader;
     unsigned sizeOfPartialMsgHrd;
     unsigned numberOfRetriesWithZeroRead;
+    int timeToWait;
     MessageBuffer() : msg(NULL), lock(false), readCount(0), possibleAvailableData(0),
     		partialMessageHeader(new char[sizeof(Message)]), sizeOfPartialMsgHrd(0),
-    		numberOfRetriesWithZeroRead(0){}
+    		numberOfRetriesWithZeroRead(0), timeToWait(0){}
     MessageBuffer(const MessageBuffer & msgBfr) : msg(msgBfr.msg), lock(msgBfr.lock), readCount(msgBfr.readCount),
             possibleAvailableData(msgBfr.possibleAvailableData),
             partialMessageHeader(new char[sizeof(Message)]), sizeOfPartialMsgHrd(msgBfr.sizeOfPartialMsgHrd),
-            numberOfRetriesWithZeroRead(msgBfr.numberOfRetriesWithZeroRead){
+            numberOfRetriesWithZeroRead(msgBfr.numberOfRetriesWithZeroRead), timeToWait(msgBfr.timeToWait){
         memcpy(partialMessageHeader, msgBfr.partialMessageHeader, sizeof(Message));
     }
     MessageBuffer & operator=(const MessageBuffer & msgBfr){
@@ -55,6 +56,7 @@ public:
         partialMessageHeader = new char[sizeof(Message)];
         sizeOfPartialMsgHrd = msgBfr.sizeOfPartialMsgHrd;
         numberOfRetriesWithZeroRead = msgBfr.numberOfRetriesWithZeroRead;
+        timeToWait = msgBfr.timeToWait;
         memcpy(partialMessageHeader, msgBfr.partialMessageHeader, sizeof(Message));
         return *this;
     }
