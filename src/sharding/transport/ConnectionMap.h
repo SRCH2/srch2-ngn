@@ -38,7 +38,9 @@ public:
     int timeToWait;
     MessageBuffer() : msg(NULL), lock(false), readCount(0), possibleAvailableData(0),
     		partialMessageHeader(new char[sizeof(Message)]), sizeOfPartialMsgHrd(0),
-    		numberOfRetriesWithZeroRead(0), timeToWait(0){}
+    		numberOfRetriesWithZeroRead(0), timeToWait(0){
+        memset(partialMessageHeader, 0, sizeof(Message));
+    }
     MessageBuffer(const MessageBuffer & msgBfr) : msg(msgBfr.msg), lock(msgBfr.lock), readCount(msgBfr.readCount),
             possibleAvailableData(msgBfr.possibleAvailableData),
             partialMessageHeader(new char[sizeof(Message)]), sizeOfPartialMsgHrd(msgBfr.sizeOfPartialMsgHrd),

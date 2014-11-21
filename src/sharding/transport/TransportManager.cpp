@@ -382,11 +382,12 @@ bool TransportManager::receiveMessage(int fd, TransportCallback *cb, int comingB
 		 */
 		readBuffer.msg = getMessageAllocator()->allocateMessage(msgHeader.getBodySize());
 		memcpy(readBuffer.msg, &msgHeader, sizeof(Message));
-		if(readBuffer.msg->getBodySize() == 0){
-			readBuffer.setReadCount(0);
-		}else{
+		readBuffer.sizeOfPartialMsgHrd = 0;
+		memset(readBuffer.partialMessageHeader, 0, sizeof(Message));
+		if(readBuffer.msg->getBodySize() != 0){
 			readBody = true;
 		}
+        readBuffer.setReadCount(0);
 	}else{
 		readBody = true;
 	}
