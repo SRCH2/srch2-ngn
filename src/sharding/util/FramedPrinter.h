@@ -119,6 +119,7 @@ public:
 				printEndOfRow();
 			}
 			printLine(width);
+			delete label;
 			for(unsigned rc = 0 ; rc < numCol; ++rc){
 				delete rowCells.at(rc);
 			}
