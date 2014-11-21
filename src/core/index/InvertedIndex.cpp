@@ -444,9 +444,9 @@ unsigned  InvertedIndex::workerMergeTask(RankerExpression *rankerExpression,
 		ASSERT(invertedListId < writeView->size());
 		if (invertedListId < writeView->size()) {
             int finalInvListWriteViewSize =
-               writeView->at(invertedListId)->sortAndMerge(keywordIdsWriteView->getElement(invertedListId),
-                    this->forwardIndex,forwardListDirectoryReadView, invertedListElements,
-                    totalNumberOfDocuments, rankerExpression, schema);
+                    writeView->at(invertedListId)->sortAndMerge(keywordIdsWriteView->getElement(invertedListId),
+                      this->forwardIndex,forwardListDirectoryReadView, invertedListElements,
+                      totalNumberOfDocuments, rankerExpression, schema);
             invertedListElements.clear();
 
             if (finalInvListWriteViewSize == 0) {

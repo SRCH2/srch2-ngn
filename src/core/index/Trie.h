@@ -562,6 +562,8 @@ private:
 
     vector<unsigned> emptyLeafNodeIds; // ids of leaf nodes that have an empty inverted list
     boost::mutex mutexForEmptyLeafNodeIds;
+    // check if there an empty leaf node id in the range [minId, maxId]
+    bool findEmptyLeafNodeIds(unsigned minId, unsigned maxId);
 
     friend class boost::serialization::access;
 
@@ -819,13 +821,13 @@ public:
     void print_Trie() const;
 
     void addEmptyLeafNodeId(unsigned emptyleafNodeId) {
-        // since multiple threads can call this function, we need
+        // since multiple merger worker threads can call this function, we need
         // a lock for concurrency control
         boost::unique_lock<boost::mutex> Lock(mutexForEmptyLeafNodeIds);
         this->emptyLeafNodeIds.push_back(emptyleafNodeId);
     }
     unsigned getEmptyLeafNodeIdSize() { return this->emptyLeafNodeIds.size();}
-	void applyKeywordIdMapperOnEmptyLeafNodes(map<unsigned, unsigned> &keywordIdMapper);
+    void applyKeywordIdMapperOnEmptyLeafNodes(map<unsigned, unsigned> &keywordIdMapper);
     void removeDeletedNodes();
 };
 

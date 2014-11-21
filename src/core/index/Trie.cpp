@@ -1607,8 +1607,8 @@ void Trie::removeDeletedNodes()
         cout << "The trie becomes empty!!!\n";
     }
 
-    // similar to the optioners in trie.merge(), we need to "merge"
-    // the read view and the write view
+    // similar to the operations in trie.merge(), we need to "merge"
+    // the read view and write view
     writeViewRoot->resetCopyFlag();
     this->root_readview.reset(new TrieRootNodeAndFreeList(writeViewRoot));
     if(writeViewRoot) {
@@ -1658,11 +1658,16 @@ bool Trie::removeDeletedNodes(TrieNode *trieNode)
         // Interval relationship:
         //             [minId,                  maxId]
     	// [minEmptyNodeId,    maxEmptyNodeId]
-        ASSERT(trieNode->getChild(childCursor)->getMinId() >= minEmptyNodeId);
-        int childCount = trieNode->getChildrenCount();
-        if (removeDeletedNodes(trieNode->getChild(childCursor))) {
-           // this subtrie is empty. Then delete this child,
-           // shift the children from the right to the left.
+        unsigned minId = trieNode->getChild(childCursor)->getMinId();
+        unsigned maxId = trieNode->getChild(childCursor)->getMaxId();
+        ASSERT(minEmptyNodeId <= minId);
+
+        // check if there is an empty leaf node id in the range [minId, maxId]
+        bool found = this->findEmptyLeafNodeIds(minId, maxId);
+
+        if (found && removeDeletedNodes(trieNode->getChild(childCursor))) {
+           // this subtrie is empty. Then delete this child, and
+           // shift the children from right to left.
            delete trieNode->getChild(childCursor);
            for (int i = childCursor; i < trieNode->getChildrenCount() - 1; i++) {
                trieNode->setChild(i, trieNode->getChild(i+1));
@@ -1706,6 +1711,20 @@ bool Trie::removeDeletedNodes(TrieNode *trieNode)
     // tell the caller this subtrie is not empty
     return false;
 }
+
+// the logic is similar to ForwardList::haveWordInRange()
+bool Trie::findEmptyLeafNodeIds(unsigned minId, unsigned maxId) 
+{
+  //             [minId,                  maxId]
+  // [minEmptyNodeId,    maxEmptyNodeId]
+  std::vector<unsigned>::iterator iter = lower_bound(emptyLeafNodeIds.begin(),
+						     emptyLeafNodeIds.end(),
+						     minId);
+  if ((iter != emptyLeafNodeIds.end()) && (*iter <= maxId))
+      return true;
+  return false;
+}
+
 
 const std::vector<unsigned> *Trie::getOldIdToNewIdMapVector() const
 {
