@@ -226,18 +226,18 @@ Cluster_Writeview::Cluster_Writeview(const Cluster_Writeview & copy){
 	}
 	this->cores = copy.cores;
 
-	for(unsigned i = 0 ; i < clusterShards.size(); ++i){
+	for(unsigned i = 0 ; i < copy.clusterShards.size(); ++i){
 		ClusterShard_Writeview * shard = new ClusterShard_Writeview(*(copy.clusterShards.at(i)));
 		this->clusterShards.push_back(shard);
 	}
 
-	for(unsigned i = 0 ; i < nodeShards.size(); ++i){
+	for(unsigned i = 0 ; i < copy.nodeShards.size(); ++i){
 		NodeShard_Writeview * shard = new NodeShard_Writeview( *(copy.nodeShards.at(i)));
 		this->nodeShards.push_back(shard);
 	}
-	this->clusterShards = copy.clusterShards;
+
+	this->clusterShardsCursor = copy.clusterShardsCursor;
 	this->clusterShardIdIndexes = copy.clusterShardIdIndexes;
-	this->nodeShards = copy.nodeShards;
 	// Contains an entry for each one of those cluster shards that exist on this node
 	// with server information.
 	// ShardId on this node => server info

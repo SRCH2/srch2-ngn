@@ -84,12 +84,12 @@ bool ClusterNodes_Writeview::getNodeState(const NodeId & nodeId, ShardingNodeSta
 ResourceMetadataManager::ResourceMetadataManager(){
 	// initialize writeview
 	pthread_spin_init(&m_spinlock, 0);
-	boost::unique_lock<boost::mutex>(writeviewMutex);
+	boost::unique_lock<boost::mutex> xLock(writeviewMutex);
 	writeview = NULL;
 }
 
 ResourceMetadataManager::~ResourceMetadataManager(){
-	boost::unique_lock<boost::mutex>(writeviewMutex);
+	boost::unique_lock<boost::mutex> xLock(writeviewMutex);
 	if(writeview != NULL){
 		delete writeview;
 	}
@@ -126,7 +126,7 @@ void ResourceMetadataManager::resolve(SP(MetadataReport::REQUEST) readRequest){
 		ASSERT(false);
 		return;
 	}
-	SP(MetadataReport) report = SP(MetadataReport)(new MetadataReport(this->writeview));
+	SP(MetadataReport) report = SP(MetadataReport)(new MetadataReport(new Cluster_Writeview(*(this->writeview))));
 	report->setSrc(NodeOperationId(this->writeview->currentNodeId));
 	report->setDest(readRequest->getSrc());
 	ShardingNotification::send(report);
