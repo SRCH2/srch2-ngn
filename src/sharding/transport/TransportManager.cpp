@@ -109,6 +109,11 @@ void * TransportManager::notifyUpstreamHandlers(Message *msg, int fd, NodeId  no
 
 int TransportManager::readDataFromSocket(int fd, char *buffer, const int byteToRead, int *byteReadCount) {
 
+	if(byteToRead > 18000){
+		Logger::sharding(Logger::Error, "This message is suspicious. fd = %d, byteToRead = %d",
+				fd, byteToRead);
+		ASSERT(false);
+	}
 	int readByte = recv(fd, buffer, byteToRead, MSG_DONTWAIT);
 
 	if(readByte == 0) {
