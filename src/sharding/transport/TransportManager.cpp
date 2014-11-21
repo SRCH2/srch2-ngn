@@ -158,15 +158,17 @@ int TransportManager::readDataFromSocket(int fd, char *buffer, const int byteToR
  * | Message Header | Rest of Body |
  * ---------------------------------
  */
-int TransportManager::readMessageHeader(Message * message,  int fd) {
+int TransportManager::readMessageHeader(Message * message,  int fd, int retryCountArg) {
 
 	char *buffer = (char *) message;
 	int byteToRead = sizeof(Message);
 	int byteReadCount = 0;
-	int retryCount = 10;
-
+	int retryCount = retryCountArg;
 	while(retryCount) {
 		int status = readDataFromSocket(fd, buffer, byteToRead, &byteReadCount);
+		if(byteReadCount == 0 && status == 1 && retryCountArg == 1){
+			return 1;
+		}
 		if (status != 1) {
 			return status;
 		}
@@ -242,7 +244,15 @@ bool TransportManager::receiveMessage(int fd, TransportCallback *cb) {
 	        /*
 	         *  1. read the message header which is a fixed size block.
 	         */
-	        int status = readMessageHeader(&msgHeader, fd);
+	        int status = -1 ;
+	        if(inputMustExist){
+				status = readMessageHeader(&msgHeader, fd);
+	        }else{
+	        	status = readMessageHeader(&msgHeader, fd, 1);
+	        }
+	        if(! inputMustExist && status == 1){
+	        	break;
+	        }
 	        // status can be -1, 0 or 2
 	        if(status == 0){
 	            if(inputMustExist){

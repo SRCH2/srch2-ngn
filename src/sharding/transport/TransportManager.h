@@ -145,7 +145,7 @@ private:
     * | Message Header | Rest of Body |
     * ---------------------------------
     */
-   int readMessageHeader(Message *message,  int fd);
+   int readMessageHeader(Message *message,  int fd, int retryCount = 10);
    /*
     *   The function reads the message body which follows the message header.
     */
