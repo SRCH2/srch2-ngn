@@ -478,7 +478,7 @@ void MigrationService::receiveShard(ClusterShardId shardId, unsigned remoteNode)
 		migrationMgr->sendComponentDoneMsg(currentSessionInfo);
 	}
 
-	migrationMgr->sendComponentDoneMsg(currentSessionInfo);
+//	migrationMgr->sendComponentDoneMsg(currentSessionInfo);
 
 	// create an empty shard
 	if (emptyshard) {
