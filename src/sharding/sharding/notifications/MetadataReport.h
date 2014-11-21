@@ -19,6 +19,11 @@ public:
 		this->writeview = writeview;
 	}
 	MetadataReport(){};
+	~MetadataReport(){
+		if(this->writeview != NULL){
+			delete this->writeview;
+		}
+	};
 
 	bool resolveNotification(SP(ShardingNotification) _notif);
 

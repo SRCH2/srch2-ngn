@@ -84,12 +84,12 @@ bool ClusterNodes_Writeview::getNodeState(const NodeId & nodeId, ShardingNodeSta
 ResourceMetadataManager::ResourceMetadataManager(){
 	// initialize writeview
 	pthread_spin_init(&m_spinlock, 0);
-	boost::unique_lock<boost::mutex> xLock(writeviewMutex);
+	boost::unique_lock<boost::shared_mutex> xLock(writeviewMutex);
 	writeview = NULL;
 }
 
 ResourceMetadataManager::~ResourceMetadataManager(){
-	boost::unique_lock<boost::mutex> xLock(writeviewMutex);
+	boost::unique_lock<boost::shared_mutex> xLock(writeviewMutex);
 	if(writeview != NULL){
 		delete writeview;
 	}
