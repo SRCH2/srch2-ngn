@@ -182,8 +182,9 @@ namespace srch2
     	 *         f  = number of times a record was submitted as a feedback for this query.
     	 *         K =  Constant factor deciding Timespan in second when recency factor will be 0.
     	 *              We choose 3 months. i.e K = (3 * 30 * 24 * 60 * 60) = 7776000
-    	 *              recency factor is inverted square curve.
-    	 *              ** Google => 1 - ( x / 7776000)^2
+    	 *              recency factor is inverted square curve (1-x^2). It decays slowly compared to
+    	 *              inverse function (1/x) or linear function (1-x).
+    	 *              Google "1 - ( x / 7776000)^2" to see the curve.
     	 *
     	 */
     	float feedbackBoost = 0.0;
