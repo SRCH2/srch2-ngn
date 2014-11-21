@@ -173,6 +173,11 @@ int TransportManager::readMessageInterrupted(Message * message, int fd, MessageB
 		readBuffer = __messageBuffer.partialMessageHeader+__messageBuffer.sizeOfPartialMsgHrd;
 	} else{ // reading message body
 		byteToRead = __messageBuffer.msg->getBodySize() - __messageBuffer.getReadCount();
+		if(byteToRead > 18000){
+			Logger::sharding(Logger::Error, "Body size : %d, read count = %d",  (int)__messageBuffer.msg->getBodySize(),
+					__messageBuffer.getReadCount());
+			ASSERT(false);
+		}
 		readBuffer = __messageBuffer.msg->getMessageBody() + __messageBuffer.getReadCount();
 	}
 //	char *buffer = (char *) message + __messageBuffer.sizeOfPartialMsgHrd;
