@@ -737,6 +737,10 @@ INDEXWRITE_RETVAL IndexData::_merge(bool updateHistogram) {
     // If some leaf nodes have an empty inverted list, we need to get rid of them
     if (this->trie->getEmptyLeafNodeIdSize() > 0) {
         // we need to acquire the global lock to block all other readers and writers
+        // TODO for future optimization: Instead of taking global rw lock.
+        // We could take the same approach as write operation. i.e., copying the
+        // affected TrieNode paths. Let the read view read the old paths
+        // (which will be freed after the last reader)
         boost::unique_lock<boost::shared_mutex> lock(globalRwMutexForReadersWriters);
         this->trie->removeDeletedNodes();
     }

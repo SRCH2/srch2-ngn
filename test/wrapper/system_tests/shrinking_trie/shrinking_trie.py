@@ -40,19 +40,19 @@ def shutdownSrch2Engine():
 
 #Send the insert command to the engine
 def sendInsertQuery(id):
-	status1, output1 = commands.getstatusoutput('curl "http://localhost:' + str(port) + '/docs"  -i -X PUT -d \'{"id":"' + str(id) + '","name":"test", "category":"trie", "relevance":"1"}\'')
+	status1, output1 = commands.getstatusoutput('curl "http://127.0.0.1:' + str(port) + '/docs"  -i -X PUT -d \'{"id":"' + str(id) + '","name":"'+str(id)+'test' + str(id) + '", "category":"trie", "relevance":"1"}\'')
 	#print 'status1 : ' + str(status1) + ' output1 : ' + str(output1)
 
 #Send  the save command to the engine
 def sendSaveCmd():
-	status1, output1 = commands.getstatusoutput('curl -i "http://localhost:' + str(port) + '/save" -X PUT')
+	status1, output1 = commands.getstatusoutput('curl -i "http://127.0.0.1:' + str(port) + '/save" -X PUT')
 	#print 'status1 : ' + str(status1) + ' output1 : ' + str(output1)
 	time.sleep(1)
 
 #Send the delelte command to the engine
 def sendDeleteQuery(id):
-	#print 'curl "http://localhost:' + str(port) + '/docs?id=' + str(id) + '" -i -X DELETE'
-	status1, output1 = commands.getstatusoutput('curl "http://localhost:' + str(port) + '/docs?id=' + str(id) + '" -i -X DELETE')
+	#print 'curl "http://127.0.0.1:' + str(port) + '/docs?id=' + str(id) + '" -i -X DELETE'
+	status1, output1 = commands.getstatusoutput('curl "http://127.0.0.1:' + str(port) + '/docs?id=' + str(id) + '" -i -X DELETE')
 	#print 'status1 : ' + str(status1) + ' output1 : ' + str(output1)
 
 #Insert "totalCount" of records into the engine and get the size of trie file
@@ -91,14 +91,32 @@ if __name__ == '__main__':
 	binary_path = sys.argv[1]
 	startSrch2Engine()
 	triePath = "data/shrinking_trie/CL1.idx"
-	#Start the test cases
+
+        # insert 400 records
 	sizeAfterInsert = insertRecords(400, triePath)
-	sizeAfterRemove1 = removeRecords(0,100, triePath)
+
+        # delete the first 100 records
+	sizeAfterRemove1 = removeRecords(0, 100, triePath)
 	compareSize(sizeAfterInsert, sizeAfterRemove1)
-	sizeAfterRemove2 = removeRecords(200,300, triePath)
-	compareSize(sizeAfterRemove1, sizeAfterRemove2)
-	sizeAfterRemove3 = removeRecords(300,400, triePath)
-	compareSize(sizeAfterRemove2, sizeAfterRemove3)
+
+        # delete the second 100 records
+	sizeAfterRemove2 = removeRecords(100, 200, triePath)
+	compareSize(sizeAfterInsert, sizeAfterRemove2)
+
+        # delete the third 100 records
+	sizeAfterRemove3 = removeRecords(200, 300, triePath)
+	compareSize(sizeAfterRemove1, sizeAfterRemove3)
+
+        # delete the last 100 records
+	sizeAfterRemove4 = removeRecords(300, 400, triePath)
+	compareSize(sizeAfterRemove2, sizeAfterRemove4)
+
+        # Insert them again
+	sizeAfterInsert = insertRecords(400, triePath)
+
+        # delete the first 100 records
+	sizeAfterRemove1 = removeRecords(0, 100, triePath)
+	compareSize(sizeAfterInsert, sizeAfterRemove1)
 
 	print '=============================='
 	shutdownSrch2Engine()
