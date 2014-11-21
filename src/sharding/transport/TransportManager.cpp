@@ -287,23 +287,31 @@ bool TransportManager::receiveMessage(int fd, TransportCallback *cb, int comingB
 //	readBuffer.lockForRead();
 	cb->conn->lockWrite();
 
+	if(readBuffer.getPossibleAvailableDataCount() > 0){
+		readBuffer.setPossibleAvailableDataCount(0);
+	}
 	if(comingBack != 0){
 		int timeToWait = 1;
 		if(comingBack > 1){
 			timeToWait = comingBack * 2;
 		}
-		if (checkSocketIsReadyForRead(cb->conn->fd, timeToWait) == -1) {
+		int rc = checkSocketIsReadyForRead(cb->conn->fd, timeToWait);
+		if (rc == -1 || (rc == 0 && comingBack > 10)) {
 			// there was an error. We cannot continue to read on this socket.
 			Logger::sharding(Logger::Error, "TM | Read. Msg. Socket is not ready.");
 			cb->conn->unlockWrite();
 			return false;
+		}else if (rc == 0){
+			cb->conn->unlockWrite();
+			if(comingBack != -1){
+				return receiveMessage(fd, cb, comingBack + 1);
+			}else{
+				return true;
+			}
 		}
 	}
 
 
-	if(readBuffer.getPossibleAvailableDataCount() > 0){
-		readBuffer.setPossibleAvailableDataCount(0);
-	}
 
 	Message* completeMessage = NULL;
 	bool readBody = false;
@@ -635,6 +643,7 @@ int TransportManager::checkSocketIsReady(int socket, bool checkForRead, int time
 	}
 	if (result == -1) {
 		perror("error while waiting for a socket to become available for write!");
+		return -1;
 	}
 	return FD_ISSET(socket,&selectSet) ? 1 : 0;
 }
