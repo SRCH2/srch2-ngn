@@ -17,10 +17,10 @@ class MetadataReport: public ShardingNotification{
 public:
 	MetadataReport(Cluster_Writeview * writeview){
 		this->writeview = writeview;
-		this->shouldDeleteWriteview = false;
+		this->shouldDeleteWriteview = true;
 	}
 	MetadataReport(){
-	    this->shouldDeleteWriteview = true;// because it's going to be allocated in deserialize
+	    this->shouldDeleteWriteview = false;// because it's going to be allocated in deserialize
 	};
 	~MetadataReport(){
 		if(this->writeview != NULL && shouldDeleteWriteview){

@@ -82,6 +82,9 @@ public:
 			printEndOfRow();
 			lineNumber++;
 		}
+		for(unsigned cIdx = 0; cIdx < headerCells.size(); ++cIdx){
+			delete headerCells.at(cIdx);
+		}
 		printDoubleLine(width);
 	}
 	void startFilling(){

@@ -45,6 +45,12 @@ ClusterResourceMetadata_Readview::ClusterResourceMetadata_Readview(const Cluster
 
 ClusterResourceMetadata_Readview::~ClusterResourceMetadata_Readview(){
 
+	for(unsigned coreIdx = 0; coreIdx < allCores.size() ; ++coreIdx){
+		unsigned coreId = allCores.at(coreIdx)->getCoreId();
+		delete corePartitioners[coreId];
+		delete localShardContainers[coreId];
+	}
+
 	pthread_t rvReleaseThread;
 	unsigned * vid = new unsigned;
 	*vid = this->versionId;

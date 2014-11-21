@@ -91,6 +91,7 @@ bool LockManager::canAcquireLock(const ClusterShardId & shardId, const LockLevel
 	lockManagerMutex.lock();
 	LockBatch * lockBatch = LockBatch::generateLockBatch(shardId, lockLevel);
 	bool result = canAcquireAllBatch(lockBatch);
+	delete lockBatch;
 	lockManagerMutex.unlock();
 	return result;
 }
