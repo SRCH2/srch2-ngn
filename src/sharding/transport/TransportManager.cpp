@@ -274,7 +274,7 @@ int TransportManager::readMessageInterrupted(Message * message, int fd, MessageB
  *    false: There was some error and we should not listen to the event on this socket.
  */
 
-bool TransportManager::receiveMessage(int fd, TransportCallback *cb, bool comingBack) {
+bool TransportManager::receiveMessage(int fd, TransportCallback *cb, int comingBack) {
 	if( fd != cb->conn->fd) {
 		//major error
 		Logger::warn("connection mismatch: received data on wrong socket!!");
@@ -287,8 +287,12 @@ bool TransportManager::receiveMessage(int fd, TransportCallback *cb, bool coming
 //	readBuffer.lockForRead();
 	cb->conn->lockWrite();
 
-	if(comingBack){
-		if (checkSocketIsReadyForRead(cb->conn->fd) == -1) {
+	if(comingBack != 0){
+		int timeToWait = 1;
+		if(comingBack > 1){
+			timeToWait = comingBack * 2;
+		}
+		if (checkSocketIsReadyForRead(cb->conn->fd, timeToWait) == -1) {
 			// there was an error. We cannot continue to read on this socket.
 			Logger::sharding(Logger::Error, "TM | Read. Msg. Socket is not ready.");
 			cb->conn->unlockWrite();
@@ -312,7 +316,11 @@ bool TransportManager::receiveMessage(int fd, TransportCallback *cb, bool coming
 		if(status != 0){
 			if(status == 1){ // come back later
 				cb->conn->unlockWrite();
-				return receiveMessage(fd, cb, true);
+				if(comingBack != -1){
+					return receiveMessage(fd, cb, comingBack + 1);
+				}else{
+					return true;
+				}
 //				return true;
 			}else if (status == -1){
 				Logger::sharding(Logger::Error, "TM | Rec.Msg. Failed to read message header, status %d", status);
@@ -358,7 +366,11 @@ bool TransportManager::receiveMessage(int fd, TransportCallback *cb, bool coming
 		if(status != 0){
 			if(status == 1){ // come back later
 				cb->conn->unlockWrite();
-				return receiveMessage(fd, cb, true);
+				if(comingBack != -1){
+					return receiveMessage(fd, cb, comingBack + 1);
+				}else{
+					return true;
+				}
 //				return true;
 			}else if (status == -1){
 				Logger::sharding(Logger::Error, "TM | Rec.Msg. Failed to read message body, status %d", status);
@@ -383,7 +395,7 @@ bool TransportManager::receiveMessage(int fd, TransportCallback *cb, bool coming
 
 		// we could read a message, if it's possible to have data, try
 		if(possibleDataForReadCount > 0){
-			return receiveMessage(fd, cb);
+			return receiveMessage(fd, cb, -1);
 		}
 	}
 
@@ -592,14 +604,19 @@ MessageID_t TransportManager::_sendMessage(int fd, Message *message) {
 	return message->getMessageId();
 }
 
-int TransportManager::checkSocketIsReady(int socket, bool checkForRead) {
+int TransportManager::checkSocketIsReady(int socket, bool checkForRead, int timeToWait) {
 	/*
 	 *  Prepare data structure for select system call.
 	 *  http://man7.org/linux/man-pages/man2/select.2.html
 	 */
 	fd_set selectSet;
 	timeval waitTimeout;
-	waitTimeout.tv_sec = 1;
+	if(timeToWait <= 0){
+		timeToWait = 1;
+	}else if (timeToWait > 10){
+		timeToWait = 10 ;
+	}
+	waitTimeout.tv_sec = timeToWait;
 	waitTimeout.tv_usec = 0;
 	FD_ZERO(&selectSet);
 	FD_SET(socket, &selectSet);

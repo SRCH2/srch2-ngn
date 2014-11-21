@@ -95,7 +95,7 @@ public:
 
 	~TransportManager();
 	// API for the libevent callback to call into TM
-	bool receiveMessage(int fd, TransportCallback *cb, bool comingBack = false);
+	bool receiveMessage(int fd, TransportCallback *cb, int comingBack = 0);
 
 	ConnectionMap& getConnectionMap() { return routeMap; }
 
@@ -151,8 +151,8 @@ private:
 //    */
 //   int readMessageBody(int fd, MessageBuffer &readBuffer);
 
-   int checkSocketIsReadyForRead(int fd) {
-	   return checkSocketIsReady(fd, true);
+   int checkSocketIsReadyForRead(int fd, int time = 1) {
+	   return checkSocketIsReady(fd, true, time);
    }
    int checkSocketIsReadyForWrite(int fd) {
 	   return checkSocketIsReady(fd, false);
@@ -163,7 +163,7 @@ private:
     *  checkForRead = false -> check whether socket is ready for write
     *  checkForRead = true -> check whether socket is ready for read
     */
-   int checkSocketIsReady(int socket, bool checkForRead);
+   int checkSocketIsReady(int socket, bool checkForRead, int timeToWait = 1);
 
    /*
     *   fetches IPv4 addresses of all NIC interfaces on the local host.
