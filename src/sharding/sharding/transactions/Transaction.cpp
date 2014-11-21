@@ -128,16 +128,16 @@ void WriteviewTransaction::threadBegin(SP(Transaction) sp){ // sets sharedPointe
 	this->writeview = ShardManager::getWriteview_write(*writeviewLock);
 }
 void WriteviewTransaction::threadEnd(){ // resets sharedPointer
-	Transaction::threadEnd();
 	if(finalizeArgument != NULL && finalizeArgument->needWriteviewLock){
 		finalizeArgument->writeviewLock = writeviewLock;
 		writeviewLock = NULL;
-		return;
+	}else{
+		if(writeviewLock != NULL){
+			delete writeviewLock;
+			writeviewLock = NULL;
+		}
 	}
-	if(writeviewLock != NULL){
-		delete writeviewLock;
-		writeviewLock = NULL;
-	}
+	Transaction::threadEnd();
 }
 
 Cluster_Writeview * WriteviewTransaction::getWriteview(){

@@ -29,6 +29,7 @@ public:
 		~Params(){
 			if(writeviewLock != NULL){
 				delete writeviewLock;
+				this->writeviewLock = NULL;
 			}
 		}
 		Params(bool shouldLock){
