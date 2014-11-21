@@ -311,8 +311,8 @@ bool TransportManager::receiveMessage(int fd, TransportCallback *cb, bool coming
 		if(status != 0){
 			if(status == 1){ // come back later
 				readBuffer.unlockRead();
-//				return receiveMessage(fd, cb, true);
-				return true;
+				return receiveMessage(fd, cb, true);
+//				return true;
 			}else if (status == -1){
 				Logger::sharding(Logger::Error, "TM | Rec.Msg. Failed to read message header, status %d", status);
 			}
@@ -357,8 +357,8 @@ bool TransportManager::receiveMessage(int fd, TransportCallback *cb, bool coming
 		if(status != 0){
 			if(status == 1){ // come back later
 				readBuffer.unlockRead();
-//				return receiveMessage(fd, cb, true);
-				return true;
+				return receiveMessage(fd, cb, true);
+//				return true;
 			}else if (status == -1){
 				Logger::sharding(Logger::Error, "TM | Rec.Msg. Failed to read message body, status %d", status);
 			}
