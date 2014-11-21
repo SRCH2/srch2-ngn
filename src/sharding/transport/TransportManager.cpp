@@ -382,6 +382,9 @@ bool TransportManager::receiveMessage(int fd, TransportCallback *cb, int comingB
 		 */
 		readBuffer.msg = getMessageAllocator()->allocateMessage(msgHeader.getBodySize());
 		memcpy(readBuffer.msg, &msgHeader, sizeof(Message));
+		if(readBuffer.msg->getBodySize() > 18000 ){
+		    Logger::sharding(Logger::Error, "Too large body size. body size = %d ", readBuffer.msg->getBodySize() );
+		}
 		readBuffer.sizeOfPartialMsgHrd = 0;
 		memset(readBuffer.partialMessageHeader, 0, sizeof(Message));
 		if(readBuffer.msg->getBodySize() != 0){
