@@ -636,7 +636,7 @@ int TransportManager::checkSocketIsReady(int socket, bool checkForRead, int time
 	if (result == -1) {
 		perror("error while waiting for a socket to become available for write!");
 	}
-	return result;
+	return FD_ISSET(socket,&selectSet) ? 1 : 0;
 }
 
 void TransportManager::registerEventListenerForSocket(int fd, Connection *conn) {
