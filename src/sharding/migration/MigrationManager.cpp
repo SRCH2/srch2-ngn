@@ -359,7 +359,7 @@ void MigrationService::receiveShard(ClusterShardId shardId, unsigned remoteNode)
 	for (unsigned i =0; i < componentCount; ++i) {
 
 		Logger::debug("waiting for component begin message...");
-		migrationMgr->busyWaitWithTimeOut(currentSessionInfo, MM_STATE_INFO_RCVD);
+		migrationMgr->busyWaitWithTimeOut(currentSessionInfo, MM_STATE_INFO_RCVD, 15);
 		if(currentSessionInfo.status !=  MM_STATE_INFO_RCVD) {
 			Logger::debug("Migration: shard %s : timeout!", shardId.toString().c_str());
 			close(commSocket);
