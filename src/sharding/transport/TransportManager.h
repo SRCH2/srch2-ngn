@@ -145,7 +145,7 @@ private:
     * | Message Header | Rest of Body |
     * ---------------------------------
     */
-   int readMessageHeader(const Message *message,  int fd);
+   int readMessageHeader(Message *message,  int fd);
    /*
     *   The function reads the message body which follows the message header.
     */

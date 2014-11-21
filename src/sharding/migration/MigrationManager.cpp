@@ -1009,6 +1009,7 @@ void MigrationManager::busyWaitWithTimeOut(const MigrationSessionInfo& currentSe
 		if (timeNow - prevTime > waittime) {
 			break;
 		}
+		sleep(1);
 	}
 }
 

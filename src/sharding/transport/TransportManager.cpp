@@ -157,7 +157,7 @@ int TransportManager::readDataFromSocket(int fd, char *buffer, const int byteToR
  * | Message Header | Rest of Body |
  * ---------------------------------
  */
-int TransportManager::readMessageHeader(const Message * message,  int fd) {
+int TransportManager::readMessageHeader(Message * message,  int fd) {
 
 	char *buffer = (char *) message;
 	int byteToRead = sizeof(Message);
@@ -198,7 +198,9 @@ int TransportManager::readMessageBody(int fd, MessageBuffer &readBuffer) {
 	int byteToRead = readBuffer.msg->getBodySize() - readBuffer.readCount;
 	int byteReadCount = 0;
 	int status = readDataFromSocket(fd, buffer, byteToRead, &byteReadCount);
-	readBuffer.readCount += byteReadCount;
+	if(status == 0 || status == 1){
+        readBuffer.readCount += byteReadCount;
+	}
 	return status;
 }
 
@@ -274,13 +276,13 @@ bool TransportManager::receiveMessage(int fd, TransportCallback *cb) {
 			if(status == 1) {
 				// we will come back again for the remaining data. See else section below.
 				Logger::sharding(Logger::Detail, "TM | Rec.Msg. Message body is read partially. It was going to be %d bytes. %d bytes read so far."
-						, status, msgHeader.getBodySize(), readBuffer.readCount);
+						, msgHeader.getBodySize(), readBuffer.readCount);
 				readBuffer.lock = false;
 				return true;
 			} else if (status == -1) {
 				// there was an error. We cannot continue to read on this socket.
 				Logger::sharding(Logger::Error, "TM | Rec.Msg. Failed to read message body, status %d. It was going to be %d bytes. %d bytes read so far."
-						, status, msgHeader.getBodySize(), readBuffer.readCount);
+						, msgHeader.getBodySize(), readBuffer.readCount);
 				readBuffer.lock = false;
 				return false;
 			}
