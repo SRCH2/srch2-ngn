@@ -95,7 +95,7 @@ public:
 
 	~TransportManager();
 	// API for the libevent callback to call into TM
-	bool receiveMessage(int fd, TransportCallback *cb);
+	bool receiveMessage(int fd, TransportCallback *cb, bool comingBack = false);
 
 	ConnectionMap& getConnectionMap() { return routeMap; }
 
@@ -145,11 +145,11 @@ private:
     * | Message Header | Rest of Body |
     * ---------------------------------
     */
-   int readMessageHeader(Message *message,  int fd);
-   /*
-    *   The function reads the message body which follows the message header.
-    */
-   int readMessageBody(int fd, MessageBuffer &readBuffer);
+   int readMessageInterrupted(Message *message, int fd, MessageBuffer & buffer);
+//   /*
+//    *   The function reads the message body which follows the message header.
+//    */
+//   int readMessageBody(int fd, MessageBuffer &readBuffer);
 
    int checkSocketIsReadyForRead(int fd) {
 	   return checkSocketIsReady(fd, true);

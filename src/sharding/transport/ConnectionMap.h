@@ -25,11 +25,41 @@ struct NodeInfo {
 };
 
 class MessageBuffer {
-  public:
+public:
     Message* msg;
     bool lock;
+private:
     int readCount;
-    MessageBuffer() : msg(NULL), lock(false), readCount(0) {}
+    int possibleAvailableData;
+public:
+    char * partialMessageHeader;
+    unsigned sizeOfPartialMsgHrd;
+    unsigned numberOfRetriesWithZeroRead;
+    MessageBuffer() : msg(NULL), lock(false), readCount(0), possibleAvailableData(0),
+    		partialMessageHeader(new char[sizeof(Message)]), sizeOfPartialMsgHrd(0),
+    		numberOfRetriesWithZeroRead(0){}
+    ~MessageBuffer(){delete partialMessageHeader;};
+    void setReadCount(int readCount){
+    	this->readCount = readCount;
+    	if(msg != NULL && msg->getBodySize() == readCount){
+    		possibleAvailableData ++;
+    	}
+    }
+    int getReadCount() const{
+    	return readCount;
+    }
+    void lockForRead(){
+    	while(!__sync_bool_compare_and_swap(&lock, false, true));
+    }
+    void unlockRead(){
+    	lock = false;
+    }
+    int getPossibleAvailableDataCount() const{
+    	return possibleAvailableData;
+    }
+    void setPossibleAvailableDataCount(int possibleAvailableData) {
+    	this->possibleAvailableData = possibleAvailableData;
+    }
 };
 
 class Connection {
@@ -38,7 +68,18 @@ public:
   MessageBuffer buffer;
   bool sendLock;
   NodeId nodeId;
-
+  void lockRead(){
+  	while(!__sync_bool_compare_and_swap(&buffer.lock, false, true));
+  }
+  void lockWrite(){
+  	while(!__sync_bool_compare_and_swap(&sendLock, false, true));
+  }
+  void unlockRead(){
+  	buffer.lock = false;
+  }
+  void unlockWrite(){
+	  sendLock = false;
+  }
   Connection(int fd, NodeId nodeId) : fd(fd), sendLock(false), nodeId(nodeId) {}
   Connection():fd(-1), sendLock(false), nodeId(-1){}
 };

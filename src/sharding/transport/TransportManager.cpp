@@ -120,12 +120,12 @@ int TransportManager::readDataFromSocket(int fd, char *buffer, const int byteToR
 	if(readByte == -1) {
 		if(errno == EAGAIN || errno == EWOULDBLOCK) {
 			// socket is not ready for read. return status 1 ( come again later)
-			Logger::sharding(Logger::Detail, "TM | readDataFromSocket socket not ready. readByte = %d , byteToRead = %d"
-					, readByte, byteToRead);
+			Logger::sharding(Logger::Detail, "TM | readDataFromSocket socket is NOT READY. Come back later. byteToRead = %d"
+					, byteToRead);
 			return 1;
 		} else {
 			perror("Error while reading data from socket : ");
-			Logger::sharding(Logger::Error, "TM | readDataFromSocket Error while reading data from socket");
+			Logger::sharding(Logger::Error, "TM | readDataFromSocket Error while reading data from socket, byteToRead = %d", byteToRead);
 			//some socket error. return status -1 (error)
 			return -1;
 		}
@@ -135,13 +135,14 @@ int TransportManager::readDataFromSocket(int fd, char *buffer, const int byteToR
 
 	if(readByte < byteToRead) {
 		// incomplete read. return status 1 ( come again later)
-		Logger::sharding(Logger::Detail, "TM | readDataFromSocket incomplete read, will come back later. readByte = %d , byteToRead = %d"
+		Logger::sharding(Logger::Detail, "TM | readDataFromSocket Incomplete read. Come back later. readByte = %d , byteToRead = %d"
 				, readByte, byteToRead);
 		return 1;
 	}
 	if(byteToRead != readByte){
 		Logger::sharding(Logger::Error, "TM | readDataFromSocket readByte is larger than byteToRead. readByte = %d , byteToRead = %d"
 				, readByte, byteToRead);
+		Logger::sharding(Logger::Detail, "TM | !!!!!!!!!! Possible memory corruption !!!!!!!!!!!!");
 		ASSERT(false);
 		return -1;
 	}
@@ -157,54 +158,112 @@ int TransportManager::readDataFromSocket(int fd, char *buffer, const int byteToR
  * | Message Header | Rest of Body |
  * ---------------------------------
  */
-int TransportManager::readMessageHeader(Message * message,  int fd) {
+int TransportManager::readMessageInterrupted(Message * message, int fd, MessageBuffer & __messageBuffer) {
 
-	char *buffer = (char *) message;
-	int byteToRead = sizeof(Message);
-	int byteReadCount = 0;
-	int retryCount = 10;
-
-	while(retryCount) {
-		int status = readDataFromSocket(fd, buffer, byteToRead, &byteReadCount);
-		if (status != 1) {
-			return status;
-		}
-		// status is 1 which means incomplete read. Because reading the header completely
-		// is critical, we should try again once socket is ready for read.
-		byteToRead -= byteReadCount;
-		buffer += byteReadCount;
-		// check socket is ready for write operation
-		if (checkSocketIsReadyForRead(fd) == -1) {
-			Logger::sharding(Logger::Error, "TM | Read. Msg. Hdr. Socket is not ready.");
-			break;
-		}
-		--retryCount;
+	int byteToRead = 0;
+	char * readBuffer;
+	if(message != NULL){ // reading message header
+		byteToRead = sizeof(Message) - __messageBuffer.sizeOfPartialMsgHrd;
+		readBuffer = __messageBuffer.partialMessageHeader+__messageBuffer.sizeOfPartialMsgHrd;
+	} else{ // reading message body
+		byteToRead = __messageBuffer.msg->getBodySize() - __messageBuffer.getReadCount();
+		readBuffer = __messageBuffer.msg->getMessageBody();
 	}
-	if (byteToRead) {
-		// if we still have some bytes to read after max trial, then it is an error
-		Logger::sharding(Logger::Error, "TM | Read. Msg. Hdr. There is still some bytes to read (%d) even after max trial. Error.", byteToRead);
-		return -1;
-	}
-	return 0;
-}
-
-
-/*
- *   The function reads the message body which follows the message header.
- */
-
-int TransportManager::readMessageBody(int fd, MessageBuffer &readBuffer) {
-	char *buffer = readBuffer.msg->getMessageBody() + readBuffer.readCount;
-	int byteToRead = readBuffer.msg->getBodySize() - readBuffer.readCount;
+//	char *buffer = (char *) message + __messageBuffer.sizeOfPartialMsgHrd;
+	char * buffer = new char[byteToRead];
 	int byteReadCount = 0;
 	int status = readDataFromSocket(fd, buffer, byteToRead, &byteReadCount);
-	if(status == 0 || status == 1){
-        readBuffer.readCount += byteReadCount;
+	if(status == 1){ // either socket wasn't ready or partial read of the message header
+		if(byteReadCount == 0){ // socket not ready
+			__messageBuffer.numberOfRetriesWithZeroRead ++;
+			if(__messageBuffer.numberOfRetriesWithZeroRead >= 10){
+				// if we still have some bytes to read after max trial, then it is an error
+				Logger::sharding(Logger::Error, "TM | Read. Msg. Intrptd. There is still some bytes to read (%d) even after max trial. Error.", byteToRead);
+				return -1;
+			}
+			return 1; // returning 1 means come back later.
+		}
+		ASSERT(byteReadCount > 0);
+		// we could at least read one character
+		__messageBuffer.numberOfRetriesWithZeroRead = 0;
+		memcpy(readBuffer,
+				buffer, byteReadCount);
+		// because message is not complete we don't write it in message, instead we write it in partial copy in buffer
+		if(byteReadCount == byteToRead){
+			ASSERT(false);
+			if(message != NULL){
+				__messageBuffer.sizeOfPartialMsgHrd = 0;
+				return 0;
+			}else{
+				__messageBuffer.setReadCount(__messageBuffer.msg->getBodySize());
+				return 0;
+			}
+		}else{
+			ASSERT(byteReadCount < byteToRead);
+			if(message != NULL){
+				__messageBuffer.sizeOfPartialMsgHrd += byteReadCount;
+				return 1; // returning 1 means come back later.
+			}else{
+				__messageBuffer.setReadCount(__messageBuffer.getReadCount() + byteReadCount);
+				return 1; // returning 1 means come back later.
+			}
+		}
+	}else if (status == 0){ // exactly this amount of data is read // suspicious
+		ASSERT(byteReadCount == byteToRead);
+		memcpy(readBuffer, buffer, byteReadCount);
+		__messageBuffer.numberOfRetriesWithZeroRead = 0;
+		if(message != NULL){
+			__messageBuffer.sizeOfPartialMsgHrd = 0;
+			memcpy((char *)message, __messageBuffer.partialMessageHeader, sizeof(Message));
+			return 0;
+		}else{
+			__messageBuffer.setReadCount(__messageBuffer.msg->getBodySize());
+			return 0;
+		}
+		return 1;
+	}else if (status == -1){
+		return -1;
 	}
-	return status;
+	ASSERT(false);
+	return -1;
+
+
+//	int retryCount = 10;
+//
+//	while(retryCount) {
+//
+//		if (status != 1) {
+//			return status;
+//		}
+//		// status is 1 which means incomplete read. Because reading the header completely
+//		// is critical, we should try again once socket is ready for read.
+//		byteToRead -= byteReadCount;
+//		buffer += byteReadCount;
+//		// check socket is ready for read operation
+//		// MAY WAIT FOR 1 SECOND
+//		if (checkSocketIsReadyForRead(fd) == -1) {
+//			Logger::sharding(Logger::Error, "TM | Read. Msg. Hdr. Socket is not ready.");
+//			break;
+//		}
+//		--retryCount;
+//	}
 }
 
 
+///*
+// *   The function reads the message body which follows the message header.
+// */
+//
+//int TransportManager::readMessageBody(int fd, MessageBuffer &readBuffer) {
+//	char *buffer = readBuffer.msg->getMessageBody() + readBuffer.readCount;
+//	int byteToRead = readBuffer.msg->getBodySize() - readBuffer.readCount;
+//	int byteReadCount = 0;
+//	int status = readDataFromSocket(fd, buffer, byteToRead, &byteReadCount);
+//	if(status == 0 || status == 1){
+//        readBuffer.readCount += byteReadCount;
+//	}
+//	return status;
+//}
 /*
  *    The function for handling received callback for data read.
  *
@@ -214,7 +273,7 @@ int TransportManager::readMessageBody(int fd, MessageBuffer &readBuffer) {
  *    false: There was some error and we should not listen to the event on this socket.
  */
 
-bool TransportManager::receiveMessage(int fd, TransportCallback *cb) {
+bool TransportManager::receiveMessage(int fd, TransportCallback *cb, bool comingBack) {
 	if( fd != cb->conn->fd) {
 		//major error
 		Logger::warn("connection mismatch: received data on wrong socket!!");
@@ -224,27 +283,40 @@ bool TransportManager::receiveMessage(int fd, TransportCallback *cb) {
 	MessageBuffer& readBuffer = cb->conn->buffer;
 
 	// acquire lock to avoid interleaved message written to a current socket
-	while(!__sync_bool_compare_and_swap(&readBuffer.lock, false, true));
+	readBuffer.lockForRead();
 
-	if(readBuffer.msg == NULL) {
-		/*
-		 *  readBuffer.msg == NULL means there was no incomplete read in the previous iteration.
-		 *  The current read from the socket is for a fresh new message.
-		 */
-		Message msgHeader;
+	if(comingBack){
+		if (checkSocketIsReadyForRead(cb->conn->fd) == -1) {
+			// there was an error. We cannot continue to read on this socket.
+			Logger::sharding(Logger::Error, "TM | Read. Msg. Socket is not ready.");
+			readBuffer.unlockRead();
+			return false;
+		}
+	}
 
+
+	if(readBuffer.getPossibleAvailableDataCount() > 0){
+		readBuffer.setPossibleAvailableDataCount(0);
+	}
+
+	Message* completeMessage = NULL;
+	bool readBody = false;
+	if(readBuffer.msg == NULL){ // so message header is being read partially
 		/*
 		 *  1. read the message header which is a fixed size block.
 		 */
-		int status = readMessageHeader(&msgHeader, fd);
-
+		Message msgHeader;
+		int status = readMessageInterrupted(&msgHeader, cb->conn->fd, readBuffer);
 		if(status != 0){
-			// there was an error. We cannot continue to read on this socket.
-			Logger::sharding(Logger::Error, "TM | Rec.Msg. Failed to read message header, status %d", status);
-			readBuffer.lock = false;
+			if(status == 1){ // come back later
+				readBuffer.unlockRead();
+				return receiveMessage(fd, cb, true);
+			}else if (status == -1){
+				Logger::sharding(Logger::Error, "TM | Rec.Msg. Failed to read message header, status %d", status);
+			}
+			readBuffer.unlockRead();
 			return false;
 		}
-
 		/*
 		 *  2. sets the distributedMessageId of TM to the maximum messageId received by a message
 		 *  in a thread safe fashion
@@ -260,6 +332,7 @@ bool TransportManager::receiveMessage(int fd, TransportCallback *cb) {
 					&getCurrentMessageId(), messageID, msgHeader.getMessageId()+1)) break;
 		}
 
+
 		/*
 		 *  3. read the remaining body of the message.
 		 *
@@ -268,66 +341,49 @@ bool TransportManager::receiveMessage(int fd, TransportCallback *cb) {
 		 */
 		readBuffer.msg = getMessageAllocator()->allocateMessage(msgHeader.getBodySize());
 		memcpy(readBuffer.msg, &msgHeader, sizeof(Message));
-		if(msgHeader.getBodySize() > 0){
-
-			readBuffer.readCount = 0;
-			int status = readMessageBody(fd, readBuffer);
-
-			if(status == 1) {
-				// we will come back again for the remaining data. See else section below.
-				Logger::sharding(Logger::Detail, "TM | Rec.Msg. Message body is read partially. It was going to be %d bytes. %d bytes read so far."
-						, msgHeader.getBodySize(), readBuffer.readCount);
-				readBuffer.lock = false;
-				return true;
-			} else if (status == -1) {
-				// there was an error. We cannot continue to read on this socket.
-				Logger::sharding(Logger::Error, "TM | Rec.Msg. Failed to read message body, status %d. It was going to be %d bytes. %d bytes read so far."
-						, msgHeader.getBodySize(), readBuffer.readCount);
-				readBuffer.lock = false;
-				return false;
-			}
+		if(readBuffer.msg->getBodySize() == 0){
+			readBuffer.setReadCount(0);
+		}else{
+			readBody = true;
 		}
+	}else{
+		readBody = true;
+	}
 
-	} else {
-		/*
-		 *   4. Try to read the remaining part of the incomplete message from
-		 *      the previous libevent iteration.
-		 */
-
-		int byteToRead = readBuffer.msg->getBodySize() - readBuffer.readCount;
-		if(readBuffer.msg->getBodySize() < readBuffer.readCount){
-			ASSERT(false);
-			Logger::sharding(Logger::Error, "TM | Rec.Msg. Read count %d is larger than message body size %d. Returning false",
-					readBuffer.msg->getBodySize() , readBuffer.readCount);
-			readBuffer.lock = false;
+	if(readBody){
+		int status = readMessageInterrupted(NULL, cb->conn->fd, readBuffer);
+		if(status != 0){
+			if(status == 1){ // come back later
+				readBuffer.unlockRead();
+				return receiveMessage(fd, cb, true);
+			}else if (status == -1){
+				Logger::sharding(Logger::Error, "TM | Rec.Msg. Failed to read message body, status %d", status);
+			}
+			readBuffer.unlockRead();
 			return false;
-		}
-		if(byteToRead > 0) {
-
-			int status = readMessageBody(fd, readBuffer);
-			if(status == 1) {
-				// we will come back again for the remaining data.
-				Logger::sharding(Logger::Detail, "TM | Rec.Msg. Message body is read partially. It was going to be %d bytes. %d bytes read so far."
-						, status, readBuffer.msg->getBodySize(), readBuffer.readCount);
-				readBuffer.lock = false;
-				return true;
-			} else if (status == -1) {
-				// there was an error. We cannot continue to read on this socket.
-				Logger::sharding(Logger::Error, "TM | Rec.Msg. Failed to read message body, status %d. It was going to be %d bytes. %d bytes read so far."
-						, status, readBuffer.msg->getBodySize(), readBuffer.readCount);
-				readBuffer.lock = false;
-				return false;
-			}
-
+		}else{ // status == 0
+			// message is complete, let's give it to upstream
+			completeMessage = readBuffer.msg;
+			// set to NULL to indicate that the message was read completely.
+			readBuffer.msg = NULL;
+			readBuffer.setReadCount(0);
 		}
 	}
 
-	Message* completeMessage = readBuffer.msg;
-	// set to NULL to indicate that the message was read completely.
-	readBuffer.msg = NULL;
-	readBuffer.lock = false;
+	int possibleDataForReadCount = readBuffer.getPossibleAvailableDataCount();
 
-	notifyUpstreamHandlers(completeMessage, fd, cb->conn->nodeId);
+	readBuffer.unlockRead();
+
+	if(completeMessage != NULL){
+		notifyUpstreamHandlers(completeMessage, fd, cb->conn->nodeId);
+
+		// we could read a message, if it's possible to have data, try
+		if(possibleDataForReadCount > 0){
+			return receiveMessage(fd, cb);
+		}
+	}
+
+
 	return true;
 }
 
