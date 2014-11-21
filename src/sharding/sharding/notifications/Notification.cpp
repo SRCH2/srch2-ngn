@@ -202,6 +202,13 @@ bool ShardingNotification::send(SP(ShardingNotification) notification){
 		ASSERT(false);
 		return false;
 	}
+	if(notification->messageType() == ShardingNewNodeReadMetadataReplyMessageType ||
+	        notification->messageType() == ShardingNewNodeReadMetadataRequestMessageType){
+	    if(notification->getSrc().nodeId != notification->getDest().nodeId){
+	        ASSERT(false);
+	        return false;
+	    }
+	}
 	if(notification->getDest().nodeId == ShardManager::getCurrentNodeId()){
 		return ShardManager::getShardManager()->resolveLocal(notification);
 	}
