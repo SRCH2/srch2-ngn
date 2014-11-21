@@ -1,7 +1,8 @@
 #coding=gbk
-#This test tests the chinese query parser
+#This test tests the query parser.
 #If query keyword contains more words like "曼联皇马", the engine should 
 #split the query keyword by using the chinese_dictionary into "曼联","皇马".
+#Also, for english keyword "this is a", the engine should split it into "this", "is" and "a".
 #The test sends query to the server and checks the response "prefix" part to see if the 
 #keyword is split by the engine correctly.
  
@@ -19,7 +20,7 @@ totalFailCount = 0
 def startSrch2Engine():
 	global serverHandle
 	#Start the engine server
-        args = [binary_path , '--config-file=chinese_parser/conf.xml']
+        args = [binary_path , '--config-file=query_parser_split/conf.xml']
 
         if test_lib.confirmPortAvailable(port) == False:
                 print 'Port' + str(port) + ' already in use -aborting '

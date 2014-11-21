@@ -5,9 +5,9 @@
     <listeningHostname>127.0.0.1</listeningHostname>
     <listeningPort>8087</listeningPort>
 
-    <dataDir>./data/chinese_parser/</dataDir>
+    <dataDir>./data/query_parser_split/</dataDir>
 
-    <dataFile>./chinese/data.json</dataFile>
+    <dataFile>./query_parser_split/data.json</dataFile>
 
     <maxSearchThreads>2</maxSearchThreads>
 
@@ -93,7 +93,7 @@
     <updateLog>
         <logLevel>3</logLevel>
 
-        <accessLogFile>./data/chinese_parser/log.txt</accessLogFile>
+        <accessLogFile>./data/query_parser_split/log.txt</accessLogFile>
     </updateLog>
 
 </config>

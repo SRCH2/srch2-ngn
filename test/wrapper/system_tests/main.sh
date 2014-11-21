@@ -407,7 +407,7 @@ test_case "test Chinese" "python ./chinese/chinese_analyzer.py $SRCH2_ENGINE"
 
 sleep 3
 
-test_case "test Chinese parser" "python chinese_parser/chinese_parser.py $SRCH2_ENGINE chinese_parser/queryResults.txt"
+test_case "test query parser split" "python query_parser_split/query_parser_split.py $SRCH2_ENGINE query_parser_split/queryResults.txt"
 
 sleep 3
 
