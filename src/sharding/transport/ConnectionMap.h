@@ -62,7 +62,7 @@ public:
         memcpy(partialMessageHeader, msgBfr.partialMessageHeader, sizeof(Message));
         return *this;
     }
-    ~MessageBuffer(){delete partialMessageHeader;};
+    ~MessageBuffer(){delete[] partialMessageHeader;};
     void setReadCount(int readCount){
     	this->readCount = readCount;
     	if(msg != NULL && msg->getBodySize() == readCount){
