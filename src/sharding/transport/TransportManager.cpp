@@ -232,6 +232,7 @@ bool TransportManager::receiveMessage(int fd, TransportCallback *cb) {
 
 	while(true){
 		if(readBuffer.msg == NULL) {
+		    Logger::sharding(Logger::Detail, "TM | receiveMessage : going to read a new message.");
 				/*
 				 *  readBuffer.msg == NULL means there was no incomplete read in the previous iteration.
 				 *  The current read from the socket is for a fresh new message.
@@ -294,7 +295,7 @@ bool TransportManager::receiveMessage(int fd, TransportCallback *cb) {
 								, msgHeader.getBodySize(), readBuffer.readCount);
 						break;
 					} else if (status == 2){
-						continue;
+//						continue;
 					} else if (status == 0){
 						break;
 					} else if (status == -1) {
@@ -307,6 +308,7 @@ bool TransportManager::receiveMessage(int fd, TransportCallback *cb) {
 				}
 
 			} else {
+	            Logger::sharding(Logger::Detail, "TM | receiveMessage : going continue reading message with body size %d", readBuffer.msg->getBodySize());
 				/*
 				 *   4. Try to read the remaining part of the incomplete message from
 				 *      the previous libevent iteration.
@@ -329,7 +331,7 @@ bool TransportManager::receiveMessage(int fd, TransportCallback *cb) {
 								, status, readBuffer.msg->getBodySize(), readBuffer.readCount);
 						break;
 					}else if (status == 2){
-						continue;
+//						continue;
 					} else if (status == 0){
 						break;
 					} else if (status == -1) {
