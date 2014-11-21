@@ -480,7 +480,7 @@ void InvertedIndex::parallelMerge()
     	workerIdsList[i++] = *iter; // <invertedListId, keywordId>
     }
 
-    // intitalize worker queue
+    // initialize worker queue
     mergeWorkersSharedQueue.invertedListKeywordIds = workerIdsList;
     mergeWorkersSharedQueue.dataLen = totalLoad;
     mergeWorkersSharedQueue.cursor = 0;

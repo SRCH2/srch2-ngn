@@ -1603,6 +1603,9 @@ void Trie::removeDeletedNodes()
 
     TrieNode *writeViewRoot = this->getTrieRootNode_WriteView();
     removeDeletedNodes(writeViewRoot);
+
+    // remove these empty leaf nodes
+    emptyLeafNodeIds.clear();
 }
 
 // return TRUE if the subtrie of t becomes empty, and FALSE otherwise

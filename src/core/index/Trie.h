@@ -33,6 +33,8 @@
 #include <boost/archive/binary_iarchive.hpp>
 #include <boost/serialization/shared_ptr.hpp>
 #include <boost/cstdint.hpp>
+#include <boost/thread/mutex.hpp>
+#include <boost/thread/locks.hpp>
 
 #include <math.h>
 #include <iostream>
@@ -558,7 +560,9 @@ private:
     bool commited;
     bool mergeRequired;
 
+    // TODO
     vector<unsigned> emptyLeafNodeIds; // ids of leaf nodes that have an empty inverted list
+    boost::mutex mutexForEmptyLeafNodeIds;
 
     friend class boost::serialization::access;
 
@@ -815,7 +819,12 @@ public:
 
     void print_Trie() const;
 
-    void addEmptyLeafNodeId(unsigned emptyleafNodeId) { this->emptyLeafNodeIds.push_back(emptyleafNodeId);}
+    void addEmptyLeafNodeId(unsigned emptyleafNodeId) {
+        // since multiple threads can call this function, we need
+        // a lock for concurrency control
+        boost::unique_lock<boost::mutex> Lock(mutexForEmptyLeafNodeIds);
+        this->emptyLeafNodeIds.push_back(emptyleafNodeId);
+    }
     unsigned getEmptyLeafNodeIdSize() { return this->emptyLeafNodeIds.size();}
 	void applyKeywordIdMapperOnEmptyLeafNodes(map<unsigned, unsigned> &keywordIdMapper);
     void removeDeletedNodes();

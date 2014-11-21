@@ -133,7 +133,7 @@ public:
     //CowInvertedList *invList;
     cowvector<unsigned> *invList;
 
-    InvertedListContainer() // TODO for serialization. Remove dependancy
+    InvertedListContainer() // TODO for serialization. Remove dependency
     {
     	this->invList = new cowvector<unsigned>;
     };
