@@ -84,14 +84,14 @@ bool IndexSizeComparator(std::pair<string, long> l,  std::pair<string, long> r) 
 		return false;
 }
 
-int checkSocketIsReadyForRead(int socket) {
+int checkSocketIsReadyForRead(int socket, int waitingTime = 1) {
 	/*
 	 *  Prepare data structure for select system call.
 	 *  http://man7.org/linux/man-pages/man2/select.2.html
 	 */
 	fd_set selectSet;
 	timeval waitTimeout;
-	waitTimeout.tv_sec = 1;
+	waitTimeout.tv_sec = waitingTime;
 	waitTimeout.tv_usec = 0;
 	FD_ZERO(&selectSet);
 	FD_SET(socket, &selectSet);
@@ -106,12 +106,14 @@ int checkSocketIsReadyForRead(int socket) {
 	result = select(socket + 1, &selectSet, NULL, NULL, &waitTimeout);
 	if (result == -1) {
 		perror("error while waiting for a socket to become available for read/write!");
+		return -1;
 	}
-	return result;
+	return FD_ISSET(socket, &selectSet) ? 1 : 0;
 }
 
 int readDataFromSocketWithRetry(int fd, char *buffer, int byteToRead, int retryCount) {
 
+    int waitingTime = 1;
 	while(1) {
 		int readByte = recv(fd, buffer, byteToRead, MSG_DONTWAIT);
 		if(readByte == 0) {
@@ -123,7 +125,15 @@ int readDataFromSocketWithRetry(int fd, char *buffer, int byteToRead, int retryC
 			if(errno == EAGAIN || errno == EWOULDBLOCK) {
 				// socket is not ready for read. try again.
 				if (retryCount) {
-					checkSocketIsReadyForRead(fd);
+					int rc = checkSocketIsReadyForRead(fd, waitingTime);
+					if(rc == -1){
+	                    Logger::debug("read timeout");
+	                    return -1;
+					}else if(rc == 0){
+					    waitingTime += 2;
+					}else {
+					    waitingTime = 1;
+					}
 					--retryCount;
 					continue;
 				} else {
@@ -359,7 +369,7 @@ void MigrationService::receiveShard(ClusterShardId shardId, unsigned remoteNode)
 	for (unsigned i =0; i < componentCount; ++i) {
 
 		Logger::debug("waiting for component begin message...");
-		migrationMgr->busyWaitWithTimeOut(currentSessionInfo, MM_STATE_INFO_RCVD, 15);
+		migrationMgr->busyWaitWithTimeOut(currentSessionInfo, MM_STATE_INFO_RCVD);
 		if(currentSessionInfo.status !=  MM_STATE_INFO_RCVD) {
 			Logger::debug("Migration: shard %s : timeout!", shardId.toString().c_str());
 			close(commSocket);
