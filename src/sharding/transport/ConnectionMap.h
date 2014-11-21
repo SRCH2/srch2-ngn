@@ -46,7 +46,7 @@ public:
     }
     MessageBuffer & operator=(const MessageBuffer & msgBfr){
         if(this == &msgBfr){
-            return &this;
+            return *this;
         }
         msg = msgBfr.msg;
         lock = msgBfr.lock;
@@ -56,7 +56,7 @@ public:
         sizeOfPartialMsgHrd = msgBfr.sizeOfPartialMsgHrd;
         numberOfRetriesWithZeroRead = msgBfr.numberOfRetriesWithZeroRead;
         memcpy(partialMessageHeader, msgBfr.partialMessageHeader, sizeof(Message));
-        return &this;
+        return *this;
     }
     ~MessageBuffer(){delete partialMessageHeader;};
     void setReadCount(int readCount){
