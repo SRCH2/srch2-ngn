@@ -167,7 +167,7 @@ int TransportManager::readMessageInterrupted(Message * message, int fd, MessageB
 		byteToRead = sizeof(Message) - __messageBuffer.sizeOfPartialMsgHrd;
 		readBuffer = __messageBuffer.partialMessageHeader+__messageBuffer.sizeOfPartialMsgHrd;
 	} else{ // reading message body
-		byteToRead = __messageBuffer.msg->getBodySize() - __messageBuffer.getReadCount();
+		byteToRead = (int)(__messageBuffer.msg->getBodySize() - (unsigned)__messageBuffer.getReadCount());
 		readBuffer = __messageBuffer.msg->getMessageBody() + __messageBuffer.getReadCount();
 	}
 //	char *buffer = (char *) message + __messageBuffer.sizeOfPartialMsgHrd;
@@ -599,7 +599,7 @@ MessageID_t TransportManager::_sendMessage(int fd, Message *message) {
 
 	while(retryCount) {
 
-		ssize_t writeSize = send(fd, bufferToWrite, totalbufferSize, flag);
+		ssize_t writeSize = send(fd, bufferToWrite, (size_t)totalbufferSize, flag);
 
 		if(writeSize == -1){
 			if(errno != EAGAIN && errno != EWOULDBLOCK) {
@@ -609,28 +609,47 @@ MessageID_t TransportManager::_sendMessage(int fd, Message *message) {
 				perror("Message sending failed !!");
 				// Todo V1:  remove socket from connection map.
 				break;
+			}else{ // come back later
+				// check socket is ready for write operation
+				int rv = 0;
+				bool shouldWrite = false;
+				while((rv = checkSocketIsReadyForWrite(fd)) != -1){
+					if(rv == 1){
+						shouldWrite = true;
+						break;
+					}else{ // rv == 0
+						ASSERT(rv == 0);
+						if(! --retryCount){
+							break;
+						}
+						continue;
+					}
+				}
+				if(shouldWrite){
+					continue;
+				}else{
+					retryCount = 0;
+					break;
+				}
 			}
 		}
 
-		if (writeSize ==  totalbufferSize) {
+		ASSERT(writeSize >= 0);
+
+		if ((unsigned)writeSize ==  totalbufferSize) {
 			break;
 		}
-
+		ASSERT(totalbufferSize > (unsigned)writeSize);
 		/*
 		 *  If we reached here, it means the write was not complete. Try to write again
 		 *  when socket is ready.
 		 */
 
-		totalbufferSize -= writeSize;
-		bufferToWrite += writeSize;
+		totalbufferSize -= (unsigned)writeSize;
+		bufferToWrite += (unsigned)writeSize;
 
 		Logger::console("Message not sent completely through TM route(fd,msg). Msg type is %d and size is %d",
 				message->getType(), message->getBodySize());
-
-		// check socket is ready for write operation
-		if (checkSocketIsReadyForWrite(fd) == -1) {
-			break;
-		}
 
 		--retryCount;
 	}

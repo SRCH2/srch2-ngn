@@ -52,7 +52,9 @@ struct ShardComponentInfoMsgBody {
 	ClusterShardId shardId;
 	unsigned componentSize;
 	unsigned componentNameSize;
-	char name[0];
+	char * getName(){
+		return (char *)((char *)this + sizeof(ShardComponentInfoMsgBody));
+	}
 };
 
 struct ShardComponentInfoAckMsgBody{
@@ -73,7 +75,9 @@ struct MigrationDoneAckMsgBody{
 	ClusterShardId shardId;
 	char flag;  // 0 = incomplete or 1 = complete
 	unsigned missingPacketCount;
-	unsigned arr[0];
+	unsigned * getArr(){
+		return (unsigned *)((char *)this + sizeof(MigrationDoneAckMsgBody));
+	}
 };
 
 
@@ -225,7 +229,7 @@ bool MMCallBackForTM::resolveMessage(Message * incomingMessage, NodeId remoteNod
 		migrationMgr->sessionLock.lock();
 		if (migrationMgr->hasActiveSession(compInfoMsgBody->shardId, remoteNode, sessionkey)) {
 			migrationMgr->migrationSession[sessionkey].shardCompSize = compInfoMsgBody->componentSize;
-			migrationMgr->migrationSession[sessionkey].shardCompName.assign(compInfoMsgBody->name,
+			migrationMgr->migrationSession[sessionkey].shardCompName.assign(compInfoMsgBody->getName(),
 					compInfoMsgBody->componentNameSize);
 			migrationMgr->migrationSession[sessionkey].status = MM_STATE_INFO_RCVD;
 		}
@@ -781,7 +785,7 @@ void MigrationManager::sendComponentInfoAndWaitForAck(MigrationSessionInfo& curr
 	bodyPtr->shardId = currentSessionInfo.currentShardId;
 	bodyPtr->componentSize = currentSessionInfo.shardCompSize;
 	bodyPtr->componentNameSize = componentName.size();
-	memcpy(bodyPtr->name, componentName.c_str(), componentName.size());
+	memcpy(bodyPtr->getName(), componentName.c_str(), componentName.size());
 	currentSessionInfo.status = MM_STATE_INFO_ACK_WAIT;
 	sendMessage(destinationNodeId, compInfoMessage);
 	deAllocateMessage(compInfoMessage);

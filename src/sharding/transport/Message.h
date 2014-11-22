@@ -104,7 +104,7 @@ public:
    }
    void setBodyAndBodySize(void * src, unsigned bodySize){
 	   setBodySize(bodySize);
-	   memcpy(this->body, src, this->getBodySize());
+	   memcpy(this->getMessageBody(), src, this->getBodySize());
    }
    ShardingMessageType getType(){
 	   return this->shardingMessageType;
@@ -118,13 +118,16 @@ public:
 
    void setMask(char mask) { this->mask =  mask; }
    char getMask() const{return this->mask;};
-   char * getMessageBody() { return this->body; }
+   char * getMessageBody() {
+	   return ((char *)this + sizeof(Message));
+   }
 
    static Message * getMessagePointerFromBodyPointer( void * bodyPointer){
 	   return (Message *)((char *)bodyPointer - sizeof(Message));
    }
    static char * getBodyPointerFromMessagePointer(Message * messagePointer){
-	   return messagePointer->body;
+//	   return messagePointer->body;
+	   return (char *)((char *)messagePointer + sizeof(Message));
    }
 
    string getDescription(){
@@ -138,7 +141,7 @@ private:
    unsigned bodySize;
    MessageID_t id;
    MessageID_t requestMessageId; //used by response type messages
-   char body[0];
+//   char body[0];
 };
 
 }

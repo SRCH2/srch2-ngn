@@ -18,13 +18,14 @@ public:
 	 */
 	void* allocateMessageReturnBody(size_type bodySize) {
 		// allocate full message
-		Message *msg = (Message*) allocator<char>::allocate(bodySize + sizeof(Message));
+		char *msgCharBuffer = (char*) allocator<char>::allocate(bodySize + sizeof(Message));
 		// initalize all bits of message to zero
-		memset(msg, 0, sizeof(Message) + bodySize);
+		memset(msgCharBuffer, 0, sizeof(Message) + bodySize);
 		// set the body size
-		msg->setBodySize(bodySize);
+		Message * newMsg = new (msgCharBuffer) Message;
+		newMsg->setBodySize(bodySize);
 		// return the pointer to the beginning of body
-		return Message::getBodyPointerFromMessagePointer(msg);
+		return Message::getBodyPointerFromMessagePointer(newMsg);
 	}
 
 	void * allocateByteArray(size_type bodySize){

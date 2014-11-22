@@ -17,7 +17,7 @@ CommitNotification::CommitNotification(MetadataChange * metadataChange){
 
 CommitNotification::CommitNotification(){
 	metadataChange = NULL;
-};
+}
 CommitNotification::~CommitNotification(){
 }
 

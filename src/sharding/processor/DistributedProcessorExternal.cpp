@@ -68,7 +68,7 @@ DPExternalRequestHandler::DPExternalRequestHandler(ConfigManager & configuration
 			dpMessageHandler(configurationManager, transportManager, dpInternal){
 	this->configurationManager = &configurationManager;
 	transportManager.registerCallbackForDPMessageHandler(&dpMessageHandler);
-};
+}
 
 
 /*
