@@ -49,7 +49,7 @@ inline void * deserializeString(void * buffer, string & msg){
 	char * msgBody = new char[msgSize];
 	memcpy(msgBody , buffer, msgSize);
 	msg = string(msgBody, msgSize);
-	delete msgBody;
+	delete [] msgBody;
 	return ((char *)buffer) + msgSize;
 }
 
