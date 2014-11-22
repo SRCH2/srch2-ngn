@@ -222,9 +222,11 @@ bool ShardingNotification::send(SP(ShardingNotification) notification){
 //	Logger::sharding(Logger::Detail, "%s | Sending [Type: %s, ID: %d]. ", notification->getDescription().c_str(),
 //			notificationMessage->getDescription().c_str(), notificationMessage->getMessageId());
 
-	tm->sendMessage(notification->getDest().nodeId , notificationMessage, 0);
+	if(tm->sendMessage(notification->getDest().nodeId , notificationMessage, 0) == 0){
+		tm->getMessageAllocator()->deallocateByMessagePointer(notificationMessage);
+		return false;
+	}
 	tm->getMessageAllocator()->deallocateByMessagePointer(notificationMessage);
-
 	// currently TM always send the message
 	return true;
 }
