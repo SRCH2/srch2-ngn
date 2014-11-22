@@ -591,6 +591,21 @@ MessageID_t TransportManager::_sendMessage(int fd, Message *message) {
 	int flag = MSG_NOSIGNAL;
 #endif
 
+	// check, we shouldn't, defensive policy, transmit all kind of trash to other nodes.
+	// check the mask to be one of valid masks
+	if(! message->isValidMask()){
+		Logger::sharding(Logger::Error, "TM | Send : Message rejected from send because mask is not valid, mask is : %8x",
+				message->getMask());
+		return 0;
+	}
+	if(! (message->getType() >= ShardingMessageTypeFirst && message->getType() <= ShardingMessageTypeLast) ){
+		Logger::sharding(Logger::Error, "TM | Send : Message rejected from send because type is not valid, type is : %32x", message->getType());
+		return 0;
+	}
+	if(message->getType() == MigrationInitMessage){
+		Logger::sharding(Logger::Warning, "TM | Send : Suspicious body size = %d", message->getBodySize());
+	}
+
 	unsigned totalbufferSize = message->getBodySize() + sizeof(Message);
 	char * bufferToWrite = (char * ) message;
 	unsigned retryCount = 5;  //TODO v1: change to accomodate large data transfer.

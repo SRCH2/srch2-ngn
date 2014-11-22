@@ -22,6 +22,21 @@ public:
 
    //helper Functions
 
+   bool isValidMask() const{
+	   char maskBackup = this->mask;
+	   unsetMask(maskBackup, MSG_LOCAL_MASK);
+	   unsetMask(maskBackup, MSG_DISCOVERY_MASK);
+	   unsetMask(maskBackup, MSG_DP_REQUEST_MASK);
+	   unsetMask(maskBackup, MSG_DP_REPLY_MASK);
+	   unsetMask(maskBackup, MSG_SHARDING_MASK);
+	   unsetMask(maskBackup, MSG_MIGRATION_MASK);
+	   return (maskBackup == NULL);
+   }
+
+   void unsetMask(char & mask, const char msg_mask) const{
+	   mask &= ~(msg_mask);
+   }
+
    bool isSMRelated(){
 	 return (mask == 0);
    }
@@ -102,6 +117,7 @@ public:
    }
 
    void setMask(char mask) { this->mask =  mask; }
+   char getMask() const{return this->mask;};
    char * getMessageBody() { return this->body; }
 
    static Message * getMessagePointerFromBodyPointer( void * bodyPointer){

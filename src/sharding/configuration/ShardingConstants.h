@@ -87,7 +87,10 @@ enum ShardingMessageType{
 
     // just notifications
     ShardingMMNotificationMessageType,
-    ShardingNodeFailureNotificationMessageType
+    ShardingNodeFailureNotificationMessageType,
+
+    ShardingMessageTypeFirst = NULLType,
+    ShardingMessageTypeLast = ShardingNodeFailureNotificationMessageType
 };
 
 const char * getShardingMessageTypeStr(ShardingMessageType shardingMessageType);
