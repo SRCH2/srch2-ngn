@@ -336,8 +336,8 @@ void * dispatchMergeWorkerThread(void *arg) {
 			break;
 		if (info->isDataReady == true) {
 			//Logger::console("Worker %d : Starting Merge of Inverted Lists", info->workerId);
-			unsigned processedCount  = index->invertedIndex->workerMergeTask( index->rankerExpression,
-						index->_getNumberOfDocumentsInIndex(), index->schemaInternal);
+			unsigned processedCount  = index->invertedIndex->workerMergeTask(index->rankerExpression,
+						index->_getNumberOfDocumentsInIndex(), index->schemaInternal, index->trie);
 			info->isDataReady = false;
 			// acquire the lock to make sure that main merge thread is waiting for this condition.
 			// When the main thread is waiting on the condition then this lock is in unlocked state

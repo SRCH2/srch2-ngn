@@ -15,7 +15,7 @@
  * OR PROFITS, WHETHER IN AN ACTION OF CONTRACT, NEGLIGENCE OR OTHER ACTION, ARISING OUT OF OR IN CONNECTION
  * WITH THE USE OR PERFORMANCE OF SOFTWARE.
 
- * Copyright © 2010 SRCH2 Inc. All rights reserved
+ * Copyright 2010 SRCH2 Inc. All rights reserved
  */
 
 #ifndef __TRIE_H__
@@ -33,6 +33,8 @@
 #include <boost/archive/binary_iarchive.hpp>
 #include <boost/serialization/shared_ptr.hpp>
 #include <boost/cstdint.hpp>
+#include <boost/thread/mutex.hpp>
+#include <boost/thread/locks.hpp>
 
 #include <math.h>
 #include <iostream>
@@ -558,6 +560,10 @@ private:
     bool commited;
     bool mergeRequired;
 
+    vector<unsigned> emptyLeafNodeIds; // ids of leaf nodes that have an empty inverted list
+    boost::mutex mutexForEmptyLeafNodeIds;
+    // check if there an empty leaf node id in the range [minId, maxId]
+    bool findEmptyLeafNodeIds(unsigned minId, unsigned maxId);
 
     friend class boost::serialization::access;
 
@@ -591,6 +597,9 @@ private:
     		const InvertedIndex * invertedIndex ,
     		const ForwardIndex * forwardIndex ,
     		const unsigned totalNumberOfRecords );
+
+    // return TRUE if the subtrie of t becomes empty, and FALSE otherwise
+    bool removeDeletedNodes(TrieNode *trieNode);
 
 public:
 
@@ -818,6 +827,16 @@ public:
     void printSubTrie(const TrieNode *root, const TrieNode *node, set<unsigned>& keywordIds) const;
 
     void print_Trie() const;
+
+    void addEmptyLeafNodeId(unsigned emptyleafNodeId) {
+        // since multiple merger worker threads can call this function, we need
+        // a lock for concurrency control
+        boost::unique_lock<boost::mutex> Lock(mutexForEmptyLeafNodeIds);
+        this->emptyLeafNodeIds.push_back(emptyleafNodeId);
+    }
+    unsigned getEmptyLeafNodeIdSize() { return this->emptyLeafNodeIds.size();}
+    void applyKeywordIdMapperOnEmptyLeafNodes(map<unsigned, unsigned> &keywordIdMapper);
+    void removeDeletedNodes();
 };
 
 }
