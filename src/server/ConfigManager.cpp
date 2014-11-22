@@ -2330,13 +2330,13 @@ void ConfigManager::parse(const pugi::xml_document& configDoc,
     // licenseFile is a required field
     childNode = configNode.child(licenseFileString);
     if (childNode && childNode.text()) { // checks if config/licenseFile exists and have any text value or not
-      string tempUse = string(childNode.text().get());
-      trimSpacesFromValue(tempUse, licenseFileString, parseWarnings);
-      this->licenseKeyFile = this->srch2Home + tempUse;
+        string tempUse = string(childNode.text().get());
+        trimSpacesFromValue(tempUse, licenseFileString, parseWarnings);
+        this->licenseKeyFile = this->srch2Home + tempUse;
     } else {
-      parseError << "License key is not set.\n";
-      configSuccess = false;
-      return;
+        parseError << "License key is not set.\n";
+        configSuccess = false;
+        return;
     }
 
     // listeningHostname is a required field
