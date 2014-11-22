@@ -481,6 +481,41 @@ LocalShardContainer::LocalShardContainer(const LocalShardContainer & copy):coreI
 	}
 }
 
+LocalShardContainer & LocalShardContainer::operator=(const LocalShardContainer & copy){
+
+	const_cast<unsigned>(coreId) = copy.coreId;
+	const_cast<NodeId>(nodeId) = copy.nodeId;
+
+	for(map<unsigned, vector<ClusterShard *> >::const_iterator clusterShardItr = copy.localClusterShards.begin();
+			clusterShardItr != copy.localClusterShards.end(); ++clusterShardItr){
+		this->localClusterShards[clusterShardItr->first] = vector<ClusterShard *>();
+		for(unsigned i = 0 ; i < clusterShardItr->second.size(); ++i){
+			this->localClusterShards[clusterShardItr->first].push_back(new ClusterShard(*(clusterShardItr->second.at(i))));
+		}
+	}
+
+	for(map<unsigned, NodeShard * >::const_iterator nodeShardItr = copy.localNodeShards.begin();
+			nodeShardItr != copy.localNodeShards.end(); ++nodeShardItr){
+		this->localNodeShards[nodeShardItr->first] = new NodeShard(*(nodeShardItr->second));
+	}
+
+	return *this;
+}
+
+LocalShardContainer::~LocalShardContainer(){
+	for(map<unsigned, vector<ClusterShard *> >::iterator clusterShardItr = this->localClusterShards.begin();
+			clusterShardItr != this->localClusterShards.end(); ++clusterShardItr){
+		for(unsigned i = 0 ; i < clusterShardItr->second.size(); ++i){
+			delete clusterShardItr->second.at(i);
+		}
+	}
+
+	for(map<unsigned, NodeShard * >::iterator nodeShardItr = this->localNodeShards.begin();
+			nodeShardItr != localNodeShards.end(); ++nodeShardItr){
+		delete nodeShardItr->second;
+	}
+}
+
 unsigned LocalShardContainer::getCoreId() const	{
 	return coreId;
 }

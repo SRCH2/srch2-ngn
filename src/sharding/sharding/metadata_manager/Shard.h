@@ -298,6 +298,8 @@ public:
 
 	LocalShardContainer(const unsigned coreId, const NodeId nodeId);
 	LocalShardContainer(const LocalShardContainer & copy);
+	LocalShardContainer & operator=(const LocalShardContainer & copy);
+	~LocalShardContainer();
 	unsigned getCoreId() const	;
 	NodeId getNodeId() const;
 	void getShards(const NodeTargetShardInfo & targets, vector<const Shard *> & shards) const;

@@ -73,6 +73,53 @@ public:
 			this->clusterPartitions[pid] = new ClusterPartition(coreId, pid, PartitionLock_Unlocked);
 		}
 	}
+
+	CorePartitionContianer(const CorePartitionContianer & left):
+		coreId(coreId), totalNumberOfPartitions(totalNumberOfPartitions), replicationDegree(replicationDegree){
+
+		for(map<unsigned, ClusterPartition *>::const_iterator cPartItr = left.clusterPartitions.begin();
+				cPartItr != left.clusterPartitions.end(); ++cPartItr){
+			this->clusterPartitions[cPartItr->first] = new ClusterPartition(*(cPartItr->second));
+		}
+
+		for(map<NodeId, NodePartition *>::const_iterator cPartItr = left.nodePartitions.begin();
+				cPartItr != left.nodePartitions.end(); ++cPartItr){
+			this->nodePartitions[cPartItr->first] = new NodePartition(*(cPartItr->second));
+		}
+	}
+
+	CorePartitionContianer & operator=(const CorePartitionContianer & left){
+		if(this != &left){
+			return *this;
+		}
+		const_cast<unsigned>(this->coreId) = left.coreId;
+		const_cast<unsigned>(this->totalNumberOfPartitions) = left.totalNumberOfPartitions;
+		const_cast<unsigned>(this->replicationDegree) = left.replicationDegree;
+
+		for(map<unsigned, ClusterPartition *>::const_iterator cPartItr = left.clusterPartitions.begin();
+				cPartItr != left.clusterPartitions.end(); ++cPartItr){
+			this->clusterPartitions[cPartItr->first] = new ClusterPartition(*(cPartItr->second));
+		}
+
+		for(map<NodeId, NodePartition *>::const_iterator cPartItr = left.nodePartitions.begin();
+				cPartItr != left.nodePartitions.end(); ++cPartItr){
+			this->nodePartitions[cPartItr->first] = new NodePartition(*(cPartItr->second));
+		}
+
+		return *this;
+	}
+
+	~CorePartitionContianer(){
+		for(map<unsigned, ClusterPartition *>::iterator cPartItr = this->clusterPartitions.begin();
+				cPartItr != this->clusterPartitions.end(); ++cPartItr){
+			delete this->clusterPartitions[cPartItr->first];
+		}
+
+		for(map<NodeId, NodePartition *>::iterator cPartItr = this->nodePartitions.begin();
+				cPartItr != this->nodePartitions.end(); ++cPartItr){
+			delete this->nodePartitions[cPartItr->first];;
+		}
+	}
 	void addClusterShard(NodeId nodeId, ClusterShardId shardId);
 	void addNodeShard(NodeId nodeId, unsigned nodeInternalPartitionId);
 	void setPartitionLock(unsigned partitionLock, PartitionLockValue lockValue);
