@@ -745,6 +745,7 @@ void MigrationManager::doInitialHandShake(MigrationSessionInfo& currentSessionIn
 		if (end - beg > timewait)
 			break;
 		end = time(NULL);
+		usleep(500);
 	} while(currentSessionInfo.status != MM_STATE_INIT_ACK_RCVD);
 	deAllocateMessage(initMessage);
 }
