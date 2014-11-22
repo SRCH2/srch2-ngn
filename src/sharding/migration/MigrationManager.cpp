@@ -193,7 +193,7 @@ bool MMCallBackForTM::resolveMessage(Message * incomingMessage, NodeId remoteNod
 	switch (incomingMessage->getType()) {
 	case MigrationInitMessage:
 	{
-		MigrationInitMsgBody *initMsgBody = (MigrationInitMsgBody *)incomingMessage->getMessageBody();
+		MigrationInitMsgBody *initMsgBody = new (incomingMessage->getMessageBody()) MigrationInitMsgBody;
 
 		migrationMgr->sessionLock.lock();
 		if (!migrationMgr->hasActiveSession(initMsgBody->migratingShardId, remoteNode)) {
@@ -719,7 +719,7 @@ void MigrationManager::doInitialHandShake(MigrationSessionInfo& currentSessionIn
 
 	Message *initMessage = MessageAllocator().allocateMessage(sizeof(MigrationInitMsgBody));
 	initMessage->setType(MigrationInitMessage);
-	MigrationInitMsgBody *initMessageBody = (MigrationInitMsgBody *)initMessage->getMessageBody();
+	MigrationInitMsgBody *initMessageBody = new (initMessage->getMessageBody()) MigrationInitMsgBody;
 	initMessageBody->migratingShardId = currentSessionInfo.currentShardId;
 	initMessageBody->destinationShardId = currentSessionInfo.destShardId;
 
@@ -749,7 +749,7 @@ void MigrationManager::sendInitMessageAck(MigrationSessionInfo& currentSessionIn
 
 	Message * initAckMesssage = MessageAllocator().allocateMessage(sizeof(MigrationInitAckMsgBody));
 	initAckMesssage->setType(MigrationInitAckMessage);
-	MigrationInitAckMsgBody *body = (MigrationInitAckMsgBody *)initAckMesssage->getMessageBody();
+	MigrationInitAckMsgBody *body = new (initAckMesssage->getMessageBody()) MigrationInitAckMsgBody;
 	body->shardId = currentSessionInfo.currentShardId;
 	body->portnumber = currentSessionInfo.listeningPort;
 	body->ipAddress = transport->getPublishedInterfaceNumericAddr();
@@ -762,7 +762,7 @@ void MigrationManager::sendInitMessageAck(MigrationSessionInfo& currentSessionIn
 void MigrationManager::sendInfoAckMessage(MigrationSessionInfo& currentSessionInfo) {
 	Message * infoAckMesssage = MessageAllocator().allocateMessage(sizeof(ShardComponentInfoAckMsgBody));
 	infoAckMesssage->setType(MigrationComponentBeginAckMessage);
-	ShardComponentInfoAckMsgBody *body = (ShardComponentInfoAckMsgBody *)infoAckMesssage->getMessageBody();
+	ShardComponentInfoAckMsgBody *body = new (infoAckMesssage->getMessageBody()) ShardComponentInfoAckMsgBody;
 	body->shardId = currentSessionInfo.currentShardId;
 	currentSessionInfo.status = MM_STATE_COMPONENT_RECEIVING;
 	Logger::debug("sending component begin ack to %d ", currentSessionInfo.remoteNode);
@@ -777,7 +777,7 @@ void MigrationManager::sendComponentInfoAndWaitForAck(MigrationSessionInfo& curr
 	unsigned compInfoMessageSize = sizeof(ShardComponentInfoMsgBody) + componentName.size();
 	Message *compInfoMessage = allocateMessage(compInfoMessageSize);
 	compInfoMessage->setType(MigrationComponentBeginMessage);
-	ShardComponentInfoMsgBody *bodyPtr = (ShardComponentInfoMsgBody *)compInfoMessage->getMessageBody();
+	ShardComponentInfoMsgBody *bodyPtr = new (compInfoMessage->getMessageBody()) ShardComponentInfoMsgBody;
 	bodyPtr->shardId = currentSessionInfo.currentShardId;
 	bodyPtr->componentSize = currentSessionInfo.shardCompSize;
 	bodyPtr->componentNameSize = componentName.size();
@@ -801,7 +801,7 @@ void MigrationManager::sendComponentDoneMsg(MigrationSessionInfo& currentSession
 		compDoneMessage->setType(MigrationCompleteAckMessage);
 	}
 
-	MigrationDoneMsgBody *bodyPtr = (MigrationDoneMsgBody *)compDoneMessage->getMessageBody();
+	MigrationDoneMsgBody *bodyPtr = new (compDoneMessage->getMessageBody()) MigrationDoneMsgBody;
 	bodyPtr->shardId = currentSessionInfo.currentShardId;
 
 	if (!shardDone) {
