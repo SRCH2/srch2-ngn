@@ -176,7 +176,7 @@ int TransportManager::readMessageInterrupted(Message * message, int fd, MessageB
 		if(byteToRead > 18000){
 			Logger::sharding(Logger::Error, "Body size : %d, read count = %d",  (int)__messageBuffer.msg->getBodySize(),
 					__messageBuffer.getReadCount());
-			ASSERT(false);
+//			ASSERT(false);
 		}
 		readBuffer = __messageBuffer.msg->getMessageBody() + __messageBuffer.getReadCount();
 	}
