@@ -117,8 +117,8 @@ void FeedbackIndex::addFeedback(const string& query, unsigned recordId, unsigned
 						queryAgeOrder[headId].queryId, &tp);
 
 				if (tp.path->size()) {
+					queryTrie->addEmptyLeafNodeId(queryAgeOrder[headId].queryId);
 					tp.path->back()->setInvertedListOffset(-1);
-
 					// free feedback list
 					delete feedbackListIndexVector->getWriteView()->at(headId);
 				} else {
@@ -344,6 +344,12 @@ void FeedbackIndex::_merge() {
 
 	//3. Trie should be merged last because it is a top level data structure.
 	queryTrie->merge(NULL, NULL, 0, false);
+
+	if (queryTrie->getEmptyLeafNodeIdSize()) {
+		// deleting empty node not thread safe yet, so we need to grab an exclusive lock
+		boost::unique_lock<boost::shared_mutex> lock(readerWriterLock);
+		queryTrie->removeDeletedNodes();
+	}
 
 	mergeRequired = false;
 }
