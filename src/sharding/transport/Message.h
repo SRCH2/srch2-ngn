@@ -7,7 +7,10 @@
 namespace srch2 {
 namespace httpwrapper {
 
-typedef unsigned MessageID_t;
+typedef unsigned int MessageID_t;
+
+const int MSG_HEADER_CONST_SIZE = 17;     // 00010000
+const int MSG_HEADER_PADDING_SIZE = 15;
 
 const char MSG_LOCAL_MASK = 0x1;        // 00000001
 const char MSG_DISCOVERY_MASK = 0x2;    // 00000010
@@ -22,8 +25,8 @@ public:
 
    //helper Functions
 
-   bool isValidMask() const{
-	   char maskBackup = this->mask;
+   bool isValidMask(){
+	   char maskBackup = this->getMask();
 	   unsetMask(maskBackup, MSG_LOCAL_MASK);
 	   unsetMask(maskBackup, MSG_DISCOVERY_MASK);
 	   unsetMask(maskBackup, MSG_DP_REQUEST_MASK);
@@ -38,88 +41,111 @@ public:
    }
 
    bool isSMRelated(){
+	   char & mask = this->_getMask();
 	 return (mask == 0);
    }
 
    bool isLocal(){
+	   char & mask = this->_getMask();
      return mask & MSG_LOCAL_MASK;
    }
    bool isDPRequest() {
+	   char & mask = this->_getMask();
      return mask & MSG_DP_REQUEST_MASK;
    }
    bool isDPReply() {
+	   char & mask = this->_getMask();
      return mask & MSG_DP_REPLY_MASK;
    }
    bool isDiscovery() {
+	   char & mask = this->_getMask();
      return mask & MSG_DISCOVERY_MASK;
    }
 
    bool isMigration() {
+	   char & mask = this->_getMask();
 	   return mask & MSG_MIGRATION_MASK;
    }
 
    bool isSharding() {
+	   char & mask = this->_getMask();
      return mask & MSG_SHARDING_MASK;
    }
    Message * setLocal(){
+	   char & mask = this->_getMask();
 	   mask |= MSG_LOCAL_MASK;
 	   return this;
    }
    Message * setDPRequestMask(){
+	   char & mask = this->_getMask();
 	   mask |= MSG_DP_REQUEST_MASK;
 	   return this;
    }
    Message * setDPReplyMask(){
+	   char & mask = this->_getMask();
 	   mask |= MSG_DP_REPLY_MASK;
 	   return this;
    }
    Message * setDiscoveryMask(){
+	   char & mask = this->_getMask();
 	   mask |= MSG_DISCOVERY_MASK;
 	   return this;
    }
 
    Message * setMigrationMask(){
+	   char & mask = this->_getMask();
 	   mask |= MSG_MIGRATION_MASK;
 	   return this;
    }
 
    Message * setShardingMask(){
+	   char & mask = this->_getMask();
 	   mask |= MSG_SHARDING_MASK;
 	   return this;
    }
    unsigned getBodySize(){
-	   return this->bodySize;
+	   return this->_getBodySize();
    }
    void setMessageId(MessageID_t id){
-	   this->id = id;
+	   MessageID_t & idRef = this->_getMessageId();
+	   idRef = id;
    }
    MessageID_t getMessageId(){
-	   return this->id;
+	   return this->_getMessageId();
    }
    void setRequestMessageId(MessageID_t requestMessageId){
-	   this->requestMessageId = requestMessageId;
+	   MessageID_t & requestMessageIdRef = this->_getReqMessageId();
+	   requestMessageIdRef = requestMessageId;
    }
    MessageID_t getRequestMessageId(){
-	   return this->requestMessageId;
+	   return this->_getReqMessageId();
    }
    void setBodyAndBodySize(void * src, unsigned bodySize){
 	   setBodySize(bodySize);
-	   memcpy(this->getMessageBody(), src, this->getBodySize());
+	   if(this->_getBodySize() == 0){
+		   return;
+	   }
+	   memcpy(this->getMessageBody(), src, this->_getBodySize());
    }
    ShardingMessageType getType(){
-	   return this->shardingMessageType;
+	   return _getShardingMessageType();
    }
    void setType(ShardingMessageType type){
-	   this->shardingMessageType = type;
+	   ShardingMessageType & typeRef = _getShardingMessageType();
+	   typeRef = type;
    }
    void setBodySize(unsigned bodySize){
-	   this->bodySize = bodySize;
+	   unsigned int & bodySizeRef = _getBodySize();
+	   bodySizeRef = bodySize;
    }
 
-   void setMask(char mask) { this->mask =  mask; }
-   char getMask() const{return this->mask;};
+   void setMask(char mask) {
+	   char & maskRef = _getMask();
+	   maskRef = mask;
+   }
+   char getMask(){return this->_getMask();};
    char * getMessageBody() {
-	   return ((char *)this + sizeof(Message));
+	   return (char *)((char *)this + sizeof(Message));
    }
 
    static Message * getMessagePointerFromBodyPointer( void * bodyPointer){
@@ -130,18 +156,53 @@ public:
 	   return (char *)((char *)messagePointer + sizeof(Message));
    }
 
+   void populate(char * headerDataStart){
+	   memcpy(headerData, headerDataStart, MSG_HEADER_CONST_SIZE);
+   }
+
+   inline char * getHeaderInfoStart(){
+	   return headerData;
+   }
+
    string getDescription(){
-	   return string(getShardingMessageTypeStr(shardingMessageType));
+	   return string(getShardingMessageTypeStr(_getShardingMessageType()));
    }
 
 
 private:
-   ShardingMessageType shardingMessageType;
-   char mask;
-   unsigned bodySize;
-   MessageID_t id;
-   MessageID_t requestMessageId; //used by response type messages
+   inline ShardingMessageType & _getShardingMessageType(){
+	   return (ShardingMessageType &)(*((ShardingMessageType *)headerData));
+   }
+   inline char & _getMask(){
+	   return (char &)(*((char *)headerData + sizeof(ShardingMessageType)));
+   }
+   inline unsigned & _getBodySize(){
+	   return (unsigned &)(*((unsigned *)headerData + sizeof(ShardingMessageType) + sizeof(char)));
+   }
+   inline unsigned & _getMessageId(){
+	   return (MessageID_t &)(*((MessageID_t *)headerData + sizeof(ShardingMessageType)
+			   + sizeof(char) + sizeof(unsigned int)));
+   }
+   inline unsigned & _getReqMessageId(){
+	   return (MessageID_t &)(*((MessageID_t *)headerData + sizeof(ShardingMessageType)
+			   + sizeof(char) + sizeof(unsigned int) + sizeof(MessageID_t)));
+   }
+   // 4 + 1 + 4 + 4 + 4 = 17 = MSG_CONST_SIZE
+   char headerData[MSG_HEADER_CONST_SIZE]; // because different machines can have different alignments ...
+   char _headerPaddingPlaceHolders[MSG_HEADER_PADDING_SIZE];
+   /// now, we can always safely use the Message * cast technique
+//   ShardingMessageType shardingMessageType;
+//   char mask;
+//   unsigned int bodySize;
+//   MessageID_t id;
+//   MessageID_t requestMessageId; //used by response type messages
 //   char body[0];
+
+   /*
+    * NOTE : allocate must be like allocate( sizeof(Message) + length of body )
+    *        but serialize and deserialize must be only on the headerData array because different
+    *        platforms can have different paddings ...
+    */
 };
 
 }

@@ -159,16 +159,25 @@ int TransportManager::readDataFromSocket(int fd, char *buffer, const int byteToR
  * | Message Header | Rest of Body |
  * ---------------------------------
  */
-int TransportManager::readMessageInterrupted(Message * message, int fd, MessageBuffer & __messageBuffer) {
+int TransportManager::readMessageInterrupted(char * message, int fd, MessageBuffer & __messageBuffer) {
 
 	int byteToRead = 0;
 	char * readBuffer;
 	if(message != NULL){ // reading message header
 		byteToRead = sizeof(Message) - __messageBuffer.sizeOfPartialMsgHrd;
 		readBuffer = __messageBuffer.partialMessageHeader+__messageBuffer.sizeOfPartialMsgHrd;
+		Logger::sharding(Logger::Detail, "TM | recv : going to read msg header : %d bytes into %p which is the %d index of partial message buffer.",
+				byteToRead, readBuffer, __messageBuffer.sizeOfPartialMsgHrd);
 	} else{ // reading message body
 		byteToRead = (int)(__messageBuffer.msg->getBodySize() - (unsigned)__messageBuffer.getReadCount());
 		readBuffer = __messageBuffer.msg->getMessageBody() + __messageBuffer.getReadCount();
+		Logger::sharding(Logger::Detail, "TM | recv : going to read body : %d bytes into %p which is the %d index of body of message.",
+				byteToRead, readBuffer, __messageBuffer.getReadCount());
+	}
+	if(byteToRead == 0){
+		ASSERT(false);
+		__messageBuffer.timeToWait = 1;
+		return 1;
 	}
 //	char *buffer = (char *) message + __messageBuffer.sizeOfPartialMsgHrd;
 	char * buffer = new char[byteToRead];
@@ -187,11 +196,12 @@ int TransportManager::readMessageInterrupted(Message * message, int fd, MessageB
 			return 1; // returning 1 means come back later.
 		}
 		ASSERT(byteReadCount > 0);
+		Logger::sharding(Logger::Detail, "TM | recv : number of bytes read from recv is (unsigned long int)%d or %d",
+				(unsigned long int)byteReadCount, byteReadCount);
 		// we could at least read one character
 		__messageBuffer.numberOfRetriesWithZeroRead = 0;
 		__messageBuffer.timeToWait = 1;
-		memcpy(readBuffer,
-				buffer, byteReadCount);
+		memcpy(readBuffer, buffer, byteReadCount);
 		delete [] buffer;
 		// because message is not complete we don't write it in message, instead we write it in partial copy in buffer
 		if(byteReadCount == byteToRead){
@@ -207,9 +217,11 @@ int TransportManager::readMessageInterrupted(Message * message, int fd, MessageB
 			ASSERT(byteReadCount < byteToRead);
 			if(message != NULL){
 				__messageBuffer.sizeOfPartialMsgHrd += byteReadCount;
+				Logger::sharding(Logger::Detail, "TM | recv : size of partial message header is : %d", __messageBuffer.sizeOfPartialMsgHrd);
 				return 1; // returning 1 means come back later.
 			}else{
 				__messageBuffer.setReadCount(__messageBuffer.getReadCount() + byteReadCount);
+				Logger::sharding(Logger::Detail, "TM | recv : size of partial body is : %d", __messageBuffer.getReadCount());
 				return 1; // returning 1 means come back later.
 			}
 		}
@@ -222,9 +234,13 @@ int TransportManager::readMessageInterrupted(Message * message, int fd, MessageB
 		if(message != NULL){
 			__messageBuffer.sizeOfPartialMsgHrd = 0;
 			memcpy((char *)message, __messageBuffer.partialMessageHeader, sizeof(Message));
+			memset(__messageBuffer.partialMessageHeader, 0, sizeof(Message));
+			Logger::sharding(Logger::Detail, "TM | recv : msg header read completely. its body size is ",
+					((Message *)message)->getBodySize());
 			return 0;
 		}else{
 			__messageBuffer.setReadCount(__messageBuffer.msg->getBodySize());
+			Logger::sharding(Logger::Detail, "TM | recv : msg body read completely. Body size was ", __messageBuffer.msg->getBodySize());
 			return 0;
 		}
 		return 1;
@@ -303,53 +319,37 @@ bool TransportManager::receiveMessage(int fd, TransportCallback *cb, int comingB
 //	readBuffer.lockForRead();
 	cb->conn->lockRead();
 
-//	if(readBuffer.getPossibleAvailableDataCount() > 0){
-//		readBuffer.setPossibleAvailableDataCount(0);
-//	}
-//	if(comingBack != 0){
-//		int rc = checkSocketIsReadyForRead(cb->conn->fd, readBuffer.timeToWait);
-//		if (rc == -1) {
-//			// there was an error. We cannot continue to read on this socket.
-//			Logger::sharding(Logger::Error, "TM | Read. Msg. Socket is not ready.");
-//			readBuffer.timeToWait = 1;
-//			cb->conn->unlockRead();
-//			return false;
-//		}else if (rc == 0){
-//			readBuffer.timeToWait += 2;
-//			if(readBuffer.timeToWait > 12){
-//				readBuffer.timeToWait = 12;
-//			}
-//			cb->conn->unlockRead();
-//			if(comingBack != -1 && readBuffer.timeToWait < 12){
-//				return receiveMessage(fd, cb, comingBack + 1);
-//			}else{
-//				return true;
-//			}
-//		}
-//	}
-
-
-
 	Message* completeMessage = NULL;
 	bool readBody = false;
 	if(readBuffer.msg == NULL){ // so message header is being read partially
 		/*
 		 *  1. read the message header which is a fixed size block.
 		 */
-		Message msgHeader;
-		int status = readMessageInterrupted(&msgHeader, cb->conn->fd, readBuffer);
+		int rv = checkSocketIsReadyForRead(cb->conn->fd, readBuffer.timeToWait);
+		if(rv == -1){
+			Logger::sharding(Logger::Error, "TM | recv : select returning -1");
+			cb->conn->unlockRead();
+			return false;
+		}else if(rv == 0){ // socket is not ready yet.
+			readBuffer.timeToWait += 2;
+			if(readBuffer.timeToWait > 10){
+				readBuffer.timeToWait = 10;
+			}
+			cb->conn->unlockRead();
+			return true;
+		}
+		char * msgArray = new char[sizeof(Message)];
+		int status = readMessageInterrupted(msgArray, cb->conn->fd, readBuffer);
 		if(status != 0){
 			if(status == 1){ // come back later
+				delete [] msgArray;
 				cb->conn->unlockRead();
-//				if(comingBack != -1){
-//					return receiveMessage(fd, cb, comingBack + 1);
-//				}else{
-//					return true;
-//				}
+				usleep(50);
 				return true;
 			}else if (status == -1){
 				Logger::sharding(Logger::Error, "TM | Rec.Msg. Failed to read message header, status %d", status);
 			}
+			delete [] msgArray;
 			cb->conn->unlockRead();
 			return false;
 		}
@@ -357,6 +357,8 @@ bool TransportManager::receiveMessage(int fd, TransportCallback *cb, int comingB
 		 *  2. sets the distributedMessageId of TM to the maximum messageId received by a message
 		 *  in a thread safe fashion
 		 */
+		Message msgHeader;
+		msgHeader.populate(msgArray);
 
 		while(true) {
 			MessageID_t messageID = getCurrentMessageId();
@@ -376,7 +378,8 @@ bool TransportManager::receiveMessage(int fd, TransportCallback *cb, int comingB
 		 *	have any information in them and therefore their body size is zero
 		 */
 		readBuffer.msg = getMessageAllocator()->allocateMessage(msgHeader.getBodySize());
-		memcpy(readBuffer.msg, &msgHeader, sizeof(Message));
+		readBuffer.msg->populate(msgHeader.getHeaderInfoStart());
+		delete [] msgArray;
 		if(readBuffer.msg->getBodySize() > 18000 ){
 		    Logger::sharding(Logger::Error, "Too large body size. body size = %d ", readBuffer.msg->getBodySize() );
 		}
@@ -395,6 +398,7 @@ bool TransportManager::receiveMessage(int fd, TransportCallback *cb, int comingB
 		if(status != 0){
 			if(status == 1){ // come back later
 				cb->conn->unlockRead();
+				usleep(50);
 //				if(comingBack != -1){
 //					return receiveMessage(fd, cb, comingBack + 1);
 //				}else{

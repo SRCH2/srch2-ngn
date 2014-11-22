@@ -145,7 +145,7 @@ private:
     * | Message Header | Rest of Body |
     * ---------------------------------
     */
-   int readMessageInterrupted(Message *message, int fd, MessageBuffer & buffer);
+   int readMessageInterrupted(char *message, int fd, MessageBuffer & buffer);
 //   /*
 //    *   The function reads the message body which follows the message header.
 //    */
