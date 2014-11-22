@@ -109,11 +109,6 @@ void * TransportManager::notifyUpstreamHandlers(Message *msg, int fd, NodeId  no
 
 int TransportManager::readDataFromSocket(int fd, char *buffer, const int byteToRead, int *byteReadCount) {
 
-	if(byteToRead > 18000){
-		Logger::sharding(Logger::Error, "This message is suspicious. fd = %d, byteToRead = %d",
-				fd, byteToRead);
-		ASSERT(false);
-	}
 	int readByte = recv(fd, buffer, byteToRead, MSG_DONTWAIT);
 
 	if(readByte == 0) {
@@ -173,11 +168,6 @@ int TransportManager::readMessageInterrupted(Message * message, int fd, MessageB
 		readBuffer = __messageBuffer.partialMessageHeader+__messageBuffer.sizeOfPartialMsgHrd;
 	} else{ // reading message body
 		byteToRead = __messageBuffer.msg->getBodySize() - __messageBuffer.getReadCount();
-		if(byteToRead > 18000){
-			Logger::sharding(Logger::Error, "Body size : %d, read count = %d",  (int)__messageBuffer.msg->getBodySize(),
-					__messageBuffer.getReadCount());
-//			ASSERT(false);
-		}
 		readBuffer = __messageBuffer.msg->getMessageBody() + __messageBuffer.getReadCount();
 	}
 //	char *buffer = (char *) message + __messageBuffer.sizeOfPartialMsgHrd;
@@ -601,9 +591,6 @@ MessageID_t TransportManager::_sendMessage(int fd, Message *message) {
 	if(! (message->getType() >= ShardingMessageTypeFirst && message->getType() <= ShardingMessageTypeLast) ){
 		Logger::sharding(Logger::Error, "TM | Send : Message rejected from send because type is not valid, type is : %32x", message->getType());
 		return 0;
-	}
-	if(message->getType() == MigrationInitMessage){
-		Logger::sharding(Logger::Warning, "TM | Send : Suspicious body size = %d", message->getBodySize());
 	}
 
 	unsigned totalbufferSize = message->getBodySize() + sizeof(Message);
