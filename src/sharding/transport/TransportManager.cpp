@@ -186,6 +186,7 @@ int TransportManager::readMessageInterrupted(Message * message, int fd, MessageB
 	int status = readDataFromSocket(fd, buffer, byteToRead, &byteReadCount);
 	if(status == 1){ // either socket wasn't ready or partial read of the message header
 		if(byteReadCount == 0){ // socket not ready
+			delete [] buffer;
 			__messageBuffer.numberOfRetriesWithZeroRead ++;
 			__messageBuffer.timeToWait += 2;
 			if(__messageBuffer.numberOfRetriesWithZeroRead >= 10){
@@ -201,6 +202,7 @@ int TransportManager::readMessageInterrupted(Message * message, int fd, MessageB
 		__messageBuffer.timeToWait = 1;
 		memcpy(readBuffer,
 				buffer, byteReadCount);
+		delete [] buffer;
 		// because message is not complete we don't write it in message, instead we write it in partial copy in buffer
 		if(byteReadCount == byteToRead){
 			ASSERT(false);
@@ -224,6 +226,7 @@ int TransportManager::readMessageInterrupted(Message * message, int fd, MessageB
 	}else if (status == 0){ // exactly this amount of data is read // suspicious
 		ASSERT(byteReadCount == byteToRead);
 		memcpy(readBuffer, buffer, byteReadCount);
+		delete [] buffer;
 		__messageBuffer.numberOfRetriesWithZeroRead = 0;
 		__messageBuffer.timeToWait = 1;
 		if(message != NULL){
@@ -236,10 +239,12 @@ int TransportManager::readMessageInterrupted(Message * message, int fd, MessageB
 		}
 		return 1;
 	}else if (status == -1){
+		delete [] buffer;
 		__messageBuffer.timeToWait = 1;
 		return -1;
 	}
 	ASSERT(false);
+	delete [] buffer;
 	__messageBuffer.timeToWait = 1;
 	return -1;
 
