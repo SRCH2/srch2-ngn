@@ -483,8 +483,8 @@ LocalShardContainer::LocalShardContainer(const LocalShardContainer & copy):coreI
 
 LocalShardContainer & LocalShardContainer::operator=(const LocalShardContainer & copy){
 
-	const_cast<unsigned>(coreId) = copy.coreId;
-	const_cast<NodeId>(nodeId) = copy.nodeId;
+	*(const_cast<unsigned*>(&coreId)) = copy.coreId;
+	*(const_cast<NodeId*>(&nodeId)) = copy.nodeId;
 
 	for(map<unsigned, vector<ClusterShard *> >::const_iterator clusterShardItr = copy.localClusterShards.begin();
 			clusterShardItr != copy.localClusterShards.end(); ++clusterShardItr){

@@ -30,7 +30,7 @@ public:
 	   unsetMask(maskBackup, MSG_DP_REPLY_MASK);
 	   unsetMask(maskBackup, MSG_SHARDING_MASK);
 	   unsetMask(maskBackup, MSG_MIGRATION_MASK);
-	   return (maskBackup == NULL);
+	   return (maskBackup == 0);
    }
 
    void unsetMask(char & mask, const char msg_mask) const{

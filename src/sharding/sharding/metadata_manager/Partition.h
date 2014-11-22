@@ -92,9 +92,9 @@ public:
 		if(this != &left){
 			return *this;
 		}
-		const_cast<unsigned>(this->coreId) = left.coreId;
-		const_cast<unsigned>(this->totalNumberOfPartitions) = left.totalNumberOfPartitions;
-		const_cast<unsigned>(this->replicationDegree) = left.replicationDegree;
+		*(const_cast<unsigned *>(&(this->coreId))) = left.coreId;
+		*(const_cast<unsigned *>(&(this->totalNumberOfPartitions))) = left.totalNumberOfPartitions;
+		*(const_cast<unsigned *>(&(this->replicationDegree))) = left.replicationDegree;
 
 		for(map<unsigned, ClusterPartition *>::const_iterator cPartItr = left.clusterPartitions.begin();
 				cPartItr != left.clusterPartitions.end(); ++cPartItr){
