@@ -234,7 +234,7 @@ int TransportManager::readMessageInterrupted(bool isMessageHeader, int fd, Messa
 			return 0;
 		}else{
 			*newCompleteMessage = __messageBuffer.finalizeMessage();
-			Logger::sharding(Logger::Detail, "TM | recv : msg body read completely. Body size was ", __messageBuffer.msg->getBodySize());
+			Logger::sharding(Logger::Detail, "TM | recv : msg body read completely. Body size was ", (*newCompleteMessage)->getBodySize());
 			return 0;
 		}
 		return 1;
