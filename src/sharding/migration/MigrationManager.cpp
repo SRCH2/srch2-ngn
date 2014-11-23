@@ -15,6 +15,7 @@
 #include <ifaddrs.h>
 #include <netdb.h>
 #include <net/if.h>
+#include "core/util/SerializationHelper.h"
 
 #include "util/Logger.h"
 #include "util/Assert.h"
@@ -40,35 +41,146 @@ struct MigrationInitMsgBody{
 	unsigned srcNodeId;
 	unsigned dstNodeId;
 	unsigned shardComponentCount;
+	void * serialize(void * buffer)const{
+		buffer = migratingShardId.serialize(buffer);
+		buffer = destinationShardId.serialize(buffer);
+		buffer = srch2::util::serializeFixedTypes(srcOperationId, buffer);
+		buffer = srch2::util::serializeFixedTypes(dstOperationId, buffer);
+		buffer = srch2::util::serializeFixedTypes(srcNodeId, buffer);
+		buffer = srch2::util::serializeFixedTypes(dstNodeId, buffer);
+		buffer = srch2::util::serializeFixedTypes(shardComponentCount, buffer);
+		return buffer;
+	}
+	unsigned getNumberOfBytes() const{
+		unsigned numberOfBytes = 0;
+		numberOfBytes += migratingShardId.getNumberOfBytes();
+		numberOfBytes += destinationShardId.getNumberOfBytes();
+		numberOfBytes += sizeof(unsigned);
+		numberOfBytes += sizeof(unsigned);
+		numberOfBytes += sizeof(unsigned);
+		numberOfBytes += sizeof(unsigned);
+		numberOfBytes += sizeof(unsigned);
+		return numberOfBytes;
+	}
+	void * deserialize(void * buffer){
+		buffer = migratingShardId.deserialize(buffer);
+		buffer = destinationShardId.deserialize(buffer);
+		buffer = srch2::util::deserializeFixedTypes(buffer, srcOperationId);
+		buffer = srch2::util::deserializeFixedTypes(buffer, dstOperationId);
+		buffer = srch2::util::deserializeFixedTypes(buffer, srcNodeId);
+		buffer = srch2::util::deserializeFixedTypes(buffer, dstNodeId);
+		buffer = srch2::util::deserializeFixedTypes(buffer, shardComponentCount);
+		return buffer;
+	}
 };
 
 struct MigrationInitAckMsgBody{
 	ClusterShardId shardId;
 	unsigned ipAddress;
 	short portnumber;
+	void * serialize(void * buffer)const{
+		buffer = shardId.serialize(buffer);
+		buffer = srch2::util::serializeFixedTypes(ipAddress, buffer);
+		buffer = srch2::util::serializeFixedTypes(portnumber, buffer);
+		return buffer;
+	}
+	unsigned getNumberOfBytes() const{
+		unsigned numberOfBytes = 0;
+		numberOfBytes += shardId.getNumberOfBytes();
+		numberOfBytes += sizeof(unsigned);
+		numberOfBytes += sizeof(short);
+		return numberOfBytes;
+	}
+	void * deserialize(void * buffer){
+		buffer = shardId.deserialize(buffer);
+		buffer = srch2::util::deserializeFixedTypes(buffer, ipAddress);
+		buffer = srch2::util::deserializeFixedTypes(buffer, portnumber);
+		return buffer;
+	}
 };
 
 struct ShardComponentInfoMsgBody {
 	ClusterShardId shardId;
 	unsigned componentSize;
-	unsigned componentNameSize;
-	char * getName(){
-		return (char *)((char *)this + sizeof(ShardComponentInfoMsgBody));
+	string componentName;
+	void * serialize(void * buffer)const{
+		buffer = shardId.serialize(buffer);
+		buffer = srch2::util::serializeFixedTypes(componentSize, buffer);
+		buffer = srch2::util::serializeString(componentName, buffer);
+		return buffer;
+	}
+	unsigned getNumberOfBytes() const{
+		unsigned numberOfBytes = 0;
+		numberOfBytes += shardId.getNumberOfBytes();
+		numberOfBytes += sizeof(unsigned);
+		numberOfBytes += sizeof(unsigned) + componentName.size();
+		return numberOfBytes;
+	}
+	void * deserialize(void * buffer){
+		buffer = shardId.deserialize(buffer);
+		buffer = srch2::util::deserializeFixedTypes(buffer, componentSize);
+		buffer = srch2::util::deserializeString(buffer, componentName);
+		return buffer;
 	}
 };
 
 struct ShardComponentInfoAckMsgBody{
 	ClusterShardId shardId;
+	void * serialize(void * buffer)const{
+		buffer = shardId.serialize(buffer);
+		return buffer;
+	}
+	unsigned getNumberOfBytes() const{
+		unsigned numberOfBytes = 0;
+		numberOfBytes += shardId.getNumberOfBytes();
+		return numberOfBytes;
+	}
+	void * deserialize(void * buffer){
+		buffer = shardId.deserialize(buffer);
+		return buffer;
+	}
 };
 
 struct MigrationData {
 	ClusterShardId shardId;
 	unsigned sequenceNumber;
 	char data[BLOCK_SIZE];
+	void * serialize(void * buffer)const{
+		buffer = shardId.serialize(buffer);
+		buffer = srch2::util::serializeFixedTypes(sequenceNumber, buffer);
+		memcpy(buffer, data, BLOCK_SIZE);
+		return buffer;
+	}
+	unsigned getNumberOfBytes() const{
+		unsigned numberOfBytes = 0;
+		numberOfBytes += shardId.getNumberOfBytes();
+		numberOfBytes += sizeof(unsigned);
+		numberOfBytes += BLOCK_SIZE;
+		return numberOfBytes;
+	}
+	void * deserialize(void * buffer){
+		buffer = shardId.deserialize(buffer);
+		buffer = srch2::util::deserializeFixedTypes(buffer, sequenceNumber);
+		memcpy(data, buffer, BLOCK_SIZE);
+		return buffer;
+	}
 };
 
 struct MigrationDoneMsgBody{
 	ClusterShardId shardId;
+	void * serialize(void * buffer)const{
+		buffer = shardId.serialize(buffer);
+		return buffer;
+	}
+	unsigned getNumberOfBytes() const{
+		unsigned numberOfBytes = 0;
+		numberOfBytes += shardId.getNumberOfBytes();
+		return numberOfBytes;
+	}
+	void * deserialize(void * buffer){
+		buffer = shardId.deserialize(buffer);
+		return buffer;
+	}
 };
 
 struct MigrationDoneAckMsgBody{
@@ -77,6 +189,19 @@ struct MigrationDoneAckMsgBody{
 	unsigned missingPacketCount;
 	unsigned * getArr(){
 		return (unsigned *)((char *)this + sizeof(MigrationDoneAckMsgBody));
+	}
+	void * serialize(void * buffer)const{
+		ASSERT(false);//TODO
+		return buffer;
+	}
+	unsigned getNumberOfBytes() const{
+		unsigned numberOfBytes = 0;
+		ASSERT(false);//TODO
+		return numberOfBytes;
+	}
+	void * deserialize(void * buffer){
+		ASSERT(false);//TODO
+		return buffer;
 	}
 };
 
@@ -197,7 +322,9 @@ bool MMCallBackForTM::resolveMessage(Message * incomingMessage, NodeId remoteNod
 	switch (incomingMessage->getType()) {
 	case MigrationInitMessage:
 	{
-		MigrationInitMsgBody *initMsgBody = new (incomingMessage->getMessageBody()) MigrationInitMsgBody;
+		MigrationInitMsgBody initMsgBodyObj;
+		initMsgBodyObj.deserialize(incomingMessage->getMessageBody());
+		MigrationInitMsgBody * initMsgBody = &initMsgBodyObj;
 
 		migrationMgr->sessionLock.lock();
 		if (!migrationMgr->hasActiveSession(initMsgBody->migratingShardId, remoteNode)) {
@@ -224,13 +351,13 @@ bool MMCallBackForTM::resolveMessage(Message * incomingMessage, NodeId remoteNod
 	}
 	case MigrationComponentBeginMessage:
 	{
-		ShardComponentInfoMsgBody *compInfoMsgBody = (ShardComponentInfoMsgBody *)incomingMessage->getMessageBody();
+		ShardComponentInfoMsgBody compInfoMsgBody;
+		compInfoMsgBody.deserialize(incomingMessage->getMessageBody());
 		string sessionkey;
 		migrationMgr->sessionLock.lock();
-		if (migrationMgr->hasActiveSession(compInfoMsgBody->shardId, remoteNode, sessionkey)) {
-			migrationMgr->migrationSession[sessionkey].shardCompSize = compInfoMsgBody->componentSize;
-			migrationMgr->migrationSession[sessionkey].shardCompName.assign(compInfoMsgBody->getName(),
-					compInfoMsgBody->componentNameSize);
+		if (migrationMgr->hasActiveSession(compInfoMsgBody.shardId, remoteNode, sessionkey)) {
+			migrationMgr->migrationSession[sessionkey].shardCompSize = compInfoMsgBody.componentSize;
+			migrationMgr->migrationSession[sessionkey].shardCompName = compInfoMsgBody.componentName;
 			migrationMgr->migrationSession[sessionkey].status = MM_STATE_INFO_RCVD;
 		}
 		migrationMgr->sessionLock.unlock();
@@ -238,12 +365,13 @@ bool MMCallBackForTM::resolveMessage(Message * incomingMessage, NodeId remoteNod
 	}
 	case MigrationInitAckMessage:
 	{
-		MigrationInitAckMsgBody *initAckMessageBody = (MigrationInitAckMsgBody *)incomingMessage->getMessageBody();
+		MigrationInitAckMsgBody initAckMessageBody ;
+		initAckMessageBody.deserialize(incomingMessage->getMessageBody());
 		string sessionkey;
 		migrationMgr->sessionLock.lock();
-		if (migrationMgr->hasActiveSession(initAckMessageBody->shardId, remoteNode, sessionkey)) {
-			migrationMgr->migrationSession[sessionkey].listeningPort = initAckMessageBody->portnumber;
-			migrationMgr->migrationSession[sessionkey].remoteAddr = initAckMessageBody->ipAddress;
+		if (migrationMgr->hasActiveSession(initAckMessageBody.shardId, remoteNode, sessionkey)) {
+			migrationMgr->migrationSession[sessionkey].listeningPort = initAckMessageBody.portnumber;
+			migrationMgr->migrationSession[sessionkey].remoteAddr = initAckMessageBody.ipAddress;
 			migrationMgr->migrationSession[sessionkey].status = MM_STATE_INIT_ACK_RCVD;
 		}
 		migrationMgr->sessionLock.unlock();
@@ -253,9 +381,10 @@ bool MMCallBackForTM::resolveMessage(Message * incomingMessage, NodeId remoteNod
 	{
 		//if (migrationMgr->migrationSession[compInfoMsgBody->shardId].status == MM_STATUS_ACK_RECEIVED)
 		string sessionkey;
-		ShardComponentInfoMsgBody *compInfoMsgBody = (ShardComponentInfoMsgBody *)incomingMessage->getMessageBody();
+		ShardComponentInfoAckMsgBody compInfoMsgBody;
+		compInfoMsgBody.deserialize(incomingMessage->getMessageBody());
 		migrationMgr->sessionLock.lock();
-		if (migrationMgr->hasActiveSession(compInfoMsgBody->shardId, remoteNode, sessionkey)) {
+		if (migrationMgr->hasActiveSession(compInfoMsgBody.shardId, remoteNode, sessionkey)) {
 			migrationMgr->migrationSession[sessionkey].status = MM_STATE_INFO_ACK_RCVD;
 		}
 		migrationMgr->sessionLock.unlock();
@@ -264,9 +393,10 @@ bool MMCallBackForTM::resolveMessage(Message * incomingMessage, NodeId remoteNod
 	case MigrationComponentEndAckMessage:
 	{
 		string sessionkey;
-		MigrationDoneMsgBody *completeMsgBody = (MigrationDoneMsgBody *)incomingMessage->getMessageBody();
+		MigrationDoneMsgBody completeMsgBody;
+		completeMsgBody.deserialize(incomingMessage->getMessageBody());
 		migrationMgr->sessionLock.lock();
-		if (migrationMgr->hasActiveSession(completeMsgBody->shardId, remoteNode, sessionkey)) {
+		if (migrationMgr->hasActiveSession(completeMsgBody.shardId, remoteNode, sessionkey)) {
 			migrationMgr->migrationSession[sessionkey].status = MM_STATE_COMPONENT_TRANSFERRED_ACK_RCVD;
 		}
 		migrationMgr->sessionLock.unlock();
@@ -275,9 +405,10 @@ bool MMCallBackForTM::resolveMessage(Message * incomingMessage, NodeId remoteNod
 	case MigrationCompleteAckMessage:
 	{
 		string sessionkey;
-		MigrationDoneMsgBody *completeMsgBody = (MigrationDoneMsgBody *)incomingMessage->getMessageBody();
+		MigrationDoneMsgBody completeMsgBody ;
+		completeMsgBody.deserialize(incomingMessage->getMessageBody());
 		migrationMgr->sessionLock.lock();
-		if (migrationMgr->hasActiveSession(completeMsgBody->shardId, remoteNode, sessionkey)) {
+		if (migrationMgr->hasActiveSession(completeMsgBody.shardId, remoteNode, sessionkey)) {
 			migrationMgr->migrationSession[sessionkey].status = MM_STATE_SHARD_TRANSFERRED_ACK_RCVD;
 		}
 		migrationMgr->sessionLock.unlock();
@@ -721,9 +852,7 @@ void MigrationService::sendShard(ClusterShardId shardId, unsigned destinationNod
 
 void MigrationManager::doInitialHandShake(MigrationSessionInfo& currentSessionInfo) {
 
-	Message *initMessage = MessageAllocator().allocateMessage(sizeof(MigrationInitMsgBody));
-	initMessage->setType(MigrationInitMessage);
-	MigrationInitMsgBody *initMessageBody = new (initMessage->getMessageBody()) MigrationInitMsgBody;
+	MigrationInitMsgBody *initMessageBody = new MigrationInitMsgBody;
 	initMessageBody->migratingShardId = currentSessionInfo.currentShardId;
 	initMessageBody->destinationShardId = currentSessionInfo.destShardId;
 
@@ -734,6 +863,10 @@ void MigrationManager::doInitialHandShake(MigrationSessionInfo& currentSessionIn
 	initMessageBody->srcNodeId = currentSessionInfo.srcNodeId;
 	initMessageBody->dstNodeId = currentSessionInfo.destNodeId;
 
+	Message *initMessage = MessageAllocator().allocateMessage(initMessageBody->getNumberOfBytes());
+	initMessage->setType(MigrationInitMessage);
+	initMessageBody->serialize(initMessage->getMessageBody());
+	delete initMessageBody;
 	unsigned destinationNodeId = currentSessionInfo.remoteNode;
 	currentSessionInfo.status = MM_STATE_INIT_ACK_WAIT;
 	//int tryCount = 5;
@@ -752,12 +885,13 @@ void MigrationManager::doInitialHandShake(MigrationSessionInfo& currentSessionIn
 
 void MigrationManager::sendInitMessageAck(MigrationSessionInfo& currentSessionInfo) {
 
-	Message * initAckMesssage = MessageAllocator().allocateMessage(sizeof(MigrationInitAckMsgBody));
+	MigrationInitAckMsgBody body;
+	body.shardId = currentSessionInfo.currentShardId;
+	body.portnumber = currentSessionInfo.listeningPort;
+	body.ipAddress = transport->getPublishedInterfaceNumericAddr();
+	Message * initAckMesssage = MessageAllocator().allocateMessage(body.getNumberOfBytes());
 	initAckMesssage->setType(MigrationInitAckMessage);
-	MigrationInitAckMsgBody *body = new (initAckMesssage->getMessageBody()) MigrationInitAckMsgBody;
-	body->shardId = currentSessionInfo.currentShardId;
-	body->portnumber = currentSessionInfo.listeningPort;
-	body->ipAddress = transport->getPublishedInterfaceNumericAddr();
+	body.serialize(initAckMesssage->getMessageBody());
 	currentSessionInfo.status = MM_STATE_INFO_WAIT;
 	sendMessage(currentSessionInfo.remoteNode, initAckMesssage);
 	MessageAllocator().deallocateByMessagePointer(initAckMesssage);
@@ -765,10 +899,11 @@ void MigrationManager::sendInitMessageAck(MigrationSessionInfo& currentSessionIn
 }
 
 void MigrationManager::sendInfoAckMessage(MigrationSessionInfo& currentSessionInfo) {
-	Message * infoAckMesssage = MessageAllocator().allocateMessage(sizeof(ShardComponentInfoAckMsgBody));
+	ShardComponentInfoAckMsgBody body;
+	body.shardId = currentSessionInfo.currentShardId;
+	Message * infoAckMesssage = MessageAllocator().allocateMessage(body.getNumberOfBytes());
 	infoAckMesssage->setType(MigrationComponentBeginAckMessage);
-	ShardComponentInfoAckMsgBody *body = new (infoAckMesssage->getMessageBody()) ShardComponentInfoAckMsgBody;
-	body->shardId = currentSessionInfo.currentShardId;
+	body.serialize(infoAckMesssage->getMessageBody());
 	currentSessionInfo.status = MM_STATE_COMPONENT_RECEIVING;
 	Logger::debug("sending component begin ack to %d ", currentSessionInfo.remoteNode);
 	sendMessage(currentSessionInfo.remoteNode, infoAckMesssage);
@@ -779,14 +914,13 @@ void MigrationManager::sendComponentInfoAndWaitForAck(MigrationSessionInfo& curr
 
 	unsigned destinationNodeId = currentSessionInfo.remoteNode;
 	string componentName = currentSessionInfo.shardCompName;
-	unsigned compInfoMessageSize = sizeof(ShardComponentInfoMsgBody) + componentName.size();
-	Message *compInfoMessage = allocateMessage(compInfoMessageSize);
+	ShardComponentInfoMsgBody body;
+	body.shardId = currentSessionInfo.currentShardId;
+	body.componentSize = currentSessionInfo.shardCompSize;
+	body.componentName = componentName;
+	Message *compInfoMessage = allocateMessage(body.getNumberOfBytes());
 	compInfoMessage->setType(MigrationComponentBeginMessage);
-	ShardComponentInfoMsgBody *bodyPtr = new (compInfoMessage->getMessageBody()) ShardComponentInfoMsgBody;
-	bodyPtr->shardId = currentSessionInfo.currentShardId;
-	bodyPtr->componentSize = currentSessionInfo.shardCompSize;
-	bodyPtr->componentNameSize = componentName.size();
-	memcpy(bodyPtr->getName(), componentName.c_str(), componentName.size());
+	body.serialize(compInfoMessage->getMessageBody());
 	currentSessionInfo.status = MM_STATE_INFO_ACK_WAIT;
 	sendMessage(destinationNodeId, compInfoMessage);
 	deAllocateMessage(compInfoMessage);
@@ -798,16 +932,16 @@ void MigrationManager::sendComponentDoneMsg(MigrationSessionInfo& currentSession
 
 	const string& componentName  = currentSessionInfo.shardCompName;
 	bool shardDone = componentName.size() > 0 ? false : true;
-	Message *compDoneMessage = allocateMessage(sizeof(MigrationDoneMsgBody));
+	MigrationDoneMsgBody body;
+	body.shardId = currentSessionInfo.currentShardId;
 
+	Message *compDoneMessage = allocateMessage(body.getNumberOfBytes());
 	if (!shardDone) {
 		compDoneMessage->setType(MigrationComponentEndAckMessage);
 	} else {
 		compDoneMessage->setType(MigrationCompleteAckMessage);
 	}
-
-	MigrationDoneMsgBody *bodyPtr = new (compDoneMessage->getMessageBody()) MigrationDoneMsgBody;
-	bodyPtr->shardId = currentSessionInfo.currentShardId;
+	body.serialize(compDoneMessage);
 
 	if (!shardDone) {
 		currentSessionInfo.status = MM_STATE_INFO_WAIT;  // waiting for next component
