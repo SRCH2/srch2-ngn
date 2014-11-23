@@ -10,7 +10,7 @@ namespace httpwrapper {
 typedef unsigned int MessageID_t;
 
 const int MSG_HEADER_CONST_SIZE = 17;     // 00010000
-const int MSG_HEADER_PADDING_SIZE = 15;
+const int MSG_HEADER_PADDING_SIZE = (32 - MSG_HEADER_CONST_SIZE % 32);
 
 const char MSG_LOCAL_MASK = 0x1;        // 00000001
 const char MSG_DISCOVERY_MASK = 0x2;    // 00000010
@@ -106,6 +106,12 @@ public:
    unsigned getBodySize(){
 	   return this->_getBodySize();
    }
+   unsigned getTotalSize(){
+	   return this->getBodySize() + sizeof(Message);
+   }
+   unsigned getHeaderSize(){
+	   return sizeof(Message); // sizeof(Message bytes are used for the header but only the array conaines information - padding!)
+   }
    void setMessageId(MessageID_t id){
 	   MessageID_t & idRef = this->_getMessageId();
 	   idRef = id;
@@ -145,7 +151,7 @@ public:
    }
    char getMask(){return this->_getMask();};
    char * getMessageBody() {
-	   return (char *)((char *)this + sizeof(Message));
+	   return (char *)(body);
    }
 
    static Message * getMessagePointerFromBodyPointer( void * bodyPointer){
@@ -156,7 +162,7 @@ public:
 	   return (char *)((char *)messagePointer + sizeof(Message));
    }
 
-   void populate(char * headerDataStart){
+   void populateHeader(char * headerDataStart /* a byte array that containes MSG_HEADER_CONST_SIZE bytes which is the data of message */){
 	   memcpy(headerData, headerDataStart, MSG_HEADER_CONST_SIZE);
    }
 
@@ -171,38 +177,56 @@ public:
 
 private:
    inline ShardingMessageType & _getShardingMessageType(){
-	   return (ShardingMessageType &)(*((ShardingMessageType *)headerData));
+	   return (ShardingMessageType &)(*(ShardingMessageType *)(headerData + _getShardingMessageTypeOffset()));
+   }
+   inline unsigned _getShardingMessageTypeOffset(){
+	   return 0;
    }
    inline char & _getMask(){
-	   return (char &)(*((char *)headerData + sizeof(ShardingMessageType)));
+	   return (char &)(*(headerData + _getMaskOffset()));
+   }
+   inline unsigned _getMaskOffset(){
+	   return _getShardingMessageTypeOffset() + sizeof(ShardingMessageType);
    }
    inline unsigned & _getBodySize(){
-	   return (unsigned &)(*((unsigned *)headerData + sizeof(ShardingMessageType) + sizeof(char)));
+	   return (unsigned &)(*(unsigned *)(headerData + _getBodySizeOffset()));
+   }
+   inline unsigned _getBodySizeOffset(){
+	   return _getMaskOffset() + sizeof(char);
    }
    inline unsigned & _getMessageId(){
-	   return (MessageID_t &)(*((MessageID_t *)headerData + sizeof(ShardingMessageType)
-			   + sizeof(char) + sizeof(unsigned int)));
+	   return (MessageID_t &)(*(MessageID_t *)(headerData + _getMessageIdOffset()));
+   }
+   inline unsigned _getMessageIdOffset(){
+	   return _getBodySizeOffset() + sizeof(MessageID_t);
    }
    inline unsigned & _getReqMessageId(){
-	   return (MessageID_t &)(*((MessageID_t *)headerData + sizeof(ShardingMessageType)
-			   + sizeof(char) + sizeof(unsigned int) + sizeof(MessageID_t)));
+	   return (MessageID_t &)(*(MessageID_t *)(headerData + _getReqMessageIdOffset()));
+   }
+   inline unsigned _getReqMessageIdOffset(){
+	   return _getMessageIdOffset() + sizeof(MessageID_t);
    }
    // 4 + 1 + 4 + 4 + 4 = 17 = MSG_CONST_SIZE
-   char headerData[MSG_HEADER_CONST_SIZE]; // because different machines can have different alignments ...
-   char _headerPaddingPlaceHolders[MSG_HEADER_PADDING_SIZE];
+   // because different architectures can have different alignments
+   // we store all data of message header in a byte array and access them through getter methods
+   // that return reference variables.
+   // NOTE : this must be offset zero
+   char headerData[MSG_HEADER_CONST_SIZE];
    /// now, we can always safely use the Message * cast technique
 //   ShardingMessageType shardingMessageType;
 //   char mask;
 //   unsigned int bodySize;
 //   MessageID_t id;
 //   MessageID_t requestMessageId; //used by response type messages
-//   char body[0];
 
    /*
     * NOTE : allocate must be like allocate( sizeof(Message) + length of body )
     *        but serialize and deserialize must be only on the headerData array because different
     *        platforms can have different paddings ...
     */
+   char body[0]; // zero-length array, aka Struct Hack.
+   // body acts as a pointer which always points to
+   // end of the header message.
 };
 
 }

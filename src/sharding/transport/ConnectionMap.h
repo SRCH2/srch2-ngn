@@ -10,6 +10,7 @@
 #include <boost/thread/shared_mutex.hpp>
 #include <boost/thread/locks.hpp>
 #include "Message.h"
+#include "MessageAllocator.h"
 
 namespace srch2 {
 namespace httpwrapper {
@@ -29,13 +30,13 @@ public:
     Message* msg;
     bool lock;
 private:
-    int readCount;
-    int possibleAvailableData;
+    unsigned readCount;
+    unsigned possibleAvailableData;
 public:
     char * partialMessageHeader;
     unsigned sizeOfPartialMsgHrd;
     unsigned numberOfRetriesWithZeroRead;
-    int timeToWait;
+    unsigned timeToWait;
     MessageBuffer() : msg(NULL), lock(false), readCount(0), possibleAvailableData(0),
     		partialMessageHeader(new char[sizeof(Message)]), sizeOfPartialMsgHrd(0),
     		numberOfRetriesWithZeroRead(0), timeToWait(0){
@@ -46,6 +47,28 @@ public:
             partialMessageHeader(new char[sizeof(Message)]), sizeOfPartialMsgHrd(msgBfr.sizeOfPartialMsgHrd),
             numberOfRetriesWithZeroRead(msgBfr.numberOfRetriesWithZeroRead), timeToWait(msgBfr.timeToWait){
         memcpy(partialMessageHeader, msgBfr.partialMessageHeader, sizeof(Message));
+    }
+    void finalizeMessageHeader(){
+    	// make a message object and put it in msg pointer.
+    	if(msg != NULL){
+    		ASSERT(false);
+    		return;
+    	}
+    	Message msgHeader;
+    	msgHeader.populateHeader(partialMessageHeader);
+    	msg = MessageAllocator().allocateMessage(msgHeader.getBodySize());
+    	// body size is already set but it will be over-written in populate
+    	msg->populateHeader(partialMessageHeader);
+
+        memset(partialMessageHeader, 0, sizeof(Message));
+        sizeOfPartialMsgHrd = 0;
+    }
+
+    Message * finalizeMessage(){
+    	Message * completeMessage = msg;
+    	msg = NULL;
+    	setReadCount(0);
+    	return completeMessage;
     }
     MessageBuffer & operator=(const MessageBuffer & msgBfr){
         if(this == &msgBfr){
@@ -63,13 +86,13 @@ public:
         return *this;
     }
     ~MessageBuffer(){delete[] partialMessageHeader;};
-    void setReadCount(int readCount){
+    void setReadCount(unsigned readCount){
     	this->readCount = readCount;
     	if(msg != NULL && msg->getBodySize() == readCount){
     		possibleAvailableData ++;
     	}
     }
-    int getReadCount() const{
+    unsigned getReadCount() const{
     	return readCount;
     }
     void lockForRead(){

@@ -145,7 +145,7 @@ private:
     * | Message Header | Rest of Body |
     * ---------------------------------
     */
-   int readMessageInterrupted(char *message, int fd, MessageBuffer & buffer);
+   int readMessageInterrupted(bool isMessageHeader, int fd, MessageBuffer & buffer, Message ** newCompleteMessage = NULL);
 //   /*
 //    *   The function reads the message body which follows the message header.
 //    */
@@ -154,8 +154,8 @@ private:
    int checkSocketIsReadyForRead(int fd, int time = 1) {
 	   return checkSocketIsReady(fd, true, time);
    }
-   int checkSocketIsReadyForWrite(int fd) {
-	   return checkSocketIsReady(fd, false);
+   int checkSocketIsReadyForWrite(int fd, int time = 1) {
+	   return checkSocketIsReady(fd, false, time);
    }
    /*
     *  use select system call to check whether the socket is ready for
