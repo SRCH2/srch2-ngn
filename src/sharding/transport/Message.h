@@ -46,29 +46,29 @@ public:
    }
 
    bool isLocal(){
-	   char & mask = this->_getMask();
+	   char mask = this->_getMask();
      return mask & MSG_LOCAL_MASK;
    }
    bool isDPRequest() {
-	   char & mask = this->_getMask();
+	   char mask = this->_getMask();
      return mask & MSG_DP_REQUEST_MASK;
    }
    bool isDPReply() {
-	   char & mask = this->_getMask();
+	   char mask = this->_getMask();
      return mask & MSG_DP_REPLY_MASK;
    }
    bool isDiscovery() {
-	   char & mask = this->_getMask();
+	   char mask = this->_getMask();
      return mask & MSG_DISCOVERY_MASK;
    }
 
    bool isMigration() {
-	   char & mask = this->_getMask();
+	   char mask = this->_getMask();
 	   return mask & MSG_MIGRATION_MASK;
    }
 
    bool isSharding() {
-	   char & mask = this->_getMask();
+	   char mask = this->_getMask();
      return mask & MSG_SHARDING_MASK;
    }
    Message * setLocal(){

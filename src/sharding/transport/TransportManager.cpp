@@ -69,24 +69,26 @@ void * TransportManager::notifyUpstreamHandlers(Message *msg, int fd, NodeId  no
 		getMessageAllocator()->deallocateByMessagePointer(msg);
 
 	} else if(msg->isDiscovery()) {
+		Logger::sharding(Logger::Detail, "TM | broker : Discovery message received with type %s", getShardingMessageTypeStr(msg->getType()));
 		if (getDiscoveryHandler() != NULL) {
 			getDiscoveryHandler()->resolveMessage(msg, nodeId);
 		}
 		getMessageAllocator()->deallocateByMessagePointer(msg);
 	} else if(msg->isMigration()) {
-
+		Logger::sharding(Logger::Detail, "TM | broker : Migration message received with type %s", getShardingMessageTypeStr(msg->getType()));
 		if (getMMHandler() != NULL) {
 			getMMHandler()->resolveMessage(msg, nodeId);
 		}
 		getMessageAllocator()->deallocateByMessagePointer(msg);
 	} else if(msg->isSharding()){
+		Logger::sharding(Logger::Detail, "TM | broker : Sharding message received with type %s", getShardingMessageTypeStr(msg->getType()));
 //		Logger::debug("Sharding message is received. Msg type is %d", msg->getType());
 		if(getShardManagerHandler() != NULL){
 			getShardManagerHandler()->resolveMessage(msg, nodeId);
 		}
 		getMessageAllocator()->deallocateByMessagePointer(msg);
 	}else{
-
+		Logger::sharding(Logger::Detail, "TM | broker : SM message received with type %s", getShardingMessageTypeStr(msg->getType()));
 		// Check whether this node has registered SMHandler into TM yet. If not skip the message.
 		if (getSmHandler() != NULL){
 			getSmHandler()->resolveMessage(msg, nodeId);
