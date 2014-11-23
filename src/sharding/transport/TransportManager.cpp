@@ -375,8 +375,10 @@ bool TransportManager::receiveMessage(int fd, TransportCallback *cb, int comingB
 		memset(readBuffer.partialMessageHeader, 0, sizeof(Message));
 		if(readBuffer.msg->getBodySize() != 0){
 			readBody = true;
+		}else{
+			completeMessage = readBuffer.finalizeMessage();
+			readBuffer.setReadCount(0);
 		}
-        readBuffer.setReadCount(0);
 	}else{
 		readBody = true;
 	}
