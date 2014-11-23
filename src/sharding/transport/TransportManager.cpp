@@ -229,12 +229,12 @@ int TransportManager::readMessageInterrupted(bool isMessageHeader, int fd, Messa
 		__messageBuffer.timeToWait = 1;
 		if(isMessageHeader){
 			__messageBuffer.finalizeMessageHeader();
-			Logger::sharding(Logger::Detail, "TM | recv : msg header read completely. its body size is ",
+			Logger::sharding(Logger::Detail, "TM | recv : msg header read completely. its body size is %d",
 					__messageBuffer.msg->getBodySize());
 			return 0;
 		}else{
 			*newCompleteMessage = __messageBuffer.finalizeMessage();
-			Logger::sharding(Logger::Detail, "TM | recv : msg body read completely. Body size was ", (*newCompleteMessage)->getBodySize());
+			Logger::sharding(Logger::Detail, "TM | recv : msg body read completely. Body size was %d", (*newCompleteMessage)->getBodySize());
 			return 0;
 		}
 		return 1;
@@ -381,8 +381,7 @@ bool TransportManager::receiveMessage(int fd, TransportCallback *cb, int comingB
 
 	if(readBody){
 		Message * newCompleteMessage = NULL;
-		Message ** newCompleteMessagePtr = &newCompleteMessage;
-		int status = readMessageInterrupted(NULL, cb->conn->fd, readBuffer, newCompleteMessagePtr);
+		int status = readMessageInterrupted(NULL, cb->conn->fd, readBuffer, &newCompleteMessage);
 		if(status != 0){
 			if(status == 1){ // come back later
 				cb->conn->unlockRead();
