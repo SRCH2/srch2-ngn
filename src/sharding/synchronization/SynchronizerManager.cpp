@@ -26,7 +26,7 @@ void * bootSynchronizer(void *arg) {
 		Logger::error("synchronizer cannot be started");
 		exit(-1);
 	}
-//	obj->run();
+	obj->run();
 	return NULL;
 }
 
