@@ -61,40 +61,44 @@ void cb_sendMessage(int fd, short eventType, void *arg) {
  */
 void * TransportManager::notifyUpstreamHandlers(Message *msg, int fd, NodeId  nodeId) {
 
+	unsigned messageTotalSize = msg->getTotalSize();
+	MessageID_t messageId = msg->getMessageId();
+	ShardingMessageType messageType = msg->getType();
+	string messageDestinationName = "";
 	if(msg->isDPRequest() || msg->isDPReply()) {
-		Logger::debug("Reply message is received. Msg type is %d", msg->getType());
 		if(getDPMessageHandler() != NULL){
 			getDPMessageHandler()->resolveMessage(msg, nodeId);
 		}
 		getMessageAllocator()->deallocateByMessagePointer(msg);
-
+		messageDestinationName = "DP-Internal";
 	} else if(msg->isDiscovery()) {
-		Logger::sharding(Logger::Detail, "TM | broker : Discovery message received with type %s", getShardingMessageTypeStr(msg->getType()));
 		if (getDiscoveryHandler() != NULL) {
 			getDiscoveryHandler()->resolveMessage(msg, nodeId);
 		}
 		getMessageAllocator()->deallocateByMessagePointer(msg);
+		messageDestinationName = "Discovery";
 	} else if(msg->isMigration()) {
-		Logger::sharding(Logger::Detail, "TM | broker : Migration message received with type %s", getShardingMessageTypeStr(msg->getType()));
 		if (getMMHandler() != NULL) {
 			getMMHandler()->resolveMessage(msg, nodeId);
 		}
 		getMessageAllocator()->deallocateByMessagePointer(msg);
+		messageDestinationName = "MigrationManager";
 	} else if(msg->isSharding()){
-		Logger::sharding(Logger::Detail, "TM | broker : Sharding message received with type %s", getShardingMessageTypeStr(msg->getType()));
-//		Logger::debug("Sharding message is received. Msg type is %d", msg->getType());
 		if(getShardManagerHandler() != NULL){
 			getShardManagerHandler()->resolveMessage(msg, nodeId);
 		}
 		getMessageAllocator()->deallocateByMessagePointer(msg);
+		messageDestinationName = "ShardManager";
 	}else{
-		Logger::sharding(Logger::Detail, "TM | broker : SM message received with type %s", getShardingMessageTypeStr(msg->getType()));
 		// Check whether this node has registered SMHandler into TM yet. If not skip the message.
 		if (getSmHandler() != NULL){
 			getSmHandler()->resolveMessage(msg, nodeId);
 		}
 		getMessageAllocator()->deallocateByMessagePointer(msg);
+		messageDestinationName = "SynchManager";
 	}
+	Logger::sharding(Logger::Detail, "TM | recv : (%d -> here), msg = [%s, %s, %d, %d]",
+			nodeId, messageDestinationName.c_str(), getShardingMessageTypeStr(messageType), messageId, messageTotalSize);
 	return NULL;
 }
 
@@ -145,7 +149,7 @@ int TransportManager::readDataFromSocket(int fd, char *buffer, const int byteToR
 	if(byteToRead != readByte){
 		Logger::sharding(Logger::Error, "TM | readDataFromSocket readByte is larger than byteToRead. readByte = %d , byteToRead = %d"
 				, readByte, byteToRead);
-		Logger::sharding(Logger::Detail, "TM | !!!!!!!!!! Possible memory corruption !!!!!!!!!!!!");
+		Logger::sharding(Logger::Warning, "TM | !!!!!!!!!! Possible memory corruption !!!!!!!!!!!!");
 		ASSERT(false);
 		return -1;
 	}
@@ -173,8 +177,8 @@ int TransportManager::readMessageInterrupted(bool isMessageHeader, int fd, Messa
 		ASSERT(sizeof(Message) > __messageBuffer.sizeOfPartialMsgHrd);
 		byteToRead = sizeof(Message) - __messageBuffer.sizeOfPartialMsgHrd;
 		readBuffer = __messageBuffer.partialMessageHeader+__messageBuffer.sizeOfPartialMsgHrd;
-		Logger::sharding(Logger::Detail, "TM | recv : going to read msg header : %d bytes into %p which is the %d index of partial message buffer.",
-				byteToRead, readBuffer, __messageBuffer.sizeOfPartialMsgHrd);
+//		Logger::sharding(Logger::Detail, "TM | recv : going to read msg header : %d bytes into %p which is the %d index of partial message buffer.",
+//				byteToRead, readBuffer, __messageBuffer.sizeOfPartialMsgHrd);
 	} else{ // reading message body
 		if(__messageBuffer.msg == NULL){
 			ASSERT(false);
@@ -182,8 +186,8 @@ int TransportManager::readMessageInterrupted(bool isMessageHeader, int fd, Messa
 		}
 		byteToRead = __messageBuffer.msg->getBodySize() - __messageBuffer.getReadCount();
 		readBuffer = __messageBuffer.msg->getMessageBody() + __messageBuffer.getReadCount();
-		Logger::sharding(Logger::Detail, "TM | recv : going to read body : %d bytes into %p which is the %d index of body of message.",
-				byteToRead, readBuffer, __messageBuffer.getReadCount());
+//		Logger::sharding(Logger::Detail, "TM | recv : going to read body : %d bytes into %p which is the %d index of body of message.",
+//				byteToRead, readBuffer, __messageBuffer.getReadCount());
 	}
 	if(byteToRead == 0){
 		ASSERT(false);
@@ -205,8 +209,8 @@ int TransportManager::readMessageInterrupted(bool isMessageHeader, int fd, Messa
 			return 1; // returning 1 means come back later.
 		}
 		ASSERT(byteReadCount > 0);
-		Logger::sharding(Logger::Detail, "TM | recv : number of bytes read from recv is (unsigned long int)%d or %d",
-				(unsigned long int)byteReadCount, byteReadCount);
+//		Logger::sharding(Logger::Detail, "TM | recv : number of bytes read from recv is (unsigned long int)%d or %d",
+//				(unsigned long int)byteReadCount, byteReadCount);
 		// we could at least read one character
 		__messageBuffer.numberOfRetriesWithZeroRead = 0;
 		__messageBuffer.timeToWait = 1;
@@ -218,7 +222,7 @@ int TransportManager::readMessageInterrupted(bool isMessageHeader, int fd, Messa
 		}
 		if(isMessageHeader){
 			__messageBuffer.sizeOfPartialMsgHrd += byteReadCount;
-			Logger::sharding(Logger::Detail, "TM | recv : size of partial message header is : %d", __messageBuffer.sizeOfPartialMsgHrd);
+//			Logger::sharding(Logger::Detail, "TM | recv : size of partial message header is : %d", __messageBuffer.sizeOfPartialMsgHrd);
 			return 1; // returning 1 means come back later.
 		}else{
 			__messageBuffer.setReadCount(__messageBuffer.getReadCount() + byteReadCount);
@@ -231,12 +235,12 @@ int TransportManager::readMessageInterrupted(bool isMessageHeader, int fd, Messa
 		__messageBuffer.timeToWait = 1;
 		if(isMessageHeader){
 			__messageBuffer.finalizeMessageHeader();
-			Logger::sharding(Logger::Detail, "TM | recv : msg header read completely. its body size is %d",
-					__messageBuffer.msg->getBodySize());
+//			Logger::sharding(Logger::Detail, "TM | recv : msg header read completely. its body size is %d",
+//					__messageBuffer.msg->getBodySize());
 			return 0;
 		}else{
 			*newCompleteMessage = __messageBuffer.finalizeMessage();
-			Logger::sharding(Logger::Detail, "TM | recv : msg body read completely. Body size was %d", (*newCompleteMessage)->getBodySize());
+//			Logger::sharding(Logger::Detail, "TM | recv : msg body read completely. Body size was %d", (*newCompleteMessage)->getBodySize());
 			return 0;
 		}
 		return 1;
@@ -544,6 +548,30 @@ MessageID_t TransportManager::sendMessage(NodeId node, Message * msg, unsigned t
 	Connection& conn = routeMap.getConnection(node);
 
 	while(!__sync_bool_compare_and_swap(&conn.sendLock, false, true));
+
+	/****
+	 * Log info
+	 */
+	unsigned messageTotalSize = msg->getTotalSize();
+	MessageID_t messageId = msg->getMessageId();
+	ShardingMessageType messageType = msg->getType();
+	string messageDestinationName = "";
+	if(msg->isDPRequest() || msg->isDPReply()) {
+		messageDestinationName = "DP-Internal";
+	} else if(msg->isDiscovery()) {
+		messageDestinationName = "Discovery";
+	} else if(msg->isMigration()) {
+		messageDestinationName = "MigrationManager";
+	} else if(msg->isSharding()){
+		messageDestinationName = "ShardManager";
+	}else{
+		messageDestinationName = "SynchManager";
+	}
+	Logger::sharding(Logger::Detail, "TM | send : (here -> %d), msg = [%s, %s, %d, %d]",
+			node, messageDestinationName.c_str(), getShardingMessageTypeStr(messageType), messageId, messageTotalSize);
+
+	/**********/
+
 	MessageID_t returnValue = _sendMessage(conn.fd, msg);
 	conn.sendLock = false;
 	return returnValue;

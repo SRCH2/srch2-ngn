@@ -9,8 +9,7 @@ namespace httpwrapper {
 
 typedef unsigned int MessageID_t;
 
-const int MSG_HEADER_CONST_SIZE = 17;     // 00010000
-const int MSG_HEADER_PADDING_SIZE = (32 - MSG_HEADER_CONST_SIZE % 32);
+const int MSG_HEADER_CONST_SIZE = 17;
 
 const char MSG_LOCAL_MASK = 0x1;        // 00000001
 const char MSG_DISCOVERY_MASK = 0x2;    // 00000010

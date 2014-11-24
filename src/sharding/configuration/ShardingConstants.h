@@ -1,6 +1,7 @@
 #ifndef __SHARDING_CONFIGURATION_SHARDING_CONSTANTS_H__
 #define __SHARDING_CONFIGURATION_SHARDING_CONSTANTS_H__
-
+#include <map>
+#include <string>
 namespace srch2 {
 namespace httpwrapper {
 
@@ -92,6 +93,7 @@ enum ShardingMessageType{
     ShardingMessageTypeFirst = NULLType,
     ShardingMessageTypeLast = ShardingNodeFailureNotificationMessageType
 };
+
 
 const char * getShardingMessageTypeStr(ShardingMessageType shardingMessageType);
 

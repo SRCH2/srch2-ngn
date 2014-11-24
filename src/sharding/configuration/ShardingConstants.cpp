@@ -1,50 +1,76 @@
 
 #include "ShardingConstants.h"
-
+#include "boost/assign/list_of.hpp"
+#include "core/util/Assert.h"
+using namespace srch2::instantsearch;
 namespace srch2 {
 namespace httpwrapper {
 
+std::map<ShardingMessageType,std::string> __shardingMessageTypeEnumNames = boost::assign::map_list_of
+	(NULLType, "NULLType")
+	(SearchCommandMessageType, "SearchCommandMessageType")
+	(SearchResultsMessageType, "SearchResultsMessageType")
+	(DeleteCommandMessageType, "DeleteCommandMessageType")
+	(GetInfoCommandMessageType, "GetInfoCommandMessageType")
+	(GetInfoResultsMessageType, "GetInfoResultsMessageType")
+	(StatusMessageType, "StatusMessageType")
+	(RecordWriteCommandMessageType, "RecordWriteCommandMessageType")
+	// For SM
+	(HeartBeatMessageType, "HeartBeatMessageType")
+	(ClientStatusMessageType, "ClientStatusMessageType")
+	(ClusterStatusMessageType, "ClusterStatusMessageType")
+	(LeaderElectionProposalMessageType, "LeaderElectionProposalMessageType")
+	(LeaderElectionAckMessageType, "LeaderElectionAckMessageType")
+	(LeaderElectionDenyMessageType, "LeaderElectionDenyMessageType")
+	(NewNodeNotificationMessageType, "NewNodeNotificationMessageType")
+	(ClusterInfoRequestMessageType, "ClusterInfoRequestMessageType")
+	(ClusterInfoReplyMessageType, "ClusterInfoReplyMessageType")
+	(ClusterUpdateMessageType, "ClusterUpdateMessageType")
+	// for MM
+	(MigrationInitMessage, "MigrationInitMessage")
+	(MigrationInitAckMessage, "MigrationInitAckMessage")
+	(MigrationComponentBeginMessage, "MigrationComponentBeginMessage")
+	(MigrationComponentBeginAckMessage, "MigrationComponentBeginAckMessage")
+	(MigrationComponentEndAckMessage, "MigrationComponentEndAckMessage")
+	(MigrationCompleteAckMessage, "MigrationCompleteAckMessage")
+	// For SHM
+	(ShardingMoveToMeMessageType, "ShardingMoveToMeMessageType")
+	(ShardingMoveToMeACKMessageType, "ShardingMoveToMeACKMessageType")
+	(ShardingMoveToMeCleanupMessageType, "ShardingMoveToMeCleanupMessageType")
+	(ShardingNewNodeReadMetadataRequestMessageType, "ShardingNewNodeReadMetadataRequestMessageType")
+	(ShardingNewNodeReadMetadataReplyMessageType, "ShardingNewNodeReadMetadataReplyMessageType")
+	(ShardingLockMessageType, "ShardingLockMessageType")
+	(ShardingLockACKMessageType, "ShardingLockACKMessageType")
+	(ShardingLockRVReleasedMessageType, "ShardingLockRVReleasedMessageType")
+	(ShardingLoadBalancingReportMessageType, "ShardingLoadBalancingReportMessageType")
+	(ShardingLoadBalancingReportRequestMessageType, "ShardingLoadBalancingReportRequestMessageType")
+	(ShardingCopyToMeMessageType, "ShardingCopyToMeMessageType")
+	(ShardingCopyToMeACKMessageType, "ShardingCopyToMeACKMessageType")
+	(ShardingShardCommandMessageType, "ShardingShardCommandMessageType")
+	(ShardingAclAttrReadMessageType, "ShardingAclAttrReadMessageType")
+	(ShardingAclAttrReadACKMessageType, "ShardingAclAttrReadACKMessageType")
+	(ShardingAclAttrReplaceMessageType, "ShardingAclAttrReplaceMessageType")
+	(ShardingAclAttrReplaceACKMessageType, "ShardingAclAttrReplaceACKMessageType")
+	(ShardingCommitMessageType, "ShardingCommitMessageType")
+	(ShardingCommitACKMessageType, "ShardingCommitACKMessageType")
+	(ShardingShutdownMessageType, "ShardingShutdownMessageType")
+	(ShardingRecordLockMessageType, "ShardingRecordLockMessageType")
+	(ShardingRecordLockACKMessageType, "ShardingRecordLockACKMessageType")
+	(InsertUpdateCommandMessageType, "InsertUpdateCommandMessageType")
+	(ShardingWriteCommand2PCMessageType, "ShardingWriteCommand2PCMessageType")
+	(ShardingWriteCommand2PCACKMessageType, "ShardingWriteCommand2PCACKMessageType")
+	(ShardingSearchCommandMessageType, "ShardingSearchCommandMessageType")
+	(ShardingSearchResultsMessageType, "ShardingSearchResultsMessageType")
+	// just notifications
+	(ShardingMMNotificationMessageType, "ShardingMMNotificationMessageType")
+    (ShardingNodeFailureNotificationMessageType, "ShardingNodeFailureNotificationMessageType");
+
 const char * getShardingMessageTypeStr(ShardingMessageType shardingMessageType){
-	   switch (shardingMessageType) {
-	   case ShardingMoveToMeMessageType:
-		   return "ShardingMoveToMeMessageType";
-	   case ShardingMoveToMeACKMessageType:
-		   return "ShardingMoveToMeACKMessageType";
-	   case ShardingMoveToMeCleanupMessageType:
-		   return "ShardingMoveToMeCleanupMessageType";
-	   case ShardingNewNodeReadMetadataRequestMessageType:
-		   return "ShardingNewNodeReadMetadataRequestMessageType";
-	   case ShardingNewNodeReadMetadataReplyMessageType:
-		   return "ShardingNewNodeReadMetadataReplyMessageType";
-	   case ShardingLockMessageType:
-		   return "ShardingLockMessageType";
-	   case ShardingLockACKMessageType:
-		   return "ShardingLockACKMessageType";
-	   case ShardingLockRVReleasedMessageType:
-		   return "ShardingLockACKMessageType";
-	   case ShardingLoadBalancingReportMessageType:
-		   return "ShardingLoadBalancingReportMessageType";
-	   case ShardingLoadBalancingReportRequestMessageType:
-		   return "ShardingLoadBalancingReportRequestMessageType";
-	   case ShardingCopyToMeMessageType:
-		   return "ShardingCopyToMeMessageType";
-	   case ShardingCommitMessageType:
-		   return "ShardingCommitMessageType";
-	   case ShardingCommitACKMessageType:
-		   return "ShardingCommitACKMessageType";
-	   case ShardingMMNotificationMessageType:
-		   return "ShardingMMNotificationMessageType";
-	   case ShardingNodeFailureNotificationMessageType:
-		   return "ShardingNodeFailureNotificationMessageType";
-	   case ShardingWriteCommand2PCMessageType:
-		   return "ShardingWriteCommand2PCMessageType";
-	   case ShardingWriteCommand2PCACKMessageType:
-		   return "ShardingWriteCommand2PCACKMessageType";
-	   default:
-		   return "Message Does Not Have Description";
-		   break;
+	   if(__shardingMessageTypeEnumNames.find(shardingMessageType) == __shardingMessageTypeEnumNames.end()){
+		   ASSERT(false);
+		   return "TYPE NOT FOUND";
 	   }
-	   return "";
+	   return __shardingMessageTypeEnumNames.find(shardingMessageType)->second.c_str();
 }
 
 const char * getTransTypeStr(ShardingTransactionType type){
