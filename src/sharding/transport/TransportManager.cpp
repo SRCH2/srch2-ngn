@@ -99,7 +99,7 @@ void * TransportManager::notifyUpstreamHandlers(Message *msg, int fd, NodeId  no
 	}
 	if(messageType != HeartBeatMessageType &&
 			messageType != ClientStatusMessageType){
-		Logger::sharding(Logger::Detail, "TM | recv : (%d -> here), msg = [%s, %s, %d, %d]",
+		Logger::sharding(Logger::Detail, "TM | recv : (%d -> here), msg = [%s\t%s\t%d\t%d]",
 				nodeId, messageDestinationName.c_str(), getShardingMessageTypeStr(messageType), messageId, messageTotalSize);
 	}
 	return NULL;
@@ -572,7 +572,7 @@ MessageID_t TransportManager::sendMessage(NodeId node, Message * msg, unsigned t
 	}
 	if(messageType != HeartBeatMessageType &&
 			messageType != ClientStatusMessageType){
-		Logger::sharding(Logger::Detail, "TM | send : (here -> %d), msg = [%s, %s, %d, %d]",
+		Logger::sharding(Logger::Detail, "TM | send : (here -> %d), msg = [%s\t%s\t%d\t%d]",
 				node, messageDestinationName.c_str(), getShardingMessageTypeStr(messageType), messageId, messageTotalSize);
 	}
 

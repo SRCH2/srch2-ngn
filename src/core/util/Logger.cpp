@@ -171,7 +171,7 @@ void Logger::sharding(ShardingLogLevel logLevel, const char *format, ...){
 				break;
 		}
 		ss << "\t";
-		ss << "P" << getpid() << "/T" << (unsigned long)pthread_self() << " || ";
+		ss << "P" << getpid() << "/T" << ((unsigned long)pthread_self())%10000 << " || ";
 		formatLogString(buffer, ss.str().c_str());
 		vsnprintf(buffer + strlen(buffer), kMaxLengthOfMessage - strlen(buffer),
 				format, args);
