@@ -40,11 +40,13 @@ void PartitionWriter::produce(){
 	 * 2. if node shards : call performWrite()
 	 */
 	if(targets.empty()){
+		ASSERT(false);
 		// we should not do anything.
 		return;
 	}
 	if(records.empty()){
 		// just call consume
+		ASSERT(false);
 		return;
 	}
 	if(this->clusterOrNodeFlag){
