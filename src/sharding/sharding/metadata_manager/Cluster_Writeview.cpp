@@ -1197,7 +1197,9 @@ ClusterResourceMetadata_Readview * Cluster_Writeview::getNewReadview() const{
         NodeShardIterator nShardItr(this);
         nShardItr.beginNodeShardsIteration();
 		while(nShardItr.getNextNodeShard(nodeShardId, isLocal)){
-			corePartitionContainer->addNodeShard(nodeShardId.nodeId, nodeShardId.partitionId);
+			if(nodeShardId.coreId == coreId){
+				corePartitionContainer->addNodeShard(nodeShardId.nodeId, nodeShardId.partitionId);
+			}
 		}
 
 		// set locks of partitions of this core
