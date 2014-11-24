@@ -537,9 +537,11 @@ void WriteCommand::consume(const ClusterPID & pid){
 	}
 	delete partitionWriters[pid];
 	partitionWriters.erase(pid);
-	if(! tryFinalize() && partitionWriters.empty()){
+	if(partitionWriters.empty()){
 		finalize();
+		return;
 	}
+	tryFinalize();
 }
 
 // coming back from node-shards write operation
