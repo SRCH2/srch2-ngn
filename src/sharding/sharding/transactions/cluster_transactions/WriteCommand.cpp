@@ -477,6 +477,16 @@ WriteCommand::WriteCommand(ConsumerInterface * consumer,
 	this->nodeWriter = NULL;
 }
 
+WriteCommand::~WriteCommand(){
+	if(this->nodeWriter != NULL){
+		delete nodeWriter;
+	}
+	for(map<ClusterPID, PartitionWriter * >::iterator pItr = finishedPartitionWriters.begin();
+			pItr != finishedPartitionWriters.end(); ++pItr){
+		delete pItr->second;
+	}
+}
+
 void WriteCommand::produce(){
 	if(records.empty()){
 		return;
@@ -535,7 +545,8 @@ void WriteCommand::consume(const ClusterPID & pid){
 	if(partitionWriters.find(pid) == partitionWriters.end()){
 		ASSERT(false);
 	}
-	delete partitionWriters[pid];
+//	delete partitionWriters[pid];
+	finishedPartitionWriters[pid] = partitionWriters[pid];
 	partitionWriters.erase(pid);
 	if(partitionWriters.empty()){
 		finalize();

@@ -171,6 +171,7 @@ private:
 	void initActionType(ClusterRecordOperation_Type insertUpdateDelete);
 
 	map<ClusterPID, PartitionWriter * > partitionWriters;
+	map<ClusterPID, PartitionWriter * > finishedPartitionWriters;
 	PartitionWriter * nodeWriter;
 	map<string, RecordWriteOpHandle *> records;
 
