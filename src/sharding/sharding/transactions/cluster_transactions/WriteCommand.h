@@ -132,7 +132,7 @@ public:
 			map<string, vector<string> > & primaryKeyRoleIds,
 			AclActionType commandType,
 			const CoreInfo_t * coreInfo);
-
+	~WriteCommand();
 	void produce();
 
 
