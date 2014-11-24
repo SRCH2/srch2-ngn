@@ -941,7 +941,7 @@ void MigrationManager::sendComponentDoneMsg(MigrationSessionInfo& currentSession
 	} else {
 		compDoneMessage->setType(MigrationCompleteAckMessage);
 	}
-	body.serialize(compDoneMessage);
+	body.serialize(compDoneMessage->getMessageBody());
 
 	if (!shardDone) {
 		currentSessionInfo.status = MM_STATE_INFO_WAIT;  // waiting for next component
