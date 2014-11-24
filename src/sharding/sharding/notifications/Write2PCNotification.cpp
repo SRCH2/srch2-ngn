@@ -237,9 +237,9 @@ unsigned Write2PCNotification::getNumberOfBytesBody() const{
 	return numberOfBytes;
 }
 void * Write2PCNotification::deserializeBody(void * buffer){
-	buffer = srch2::util::serializeFixedTypes(commandType, buffer);
-	buffer = targets.serialize(buffer);
-	buffer = srch2::util::serializeFixedTypes(mode, buffer);
+	buffer = srch2::util::deserializeFixedTypes(buffer, commandType);
+	buffer = targets.deserialize(buffer);
+	buffer = srch2::util::deserializeFixedTypes(buffer, mode);
 
 	const Schema * schema = clusterReadview->getCore(targets.getCoreId())->getSchema();
 	unsigned recordHandlesSize = 0;
