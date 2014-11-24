@@ -359,10 +359,12 @@ void FeedbackIndex::_merge() {
 void FeedbackIndex::reassignQueryIdsInFeedbackIndex() {
 	map<TrieNode *, unsigned> trieNodeIdMapper;
 	queryTrie->reassignKeywordIds(trieNodeIdMapper);
+	std::map<unsigned, unsigned> oldToNewKeywordIdMapper;
 	for (map<TrieNode *, unsigned>::iterator iter = trieNodeIdMapper.begin();
 			iter != trieNodeIdMapper.end(); ++iter) {
 		TrieNode *node = iter->first;
 		unsigned newKeywordId = iter->second;
+		oldToNewKeywordIdMapper.insert(make_pair(node->getId(), newKeywordId));
 		// fix keywordIds in query Trie
 		node->setId(newKeywordId);
 
@@ -372,6 +374,7 @@ void FeedbackIndex::reassignQueryIdsInFeedbackIndex() {
 	}
 	// once reassignment is done reset the counter for reassign keywordIds
 	queryTrie->resetcounterForReassignedKeywordIds();
+	queryTrie->applyKeywordIdMapperOnEmptyLeafNodes(oldToNewKeywordIdMapper);
 }
 
 void FeedbackIndex::mergeFeedbackList(UserFeedbackList *feedbackList) {
