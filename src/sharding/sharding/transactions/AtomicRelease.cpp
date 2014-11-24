@@ -21,7 +21,7 @@ AtomicRelease::AtomicRelease(const ClusterShardId & srcShardId,
 		const ClusterShardId & destShardId,
 		const NodeOperationId & copyAgent,
 		ConsumerInterface * consumer) : ProducerInterface(consumer){
-	ASSERT(this->getTransaction() != NULL);
+	ASSERT(this->getTransaction());
 	// prepare the locker and locking notification
 	this->releaseNotification = SP(LockingNotification)(new LockingNotification(srcShardId, destShardId, copyAgent, true));
 	this->lockType = LockRequestType_Copy;
@@ -45,7 +45,7 @@ AtomicRelease::AtomicRelease(const NodeOperationId & newNodeOpId,
 /// record releasing
 AtomicRelease::AtomicRelease(const vector<string> & primaryKeys, const NodeOperationId & writerAgent, const ClusterPID & pid,
 		ConsumerInterface * consumer): ProducerInterface(consumer){
-	ASSERT(this->getTransaction() != NULL);
+	ASSERT(this->getTransaction());
 	// prepare the locker and locking notification
 	this->releaseNotification = SP(LockingNotification)(new LockingNotification(primaryKeys, writerAgent, pid, true));
 	this->lockType = LockRequestType_PrimaryKey;
@@ -58,7 +58,7 @@ AtomicRelease::AtomicRelease(const vector<string> & primaryKeys, const NodeOpera
 /// general purpose cluster shard releasing
 AtomicRelease::AtomicRelease(const ClusterShardId & shardId, const NodeOperationId & agent,
 		ConsumerInterface * consumer): ProducerInterface(consumer){
-	ASSERT(this->getTransaction() != NULL);
+	ASSERT(this->getTransaction());
 	// prepare the locker and locking notification
 	this->releaseNotification = SP(LockingNotification)(new LockingNotification(shardId, agent));
 	this->lockType = LockRequestType_GeneralPurpose;
