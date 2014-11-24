@@ -157,7 +157,8 @@ unsigned RecordWriteOpHandle::getNumberOfBytes(const WriteNotificationMode mode)
 		case WriteNotificationModeAsk2PC:
 		{
 			// only transferring primary keys
-			numberOfBytes += sizeof(unsigned) + this->primaryKey.size();
+			string primaryKey = this->getPrimaryKey();
+			numberOfBytes += sizeof(unsigned) + primaryKey.size();
 			break;
 		}
 		case WriteNotificationModePerformWrite:
