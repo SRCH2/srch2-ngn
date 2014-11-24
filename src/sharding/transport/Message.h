@@ -41,70 +41,70 @@ public:
    }
 
    bool isSMRelated(){
-	   char & mask = this->_getMask();
-	 return (mask == 0);
+       char * mask = this->_getMask();
+	 return (*mask == 0);
    }
 
    bool isLocal(){
-	   char mask = this->_getMask();
-     return mask & MSG_LOCAL_MASK;
+       char * mask = this->_getMask();
+     return *mask & MSG_LOCAL_MASK;
    }
    bool isDPRequest() {
-	   char mask = this->_getMask();
-     return mask & MSG_DP_REQUEST_MASK;
+       char * mask = this->_getMask();
+     return *mask & MSG_DP_REQUEST_MASK;
    }
    bool isDPReply() {
-	   char mask = this->_getMask();
-     return mask & MSG_DP_REPLY_MASK;
+       char * mask = this->_getMask();
+     return *mask & MSG_DP_REPLY_MASK;
    }
    bool isDiscovery() {
-	   char mask = this->_getMask();
-     return mask & MSG_DISCOVERY_MASK;
+       char * mask = this->_getMask();
+     return *mask & MSG_DISCOVERY_MASK;
    }
 
    bool isMigration() {
-	   char mask = this->_getMask();
-	   return mask & MSG_MIGRATION_MASK;
+       char * mask = this->_getMask();
+	   return *mask & MSG_MIGRATION_MASK;
    }
 
    bool isSharding() {
-	   char mask = this->_getMask();
-     return mask & MSG_SHARDING_MASK;
+       char * mask = this->_getMask();
+     return *mask & MSG_SHARDING_MASK;
    }
    Message * setLocal(){
-	   char & mask = this->_getMask();
-	   mask |= MSG_LOCAL_MASK;
+       char * mask = this->_getMask();
+       *mask |= MSG_LOCAL_MASK;
 	   return this;
    }
    Message * setDPRequestMask(){
-	   char & mask = this->_getMask();
-	   mask |= MSG_DP_REQUEST_MASK;
+       char * mask = this->_getMask();
+       *mask |= MSG_DP_REQUEST_MASK;
 	   return this;
    }
    Message * setDPReplyMask(){
-	   char & mask = this->_getMask();
-	   mask |= MSG_DP_REPLY_MASK;
+       char * mask = this->_getMask();
+       *mask |= MSG_DP_REPLY_MASK;
 	   return this;
    }
    Message * setDiscoveryMask(){
-	   char & mask = this->_getMask();
-	   mask |= MSG_DISCOVERY_MASK;
+       char * mask = this->_getMask();
+       *mask |= MSG_DISCOVERY_MASK;
 	   return this;
    }
 
    Message * setMigrationMask(){
-	   char & mask = this->_getMask();
-	   mask |= MSG_MIGRATION_MASK;
+	   char * mask = this->_getMask();
+	   *mask |= MSG_MIGRATION_MASK;
 	   return this;
    }
 
    Message * setShardingMask(){
-	   char & mask = this->_getMask();
-	   mask |= MSG_SHARDING_MASK;
+	   char * mask = this->_getMask();
+	   *mask |= MSG_SHARDING_MASK;
 	   return this;
    }
    unsigned getBodySize(){
-	   return this->_getBodySize();
+	   return *this->_getBodySize();
    }
    unsigned getTotalSize(){
 	   return this->getBodySize() + sizeof(Message);
@@ -113,43 +113,43 @@ public:
 	   return sizeof(Message); // sizeof(Message bytes are used for the header but only the array conaines information - padding!)
    }
    void setMessageId(MessageID_t id){
-	   MessageID_t & idRef = this->_getMessageId();
-	   idRef = id;
+	   MessageID_t * idRef = this->_getMessageId();
+	   *idRef = id;
    }
    MessageID_t getMessageId(){
-	   return this->_getMessageId();
+	   return *this->_getMessageId();
    }
    void setRequestMessageId(MessageID_t requestMessageId){
-	   MessageID_t & requestMessageIdRef = this->_getReqMessageId();
-	   requestMessageIdRef = requestMessageId;
+	   MessageID_t * requestMessageIdRef = this->_getReqMessageId();
+	   *requestMessageIdRef = requestMessageId;
    }
    MessageID_t getRequestMessageId(){
-	   return this->_getReqMessageId();
+	   return *this->_getReqMessageId();
    }
    void setBodyAndBodySize(void * src, unsigned bodySize){
 	   setBodySize(bodySize);
-	   if(this->_getBodySize() == 0){
+	   if(*this->_getBodySize() == 0){
 		   return;
 	   }
-	   memcpy(this->getMessageBody(), src, this->_getBodySize());
+	   memcpy(this->getMessageBody(), src, *this->_getBodySize());
    }
    ShardingMessageType getType(){
-	   return _getShardingMessageType();
+	   return *_getShardingMessageType();
    }
    void setType(ShardingMessageType type){
-	   ShardingMessageType & typeRef = _getShardingMessageType();
-	   typeRef = type;
+	   ShardingMessageType * typeRef = _getShardingMessageType();
+	   *typeRef = type;
    }
    void setBodySize(unsigned bodySize){
-	   unsigned int & bodySizeRef = _getBodySize();
-	   bodySizeRef = bodySize;
+	   unsigned int * bodySizeRef = _getBodySize();
+	   *bodySizeRef = bodySize;
    }
 
    void setMask(char mask) {
-	   char & maskRef = _getMask();
-	   maskRef = mask;
+	   char * maskRef = _getMask();
+	   *maskRef = mask;
    }
-   char getMask(){return this->_getMask();};
+   char getMask(){return *this->_getMask();};
    char * getMessageBody() {
 	   return (char *)(body);
    }
@@ -158,8 +158,8 @@ public:
 	   return (Message *)((char *)bodyPointer - sizeof(Message));
    }
    static char * getBodyPointerFromMessagePointer(Message * messagePointer){
-//	   return messagePointer->body;
-	   return (char *)((char *)messagePointer + sizeof(Message));
+	   return (char *)(messagePointer->body);
+//	   return (char *)((char *)messagePointer + sizeof(Message));
    }
 
    void populateHeader(char * headerDataStart /* a byte array that containes MSG_HEADER_CONST_SIZE bytes which is the data of message */){
@@ -171,37 +171,37 @@ public:
    }
 
    string getDescription(){
-	   return string(getShardingMessageTypeStr(_getShardingMessageType()));
+	   return string(getShardingMessageTypeStr(*_getShardingMessageType()));
    }
 
 
 private:
-   inline ShardingMessageType & _getShardingMessageType(){
-	   return (ShardingMessageType &)(*(ShardingMessageType *)(headerData + _getShardingMessageTypeOffset()));
+   inline ShardingMessageType * _getShardingMessageType(){
+	   return (ShardingMessageType *)(headerData + _getShardingMessageTypeOffset());
    }
    inline unsigned _getShardingMessageTypeOffset(){
 	   return 0;
    }
-   inline char & _getMask(){
-	   return (char &)(*(headerData + _getMaskOffset()));
+   inline char * _getMask(){
+	   return headerData + _getMaskOffset();
    }
    inline unsigned _getMaskOffset(){
 	   return _getShardingMessageTypeOffset() + sizeof(ShardingMessageType);
    }
-   inline unsigned & _getBodySize(){
-	   return (unsigned &)(*(unsigned *)(headerData + _getBodySizeOffset()));
+   inline unsigned * _getBodySize(){
+	   return (unsigned *)(headerData + _getBodySizeOffset());
    }
    inline unsigned _getBodySizeOffset(){
 	   return _getMaskOffset() + sizeof(char);
    }
-   inline unsigned & _getMessageId(){
-	   return (MessageID_t &)(*(MessageID_t *)(headerData + _getMessageIdOffset()));
+   inline unsigned * _getMessageId(){
+	   return (MessageID_t *)(headerData + _getMessageIdOffset());
    }
    inline unsigned _getMessageIdOffset(){
-	   return _getBodySizeOffset() + sizeof(MessageID_t);
+	   return _getBodySizeOffset() + sizeof(unsigned);
    }
-   inline unsigned & _getReqMessageId(){
-	   return (MessageID_t &)(*(MessageID_t *)(headerData + _getReqMessageIdOffset()));
+   inline unsigned * _getReqMessageId(){
+	   return (MessageID_t *)(headerData + _getReqMessageIdOffset());
    }
    inline unsigned _getReqMessageIdOffset(){
 	   return _getMessageIdOffset() + sizeof(MessageID_t);
