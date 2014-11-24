@@ -516,7 +516,7 @@ void ShardManager::resolveSMNodeArrival(const Node & newNode){
 
 void ShardManager::resolveSMNodeFailure(const NodeId failedNodeId){
 	Logger::sharding(Logger::Detail, "SHM| SM Node %d failure.", failedNodeId);
-	boost::unique_lock<boost::shared_mutex> xLock(singleInstanceLock);
+	boost::shared_lock<boost::shared_mutex> sLock(singleInstanceLock);
 	SP(Notification) nodeFailureNotif(new NodeFailureNotification(failedNodeId));
 
 	// 1. metadata manager
