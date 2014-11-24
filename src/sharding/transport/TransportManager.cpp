@@ -97,8 +97,11 @@ void * TransportManager::notifyUpstreamHandlers(Message *msg, int fd, NodeId  no
 		getMessageAllocator()->deallocateByMessagePointer(msg);
 		messageDestinationName = "SynchManager";
 	}
-	Logger::sharding(Logger::Detail, "TM | recv : (%d -> here), msg = [%s, %s, %d, %d]",
-			nodeId, messageDestinationName.c_str(), getShardingMessageTypeStr(messageType), messageId, messageTotalSize);
+	if(messageType != HeartBeatMessageType &&
+			messageType != ClientStatusMessageType){
+		Logger::sharding(Logger::Detail, "TM | recv : (%d -> here), msg = [%s, %s, %d, %d]",
+				nodeId, messageDestinationName.c_str(), getShardingMessageTypeStr(messageType), messageId, messageTotalSize);
+	}
 	return NULL;
 }
 
@@ -567,8 +570,11 @@ MessageID_t TransportManager::sendMessage(NodeId node, Message * msg, unsigned t
 	}else{
 		messageDestinationName = "SynchManager";
 	}
-	Logger::sharding(Logger::Detail, "TM | send : (here -> %d), msg = [%s, %s, %d, %d]",
-			node, messageDestinationName.c_str(), getShardingMessageTypeStr(messageType), messageId, messageTotalSize);
+	if(messageType != HeartBeatMessageType &&
+			messageType != ClientStatusMessageType){
+		Logger::sharding(Logger::Detail, "TM | send : (here -> %d), msg = [%s, %s, %d, %d]",
+				node, messageDestinationName.c_str(), getShardingMessageTypeStr(messageType), messageId, messageTotalSize);
+	}
 
 	/**********/
 
