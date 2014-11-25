@@ -411,7 +411,7 @@ test_case "adapter_mysql" "python ./adapter_mysql/adapter_mysql.py $SRCH2_ENGINE
     ./adapter_sqlite/testCreateIndexes_sql.txt ./adapter_sqlite/testCreateIndexes.txt \
     ./adapter_sqlite/testRunListener_sql.txt ./adapter_sqlite/testRunListener.txt \
     ./adapter_sqlite/testOfflineLog_sql.txt ./adapter_sqlite/testOfflineLog.txt" \
-    255 "-- SKIPPED: Cannot connect to the MySQL. Check if MySQL is installed."
+    255 "-- SKIPPED: Cannot connect to the MySQL. Check if MySQL is installed and the account info is correct in the conf.xml."
 
 sleep 3
 
@@ -419,7 +419,7 @@ test_case "adapter_mysql_recover" "python ./adapter_mysql/adapter_mysql_recover.
     ./adapter_sqlite/testCreateIndexes_sql.txt ./adapter_sqlite/testCreateIndexes.txt \
     ./adapter_sqlite/testRunListener_sql.txt ./adapter_sqlite/testRunListener.txt \
     ./adapter_sqlite/testOfflineLog_sql.txt ./adapter_sqlite/testOfflineLog.txt" \
-    255 "-- SKIPPED: Cannot connect to the MySQL. Check if MySQL is installed."
+    255 "-- SKIPPED: Cannot connect to the MySQL. Check if MySQL is installed and the account info is correct in the conf.xml."
 
 sleep 3
 
@@ -443,7 +443,7 @@ test_case "adapter_sqlserver" "python ./adapter_sqlserver/adapter_sqlserver.py $
     ./adapter_sqlserver/testCreateIndexes_sql.txt ./adapter_sqlite/testCreateIndexes.txt \
     ./adapter_sqlite/testRunListener_sql.txt ./adapter_sqlite/testRunListener.txt \
     ./adapter_sqlite/testOfflineLog_sql.txt ./adapter_sqlite/testOfflineLog.txt" \
-    255 "-- SKIPPED: Cannot connect to the SQL Server. Check if SQL Server driver is installed."
+    255 "-- SKIPPED: Cannot connect to the SQL Server. Check if SQL Server driver is installed and the account info is correct in the conf.xml."
 
 sleep 3
 
@@ -451,7 +451,7 @@ test_case "adapter_sqlserver_recover" "python ./adapter_sqlserver/adapter_sqlser
     ./adapter_sqlserver/testCreateIndexes_sql.txt ./adapter_sqlite/testCreateIndexes.txt \
     ./adapter_sqlite/testRunListener_sql.txt ./adapter_sqlite/testRunListener.txt \
     ./adapter_sqlite/testOfflineLog_sql.txt ./adapter_sqlite/testOfflineLog.txt" \
-    255 "-- SKIPPED: Cannot connect to the SQL Server. Check if SQL Server driver is installed."
+    255 "-- SKIPPED: Cannot connect to the SQL Server. Check if SQL Server driver is installed and the account info is correct in the conf.xml."
 
 # The following cases may not run on Mac, so we put them to the end
 
