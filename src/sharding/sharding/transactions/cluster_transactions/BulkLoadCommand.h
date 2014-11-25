@@ -135,10 +135,18 @@ public:
 
 		bulkLoadWriteCommand = parseRecordsFromFile();
 
-		if (bulkLoadWriteCommand)
+		if (bulkLoadWriteCommand){
 			bulkLoadWriteCommand->produce();
+		}else{
+			finalize();
+		}
 
-		performCleanup();
+	}
+
+	void consume(const map<string, bool> & results,
+				map<string, map<ShardId * ,vector<JsonMessageCode>, ShardPtrComparator > > & messageCodes){
+		//TODO
+		finalize();
 	}
 
 	void finalize(){

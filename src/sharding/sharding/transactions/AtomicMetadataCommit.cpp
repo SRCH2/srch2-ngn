@@ -114,7 +114,8 @@ void AtomicMetadataCommit::produce(){
 	nodesWriteview.reset();
     if(participants.empty()){
         // no participant exists
-        return ;
+    	finalize(false);
+    	return ;
     }
     if(metadataChange == NULL){
         ASSERT(false);

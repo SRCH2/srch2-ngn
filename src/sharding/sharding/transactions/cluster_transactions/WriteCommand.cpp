@@ -40,18 +40,21 @@ void PartitionWriter::produce(){
 	 * 2. if node shards : call performWrite()
 	 */
 	if(targets.empty()){
-		ASSERT(false);
 		// we should not do anything.
+		ASSERT(false);
+		finalize(false, HTTP_Json_General_Error);
 		return;
 	}
 	if(records.empty()){
 		// just call consume
 		ASSERT(false);
+		finalize(false, HTTP_Json_General_Error);
 		return;
 	}
 	if(this->clusterOrNodeFlag){
 		// case of cluster shard core write request
 		if(pid == ClusterPID()){
+			finalize(false, HTTP_Json_General_Error);
 			ASSERT(false);
 			return;
 		}
@@ -59,6 +62,7 @@ void PartitionWriter::produce(){
 	}else{
 		// case of node shard core write request
 		if(pid != ClusterPID()){
+			finalize(false, HTTP_Json_General_Error);
 			ASSERT(false);
 			return;
 		}
@@ -325,6 +329,7 @@ void PartitionWriter::sendWriteCommand(WriteNotificationMode mode){
 		}
 		recordsToPass = &successful2PCRecords;
 	}else{
+		finalize(false, HTTP_Json_General_Error);
 		ASSERT(false);
 		return;
 	}
@@ -498,6 +503,7 @@ void WriteCommand::produce(){
 		// cluster core
 		// partition the records and prepare the PartitionWriters
 		if(! partitionRecords()){
+			finalize();
 			return;
 		}
 		// check if we are done, return.
@@ -508,6 +514,7 @@ void WriteCommand::produce(){
 		}
 		// start writers
 		if(partitionWriters.empty()){
+			finalize();
 			ASSERT(false);
 			return;
 		}
@@ -532,6 +539,7 @@ void WriteCommand::produce(){
 		const CorePartitionContianer * corePartContainer = clusterReadview->getPartitioner(coreInfo->getCoreId());
 		if(corePartContainer == NULL){
 			ASSERT(false);
+			finalize();
 			return;
 		}
 		CorePartitioner * partitioner = new CorePartitioner(corePartContainer);

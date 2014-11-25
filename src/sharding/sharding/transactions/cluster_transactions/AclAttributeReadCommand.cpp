@@ -56,6 +56,7 @@ void AclAttributeReadCommand::produce(){
 	if(allWriteTargets.empty()){
 		messageCodes.push_back(HTTP_Json_Role_Id_Does_Not_Exist);
 		finalize();
+		return;
 	}
 	// if current node is among targets choose it otherwise just pick one
 	unsigned chosenTarget = 0;

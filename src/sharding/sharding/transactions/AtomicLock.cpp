@@ -116,6 +116,7 @@ void AtomicLock::produce(){
     if(participants.empty()){
         Logger::sharding(Logger::Detail, "AtomicLock| ends unattached, no participant found.");
         delete locker;
+        finalize(getDefaultStatusValue());
     	return;
     }else if(participantsChangedFlag){
     	locker->setParticipants(participants);
@@ -163,10 +164,9 @@ bool AtomicLock::condition(SP(ShardingNotification) reqArg,
 	}
 	if(res->isGranted()){
 		return true;
-	}else{
-		Logger::sharding(Logger::Detail, "AtomicLock| node %s rejected lock.", resArg->getSrc().toString().c_str());
-		recover();
 	}
+	Logger::sharding(Logger::Detail, "AtomicLock| node %s rejected lock.", resArg->getSrc().toString().c_str());
+	recover();
 	return false;
 }
 

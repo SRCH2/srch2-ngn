@@ -99,6 +99,7 @@ void AtomicRelease::produce(){
     nodesWriteview.reset();
     if(participants.empty()){
         Logger::sharding(Logger::Detail, "AtomicLock| ends unattached, no participant found.");
+        finalize();
     	return;
     }else if(participantsChangedFlag){
     	releaser->setParticipants(participants);
