@@ -40,6 +40,7 @@ bool UnionLowestLevelSuggestionOperator::open(QueryEvaluatorInternal * queryEval
         queryEvaluatorIntrnal->getInvertedIndex()->
                     getInvertedListReadView(invertedListDirectoryReadView,
                             suggestionInfoItr->suggestedCompleteTermNode->getInvertedListOffset(), invertedListReadView);
+        //Empty inverted lists should not be included in the lists of lowest level operators.
         if(invertedListReadView->size() == 0){
         	continue;
         }
