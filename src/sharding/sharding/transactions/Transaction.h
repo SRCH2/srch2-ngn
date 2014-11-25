@@ -74,11 +74,11 @@ public:
 		this->sharedPointer = sp;
 	}
 	virtual void threadEnd(){ // resets sharedPointer
+		this->sharedPointer.reset();
 	    if(this->finalizeArgument == NULL ||
 	            (this->finalizeArgument != NULL && ! this->finalizeArgument->needWriteviewLock)){
             this->transMutex.unlock();
 	    }
-		this->sharedPointer.reset();
 	}
 	TRANS_ID getTID() const ;
 
