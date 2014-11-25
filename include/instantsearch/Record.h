@@ -35,7 +35,7 @@ class Schema;
 /*
  * This array_deleter is overwriting the destructor of the shared pointer.
  * The default destructor of shared pointer is "delete p" which is not
- * correct if the pointer points to an array.
+ * correct if the pointer points to an array using new char[len].
  */
 template< typename T >
 struct array_deleter
