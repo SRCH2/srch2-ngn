@@ -262,9 +262,12 @@ void ShardManager::print(){
 
 	_lockManager->print();
 
-	stateMachine->lockStateMachine();
-	stateMachine->print();
-	stateMachine->unlockStateMachine();
+	if(stateMachine->lockStateMachine()){
+		stateMachine->print();
+		stateMachine->unlockStateMachine();
+	}else{
+		//TODO : print : stateMachine could not be locked.
+	}
 
 	// bounced notifications
 	boost::shared_lock<boost::shared_mutex> sLock(shardManagerMembersMutex);

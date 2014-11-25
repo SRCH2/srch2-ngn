@@ -51,21 +51,20 @@ void StateMachine::handle(SP(ShardingNotification) notification){
 		return;
 	}
 	ActiveOperationGroup & opGroup = getOperationGroup(notification->getDest().operationId);
-	OperationState * targetOperation = opGroup.getActiveOperation(notification->getDest().operationId);
-	if(targetOperation == NULL){
+	SP(OperationState) targetOperation = opGroup.getActiveOperation(notification->getDest().operationId);
+	if(! targetOperation){
 		return;
 	}
 	targetOperation->lock();
 	OperationState * nextState = targetOperation->handle(notification);
 	targetOperation->unlock();
-	if(nextState == targetOperation){
+	if(nextState == targetOperation.get()){
 		return;
 	}
 	ASSERT(nextState == NULL);
-	const string & targetOpName = targetOperation->getOperationName();
 	if(! opGroup.deleteActiveOperation(notification->getDest().operationId)){
 		Logger::sharding(Logger::Detail, "State Machine | Attempted to delete operation %s (id : %d) more than one time.",
-				targetOpName.c_str(), notification->getDest().operationId );
+				targetOperation->getOperationName().c_str(), notification->getDest().operationId );
 	}
 }
 
@@ -93,10 +92,9 @@ void StateMachine::handle(SP(Notification) notification){
 				return;
 			}
 			ASSERT(nextState == NULL);
-			const string & targetOpName = targetOperation->getOperationName();
 			if(! opGroup.deleteActiveOperation(targetOperation->getOperationId())){
 				Logger::sharding(Logger::Detail, "State Machine | Attempted to delete operation %s (id : %d) more than one time.",
-						targetOpName.c_str(), targetOperation->getOperationId() );
+						targetOperation->getOperationName().c_str(), targetOperation->getOperationId() );
 			}
 		}
 	}
@@ -213,7 +211,7 @@ bool StateMachine::ActiveOperationGroup::deleteActiveOperation(const unsigned op
 }
 
 
-OperationState * StateMachine::ActiveOperationGroup::getActiveOperation(const unsigned operationId){
+SP(OperationState) StateMachine::ActiveOperationGroup::getActiveOperation(const unsigned operationId){
 	SP(OperationState) operation;
 	operation.reset();
 	contentMutex.lock();
@@ -221,7 +219,7 @@ OperationState * StateMachine::ActiveOperationGroup::getActiveOperation(const un
 		operation = activeOperations.at(operationId);
 	}
 	contentMutex.unlock();
-	return operation.get();
+	return operation;
 }
 
 void StateMachine::ActiveOperationGroup::getAllActiveOperations(map<unsigned , SP(OperationState)> & activeOperations){

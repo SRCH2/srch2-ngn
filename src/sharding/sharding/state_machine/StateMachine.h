@@ -49,7 +49,7 @@ private:
 		map<unsigned , SP(OperationState)> activeOperations;
 		bool addActiveOperation(OperationState * operation);
 		bool deleteActiveOperation(const unsigned operationId);
-		OperationState * getActiveOperation(const unsigned operationId);
+		SP(OperationState) getActiveOperation(const unsigned operationId);
 		void getAllActiveOperations(map<unsigned , SP(OperationState)> & activeOperations);
 		unsigned size();
 		void clear();
