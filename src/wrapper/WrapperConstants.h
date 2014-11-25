@@ -21,7 +21,9 @@
 #define __INCLUDE_INSTANTSEARCH__WRAPPERCONSTANTS_H__
 
 #include <instantsearch/Constants.h>
-
+#include <boost/assign/list_of.hpp>
+#include <map>
+#include <string>
 namespace srch2 {
 namespace httpwrapper {
 
@@ -125,10 +127,12 @@ typedef enum {
 	HTTP_Json_General_Error
 } JsonMessageCode;
 
-}
+
+
+const std::string getJsonMessageCodeStr(const JsonMessageCode code);
 
 }
-
+}
 namespace srch2http = srch2::httpwrapper;
 
 #endif  // __INCLUDE_INSTANTSEARCH__WRAPPERCONSTANTS_H__

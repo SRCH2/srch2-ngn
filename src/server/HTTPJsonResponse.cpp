@@ -109,6 +109,7 @@ Json::Value JsonResponseHandler::getJsonSingleMessage(const JsonMessageCode code
 	case HTTP_JSON_Search_Res_Format_Wrong_Error:
 	case HTTP_JSON_Cluster_Not_Ready_Error:
 	case HTTP_JSON_Core_Does_Not_Exist:
+	case HTTP_Json_No_Data_Shard_Available_For_Write:
 		msgValue[c_error] = getJsonSingleMessageStr(code);
 		break;
 	case HTTP_JSON_Existing_Record_Update_Info:
@@ -132,63 +133,7 @@ Json::Value JsonResponseHandler::getJsonSingleMessage(const JsonMessageCode code
 }
 
 const string JsonResponseHandler::getJsonSingleMessageStr(const JsonMessageCode code){
-	switch (code) {
-	case HTTP_JSON_Parse_Error:
-		return "JSON object parse error";
-	case HTTP_JSON_Empty_Body:
-		return "Http body is empty.";
-	case HTTP_JSON_All_Shards_Down_Error:
-		return "No data shard is available for this request.";
-	case HTTP_JSON_Node_Timeout_Warning:
-		return "Node timeout.";
-	case HTTP_JSON_PK_Exists_Error:
-		return "The record with same primary key already exists";
-	case HTTP_JSON_Doc_Limit_Reached_Error:
-		return "Document limit reached. Email support@srch2.com for account upgrade.";
-	case HTTP_JSON_Existing_Record_Update_Info:
-		return "Existing record updated successfully.";
-	case HTTP_JSON_Update_Failed_Error:
-		return "Record update failed.";
-	case HTTP_JSON_Recover_Failed_Error:
-		return "Existing record with the same primary key deleted but failed to recover.";
-	case HTTP_JSON_Delete_Record_Not_Found_Error:
-		return "No record with given primary key";
-	case HTTP_JSON_ResetLogger_Reopen_Failed_Error:
-		return "The logger file repointing failed. Could not create new logger file";
-	case HTTP_JSON_PK_NOT_PROVIDED:
-		return "Primary key not provided.";
-	case HTTP_JSON_Search_Res_Format_Wrong_Error:
-		return "The indexed data failed to export to disk, The request need to set search-response-format to be 0 or 2";
-	case HTTP_JSON_Merge_Already_Done_Info:
-		return "No records require merge at this time. Merge is up-to-date.";
-	case HTTP_JSON_Merge_DISABLED:
-		return "Merge is disabled. Use 'set' parameter to enable it.";
-	case HTTP_JSON_Commit_Already_Done_Info:
-		return "Commit is finished. No need to commit anymore.";
-	case HTTP_JSON_Cluster_Not_Ready_Error:
-		return "Cluster is not ready to accept this request now, please try again later.";
-	case HTTP_JSON_Merge_Parameter_Not_Recognized:
-		return "Parameter not recognized.";
-	case HTTP_JSON_Request_Rejected_Due_To_Load_Balancing:
-		return "Request rejected due to ongoing load-balancing task.";
-	case HTTP_JSON_Request_ACL_Not_Available:
-		return "Core does not have record-based access control.";
-	case HTTP_Json_DUP_PRIMARY_KEY:
-		return "Primary key repeats in the same batch, first one is used.";
-	case HTTP_Json_Partition_Is_Locked:
-		return "The corresponding partition of data is not usable now. Please try again later.";
-	case HTTP_Json_No_Data_Shard_Available_For_Write:
-		return "No data shard is currently available for this record. This is mostly caused by node failure. Please try again later.";
-	case HTTP_JSON_Core_Does_Not_Exist:
-		return "Core name is not recognized.";
-	case HTTP_JSON_PK_Does_Not_Exist:
-		return "Primary key provided does not exist.";
-	case HTTP_Json_General_Error:
-		return "Unknown Error.";
-	default:
-		ASSERT(false);
-		return "Unknown error.";
-	}
+	return getJsonMessageCodeStr(code);
 }
 
 const string JsonResponseHandler::getCustomMessageStr(const JsonMessageCode code, const string variablePart){
