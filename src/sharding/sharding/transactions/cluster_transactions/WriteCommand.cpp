@@ -498,6 +498,7 @@ WriteCommand::~WriteCommand(){
 
 void WriteCommand::produce(){
 	if(records.empty()){
+		finalize();
 		return;
 	}
 	// 1. first check if core is cluster core or node core
