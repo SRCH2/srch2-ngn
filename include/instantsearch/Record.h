@@ -32,12 +32,26 @@ namespace instantsearch
 {
 class Schema;
 
+/*
+ * This array_deleter is overwriting the destructor of the shared pointer.
+ * The default destructor of shared pointer is "delete p" which is not
+ * correct if the pointer points to an array.
+ */
+template< typename T >
+struct array_deleter
+{
+  void operator ()( T const * p)
+  {
+    delete[] p;
+  }
+};
+
 struct StoredRecordBuffer {
   boost::shared_ptr<const char> start;
   size_t length;
   StoredRecordBuffer() { start.reset(); length = 0; }
   StoredRecordBuffer(const char* s, size_t l) {
-	  start.reset(s); length = l;
+	  start.reset(s, array_deleter<const char>()); length = l;
   }
   StoredRecordBuffer(const boost::shared_ptr<const char>& s, size_t l) {
   	  start = s; length = l;
