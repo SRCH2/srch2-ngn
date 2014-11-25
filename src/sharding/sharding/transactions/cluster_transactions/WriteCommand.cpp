@@ -233,6 +233,7 @@ void PartitionWriter::processWriteResponse(map<NodeId, SP(ShardingNotification) 
 		primaryKeys.push_back(records.at(i)->getPrimaryKey());
 	}
 	if(! this->getConsumer()->getTransaction()){
+		this->getConsumer()->getTransaction();
 		ASSERT(false);
 	}
 	releaser = new AtomicRelease(primaryKeys, currentOpId, pid, this);
