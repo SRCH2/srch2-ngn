@@ -40,6 +40,9 @@ bool UnionLowestLevelSuggestionOperator::open(QueryEvaluatorInternal * queryEval
         queryEvaluatorIntrnal->getInvertedIndex()->
                     getInvertedListReadView(invertedListDirectoryReadView,
                             suggestionInfoItr->suggestedCompleteTermNode->getInvertedListOffset(), invertedListReadView);
+        if(invertedListReadView->size() == 0){
+        	continue;
+        }
         suggestionPairsInvertedListReadViews.push_back(invertedListReadView);
 
     }

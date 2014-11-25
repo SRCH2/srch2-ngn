@@ -47,6 +47,9 @@ bool UnionLowestLevelSimpleScanOperator::open(QueryEvaluatorInternal * queryEval
             this->queryEvaluator->getInvertedIndex()->
                     getInvertedListReadView(invertedListDirectoryReadView,
                             leafNode->getInvertedListOffset() , invertedListReadView);
+            if(invertedListReadView->size() == 0){
+            	continue;
+            }
             this->invertedListsSharedPointers.push_back(invertedListReadView);
             this->invertedLists.push_back(invertedListReadView.get());
             this->invertedListPrefixes.push_back(prefixNode);
@@ -66,6 +69,9 @@ bool UnionLowestLevelSimpleScanOperator::open(QueryEvaluatorInternal * queryEval
 	        this->queryEvaluator->getInvertedIndex()->
 	                getInvertedListReadView(invertedListDirectoryReadView,
 	                        trieNode->getInvertedListOffset() , invertedListReadView);
+            if(invertedListReadView->size() == 0){
+            	continue;
+            }
 	        this->invertedListsSharedPointers.push_back(invertedListReadView);
 	        this->invertedLists.push_back(invertedListReadView.get());
 	        this->invertedListPrefixes.push_back(trieNode);

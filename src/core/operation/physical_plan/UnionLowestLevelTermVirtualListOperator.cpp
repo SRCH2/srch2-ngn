@@ -313,6 +313,9 @@ void UnionLowestLevelTermVirtualListOperator::initialiseTermVirtualListElement(T
     shared_ptr<vectorview<unsigned> > invertedListReadView;
     this->invertedIndex->getInvertedListReadView(invertedListDirectoryReadView,
     		invertedListId, invertedListReadView);
+    if(invertedListReadView->size() == 0){
+    	return;
+    }
     unsigned recordId = invertedListReadView->getElement(invertedListCounter);
     // calculate record offset online
     unsigned keywordOffset = this->invertedIndex->getKeywordOffset(this->forwardIndexDirectoryReadView,
