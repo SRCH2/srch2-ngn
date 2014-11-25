@@ -259,6 +259,7 @@ bool PartitionWriter::shouldAbort(const NodeId & failedNode){
 			return true;
 		}else{
 			ASSERT(false);
+			finalize(false, HTTP_Json_General_Error);
 			return true;
 		}
 	}
@@ -280,6 +281,7 @@ void PartitionWriter::end(map<NodeId, SP(ShardingNotification) > & replies){
 		processWriteResponse(replies);
 	}else{
 		ASSERT(false);
+		finalize(false, HTTP_Json_General_Error);
 	}
 }
 
@@ -510,12 +512,13 @@ void WriteCommand::produce(){
 		// it is possible because all records may have some problem and nothing be appropriate
 		// for continuing ...
 		if(tryFinalize()){
+			finalize();
 			return;
 		}
 		// start writers
 		if(partitionWriters.empty()){
-			finalize();
 			ASSERT(false);
+			finalize();
 			return;
 		}
 		for(map<ClusterPID, PartitionWriter * >::iterator pItr = partitionWriters.begin();
@@ -554,10 +557,11 @@ void WriteCommand::produce(){
 void WriteCommand::consume(const ClusterPID & pid){
 	if(partitionWriters.find(pid) == partitionWriters.end()){
 		ASSERT(false);
+	}else{
+		finishedPartitionWriters[pid] = partitionWriters[pid];
+		partitionWriters.erase(pid);
 	}
 //	delete partitionWriters[pid];
-	finishedPartitionWriters[pid] = partitionWriters[pid];
-	partitionWriters.erase(pid);
 	if(partitionWriters.empty()){
 		finalize();
 		return;

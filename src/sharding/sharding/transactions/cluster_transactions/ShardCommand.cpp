@@ -28,6 +28,8 @@ void ShardCommand::produce(){
 	Logger::sharding(Logger::Step, "ShardCommand(code : %d)| Starting core shard command operation", commandCode);
 	if(! dataSavedFlag){
 		if (!  partition(this->targets)){
+			map<NodeOperationId , SP(ShardingNotification)> emptyResult;
+			finalize(emptyResult);
 			return;
 		}
 	}
@@ -55,8 +57,6 @@ bool ShardCommand::partition(vector<NodeTargetShardInfo> & targets){
 			Logger::sharding(Logger::Detail, "ShardCommand(code : %d)| Core is currently locked. Request rejected.", commandCode);
 		    this->getTransaction()->getSession()->response->addError(JsonResponseHandler::getJsonSingleMessage(HTTP_JSON_All_Shards_Down_Error));
 		    this->getTransaction()->getSession()->response->finalizeOK();
-			map<NodeOperationId , SP(ShardingNotification)> emptyResult;
-			finalize(emptyResult);
 			delete partitioner;
 			return false;
 		}
@@ -78,8 +78,6 @@ bool ShardCommand::partition(vector<NodeTargetShardInfo> & targets){
 	Logger::sharding(Logger::Detail, "ShardCommand(code : %d)| No targets found, Returning unattached.", commandCode);
     this->getTransaction()->getSession()->response->addError(JsonResponseHandler::getJsonSingleMessage(HTTP_JSON_All_Shards_Down_Error));
     this->getTransaction()->getSession()->response->finalizeOK();
-	map<NodeOperationId , SP(ShardingNotification)> emptyResult;
-	finalize(emptyResult);
 	return false;
 }
 // process coming back from distributed conversation to aggregate the results of
@@ -119,6 +117,13 @@ void ShardCommand::end_(map<NodeOperationId , SP(ShardingNotification)> & replie
 	    case ShardCommandCode_ResetLogger:
 	    {
 	    	finalize(replies);
+			return;
+	    }
+	    default:
+	    {
+	    	ASSERT(false);
+			map<NodeOperationId , SP(ShardingNotification)> emptyResult;
+			finalize(emptyResult);
 			return;
 	    }
 	}

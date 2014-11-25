@@ -236,7 +236,7 @@ void AtomicLock::end(map<NodeId, SP(ShardingNotification) > & replies){
 		ASSERT(false);
 		__FUNC_LINE__
 		Logger::sharding(Logger::Error, "AtomicLock| end must be empty but has %d elements.", replies.size());
-		finalize(false);
+		finalize(getDefaultStatusValue());
 		return;
 	}
 	/*
@@ -248,7 +248,8 @@ void AtomicLock::end(map<NodeId, SP(ShardingNotification) > & replies){
 			// record change must be stopped because there is no shard
 			// anymore
 			Logger::sharding(Logger::Detail, "AtomicLock| empty list of participants in primaryKey lock : abort and return false");
-			finalize(false);
+			finalize(getDefaultStatusValue());
+			return;
 		}
 	}
 	finalize(true);

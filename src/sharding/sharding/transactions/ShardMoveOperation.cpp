@@ -71,6 +71,7 @@ void ShardMoveOperation::consume(bool granted){
 	switch (currentOp) {
 		case PreStart:
 			ASSERT(false);
+			finalize();
 			break;
 		case Lock:
 		{
@@ -104,6 +105,8 @@ void ShardMoveOperation::consume(bool granted){
 			}
 			break;
 		default:
+			ASSERT(false);
+			finalize();
 			break;
 	}
 }
@@ -153,7 +156,7 @@ bool ShardMoveOperation::shouldAbort(const NodeId & failedNode){
 		}
 	}else if (this->currentOp == Cleanup){
 		finalize();
-		return false;
+		return true;
 	}
 	return false;
 }
