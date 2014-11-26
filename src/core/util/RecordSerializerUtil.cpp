@@ -17,6 +17,17 @@ using namespace srch2::instantsearch;
 namespace srch2 {
 namespace util {
 
+/*
+ * The "schema" is the one populated from the config file.
+ * In "schema" the concept of "searchable attributes" and "refining attributes"
+ * are same as the definition in the config file.
+ *
+ * The "storedSchema" is the one used for the compact record.
+ * In "storedSchema", the concept of "searchable attributes" and "refining attributes"
+ * are changed.
+ * The "searchable attributes" stores those variable-length attributes, and
+ * the "refining attributes" stores those fix-length attributes.
+ */
 void RecordSerializerUtil::populateStoredSchema(Schema* storedSchema, const Schema *schema) {
 
 	const string* primaryKey = schema->getPrimaryKey();
@@ -30,6 +41,10 @@ void RecordSerializerUtil::populateStoredSchema(Schema* storedSchema, const Sche
 	{
 		bool isMultiValued = schema->isSearchableAttributeMultiValued(searchableAttributeIter->second);
 		bool isHighLight = schema->isHighlightEnabled(searchableAttributeIter->second);
+		/*
+		 * Save all the schema->SearchableAttribute to storedSchema->SearchableAttribute
+		 * since the searchable attribute can only be "text" type.
+		 */
 		storedSchema->setSearchableAttribute(searchableAttributeIter->first, 1, isMultiValued, isHighLight);
 		visitedAttr.insert(searchableAttributeIter->first);
 	}
@@ -44,6 +59,8 @@ void RecordSerializerUtil::populateStoredSchema(Schema* storedSchema, const Sche
 		}
 		bool isMultiValued = schema->isRefiningAttributeMultiValued(refiningAttributeIter->second);
 		if (isMultiValued) {
+		    //Since the multi-valued is variable length type, it will be stored
+		    //as storedSchema->SearchableAttribute
 			storedSchema->setSearchableAttribute(refiningAttributeIter->first,
 								1, true, false);
 			continue;
@@ -54,11 +71,13 @@ void RecordSerializerUtil::populateStoredSchema(Schema* storedSchema, const Sche
 		case srch2is::ATTRIBUTE_TYPE_LONG:
 		case srch2is::ATTRIBUTE_TYPE_FLOAT:
 		case srch2is::ATTRIBUTE_TYPE_DOUBLE:
+		    //Save the fix-length type into storedSchema->RefiningAttribute
 			storedSchema->setRefiningAttribute(refiningAttributeIter->first,
 					type, *schema->getDefaultValueOfRefiningAttribute(refiningAttributeIter->second),
 					false);
 			break;
 		default:
+		    //All the other type are variable length.
 			storedSchema->setSearchableAttribute(refiningAttributeIter->first,
 					1, false, false);
 		}
