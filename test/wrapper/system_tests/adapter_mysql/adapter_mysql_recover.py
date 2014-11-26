@@ -162,8 +162,8 @@ def testCreateIndexes(conn,sqlQueriesPath,testQueriesPath):
     time.sleep(2)
     print '=============================='
 
-#Test 2: Start the engine, update the record in mysql, time
-#then the listener should fetch the results, then engine exits without saving changes.
+#Test 2: Start the engine, update the record in mysql, 
+#and the listener should fetch the results, then engine exits without saving changes.
 def testRunListener(conn,sqlQueriesPath,testQueriesPath):
     startSrch2Engine()
     #Modify the table while the srch2 engine is running.
@@ -216,7 +216,7 @@ if __name__ == '__main__':
         conn = mysql.connector.connect(host="127.0.0.1",user=myUserName, password=myPassword)
     except :
         print 'Access denied while connecting to the MySQL database. Set the MySQL user name and password in ./adapter_mysql/conf.xml'
-        os._exit(-2)
+        os._exit(-1)
         
     #Remove the srch2Test database and tables
     conn.cursor().execute('DROP DATABASE IF EXISTS srch2Test ')

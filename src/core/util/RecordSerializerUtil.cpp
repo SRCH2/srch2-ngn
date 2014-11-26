@@ -17,6 +17,15 @@ using namespace srch2::instantsearch;
 namespace srch2 {
 namespace util {
 
+/*
+ * The second argument "schema" includes the data schema obtained from the
+ * config file.  Its concepts of "searchable attributes" and "refining
+ * attributes" are the same as the definition in the config file.
+ *
+ * The first argument "storedSchema" is the one used for the compact record.
+ * Its "searchable attributes" are those variable-length attributes, and
+ * its "refining attributes" are those fixed-length attributes.
+ */
 void RecordSerializerUtil::populateStoredSchema(Schema* storedSchema, const Schema *schema) {
 
 	const string* primaryKey = schema->getPrimaryKey();
@@ -30,6 +39,10 @@ void RecordSerializerUtil::populateStoredSchema(Schema* storedSchema, const Sche
 	{
 		bool isMultiValued = schema->isSearchableAttributeMultiValued(searchableAttributeIter->second);
 		bool isHighLight = schema->isHighlightEnabled(searchableAttributeIter->second);
+		/*
+		 * Save all the schema->SearchableAttribute to storedSchema->SearchableAttribute
+		 * since the searchable attribute can only be "text" type.
+		 */
 		storedSchema->setSearchableAttribute(searchableAttributeIter->first, 1, isMultiValued, isHighLight);
 		visitedAttr.insert(searchableAttributeIter->first);
 	}
@@ -44,9 +57,11 @@ void RecordSerializerUtil::populateStoredSchema(Schema* storedSchema, const Sche
 		}
 		bool isMultiValued = schema->isRefiningAttributeMultiValued(refiningAttributeIter->second);
 		if (isMultiValued) {
-			storedSchema->setSearchableAttribute(refiningAttributeIter->first,
-								1, true, false);
-			continue;
+                  // The multi-valued type is variable-length type, so
+                  // it is stored as a storedSchema->SearchableAttribute
+                  storedSchema->setSearchableAttribute(refiningAttributeIter->first,
+                                                       1, true, false);
+                  continue;
 		}
 		srch2is::FilterType type = schema->getTypeOfRefiningAttribute(refiningAttributeIter->second);
 		switch (type) {
@@ -54,13 +69,16 @@ void RecordSerializerUtil::populateStoredSchema(Schema* storedSchema, const Sche
 		case srch2is::ATTRIBUTE_TYPE_LONG:
 		case srch2is::ATTRIBUTE_TYPE_FLOAT:
 		case srch2is::ATTRIBUTE_TYPE_DOUBLE:
-			storedSchema->setRefiningAttribute(refiningAttributeIter->first,
-					type, *schema->getDefaultValueOfRefiningAttribute(refiningAttributeIter->second),
-					false);
+                  // Save the fixed-length type into storedSchema->RefiningAttribute
+                  storedSchema->setRefiningAttribute(refiningAttributeIter->first,
+                                                     type, *schema->getDefaultValueOfRefiningAttribute(refiningAttributeIter->second),
+                                                     false);
 			break;
+
 		default:
-			storedSchema->setSearchableAttribute(refiningAttributeIter->first,
-					1, false, false);
+                  // All the other types are variable length.
+                  storedSchema->setSearchableAttribute(refiningAttributeIter->first,
+                                                       1, false, false);
 		}
 	}
 }
