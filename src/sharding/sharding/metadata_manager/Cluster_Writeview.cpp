@@ -662,6 +662,9 @@ void Cluster_Writeview::printNodeShards(JsonResponseHandler * response) const{
 					shardJson["json-file-path"] = localNodeDataShards.at(nodeShardId.partitionId).jsonFileCompletePath;
 					shardJson["num-records"] = localNodeDataShards.at(nodeShardId.partitionId).server->getIndexer()->getNumberOfDocumentsInIndex();
 				}
+				shardJson["local"] = "YES";
+			}else{
+				shardJson["local"] = "NO";
 			}
 			nodeShardsJson[nodeShardIdx ++] = shardJson;
 		}
