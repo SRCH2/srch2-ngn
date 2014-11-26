@@ -22,6 +22,7 @@ namespace srch2 {
 namespace httpwrapper {
 
 class Srch2Server;
+class JsonResponseHandler;
 
 struct LocalPhysicalShard{
 	boost::shared_ptr<Srch2Server> server;
@@ -223,13 +224,13 @@ public:
 	Cluster_Writeview();
 	bool operator==(const Cluster_Writeview & right);
 	bool isEqualDiscardingLocalShards(const Cluster_Writeview & right);
-	void print() const;
+	void print(JsonResponseHandler * response = NULL) const;
 
-	void printCores() const;
-	void printNodes() const;
-	void printClusterShards() const;
-	void printNodeShards() const;
-	void printLocalShards() const;
+	void printCores(JsonResponseHandler * response = NULL) const;
+	void printNodes(JsonResponseHandler * response = NULL) const;
+	void printClusterShards(JsonResponseHandler * response = NULL) const;
+	void printNodeShards(JsonResponseHandler * response = NULL) const;
+	void printLocalShards(JsonResponseHandler * response = NULL) const;
 
 	~Cluster_Writeview();
 

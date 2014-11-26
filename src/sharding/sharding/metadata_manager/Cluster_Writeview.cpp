@@ -9,6 +9,7 @@
 #include "../lock_manager/LockManager.h"
 #include "core/util/SerializationHelper.h"
 #include "server/Srch2Server.h"
+#include "server/HTTPJsonResponse.h"
 
 #include <sstream>
 #include <fstream>
@@ -319,27 +320,45 @@ Cluster_Writeview::~Cluster_Writeview(){
 }
 
 
-void Cluster_Writeview::print() const{
+void Cluster_Writeview::print(JsonResponseHandler * response) const{
 
-	printCores();
+	printCores(response);
 
-	printNodes();
+	printNodes(response);
 
 	/// cluster shards
 
-	printClusterShards();
+	printClusterShards(response);
 
 
 
 	///// node shards
-	printNodeShards();
+	printNodeShards(response);
 
 
-	printLocalShards();
+	printLocalShards(response);
 
 }
 
-void Cluster_Writeview::printCores() const{
+void Cluster_Writeview::printCores(JsonResponseHandler * response) const{
+	if(response != NULL){
+		Json::Value coresJsonValue(Json::arrayValue);
+		unsigned coreIdx = 0 ;
+		for(map<unsigned, CoreInfo_t *>::const_iterator coreItr = cores.begin(); coreItr != cores.end(); ++coreItr){
+			Json::Value coreJsonValue(Json::objectValue);
+			coreJsonValue["ID"] = coreItr->first;
+			coreJsonValue["Name"] = coreItr->second->getName();
+			coreJsonValue["distributed"] = coreItr->second->isDistributedCore() ? "distributed" : "node-core";
+			if(coreItr->second->isDistributedCore()){
+				coreJsonValue["#primary-shards"] = coreItr->second->getNumberOfPrimaryShards();
+				coreJsonValue["#replicas"] = coreItr->second->getNumberOfReplicas();
+			}
+			//
+			coresJsonValue[coreIdx++] = coreJsonValue;
+		}
+		response->setResponseAttribute("cores-info" , coresJsonValue);
+		return;
+	}
 	vector<string> coreHeaders;
 	for(map<unsigned, CoreInfo_t *>::const_iterator coreItr = cores.begin(); coreItr != cores.end(); ++coreItr){
 		stringstream ss;
@@ -352,8 +371,50 @@ void Cluster_Writeview::printCores() const{
 	coresTable.printColumnHeaders();
 }
 
-void Cluster_Writeview::printNodes() const{
+void Cluster_Writeview::printNodes(JsonResponseHandler * response) const{
 
+	if(response != NULL){
+		Json::Value nodesJsonInfo(Json::arrayValue);
+		unsigned nodeIdx = 0;
+		for(map<NodeId, std::pair<ShardingNodeState, Node *> >::const_iterator nodeItr =
+				nodes.begin(); nodeItr != nodes.end(); ++nodeItr){
+			Json::Value nodeJsonInfo(Json::objectValue);
+
+			nodeJsonInfo["ID"] = nodeItr->first;
+			switch (nodeItr->second.first) {
+				case ShardingNodeStateNotArrived:
+					nodeJsonInfo["State"] = "NOT-ARRIVED";
+					break;
+				case ShardingNodeStateArrived:
+					nodeJsonInfo["State"] = "ARRIVED";
+					break;
+				case ShardingNodeStateFailed:
+					nodeJsonInfo["State"] = "FAILED";
+					break;
+			}
+			if(nodeItr->second.second == NULL){
+				nodeJsonInfo["Obj"] = "NULL";
+			}else{
+				Node * node = nodeItr->second.second;
+				nodeJsonInfo["Name"] = node->getName();
+				nodeJsonInfo["IP"] = node->getIpAddress();
+				nodeJsonInfo["Port"] = node->getPortNumber();
+				if(node->thisIsMe){
+					nodeJsonInfo["ME"] = "YES";
+				}else{
+					nodeJsonInfo["ME"] = "NO";
+				}
+				if(node->isMaster()){
+					nodeJsonInfo["Master"] = "YES";
+				}else{
+					nodeJsonInfo["Master"] = "NO";
+				}
+			}
+			nodesJsonInfo[nodeIdx++] = nodeJsonInfo;
+		}
+		response->setResponseAttribute("nodes-info" , nodesJsonInfo);
+		return;
+	}
 	/// nodes
 	if(nodes.size() != 0){
 		vector<string> nodeHeaders;
@@ -392,8 +453,70 @@ void Cluster_Writeview::printNodes() const{
 }
 
 
-void Cluster_Writeview::printClusterShards() const{
+void Cluster_Writeview::printClusterShards(JsonResponseHandler * response) const{
 	ClusterShardId id;double load;ShardState state;bool isLocal;NodeId nodeId;NodeShardId nodeShardId;
+
+	if(response != NULL){
+		Json::Value clusterShardsJson(Json::arrayValue);
+		unsigned coreIdx = 0;
+		for(map<unsigned, CoreInfo_t *>::const_iterator coreItr = cores.begin(); coreItr != cores.end(); ++coreItr){
+			Json::Value coreClusterShardsJson(Json::objectValue);
+			coreClusterShardsJson["core-name"] = coreItr->second->getName();
+			coreClusterShardsJson["is-acl-core"] = coreItr->second->isAclCore() ? "YES" : "NO";
+			coreClusterShardsJson["distributed"] = coreItr->second->isDistributedCore() ? "YES" : "NO";
+			coreClusterShardsJson["num-primary-shards"] = coreItr->second->getNumberOfPrimaryShards();
+			coreClusterShardsJson["num-replica-shards"] = coreItr->second->getNumberOfReplicas();
+			Json::Value shardsJson(Json::arrayValue);
+			unsigned shardIdx = 0 ;
+			ClusterShardIterator cShardItr(this);
+			while(cShardItr.getNextClusterShard(id, load, state, isLocal, nodeId)){
+				if(id.coreId != coreItr->first){
+					continue;
+				}
+				Json::Value shardJson(Json::objectValue);
+
+				shardJson["ID"] = id.toString();
+				shardJson["location"] = nodeId;
+				if(isLocal){
+					shardJson["local"] = "YES";
+					if(localClusterDataShards.find(id) == localClusterDataShards.end()){
+						shardJson["ERROR"] = "Local cluster shard which is not available in local shards.";
+					}else{
+						shardJson["index-directory"] = localClusterDataShards.at(id).indexDirectory;
+						shardJson["json-file-path"] = localClusterDataShards.at(id).jsonFileCompletePath;
+						shardJson["num-records"] = localClusterDataShards.at(id).server->getIndexer()->getNumberOfDocumentsInIndex();
+					}
+				}else{
+					shardJson["local"] = "NO";
+				}
+				shardJson["load"] = load;
+				switch(state){
+				case SHARDSTATE_UNASSIGNED:
+					shardJson["State"] = "UNASSIGNED";
+					break;
+				case SHARDSTATE_PENDING:
+					shardJson["State"] = "PENDING";
+					break;
+				case SHARDSTATE_READY:
+					shardJson["State"] = "READY";
+					break;
+				}
+
+				shardsJson[shardIdx ++] = shardJson;
+			}
+
+			coreClusterShardsJson["cluster-shards"] = shardsJson;
+
+			//
+			clusterShardsJson[coreIdx ++] = coreClusterShardsJson;
+		}
+
+		response->setResponseAttribute("cluster-shards" , clusterShardsJson);
+
+		return;
+	}
+
+
 	if(clusterShards.size() > 0){
 		for(map<unsigned, CoreInfo_t *>::const_iterator coreItr = cores.begin(); coreItr != cores.end(); ++coreItr){
 			if(coreItr->second->isAclCore()){
@@ -516,9 +639,39 @@ void Cluster_Writeview::printClusterShards() const{
 }
 
 
-void Cluster_Writeview::printNodeShards() const{
+void Cluster_Writeview::printNodeShards(JsonResponseHandler * response) const{
+
+	ClusterShardId id;double load;ShardState state;bool isLocal;NodeId nodeId;NodeShardId nodeShardId;
+	if(response != NULL){
+
+		Json::Value nodeShardsJson(Json::arrayValue);
+
+		NodeShardIterator nShardItr(this);
+		nShardItr.beginNodeShardsIteration();
+		unsigned nodeShardIdx  = 0;
+		while(nShardItr.getNextNodeShard(nodeShardId,isLocal)){
+			Json::Value shardJson(Json::objectValue);
+			shardJson["core-id"] = nodeShardId.coreId;
+			shardJson["location"] = nodeShardId.nodeId;
+			shardJson["partition-id"] = nodeShardId.partitionId;
+			if(isLocal){
+				if(localNodeDataShards.find(nodeShardId.partitionId) == localNodeDataShards.end()){
+					shardJson["ERROR"] = "Local node shard does not exist in local node shards";
+				}else{
+					shardJson["index-directory"] = localNodeDataShards.at(nodeShardId.partitionId).indexDirectory;
+					shardJson["json-file-path"] = localNodeDataShards.at(nodeShardId.partitionId).jsonFileCompletePath;
+					shardJson["num-records"] = localNodeDataShards.at(nodeShardId.partitionId).server->getIndexer()->getNumberOfDocumentsInIndex();
+				}
+			}
+			nodeShardsJson[nodeShardIdx ++] = shardJson;
+		}
+
+		response->setResponseAttribute("node-shards" , nodeShardsJson);
+		return;
+	}
+
+
 	if(nodeShards.size() > 0){
-		ClusterShardId id;double load;ShardState state;bool isLocal;NodeId nodeId;NodeShardId nodeShardId;
 		vector<string> nodeShardHeaders;
 		vector<string> nodeShardLabels;
 		unsigned counter = 0;
@@ -547,7 +700,7 @@ void Cluster_Writeview::printNodeShards() const{
 }
 
 
-void Cluster_Writeview::printLocalShards() const{
+void Cluster_Writeview::printLocalShards(JsonResponseHandler * response) const{
 	if(localClusterDataShards.size() != 0){
 		//////// Cluster physical shards
 		vector<string> localClusterShardHeaders;

@@ -275,7 +275,8 @@ enum ShardingTransactionType{
 	ShardingTransactionType_RecordAclCommandCode,
 	ShardingTransactionType_InsertUpdateCommand,
 	ShardingTransactionType_ReadCommand,
-	ShardingTransactionType_Shutdown
+	ShardingTransactionType_Shutdown,
+	ShardingTransactionType_DebugCollectInfo
 };
 
 const char * getTransTypeStr(ShardingTransactionType type);

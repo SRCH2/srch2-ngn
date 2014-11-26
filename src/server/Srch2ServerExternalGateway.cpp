@@ -10,6 +10,7 @@
 #include "sharding/sharding/transactions/cluster_transactions/AclRecordCommandHttp.h"
 #include "sharding/sharding/transactions/cluster_transactions/BulkLoadCommandHttp.h"
 #include "sharding/sharding/transactions/cluster_transactions/ShutdownCommand.h"
+#include "sharding/sharding/transactions/cluster_transactions/DebugInfoCollector.h"
 #include <exception>
 
 
@@ -173,8 +174,10 @@ void Srch2ServerGateway::cb_globalOperations(struct evhttp_request * req, void *
     		break;
     	case srch2http::InfoPort_Nodes_NodeID:
     	case srch2http::InfoPort_Cluster_Stats:
-    	case srch2http::DebugStatsPort:
     		dpExternal->externalGetInfoCommand(clusterReadview, req, (unsigned) -1, portType);
+    		break;
+    	case srch2http::DebugStatsPort:
+    		DebugInfoCollector::collectInfo(req);
     		break;
     	case srch2http::ShutdownPort:
     		srch2http::ShutdownCommand::runShutdown(req);
