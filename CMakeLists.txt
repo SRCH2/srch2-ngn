@@ -74,9 +74,9 @@ SET(BUILD_TEST ON CACHE BOOL "Build tests. Default ON")
 SET(BUILD_UTILITY ON CACHE BOOL "Build utilities. Default ON")
 #SET(CMAKE_CXX_FLAGS_RELEASE "") 
 IF(CMAKE_SIZEOF_VOID_P EQUAL 8)
-    SET(BUILD64BIT ON ON CACHE BOOL "Building for 64 bit platform")
+    SET(BUILD64BIT ON CACHE BOOL "Building for 64 bit platform")
 ELSE()
-    SET(BUILD64BIT OFF ON CACHE BOOL "Building for 32 bit platform")
+    SET(BUILD64BIT OFF CACHE BOOL "Building for 32 bit platform")
 ENDIF()
 
 
