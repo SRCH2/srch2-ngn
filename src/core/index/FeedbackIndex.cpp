@@ -65,6 +65,9 @@ void FeedbackIndex::addFeedback(const string& query, unsigned recordId, unsigned
 	TrieNode *terminalNode;
 	unsigned queryId = queryTrie->addKeyword_ThreadSafe(query, &terminalNode);
 	unsigned feedbackListOffset = terminalNode->getInvertedListOffset();
+	if (feedbackListOffset == -1) {
+		queryTrie->removeEmptyLeafNodeId(queryId);
+	}
 	unsigned feedbackListIndexWriteViewSize = feedbackListIndexVector->getWriteView()->size();
 	if (feedbackListOffset >= feedbackListIndexWriteViewSize) {
 
@@ -126,6 +129,7 @@ void FeedbackIndex::addFeedback(const string& query, unsigned recordId, unsigned
 							queryAgeOrder[headId].queryId);
 					ASSERT(false);
 				}
+				tp.clean();
 			}
 
 			// current Query's terminal node will reuse the slot of oldest query
@@ -356,6 +360,7 @@ void FeedbackIndex::_merge() {
 
 // Reassign the QueryIds in Feedback Index.
 // First reassign the keywordIds (queryIds) in trie and then reassign queryIds in the linked list.
+// This function is similar to IndexData::reassignKeywordIds()
 void FeedbackIndex::reassignQueryIdsInFeedbackIndex() {
 	map<TrieNode *, unsigned> trieNodeIdMapper;
 	queryTrie->reassignKeywordIds(trieNodeIdMapper);

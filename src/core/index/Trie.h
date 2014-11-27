@@ -834,6 +834,14 @@ public:
         boost::unique_lock<boost::mutex> Lock(mutexForEmptyLeafNodeIds);
         this->emptyLeafNodeIds.push_back(emptyleafNodeId);
     }
+    void removeEmptyLeafNodeId(unsigned emptyleafNodeId) {
+    	for (unsigned iter = 0; iter < emptyLeafNodeIds.size(); ++iter) {
+    		if (emptyLeafNodeIds[iter] == emptyleafNodeId) {
+    			emptyLeafNodeIds.erase(emptyLeafNodeIds.begin() + iter);
+    			return;
+    		}
+    	}
+    }
     unsigned getEmptyLeafNodeIdSize() { return this->emptyLeafNodeIds.size();}
     void applyKeywordIdMapperOnEmptyLeafNodes(map<unsigned, unsigned> &keywordIdMapper);
     void removeDeletedNodes();
