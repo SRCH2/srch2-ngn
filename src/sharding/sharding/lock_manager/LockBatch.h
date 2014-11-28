@@ -176,7 +176,7 @@ public:
 				Json::Value resourceJson(Json::arrayValue);
 				unsigned i = 0;
 				for(vector<pair<NodeOperationId, LockLevel> >::const_iterator holderItr = resItr->second.begin();
-						holderItr == resItr->second.end(); ++resItr){
+						holderItr != resItr->second.end(); ++resItr){
 					resourceJson[i]["holder"] = holderItr->first.toString();
 					resourceJson[i]["lock"] = holderItr->second == LockLevel_S ? "S" : "X";
 					//
