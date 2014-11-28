@@ -141,6 +141,8 @@ void FeedbackIndex::addFeedback(const string& query, unsigned recordId, unsigned
 			queryAgeOrder[headId].prevIndexId = -1;
 
 			--totalQueryCount;
+			queryTrie->decrementTerminalNodesCounter();
+
 		}
 
 		if (headId == -1 && tailId == -1) {
