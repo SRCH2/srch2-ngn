@@ -494,8 +494,8 @@ void IndexReaderWriter::startMergeThreadLoop()
       Logger::warn("Merge thread can be called only after first commit!");
       return;
     }
-    pthread_mutex_unlock(&lockForWriters);
     mergeThreadStarted = true;
+    pthread_mutex_unlock(&lockForWriters);
     /*
      *  Initialize condition variable for the first time before loop starts.
      */
