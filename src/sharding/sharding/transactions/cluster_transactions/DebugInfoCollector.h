@@ -46,7 +46,7 @@ private:
 
 	void run(){
 		// 1. add writeview info
-		this->getWriteview()->print(this->getSession()->response);
+		ShardManager::getShardManager()->print(this->getSession()->response);
 		this->getSession()->response->finalizeOK();
 	}
 

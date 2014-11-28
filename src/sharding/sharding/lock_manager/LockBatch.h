@@ -167,7 +167,26 @@ public:
 		return numberOfBytes;
 	}
 
-	void print(const string & tableName){
+	void print(const string & tableName, JsonResponseHandler * response = NULL){
+
+		if(response != NULL){
+			Json::Value grantedLocksJson(Json::Value(Json::objectValue));
+			for(typename map<Resource, vector<pair<NodeOperationId, LockLevel> > >::const_iterator
+					resItr = grantedLocks.begin(); resItr != grantedLocks.end(); ++resItr){
+				Json::Value resourceJson(Json::arrayValue);
+				unsigned i = 0;
+				for(vector<pair<NodeOperationId, LockLevel> >::const_iterator holderItr = resItr->second.begin();
+						holderItr == resItr->second.end(); ++resItr){
+					resourceJson[i]["holder"] = holderItr->first.toString();
+					resourceJson[i]["lock"] = holderItr->second == LockLevel_S ? "S" : "X";
+					//
+					i++;
+				}
+				grantedLocksJson[_toString(resItr->first)] = resourceJson;
+			}
+			response->setResponseAttribute(tableName.c_str(), grantedLocksJson);
+			return;
+		}
 
 		vector<string> colomnHeaders;
 		colomnHeaders.push_back("Lock holders");
@@ -361,7 +380,62 @@ public:
 		return ss.str();
 	}
 
-	string toString(){
+	string toString(Json::Value * _jsonRep = NULL){
+		if(_jsonRep != NULL){
+			Json::Value & jsonRep = *_jsonRep;
+			jsonRep["blocking"] = blocking;
+			jsonRep["release"] = release;
+			jsonRep["incremental"] = incremental;
+			jsonRep["batch-type"] = getBatchTypeStr();
+	        if(ack){
+	        	jsonRep["requester"] = ack->getDest().nodeId;
+	        }else{
+	        	jsonRep["requester"] = "NULL";
+	        }
+	        if(versionId > 0){
+	        	jsonRep["rv-waiting"] = "YES";
+	        }else{
+	        	jsonRep["rv-waiting"] = "NO";
+	        }
+			jsonRep["resources"] = Json::Value(Json::objectValue);
+	        switch(batchType){
+	        case LockRequestType_Copy:
+	        case LockRequestType_Move:
+	        case LockRequestType_GeneralPurpose:
+	        case LockRequestType_ShardIdList:
+	            {
+	                for(unsigned i = 0 ; i < tokens.size(); ++i){
+	                    if(tokens.at(i).second == LockLevel_S){
+	                        jsonRep["resources"][tokens.at(i).first.toString()] = "S";
+	                    }else{
+	                        jsonRep["resources"][tokens.at(i).first.toString()] = "X";
+	                    }
+	                }
+	                break;
+	            }
+	        case LockRequestType_Metadata:
+	            if(metadataLockLevel == LockLevel_S){
+	                jsonRep["resources"]["metadata"] = "S";
+	            }else{
+	                jsonRep["resources"]["metadata"] = "X";
+	            }
+	            if(olderNodes.size() > 0){
+	            	jsonRep["resources"]["older-nodes"] = Json::Value(Json::arrayValue);
+	            	for(unsigned nIdx = 0; nIdx < olderNodes.size(); ++nIdx){
+	            		jsonRep["resources"]["older-nodes"][nIdx] = olderNodes.at(nIdx);
+	            	}
+	            }
+	            break;
+	        case LockRequestType_PrimaryKey:
+	        	jsonRep["resources"]["containing-cluster-shard-id"] = pid.toString();
+	        	jsonRep["resources"]["primary-keys"] = Json::Value(Json::arrayValue);
+	        	for(unsigned pIdx = 0 ; pIdx < pkTokens.size(); ++pIdx){
+	        		jsonRep["resources"]["primary-keys"][pIdx] = pkTokens.at(pIdx).first;
+	        	}
+	            break;
+	        }
+			return "";
+		}
 	    stringstream ss;
 	    ss << "B(" << blocking << "), R(" << release << "), I(" << incremental << "), batchType(" << getBatchTypeStr() << "), ";
         switch(batchType){

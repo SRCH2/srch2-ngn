@@ -104,7 +104,12 @@ void StateMachine::handle(SP(Notification) notification){
 /*
  * Before calling print, lockStateMachine() must be invoked.
  */
-void StateMachine::print() const{
+void StateMachine::print(JsonResponseHandler * response) const{
+	if(response != NULL){
+
+		//TODO
+		return;
+	}
 	bool isEmpty = true;
 	for(unsigned groupId = 0; groupId < ACTIVE_OPERATINS_GROUP_COUNT; ++groupId){
 		const ActiveOperationGroup & activeOperations = activeOperationGroups[groupId];

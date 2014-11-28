@@ -184,7 +184,7 @@ public:
 	pthread_t * getLoadbalancingThread() ;
 
 
-	void print();
+	void print(JsonResponseHandler * response = NULL);
 private:
 
 
@@ -216,7 +216,7 @@ private:
 	void resendBouncedNotifications();
 	void bounceNotification(SP(ShardingNotification) notif);
 	//TODO : must become const, assumes S lock acquired
-	void printBouncedNotifications();
+	void printBouncedNotifications(JsonResponseHandler * response = NULL);
 
 	// map from operatioId to MM listener
 	vector< std::pair< map<unsigned , ConsumerInterface *>, boost::mutex * > > mmSessionListenersGroup;

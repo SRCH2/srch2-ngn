@@ -66,7 +66,7 @@ public:
 	SP(const ClusterNodes_Writeview) getClusterNodesWriteview_read();
 
 	// sLock on writeview and nodes must be acquired before calling this method
-	void print() const;
+	void print(JsonResponseHandler * response = NULL) const;
 
 private:
 	// NOTE : changing this pointer (like assigning it to a new object or deleting

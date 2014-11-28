@@ -254,7 +254,11 @@ SP(const ClusterNodes_Writeview) ResourceMetadataManager::getClusterNodesWritevi
 			(new ClusterNodes_Writeview(nodesMutex, writeview->nodes, writeview->currentNodeId, false));
 }
 
-void ResourceMetadataManager::print() const{
+void ResourceMetadataManager::print(JsonResponseHandler * response) const{
+	if(response != NULL){
+		writeview->print(response);
+		return;
+	}
 	if(writeview != NULL){
 		cout << "**************************************************************************************************" << endl;
 		cout << "Writeview : " << endl;

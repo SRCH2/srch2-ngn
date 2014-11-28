@@ -474,7 +474,30 @@ void LockManager::initialize(){
     }
 }
 
-void LockManager::print(){
+void LockManager::print(JsonResponseHandler * response){
+	if(response != NULL){
+		lockManagerMutex.lock();
+		if(this->isLockManagerClean()){
+			lockManagerMutex.unlock();
+			return;
+		}
+		// print pending lock requests
+		printPendingRequests(pendingLockBatches, "pending-lock-requests", response);
+
+		//  print rv pending lock requests
+		printRVPendingRequests(response);
+
+		// print cluster shard locks
+		printClusterShardIdLocks(response);
+		// print primary key locks
+		printPrimaryKeyLocks(response);
+		// print metadata locks
+		printMetadataLocks(response);
+
+		lockManagerMutex.unlock();
+
+		return;
+	}
 	lockManagerMutex.lock();
 	if(this->isLockManagerClean()){
 		lockManagerMutex.unlock();
@@ -501,7 +524,16 @@ void LockManager::print(){
 }
 
 
-void LockManager::printPendingRequests(const vector<LockBatch *> & pendingLockBatches, const string & tableName) const{
+void LockManager::printPendingRequests(const vector<LockBatch *> & pendingLockBatches, const string & tableName, JsonResponseHandler * response) const{
+	if(response != NULL){
+		Json::Value pendingLockBatchesJson(Json::arrayValue);
+		for(unsigned i = 0; i < pendingLockBatches.size(); ++i){
+			pendingLockBatchesJson[i] = Json::Value(Json::objectValue);
+			pendingLockBatches.at(i)->toString(&(pendingLockBatchesJson[i]));
+		}
+		response->setResponseAttribute(tableName.c_str() , pendingLockBatchesJson);
+		return;
+	}
 	if(pendingLockBatches.empty()){
 		return;
 	}
@@ -529,22 +561,38 @@ void LockManager::printPendingRequests(const vector<LockBatch *> & pendingLockBa
 
 }
 
-void LockManager::printRVPendingRequests(){
-	readviewReleaseMutex.lock();
-	printPendingRequests(rvReleasePendingLockBatches, "RV Release %pending Requests");
-	readviewReleaseMutex.unlock();
+void LockManager::printRVPendingRequests(JsonResponseHandler * response){
+	if(response != NULL){
+		printPendingRequests(rvReleasePendingLockBatches, "rv-release-pending-requests", response);
+	}else{
+		readviewReleaseMutex.lock();
+		printPendingRequests(rvReleasePendingLockBatches, "RV Release %pending Requests", response);
+		readviewReleaseMutex.unlock();
+	}
 }
 
-void LockManager::printClusterShardIdLocks(){
-	clusterShardLocks.print("ClusterShard Locks");
+void LockManager::printClusterShardIdLocks(JsonResponseHandler * response){
+	if(response != NULL){
+		clusterShardLocks.print("cluster-shard-locks", response);
+	}else{
+		clusterShardLocks.print("ClusterShard Locks", response);
+	}
 }
 
-void LockManager::printPrimaryKeyLocks(){
-	primaryKeyLocks.print("Primary Key Locks");
+void LockManager::printPrimaryKeyLocks(JsonResponseHandler * response){
+	if(response != NULL){
+		primaryKeyLocks.print("primary-key-locks", response);
+	}else{
+		primaryKeyLocks.print("Primary Key Locks", response);
+	}
 }
 
-void LockManager::printMetadataLocks(){
-	allNodeSharedInfo.print("Metadata locks");
+void LockManager::printMetadataLocks(JsonResponseHandler * response){
+	if(response != NULL){
+		allNodeSharedInfo.print("metadata-locks", response);
+	}else{
+		allNodeSharedInfo.print("Metadata locks", response);
+	}
 }
 
 }

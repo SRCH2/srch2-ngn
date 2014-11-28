@@ -38,7 +38,7 @@ public:
 	// goes to everybody
 	void handle(SP(Notification) notification);
 
-	void print() const;
+	void print(JsonResponseHandler * response = NULL) const;
 	bool lockStateMachine();
 	void unlockStateMachine();
 

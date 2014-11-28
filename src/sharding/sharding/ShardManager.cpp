@@ -251,7 +251,20 @@ pthread_t * ShardManager::getLoadbalancingThread() {
 	return this->loadBalancingThread;
 }
 
-void ShardManager::print(){
+void ShardManager::print(JsonResponseHandler * response){
+	if(response != NULL){
+		metadataManager->print(response);
+		_lockManager->print(response);
+		if(stateMachine->lockStateMachine()){
+			stateMachine->print(response);
+			stateMachine->unlockStateMachine();
+		}
+		// bounced notifications
+		boost::shared_lock<boost::shared_mutex> sLock(shardManagerMembersMutex);
+		printBouncedNotifications(response);
+
+		return;
+	}
 	// lock writeview
 	boost::unique_lock<boost::shared_mutex> xLock;
 	metadataManager->getClusterWriteview_write(xLock);
@@ -620,7 +633,11 @@ void ShardManager::bounceNotification(SP(ShardingNotification) notif){
 	ShardingNotification::send(notif);
 }
 
-void ShardManager::printBouncedNotifications(){
+void ShardManager::printBouncedNotifications(JsonResponseHandler * response){
+	if(response != NULL){
+		//TODO
+		return;
+	}
 	if(bouncedNotifications.empty()){
 		return;
 	}

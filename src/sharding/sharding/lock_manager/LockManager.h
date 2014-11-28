@@ -36,17 +36,17 @@ public:
 	void getLockedPartitions(vector<ClusterPID> & lockedPartitions);
 	void setNodePassedInitialization(const NodeId & nodeId);
 	void initialize();
-	void print();
+	void print(JsonResponseHandler * response = NULL);
 private:
 
 
-	void printPendingRequests(const vector<LockBatch *> & pendingLockBatches, const string & tableName) const;
+	void printPendingRequests(const vector<LockBatch *> & pendingLockBatches, const string & tableName, JsonResponseHandler * response = NULL) const;
 
-	void printRVPendingRequests();
+	void printRVPendingRequests(JsonResponseHandler * response = NULL);
 
-	void printClusterShardIdLocks();
-	void printPrimaryKeyLocks();
-	void printMetadataLocks();
+	void printClusterShardIdLocks(JsonResponseHandler * response = NULL);
+	void printPrimaryKeyLocks(JsonResponseHandler * response = NULL);
+	void printMetadataLocks(JsonResponseHandler * response = NULL);
 
 
 	bool canAcquireAllBatch(LockBatch * lockBatch);
