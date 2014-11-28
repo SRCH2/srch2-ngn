@@ -46,7 +46,11 @@ private:
 
 	void run(){
 		// 1. add writeview info
-		ShardManager::getShardManager()->print(this->getSession()->response);
+		if(! ShardManager::getShardManager()->isCancelled() && ShardManager::getShardManager()->isJoined()){
+			ShardManager::getShardManager()->print(this->getSession()->response);
+		}else{
+			this->getSession()->response->setResponseAttribute("error",  "Engine is not ready yet.");
+		}
 		this->getSession()->response->finalizeOK();
 	}
 
