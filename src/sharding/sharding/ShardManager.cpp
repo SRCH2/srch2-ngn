@@ -634,11 +634,17 @@ void ShardManager::bounceNotification(SP(ShardingNotification) notif){
 }
 
 void ShardManager::printBouncedNotifications(JsonResponseHandler * response){
-	if(response != NULL){
-		//TODO
+	if(bouncedNotifications.empty()){
 		return;
 	}
-	if(bouncedNotifications.empty()){
+	if(response != NULL){
+		Json::Value bouncedNotifJson(Json::arrayValue);
+		for(unsigned i = 0; i < bouncedNotifications.size(); ++i){
+			SP(ShardingNotification) notif = bouncedNotifications.at(i);
+			bouncedNotifJson[i]["address"] = notif->getDescription();
+			bouncedNotifJson[i]["type"] = getShardingMessageTypeStr(notif->messageType());
+		}
+		response->setResponseAttribute("bounced-notifications", bouncedNotifJson);
 		return;
 	}
 	cout << "**************************************************************************************************" << endl;

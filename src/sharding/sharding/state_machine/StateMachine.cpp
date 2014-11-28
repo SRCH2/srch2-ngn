@@ -105,11 +105,6 @@ void StateMachine::handle(SP(Notification) notification){
  * Before calling print, lockStateMachine() must be invoked.
  */
 void StateMachine::print(JsonResponseHandler * response) const{
-	if(response != NULL){
-
-		//TODO
-		return;
-	}
 	bool isEmpty = true;
 	for(unsigned groupId = 0; groupId < ACTIVE_OPERATINS_GROUP_COUNT; ++groupId){
 		const ActiveOperationGroup & activeOperations = activeOperationGroups[groupId];
@@ -119,6 +114,29 @@ void StateMachine::print(JsonResponseHandler * response) const{
 		}
 	}
 
+	if(response != NULL){
+		if(isEmpty){
+			return;
+		}
+		Json::Value activeOperationsJson(Json::arrayValue);
+		unsigned i = 0;
+		for(unsigned groupId = 0; groupId < ACTIVE_OPERATINS_GROUP_COUNT; ++groupId){
+			const ActiveOperationGroup & activeOperationsGroup = activeOperationGroups[groupId];
+
+			const map<unsigned , SP(OperationState)> & activeOperations = activeOperationsGroup.activeOperations;
+			for(map<unsigned, SP(OperationState)>::const_iterator opItr = activeOperations.begin();
+					opItr != activeOperations.end(); ++opItr){
+				ASSERT(opItr->first == opItr->second->getOperationId());
+				activeOperationsJson[i]["id"] = opItr->second->getOperationName();
+				activeOperationsJson[i]["name"] = opItr->second->getOperationName();
+				activeOperationsJson[i]["state"] = opItr->second->getOperationStatus();
+
+				i ++;
+			}
+		}
+		response->setResponseAttribute("active-operations", activeOperationsJson);
+		return;
+	}
 	if(! isEmpty){
 		cout << "**************************************************************************************************" << endl;
 		cout << "State machine : " << endl;
