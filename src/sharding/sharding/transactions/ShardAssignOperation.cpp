@@ -98,7 +98,7 @@ void ShardAssignOperation::commit(){
 				writeview->cores.at(shardId.coreId)->getName(), &shardId);
 	}
 	EmptyShardBuilder emptyShard(new ClusterShardId(shardId), indexDirectory);
-	emptyShard.prepare();
+	emptyShard.prepare(false);
 	LocalPhysicalShard physicalShard(emptyShard.getShardServer(), emptyShard.getIndexDirectory(), "");
 	// prepare the shard change
 	ShardAssignChange * shardAssignChange = new ShardAssignChange(shardId, ShardManager::getCurrentNodeId(), 0);
