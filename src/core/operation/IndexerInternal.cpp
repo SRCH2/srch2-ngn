@@ -198,7 +198,7 @@ void IndexReaderWriter::save()
     writesCounterForMerge = 0;
 
     srch2::util::Logger::console("Saving Indexes ...");
-    this->index->_save();
+    this->index->_save(this->cache);
 
     // Since one save is done, we need to set needToSaveIndexes back to false
     // we need this line because of bulk-load. Because in normal save, the engine will be killed after save
@@ -217,7 +217,7 @@ void IndexReaderWriter::save(const std::string& directoryName)
     this->merge(false);
     writesCounterForMerge = 0;
 
-    this->index->_save(directoryName);
+    this->index->_save(this->cache, directoryName);
 
     pthread_mutex_unlock(&lockForWriters);
 }
@@ -238,7 +238,7 @@ INDEXWRITE_RETVAL IndexReaderWriter::merge(bool updateHistogram)
     struct timespec tstart;
     clock_gettime(CLOCK_REALTIME, &tstart);
 
-    INDEXWRITE_RETVAL returnValue = this->index->_merge(updateHistogram);
+    INDEXWRITE_RETVAL returnValue = this->index->_merge(this->cache, updateHistogram);
 
     struct timespec tend;
     clock_gettime(CLOCK_REALTIME, &tend);
