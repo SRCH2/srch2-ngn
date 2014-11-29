@@ -205,7 +205,7 @@ void IndexReaderWriter::save()
 
     srch2::util::Logger::console("Saving Indexes ...");
     if (this->needToSaveIndexes)
-    	this->index->_save();
+    	this->index->_save(this->cache);
     if (needToSaveFeedbackIndex)
     	this->userFeedbackIndex->save(indexDirectoryName);
 
@@ -227,7 +227,7 @@ void IndexReaderWriter::save(const std::string& directoryName)
     this->merge(false);
     writesCounterForMerge = 0;
 
-    this->index->_save(directoryName);
+    this->index->_save(this->cache, directoryName);
 
     pthread_mutex_unlock(&lockForWriters);
 }
@@ -250,7 +250,7 @@ INDEXWRITE_RETVAL IndexReaderWriter::merge(bool updateHistogram)
 
     this->userFeedbackIndex->merge();
 
-    INDEXWRITE_RETVAL returnValue = this->index->_merge(updateHistogram);
+    INDEXWRITE_RETVAL returnValue = this->index->_merge(this->cache, updateHistogram);
 
     struct timespec tend;
     clock_gettime(CLOCK_REALTIME, &tend);

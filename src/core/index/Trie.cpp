@@ -1645,16 +1645,17 @@ bool Trie::removeDeletedNodes(TrieNode *trieNode)
   if (trieNode == NULL)
     return true;
 
-    // [child_0] [child_1] ... [child_k]   --- sorted
-    //   /   \     /   \          /  \
-    // min   max  min  max       min  max
-    //
-    // emptyLeafNodeIds:
-    //  [v_0, v_1, v_2, ..., v_n]   --- sorted
-    //
-    // Find a range of children [a,b] that need to shrink based on their
-    // [min, max] interval and the list emptyLeafNodeIds. A child needs to shrink
-    // if its interval overlaps with the id of one of the empty leaf nodes
+  /* [child_0] [child_1] ... [child_k]   --- sorted
+       /   \     /   \          /  \
+     min   max  min  max       min  max
+    
+     emptyLeafNodeIds:
+      [v_0, v_1, v_2, ..., v_n]   --- sorted
+    
+     Find a range of children [a,b] that need to shrink based on their
+     [min, max] interval and the list emptyLeafNodeIds. A child needs to shrink
+     if its interval overlaps with the id of one of the empty leaf nodes.
+  */
     unsigned minEmptyNodeId = emptyLeafNodeIds.front();
     unsigned maxEmptyNodeId = emptyLeafNodeIds.back();
 

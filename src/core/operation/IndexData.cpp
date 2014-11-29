@@ -43,6 +43,8 @@
 #include <boost/thread/shared_mutex.hpp>
 #include <boost/thread/locks.hpp>
 
+#include "operation/CacheManager.h"
+
 using std::string;
 using std::vector;
 using std::map;
@@ -667,9 +669,7 @@ INDEXWRITE_RETVAL IndexData::finishBulkLoad() {
 	}
 }
 
-INDEXWRITE_RETVAL IndexData::_merge(bool updateHistogram) {
-	Logger::debug("Merge begins--------------------------------");
-
+INDEXWRITE_RETVAL IndexData::_merge(CacheManager *cache, bool updateHistogram) {
 	if (!this->mergeRequired)
 		return OP_FAIL;
 
@@ -743,6 +743,11 @@ INDEXWRITE_RETVAL IndexData::_merge(bool updateHistogram) {
         // (which will be freed after the last reader)
         boost::unique_lock<boost::shared_mutex> lock(globalRwMutexForReadersWriters);
         this->trie->removeDeletedNodes();
+
+	// since we are deleting trie nodes, we need to clear the cache while
+	// holding the global RW lock.
+	if (cache != NULL)
+	  cache->clear();
     }
 
 	if (this->schemaInternal->getIndexType()
@@ -751,8 +756,6 @@ INDEXWRITE_RETVAL IndexData::_merge(bool updateHistogram) {
 	}
 
 	this->mergeRequired = false;
-
-	Logger::debug("Merge ends--------------------------------");
 
 	return OP_SUCCESS;
 }
@@ -850,7 +853,7 @@ void IndexData::_exportData(const string &exportedDataFileName) const {
 	ForwardIndex::exportData(*this->forwardIndex, exportedDataFileName);
 }
 
-void IndexData::_save(const string &directoryName) const {
+void IndexData::_save(CacheManager *cache, const string &directoryName) const {
 	Serializer serializer;
 
     // ---------- save forwardIndex -----------
@@ -907,6 +910,11 @@ void IndexData::_save(const string &directoryName) const {
             // we need to acquire the global lock to block all other readers and writers
             boost::unique_lock<boost::shared_mutex> lock(globalRwMutexForReadersWriters);
             this->trie->removeDeletedNodes();
+
+	    // since we are deleting trie nodes, we need to clear the cache while
+	    // holding the global RW lock.
+	    if (cache != NULL)
+	      cache->clear();
         }
     }
 
