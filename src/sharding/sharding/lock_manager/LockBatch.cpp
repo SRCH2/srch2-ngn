@@ -18,6 +18,9 @@ LockBatch::LockBatch(){
 	this->batchType = LockRequestType_ShardIdList;
 	this->versionId = 0;
 	this->ack.reset();
+	this->shouldFinalize = false;
+	this->finalizeResult = false;
+	this->shouldCommitReadview = false;
 }
 LockBatch::~LockBatch(){
 }

@@ -299,6 +299,11 @@ public:
 	LockLevel metadataLockLevel;
 	vector<NodeId> olderNodes;
 
+
+	bool shouldFinalize;
+	bool finalizeResult;
+	bool shouldCommitReadview;
+
 	bool isReadviewPending() const;
 
 	bool update(const NodeId & failedNode);

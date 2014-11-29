@@ -28,10 +28,8 @@ public:
 
 	bool canAcquireLock(const ClusterShardId & shardId, const LockLevel & lockLevel);
 
-	// entry point of LockBatch to LockManager
-	void resolve(LockBatch * lockBatch);
 	void resolveLock(LockBatch * lockBatch);
-	void resolveRelease(LockBatch * lockBatch);
+	bool resolveRelease(LockBatch * lockBatch);
 	bool isPartitionLocked(const ClusterPID & pid);
 	void getLockedPartitions(vector<ClusterPID> & lockedPartitions);
 	void setNodePassedInitialization(const NodeId & nodeId);
@@ -52,14 +50,14 @@ private:
 	bool canAcquireAllBatch(LockBatch * lockBatch);
 
 
-	void movePendingLockBatchesForward();
+	void movePendingLockBatchesForward(unsigned pendingLockBatchIdx = 0);
 	/*
 	 * returns true only of lockBatch is finished and must be removed.
 	 * This method moves a pending lock batch forward as much as possible
 	 */
 	bool moveLockBatchForward(LockBatch * lockBatch);
 
-	void finalize(LockBatch * lockBatch, bool result );
+	void finalize(LockBatch * lockBatch);
 
 	void setPendingForRVRelease(LockBatch * lockBatch);
 	bool isNodePassedInitialization(const NodeId & nodeId);
