@@ -184,12 +184,15 @@ int MongoDBConnector::createNewIndexes() {
                         "MOGNOLISTENER: No data found in the collection %s .",
                         filterNamespace.c_str());
             }
+
+            lastAccessedLogRecordTime = time(NULL);
+            return 0;
+
         } catch (const mongo::DBException &e) {
             Logger::error("MOGNOLISTENER: MongoDb Exception %s ", e.what());
         } catch (const exception& ex) {
             Logger::error("MOGNOLISTENER: Unknown exception %s ", ex.what());
         }
-        return 0;
     } while (connectToDB());
 
     return -1;
@@ -210,9 +213,13 @@ bool MongoDBConnector::loadLastAccessedLogRecordTime() {
         a_file.close();
         return true;
     } else {
-        Logger::debug("MONGOLISTENER: Warning. Can not find %s."
-                " The connector will use the current time.", path.c_str());
-        lastAccessedLogRecordTime = time(NULL);
+        if (lastAccessedLogRecordTime == 0) {
+            Logger::error("MONGOLISTENER: Can not find %s. The data may be"
+                    "inconsistent. Please rebuild the indexes.", path.c_str());
+            Logger::debug("MONGOLISTENER: The connector will use "
+                    "the current time.", path.c_str());
+            lastAccessedLogRecordTime = time(NULL);
+        }
         return false;
     }
 }
@@ -397,7 +404,7 @@ void MongoDBConnector::parseOpLogObject(mongo::BSONObj& bobj,
         auto_ptr<mongo::DBClientCursor> cursor = oplogConnection.query(
                 filterNamespace, _internalMongoId);
 
-        if(!cursor->more()){
+        if (!cursor->more()) {
             /*
              * For update event, mongodb uses 2 log events to record it.
              * For example: for an update 'director' from 'Jim' to 'Joe', the 2 log

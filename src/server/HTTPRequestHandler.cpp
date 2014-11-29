@@ -733,18 +733,10 @@ void HTTPRequestHandler::writeCommand(evhttp_request *req,
                     vector<string> roleIds;
                     // check if there is roleId in the query or not
 					std::stringstream log_str;
-                    if( JSONRecordParser::_extractRoleIds(roleIds, doc, server->indexDataConfig, log_str) ){
-                    	if(server->indexDataConfig->getHasRecordAcl()){
+                    if(server->indexDataConfig->getHasRecordAcl()){
+                    	if( JSONRecordParser::_extractRoleIds(roleIds, doc, server->indexDataConfig, log_str) ){
                     		// add role ids to the record object
                     		record->setRoleIds(roleIds);
-                    	}else{
-                    		Logger::error(
-                    				"error: %s does not have record-based access control.",server->getCoreName().c_str());
-                    		response[JSON_MESSAGE] = "error:" + server->getCoreName() + " does not have record-based access control.";
-                    		response[JSON_LOG] = log_str.str();
-                    		bmhelper_evhttp_send_reply(req, HTTP_BADREQUEST, "INVALID REQUEST",
-                    				global_customized_writer.write(response));
-                    		return;
                     	}
                     }
 

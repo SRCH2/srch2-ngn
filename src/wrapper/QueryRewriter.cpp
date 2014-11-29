@@ -158,7 +158,7 @@ void QueryRewriter::prepareKeywordInfo() {
 
 bool QueryRewriter::applyAnalyzer() {
     Analyzer & analyzerNotConst = const_cast<Analyzer &>(analyzer); // because of bad design on analyzer
-    vector<ParseTreeNode *> keywordPointersToErase; // stop word indexes, to be removed later
+    vector<ParseTreeNode *> keywordPointersToErase; //Nodes in this vector will be removed after the iteration.
     // first apply the analyzer
 	ParseTreeNode * leafNode;
 	ParseTreeLeafNodeIterator termIterator(paramContainer->parseTreeRoot);
@@ -168,9 +168,9 @@ bool QueryRewriter::applyAnalyzer() {
 		// Currently we only get the first token coming out of analyzer chain for each
 		// keyword. In future we should handle synonyms TODO
 		string keywordAfterAnalyzer = "";
+		std::vector<AnalyzedTermInfo> analyzedQueryKeywords;
 		if (leafNode->termIntermediateStructure->isPhraseKeywordFlag){
 			PhraseInfo pi;
-			std::vector<AnalyzedTermInfo> analyzedQueryKeywords;
 			analyzerNotConst.tokenizeQuery(leafNode->termIntermediateStructure->rawQueryKeyword, analyzedQueryKeywords);
 			keywordAfterAnalyzer.clear();
 			for (int i=0; i < analyzedQueryKeywords.size(); ++i){
@@ -186,9 +186,48 @@ bool QueryRewriter::applyAnalyzer() {
 				paramContainer->PhraseKeyWordsInfoMap[keywordAfterAnalyzer] = pi;
 			}
 
-		}else{
-			TermType termType = leafNode->termIntermediateStructure->keywordPrefixComplete;
-			keywordAfterAnalyzer = analyzerNotConst.applyFilters(leafNode->termIntermediateStructure->rawQueryKeyword , termType == srch2is::TERM_TYPE_PREFIX);
+		} else {
+			/*
+			 * For a non-phrase term, we need to check if the leaf node can be split
+			 * again (e.g. "new york" -> "new" "AND" "york"). If so, we first create
+			 * an "AND" node with same parent of the original node.
+			 * Then, we create two term nodes for "new" and "york",
+			 * link them (as children) to the "AND" node. Then we append the "AND" node
+			 * to the parent of the node "new york"(Or set as root if the parent is null).
+			 * Also, we push the original node into a vector "keywordPointersToErase".
+			 * After the loop, we do the erase operation.
+			 * Note that all the parameters except "rawQueryKeyword" of the
+			 * nodes "new" and "york" are the same as the original node of "new york".
+			 */
+			TermType termType =
+					leafNode->termIntermediateStructure->keywordPrefixComplete;
+			analyzerNotConst.tokenizeQuery(
+					leafNode->termIntermediateStructure->rawQueryKeyword,
+					analyzedQueryKeywords, termType == srch2is::TERM_TYPE_PREFIX);
+			if (analyzedQueryKeywords.size() >= 2) {
+				ParseTreeNode * parent = leafNode->parent;
+				keywordAfterAnalyzer = "";
+
+				ParseTreeNode * expressionNode = new ParseTreeNode(
+						LogicalPlanNodeTypeAnd, parent);
+				for (std::vector<AnalyzedTermInfo>::iterator analyzedQueryKeyword =
+						analyzedQueryKeywords.begin();
+						analyzedQueryKeyword != analyzedQueryKeywords.end();
+						analyzedQueryKeyword++) {
+					ParseTreeNode * termNode = new ParseTreeNode(
+							LogicalPlanNodeTypeTerm, expressionNode);
+					termNode->termIntermediateStructure =
+							new TermIntermediateStructure(
+									leafNode->termIntermediateStructure);
+					termNode->termIntermediateStructure->rawQueryKeyword =
+							(*analyzedQueryKeyword).term;
+					expressionNode->children.push_back(termNode);
+				}
+
+				TreeOperations::appendToTree(expressionNode, paramContainer->parseTreeRoot);
+			} else if (analyzedQueryKeywords.size() == 1) {
+				keywordAfterAnalyzer = analyzedQueryKeywords[0].term;
+			}
 		}
 		if (keywordAfterAnalyzer.compare("") == 0) { // analyzer removed this keyword, it's assumed to be a stop word
 			keywordPointersToErase.push_back(leafNode);
@@ -202,7 +241,8 @@ bool QueryRewriter::applyAnalyzer() {
     for(vector<ParseTreeNode *>::iterator keywordToErase = keywordPointersToErase.begin() ; keywordToErase != keywordPointersToErase.end() ; ++keywordToErase){
     	TreeOperations::removeFromTree(*keywordToErase , paramContainer->parseTreeRoot);
     }
-    // TODO After removing stop words the parse tree should be validated again
+
+	// TODO After removing stop words the parse tree should be validated again
 
     termIterator.init(paramContainer->parseTreeRoot);
     unsigned numberOfKeywords = 0;

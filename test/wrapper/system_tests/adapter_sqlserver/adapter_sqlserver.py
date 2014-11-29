@@ -1,9 +1,9 @@
-#These tests are used for the adapter_mysql
-#Require mysql installed.
-#Test 1: test loading records from the mysql table to create an index.
-#Test 2: When the server is running, update the record in mysql,
+#These tests are used for the adapter_sqlserver
+#Require sqlserver connected, unixODBC and sqlserver driver installed.
+#Test 1: test loading records from the sqlserver table to create an index.
+#Test 2: When the server is running, update the record in sqlserver,
 #        then the listener should fetch the results.
-#Test 3: Shut down the engine, and delete the records in mysql.
+#Test 3: Shut down the engine, and delete the records in sqlserver.
 #        Then start the engine to test if the engine can fetch the changes.
 
 import sys, urllib2, json, time, subprocess, os, commands, signal,shutil
@@ -13,10 +13,10 @@ import test_lib
 
 import xml.etree.ElementTree as ET
 
-sys.path.append(os.getcwd()+'/../../../thirdparty/mysql-connector-c++/mysql-connector-python/build')
+sys.path.append(os.getcwd()+'/../../../thirdparty/pyodbc/pyodbc/build/')
 
 try:
-    import mysql.connector
+    import pyodbc
 except ImportError:
     os._exit(-1)
 
@@ -28,10 +28,17 @@ totalFailCount = 0
 binary_path = None
 myUserName = ''
 myPassword = ''
+dataSource = ''
+server = ''
+dbName = ''
+conn = None
 
 def populateUserPassFromXML(path):
     global myUserName
     global myPassword
+    global dataSource
+    global server
+    global dbName
 
     tree = ET.parse(path)
     dbKeyValues = list(tree.find('./dbParameters/dbKeyValues').iter('dbKeyValue'))
@@ -40,12 +47,18 @@ def populateUserPassFromXML(path):
             myPassword = i.attrib['value']
         if(i.attrib['key']=='user'):
             myUserName = i.attrib['value']
+        if(i.attrib['key']=='dataSource'):
+            dataSource = i.attrib['value']
+        if(i.attrib['key']=='server'):
+            server = i.attrib['value']
+        if(i.attrib['key']=='dbName'):
+            dbName = i.attrib['value']
 
-#Start the SRCH2 engine with mysql config file.
+#Start the SRCH2 engine with sql server config file.
 def startSrch2Engine():
     global serverHandle
     #Start the engine server
-    args = [binary_path , '--config-file=adapter_mysql/conf.xml']
+    args = [binary_path , '--config-file=adapter_sqlserver/conf.xml']
 
     if test_lib.confirmPortAvailable(port) == False:
         print 'Port' + str(port) + ' already in use -aborting '
@@ -136,7 +149,7 @@ def checkResult(query, responseJson,resultValue):
     return 1
 
 
-#Test 1: test loading index from the mysql table to create the index.
+#Test 1: test loading index from the sql server table to create the index.
 def testCreateIndexes(conn,sqlQueriesPath,testQueriesPath):
     #Create the test table and Insert record into it
     f_sql = open(sqlQueriesPath,'r')
@@ -146,7 +159,7 @@ def testCreateIndexes(conn,sqlQueriesPath,testQueriesPath):
     conn.commit()
 
     #Start the engine and wait to fetch the data, 
-    #the engine will create an index from the mysql table
+    #the engine will create an index from the sql server table
     startSrch2Engine()
     time.sleep(5)
 
@@ -154,7 +167,7 @@ def testCreateIndexes(conn,sqlQueriesPath,testQueriesPath):
     compareResults(testQueriesPath)
     print '=============================='
 
-#Test 2: When the server is running, update the record in mysql, 
+#Test 2: When the server is running, update the record in sql server, 
 #then the listener should fetch the results.
 def testRunListener(conn,sqlQueriesPath,testQueriesPath):
     #Modify the table while the srch2 engine is running.
@@ -171,7 +184,7 @@ def testRunListener(conn,sqlQueriesPath,testQueriesPath):
     compareResults(testQueriesPath)
     print '=============================='
 
-#Test 3: Shut down the engine, and delete the records in mysql.
+#Test 3: Shut down the engine, and delete the records in sql server.
 #Then start the engine to test if the engine can fetch the changes
 def testOfflineLog(conn,sqlQueriesPath,testQueriesPath):
     #Shutdown the engine
@@ -197,22 +210,39 @@ def testOfflineLog(conn,sqlQueriesPath,testQueriesPath):
     shutdownSrch2Engine()
     print '=============================='
 
+def signal_handler(signum,frame):
+    return
+def connectToDB():
+    global conn
+    global dataSource
+    global server
+    global dbName
+    global myUserName
+    global myPassword
+
+    signal.signal(signal.SIGALRM, signal_handler)
+    signal.alarm(3)
+    try:
+        conn = pyodbc.connect('DRIVER={'+str(dataSource)+'};SERVER='+str(server)+';DATABASE='+str(dbName)+';UID='+str(myUserName)+';PWD='+str(myPassword)+';')
+    except Exception, exc: 
+        print 'Access denied while connecting to the SQL Server database. Make sure the SQL Server username, password, data source, server and database name are correct in the ./adapter_sqlserver/conf.xml '
+        print exc
+        os._exit(-1)
+    finally:
+        signal.alarm(0)
+
 if __name__ == '__main__':
     if(os.path.exists("data")):
         shutil.rmtree("data")
-    conn = None
 
-    populateUserPassFromXML('./adapter_mysql/conf.xml')
-    try:
-        conn = mysql.connector.connect(host="127.0.0.1",user=myUserName, password=myPassword)
-    except :
-        print 'Access denied while connecting to the MySQL database. Set the MySQL user name and password in ./adapter_mysql/conf.xml'
-        os._exit(-1)
+    populateUserPassFromXML('./adapter_sqlserver/conf.xml')
+
+    connectToDB()
         
-    #Remove the srch2Test database and tables
-    conn.cursor().execute('DROP DATABASE IF EXISTS srch2Test ')
-    conn.cursor().execute('CREATE DATABASE srch2Test')
-    conn.cursor().execute('USE srch2Test')
+    #Remove the COMPANY table
+    conn.cursor().execute("IF OBJECT_ID('COMPANY', 'U') IS NOT NULL DROP TABLE COMPANY")
+    conn.cursor().execute("CREATE TABLE COMPANY(ID CHAR(50) PRIMARY KEY NOT NULL, NAME CHAR(50) NOT NULL, AGE CHAR(50) NOT NULL, ADDRESS CHAR(50), SALARY CHAR(50))")
+    conn.cursor().execute("ALTER TABLE COMPANY ENABLE CHANGE_TRACKING WITH (TRACK_COLUMNS_UPDATED = ON)")
     #Start the test cases
     binary_path = sys.argv[1]
     testCreateIndexes(conn,sys.argv[2],sys.argv[3])
@@ -223,9 +253,8 @@ if __name__ == '__main__':
     shutdownSrch2Engine()
     time.sleep(3)
 
-    #Remove the srch2Test database and tables
-    conn.cursor().execute('DROP TABLE IF EXISTS COMPANY')
-    conn.cursor().execute('DROP DATABASE IF EXISTS srch2Test ')
+    #Remove the COMPANY table
+    conn.cursor().execute("DROP TABLE COMPANY")
     conn.close()
     if(os.path.exists("data")):
         shutil.rmtree("data")

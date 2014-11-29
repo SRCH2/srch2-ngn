@@ -499,7 +499,7 @@ PhysicalPlanOptimizationNode * QueryOptimizer::findTheMinimumCostTree(vector<Phy
 //    if(planOffset >= treeOptions.size()-1){
 //        cout << "QO(";
 //    }
-    for(unsigned treeOptionIndex = 0 ; treeOptionIndex < treeOptions.size()-1 ; treeOptionIndex++){
+    for(unsigned treeOptionIndex = 0 ; treeOptionIndex + 1 < treeOptions.size() ; treeOptionIndex++){
         PhysicalPlanOptimizationNode * treeOption = treeOptions.at(treeOptionIndex);
         PhysicalPlanCost cost;
         unsigned numberOfGetNextCalls = physicalPlan.getExecutionParameters()->k;

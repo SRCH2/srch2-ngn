@@ -378,7 +378,7 @@ void IndexReaderWriter::createAndStartMergeWorkerThreads() {
 		pthread_cond_init(&mergeWorkersArgs[i].waitConditionVar, NULL);
 		pthread_create(&mergerWorkerThreads[i], NULL,
 				dispatchMergeWorkerThread, &mergeWorkersArgs[i]);
-		Logger::console("created merge worker thread %d", i);
+		// Logger::console("created merge worker thread %d", i);
 	}
 }
 
