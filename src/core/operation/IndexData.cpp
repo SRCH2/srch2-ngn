@@ -744,7 +744,7 @@ INDEXWRITE_RETVAL IndexData::_merge(CacheManager *cache, bool updateHistogram) {
         boost::unique_lock<boost::shared_mutex> lock(globalRwMutexForReadersWriters);
         this->trie->removeDeletedNodes();
 
-	// since we are deleting active nodes, we need to clear the cache while
+	// since we are deleting trie nodes, we need to clear the cache while
 	// holding the global RW lock.
 	if (cache != NULL)
 	  cache->clear();
@@ -911,7 +911,7 @@ void IndexData::_save(CacheManager *cache, const string &directoryName) const {
             boost::unique_lock<boost::shared_mutex> lock(globalRwMutexForReadersWriters);
             this->trie->removeDeletedNodes();
 
-	    // since we are deleting active nodes, we need to clear the cache while
+	    // since we are deleting trie nodes, we need to clear the cache while
 	    // holding the global RW lock.
 	    if (cache != NULL)
 	      cache->clear();
