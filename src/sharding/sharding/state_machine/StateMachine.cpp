@@ -185,7 +185,7 @@ bool StateMachine::lockStateMachine(){
 		ActiveOperationGroup & activeOperationsGroup = activeOperationGroups[groupId];
 		if(! activeOperationsGroup.contentMutex.try_lock()){
 			for(unsigned releaseGroupId = 0; releaseGroupId < groupId; ++releaseGroupId){
-				activeOperationsGroup.contentMutex.unlock();
+				activeOperationGroups[releaseGroupId].contentMutex.unlock();
 			}
 			return false;
 		}
