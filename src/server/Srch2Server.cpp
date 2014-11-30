@@ -40,15 +40,10 @@ bool Srch2Server::checkIndexExistence(const string & directoryPath)
         return false;
     if(!checkDirExistence((directoryName + "/" + IndexConfig::schemaFileName).c_str()))
         return false;
-    if (getCoreInfo()->getIndexType() == srch2::instantsearch::DefaultIndex){
-        // Check existence of the inverted index file for basic keyword search ("A1")
-        if(!checkDirExistence((directoryName + "/" + IndexConfig::invertedIndexFileName).c_str()))
+    if(!checkDirExistence((directoryName + "/" + IndexConfig::invertedIndexFileName).c_str()))
+    	return false;
+    if(!checkDirExistence((directoryName + "/" + IndexConfig::quadTreeFileName).c_str()))
 	    return false;
-    }else{
-        // Check existence of the quadtree index file for geo keyword search ("M1")
-        if(!checkDirExistence((directoryName + "/" + IndexConfig::quadTreeFileName).c_str()))
-	    return false;
-    }
     return true;
 }
 
@@ -310,11 +305,12 @@ int Srch2Server::getSerializedShardSize(vector<std::pair<string, long> > &indexF
 	indexFiles.push_back(make_pair(IndexConfig::schemaFileName, 0));
 	indexFiles.push_back(make_pair(IndexConfig::trieFileName, 0));
 	indexFiles.push_back(make_pair(IndexConfig::forwardIndexFileName, 0));
-	if (indexer->getSchema()->getIndexType() == LocationIndex) {
-		indexFiles.push_back(make_pair(IndexConfig::quadTreeFileName, 0));
-	} else {
-		indexFiles.push_back(make_pair(IndexConfig::invertedIndexFileName, 0));
-	}
+	indexFiles.push_back(make_pair(IndexConfig::quadTreeFileName, 0));
+	indexFiles.push_back(make_pair(IndexConfig::invertedIndexFileName, 0));
+	// TODO : Remove this if else statement if you confirm that we dont need it.
+//	if (indexer->getSchema()->getIndexType() == LocationIndex) {
+//	} else {
+//	}
 	indexFiles.push_back(make_pair(IndexConfig::indexCountsFileName, 0));
 	//indexFiles.push_back(make_pair(IndexConfig::analyzerFileName, 0));
 
