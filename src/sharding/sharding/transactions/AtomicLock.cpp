@@ -181,7 +181,7 @@ bool AtomicLock::shouldAbort(const NodeId & failedNode){
 		return false;
 	}
 
-	this->participants.erase(this->participants.begin() + failedNodeIndex);
+	this->participants.erase(std::find(this->participants.begin(), this->participants.end(), failedNode));
 
 	if(this->participants.empty()){
 		// all nodes that are involved in lock are now dead, so we should return the
@@ -190,7 +190,7 @@ bool AtomicLock::shouldAbort(const NodeId & failedNode){
 		// NOT an exit point
 		return true;
 	}
-	if(this->participantIndex >= failedNodeIndex ){
+	if(this->participantIndex >= failedNodeIndex){
 		this->participantIndex --;
 	}
 	return false;
@@ -200,7 +200,7 @@ bool AtomicLock::shouldAbort(const NodeId & failedNode){
 void AtomicLock::recover(){
 
     Logger::sharding(Logger::Detail, "AtomicLock| In case we could acquite some locks we must release them here.");
-	if(participantIndex == 0){
+	if(participantIndex <= 0){
 		finalize(false);
 		return;
 	}

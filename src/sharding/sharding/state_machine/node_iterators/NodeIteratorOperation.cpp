@@ -112,6 +112,9 @@ OperationState * OrderedNodeIteratorOperation::handle(SP(NodeFailureNotification
 			this->getTransaction()->threadEnd();
 		}
 		if(abortResult){
+			Logger::sharding(Logger::Detail, "NodeIterator(opid=%s)| consumer(%s) asked for abort due to node (%d) failure.",
+							NodeOperationId(ShardManager::getCurrentNodeId(), this->getOperationId()).toString().c_str(),
+							validatorObj->getName().c_str(), failedNode);
 			this->setTransaction(SP(Transaction)());
 			/************ Thread Exit Point ********************/
 			// But transaction may live on ...
@@ -144,7 +147,7 @@ OperationState * OrderedNodeIteratorOperation::handle(SP(NodeFailureNotification
 		//2. fix the iteration index
 		if(this->participants.size() == 0){
 			// we are done, we shoud just call finalize
-	        Logger::sharding(Logger::Detail, "NodeIterator(opid=%s)| list of participants is empty node(%d): aborting.",
+	        Logger::sharding(Logger::Detail, "NodeIterator(opid=%s)| list of participants is empty due to failure of node(%d): aborting.",
 	        		NodeOperationId(ShardManager::getCurrentNodeId(), this->getOperationId()).toString().c_str(),
 	        		failedNode);
 			if(this->validatorObj != NULL){
@@ -161,7 +164,9 @@ OperationState * OrderedNodeIteratorOperation::handle(SP(NodeFailureNotification
 			}
 			return NULL;
 		}
-		this->participantsIndex --;
+		if(this->participantsIndex > 0){
+			this->participantsIndex --;
+		}
 		//3. now participantsIndex points to a new target, send a new request
 		return askNode(this->participantsIndex);
 	}//else{ // we have not reached to this target

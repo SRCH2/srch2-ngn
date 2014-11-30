@@ -75,15 +75,16 @@ public:
 		grantedLocks.clear();
 	}
 
-	void release(const NodeId & failedNodeId){
+	bool release(const NodeId & failedNodeId){
 
 		vector<Resource> resourceToDelete;
-
+		bool releaseHappenned = false;
 		for(typename map<Resource, vector<pair<NodeOperationId, LockLevel> > >::iterator resItr = grantedLocks.begin();
 				resItr != grantedLocks.end(); ++resItr){
 			for(vector<pair<NodeOperationId, LockLevel> >::iterator nodeItr = resItr->second.begin(); nodeItr != resItr->second.end(); ){
 				if(nodeItr->first.nodeId == failedNodeId){
 					nodeItr = resItr->second.erase(nodeItr);
+					releaseHappenned = true;
 				}else{
 					++nodeItr;
 				}
@@ -95,6 +96,7 @@ public:
 		for(unsigned i = 0 ; i < resourceToDelete.size(); ++i){
 			grantedLocks.erase(resourceToDelete.at(i));
 		}
+		return releaseHappenned;
 	}
 	bool isLock(const Resource & resource){
 		if(grantedLocks.find(resource) == grantedLocks.end()){

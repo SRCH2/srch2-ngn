@@ -192,9 +192,10 @@ OperationState * ConcurrentNotifOperation::handle(SP(NodeFailureNotification)  n
 			this->getTransaction()->threadEnd();
 		}
 		if(shouldAbortResult){
-			Logger::sharding(Logger::Detail, "NodeAggregator(opid=%s)| consumer(%s) asked for abort due to node failure."
-					, NodeOperationId(ShardManager::getCurrentNodeId(),
-							this->getOperationId()).toString().c_str(), consumer->getName().c_str());
+			Logger::sharding(Logger::Detail, "NodeAggregator(opid=%s)| consumer(%s) asked for abort due to node (%d) failure.",
+							NodeOperationId(ShardManager::getCurrentNodeId(), this->getOperationId()).toString().c_str(),
+							consumer->getName().c_str(),
+							failedNode);
 			this->setTransaction(SP(Transaction)());
 			/***************** Thread Exit Point *************/
 			return NULL;
@@ -204,10 +205,12 @@ OperationState * ConcurrentNotifOperation::handle(SP(NodeFailureNotification)  n
 	if(targetResponsesMap.find(failedNode) != targetResponsesMap.end()){
 		targetResponsesMap.erase(failedNode);
 	}
-	for(unsigned p = 0 ; p < this->participants.size(); ++p){
-		if(participants.at(p).nodeId == failedNode){
-			this->participants.erase(this->participants.begin() + p);
-			p --;
+	for(vector<NodeOperationId>::iterator participantItr = this->participants.begin();
+			participantItr != this->participants.end();){
+		if(participantItr->nodeId == failedNode){
+			participantItr = this->participants.erase(participantItr);
+		}else{
+			++participantItr;
 		}
 	}
 	if(checkFinished()){

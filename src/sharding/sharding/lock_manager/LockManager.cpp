@@ -96,20 +96,26 @@ void LockManager::resolveNodeFailure(const NodeId & failedNode){
 		}
 	}
 
-	clusterShardLocks.release(failedNode);
-	primaryKeyLocks.release(failedNode);
-	allNodeSharedInfo.release(failedNode);
+	bool releaseHappenned = clusterShardLocks.release(failedNode);
+	bool releaseHappenned2 = releaseHappenned;
+	releaseHappenned2 = releaseHappenned2 || primaryKeyLocks.release(failedNode);
+	releaseHappenned2 = releaseHappenned2 || allNodeSharedInfo.release(failedNode);
 
 	if(passedInitialization.find(failedNode) != passedInitialization.end()){
+		releaseHappenned2 = true;
 		passedInitialization.erase(passedInitialization.find(failedNode));
 	}
 
 	lockManagerMutex.unlock();
 	// reflect changes on the readview
-	ShardManager::getShardManager()->getMetadataManager()->commitClusterMetadata();
+	if(releaseHappenned){
+		ShardManager::getShardManager()->getMetadataManager()->commitClusterMetadata();
+	}
 
 	// maybe some other pending lock requests can move forward
-	movePendingLockBatchesForward();
+	if(releaseHappenned2){
+		movePendingLockBatchesForward();
+	}
 
 }
 
