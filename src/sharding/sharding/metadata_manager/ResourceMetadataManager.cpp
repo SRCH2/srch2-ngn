@@ -84,14 +84,21 @@ bool ClusterNodes_Writeview::getNodeState(const NodeId & nodeId, ShardingNodeSta
 ResourceMetadataManager::ResourceMetadataManager(){
 	// initialize writeview
 	pthread_spin_init(&m_spinlock, 0);
+	pthread_spin_init(&m_spinlock_writeview, 0);
 	boost::unique_lock<boost::shared_mutex> xLock(writeviewMutex);
 	writeview = NULL;
+    pthread_spin_lock(&m_spinlock_writeview);
+    writeviewVersionId = 0;
+    pthread_spin_unlock(&m_spinlock_writeview);
 }
 
 ResourceMetadataManager::~ResourceMetadataManager(){
 	boost::unique_lock<boost::shared_mutex> xLock(writeviewMutex);
 	if(writeview != NULL){
 		delete writeview;
+	    pthread_spin_lock(&m_spinlock_writeview);
+	    writeviewVersionId = 0;
+	    pthread_spin_unlock(&m_spinlock_writeview);
 	}
 }
 
@@ -160,6 +167,9 @@ void ResourceMetadataManager::commitClusterMetadata(const bool shouldLock){
 		nodesMutex.lock();
 	}
 	this->writeview->versionId++;
+    pthread_spin_lock(&m_spinlock_writeview);
+    writeviewVersionId = this->writeview->versionId;
+    pthread_spin_unlock(&m_spinlock_writeview);
 	ClusterResourceMetadata_Readview * newReadview = this->writeview->getNewReadview();
 	if(shouldLock){
 		writeviewMutex.unlock_shared();
@@ -195,6 +205,9 @@ void ResourceMetadataManager::setWriteview(Cluster_Writeview * newWriteview, con
 		delete writeview;
 	}
 	writeview = newWriteview;
+    pthread_spin_lock(&m_spinlock_writeview);
+    writeviewVersionId = this->writeview->versionId;
+    pthread_spin_unlock(&m_spinlock_writeview);
 
 	if(shouldLock){
 		writeviewMutex.unlock();
@@ -218,8 +231,19 @@ unsigned ResourceMetadataManager::applyAndCommit(MetadataChange * metadataChange
 unsigned ResourceMetadataManager::applyAndCommit(MetadataChange * metadataChange){
 	this->writeviewMutex.lock();
 	unsigned oldVersionId = applyAndCommit(metadataChange, this->writeview);
+    pthread_spin_lock(&m_spinlock_writeview);
+    writeviewVersionId = this->writeview->versionId;
+    pthread_spin_unlock(&m_spinlock_writeview);
 	this->writeviewMutex.unlock();
 	return oldVersionId;
+}
+
+unsigned ResourceMetadataManager::getClusterWriteviewVersionID(){
+    unsigned id = 0;
+	pthread_spin_lock(&m_spinlock_writeview);
+    id = writeviewVersionId;
+    pthread_spin_unlock(&m_spinlock_writeview);
+    return id;
 }
 
 Cluster_Writeview * ResourceMetadataManager::

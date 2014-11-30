@@ -58,6 +58,7 @@ public:
 	 */
 	void setWriteview(Cluster_Writeview * newWriteview, const bool shouldLock = true);
 	unsigned applyAndCommit(MetadataChange * metadataChange);
+	unsigned getClusterWriteviewVersionID();
 	Cluster_Writeview * getClusterWriteview_write(boost::unique_lock<boost::shared_mutex> & xLock);
 	Cluster_Writeview * getClusterWriteview_nolock();
 	const Cluster_Writeview * getClusterWriteview_read(boost::shared_lock<boost::shared_mutex> & sLock);
@@ -72,6 +73,8 @@ private:
 	// NOTE : changing this pointer (like assigning it to a new object or deleting
 	// its object) requires writeview X lock and nodes S lock.
 	Cluster_Writeview * writeview;
+    unsigned writeviewVersionId;
+    mutable pthread_spinlock_t m_spinlock_writeview;
 	boost::shared_mutex writeviewMutex;
 	boost::shared_mutex nodesMutex;
     boost::shared_ptr< const ClusterResourceMetadata_Readview > metadata_readView;

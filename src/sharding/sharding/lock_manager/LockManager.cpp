@@ -402,8 +402,7 @@ bool LockManager::moveLockBatchForward(LockBatch * lockBatch){
 					lockBatch->lastGrantedItemIndex++;
 					if(lockBatch->lastGrantedItemIndex == lockBatch->tokens.size() - 1){
 
-						boost::unique_lock<boost::shared_mutex> xLock;
-						lockBatch->versionId = ShardManager::getWriteview_write(xLock)->versionId;
+						lockBatch->versionId = ShardManager::getShardManager()->getMetadataManager()->getClusterWriteviewVersionID();
 						ASSERT(lockBatch->isReadviewPending());
 						lockBatch->shouldCommitReadview = true;
 						return false; // because we should still wait for the release of readview
