@@ -48,7 +48,6 @@ private:
             evhttp_request *req, unsigned coreId, BulkLoadType type):ReadviewTransaction(clusterReadview){
     	this->req = req;
     	this->coreInfo = clusterReadview->getCore(coreId);
-    	unsigned aclCoreId = this->coreInfo->getAttributeAclCoreId();
     	ASSERT(this->coreInfo != NULL);
         bulkLoader = NULL;
         bulkLoadType = type;
