@@ -845,12 +845,12 @@ void IndexData::_deSerializeInvertedIndex(std::istream& inputStream) {
 		throw exception();
 	}
 
-	if (this->schemaInternal->getIndexType() == srch2::instantsearch::DefaultIndex){
-		delete this->invertedIndex;
-		this->invertedIndex = new InvertedIndex(this->forwardIndex);
-		ia >> *(this->invertedIndex);
-		this->invertedIndex->setForwardIndex(this->forwardIndex);
-	}
+    delete this->invertedIndex;
+    this->invertedIndex = new InvertedIndex(this->forwardIndex);
+    ia >> *(this->invertedIndex);
+    this->invertedIndex->setForwardIndex(this->forwardIndex);
+//	if (this->schemaInternal->getIndexType() == srch2::instantsearch::DefaultIndex){
+//	}
 
 }
 
@@ -865,11 +865,11 @@ void IndexData::_deSerializeLocationIndex(std::istream& inputStream) {
 				"of engine or migrated from a different machine/architecture.");
 		throw exception();
 	}
-	if (this->schemaInternal->getIndexType() == srch2::instantsearch::LocationIndex){
-		delete this->quadTree;
-		this->quadTree = new QuadTree();
-		ia >> *(this->quadTree);
-	}
+    delete this->quadTree;
+    this->quadTree = new QuadTree();
+    ia >> *(this->quadTree);
+//	if (this->schemaInternal->getIndexType() == srch2::instantsearch::LocationIndex){
+//	}
 }
 
 void IndexData::_deSerializeIndexCounts(std::istream& inputStream) {

@@ -466,10 +466,11 @@ void MigrationService::receiveShard(ClusterShardId shardId, unsigned remoteNode)
 
 	currentSessionInfo.listeningPort = receivePort;
 
-	Logger::debug("sending init ack to %d", currentSessionInfo.remoteNode);
+    Logger::sharding(Logger::Detail, "MM | Receiving shard %s from %d, sending first ack.", shardId.toString().c_str(), remoteNode);
 	migrationMgr->sendInitMessageAck(currentSessionInfo);
 
 	Logger::debug("waiting for sender to connect...");
+    Logger::sharding(Logger::Detail, "MM | Receiving shard %s from %d, waiting for sender to connect ...", shardId.toString().c_str(), remoteNode);
 	int commSocket = migrationMgr->acceptTCPConnection(receiveSocket, receivePort);
 	if (commSocket == -1) {
 		//close socket
@@ -479,11 +480,9 @@ void MigrationService::receiveShard(ClusterShardId shardId, unsigned remoteNode)
 		return;
 	}
 
-	Logger::debug("Done");
-//    currentSessionInfo.print();
-
 	unsigned componentCount = currentSessionInfo.shardCompCount;
-
+    Logger::sharding(Logger::Detail, "MM | Receiving shard %s from %d, component count : %d",
+            shardId.toString().c_str(), remoteNode, componentCount);
 	// Create a path to store this Shard on storage device.
 	ConfigManager *configManager = migrationMgr->configManager;
 	string directoryPath = "";
@@ -503,10 +502,12 @@ void MigrationService::receiveShard(ClusterShardId shardId, unsigned remoteNode)
 
 	for (unsigned i =0; i < componentCount; ++i) {
 
-		Logger::debug("waiting for component begin message...");
+	    Logger::sharding(Logger::Detail, "MM | Receiving shard %s from %d, waiting for component begin message (i : %d)",
+	            shardId.toString().c_str(), remoteNode, i);
 		migrationMgr->busyWaitWithTimeOut(currentSessionInfo, MM_STATE_INFO_RCVD);
 		if(currentSessionInfo.status !=  MM_STATE_INFO_RCVD) {
-			Logger::debug("Migration: shard %s : timeout!", shardId.toString().c_str());
+	        Logger::sharding(Logger::Detail, "MM | Receiving shard %s from %d, TIMEOUT!!! (i : %d)",
+	                shardId.toString().c_str(), remoteNode, i);
 			close(commSocket);
 			close(receiveSocket);
 			delete migratedShard;
@@ -517,7 +518,9 @@ void MigrationService::receiveShard(ClusterShardId shardId, unsigned remoteNode)
 		string filePath = directoryPath + "/" + currentSessionInfo.shardCompName;
 		unsigned componentSize = currentSessionInfo.shardCompSize;
 
-		Logger::debug("shard path = %s", filePath.c_str());
+        Logger::sharding(Logger::Detail, "MM | Receiving shard %s from %d, component name : %s, component size : %d, filepath : %s (i : %d)",
+                shardId.toString().c_str(), remoteNode,
+                currentSessionInfo.shardCompName.c_str(), currentSessionInfo.shardCompSize, filePath.c_str(), i);
 
 //		currentSessionInfo.print();
 
@@ -771,7 +774,8 @@ void MigrationService::sendShard(ClusterShardId shardId, unsigned destinationNod
 		unsigned componentSize = indexFilesWithSize[i].second;
 		currentSessionInfo.shardCompSize = componentSize;
 
-		Logger::debug("Migrating shard component %s", componentName.c_str());
+		Logger::sharding(Logger::Detail, "MM | Migrating shard component %s (size : %d) for migrating shard %s to %d",
+		        currentSessionInfo.shardCompName.c_str(), currentSessionInfo.shardCompSize, shardId.toString().c_str(), destinationNodeId);
 		migrationMgr->sendComponentInfoAndWaitForAck(currentSessionInfo);
 
 //		migrationMgr->busyWaitWithTimeOut(currentSessionInfo, MM_STATE_INFO_ACK_RCVD);
@@ -793,7 +797,8 @@ void MigrationService::sendShard(ClusterShardId shardId, unsigned destinationNod
 				return;
 			}
 		}
-		Logger::debug("Sending data for shard component %s", componentName.c_str());
+        Logger::sharding(Logger::Detail, "MM | Sending data for component %s (size : %d) for migrating shard %s to %d",
+                currentSessionInfo.shardCompName.c_str(), currentSessionInfo.shardCompSize, shardId.toString().c_str(), destinationNodeId);
 		off_t offset = 0;
 
 		if (componentSize > 0) {
@@ -845,6 +850,8 @@ void MigrationService::sendShard(ClusterShardId shardId, unsigned destinationNod
 	currentSessionInfo.endTimeStamp = time(NULL);
 	Logger::console("Send shard %s in %d secs", shardId.toString().c_str(),
 			currentSessionInfo.endTimeStamp - currentSessionInfo.beginTimeStamp);
+    Logger::sharding(Logger::Detail, "MM | Finished migrating shard %s to %d",
+            shardId.toString().c_str(), destinationNodeId);
 
 	migrationMgr->notifySHMAndCleanup(sessionKey, MM_STATUS_SUCCESS);
 
