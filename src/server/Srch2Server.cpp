@@ -371,6 +371,7 @@ void Srch2Server::postBootStrap() {
 	RecordSerializerUtil::populateStoredSchema(storedAttrSchema, getIndexer()->getSchema());
     createHighlightAttributesVector(storedAttrSchema);
 	delete storedAttrSchema;
+	this->__debugShardingInfo = this->getIndexer()->__getDebugShardingInfo();
 	getIndexer()->createAndStartMergeThreadLoop();
 }
 

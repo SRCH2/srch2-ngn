@@ -7,6 +7,7 @@
 #include "../../configuration/CoreInfo.h"
 #include "server/Srch2Server.h"
 #include "core/util/Logger.h"
+#include "core/operation/IndexData.h"//for debug purpose
 
 #include <boost/shared_ptr.hpp>
 #include <boost/serialization/shared_ptr.hpp>
@@ -55,6 +56,13 @@ public:
 		//load the index from the data source
 	    try{
 	        server->init();
+	        if(server->__debugShardingInfo != NULL){
+				server->__debugShardingInfo->shardName = shardId->toString();
+				stringstream ss;
+				ss << "result of shard loader, indexDirectory : " << indexDirectory << " with " <<
+            			server->getIndexer()->getNumberOfDocumentsInIndex() << " records.";
+				server->__debugShardingInfo->explanation = ss.str();
+	        }
 	    } catch(exception& ex) {
 	        /*
 	         *  We got some fatal error during server initialization. Print the error
@@ -93,6 +101,14 @@ public:
 		//load the index from the data source
 	    try{
 	        server->init();
+	        if(server->__debugShardingInfo != NULL){
+				server->__debugShardingInfo->shardName = shardId->toString();
+				stringstream ss;
+				ss << "result of initial shard builder, indexDirectory : " << indexDirectory << " with " <<
+            			server->getIndexer()->getNumberOfDocumentsInIndex() << " records.";
+				server->__debugShardingInfo->explanation = ss.str();
+
+	        }
 	    } catch(exception& ex) {
 	        /*
 	         *  We got some fatal error during server initialization. Print the error
@@ -137,6 +153,12 @@ public:
 		//load the index from the data source
 	    try{
 	        server->init();
+	        if(server->__debugShardingInfo != NULL){
+				server->__debugShardingInfo->shardName = shardId->toString();
+				stringstream ss;
+				ss << "result of empty shard builder, indexDirectory : " << indexDirectory << " .";
+				server->__debugShardingInfo->explanation = ss.str();
+	        }
 	    } catch(exception& ex) {
 	        /*
 	         *  We got some fatal error during server initialization. Print the error

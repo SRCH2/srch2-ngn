@@ -98,7 +98,7 @@ public:
 };
 
 
-
+class __DebugShardingInfo;
 
 class Indexer
 {
@@ -108,6 +108,7 @@ public:
 
     virtual ~Indexer() {};
 
+    virtual __DebugShardingInfo * __getDebugShardingInfo() = 0;
     /*virtual const Index *getReadView_NoToken() = 0;*/
     /*virtual GlobalCache *getCache() = 0;*/
 

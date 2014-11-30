@@ -5,6 +5,7 @@
 #include "../../configuration/ShardingConstants.h"
 #include "core/util/SerializationHelper.h"
 #include "core/util/Assert.h"
+#include "core/operation/IndexData.h"//for debug purpose
 #include "server/Srch2Server.h"
 #include "sharding/migration/MigrationManager.h"
 #include "../state_machine/node_iterators/ConcurrentNotifOperation.h"
@@ -147,6 +148,17 @@ void ShardCopyOperation::consume(const ShardMigrationStatus & status){
                         writeview->cores.at(unassignedShardId.coreId)->getName(), &unassignedShardId);
             }
             physicalShard = LocalPhysicalShard(status.shard, indexDirectory, "");
+
+            if(physicalShard.server->__debugShardingInfo != NULL){
+            	physicalShard.server->__debugShardingInfo->shardName = unassignedShardId.toString();
+            	SP(const ClusterNodes_Writeview) nodesWriteview = ShardManager::getNodesWriteview_read();
+            	physicalShard.server->__debugShardingInfo->nodeName =
+            			nodesWriteview->getNodes_read().find(ShardManager::getCurrentNodeId())->second.second->toStringShort();
+            	stringstream ss;
+				ss << "Result of shard copy from node " << srcNodeId << " and shard " << replicaShardId.toString() <<
+						" with " << physicalShard.server->getIndexer()->getNumberOfDocumentsInIndex() << " records.";
+				physicalShard.server->__debugShardingInfo->explanation = ss.str();
+            }
             commit();
         }
     }else{

@@ -40,11 +40,14 @@ class Srch2Server
 {
 public:
 
+	__DebugShardingInfo * __debugShardingInfo;
+
     Srch2Server(const CoreInfo_t * indexDataConfig, const string & directoryPath, const string & jsonFilePath):
     	directoryPath(directoryPath),jsonFilePath(jsonFilePath)
     {
         this->indexer = NULL;
         this->indexDataConfig = indexDataConfig;
+        this->__debugShardingInfo = NULL;
     }
 
     void save() {
@@ -54,6 +57,7 @@ public:
     void init()
     {
         createAndBootStrapIndexer(directoryPath);
+        this->__debugShardingInfo = this->getIndexer()->__getDebugShardingInfo();
     }
 
     void serialize(std::ostream&  outputStream) {

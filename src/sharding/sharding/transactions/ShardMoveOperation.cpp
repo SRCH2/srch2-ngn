@@ -2,6 +2,7 @@
 #include "core/util/SerializationHelper.h"
 #include "core/util/Assert.h"
 #include "core/util/Logger.h"
+#include "core/operation/IndexData.h"//for debug purpose
 #include "server/Srch2Server.h"
 #include "./cluster_transactions/LoadBalancer.h"
 #include "../metadata_manager/Cluster_Writeview.h"
@@ -188,6 +189,16 @@ void ShardMoveOperation::consume(const ShardMigrationStatus & status){
             }
 
             physicalShard = LocalPhysicalShard(status.shard, indexDirectory, "");
+            if(physicalShard.server->__debugShardingInfo != NULL){
+            	physicalShard.server->__debugShardingInfo->shardName = shardId.toString();
+            	SP(const ClusterNodes_Writeview) nodesWriteview = ShardManager::getNodesWriteview_read();
+            	physicalShard.server->__debugShardingInfo->nodeName =
+            			nodesWriteview->getNodes_read().find(ShardManager::getCurrentNodeId())->second.second->toStringShort();
+            	stringstream ss;
+            	ss << "Result of shard move from node " << srcAddress.nodeId << " with " <<
+            			physicalShard.server->getIndexer()->getNumberOfDocumentsInIndex() << " records.";
+            	physicalShard.server->__debugShardingInfo->explanation = ss.str();
+            }
             commit();
         }
     }

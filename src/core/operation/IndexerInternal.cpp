@@ -162,6 +162,9 @@ const void IndexHealthInfo::getIndexHealthStringComponents(std::string & lastMer
 
 INDEXWRITE_RETVAL IndexReaderWriter::commit()
 {    
+	Logger::sharding(Logger::Detail, "CORE(%s) | Commit. Node name : %s , Explanation : %s .",
+			this->__getDebugShardingInfo()->shardName.c_str(), this->__getDebugShardingInfo()->nodeName.c_str(),
+			this->__getDebugShardingInfo()->explanation.c_str());
     pthread_mutex_lock(&lockForWriters);
     INDEXWRITE_RETVAL commitReturnValue;
     if (!this->index->isBulkLoadDone()) {
@@ -305,6 +308,9 @@ void IndexReaderWriter::exportData(const string &exportedDataFileName)
     // add write lock
     pthread_mutex_lock(&lockForWriters);
 
+    Logger::sharding(Logger::Detail, "CORE(%s) | Export. Node name : %s , Explanation : %s .",
+    		this->__getDebugShardingInfo()->shardName.c_str(), this->__getDebugShardingInfo()->nodeName.c_str(),
+    		this->__getDebugShardingInfo()->explanation.c_str());
     // merge the index
     // we don't have to update histogram information when we want to export.
     this->merge(false);
@@ -326,7 +332,9 @@ void IndexReaderWriter::save()
       pthread_mutex_unlock(&lockForWriters);
     	return;
     }
-
+    Logger::sharding(Logger::Detail, "CORE(%s) | Save. Node name : %s , Explanation : %s .",
+    		this->__getDebugShardingInfo()->shardName.c_str(), this->__getDebugShardingInfo()->nodeName.c_str(),
+    		this->__getDebugShardingInfo()->explanation.c_str());
     // we don't have to update histogram information when we want to export.
     this->merge(false);
     writesCounterForMerge = 0;
@@ -384,6 +392,9 @@ void IndexReaderWriter::save(const std::string& directoryName)
     this->merge(false);
     writesCounterForMerge = 0;
 
+    Logger::sharding(Logger::Detail, "CORE(%s) | Save. Node name : %s , Explanation : %s .",
+    		this->__getDebugShardingInfo()->shardName.c_str(), this->__getDebugShardingInfo()->nodeName.c_str(),
+    		this->__getDebugShardingInfo()->explanation.c_str());
     this->index->_save(directoryName);
 
     pthread_mutex_unlock(&lockForWriters);
@@ -405,7 +416,9 @@ INDEXWRITE_RETVAL IndexReaderWriter::merge(bool updateHistogram)
 
     // increment the mergeCounterForUpdatingHistogram
     this->mergeCounterForUpdatingHistogram ++;
-
+    Logger::sharding(Logger::Detail, "CORE(%s) | Merge, updateHistogram : %d. Node name : %s , Explanation : %s .",
+    		this->__getDebugShardingInfo()->shardName.c_str(), updateHistogram, this->__getDebugShardingInfo()->nodeName.c_str(),
+    		this->__getDebugShardingInfo()->explanation.c_str());
     struct timespec tstart;
     clock_gettime(CLOCK_REALTIME, &tstart);
 
@@ -455,6 +468,9 @@ void IndexReaderWriter::initIndexReaderWriter(IndexMetaData* indexMetaData)
      this->mergeThreadStarted = false; // No threads running
      this->mergeEnabledFlag = true;
      //zero indicates that the lockForWriters is unset
+     Logger::sharding(Logger::Detail, "CORE(%s) | Indexer construction. Node name : %s , Explanation : %s .",
+     		this->__getDebugShardingInfo()->shardName.c_str(), this->__getDebugShardingInfo()->nodeName.c_str(),
+     		this->__getDebugShardingInfo()->explanation.c_str());
      pthread_mutex_init(&lockForWriters, 0); 
  }
 
@@ -468,6 +484,9 @@ uint32_t IndexReaderWriter::getNumberOfDocumentsInIndex() const
 pthread_t IndexReaderWriter::createAndStartMergeThreadLoop() {
 	pthread_attr_init(&mergeThreadAttributes);
 	pthread_attr_setdetachstate(&mergeThreadAttributes, PTHREAD_CREATE_JOINABLE);
+    Logger::sharding(Logger::Detail, "CORE(%s) | Dispatching merge thread. Node name : %s , Explanation : %s .",
+    		this->__getDebugShardingInfo()->shardName.c_str(), this->__getDebugShardingInfo()->nodeName.c_str(),
+    		this->__getDebugShardingInfo()->explanation.c_str());
 	pthread_create(&mergerThread, &mergeThreadAttributes, dispatchMergeThread, this);
 	pthread_attr_destroy(&mergeThreadAttributes);
 	return mergerThread;
@@ -495,13 +514,17 @@ void IndexReaderWriter::startMergeThreadLoop()
       return;
     }
     mergeThreadStarted = true;
+    Logger::sharding(Logger::Detail, "CORE(%s) | Merge thread flag set to true in merge thread. Node name : %s , Explanation : %s .",
+    		this->__getDebugShardingInfo()->shardName.c_str(), this->__getDebugShardingInfo()->nodeName.c_str(),
+    		this->__getDebugShardingInfo()->explanation.c_str());
     pthread_mutex_unlock(&lockForWriters);
     /*
      *  Initialize condition variable for the first time before loop starts.
      */
     pthread_cond_init(&countThresholdConditionVariable, NULL);
-
-    while (1)
+    // NOTE : loopCounter is only added for debug purposes, this is a while(1) :
+    unsigned loopCounter = 0;
+    while (++loopCounter)
     {
         rc =  gettimeofday(&tp, NULL);
         // Convert from timeval to timespec

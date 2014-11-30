@@ -245,6 +245,18 @@ private:
 	}
 };
 
+struct __DebugShardingInfo{
+	/*
+	 * DO NOT USE THIS CLASS FOR PASSING INFORMATION
+	 * FROM THE SHARDING LAYER TO THE CORE. THIS IS
+	 * EXTREMELY IMPORTANT TO KEEP THESE TWO LAYERS SEPARATE.
+	 * ONLY FOR DEBUG PURPOSE.
+	 */
+	string shardName;
+	string nodeName;
+	string explanation;
+};
+
 class IndexData
 {
 private:
@@ -272,6 +284,7 @@ private:
     // This function is called when a necessary lock is already acquired (in M1) or no lock is acquired (in A1).
     INDEXWRITE_RETVAL _addRecordWithoutLock(const Record *record, Analyzer *analyzer);
 public:
+    __DebugShardingInfo __debugShardingInfo;
     
     inline static IndexData* create(const string& directoryName,
                 const Schema *schema)

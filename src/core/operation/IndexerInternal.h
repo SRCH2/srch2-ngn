@@ -58,16 +58,25 @@ public:
     void initIndexReaderWriter(IndexMetaData* indexMetaData);
     virtual ~IndexReaderWriter()
     {
+		pthread_mutex_lock(&lockForWriters);
     	if (this->mergeThreadStarted == true) {
-	  pthread_mutex_lock(&lockForWriters);
-	  this->mergeThreadStarted = false;
-	  pthread_cond_signal(&countThresholdConditionVariable);
-	  pthread_mutex_unlock(&lockForWriters);
-        
-	  pthread_join(mergerThread, NULL); // waiting to JOINABLE merge thread.
+    		this->mergeThreadStarted = false;
+    		pthread_cond_signal(&countThresholdConditionVariable);
+    		pthread_mutex_unlock(&lockForWriters);
+
+    		pthread_join(mergerThread, NULL); // waiting to JOINABLE merge thread.
+    	}else{
+			pthread_mutex_unlock(&lockForWriters);
     	}
-        delete this->index;
+    	delete this->index;
     };
+
+    __DebugShardingInfo * __getDebugShardingInfo(){
+    	if(index == NULL){
+    		return NULL;
+    	}
+    	return &(index->__debugShardingInfo);
+    }
 
     uint32_t getNumberOfDocumentsInIndex() const;
 
