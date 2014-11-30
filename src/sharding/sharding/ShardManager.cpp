@@ -253,7 +253,13 @@ pthread_t * ShardManager::getLoadbalancingThread() {
 
 void ShardManager::print(JsonResponseHandler * response){
 	if(response != NULL){
+		// lock writeview
+		boost::unique_lock<boost::shared_mutex> xLock;
+		metadataManager->getClusterWriteview_write(xLock);
+		SP(const ClusterNodes_Writeview) nodesWriteview = metadataManager->getClusterNodesWriteview_read();
 		metadataManager->print(response);
+		xLock.unlock();
+		nodesWriteview.reset();
 		_lockManager->print(response);
 		if(stateMachine->lockStateMachine()){
 			stateMachine->print(response);

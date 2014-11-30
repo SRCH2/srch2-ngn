@@ -177,7 +177,7 @@ void Srch2ServerGateway::cb_globalOperations(struct evhttp_request * req, void *
     		dpExternal->externalGetInfoCommand(clusterReadview, req, (unsigned) -1, portType);
     		break;
     	case srch2http::DebugStatsPort:
-    		DebugInfoCollector::collectInfo(req);
+    		DebugInfoCollector::collectInfo(clusterReadview, req);
     		break;
     	case srch2http::ShutdownPort:
     		srch2http::ShutdownCommand::runShutdown(req);

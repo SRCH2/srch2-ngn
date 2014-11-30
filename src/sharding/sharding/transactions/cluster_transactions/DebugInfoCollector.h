@@ -24,12 +24,13 @@ namespace httpwrapper {
  * 2. When all nodes saved their indices, request all nodes to save their cluster metadata
  * 3. When all nodes acked metadata save, write the metadata on disk and done.
  */
-class DebugInfoCollector: public WriteviewTransaction, public ConsumerInterface {
+class DebugInfoCollector: public ReadviewTransaction, public ConsumerInterface {
 public:
 
-	static void collectInfo(evhttp_request *req){
+	static void collectInfo(boost::shared_ptr<const ClusterResourceMetadata_Readview> clusterReadview,
+			evhttp_request *req){
         SP(DebugInfoCollector) debugInfoCollector =
-        		SP(DebugInfoCollector)(new DebugInfoCollector(req)); //
+        		SP(DebugInfoCollector)(new DebugInfoCollector(clusterReadview, req)); //
         Transaction::startTransaction(debugInfoCollector);
         return ;
 	}
@@ -40,7 +41,8 @@ public:
 
 private:
 
-	DebugInfoCollector(evhttp_request *req){
+	DebugInfoCollector(boost::shared_ptr<const ClusterResourceMetadata_Readview> clusterReadview,
+			evhttp_request *req):ReadviewTransaction(clusterReadview){
 		this->req = req;
 	}
 

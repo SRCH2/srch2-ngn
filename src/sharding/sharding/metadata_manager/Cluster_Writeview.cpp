@@ -396,7 +396,7 @@ void Cluster_Writeview::printNodes(JsonResponseHandler * response) const{
 				nodeJsonInfo["Obj"] = "NULL";
 			}else{
 				Node * node = nodeItr->second.second;
-				nodeJsonInfo["Name"] = node->getName();
+				nodeJsonInfo["NodeName"] = node->getName();
 				nodeJsonInfo["IP"] = node->getIpAddress();
 				nodeJsonInfo["Port"] = node->getPortNumber();
 				if(node->thisIsMe){
@@ -457,7 +457,7 @@ void Cluster_Writeview::printClusterShards(JsonResponseHandler * response) const
 	ClusterShardId id;double load;ShardState state;bool isLocal;NodeId nodeId;NodeShardId nodeShardId;
 
 	if(response != NULL){
-		Json::Value clusterShardsJson(Json::arrayValue);
+		Json::Value coresJson(Json::arrayValue);
 		unsigned coreIdx = 0;
 		for(map<unsigned, CoreInfo_t *>::const_iterator coreItr = cores.begin(); coreItr != cores.end(); ++coreItr){
 			Json::Value coreClusterShardsJson(Json::objectValue);
@@ -508,10 +508,10 @@ void Cluster_Writeview::printClusterShards(JsonResponseHandler * response) const
 			coreClusterShardsJson["cluster-shards"] = shardsJson;
 
 			//
-			clusterShardsJson[coreIdx ++] = coreClusterShardsJson;
+			coresJson[coreIdx ++] = coreClusterShardsJson;
 		}
 
-		response->setResponseAttribute("cluster-shards" , clusterShardsJson);
+		response->setResponseAttribute("cluster-shards" , coresJson);
 
 		return;
 	}
@@ -652,6 +652,7 @@ void Cluster_Writeview::printNodeShards(JsonResponseHandler * response) const{
 		while(nShardItr.getNextNodeShard(nodeShardId,isLocal)){
 			Json::Value shardJson(Json::objectValue);
 			shardJson["core-id"] = nodeShardId.coreId;
+			shardJson["core-name"] = this->cores.find(nodeShardId.coreId)->second->getName();
 			shardJson["location"] = nodeShardId.nodeId;
 			shardJson["partition-id"] = nodeShardId.partitionId;
 			if(isLocal){
