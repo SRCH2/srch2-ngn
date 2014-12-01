@@ -91,6 +91,8 @@ const char * getTransTypeStr(ShardingTransactionType type){
 			return "record-acl-command";
 		case ShardingTransactionType_ReadCommand:
 			return "read-command";
+		case ShardingTransactionType_DebugCollectInfo:
+			return "debug-info-collector";
 	}
 	return "unknown-command";
 }
