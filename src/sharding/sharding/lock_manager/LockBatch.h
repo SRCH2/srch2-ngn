@@ -7,6 +7,8 @@
 
 #include <sstream>
 
+#define PRIMARY_KEY_SHARD_DELIMITER string("#$SRCH2$#")
+
 namespace srch2is = srch2::instantsearch;
 using namespace srch2is;
 using namespace std;
@@ -172,19 +174,29 @@ public:
 	void print(const string & tableName, JsonResponseHandler * response = NULL){
 
 		if(response != NULL){
-			Json::Value grantedLocksJson(Json::Value(Json::objectValue));
+			Json::Value grantedLocksJson(Json::objectValue);
 			for(typename map<Resource, vector<pair<NodeOperationId, LockLevel> > >::const_iterator
 					resItr = grantedLocks.begin(); resItr != grantedLocks.end(); ++resItr){
-				Json::Value resourceJson(Json::arrayValue);
+				Json::Value resourceJson(Json::objectValue);
+				Json::Value lockHoldersListJson(Json::arrayValue);
 				unsigned i = 0;
 				for(vector<pair<NodeOperationId, LockLevel> >::const_iterator holderItr = resItr->second.begin();
 						holderItr != resItr->second.end(); ++holderItr){
-					resourceJson[i]["holder"] = holderItr->first.toString();
-					resourceJson[i]["lock"] = holderItr->second == LockLevel_S ? "S" : "X";
+					lockHoldersListJson[i]["holder"] = holderItr->first.toString();
+					lockHoldersListJson[i]["lock"] = holderItr->second == LockLevel_S ? "S" : "X";
 					//
 					i++;
 				}
-				grantedLocksJson[_toString(resItr->first)] = resourceJson;
+				resourceJson["lock-holders"] = lockHoldersListJson;
+				string resourceStringValue = _toString(resItr->first);
+				// TODO : this code can be enhanced, it's not good to use
+				//         this constant which is a print constant here in logic ...
+				if(tableName.compare("primary-key-locks") == 0){
+					resourceJson["containing-cluster-pid"] =
+							resourceStringValue.substr(resourceStringValue.find(PRIMARY_KEY_SHARD_DELIMITER) + 9);
+					resourceStringValue = resourceStringValue.substr(0, resourceStringValue.find(PRIMARY_KEY_SHARD_DELIMITER));
+				}
+				grantedLocksJson[resourceStringValue] = resourceJson;
 			}
 			response->setResponseAttribute(tableName.c_str(), grantedLocksJson);
 			return;
@@ -434,11 +446,15 @@ public:
 	            }
 	            break;
 	        case LockRequestType_PrimaryKey:
-	        	jsonRep["resources"]["containing-cluster-shard-id"] = pid.toString();
-	        	jsonRep["resources"]["primary-keys"] = Json::Value(Json::arrayValue);
+	        	jsonRep["resources"]["containing-cluster-pid"] = pid.toString();
+	        	 stringstream ss;
 	        	for(unsigned pIdx = 0 ; pIdx < pkTokens.size(); ++pIdx){
-	        		jsonRep["resources"]["primary-keys"][pIdx] = pkTokens.at(pIdx).first;
+	        		if(pIdx > 0){
+	        			ss << ";";
+	        		}
+	        		ss << pkTokens.at(pIdx).first;
 	        	}
+	        	jsonRep["resources"]["primary-keys"] = ss.str();
 	            break;
 	        }
 			return "";

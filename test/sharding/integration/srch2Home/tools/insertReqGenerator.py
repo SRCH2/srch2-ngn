@@ -6,20 +6,28 @@ import sys
 import json
 
 CULR_MAX_ARG_CHAR_SIZE=10000
-port = "7049"
+port = "7051"
 hostname = "localhost"
 corename = "stackoverflow"
 
-if len(sys.argv) < 2:
-   print "Source file not given."
+if len(sys.argv) < 4:
+   print "Usage : " + sys.argv[0] + " sourceFileName.json insertOutput.json deleteOutput.json"
    sys.exit(0);
 
 sourceName = sys.argv[1]
+insertOutputFileName = sys.argv[2]
+deleteOutputFileName = sys.argv[3]
 sourceFile = open(sourceName, 'r')
+insertOutputFile = open(insertOutputFileName, 'w')
+deleteOutputFile = open(deleteOutputFileName, 'w')
 lineNum = 0
 recordBatch = "["
 for line in sourceFile:
    line = line.replace("'" , "")
+   jsonRecord = json.loads(line)
+   #print json.dumps(jsonRecord)
+   #print "--------------------------------------"
+   deleteOutputFile.write("curl \"http://"+hostname+":"+port+"/"+corename+"/docs?id=" + jsonRecord['id'] + "\" -i -X DELETE" + "\n")
    if len(line.strip()) > CULR_MAX_ARG_CHAR_SIZE:
       continue 
    if recordBatch == "[":
@@ -28,10 +36,14 @@ for line in sourceFile:
       newRecordBatch = recordBatch + "," +  line.strip()
    if len(newRecordBatch) > CULR_MAX_ARG_CHAR_SIZE:
       recordBatch = recordBatch + "]"
-      print "curl \"http://"+hostname+":"+port+"/"+corename+"/docs\" -i -X PUT -d '" + recordBatch + "'"
+      insertOutputFile.write("curl \"http://"+hostname+":"+port+"/"+corename+"/docs\" -i -X PUT -d '" + recordBatch + "'" + "\n")      
       recordBatch = "[" + line.strip()
    else:      
       recordBatch = newRecordBatch
 if recordBatch[-1] != ']':
    recordBatch = recordBatch + "]"   
-print "curl \"http://"+hostname+":"+port+"/"+corename+"/docs\" -i -X PUT -d '" + recordBatch + "'"
+insertOutputFile.write("curl \"http://"+hostname+":"+port+"/"+corename+"/docs\" -i -X PUT -d '" + recordBatch + "'" + "\n")
+
+insertOutputFile.close()
+deleteOutputFile.close()
+sourceFile.close()

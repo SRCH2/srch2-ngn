@@ -13,7 +13,6 @@ namespace srch2 {
 namespace httpwrapper {
 
 const string LockManager::metadataResourceName = string("srch2-cluster-metadata");
-
 LockManager::LockManager(){
 }
 
@@ -217,7 +216,11 @@ bool LockManager::resolveRelease(LockBatch * lockBatch){
 			for(lockBatch->lastGrantedItemIndex = 0 ;
 					lockBatch->lastGrantedItemIndex < lockBatch->pkTokens.size(); ++ lockBatch->lastGrantedItemIndex){
 				for(unsigned i = 0 ;i < lockBatch->opIds.size(); ++i){
-					bool relHap = primaryKeyLocks.release(lockBatch->pkTokens.at(lockBatch->lastGrantedItemIndex).first , lockBatch->opIds.at(i));
+					stringstream ss;
+					ss << lockBatch->pkTokens.at(lockBatch->lastGrantedItemIndex).first <<
+							PRIMARY_KEY_SHARD_DELIMITER << lockBatch->pid.toString();
+					string lockKeyValue = ss.str();
+					bool relHap = primaryKeyLocks.release(lockKeyValue , lockBatch->opIds.at(i));
 					releaseHappened = releaseHappened || relHap;
 				}
 			}
@@ -369,7 +372,9 @@ bool LockManager::canAcquireAllBatch(LockBatch * lockBatch){
 				ASSERT(lockBatch->lastGrantedItemIndex < lockBatch->pkTokens.size());
 				ASSERT(lockBatch->incremental);
 				pair<string, LockLevel> & nxtToken = lockBatch->pkTokens.at(lastGrantedPreValue + 1);
-				if(! primaryKeyLocks.canLock(nxtToken.first, nxtToken.second)){
+				stringstream ss;
+				ss << nxtToken.first << PRIMARY_KEY_SHARD_DELIMITER << lockBatch->pid.toString();
+				if(! primaryKeyLocks.canLock(ss.str() , nxtToken.second)){
 					return false;
 				}else{
 					if(lastGrantedPreValue == lockBatch->pkTokens.size() - 1){
@@ -462,7 +467,9 @@ bool LockManager::moveLockBatchForward(LockBatch * lockBatch){
 			{
 				ASSERT(lockBatch->lastGrantedItemIndex < (int)(lockBatch->pkTokens.size()));
 				pair<string, LockLevel> & nxtToken = lockBatch->pkTokens.at(lockBatch->lastGrantedItemIndex + 1);
-				if(primaryKeyLocks.lock(nxtToken.first, lockBatch->opIds, nxtToken.second)){
+				stringstream ss;
+				ss << nxtToken.first << PRIMARY_KEY_SHARD_DELIMITER << lockBatch->pid.toString();
+				if(primaryKeyLocks.lock(ss.str(), lockBatch->opIds, nxtToken.second)){
 					// one more token was granted.
 					lockBatch->lastGrantedItemIndex++;
 					if(lockBatch->lastGrantedItemIndex == lockBatch->pkTokens.size()-1){
