@@ -83,6 +83,11 @@ bool ShardCommand::partition(vector<NodeTargetShardInfo> & targets){
 // process coming back from distributed conversation to aggregate the results of
 // this command
 void ShardCommand::end_(map<NodeOperationId , SP(ShardingNotification)> & replies){
+	if(replies.empty()){
+		map<NodeOperationId , SP(ShardingNotification)> emptyResult;
+		finalize(emptyResult);
+		return;
+	}
 	switch (this->commandCode) {
 		case ShardCommandCode_SaveData_SaveMetadata:
 		{

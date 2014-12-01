@@ -33,20 +33,33 @@ OperationState * OrderedNodeIteratorOperation::entry(){
 	if(this->validatorObj != NULL){
 		this->setTransaction(this->validatorObj->getTransaction());
 	}
-	// Consistency check : participants must not be empty
-	if(this->participants.empty()){
-		ASSERT(false);
-		return NULL;
-	}
+
 	// Consistency check : all participants must be alive
 	SP(const ClusterNodes_Writeview) nodesWriteview = ShardManager::getNodesWriteview_read();
+	vector<NodeOperationId> participantsCopy;
 	for(unsigned i = 0 ; i < this->participants.size(); ++i){
-		if(! nodesWriteview->isNodeAlive(this->participants.at(i).nodeId)){
-			ASSERT(false);
-			return NULL;
+		if(nodesWriteview->isNodeAlive(this->participants.at(i).nodeId)){
+			participantsCopy.push_back(this->participants.at(i));
 		}
 	}
+	this->participants = participantsCopy;
 	nodesWriteview.reset();
+	// Consistency check : participants must not be empty
+	if(this->participants.empty()){
+		if(this->validatorObj != NULL){
+			if(this->getTransaction()){
+				this->getTransaction()->threadBegin(this->getTransaction());
+			}
+			// NOTE : OrderedNodeIteratorOperation returns empty reply to the consumer.
+			map<NodeOperationId, SP(ShardingNotification) > _replies;
+			this->validatorObj->end_(_replies, this->getOperationId());
+			if(this->getTransaction()){
+				this->getTransaction()->threadEnd();
+			}
+			this->setTransaction(SP(Transaction)());
+		}
+		return NULL;
+	}
 	// ask the first node.
 	this->participantsIndex = 0;
 	return askNode(	this->participantsIndex);
@@ -185,12 +198,13 @@ void OrderedNodeIteratorOperation::setParticipants(vector<NodeId> & participants
 
 	// Consistency check : all participants must be alive
 	SP(const ClusterNodes_Writeview) nodesWriteview = ShardManager::getNodesWriteview_read();
+	vector<NodeId> participantsCopy;
 	for(int nodeIdx = 0; nodeIdx < participants.size(); ++nodeIdx){
-		if(! nodesWriteview->isNodeAlive(participants.at(nodeIdx))){
-			ASSERT(false);
-			return;
+		if(nodesWriteview->isNodeAlive(participants.at(nodeIdx))){
+			participantsCopy.push_back(participants.at(nodeIdx));
 		}
 	}
+	participants = participantsCopy;
 	nodesWriteview.reset();
 
 	// we can continue with this set of participants

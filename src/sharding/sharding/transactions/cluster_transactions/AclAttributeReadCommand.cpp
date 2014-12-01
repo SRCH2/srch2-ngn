@@ -96,8 +96,7 @@ bool AclAttributeReadCommand::shouldAbort(const NodeId & failedNode){
 
 // response which contains the list of attributes comes to this function
 void AclAttributeReadCommand::end(map<NodeId, SP(ShardingNotification) > & replies){
-	if(replies.size() != 1){
-		ASSERT(false);
+	if(replies.size() < 1){
 		Logger::sharding(Logger::Error, "%d replies are received while waiting for a list of attributes." , replies.size());
 		finalize();
 		return;

@@ -131,6 +131,11 @@ void ShardMoveOperation::transfer(){
 
 
 void ShardMoveOperation::end(map<NodeId, SP(ShardingNotification) > & replies){
+	if(replies.empty()){
+		this->successFlag = false;
+		finalize();
+		return;
+	}
     if(this->currentOp == Transfer){
         if(transferAckReceived){
            consume(transferStatus);

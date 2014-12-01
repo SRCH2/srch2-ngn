@@ -182,7 +182,6 @@ bool AtomicMetadataCommit::shouldAbort(const NodeId & failedNode){
 void AtomicMetadataCommit::end_(map<NodeOperationId , SP(ShardingNotification)> & replies){
 	// nothing to do with commit acks
 	if(replies.size() != participants.size()){
-		ASSERT(false);
 		finalize(false);
 		return;
 	}

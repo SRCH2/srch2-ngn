@@ -160,9 +160,14 @@ bool NodeJoiner::shouldAbort(const NodeId & failedNode){
 }
 // if returns true, operation must stop and return null to state_machine
 void NodeJoiner::end_(map<NodeOperationId, SP(ShardingNotification) > & replies){
-	if(replies.size() != 1){
+	if(replies.size() > 1){
 		ASSERT(false);
-		this->setFinalizeArgument(false, true);
+		this->setFinalizeArgument(false, false);
+		return;
+	}
+	if(replies.size() < 1){
+		Logger::sharding(Logger::Warning, "NodeJoiner|  Node Joiner : reading metadata failed.");
+		readMetadata();
 		return;
 	}
 	ASSERT(replies.begin()->first == randomNodeToReadFrom);

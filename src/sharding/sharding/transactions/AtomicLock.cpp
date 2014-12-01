@@ -214,7 +214,6 @@ void AtomicLock::recover(){
 		releaseParticipants.push_back(participants.at(i));
 	}
 	if(releaseParticipants.empty()){
-		ASSERT(false);
 		finalize(false);
 		return;
 	}
@@ -244,7 +243,6 @@ void AtomicLock::end(map<NodeId, SP(ShardingNotification) > & replies){
 	 */
 	if(lockType == LockRequestType_PrimaryKey){
 		if(participants.empty()){
-			ASSERT(false);
 			// record change must be stopped because there is no shard
 			// anymore
 			Logger::sharding(Logger::Detail, "AtomicLock| empty list of participants in primaryKey lock : abort and return false");
