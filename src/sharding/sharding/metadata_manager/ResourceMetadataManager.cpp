@@ -12,10 +12,8 @@ namespace httpwrapper {
 void ClusterNodes_Writeview::getArrivedNodes(vector<NodeId> & arrivedNodes, bool returnThisNode) const{
 	for(map<NodeId, std::pair<ShardingNodeState, Node *> >::const_iterator nodeItr = nodes.begin();
 			nodeItr != nodes.end(); ++nodeItr){
-		if(! returnThisNode){
-			if(nodeItr->first == currentNodeId){
-				continue;
-			}
+		if(! returnThisNode && nodeItr->first == currentNodeId){
+			continue;
 		}
 		if(nodeItr->second.first == ShardingNodeStateArrived && nodeItr->second.second != NULL){
             arrivedNodes.push_back(nodeItr->first);

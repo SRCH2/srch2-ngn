@@ -68,7 +68,6 @@ public:
 	bool condition(SP(ShardingNotification) req, SP(ShardingNotification) res,
 			vector<NodeId> & updatedListOfParticipants);
 
-	bool shouldAbort(const NodeId & failedNode);
 
 	/*
 	 * Lock request must be successful (or partially successful in case of primarykeys)
@@ -87,7 +86,7 @@ private:
 	SP(LockingNotification) releaseNotification;
 
 	vector<NodeId> participants;
-	int participantIndex;
+	NodeId latestRespondedParticipant;
 
 	ClusterPID pid;// only valid and meaningful value if primary key lock
 

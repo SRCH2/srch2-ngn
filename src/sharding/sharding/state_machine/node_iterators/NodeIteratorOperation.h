@@ -33,7 +33,8 @@ public:
 
 	OperationState * handle(SP(NodeFailureNotification) notif);
 
-	void setParticipants(vector<NodeId> & participants);
+	OperationState * handle(SP(TimeoutNotification) notif);
+
 
 	string getOperationName() const ;
 
@@ -45,12 +46,13 @@ private:
 	ShardingMessageType resType;
 	SP(ShardingNotification) request;
 
+	map<NodeOperationId , SP(ShardingNotification)> targetResponsesMap;
 	vector<NodeOperationId> participants;
 	unsigned participantsIndex;
 
 	/*
 	 * Validator class must provide
-	 * bool validateResponse(Request * req, Response * res);
+	 * bool condition(Request * req, Response * res);
 	 * which is called after each response.
 	 * it must also provide
 	 * void finalize(void *);
@@ -59,9 +61,12 @@ private:
 	 */
 	OrderedNodeIteratorListenerInterface * validatorObj;
 
+	OperationState * finalize();
+
 	OperationState * askNode(const unsigned nodeIndex);
 
-	void updateParticipantsList(vector<NodeId> newParticipants);
+	void appendParticipants(vector<NodeId> newParticipants);
+	void setParticipants(vector<NodeId> & participants);
 
 };
 

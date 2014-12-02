@@ -61,9 +61,6 @@ private:
 
 	void processWriteResponse(map<NodeId, SP(ShardingNotification) > & _replies);
 
-
-	bool shouldAbort(const NodeId & failedNode);
-
 	/*
 	 * When all reply notifications resulted from call to sendWriteCommnad
 	 * reach to this node and ConcurrentNotifOperation

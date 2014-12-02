@@ -149,24 +149,6 @@ void ShardMoveOperation::end(map<NodeId, SP(ShardingNotification) > & replies){
 }
 
 
-// if returns true, operation must stop and return null to state_machine
-bool ShardMoveOperation::shouldAbort(const NodeId & failedNode){
-	if(this->currentOp == Transfer){
-		if(failedNode == srcAddress.nodeId){
-			Logger::sharding(Logger::Step, "ShardMove(opid=%s, mv {%s in %s} to self )| src node failed, abort.",
-					currentOpId.toString().c_str(),
-					shardId.toString().c_str(), srcAddress.toString().c_str());
-			this->successFlag = false;
-			finalize();
-			return true;
-		}
-	}else if (this->currentOp == Cleanup){
-		finalize();
-		return true;
-	}
-	return false;
-}
-
 // for transfer
 void ShardMoveOperation::consume(const ShardMigrationStatus & status){
 	// failed or succeed?

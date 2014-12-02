@@ -59,8 +59,6 @@ private:
 
 	// coming back from readMetadata
 	void end_(map<NodeOperationId, SP(ShardingNotification) > & replies);
-	// if returns true, operation must stop and return null to state_machine
-	bool shouldAbort(const NodeId & failedNode);
 
 	void commit();
 

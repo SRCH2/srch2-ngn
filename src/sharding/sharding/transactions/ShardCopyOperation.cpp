@@ -118,17 +118,6 @@ void ShardCopyOperation::end(map<NodeId, SP(ShardingNotification) > & replies){
         transferAckReceived = true;
     }
 }
-// if returns true, operation must stop and return null to state_machine
-bool ShardCopyOperation::shouldAbort(const NodeId & failedNode){
-	if(failedNode == srcNodeId){
-		Logger::sharding(Logger::Step, "ShardCopy(opid=%s, cp {%s in %d} to %s )| srcNode failed. Aborting.", currentOpId.toString().c_str(),
-				replicaShardId.toString().c_str(), srcNodeId, unassignedShardId.toString().c_str());
-		this->successFlag = false;
-		release();
-		return true;
-	}
-	return false;
-}
 
 // for transfer
 void ShardCopyOperation::consume(const ShardMigrationStatus & status){

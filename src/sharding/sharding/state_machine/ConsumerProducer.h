@@ -90,22 +90,22 @@ public:
 	virtual void end(map<NodeId, SP(ShardingNotification) > & replies){
 
 	}
-	// if returns true, operation must stop and return null to state_machine
-	// True is retunrned by the caller of this module if this failedNode must abort
-	// the task. By defaul this method does not need to be overridden because it returns
-	// false by default.
-	virtual bool shouldAbort(const NodeId & failedNode, unsigned callerId){
-		return shouldAbort(failedNode);
-	}
-	virtual bool shouldAbort(const NodeId & failedNode){
-		return false;
-	}
+//	// if returns true, operation must stop and return null to state_machine
+//	// True is retunrned by the caller of this module if this failedNode must abort
+//	// the task. By defaul this method does not need to be overridden because it returns
+//	// false by default.
+//	virtual bool shouldAbort(const NodeId & failedNode, unsigned callerId){
+//		return shouldAbort(failedNode);
+//	}
+//	virtual bool shouldAbort(const NodeId & failedNode){
+//		return false;
+//	}
 };
 
 class OrderedNodeIteratorListenerInterface: public NodeIteratorListenerInterface{
 public:
 	virtual ~OrderedNodeIteratorListenerInterface(){};
-	// This method, is called after each response is retreived and before we move to the next participant,
+	// This method, is called after each response is retrieved and before we move to the next participant,
 	// if it returns false, the iterator will abort. (still, getTransIdToDelete() will be called after.)
 	virtual bool condition(SP(ShardingNotification) req,
 			SP(ShardingNotification) res,

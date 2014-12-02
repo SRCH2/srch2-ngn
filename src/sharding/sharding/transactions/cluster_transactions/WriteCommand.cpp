@@ -242,34 +242,6 @@ void PartitionWriter::processWriteResponse(map<NodeId, SP(ShardingNotification) 
 }
 
 
-bool PartitionWriter::shouldAbort(const NodeId & failedNode){
-	unsigned nodeTargetInfoIndex = targets.size();
-	for(nodeTargetInfoIndex = 0; nodeTargetInfoIndex < targets.size(); ++nodeTargetInfoIndex){
-		if(targets.at(nodeTargetInfoIndex).getNodeId() == failedNode){
-			break;
-		}
-	}
-	if(nodeTargetInfoIndex < targets.size()){
-		targets.erase(targets.begin() + nodeTargetInfoIndex);
-	}
-	if(targets.empty()){
-		if(currentStep == StepAsk2PC){
-			// abort : there is no target anymore to continue
-			finalize(false, HTTP_Json_No_Data_Shard_Available_For_Write);
-			return true;
-		}else if(currentStep == StepWrite){
-			// abort : there is no target anymore to continue
-			finalize(false, HTTP_Json_No_Data_Shard_Available_For_Write);
-			return true;
-		}else{
-			ASSERT(false);
-			finalize(false, HTTP_Json_General_Error);
-			return true;
-		}
-	}
-	return false;
-}
-
 /*
  * When all reply notifications resulted from call to sendWriteCommnad
  * reach to this node and ConcurrentNotifOperation

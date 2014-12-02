@@ -34,9 +34,6 @@ public:
 
 	void readListOfAttributes(NodeTargetShardInfo & target);
 
-
-	bool shouldAbort(const NodeId & failedNode);
-
 	// response which contains the list of attributes comes to this function
 	void end(map<NodeId, SP(ShardingNotification) > & replies);
 

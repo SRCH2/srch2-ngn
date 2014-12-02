@@ -602,11 +602,10 @@ void * ShardManager::periodicWork(void *args) {
 		// 1. Resend bounced notifications.
 		ShardManager::getShardManager()->resendBouncedNotifications();
 
-		/*
-		 * TODO (not necessary but good and safer to have) : we must implement a method with
-		 *       periodically goes through all data structures and
-		 *       makes sure they are not stuck anywhere ....
-		 */
+
+
+		SP(TimeoutNotification) timeoutNotif = SP(TimeoutNotification)(new TimeoutNotification());
+		ShardManager::getStateMachine()->handle(boost::dynamic_pointer_cast<Notification>(timeoutNotif));
 		// 2. if we are joined, start load balancing.
 		if(ShardManager::getShardManager()->isJoined() && ! ShardManager::getShardManager()->isLoadBalancing()){
 			ShardManager::getShardManager()->setLoadBalancing();

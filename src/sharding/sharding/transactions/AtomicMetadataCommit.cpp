@@ -104,14 +104,6 @@ SP(Transaction) AtomicMetadataCommit::getTransaction(){
 
 void AtomicMetadataCommit::produce(){
     Logger::sharding(Logger::Detail, "Atomic Metadata Commit : starting ...");
-	SP(const ClusterNodes_Writeview) nodesWriteview = ShardManager::getNodesWriteview_read();
-	for(int i = 0 ; i < participants.size(); ++i){
-		if(! nodesWriteview->isNodeAlive(participants.at(i))){
-			participants.erase(participants.begin() + i);
-			i--;
-		}
-	}
-	nodesWriteview.reset();
     if(participants.empty()){
         // no participant exists
     	finalize(false);
@@ -167,24 +159,8 @@ void AtomicMetadataCommit::commit(){
 	ShardManager::getShardManager()->getStateMachine()->registerOperation(committer);
 }
 
-bool AtomicMetadataCommit::shouldAbort(const NodeId & failedNode){
-	if(std::find(participants.begin(), participants.end(), failedNode) == participants.end()){
-		return false;
-	}
-	participants.erase(std::find(participants.begin(), participants.end(), failedNode));
-	if(participants.empty()){
-		finalize(false);
-		return true;
-	}
-	return false;
-}
-
 void AtomicMetadataCommit::end_(map<NodeOperationId , SP(ShardingNotification)> & replies){
 	// nothing to do with commit acks
-	if(replies.size() != participants.size()){
-		finalize(false);
-		return;
-	}
 	if(skipLock){
 	    finalize(true);
 	}else{

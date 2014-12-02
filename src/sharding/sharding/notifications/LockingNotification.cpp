@@ -468,26 +468,6 @@ void LockingNotification::getInvolvedNodes(SP(Transaction) sp, vector<NodeId> & 
 	}else{
 		nodesWriteview->getArrivedNodes(participants, true);
 	}
-//	if(sp->isReadviewTransaction()){
-//		SP(const ClusterResourceMetadata_Readview) readview = ((ReadviewTransaction *)(sp.get()))->getReadview();
-//		// TODO : find list of participants from the readview
-//		if(lockRequestType == LockRequestType_PrimaryKey){
-//			readview->getCorePartitionContianer(pid.coreId)->getInvolvedNodes(pid, participants);
-//			if(participants.empty()){
-//				// now get all nodes
-//				readview->getAllNodeIds(participants);
-//			}
-//			return;
-//		}
-//		readview->getAllNodeIds(participants);
-//	}else{
-//		/*
-//		 * Writeview transaction, there is no readview, just use writeview, since we
-//		 * are within a transaction, writeview is already locked in X mode
-//		 */
-//		SP(const ClusterNodes_Writeview) nodesWriteview = ShardManager::getNodesWriteview_read();
-//
-//	}
 }
 
 LockingNotification::ACK::ACK(bool grantedFlag){

@@ -80,18 +80,8 @@ void AclAttributeReadCommand::readListOfAttributes(NodeTargetShardInfo & target)
 	SP(AclAttributeReadNotification) notif = SP(AclAttributeReadNotification)(
 			new AclAttributeReadNotification(roleId, target, clusterReadview));
 	ConcurrentNotifOperation * listSender =
-			new ConcurrentNotifOperation(notif, ShardingAclAttrReadACKMessageType, ShardManager::getCurrentNodeId(), this);
+			new ConcurrentNotifOperation(notif, ShardingAclAttrReadACKMessageType,this->target.getNodeId(), this);
 	ShardManager::getStateMachine()->registerOperation(listSender);
-}
-
-
-bool AclAttributeReadCommand::shouldAbort(const NodeId & failedNode){
-	if(failedNode == this->target.getNodeId()){
-		messageCodes.push_back(HTTP_Json_Failed_Due_To_Node_Failure);
-		finalize();
-		return true;
-	}
-	return false;
 }
 
 // response which contains the list of attributes comes to this function

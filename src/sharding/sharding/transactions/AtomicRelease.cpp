@@ -25,7 +25,6 @@ AtomicRelease::AtomicRelease(const ClusterShardId & srcShardId,
 	// prepare the locker and locking notification
 	this->releaseNotification = SP(LockingNotification)(new LockingNotification(srcShardId, destShardId, copyAgent, true));
 	this->lockType = LockRequestType_Copy;
-	this->finalizeFlag = false;
 	init();
 }
 
@@ -38,7 +37,6 @@ AtomicRelease::AtomicRelease(const NodeOperationId & newNodeOpId,
 			LockLevel_X, true, true));
 	// LockLevel_X is just a place holder,
 	this->lockType = LockRequestType_Metadata;
-	this->finalizeFlag = false;
 	init();
 }
 
@@ -50,7 +48,6 @@ AtomicRelease::AtomicRelease(const vector<string> & primaryKeys, const NodeOpera
 	this->releaseNotification = SP(LockingNotification)(new LockingNotification(primaryKeys, writerAgent, pid, true));
 	this->lockType = LockRequestType_PrimaryKey;
 	this->pid = pid;
-	this->finalizeFlag = false;
 	init();
 }
 
@@ -62,7 +59,6 @@ AtomicRelease::AtomicRelease(const ClusterShardId & shardId, const NodeOperation
 	// prepare the locker and locking notification
 	this->releaseNotification = SP(LockingNotification)(new LockingNotification(shardId, agent));
 	this->lockType = LockRequestType_GeneralPurpose;
-	this->finalizeFlag = false;
 	init();
 }
 
@@ -83,17 +79,12 @@ SP(Transaction) AtomicRelease::getTransaction(){
 void AtomicRelease::produce(){
     Logger::sharding(Logger::Detail, "AtomicRelease| starts. Consumer is %s",
     		this->getConsumer() == NULL ? "NULL" : this->getConsumer()->getName().c_str());
-    if(releaser == NULL){
-        releaser = new OrderedNodeIteratorOperation(releaseNotification, ShardingLockACKMessageType , participants, this);
-    }
 
     SP(const ClusterNodes_Writeview) nodesWriteview = ShardManager::getNodesWriteview_read();
-    bool participantsChangedFlag = false;
     for(int nodeIdx = 0; nodeIdx < participants.size(); ++nodeIdx){
     	if(! nodesWriteview->isNodeAlive(participants.at(nodeIdx))){
     		participants.erase(participants.begin() + nodeIdx);
     		nodeIdx --;
-    		participantsChangedFlag = true;
     	}
     }
     nodesWriteview.reset();
@@ -101,10 +92,11 @@ void AtomicRelease::produce(){
         Logger::sharding(Logger::Detail, "AtomicLock| ends unattached, no participant found.");
         finalize();
     	return;
-    }else if(participantsChangedFlag){
-    	releaser->setParticipants(participants);
     }
 
+    if(releaser == NULL){
+        releaser = new OrderedNodeIteratorOperation(releaseNotification, ShardingLockACKMessageType , participants, this);
+    }
     ShardManager::getShardManager()->getStateMachine()->registerOperation(releaser);
     releaser = NULL;
 }
@@ -124,27 +116,9 @@ void AtomicRelease::finalize(){
 	}
 }
 
-void AtomicRelease::setParticipants(vector<NodeId> & participants){
-	if(releaser == NULL){
-	    releaser = new OrderedNodeIteratorOperation(releaseNotification, ShardingLockACKMessageType , participants, this);
-	}
-	releaser->setParticipants(participants);
-}
-
-bool AtomicRelease::updateParticipants(){
-	releaseNotification->getInvolvedNodes(this->getTransaction(), participants);
-	if(participants.empty()){
-		return false;
-	}
-	if(releaser == NULL){
-	    releaser = new OrderedNodeIteratorOperation(releaseNotification, ShardingLockACKMessageType , participants, this);
-	}
-	releaser->setParticipants(participants);
-	return true;
-}
-
 void AtomicRelease::init(){
 	// participants are all node
+	this->finalizeFlag = false;
 	releaseNotification->getInvolvedNodes(this->getTransaction(), participants);
     releaser = NULL;
 }

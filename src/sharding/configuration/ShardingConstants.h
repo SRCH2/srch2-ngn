@@ -89,6 +89,7 @@ enum ShardingMessageType{
     // just notifications
     ShardingMMNotificationMessageType,
     ShardingNodeFailureNotificationMessageType,
+    ShardingTimeoutNotificationMessageType,
 
     ShardingMessageTypeFirst = NULLType,
     ShardingMessageTypeLast = ShardingNodeFailureNotificationMessageType

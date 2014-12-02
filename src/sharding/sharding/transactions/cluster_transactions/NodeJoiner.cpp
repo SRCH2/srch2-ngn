@@ -75,6 +75,10 @@ void NodeJoiner::lock(){ // locks the metadata to be safe to read it
     Logger::sharding(Logger::Step, "NodeJoiner| Starting to lock the metadata ...");
 	vector<NodeId> olderNodes;
 	getOlderNodesList(olderNodes);
+	if(olderNodes.empty()){
+		this->setFinalizeArgument(false, true);
+		return;
+	}
 	//lock should be acquired on all nodes
 	locker = new AtomicLock(selfOperationId, this, olderNodes); // X-locks metadata by default
 	this->currentOperation = Lock;
@@ -87,7 +91,6 @@ void NodeJoiner::consume(bool granted){
     switch (this->currentOperation) {
         case Lock:
             if(! granted){
-                ASSERT(false);
                 Logger::error("New node could not join the cluster.");
                 this->setFinalizeArgument(false, true);
             }else{
@@ -100,7 +103,6 @@ void NodeJoiner::consume(bool granted){
         case Commit:
             if(! granted){
                 Logger::sharding(Logger::Step, "NodeJoiner| New node booting a fresh cluster because commit operation failed.");
-                ASSERT(false);
                 this->setFinalizeArgument(false, true);
             }else{
                 release();
@@ -109,7 +111,6 @@ void NodeJoiner::consume(bool granted){
         case Release:
             if(! granted){
                 Logger::sharding(Logger::Step, "NodeJoiner| New node booting a fresh cluster because release operation failed.");
-                ASSERT(false);
                 this->setFinalizeArgument(false, true);
             }else{
                 this->setFinalizeArgument(true, true);
@@ -130,7 +131,7 @@ void NodeJoiner::readMetadata(){ // read the metadata of the cluster
 	vector<NodeId> olderNodes;
 	this->getOlderNodesList(olderNodes);
 
-	if(olderNodes.size() == 0){
+	if(olderNodes.empty()){
 		Logger::info("New node booting up a fresh cluster ...");
 		Logger::sharding(Logger::Step, "NodeJoiner| no other nodes are left.");
 		this->setFinalizeArgument(false, true);
@@ -150,14 +151,6 @@ void NodeJoiner::readMetadata(){ // read the metadata of the cluster
 	ShardManager::getShardManager()->getStateMachine()->registerOperation(reader);
 }
 
-bool NodeJoiner::shouldAbort(const NodeId & failedNode){
-	if(randomNodeToReadFrom == failedNode){
-		Logger::sharding(Logger::Detail, "NodeJoiner| retrying metadata read.");
-		readMetadata();
-		return true;
-	}
-	return false;
-}
 // if returns true, operation must stop and return null to state_machine
 void NodeJoiner::end_(map<NodeOperationId, SP(ShardingNotification) > & replies){
 	if(replies.size() > 1){
@@ -226,6 +219,10 @@ void NodeJoiner::commit(){
 			new NodeAddChange(ShardManager::getCurrentNodeId(),localClusterShards, nodeShardIds);
 	vector<NodeId> olderNodes;
 	getOlderNodesList(olderNodes);
+	if(olderNodes.empty()){
+		this->setFinalizeArgument(false, true);
+		return;
+	}
 	this->committer = new AtomicMetadataCommit(nodeAddChange,  olderNodes, this, true);
 	this->currentOperation = Commit;
 	this->committer->produce();
@@ -234,10 +231,6 @@ void NodeJoiner::commit(){
 void NodeJoiner::release(){ // releases the lock on metadata
 	__FUNC_LINE__
 	releaser = new AtomicRelease(selfOperationId, this);
-	if(! this->releaser->updateParticipants()){
-		this->setFinalizeArgument(false, true);
-		return;
-	}
 	this->currentOperation = Release;
 	Logger::sharding(Logger::Step, "NodeJoiner| Releasing lock ...");
 	this->releaser->produce();
@@ -285,9 +278,6 @@ void NodeJoiner::getOlderNodesList(vector<NodeId> & olderNodes){
 		ss << olderNodes.at(i);
 	}
 	Logger::sharding(Logger::Detail, "NodeJoiner| List of older nodes: %s", ss.str().c_str());
-
-	ASSERT(olderNodes.size() > 0 &&
-			olderNodes.at(olderNodes.size()-1) < ShardManager::getCurrentNodeId());
 }
 
 }

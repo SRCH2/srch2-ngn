@@ -38,7 +38,6 @@ public:
 
 
 	void commit();
-	bool shouldAbort(const NodeId & failedNode);
 	void end_(map<NodeOperationId , SP(ShardingNotification)> & replies) ; // receives notification when commit it done.
 
 

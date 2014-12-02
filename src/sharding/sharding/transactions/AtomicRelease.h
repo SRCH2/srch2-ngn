@@ -47,7 +47,6 @@ public:
 	SP(Transaction) getTransaction();
 
 	void produce();
-	bool updateParticipants();
 	/*
 	 * Lock request must be successful (or partially successful in case of primarykeys)
 	 * if we reach to this function.
@@ -65,7 +64,6 @@ private:
 
 	bool finalizeFlag ;
 	// TODO if we solve the problem of primary keys, we can remove this API
-	void setParticipants(vector<NodeId> & participants);
 	void init();
 
 	void finalize();

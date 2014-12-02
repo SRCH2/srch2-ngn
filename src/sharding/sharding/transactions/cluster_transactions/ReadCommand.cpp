@@ -95,6 +95,9 @@ void ReadCommand::search(){
     	participants.push_back(std::make_pair(notif, targetItr->getNodeId()));
     }
 
+    if(participants.empty()){
+    	finalize(false);
+    }
     ConcurrentNotifOperation * searchRequester =
     		new ConcurrentNotifOperation(ShardingSearchResultsMessageType, participants, this);
 
@@ -108,12 +111,6 @@ void ReadCommand::end(map<NodeId, SP(ShardingNotification) > & replies){
 
 void ReadCommand::processSearchResults(map<NodeId, SP(ShardingNotification) > & replies){
 	if(replies.size() != targets.size()){
-		if(replies.size() > targets.size()){
-			ASSERT(false);
-			messageCodes.push_back(HTTP_Json_General_Error);
-			finalize();
-			return;
-		}
 		// now find which nodes are dead
 		for(vector<NodeTargetShardInfo>::iterator targetItr = targets.begin(); targetItr != targets.end(); ++targetItr){
 			if(replies.find(targetItr->getNodeId()) == replies.end()){

@@ -46,19 +46,7 @@ OperationState * OrderedNodeIteratorOperation::entry(){
 	nodesWriteview.reset();
 	// Consistency check : participants must not be empty
 	if(this->participants.empty()){
-		if(this->validatorObj != NULL){
-			if(this->getTransaction()){
-				this->getTransaction()->threadBegin(this->getTransaction());
-			}
-			// NOTE : OrderedNodeIteratorOperation returns empty reply to the consumer.
-			map<NodeOperationId, SP(ShardingNotification) > _replies;
-			this->validatorObj->end_(_replies, this->getOperationId());
-			if(this->getTransaction()){
-				this->getTransaction()->threadEnd();
-			}
-			this->setTransaction(SP(Transaction)());
-		}
-		return NULL;
+		return finalize();
 	}
 	// ask the first node.
 	this->participantsIndex = 0;
@@ -78,6 +66,8 @@ OperationState * OrderedNodeIteratorOperation::handle(SP(Notification) n){
 	switch(n->messageType()){
 	case ShardingNodeFailureNotificationMessageType:
 		return handle(boost::dynamic_pointer_cast<NodeFailureNotification>(n));
+	case ShardingTimeoutNotificationMessageType:
+		return handle(boost::dynamic_pointer_cast<TimeoutNotification>(n));
 	default :
 		ASSERT(false);
 		return this;
@@ -88,6 +78,16 @@ OperationState * OrderedNodeIteratorOperation::handle(SP(Notification) n){
 
 
 OperationState * OrderedNodeIteratorOperation::handle(SP(ShardingNotification) notif){
+
+	if(find(this->participants.begin(), this->participants.end(), notif->getSrc()) == this->participants.end()){
+		return this;
+	}
+	if(targetResponsesMap.find(notif->getSrc()) != targetResponsesMap.end()){
+		return this;
+	}
+
+	targetResponsesMap[notif->getSrc()] = notif;
+
 	if(this->validatorObj != NULL){
 		vector<NodeId> newParticipants;
 		if(this->getTransaction()){
@@ -99,7 +99,6 @@ OperationState * OrderedNodeIteratorOperation::handle(SP(ShardingNotification) n
 		if(this->getTransaction()){
 			this->getTransaction()->threadEnd();
 		}
-		updateParticipantsList(newParticipants);
 		if(! conditionResult){
 			this->setTransaction(SP(Transaction)());
 			Logger::sharding(Logger::Detail, "NodeIterator(opid=%s)| consumer abort upon receiving response from node %s.",
@@ -108,6 +107,7 @@ OperationState * OrderedNodeIteratorOperation::handle(SP(ShardingNotification) n
 			/************* Thread Exit Point **********/
 			return NULL;
 		}
+		appendParticipants(newParticipants);
 	}
 	// we must ask the next node
 	this->participantsIndex ++;
@@ -116,25 +116,17 @@ OperationState * OrderedNodeIteratorOperation::handle(SP(ShardingNotification) n
 
 OperationState * OrderedNodeIteratorOperation::handle(SP(NodeFailureNotification) notif){
 	NodeId failedNode = notif->getFailedNodeID();
-	if(this->validatorObj != NULL){
-		if(this->getTransaction()){
-			this->getTransaction()->threadBegin(this->getTransaction());
-		}
-		bool abortResult = this->validatorObj->shouldAbort(failedNode, this->getOperationId());
-		if(this->getTransaction()){
-			this->getTransaction()->threadEnd();
-		}
-		if(abortResult){
-			Logger::sharding(Logger::Detail, "NodeIterator(opid=%s)| consumer(%s) asked for abort due to node (%d) failure.",
-							NodeOperationId(ShardManager::getCurrentNodeId(), this->getOperationId()).toString().c_str(),
-							validatorObj->getName().c_str(), failedNode);
-			this->setTransaction(SP(Transaction)());
-			/************ Thread Exit Point ********************/
-			// But transaction may live on ...
-			/***************************************************/
-			return NULL;
+
+	map<NodeOperationId , SP(ShardingNotification)>::iterator targetItr = targetResponsesMap.end();
+	for(targetItr = targetResponsesMap.begin(); targetItr != targetResponsesMap.end(); ++targetItr){
+		if(targetItr->first.nodeId == failedNode){
+			break;
 		}
 	}
+	if(targetItr != targetResponsesMap.end()){
+		targetResponsesMap.erase(targetItr);
+	}
+
 	bool failedTargetIndex = this->participants.size();
 	for(unsigned p = 0 ; p < this->participants.size(); ++p){
 		if(this->participants.at(p).nodeId == failedNode){
@@ -188,6 +180,32 @@ OperationState * OrderedNodeIteratorOperation::handle(SP(NodeFailureNotification
 	return this;
 }
 
+
+OperationState * OrderedNodeIteratorOperation::handle(SP(TimeoutNotification) notif){
+
+
+	SP(const ClusterNodes_Writeview) nodesWriteview = ShardManager::getNodesWriteview_read();
+
+	vector<NodeOperationId> participantsCopy = this->participants;
+	for(unsigned p = 0 ; p < participantsCopy.size(); ++p){
+		if(! nodesWriteview->isNodeAlive(participantsCopy.at(p).nodeId)){
+			SP(NodeFailureNotification) nodeFailureNotif =
+					SP(NodeFailureNotification)( new NodeFailureNotification(participantsCopy.at(p).nodeId));
+			OperationState * result = handle(nodeFailureNotif);
+			if( result == NULL){
+				return NULL;
+			}else if(result == this){
+				continue;
+			}else{
+				ASSERT(false);
+			}
+		}
+	}
+
+	return this;
+}
+
+
 void OrderedNodeIteratorOperation::setParticipants(vector<NodeId> & participants){
 
 	// Consistency check : there must be at least one participant
@@ -226,51 +244,47 @@ void OrderedNodeIteratorOperation::setParticipants(vector<NodeId> & participants
 }
 
 string OrderedNodeIteratorOperation::getOperationName() const {
-	return "NodeIteratorOperation, request " + string(getShardingMessageTypeStr(request->messageType()));
+	return "NodeIteratorOperation";
 }
 
 string OrderedNodeIteratorOperation::getOperationStatus() const {
 	stringstream ss;
+	ss << "Request " << string(getShardingMessageTypeStr(request->messageType()));
 	ss << "Targets (" << this->participants.size() << "): " ;
 	for(unsigned i = 0 ; i < this->participants.size() ; ++i){
-	    ss << this->participants.at(i).toString() << " - ";
-	}
-	if(this->participantsIndex >= this->participants.size()){
-		ss << ", now finished.";
-	}else{
-		ss << ", now " <<
-				this->participants.at(this->participantsIndex).toString().c_str() << " .";
+		if(i > 0){
+			ss << " | ";
+		}
+		if(this->participantsIndex == i){
+			ss << "*";
+		}
+	    ss << this->participants.at(i).toString() ;
 	}
 
 	return ss.str();
+}
+
+OperationState * OrderedNodeIteratorOperation::finalize(){
+	if(this->validatorObj != NULL){
+		if(this->getTransaction()){
+			this->getTransaction()->threadBegin(this->getTransaction());
+		}
+		this->validatorObj->end_(targetResponsesMap, this->getOperationId());
+		if(this->getTransaction()){
+			this->getTransaction()->threadEnd();
+		}
+		this->setTransaction(SP(Transaction)());
+	}
+	return NULL;
 }
 
 OperationState * OrderedNodeIteratorOperation::askNode(const unsigned nodeIndex){
 	// if all nodes are already iterated : call finalize from validator
 	if(nodeIndex >= this->participants.size()){
 	    Logger::sharding(Logger::Detail, "NodeIterator(opid=%s)| Done. ",NodeOperationId(ShardManager::getCurrentNodeId(), this->getOperationId()).toString().c_str());
-		if(this->validatorObj != NULL){
-			if(this->getTransaction()){
-				this->getTransaction()->threadBegin(this->getTransaction());
-			}
-			// NOTE : OrderedNodeIteratorOperation returns empty reply to the consumer.
-			map<NodeOperationId, SP(ShardingNotification) > _replies;
-			this->validatorObj->end_(_replies, this->getOperationId());
-			if(this->getTransaction()){
-				this->getTransaction()->threadEnd();
-			}
-			this->setTransaction(SP(Transaction)());
-		}
-		/************* Thread Exit Point **********/
-		return NULL;
+	    return finalize();
 	}
-	SP(const ClusterNodes_Writeview) nodesWriteview = ShardManager::getNodesWriteview_read();
-	if(! nodesWriteview->isNodeAlive(this->participants.at(nodeIndex).nodeId)){
-		nodesWriteview.reset();// TODO Make sure it's not a bug
-		Logger::sharding(Logger::Detail, "Ordered Node Iterator (opid=%s) : next node to ask is failed.",
-				NodeOperationId(ShardManager::getCurrentNodeId(), this->getOperationId()).toString().c_str());
-		return handle(SP(NodeFailureNotification)(new NodeFailureNotification(this->participants.at(nodeIndex).nodeId)));
-	}
+
 	Logger::sharding(Logger::Detail, "NodeIterator(opid=%s)| : asking the next node : %s",
 			NodeOperationId(ShardManager::getCurrentNodeId(), this->getOperationId()).toString().c_str(),
 			this->participants.at(nodeIndex).toString().c_str());
@@ -279,7 +293,7 @@ OperationState * OrderedNodeIteratorOperation::askNode(const unsigned nodeIndex)
 	return this;
 }
 
-void OrderedNodeIteratorOperation::updateParticipantsList(vector<NodeId> newParticipants){
+void OrderedNodeIteratorOperation::appendParticipants(vector<NodeId> newParticipants){
 	std::sort(newParticipants.begin(), newParticipants.end());
 	// 1. check to see if there are any new node
 	//    new nodes must have larger ids

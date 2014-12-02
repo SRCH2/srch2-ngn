@@ -35,8 +35,6 @@ public:
 	void consume(bool granted);
 	// **** If lock granted
 	void transfer();
-	// if returns true, operation must stop and return null to state_machine
-	bool shouldAbort(const NodeId & failedNode);
 
 	// for transfer
 	void consume(const ShardMigrationStatus & status);

@@ -138,6 +138,13 @@ private:
 	const NodeId failedNodeId;
 };
 
+class TimeoutNotification : public Notification{
+public:
+    ShardingMessageType messageType() const {
+    	return ShardingTimeoutNotificationMessageType;
+    }
+};
+
 
 class ShutdownNotification : public ShardingNotification {
 public:

@@ -16,24 +16,17 @@ ConcurrentNotifOperation::ConcurrentNotifOperation(SP(ShardingNotification) requ
 		NodeId participant,
 		NodeIteratorListenerInterface * consumer, bool expectResponse):
 		OperationState(this->getNextOperationId()),resType(resType), expectResponse(expectResponse){
-	SP(const ClusterNodes_Writeview) nodesWriteview = ShardManager::getNodesWriteview_read();
-	if(nodesWriteview->isNodeAlive(participant)){
-		this->participants.push_back(NodeOperationId(participant));
-		this->requests.push_back(request);
-		this->consumer = consumer;
-		if(this->consumer != NULL){
-			this->setTransaction(this->consumer->getTransaction());
-		}
-		Logger::sharding(Logger::Detail, "NodeAggregator(opid=%s)| sending request(%s) to nodes %s and aggregating response(%s). Consumer is %s. ExpectResponse(%s)"
-				, NodeOperationId(ShardManager::getCurrentNodeId(), this->getOperationId()).toString().c_str()
-				, getShardingMessageTypeStr(request->messageType()), this->participants.at(0).toString().c_str(),
-				getShardingMessageTypeStr(resType), consumer == NULL ? "NULL" : consumer->getName().c_str(), expectResponse ? "YES" : "NO");
-	}else{
-		Logger::sharding(Logger::Warning, "NodeAggregator(opid=%s)| sending request(%s) to !! NO NODES !! and aggregating response(%s). Consumer is %s. ExpectResponse(%s)"
-				, NodeOperationId(ShardManager::getCurrentNodeId(), this->getOperationId()).toString().c_str()
-				, getShardingMessageTypeStr(request->messageType()),
-				getShardingMessageTypeStr(resType), consumer == NULL ? "NULL" : consumer->getName().c_str(), expectResponse ? "YES" : "NO");
+	this->participants.push_back(NodeOperationId(participant));
+	this->requests.push_back(request);
+	this->consumer = consumer;
+	if(this->consumer != NULL){
+		this->setTransaction(this->consumer->getTransaction());
 	}
+	Logger::sharding(Logger::Detail,
+			"NodeAggregator(opid=%s)| sending request(%s) to nodes %s and aggregating response(%s). Consumer is %s. ExpectResponse(%s)"
+			, NodeOperationId(ShardManager::getCurrentNodeId(), this->getOperationId()).toString().c_str()
+			, getShardingMessageTypeStr(request->messageType()), this->participants.at(0).toString().c_str(),
+			getShardingMessageTypeStr(resType), consumer == NULL ? "NULL" : consumer->getName().c_str(), expectResponse ? "YES" : "NO");
 }
 
 ConcurrentNotifOperation::ConcurrentNotifOperation(SP(ShardingNotification) request,
@@ -68,63 +61,50 @@ ConcurrentNotifOperation::ConcurrentNotifOperation(SP(ShardingNotification) requ
 		vector<NodeId> participants,
 		NodeIteratorListenerInterface * consumer , bool expectResponse):
 			OperationState(this->getNextOperationId()),resType(resType), expectResponse(expectResponse){
-	SP(const ClusterNodes_Writeview) nodesWriteview = ShardManager::getNodesWriteview_read();
+	if(participants.empty()){
+		ASSERT(false);
+	}
 	stringstream ss;
 	for(unsigned p = 0 ; p < participants.size(); p++){
 		if(p != 0){
 			ss << " | ";
 		}
-		if(nodesWriteview->isNodeAlive(participants.at(p))){
-			this->participants.push_back(NodeOperationId(participants.at(p)));
-			this->requests.push_back(request);
-			ss << NodeOperationId(participants.at(p)).toString();
-		}
+		this->participants.push_back(NodeOperationId(participants.at(p)));
+		this->requests.push_back(request);
+		ss << NodeOperationId(participants.at(p)).toString();
 	}
 	this->consumer = consumer;
 	if(this->consumer != NULL){
 		this->setTransaction(this->consumer->getTransaction());
 	}
-	if(this->participants.empty()){
-		Logger::sharding(Logger::Warning, "NodeAggregator(opid=%s)| Sending %s to !! NO NODES !! . Consumer is %s. ExpectResponse(%s)"
-				, NodeOperationId(ShardManager::getCurrentNodeId(), this->getOperationId()).toString().c_str()
-				, getShardingMessageTypeStr(request->messageType()),
-				consumer == NULL ? "NULL" : consumer->getName().c_str(), expectResponse ? "YES" : "NO");
-	}else{
-		Logger::sharding(Logger::Detail, "NodeAggregator(opid=%s)| Sending %s to %s . Consumer is %s. ExpectResponse(%s)"
-				, NodeOperationId(ShardManager::getCurrentNodeId(), this->getOperationId()).toString().c_str()
-				, getShardingMessageTypeStr(request->messageType()), ss.str().c_str(),  consumer == NULL ? "NULL" : consumer->getName().c_str(), expectResponse ? "YES" : "NO");
-	}
+	Logger::sharding(Logger::Detail, "NodeAggregator(opid=%s)| Sending %s to %s . Consumer is %s. ExpectResponse(%s)"
+			, NodeOperationId(ShardManager::getCurrentNodeId(), this->getOperationId()).toString().c_str()
+			, getShardingMessageTypeStr(request->messageType()), ss.str().c_str(),  consumer == NULL ? "NULL" : consumer->getName().c_str(), expectResponse ? "YES" : "NO");
 }
 ConcurrentNotifOperation::ConcurrentNotifOperation(ShardingMessageType resType,
 		vector<std::pair<SP(ShardingNotification) , NodeId> > participants,
 		NodeIteratorListenerInterface * consumer , bool expectResponse ):
 			OperationState(this->getNextOperationId()),resType(resType), expectResponse(expectResponse){
 
-	SP(const ClusterNodes_Writeview) nodesWriteview = ShardManager::getNodesWriteview_read();
+	if(participants.empty()){
+		ASSERT(false);
+	}
 	stringstream ss;
 	for(unsigned p = 0 ; p < participants.size(); p++){
 		if(p != 0){
 			ss << " | ";
 		}
-		if(nodesWriteview->isNodeAlive(participants.at(p).second)){
-			this->participants.push_back(NodeOperationId(participants.at(p).second));
-			this->requests.push_back(participants.at(p).first);
-			ss << NodeOperationId(participants.at(p).second).toString() << " to " << getShardingMessageTypeStr(participants.at(p).first->messageType()) ;
-		}
+		this->participants.push_back(NodeOperationId(participants.at(p).second));
+		this->requests.push_back(participants.at(p).first);
+		ss << NodeOperationId(participants.at(p).second).toString() << " to " << getShardingMessageTypeStr(participants.at(p).first->messageType()) ;
 	}
 	this->consumer = consumer;
 	if(this->consumer != NULL){
 		this->setTransaction(this->consumer->getTransaction());
 	}
-	if(this->participants.empty()){
-		Logger::sharding(Logger::Warning, "NodeAggregator(opid=%s)| Sending to !! NO NODES !! . Consumer is %s. ExpectResponse(%s)"
-				, NodeOperationId(ShardManager::getCurrentNodeId(), this->getOperationId()).toString().c_str()
-				, consumer == NULL ? "NULL" : consumer->getName().c_str(), expectResponse ? "YES" : "NO");
-	}else{
-		Logger::sharding(Logger::Detail, "NodeAggregator(opid=%s)| Sending %s . Consumer is %s. ExpectResponse(%s)"
-				, NodeOperationId(ShardManager::getCurrentNodeId(), this->getOperationId()).toString().c_str()
-				,ss.str().c_str(),  consumer == NULL ? "NULL" : consumer->getName().c_str(), expectResponse ? "YES" : "NO");
-	}
+	Logger::sharding(Logger::Detail, "NodeAggregator(opid=%s)| Sending %s . Consumer is %s. ExpectResponse(%s)"
+			, NodeOperationId(ShardManager::getCurrentNodeId(), this->getOperationId()).toString().c_str()
+			,ss.str().c_str(),  consumer == NULL ? "NULL" : consumer->getName().c_str(), expectResponse ? "YES" : "NO");
 }
 
 ConcurrentNotifOperation::~ConcurrentNotifOperation(){
@@ -143,15 +123,6 @@ OperationState * ConcurrentNotifOperation::entry(){
 	}
 	Logger::sharding(Logger::Detail, "NodeAggregator| entry");
 
-	SP(const ClusterNodes_Writeview) nodesWriteview = ShardManager::getNodesWriteview_read();
-	vector<NodeOperationId> participantsCopy;
-	for(unsigned p = 0 ; p < this->participants.size(); ++p){
-		if(nodesWriteview->isNodeAlive(this->participants.at(p).nodeId)){
-			participantsCopy.push_back(this->participants.at(p));
-		}
-	}
-	this->participants = participantsCopy;
-	nodesWriteview.reset();
 	if(this->participants.empty()){
 		Logger::sharding(Logger::Warning, "NodeAggregator(opid=%s)| Finalizing because !! NO NODES !! . Consumer is %s. ExpectResponse(%s)"
 				, NodeOperationId(ShardManager::getCurrentNodeId(), this->getOperationId()).toString().c_str()
@@ -188,6 +159,8 @@ OperationState * ConcurrentNotifOperation::handle(SP(Notification) n){
 	switch(n->messageType()){
 	case ShardingNodeFailureNotificationMessageType:
 		return handle(boost::dynamic_pointer_cast<NodeFailureNotification>(n));
+	case ShardingTimeoutNotificationMessageType:
+		return handle(boost::dynamic_pointer_cast<TimeoutNotification>(n));
 	default :
 		ASSERT(false);
 		return this;
@@ -197,29 +170,14 @@ OperationState * ConcurrentNotifOperation::handle(SP(Notification) n){
 
 OperationState * ConcurrentNotifOperation::handle(SP(NodeFailureNotification)  notif){
 	NodeId failedNode = notif->getFailedNodeID();
-
-	if(consumer != NULL){
-		if(this->getTransaction()){
-			this->getTransaction()->threadBegin(this->getTransaction());
-		}
-		bool shouldAbortResult =
-				consumer->shouldAbort(failedNode, this->getOperationId());
-		if(this->getTransaction()){
-			this->getTransaction()->threadEnd();
-		}
-		if(shouldAbortResult){
-			Logger::sharding(Logger::Detail, "NodeAggregator(opid=%s)| consumer(%s) asked for abort due to node (%d) failure.",
-							NodeOperationId(ShardManager::getCurrentNodeId(), this->getOperationId()).toString().c_str(),
-							consumer->getName().c_str(),
-							failedNode);
-			this->setTransaction(SP(Transaction)());
-			/***************** Thread Exit Point *************/
-			return NULL;
+	map<NodeOperationId , SP(ShardingNotification)>::iterator responseItr = targetResponsesMap.end();
+	for(responseItr = targetResponsesMap.begin(); responseItr != targetResponsesMap.end(); ++responseItr){
+		if(responseItr->first.nodeId == failedNode){
+			break;
 		}
 	}
-
-	if(targetResponsesMap.find(failedNode) != targetResponsesMap.end()){
-		targetResponsesMap.erase(failedNode);
+	if(responseItr != targetResponsesMap.end()){
+		targetResponsesMap.erase(responseItr);
 	}
 	for(vector<NodeOperationId>::iterator participantItr = this->participants.begin();
 			participantItr != this->participants.end();){
@@ -237,9 +195,37 @@ OperationState * ConcurrentNotifOperation::handle(SP(NodeFailureNotification)  n
 	return this;
 }
 
+OperationState * ConcurrentNotifOperation::handle(SP(TimeoutNotification)  notif){
+
+	SP(const ClusterNodes_Writeview) nodesWriteview = ShardManager::getNodesWriteview_read();
+
+	vector<NodeOperationId> participantsCopy = this->participants;
+	for(unsigned p = 0 ; p < participantsCopy.size(); ++p){
+		if(! nodesWriteview->isNodeAlive(participantsCopy.at(p).nodeId)){
+			SP(NodeFailureNotification) nodeFailureNotif =
+					SP(NodeFailureNotification)( new NodeFailureNotification(participantsCopy.at(p).nodeId));
+			OperationState * result = handle(nodeFailureNotif);
+			if( result == NULL){
+				return NULL;
+			}else if(result == this){
+				continue;
+			}else{
+				ASSERT(false);
+			}
+		}
+	}
+
+	return this;
+
+}
+
 OperationState * ConcurrentNotifOperation::handle(SP(ShardingNotification) response){
 	// 1. save the response in the map
-	targetResponsesMap[response->getSrc()] = response;
+	if(targetResponsesMap.find(response->getSrc()) != targetResponsesMap.end()){
+		ASSERT(false);
+	}else{
+		targetResponsesMap[response->getSrc()] = response;
+	}
 	// 2. check if we are done
 	if(checkFinished()){
 		return finalize();
@@ -248,18 +234,20 @@ OperationState * ConcurrentNotifOperation::handle(SP(ShardingNotification) respo
 }
 
 string ConcurrentNotifOperation::getOperationName() const {
-	return "ConcurrentNotifOperation, request " + string(getShardingMessageTypeStr(requests.at(0)->messageType()));
+	return "ConcurrentNotifOperation";
 }
 string ConcurrentNotifOperation::getOperationStatus() const {
     stringstream ss;
-    ss << "Replies status :";
+    ss << "Request " << string(getShardingMessageTypeStr(requests.at(0)->messageType()));
+    ss << ", Replies status :";
     for(unsigned p = 0 ; p < this->participants.size(); ++p){
-        ss << "Target" << this->participants.at(p).toString();
+    	if(p != 0){
+    		ss << " | ";
+    	}
         if(this->targetResponsesMap.find(this->participants.at(p)) == this->targetResponsesMap.end()){
-            ss << " not arrived | ";
-        }else{
-            ss << " arrived | ";
+            ss << "W";
         }
+        ss << this->participants.at(p).toString() ;
     }
 	return ss.str();
 }

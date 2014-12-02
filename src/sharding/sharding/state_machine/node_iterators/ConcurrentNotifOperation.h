@@ -53,6 +53,8 @@ public:
 
 	OperationState * handle(SP(NodeFailureNotification)  notif);
 
+	OperationState * handle(SP(TimeoutNotification)  notif);
+
 	OperationState * handle(SP(ShardingNotification) response);
 
 	string getOperationName() const ;

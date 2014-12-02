@@ -37,6 +37,11 @@ void ShardCommand::produce(){
 		notifications.push_back(std::make_pair(SP(CommandNotification)
 				(new CommandNotification(clusterReadview, targets.at(i), commandCode, filePath)), targets.at(i).getNodeId()));
 	}
+	if(notifications.empty()){
+		map<NodeOperationId , SP(ShardingNotification)> emptyResult;
+		finalize(emptyResult);
+		return;
+	}
 	ConcurrentNotifOperation * commandSender = new ConcurrentNotifOperation(StatusMessageType, notifications, this);
 	ShardManager::getShardManager()->getStateMachine()->registerOperation(commandSender);
 }

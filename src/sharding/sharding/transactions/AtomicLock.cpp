@@ -101,16 +101,13 @@ SP(Transaction) AtomicLock::getTransaction(){
 
 void AtomicLock::produce(){
     Logger::sharding(Logger::Detail, "AtomicLock| starts.");
-    SP(const ClusterNodes_Writeview) nodesWriteview = ShardManager::getNodesWriteview_read();
-    bool participantsChangedFlag = false;
-    for(int nodeIdx = 0; nodeIdx < participants.size(); ++nodeIdx){
-    	if(! nodesWriteview->isNodeAlive(participants.at(nodeIdx))){
-    		participants.erase(participants.begin() + nodeIdx);
-    		nodeIdx --;
-    		participantsChangedFlag = true;
-    	}
+
+    if(participants.empty()){
+        Logger::sharding(Logger::Detail, "AtomicLock| ends unattached, no participant found.");
+        finalize(getDefaultStatusValue());
+    	return;
     }
-    nodesWriteview.reset();
+
     OrderedNodeIteratorOperation * locker =
             new OrderedNodeIteratorOperation(lockNotification, ShardingLockACKMessageType , participants, this);
     if(participants.empty()){
@@ -118,8 +115,6 @@ void AtomicLock::produce(){
         delete locker;
         finalize(getDefaultStatusValue());
     	return;
-    }else if(participantsChangedFlag){
-    	locker->setParticipants(participants);
     }
 
 	// register and run the operation state in the state-machine
@@ -130,7 +125,7 @@ void AtomicLock::produce(){
 // TODO : using writeview for primaryKey locking is WRONG!!!!
 void AtomicLock::init(){
 	lockNotification->getInvolvedNodes(this->getTransaction(), participants);
-	participantIndex = -1;
+	latestRespondedParticipant = 0;
 }
 
 /*
@@ -141,7 +136,8 @@ bool AtomicLock::condition(SP(ShardingNotification) reqArg,
 		vector<NodeId> & updatedListOfParticipants){
 
 	// get updated list of arrived nodes
-	lockNotification->getInvolvedNodes(this->getTransaction(), updatedListOfParticipants);
+	lockNotification->getInvolvedNodes(this->getTransaction(), this->participants );
+	updatedListOfParticipants = this->participants;
 
 	SP(LockingNotification) req = boost::dynamic_pointer_cast<LockingNotification>(reqArg);
 	SP(LockingNotification::ACK) res = boost::dynamic_pointer_cast<LockingNotification::ACK>(resArg);
@@ -156,8 +152,7 @@ bool AtomicLock::condition(SP(ShardingNotification) reqArg,
 		recover();
 		return false;
 	}
-
-	participantIndex ++;
+	latestRespondedParticipant = res->getSrc().nodeId;
 
 	if(req->getLockRequestType() == LockRequestType_PrimaryKey){
 		ASSERT(res->isGranted());
@@ -170,37 +165,11 @@ bool AtomicLock::condition(SP(ShardingNotification) reqArg,
 	return false;
 }
 
-bool AtomicLock::shouldAbort(const NodeId & failedNode){
-	unsigned failedNodeIndex = 0 ;
-	for(; failedNodeIndex < this->participants.size(); ++failedNodeIndex){
-		if(this->participants.at(failedNodeIndex) == failedNode){
-			break;
-		}
-	}
-	if(failedNodeIndex == this->participants.size()){
-		return false;
-	}
-
-	this->participants.erase(std::find(this->participants.begin(), this->participants.end(), failedNode));
-
-	if(this->participants.empty()){
-		// all nodes that are involved in lock are now dead, so we should return the
-		// default status.
-		finalize(getDefaultStatusValue());
-		// NOT an exit point
-		return true;
-	}
-	if(this->participantIndex >= failedNodeIndex){
-		this->participantIndex --;
-	}
-	return false;
-}
-
 // if not granted :
 void AtomicLock::recover(){
 
     Logger::sharding(Logger::Detail, "AtomicLock| In case we could acquite some locks we must release them here.");
-	if(participantIndex <= 0){
+	if(latestRespondedParticipant <= 0){
 		finalize(false);
 		return;
 	}
@@ -210,7 +179,10 @@ void AtomicLock::recover(){
 		ASSERT(false);
 	}
 	// release from [0 to participantIndex)
-	for(int i = 0 ; i < participantIndex; ++i){
+	for(int i = 0 ; i < participants.size(); ++i){
+		if(participants.at(i) >= latestRespondedParticipant){
+			break;
+		}
 		releaseParticipants.push_back(participants.at(i));
 	}
 	if(releaseParticipants.empty()){
@@ -231,25 +203,13 @@ void AtomicLock::recover(){
  * if we reach to this function.
  */
 void AtomicLock::end(map<NodeId, SP(ShardingNotification) > & replies){
-	if(! replies.empty()){
-		ASSERT(false);
+	if(replies.empty()){
 		__FUNC_LINE__
 		Logger::sharding(Logger::Error, "AtomicLock| end must be empty but has %d elements.", replies.size());
 		finalize(getDefaultStatusValue());
 		return;
 	}
-	/*
-	 * Only the fact that we reached here shows that lock was successful
-	 */
-	if(lockType == LockRequestType_PrimaryKey){
-		if(participants.empty()){
-			// record change must be stopped because there is no shard
-			// anymore
-			Logger::sharding(Logger::Detail, "AtomicLock| empty list of participants in primaryKey lock : abort and return false");
-			finalize(getDefaultStatusValue());
-			return;
-		}
-	}
+
 	finalize(true);
 }
 
