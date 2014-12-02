@@ -145,14 +145,9 @@ void InvertedListContainer::sortAndMerge(const unsigned keywordId, ForwardIndex 
         	ASSERT(keywordOffset < recordLength);
         }
         forwardList->getKeywordAttributeIdsList(keywordOffset, attributeIds);
-        float sumOfFieldBoosts = 0.0;
-        for (unsigned i =0 ; i < attributeIds.size(); ++i) {
-        	sumOfFieldBoosts += schema->getBoostOfSearchableAttribute(attributeIds[i]);
-        }
-        sumOfFieldBoosts = 1.0 + (sumOfFieldBoosts / schema->getBoostSumOfSearchableAttributes());
         float recordBoost = forwardList->getRecordBoost();
-        float tf = forwardList->getTermFrequency(keywordOffset, attributeIds);
-        float textRelevance =  Ranker::computeRecordTfIdfScore(tf, idf, sumOfFieldBoosts);
+        float tfBoostProduct = ((ForwardList*)forwardList)->getKeywordTfBoostProduct(keywordOffset);
+        float textRelevance =  Ranker::computeRecordTfIdfScore(tfBoostProduct, idf);
         float score = rankerExpression->applyExpression(recordLength, recordBoost, textRelevance);
         ((ForwardList*)forwardList)->setKeywordRecordStaticScore(keywordOffset, score);
         // add this new <recordId, score> pair to the vector
@@ -294,11 +289,11 @@ float InvertedIndex::getIdf(const unsigned totalNumberOfDocuments, const unsigne
 }
 
 float InvertedIndex::computeRecordStaticScore(RankerExpression *rankerExpression, const float recordBoost,
-        const float recordLength, const float tf, const float idf,
-        const float sumOfFieldBoosts) const
+        const float recordLength, const float idf,
+        const float tfBoostProduct) const
 {
     // recordScoreType == srch2::instantsearch::LUCENESCORE:
-    float textRelevance =  Ranker::computeRecordTfIdfScore(tf, idf, sumOfFieldBoosts);
+    float textRelevance =  Ranker::computeRecordTfIdfScore(tfBoostProduct, idf);
     return rankerExpression->applyExpression(recordLength, recordBoost, textRelevance);
 }
 
@@ -350,13 +345,15 @@ void InvertedIndex::commit( ForwardList *forwardList,
 
             float tf = forwardList->getTermFrequency(counter);
             float sumOfFieldBoost = forwardList->getKeywordRecordStaticScore(counter);
+            float tfBoostProdcut = Ranker::computeRecordTfBoostProdcut(tf, sumOfFieldBoost);
             float recordLength = forwardList->getNumberOfKeywords();
-            float score = this->computeRecordStaticScore(rankerExpression, recordBoost, recordLength, tf, idf, sumOfFieldBoost);
+            float score = this->computeRecordStaticScore(rankerExpression, recordBoost, recordLength, idf, tfBoostProdcut);
 
             //assign keywordId for the invertedListId
             vectorview<unsigned>* &writeView = this->keywordIds->getWriteView();
             writeView->at(invertedListId) = keywordId;
             this->addInvertedListElement(invertedListId, forwardListOffset);
+            forwardList->setKeywordTfBoostProduct(counter, tfBoostProdcut);
             forwardList->setKeywordRecordStaticScore(counter, score);
         }
     }
@@ -530,11 +527,13 @@ void InvertedIndex::addRecord(ForwardList* forwardList, Trie * trie,
             this->invertedListSetToMerge.insert(invertedListId);
 
             float idf = this->getIdf(totalNumberOfDocuments, invertedListId);
-            float score = this->computeRecordStaticScore(rankerExpression, recordBoost, recordLength, tf, idf, sumOfFieldBoost);
+            float tfBoostProdcut = Ranker::computeRecordTfBoostProdcut(tf, sumOfFieldBoost);
+            float score = this->computeRecordStaticScore(rankerExpression, recordBoost, recordLength, idf, tfBoostProdcut);
 
             // now we should update the trie by this score
             trie->updateMaximumScoreOfLeafNodesForKeyword_WriteView(keywordId , (half)score);
             // and update the scores in forward index
+            forwardList->setKeywordTfBoostProduct(counter, tfBoostProdcut);
             forwardList->setKeywordRecordStaticScore(counter, score);
         }
     }

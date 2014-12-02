@@ -356,8 +356,8 @@ private:
 
     float getIdf(const unsigned totalNumberOfDocuments, const unsigned keywordId) const;
     float computeRecordStaticScore(RankerExpression *rankerExpression, const float recordBoost,
-                       const float recordLength, const float tf, const float idf,
-                       const float sumOfFieldBoosts) const;
+                       const float recordLength, const float idf,
+                       const float tfBoostProduct) const;
 
     cowvector<InvertedListContainerPtr> *invertedIndexVector;
 

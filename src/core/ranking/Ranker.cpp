@@ -37,7 +37,25 @@ namespace srch2
     {
         return tf *idf * sumOfFieldBoosts;
     }
-    
+
+    // Since the tf * sumOfFieldBoosts never changes while adding new records, this value
+    // is saved into the forward list so that the engine does not need to compute tf and
+    // sumOfFieldBoosts repeatedly.
+    float DefaultTopKRanker::computeRecordTfIdfScore(const float tfBoostProdcut, const float idf)
+    {
+        return tfBoostProdcut * idf;
+    }
+
+    /*
+     * Calculate the product of tf and sumOfFieldBoosts, this value will be used in
+     * the function :
+     * float DefaultTopKRanker::computeRecordTfIdfScore(const float tfBoostProdcut, const float idf)
+     */
+    float DefaultTopKRanker::computeRecordTfBoostProdcut(const float tf, const float sumOfFieldBoosts)
+    {
+        return tf * sumOfFieldBoosts;
+    }
+
     // this function is used in the term virtual list (heap) to compute the score of
     // a record with respect to a keyword 
     float DefaultTopKRanker::computeTermRecordRuntimeScore(float termRecordStaticScore, 

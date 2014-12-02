@@ -527,9 +527,10 @@ void ForwardIndex::addRecord(const Record *record, const unsigned recordId,
         map<string, TokenAttributeHits>::const_iterator mapIterator =
                 tokenAttributeHitsMap.find(uniqueKeywordIdList[iter].second.first);
         ASSERT(mapIterator != tokenAttributeHitsMap.end());
-        forwardList->setKeywordRecordStaticScore(iter,
-                forwardList->computeFieldBoostSummation(this->schemaInternal,
-                        mapIterator->second));
+        float boostSum = forwardList->computeFieldBoostSummation(this->schemaInternal,
+                mapIterator->second);
+        forwardList->setKeywordTfBoostProduct(iter, boostSum);    //TF * sumOfFieldBoosts
+        forwardList->setKeywordRecordStaticScore(iter, boostSum);
     }
 
     ForwardListPtr managedForwardListPtr;
@@ -721,6 +722,8 @@ void ForwardIndex::reorderForwardList(ForwardList *forwardList,
 
         //Add new keyword Id, score, attribute to the new position
         keywordRichInformationList[keywordOffset].keywordId = newKeywordId;
+        keywordRichInformationList[keywordOffset].keywordTfBoostProduct =
+                forwardList->getKeywordTfBoostProduct(keywordOffset);
         keywordRichInformationList[keywordOffset].keywordScore = forwardList
                 ->getKeywordRecordStaticScore(keywordOffset);
 
@@ -776,6 +779,10 @@ void ForwardIndex::reorderForwardList(ForwardList *forwardList,
             iter != keywordRichInformationList.end(); ++iter) {
         // Copy keywordId
         forwardList->setKeywordId(keywordOffset, iter->keywordId);
+
+        // Copy tf * sumOfFieldBoosts
+        forwardList->setKeywordTfBoostProduct(keywordOffset,
+                iter->keywordTfBoostProduct);
 
         // Copy score
         forwardList->setKeywordRecordStaticScore(keywordOffset,

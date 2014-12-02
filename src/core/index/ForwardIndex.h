@@ -66,6 +66,7 @@ typedef vector<pair<unsigned, pair<string, unsigned> > > KeywordIdKeywordStringI
 // for reordering keyword ids
 struct KeywordRichInformation {
     unsigned keywordId;
+    float keywordTfBoostProduct;
     float keywordScore;
     vector<uint8_t> keywordAttribute;
     vector<uint8_t> keywordPositionsInAllAttribute;
@@ -238,9 +239,10 @@ public:
     	this->offsetIndexSize = offsetIndexDataVector.size();
     	this->charLenIndexSize = charLenDataVector.size();
     	this->synonymBitMapSize = synonymBitMapVector.size();
-        //
-    	// first two blocks are for keywordIDs and keywordRecordStaticScores.
-    	dataSize = getKeywordIdsSizeInBytes() + getKeywordRecordStaticScoresSizeInBytes();
+
+    	 // first three blocks are for keywordIDs, keywordTBoostProducts and keywordRecordStaticScores.
+    	dataSize = getKeywordIdsSizeInBytes() + getKeywordTfBoostProductsSizeInBytes()
+    	        + getKeywordRecordStaticScoresSizeInBytes();
     	data = new Byte[dataSize +
     	                this->getKeywordAttributeIdsSize() +
     	                this->getPositionIndexSize() + this->offsetIndexSize
@@ -316,6 +318,17 @@ public:
     void setKeywordId(unsigned iter, unsigned keywordId) {
         if (iter <= KEYWORD_THRESHOLD)
             this->getKeywordIdsPointer()[iter] = keywordId;
+    }
+
+    //TF * sumOfFieldBoosts
+    const float getKeywordTfBoostProduct(unsigned iter) const {
+        return getKeywordTfBoostProductsPointer()[iter];
+    }
+
+    //TF * sumOfFieldBoosts
+    void setKeywordTfBoostProduct(unsigned iter, float keywordTfBoostProduct) {
+        if (iter <= KEYWORD_THRESHOLD)
+            this->getKeywordTfBoostProductsPointer()[iter] = keywordTfBoostProduct;
     }
 
     const float getKeywordRecordStaticScore(unsigned iter) const {
@@ -516,9 +529,9 @@ private:
 
     /*
      * The format of data in this array is :
-      * -------------------------------------------------------------------------------------------------
-     * | keywordIDs | keywordRecordStaticScores | keywordAttributeBitMap | positionIndex |  offsetIndex |
-     * --------------------------------------------------------------------------------------------------
+     * ------------------------------------------------------------------------------------------------------------------------
+     * | keywordIDs | keywordTfBoostProducts | keywordRecordStaticScores | keywordAttributeBitMap | positionIndex | offsetIndex |
+     * ------------------------------------------------------------------------------------------------------------------------
      */
     Byte * data;
 
@@ -531,104 +544,127 @@ private:
 
 
     ///////////////////     Keyword IDs Helper Functions //////////////////////////////////////
-    inline unsigned * getKeywordIdsPointer() const{
+    inline unsigned * getKeywordIdsPointer() const {
         /*
          * The format of data in this array is :
-         * -------------------------------------------------------------------------------------------------
-         * | keywordIDs | keywordRecordStaticScores | keywordAttributeBitMap | positionIndex | offsetIndex |
-         * -------------------------------------------------------------------------------------------------
+         * ------------------------------------------------------------------------------------------------------------------------
+         * | keywordIDs | keywordTfBoostProducts | keywordRecordStaticScores | keywordAttributeBitMap | positionIndex | offsetIndex |
+         * ------------------------------------------------------------------------------------------------------------------------
          */
     	// keyword IDs start from the 0th position.
     	return (unsigned *)(data + 0);
     }
     inline unsigned getKeywordIdsSizeInBytes(unsigned sizeInUnsigned) const {
 
-    	return sizeInUnsigned * (sizeof(unsigned) / sizeof(Byte));
+        return sizeInUnsigned * (sizeof(unsigned) / sizeof(Byte));
     }
     inline unsigned getKeywordIdsSizeInBytes() const {
-    	return getKeywordIdsSizeInBytes(this->getNumberOfKeywords());
+        return getKeywordIdsSizeInBytes(this->getNumberOfKeywords());
     }
 
-    ////////////////////  Keyword Record Static Scores Helper Fucntions /////////////////////////
-    inline half* getKeywordRecordStaticScoresPointer() const{
+    ////////////////////  Keyword TF Boost Scores Helper Fucntions /////////////////////////
+    /*
+     * Our ranking formula is : text_relevance = tf * idf * sumOfFieldBoosts
+     * Since the tf and sumOfFieldBoosts does not change while adding new records,
+     * it's not necessary to repeatedly compute them during the merge and commit phase.
+     */
+    inline half* getKeywordTfBoostProductsPointer() const {
         /*
          * The format of data in this array is :
-         * -------------------------------------------------------------------------------------------------
-         * | keywordIDs | keywordRecordStaticScores | keywordAttributeBitMap | positionIndex | offsetIndex |
-         * -------------------------------------------------------------------------------------------------
+         * ------------------------------------------------------------------------------------------------------------------------
+         * | keywordIDs | keywordTfBoostProducts | keywordRecordStaticScores | keywordAttributeBitMap | positionIndex | offsetIndex |
+         * ------------------------------------------------------------------------------------------------------------------------
          */
-    	return (half *)(data + getKeywordIdsSizeInBytes());
+        return (half *)(data + getKeywordIdsSizeInBytes());
+    }
+    inline unsigned getKeywordTfBoostProductsSizeInBytes(unsigned sizeInHalf) const {
+        return sizeInHalf * (sizeof(half) / sizeof(Byte));
+    }
+    inline unsigned getKeywordTfBoostProductsSizeInBytes() const {
+        return getKeywordTfBoostProductsSizeInBytes(this->getNumberOfKeywords());
+    }
+
+
+    ////////////////////  Keyword Record Static Scores Helper Fucntions /////////////////////////
+    inline half* getKeywordRecordStaticScoresPointer() const {
+        /*
+         * The format of data in this array is :
+         * ------------------------------------------------------------------------------------------------------------------------
+         * | keywordIDs | keywordTfBoostProducts | keywordRecordStaticScores | keywordAttributeBitMap | positionIndex | offsetIndex |
+         * ------------------------------------------------------------------------------------------------------------------------
+         */
+        return (half *)(data + getKeywordIdsSizeInBytes() + getKeywordTfBoostProductsSizeInBytes());
     }
     inline unsigned getKeywordRecordStaticScoresSizeInBytes(unsigned sizeInHalf) const {
-    	return sizeInHalf * (sizeof(half) / sizeof(Byte));
+        return sizeInHalf * (sizeof(half) / sizeof(Byte));
     }
     inline unsigned getKeywordRecordStaticScoresSizeInBytes() const {
-    	return getKeywordRecordStaticScoresSizeInBytes(this->getNumberOfKeywords());
+        return getKeywordRecordStaticScoresSizeInBytes(this->getNumberOfKeywords());
     }
 
 
     //////////////////// Keyword Attributes Bitmap Helper Functions ////////////////////////////
-    inline uint8_t * getKeywordAttributeIdsPointer() const{
+    inline uint8_t * getKeywordAttributeIdsPointer() const {
         /*
          * The format of data in this array is :
-         * -------------------------------------------------------------------------------------------------
-         * | keywordIDs | keywordRecordStaticScores | keywordAttributeBitMap | positionIndex | offsetIndex |
-         * -------------------------------------------------------------------------------------------------
+         * ------------------------------------------------------------------------------------------------------------------------
+         * | keywordIDs | keywordTfBoostProducts | keywordRecordStaticScores | keywordAttributeBitMap | positionIndex | offsetIndex |
+         * ------------------------------------------------------------------------------------------------------------------------
          */
-    	return (uint8_t *)(data +
-    			getKeywordIdsSizeInBytes() +
-    			getKeywordRecordStaticScoresSizeInBytes());
+        return (uint8_t *) (data + getKeywordIdsSizeInBytes()
+                + getKeywordTfBoostProductsSizeInBytes()
+                + getKeywordRecordStaticScoresSizeInBytes());
     }
 
-    inline unsigned getKeywordAttributeIdsSize() const{
-    	return attributeIdsIndexSize;
+    inline unsigned getKeywordAttributeIdsSize() const {
+        return attributeIdsIndexSize;
     }
 
     /////////////////////// Position Index Helper Functions //////////////////////////////
-    inline uint8_t * getPositionIndexPointer() const{
+    inline uint8_t * getPositionIndexPointer() const {
         /*
          * The format of data in this array is :
-         * ------------------------------------------------------------------------------------
-         * | keywordIDs | keywordRecordStaticScores |  keywordAttributeBitMap | positionIndex |
-         * ------------------------------------------------------------------------------------
+         * ------------------------------------------------------------------------------------------------------------------------
+         * | keywordIDs | keywordTfBoostProducts | keywordRecordStaticScores | keywordAttributeBitMap | positionIndex | offsetIndex |
+         * ------------------------------------------------------------------------------------------------------------------------
          */
-    	return (uint8_t *)(data +
-    			getKeywordIdsSizeInBytes() +
-    			getKeywordRecordStaticScoresSizeInBytes() +
-    			getKeywordAttributeIdsSize());
+        return (uint8_t *) (data + getKeywordIdsSizeInBytes()
+                + getKeywordTfBoostProductsSizeInBytes()
+                + getKeywordRecordStaticScoresSizeInBytes()
+                + getKeywordAttributeIdsSize());
     }
-    inline uint8_t * getOffsetIndexPointer() const{
-    	/*
-    	 * The format of data in this array is :
-    	 * --------------------------------------------------------------------------------------------------
-    	 * | keywordIDs | keywordRecordStaticScores | keywordAttributeBitMap | positionIndex |  charOffsetIndex |
-    	 * --------------------------------------------------------------------------------------------------
-    	 */
-    	return getPositionIndexPointer() + positionIndexSize;
+    inline uint8_t * getOffsetIndexPointer() const {
+        /*
+         * The format of data in this array is :
+         * ------------------------------------------------------------------------------------------------------------------------
+         * | keywordIDs | keywordTfBoostProducts | keywordRecordStaticScores | keywordAttributeBitMap | positionIndex | offsetIndex |
+         * ------------------------------------------------------------------------------------------------------------------------
+         */
+        return getPositionIndexPointer() + positionIndexSize;
     }
-    inline uint8_t * getSynonymBitMapPointer() const{
-    	/*
-    	 * The format of data in this array is :
-    	 * ------------------------------------------------------------------------------------------------------------------------------------------------------
-    	 * | keywordIDs | keywordRecordStaticScores | keywordAttributeBitMap | positionIndex |  charOffsetIndex | SynonymBitFlagArray | SynonymOriginalTokenLenArray |
-    	 * ------------------------------------------------------------------------------------------------------------------------------------------------------
-    	 */
-    	return getOffsetIndexPointer() + offsetIndexSize;
+    inline uint8_t * getSynonymBitMapPointer() const {
+        /*
+         * The format of data in this array is :
+         * ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
+         * | keywordIDs | keywordTfBoostProducts | keywordRecordStaticScores | keywordAttributeBitMap | positionIndex |  charOffsetIndex | SynonymBitFlagArray | SynonymOriginalTokenLenArray |
+         * ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
+         */
+        return getOffsetIndexPointer() + offsetIndexSize;
     }
-    inline uint8_t * getCharLenIndexPointer() const{
-    	/*
-    	 * The format of data in this array is :
-    	 * -------------------------------------------------------------------------------------------------------------------------------------------------------
-    	 * | keywordIDs | keywordRecordStaticScores | keywordAttributeBitMap | positionIndex |  charOffsetIndex | SynonymBitFlagArray | SynonymOriginalTokenLenArray |
-    	 * -------------------------------------------------------------------------------------------------------------------------------------------------------
-    	 */
-    	return getSynonymBitMapPointer() + synonymBitMapSize;
+    inline uint8_t * getCharLenIndexPointer() const {
+        /*
+         * The format of data in this array is :
+         * ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
+         * | keywordIDs | keywordTfBoostProducts | keywordRecordStaticScores | keywordAttributeBitMap | positionIndex |  charOffsetIndex | SynonymBitFlagArray | SynonymOriginalTokenLenArray |
+         * ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
+         */
+        return getSynonymBitMapPointer() + synonymBitMapSize;
     }
-    inline unsigned getPositionIndexSize(){
-    	return positionIndexSize;
+    inline unsigned getPositionIndexSize() {
+        return positionIndexSize;
     }
-    inline unsigned getOffsetIndexSize(){
-    	return offsetIndexSize;
+    inline unsigned getOffsetIndexSize() {
+        return offsetIndexSize;
     }
 
 };
