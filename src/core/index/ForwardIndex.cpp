@@ -1003,13 +1003,8 @@ float ForwardList::getTermFrequency(unsigned keywordOffset,
 	if (this->positionIndexSize == 0) {
 		return 1.0;
 	}
-	vector<unsigned> positionList;
-	unsigned totalHitCount = 0;
-	for (unsigned i = 0; i < attributeIdsList.size(); ++i) {
-		this->getKeyWordPostionsInRecordField(keywordOffset, attributeIdsList[i], positionList);
-		totalHitCount += positionList.size();
-		positionList.clear();
-	}
+	unsigned totalHitCount = this->getKeywordCountInRecordField(keywordOffset);
+
 	return sqrtf(totalHitCount);
 }
 
@@ -1291,6 +1286,24 @@ void ForwardList::getKeywordAttributeIdsList(unsigned keywordOffset, vector<unsi
 	ULEB128::varLenByteArrayToInt32Vector((uint8_t *)(piPtr + piOffset + byteRead), value, attributeIdsList);
 }
 
+unsigned ForwardList::getKeywordCountInRecordField(unsigned keyOffset) const {
+
+    if (positionIndexSize == 0){
+        Logger::warn("Position Index not found in forward index!!");
+        return 0;
+    }
+
+    const uint8_t * piPtr = getPositionIndexPointer();  // pointer to position index for the record
+
+    if (*(piPtr + positionIndexSize - 1) & 0x80)
+    {
+         Logger::error("position index buffer has bad encoding..last byte is not a terminating one");
+         return 0;
+    }
+
+    return getKeywordCountFromVLBArray(keyOffset, piPtr);
+}
+
 void ForwardList::getKeyWordPostionsInRecordField(unsigned keyOffset, unsigned attributeId,
 		 vector<unsigned>& pl) const{
 
@@ -1395,6 +1408,43 @@ void ForwardList::getSynonymBitMapInRecordField(unsigned keyOffset, unsigned att
 		}
 	}
 }
+
+unsigned ForwardList::getKeywordCountFromVLBArray(unsigned keyOffset,
+        const uint8_t * piPtr) const {
+    // get the correct byte array position for current keyword + attribute combination
+
+    unsigned piOffset = 0;
+    vector<unsigned> currKeywordAttributeIdsList;
+    for (unsigned j = 0; j < keyOffset ; ++j) {
+        getKeywordAttributeIdsList(j, currKeywordAttributeIdsList);
+        unsigned count = currKeywordAttributeIdsList.size();
+        for (unsigned k = 0; k < count; ++k){
+            unsigned value;
+            short byteRead;
+            ULEB128::varLengthBytesToUInt32(piPtr + piOffset , &value, &byteRead);
+            piOffset += byteRead + value;
+        }
+        currKeywordAttributeIdsList.clear();
+    }
+    getKeywordAttributeIdsList(keyOffset, currKeywordAttributeIdsList);
+
+    // If keyword's attribute bitmap is 0 ( highly unlikely)
+    if (currKeywordAttributeIdsList.size() == 0)
+        return 0;
+
+    unsigned totalKeywordOccurTime = 0;
+    for (int i = 0; i < currKeywordAttributeIdsList.size(); ++i){
+        unsigned value;
+        short byteRead;
+        vector<unsigned> pl;
+        ULEB128::varLengthBytesToUInt32(piPtr + piOffset , &value, &byteRead);
+        ULEB128::varLenByteArrayToInt32Vector((uint8_t *)(piPtr + piOffset + byteRead), value, pl);
+        totalKeywordOccurTime += pl.size();
+        piOffset += byteRead + value;
+    }
+    return totalKeywordOccurTime;
+}
+
 void ForwardList::fetchDataFromVLBArray(unsigned keyOffset, unsigned attributeId,
 		 vector<unsigned>& pl, const uint8_t * piPtr) const{
 	// get the correct byte array position for current keyword + attribute combination

@@ -219,7 +219,7 @@ public:
     /*
      * The format of data in this array is :
      * ---------------------------------------------------------------------------------------------------------------------------------
-     * | keywordIDs | keywordRecordStaticScores | nonSearchableAttributeValues | keywordAttributeBitMap | positionIndex |  offsetIndex |
+     * | keywordIDs | keywordRecordTfBoostProduct | keywordRecordStaticScores | nonSearchableAttributeValues | keywordAttributeBitMap | positionIndex |  offsetIndex |
      * ---------------------------------------------------------------------------------------------------------------------------------
      *
      * This function will calculate and prepare nonSearchableAttribute byte array in its place.
@@ -445,6 +445,9 @@ public:
     // Position Indexes APIs
     void getKeyWordPostionsInRecordField(unsigned keywordOffset, unsigned attributeId,
     		vector<unsigned>& positionList) const;
+    unsigned getKeywordCountInRecordField(unsigned keyOffset) const;
+    unsigned getKeywordCountFromVLBArray(unsigned keyOffset,
+            const uint8_t * piPtr) const;
     void fetchDataFromVLBArray(unsigned keyOffset, unsigned attributeId,
     		vector<unsigned>& pl, const uint8_t * piPtr) const;
     void getKeyWordOffsetInRecordField(unsigned keyOffset, unsigned attributeId,
