@@ -104,7 +104,7 @@ void ShardAssignOperation::commit(){
 	ShardAssignChange * shardAssignChange = new ShardAssignChange(shardId, ShardManager::getCurrentNodeId(), 0);
 	shardAssignChange->setPhysicalShard(physicalShard);
 	currentAction = Commit;
-	this->committer = new AtomicMetadataCommit(shardAssignChange,  vector<NodeId>(), this);
+	this->committer = new AtomicMetadataCommit(vector<NodeId>(), shardAssignChange,  this, true);
 	this->committer->produce();
 }
 // ** end if
