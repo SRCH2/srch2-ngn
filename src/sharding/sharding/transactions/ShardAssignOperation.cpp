@@ -68,7 +68,6 @@ void ShardAssignOperation::consume(bool granted){
 			release();
 			break;
 		case Release:
-			ASSERT(granted);
 			if(! granted){
 				this->successFlag = granted;
 			}

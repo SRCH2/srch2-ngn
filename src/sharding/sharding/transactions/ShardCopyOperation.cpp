@@ -77,7 +77,6 @@ void ShardCopyOperation::consume(bool granted){
 		}
 	}else if(currentAction.compare("release") == 0){
 		if(! granted){
-			ASSERT(false);
 			this->successFlag = false;
 		}
 		finalize();

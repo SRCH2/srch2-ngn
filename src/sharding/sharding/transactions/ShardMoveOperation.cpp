@@ -91,7 +91,6 @@ void ShardMoveOperation::consume(bool granted){
 			if(granted){
 				release();
 			}else{
-				ASSERT(false);
 				this->successFlag = false;
 				finalize();
 			}
@@ -100,7 +99,6 @@ void ShardMoveOperation::consume(bool granted){
 			if(granted){
 				finalize();
 			}else{
-				ASSERT(false);
 				this->successFlag = false;
 				finalize();
 			}
