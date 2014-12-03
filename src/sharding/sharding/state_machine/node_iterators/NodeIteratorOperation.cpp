@@ -169,9 +169,7 @@ OperationState * OrderedNodeIteratorOperation::handle(SP(NodeFailureNotification
 			}
 			return NULL;
 		}
-		if(this->participantsIndex > 0){
-			this->participantsIndex --;
-		}
+
 		//3. now participantsIndex points to a new target, send a new request
 		return askNode(this->participantsIndex);
 	}//else{ // we have not reached to this target
