@@ -127,7 +127,7 @@ OperationState * OrderedNodeIteratorOperation::handle(SP(NodeFailureNotification
 		targetResponsesMap.erase(targetItr);
 	}
 
-	bool failedTargetIndex = this->participants.size();
+	unsigned failedTargetIndex = this->participants.size();
 	for(unsigned p = 0 ; p < this->participants.size(); ++p){
 		if(this->participants.at(p).nodeId == failedNode){
 			failedTargetIndex = p;
