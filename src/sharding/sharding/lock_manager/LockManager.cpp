@@ -27,6 +27,22 @@ void LockManager::resolve(SP(LockingNotification)  notif){
 	    Logger::sharding(Logger::Error, "LockManager| generate lock batch returning NULL");
 		return;
 	}
+
+	if(! lockBatch->release &&
+	        lockBatch->batchType == LockRequestType_Metadata && lockBatch->olderNodes.size() > 0){
+	    // specific to node arrival, nodes must join in ascending nodeId order
+        SP(ClusterNodes_Writeview) nodesWriteview = ShardManager::getNodesWriteview_write();
+        for(unsigned i = 0 ; i < lockBatch->olderNodes.size() ; ++i){
+            // 1. is this node in the writeview of this node ?
+            if(lockBatch->olderNodes.at(i) > nodesWriteview->currentNodeId){
+                ShardingNodeState olderNodeState;
+                if(! nodesWriteview->getNodeState(lockBatch->olderNodes.at(i), olderNodeState)){ // not does not exist
+                    nodesWriteview->setNodeState(lockBatch->olderNodes.at(i), ShardingNodeStateNotArrived);
+                }
+            }
+        }
+	}
+
 	lockManagerMutex.lock();
 	bool releaseHappended = false;
 	if(lockBatch->release){
@@ -135,20 +151,6 @@ void LockManager::resolveLock(LockBatch * lockBatch){
 		lockBatch->finalizeResult = false;
 		return;
 	}
-
-	// specific to node arrival, nodes must join in ascending nodeId order
-	if(lockBatch->batchType == LockRequestType_Metadata && lockBatch->olderNodes.size() > 0){
-		SP(ClusterNodes_Writeview) nodesWriteview = ShardManager::getNodesWriteview_write();
-		for(unsigned i = 0 ; i < lockBatch->olderNodes.size() ; ++i){
-			// 1. is this node in the writeview of this node ?
-			if(lockBatch->olderNodes.at(i) > nodesWriteview->currentNodeId){
-				ShardingNodeState olderNodeState;
-				if(! nodesWriteview->getNodeState(lockBatch->olderNodes.at(i), olderNodeState)){ // not does not exist
-					nodesWriteview->setNodeState(lockBatch->olderNodes.at(i), ShardingNodeStateNotArrived);
-				}
-			}
-		}
-	} // xLock goes out of scope
 
 	// first check if it's blocking or not
 	if(! lockBatch->blocking){
