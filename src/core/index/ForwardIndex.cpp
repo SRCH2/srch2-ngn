@@ -522,7 +522,7 @@ void ForwardIndex::addRecord(const Record *record, const unsigned recordId,
         forwardList->setKeywordId(iter, uniqueKeywordIdList[iter].first);
     }
 
-    // Get term frequency
+    // Get term frequency list for all keywords
     vector<float> tfList;
     forwardList->getTermFrequency(uniqueKeywordIdList.size(), tfList);
     ASSERT(uniqueKeywordIdList.size() == tfList.size());
@@ -1001,7 +1001,7 @@ unsigned ForwardList::getKeywordOffsetByLinearScan(unsigned keywordId) const {
 
 /*
  *   Populate the term frequency (TF) calculated as square root of all
- *   term occurrences in all attributes. If keyword is not found
+ *   term occurrences in all attributes. If keyword is not found then
  *   set to 0.0. If position index is not enabled then set to 1.0.
  */
 void ForwardList::getTermFrequency(const unsigned numOfKeywords,
@@ -1278,7 +1278,7 @@ void ForwardList::getKeywordAttributeIdsList(unsigned keywordOffset, vector<unsi
 void ForwardList::getKeywordTfListInRecordField(
         vector<float> & keywordTfList) const {
 
-    //If position index is not enabled then set to 1.0.
+    //If position index is not enabled then set all term frequency to 1.0.
     if (positionIndexSize == 0) {
         for (int i = 0; i < this->getNumberOfKeywords(); i++) {
             keywordTfList.push_back(1.0);
