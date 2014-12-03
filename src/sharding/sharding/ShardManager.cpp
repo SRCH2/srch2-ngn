@@ -612,7 +612,11 @@ void * ShardManager::periodicWork(void *args) {
 			LoadBalancer::runLoadBalancer();
 		}
 
-	    ShardManager::getShardManager()->print();
+		/*
+		 * NOTE : all debug info can now be collected through
+		 *        http://www.hostname:port/_debug/stats
+		 */
+	    //ShardManager::getShardManager()->print();
 	}
 	return NULL;
 }
