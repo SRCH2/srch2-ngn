@@ -31,6 +31,7 @@
 #include "boost/algorithm/string/classification.hpp"
 #include <boost/array.hpp>
 #include "util/RecordSerializerUtil.h"
+#include <instantsearch/Ranker.h>
 
 using srch2::util::Logger;
 using std::string;
@@ -521,17 +522,27 @@ void ForwardIndex::addRecord(const Record *record, const unsigned recordId,
         forwardList->setKeywordId(iter, uniqueKeywordIdList[iter].first);
     }
 
+    // Get term frequency
+    vector<float> tfList;
+    forwardList->getTermFrequency(uniqueKeywordIdList.size(), tfList);
+    ASSERT(uniqueKeywordIdList.size() == tfList.size());
+
     //Add Score List
     for (unsigned iter = 0; iter < uniqueKeywordIdList.size(); ++iter) {
 
         map<string, TokenAttributeHits>::const_iterator mapIterator =
                 tokenAttributeHitsMap.find(uniqueKeywordIdList[iter].second.first);
         ASSERT(mapIterator != tokenAttributeHitsMap.end());
+        //Get sumOfFieldBoost
         float boostSum = forwardList->computeFieldBoostSummation(this->schemaInternal,
                 mapIterator->second);
-        forwardList->setKeywordTfBoostProduct(iter, boostSum);    //TF * sumOfFieldBoosts
-        forwardList->setKeywordRecordStaticScore(iter, boostSum);
+        //Get term frequency
+        float tf = tfList[iter];
+        float tfBoostProduct = Ranker::computeRecordTfBoostProdcut(tf, boostSum);
+        forwardList->setKeywordTfBoostProduct(iter, tfBoostProduct);    //TF * sumOfFieldBoosts
     }
+
+
 
     ForwardListPtr managedForwardListPtr;
     managedForwardListPtr.first = forwardList;
@@ -989,42 +1000,20 @@ unsigned ForwardList::getKeywordOffsetByLinearScan(unsigned keywordId) const {
 }
 
 /*
- *   Returns term frequency (TF) calculated as square root of all
+ *   Populate the term frequency (TF) calculated as square root of all
  *   term occurrences in all attributes. If keyword is not found
- *   return 0.0. If position index is not enabled return 1.0.
+ *   set to 0.0. If position index is not enabled then set to 1.0.
  */
-float ForwardList::getTermFrequency(unsigned keywordOffset,
-		const vector<unsigned>& attributeIdsList) const{
-	ASSERT(keywordOffset < this->getNumberOfKeywords());
-	if (keywordOffset >= this->getNumberOfKeywords())
-		return 0.0;
+void ForwardList::getTermFrequency(const unsigned numOfKeywords,
+        vector<float> & keywordTfList) const {
+	ASSERT(numOfKeywords <= this->getNumberOfKeywords());
 
-	// check whether position index is present or not
-	if (this->positionIndexSize == 0) {
-		return 1.0;
-	}
-	unsigned totalHitCount = this->getKeywordCountInRecordField(keywordOffset);
+    this->getKeywordTfListInRecordField(keywordTfList);
 
-	return sqrtf(totalHitCount);
-}
-
-/*
- *   Returns term frequency (TF) calculated as square root of all
- *   term occurrences in all attributes. If keyword is not found
- *   return 0.0. If position index is not enabled return 1.0.
- */
-float ForwardList::getTermFrequency(unsigned keywordOffset) const{
-	ASSERT(keywordOffset < this->getNumberOfKeywords());
-	if (keywordOffset >= this->getNumberOfKeywords())
-		return 0.0;
-
-	// check whether position index is present or not
-	if (this->positionIndexSize == 0) {
-		return 1.0;
-	}
-	vector<unsigned> attributeIdsList;
-	this->getKeywordAttributeIdsList(keywordOffset, attributeIdsList);
-	return getTermFrequency(keywordOffset, attributeIdsList);
+    //Keyword not found, set to 0
+    for(int i = keywordTfList.size(); i < numOfKeywords; i++ ){
+        keywordTfList.push_back(0.0);
+    }
 }
 /// Added for stemmer
 bool ForwardList::haveWordInRangeWithStemmer(const SchemaInternal* schema,
@@ -1286,22 +1275,30 @@ void ForwardList::getKeywordAttributeIdsList(unsigned keywordOffset, vector<unsi
 	ULEB128::varLenByteArrayToInt32Vector((uint8_t *)(piPtr + piOffset + byteRead), value, attributeIdsList);
 }
 
-unsigned ForwardList::getKeywordCountInRecordField(unsigned keyOffset) const {
+void ForwardList::getKeywordTfListInRecordField(
+        vector<float> & keywordTfList) const {
 
-    if (positionIndexSize == 0){
+    //If position index is not enabled then set to 1.0.
+    if (positionIndexSize == 0) {
+        for (int i = 0; i < this->getNumberOfKeywords(); i++) {
+            keywordTfList.push_back(1.0);
+        }
         Logger::warn("Position Index not found in forward index!!");
-        return 0;
+        return;
     }
 
     const uint8_t * piPtr = getPositionIndexPointer();  // pointer to position index for the record
 
-    if (*(piPtr + positionIndexSize - 1) & 0x80)
-    {
-         Logger::error("position index buffer has bad encoding..last byte is not a terminating one");
-         return 0;
+    if (*(piPtr + positionIndexSize - 1) & 0x80) {
+        for (int i = 0; i < this->getNumberOfKeywords(); i++) {
+            keywordTfList.push_back(0);
+        }
+        Logger::error(
+                "position index buffer has bad encoding..last byte is not a terminating one");
+        return;
     }
 
-    return getKeywordCountFromVLBArray(keyOffset, piPtr);
+    getKeywordTfListFromVLBArray(piPtr, keywordTfList);
 }
 
 void ForwardList::getKeyWordPostionsInRecordField(unsigned keyOffset, unsigned attributeId,
@@ -1409,40 +1406,34 @@ void ForwardList::getSynonymBitMapInRecordField(unsigned keyOffset, unsigned att
 	}
 }
 
-unsigned ForwardList::getKeywordCountFromVLBArray(unsigned keyOffset,
-        const uint8_t * piPtr) const {
+void ForwardList::getKeywordTfListFromVLBArray(const uint8_t * piPtr,
+        vector<float> & keywordTfList) const {
     // get the correct byte array position for current keyword + attribute combination
-
     unsigned piOffset = 0;
     vector<unsigned> currKeywordAttributeIdsList;
-    for (unsigned j = 0; j < keyOffset ; ++j) {
+    for (unsigned j = 0; j <  this->getNumberOfKeywords() ; ++j) {
         getKeywordAttributeIdsList(j, currKeywordAttributeIdsList);
-        unsigned count = currKeywordAttributeIdsList.size();
-        for (unsigned k = 0; k < count; ++k){
+
+        // If keyword's attribute bitmap is 0 ( highly unlikely)
+        if (currKeywordAttributeIdsList.size() == 0){
+            keywordTfList.push_back(0);
+            continue;
+        }
+
+        unsigned totalKeywordOccurTime = 0;
+
+        for (unsigned k = 0; k < currKeywordAttributeIdsList.size(); ++k){
             unsigned value;
             short byteRead;
+            vector<unsigned> pl;
             ULEB128::varLengthBytesToUInt32(piPtr + piOffset , &value, &byteRead);
+            ULEB128::varLenByteArrayToInt32Vector((uint8_t *)(piPtr + piOffset + byteRead), value, pl);
+            totalKeywordOccurTime += pl.size();
             piOffset += byteRead + value;
         }
+        keywordTfList.push_back(sqrtf(totalKeywordOccurTime));
         currKeywordAttributeIdsList.clear();
     }
-    getKeywordAttributeIdsList(keyOffset, currKeywordAttributeIdsList);
-
-    // If keyword's attribute bitmap is 0 ( highly unlikely)
-    if (currKeywordAttributeIdsList.size() == 0)
-        return 0;
-
-    unsigned totalKeywordOccurTime = 0;
-    for (int i = 0; i < currKeywordAttributeIdsList.size(); ++i){
-        unsigned value;
-        short byteRead;
-        vector<unsigned> pl;
-        ULEB128::varLengthBytesToUInt32(piPtr + piOffset , &value, &byteRead);
-        ULEB128::varLenByteArrayToInt32Vector((uint8_t *)(piPtr + piOffset + byteRead), value, pl);
-        totalKeywordOccurTime += pl.size();
-        piOffset += byteRead + value;
-    }
-    return totalKeywordOccurTime;
 }
 
 void ForwardList::fetchDataFromVLBArray(unsigned keyOffset, unsigned attributeId,

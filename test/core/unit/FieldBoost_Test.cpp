@@ -121,9 +121,9 @@ int main(int argc, char *argv[])
     bool dummy = false;
     shared_ptr<vectorview<ForwardListPtr> > readView;
     forwardIndex->getForwardListDirectory_ReadView(readView);
-    float boost1 = forwardIndex->getForwardList(readView, 0, dummy)->getKeywordRecordStaticScore(0);
-    float boost2 = forwardIndex->getForwardList(readView, 0, dummy)->getKeywordRecordStaticScore(1);
-    float boost3 = forwardIndex->getForwardList(readView, 0, dummy)->getKeywordRecordStaticScore(2);
+    float boost1 = forwardIndex->getForwardList(readView, 0, dummy)->getKeywordTfBoostProduct(0);
+    float boost2 = forwardIndex->getForwardList(readView, 0, dummy)->getKeywordTfBoostProduct(1);
+    float boost3 = forwardIndex->getForwardList(readView, 0, dummy)->getKeywordTfBoostProduct(2);
 
     ASSERT(approximateFloatEqual(boost1, 1.8));
     ASSERT(approximateFloatEqual(boost2, 1.2));

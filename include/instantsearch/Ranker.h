@@ -36,8 +36,8 @@ namespace srch2 {
     {
     public:
         // tf-idf score computed during index construction phase
-        static float computeRecordTfIdfScore(const float tf, const float idf, const float sumOfFieldBoosts);
-        static float computeRecordTfIdfScore(const float tfAndSumOfFieldBoosts, const float idf);
+        static float computeTextRelevance(const float tf, const float idf, const float sumOfFieldBoosts);
+        static float computeTextRelevance(const float tfAndSumOfFieldBoosts, const float idf);
         static float computeRecordTfBoostProdcut(const float tf, const float sumOfFieldBoosts);
         static float computeTermRecordRuntimeScore(float recordStaticScore, 
                                unsigned editDistance, unsigned termLength, 

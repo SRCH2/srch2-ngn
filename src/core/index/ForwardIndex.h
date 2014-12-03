@@ -66,7 +66,13 @@ typedef vector<pair<unsigned, pair<string, unsigned> > > KeywordIdKeywordStringI
 // for reordering keyword ids
 struct KeywordRichInformation {
     unsigned keywordId;
+
+    /*
+     * The product of term frequency (TF) and summation of attribute boosts.
+     * This product doesn't change in the life cycle of this record.
+     */
     float keywordTfBoostProduct;
+
     float keywordScore;
     vector<uint8_t> keywordAttribute;
     vector<uint8_t> keywordPositionsInAllAttribute;
@@ -399,8 +405,7 @@ public:
 
     unsigned getKeywordOffset(unsigned keywordId) const;
     unsigned getKeywordOffsetByLinearScan(unsigned keywordId) const;
-    float getTermFrequency(unsigned keywordId, const vector<unsigned>& attributeIdsList) const;
-    float getTermFrequency(unsigned keywordOffset) const;
+    void getTermFrequency(const unsigned numOfKeywords, vector<float> & keywordTfList) const;
 
     bool getWordsInRange(const SchemaInternal* schema, const unsigned minId,
             const unsigned maxId,
@@ -445,9 +450,9 @@ public:
     // Position Indexes APIs
     void getKeyWordPostionsInRecordField(unsigned keywordOffset, unsigned attributeId,
     		vector<unsigned>& positionList) const;
-    unsigned getKeywordCountInRecordField(unsigned keyOffset) const;
-    unsigned getKeywordCountFromVLBArray(unsigned keyOffset,
-            const uint8_t * piPtr) const;
+    void getKeywordTfListInRecordField(vector<float> & keywordTfList) const;
+    void getKeywordTfListFromVLBArray(const uint8_t * piPtr,
+            vector<float> & keywordTfList) const;
     void fetchDataFromVLBArray(unsigned keyOffset, unsigned attributeId,
     		vector<unsigned>& pl, const uint8_t * piPtr) const;
     void getKeyWordOffsetInRecordField(unsigned keyOffset, unsigned attributeId,
@@ -568,7 +573,7 @@ private:
     ////////////////////  Keyword TF Boost Scores Helper Fucntions /////////////////////////
     /*
      * Our ranking formula is : text_relevance = tf * idf * sumOfFieldBoosts
-     * Since the tf and sumOfFieldBoosts does not change while adding new records,
+     * Since the tf and sumOfFieldBoosts do not change during the lifecycle of a record,
      * it's not necessary to repeatedly compute them during the merge and commit phase.
      */
     inline half* getKeywordTfBoostProductsPointer() const {

@@ -147,7 +147,7 @@ void InvertedListContainer::sortAndMerge(const unsigned keywordId, ForwardIndex 
         forwardList->getKeywordAttributeIdsList(keywordOffset, attributeIds);
         float recordBoost = forwardList->getRecordBoost();
         float tfBoostProduct = ((ForwardList*)forwardList)->getKeywordTfBoostProduct(keywordOffset);
-        float textRelevance =  Ranker::computeRecordTfIdfScore(tfBoostProduct, idf);
+        float textRelevance =  Ranker::computeTextRelevance(tfBoostProduct, idf);
         float score = rankerExpression->applyExpression(recordLength, recordBoost, textRelevance);
         ((ForwardList*)forwardList)->setKeywordRecordStaticScore(keywordOffset, score);
         // add this new <recordId, score> pair to the vector
@@ -293,7 +293,7 @@ float InvertedIndex::computeRecordStaticScore(RankerExpression *rankerExpression
         const float tfBoostProduct) const
 {
     // recordScoreType == srch2::instantsearch::LUCENESCORE:
-    float textRelevance =  Ranker::computeRecordTfIdfScore(tfBoostProduct, idf);
+    float textRelevance =  Ranker::computeTextRelevance(tfBoostProduct, idf);
     return rankerExpression->applyExpression(recordLength, recordBoost, textRelevance);
 }
 
@@ -343,17 +343,15 @@ void InvertedIndex::commit( ForwardList *forwardList,
             //unsigned numberOfOccurancesOfGivenKeywordInRecord = forwardList->getNumberOfPositionHitsForAllKeywords(schema);
             //sumOfOccurancesOfAllKeywordsInRecord += numberOfOccurancesOfGivenKeywordInRecord;
 
-            float tf = forwardList->getTermFrequency(counter);
-            float sumOfFieldBoost = forwardList->getKeywordRecordStaticScore(counter);
-            float tfBoostProdcut = Ranker::computeRecordTfBoostProdcut(tf, sumOfFieldBoost);
+            float tfBoostProduct = forwardList->getKeywordTfBoostProduct(counter);
             float recordLength = forwardList->getNumberOfKeywords();
-            float score = this->computeRecordStaticScore(rankerExpression, recordBoost, recordLength, idf, tfBoostProdcut);
+            float score = this->computeRecordStaticScore(rankerExpression, recordBoost, recordLength, idf, tfBoostProduct);
 
             //assign keywordId for the invertedListId
             vectorview<unsigned>* &writeView = this->keywordIds->getWriteView();
             writeView->at(invertedListId) = keywordId;
             this->addInvertedListElement(invertedListId, forwardListOffset);
-            forwardList->setKeywordTfBoostProduct(counter, tfBoostProdcut);
+            forwardList->setKeywordTfBoostProduct(counter, tfBoostProduct);
             forwardList->setKeywordRecordStaticScore(counter, score);
         }
     }
@@ -516,8 +514,6 @@ void InvertedIndex::addRecord(ForwardList* forwardList, Trie * trie,
             //unsigned numberOfOccurancesOfGivenKeywordInRecord = forwardList->getNumberOfPositionHitsForAllKeywords(schema);
             //sumOfOccurancesOfAllKeywordsInRecord += numberOfOccurancesOfGivenKeywordInRecord;
 
-            unsigned tf = forwardList->getTermFrequency(counter);
-            float sumOfFieldBoost = forwardList->getKeywordRecordStaticScore(counter);
             float recordLength = forwardList->getNumberOfKeywords();
 
             vectorview<unsigned>* &writeView = this->keywordIds->getWriteView();
@@ -527,13 +523,13 @@ void InvertedIndex::addRecord(ForwardList* forwardList, Trie * trie,
             this->invertedListSetToMerge.insert(invertedListId);
 
             float idf = this->getIdf(totalNumberOfDocuments, invertedListId);
-            float tfBoostProdcut = Ranker::computeRecordTfBoostProdcut(tf, sumOfFieldBoost);
-            float score = this->computeRecordStaticScore(rankerExpression, recordBoost, recordLength, idf, tfBoostProdcut);
+            float tfBoostProduct = forwardList->getKeywordTfBoostProduct(counter);
+            float score = this->computeRecordStaticScore(rankerExpression, recordBoost, recordLength, idf, tfBoostProduct);
 
             // now we should update the trie by this score
             trie->updateMaximumScoreOfLeafNodesForKeyword_WriteView(keywordId , (half)score);
             // and update the scores in forward index
-            forwardList->setKeywordTfBoostProduct(counter, tfBoostProdcut);
+            forwardList->setKeywordTfBoostProduct(counter, tfBoostProduct);
             forwardList->setKeywordRecordStaticScore(counter, score);
         }
     }
