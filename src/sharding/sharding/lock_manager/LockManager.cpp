@@ -337,34 +337,50 @@ bool LockManager::canAcquireAllBatch(LockBatch * lockBatch){
 			case LockRequestType_GeneralPurpose:
 			case LockRequestType_ShardIdList:
 			{
-					pair<ClusterShardId, LockLevel> & nxtToken = lockBatch->tokens.at(lastGrantedPreValue + 1);
+				bool allSLocks = true;
+				for(unsigned t = 0; t < lockBatch->tokens.size(); ++t){
+					if(lockBatch->tokens.at(t).second == LockLevel_X){
+						allSLocks = false;
+						break;
+					}
+				}
+				// if there is any X lock, it conflicts with metadata lock
+				if(allNodeSharedInfo.isLockTypeConflicting(metadataResourceName, allSLocks ? LockLevel_S:LockLevel_X)){
+					return false;
+				}
 
-					if(allNodeSharedInfo.isLock(metadataResourceName)){
-						return false;
+				pair<ClusterShardId, LockLevel> & nxtToken = lockBatch->tokens.at(lastGrantedPreValue + 1);
+				if(! clusterShardLocks.canLock(nxtToken.first, nxtToken.second)){
+					return false;
+				}else{
+					lastGrantedPreValue++;
+					if(lastGrantedPreValue == ((int)lockBatch->tokens.size()) - 1){
+						return true;
 					}
-					if(! clusterShardLocks.canLock(nxtToken.first, nxtToken.second)){
-						return false;
-					}else{
-						lastGrantedPreValue++;
-						if(lastGrantedPreValue == ((int)lockBatch->tokens.size()) - 1){
-							return true;
-						}
-					}
-					break;
+				}
+				break;
 			}
 			case LockRequestType_Metadata:
 			{
+				vector<ClusterShardId> allResource;
+				clusterShardLocks.getAllLockedResource(allResource);
+				bool conflictsWithShardLocks = false;
+				for(unsigned i = 0 ; i < allResource.size(); ++i){
+					if(clusterShardLocks.isLockTypeConflicting(allResource.at(i), lockBatch->metadataLockLevel)){
+						conflictsWithShardLocks = true;
+						break;
+					}
+				}
+				if(conflictsWithShardLocks){
+					return false;
+				}
+
 				ASSERT(lockBatch->lastGrantedItemIndex == -1);
 				LockLevel lockLevel = lockBatch->metadataLockLevel;
 				for(unsigned i = 0 ; i < lockBatch->olderNodes.size(); ++i){
 					if(! isNodePassedInitialization(lockBatch->olderNodes.at(i))){
 						return false; // stil not allowed to run this.
 					}
-				}
-				vector<ClusterShardId> allResource;
-				clusterShardLocks.getAllLockedResource(allResource);
-				if(! allResource.empty()){
-					return false;
 				}
 				// we can try to lock for this new node now
 				return allNodeSharedInfo.canLock(metadataResourceName, lockBatch->metadataLockLevel);
@@ -406,7 +422,15 @@ bool LockManager::moveLockBatchForward(LockBatch * lockBatch){
 			case LockRequestType_GeneralPurpose:
 			case LockRequestType_ShardIdList:
 			{
-				if(allNodeSharedInfo.isLock(metadataResourceName)){
+				bool allSLocks = true;
+				for(unsigned t = 0; t < lockBatch->tokens.size(); ++t){
+					if(lockBatch->tokens.at(t).second == LockLevel_X){
+						allSLocks = false;
+						break;
+					}
+				}
+				// if there is any X lock, it conflicts with metadata lock
+				if(allNodeSharedInfo.isLockTypeConflicting(metadataResourceName, allSLocks ? LockLevel_S:LockLevel_X)){
 					Logger::sharding(Logger::Detail, "LockManager| failed to move forward because metadata is locked.");
 					return false;
 				}
@@ -435,7 +459,14 @@ bool LockManager::moveLockBatchForward(LockBatch * lockBatch){
 			{
 				vector<ClusterShardId> allResource;
 				clusterShardLocks.getAllLockedResource(allResource);
-				if(! allResource.empty()){
+				bool conflictsWithShardLocks = false;
+				for(unsigned i = 0 ; i < allResource.size(); ++i){
+					if(clusterShardLocks.isLockTypeConflicting(allResource.at(i), lockBatch->metadataLockLevel)){
+						conflictsWithShardLocks = true;
+						break;
+					}
+				}
+				if(conflictsWithShardLocks){
 					stringstream ss;
 					for(unsigned i = 0 ; i < allResource.size(); i++){
 						if(i != 0){

@@ -100,14 +100,30 @@ public:
 		}
 		return releaseHappenned;
 	}
-	bool isLock(const Resource & resource){
+	bool isLock(const Resource & resource) const{
 		if(grantedLocks.find(resource) == grantedLocks.end()){
 			return false;
 		}
-		if(grantedLocks[resource].size() == 0){
+		if(grantedLocks.at(resource).size() == 0){
 			return false;
 		}
 		return true;
+	}
+
+	bool isLockTypeConflicting(const Resource & resource, const LockLevel lockLevel) const{
+		if(grantedLocks.find(resource) == grantedLocks.end()){
+			return false;
+		}
+		if(grantedLocks.at(resource).size() == 0){
+			return false;
+		}
+		// vector<pair<NodeOperationId, LockLevel> >
+		for(unsigned i = 0 ; i < grantedLocks.at(resource).size(); ++i){
+			if(conflict(grantedLocks.at(resource).second, lockLevel)){
+				return true;
+			}
+		}
+		return false;
 	}
 
 	void getAllLockedResource(vector<Resource> & allResources) const{

@@ -39,9 +39,6 @@ public:
 		if(shardCommand != NULL){
 			delete shardCommand;
 		}
-		if(req != NULL){
-			delete req;
-		}
 	}
 private:
 	ShardCommandHttp(boost::shared_ptr<const ClusterResourceMetadata_Readview> clusterReadview,

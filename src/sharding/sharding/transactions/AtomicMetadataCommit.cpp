@@ -122,6 +122,11 @@ void AtomicMetadataCommit::produce(){
 }
 
 void AtomicMetadataCommit::lock(){
+	/*
+	 * NOTE:
+	 */
+	Logger::sharding(Logger::Warning, "Currently only X shard locks conflict with metadata %s",
+				"because we always use S lock on metadata. It's NEW, be careful.");
     atomicLock = new AtomicLock(selfOperationId, this); // X-locks metadata by default
 	this->currentAction = "lock";
     Logger::sharding(Logger::Detail, "Atomic Metadata Commit : locking ...");
