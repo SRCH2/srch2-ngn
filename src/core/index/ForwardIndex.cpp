@@ -136,8 +136,10 @@ void printForwardList(unsigned id, const ForwardList *fl , const Schema * schema
 
     vector<vector<unsigned> > attrsLists;
     fl->getKeywordAttributeIdsLists(fl->getNumberOfKeywords(), attrsLists);
-    for(vector<vector<unsigned> >::iterator itLists = attrsLists.begin(); itLists != attrsLists.end();itLists++){
-        for(vector<unsigned>::iterator it = (*itLists).begin();it!=(*itLists).end();it++){
+    for (vector<vector<unsigned> >::iterator itLists = attrsLists.begin();
+            itLists != attrsLists.end(); itLists++) {
+        for (vector<unsigned>::iterator it = itLists->begin();
+                it != itLists->end(); it++) {
             Logger::debug("[%d]", *it);
         }
     }
@@ -1247,7 +1249,7 @@ bool ForwardList::isValidRecordTermHitWithStemmer(const SchemaInternal *schema,
      */
 }
 
-//Get all the attribute id lists in one loop
+//Get all the attribute id lists by scanning the attribute map only once.
 void ForwardList::getKeywordAttributeIdsLists(const unsigned numOfKeywords,
         vector<vector<unsigned> > & attributeIdsLists) const {
 
@@ -1258,33 +1260,41 @@ void ForwardList::getKeywordAttributeIdsLists(const unsigned numOfKeywords,
     unsigned piOffset = 0;
     unsigned value;
     short byteRead;
-    vector<unsigned> attributeIdsList;
-    // Get all keyword's attribute.
+    vector<unsigned> attributeIdsPerKeyword;
+
+    if (attributeIdsIndexSize == 0) {
+        Logger::warn("Attribute Index not found in forward index!!");
+        for (unsigned j = 0; j < numOfKeywords; ++j) {
+            attributeIdsLists.push_back(attributeIdsPerKeyword);
+        }
+        return;
+    }
+
+    if (piPtr == NULL) {
+        for (unsigned j = 0; j < numOfKeywords; ++j) {
+            attributeIdsLists.push_back(attributeIdsPerKeyword);
+        }
+        return;
+    }
+
+    if (*(piPtr + attributeIdsIndexSize - 1) & 0x80) {
+        Logger::error(
+                "Attribute Ids index buffer has bad encoding..last byte is not a terminating one");
+        for (unsigned j = 0; j < numOfKeywords; ++j) {
+            attributeIdsLists.push_back(attributeIdsPerKeyword);
+        }
+        return;
+    }
+
+    // For each attribute, get all its hit attributes.
     for (unsigned j = 0; j < numOfKeywords; ++j) {
-        attributeIdsList.clear();
-        if (attributeIdsIndexSize == 0) {
-            Logger::warn("Attribute Index not found in forward index!!");
-            attributeIdsLists.push_back(attributeIdsList);
-            continue;
-        }
-
-        if (piPtr == NULL) {
-            attributeIdsLists.push_back(attributeIdsList);
-            continue;
-        }
-
-        if (*(piPtr + attributeIdsIndexSize - 1) & 0x80) {
-            attributeIdsLists.push_back(attributeIdsList);
-            Logger::error(
-                    "Attribute Ids index buffer has bad encoding..last byte is not a terminating one");
-            continue;
-        }
+        attributeIdsPerKeyword.clear();
 
         ULEB128::varLengthBytesToUInt32(piPtr + piOffset, &value, &byteRead);
         ULEB128::varLenByteArrayToInt32Vector(
                 (uint8_t *) (piPtr + piOffset + byteRead), value,
-                attributeIdsList);
-        attributeIdsLists.push_back(attributeIdsList);
+                attributeIdsPerKeyword);
+        attributeIdsLists.push_back(attributeIdsPerKeyword);
         piOffset += byteRead + value;
     }
 }
@@ -1434,21 +1444,21 @@ void ForwardList::getSynonymBitMapInRecordField(unsigned keyOffset, unsigned att
 					== currKeywordAttributeIdsList.end())
 		return;
 
-	unsigned totalAttributes = currKeywordAttributeIdsList.size();
-	for (int i = 0; i < totalAttributes; ++i){
-		unsigned value;
-		short byteRead;
-		ULEB128::varLengthBytesToUInt32(piPtr + offset , &value, &byteRead);
-		if (attributeId == currKeywordAttributeIdsList[i]){
-			uint8_t * start = (uint8_t *)(piPtr + offset + byteRead);
-			for (unsigned i = 0; i < value; ++i) {
-				synonymBitMap.push_back(*(start + i));
-			}
-			break;
-		}else {
-			offset += byteRead + value;
-		}
-	}
+    unsigned totalAttributes = currKeywordAttributeIdsList.size();
+    for (int i = 0; i < totalAttributes; ++i) {
+        unsigned value;
+        short byteRead;
+        ULEB128::varLengthBytesToUInt32(piPtr + offset, &value, &byteRead);
+        if (attributeId == currKeywordAttributeIdsList[i]) {
+            uint8_t * start = (uint8_t *) (piPtr + offset + byteRead);
+            for (unsigned i = 0; i < value; ++i) {
+                synonymBitMap.push_back(*(start + i));
+            }
+            break;
+        } else {
+            offset += byteRead + value;
+        }
+    }
 }
 
 void ForwardList::getKeywordTfListFromVLBArray(const uint8_t * piPtr,
@@ -1456,24 +1466,25 @@ void ForwardList::getKeywordTfListFromVLBArray(const uint8_t * piPtr,
     // get the correct byte array position for current keyword + attribute combination
     unsigned piOffset = 0;
     vector<vector<unsigned> > keywordAttributeIdsLists;
-    getKeywordAttributeIdsLists(this->getNumberOfKeywords(),keywordAttributeIdsLists) ;
+    getKeywordAttributeIdsLists(this->getNumberOfKeywords(),
+            keywordAttributeIdsLists);
 
-    for (vector<vector<unsigned> >::iterator it = keywordAttributeIdsLists.begin();it !=  keywordAttributeIdsLists.end(); ++it) {
-
-        // If keyword's attribute bitmap is 0 ( highly unlikely)
-        if ((*it).size() == 0){
-            keywordTfList.push_back(0);
-            continue;
-        }
+    //Iterate over the keywords in the record.
+    for (vector<vector<unsigned> >::iterator it =
+            keywordAttributeIdsLists.begin();
+            it != keywordAttributeIdsLists.end(); ++it) {
 
         unsigned totalKeywordOccurrences = 0;
 
-        for (unsigned k = 0; k < (*it).size(); ++k){
+        //iterate over the hit attributes for this keyword.
+        for (unsigned k = 0; k < it->size(); ++k) {
             unsigned value;
             short byteRead;
             vector<unsigned> pl;
-            ULEB128::varLengthBytesToUInt32(piPtr + piOffset , &value, &byteRead);
-            ULEB128::varLenByteArrayToInt32Vector((uint8_t *)(piPtr + piOffset + byteRead), value, pl);
+            ULEB128::varLengthBytesToUInt32(piPtr + piOffset, &value,
+                    &byteRead);
+            ULEB128::varLenByteArrayToInt32Vector(
+                    (uint8_t *) (piPtr + piOffset + byteRead), value, pl);
             totalKeywordOccurrences += pl.size();
             piOffset += byteRead + value;
         }
