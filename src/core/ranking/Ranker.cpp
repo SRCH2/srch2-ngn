@@ -32,12 +32,6 @@ namespace srch2
 {
     namespace instantsearch
     {
-    // text relevance score computed during indexing time and stored in the index
-    float DefaultTopKRanker::computeTextRelevance(const float tf, const float idf, const float sumOfFieldBoosts)
-    {
-        return tf *idf * sumOfFieldBoosts;
-    }
-
     // Since the tf * sumOfFieldBoosts never changes during the life cycle of a record, this value
     // is saved into the forward list so that the engine does not need to compute tf and
     // sumOfFieldBoosts repeatedly.
