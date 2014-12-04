@@ -176,6 +176,11 @@ void ShardCommand::finalize(map<NodeOperationId , SP(ShardingNotification)> & re
 		}
 		// put all shardsStatus pointers in the result
 		result[nodeOperationId.nodeId].insert(result[nodeOperationId.nodeId].begin(), shardsStatus.begin(), shardsStatus.end());
+		if(commandCode == ShardCommandCode_SaveMetadata || commandCode == ShardCommandCode_SaveData_SaveMetadata){
+			CommandStatusNotification::ShardStatus * nodeShardStatus = new CommandStatusNotification::ShardStatus();
+			nodeShardStatus->setStatusValue(true);
+			result[nodeOperationId.nodeId].push_back(nodeShardStatus);
+		}
 	}
 
 	// call callback from the consumer
