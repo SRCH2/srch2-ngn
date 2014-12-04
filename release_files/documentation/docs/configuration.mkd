@@ -652,7 +652,7 @@ Note that whitespace characters will also be considered word delimiters and are 
 
 The [advanced example](../example-demo/srch2-config-advanced.xml) provides an example of allowing Twitter-hashtag-like terms to be queried.
 
-###11.6.6 Chinese Dictionary 
+###11.6.6 Chinese Analyzer
 
 If we want to use the Chinese analyzer by setting <code>fieldType
 name="text_chinese"</code>, then we should also provide the path of a Chinese
@@ -670,6 +670,94 @@ engine will treat each Chinese character as a separate keyword. For
 instance, the string "海边城市" will be tokenized as "海","边","城",
 and "市".  The SRCH2 Chinese dictionary is a binary file named as
 "srch2_dictionary_zh_cn.bin" inside the "srch2_data" folder. 
+
+Here we explain how to use SRCH2 to do text search in Chinese.  The
+folder ```example-demo``` in the package includes a sample
+configuration file <a
+href="../example-demo/srch2-config-chinese.xml">srch2-config-chinese.xml</a>,
+which uses using a json file ```chinese-data.json``` that has about
+two hundred Chinese records.
+
+####11.6.6.1 Configure Engine
+Find the following line inside the <i>config</i> element to specify the path of sample data file.
+```
+<dataFile>../example-demo/chinese-data.json</dataFile>
+```
+
+Find the following lines inside the <i>config</i> element to specify
+information about the Chinese dictionary, stop words, and protected words:
+
+```
+    <types>
+        <fieldType name="text_chinese" dictionary="../srch2_data/srch2_dictionary_zh_cn.bin"> 
+            <analyzer>
+                <filter name="StopFilter" words="../srch2_data/srch2_stop_words_zh_cn.txt" />
+                <filter name="protectedKeyWordsFilter" words="../srch2_data/srch2_protected_words.txt" />
+            </analyzer> 
+        </fieldType>
+    </types>
+```
+
+####11.6.6.2 Start Engine
+
+Go to the install folder of SRCH2 and run the following command to start the SRCH2 engine:
+
+```
+/home/joe/srch2/example-demo> ../bin/srch2-engine --config-file=./srch2-config-chinese.xml
+```
+
+The engine will load the sample data to build the indexes.
+
+####11.6.6.3 Search 
+
+Note that each RESTful request needs to use a proper [URL
+encoder](http://www.w3schools.com/tags/ref_urlencode.asp) to be
+converted to characters in a format that can be transmitted properly.
+In addition, make sure to use quotes ("%22") for each search query.
+
+In a shell terminal, run the following command:
+
+```
+shell> curl "http://localhost:8081/search?q=%22%E5%96%9C%E6%AC%A2%22"
+```
+
+If running in the browser, 
+You should see a record with the keyword "喜欢". 
+
+####11.6.6.4 Insert a Record
+
+The following request adds a record to the indexes.
+```
+shell> curl "http://localhost:8081/docs" -i -X PUT -d '{"id" : "300", "content" : "饺子，又名（水饺）起源于东汉中原宛城，是古老的汉族传统面食，深受中国广大人民喜爱的食品。"}'
+```
+
+Now search with the keyword "面食"
+
+```
+shell> curl "http://localhost:8081/search?q=%22%E9%9D%A2%E9%A3%9F%22"
+``` 
+The engine should return the newly inserted record.
+
+####11.6.6.5 Update a Record
+
+The following request will update the content of the newly inserted record.
+
+```
+shell>  curl "http://localhost:8081/update" -i -X PUT -d '{"id" : "300", "content" : "饺子是一种有馅的半圆形或半月形、角形的面食。"}'
+```
+
+Wait for about 4 seconds for the server to make the change, then do the above search query again. The engine should return this updated record.
+
+####11.6.6.6 Delete a Record
+
+Run the following command to delete the updated record:
+```
+shell> curl "http://localhost:8081/docs?id=300" -i -X DELETE
+```
+
+Do the above search query again. The SRCH2 engine should not return the record that we just deleted.
+
+For more information about SRCH2 RESTful API, please see [RESTful Search](restful-search.mkd) and [RESTful Update](restful-insert-update-delete.mkd).
 
 ##12. Logging
 
