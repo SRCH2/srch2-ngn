@@ -133,11 +133,13 @@ void printForwardList(unsigned id, const ForwardList *fl , const Schema * schema
 
     // keyword attribute list
     Logger::debug("keywordAttributeList: ");
-    for (unsigned idx = 0; idx < fl->getNumberOfKeywords(); idx++) {
-    	vector<unsigned> attrs;
-    	fl->getKeywordAttributeIdsList(idx, attrs);
-    	for (unsigned i = 0; i < attrs.size(); ++i)
-    		Logger::debug("[%d]", attrs[i]);
+
+    vector<vector<unsigned> > attrsLists;
+    fl->getKeywordAttributeIdsLists(fl->getNumberOfKeywords(), attrsLists);
+    for(vector<vector<unsigned> >::iterator itLists = attrsLists.begin(); itLists != attrsLists.end();itLists++){
+        for(vector<unsigned>::iterator it = (*itLists).begin();it!=(*itLists).end();it++){
+            Logger::debug("[%d]", *it);
+        }
     }
 }
 
@@ -1244,6 +1246,49 @@ bool ForwardList::isValidRecordTermHitWithStemmer(const SchemaInternal *schema,
      return returnValue;
      */
 }
+
+//Get all the attribute id lists in one loop
+void ForwardList::getKeywordAttributeIdsLists(const unsigned numOfKeywords,
+        vector<vector<unsigned> > & attributeIdsLists) const {
+
+    const uint8_t * piPtr = getKeywordAttributeIdsPointer(); // pointer to position index for the record
+
+    attributeIdsLists.clear();
+
+    unsigned piOffset = 0;
+    unsigned value;
+    short byteRead;
+    vector<unsigned> attributeIdsList;
+    // Get all keyword's attribute.
+    for (unsigned j = 0; j < numOfKeywords; ++j) {
+        attributeIdsList.clear();
+        if (attributeIdsIndexSize == 0) {
+            Logger::warn("Attribute Index not found in forward index!!");
+            attributeIdsLists.push_back(attributeIdsList);
+            continue;
+        }
+
+        if (piPtr == NULL) {
+            attributeIdsLists.push_back(attributeIdsList);
+            continue;
+        }
+
+        if (*(piPtr + attributeIdsIndexSize - 1) & 0x80) {
+            attributeIdsLists.push_back(attributeIdsList);
+            Logger::error(
+                    "Attribute Ids index buffer has bad encoding..last byte is not a terminating one");
+            continue;
+        }
+
+        ULEB128::varLengthBytesToUInt32(piPtr + piOffset, &value, &byteRead);
+        ULEB128::varLenByteArrayToInt32Vector(
+                (uint8_t *) (piPtr + piOffset + byteRead), value,
+                attributeIdsList);
+        attributeIdsLists.push_back(attributeIdsList);
+        piOffset += byteRead + value;
+    }
+}
+
 void ForwardList::getKeywordAttributeIdsList(unsigned keywordOffset, vector<unsigned>& attributeIdsList) const{
 
 	if (attributeIdsIndexSize == 0){
@@ -1410,19 +1455,20 @@ void ForwardList::getKeywordTfListFromVLBArray(const uint8_t * piPtr,
         vector<float> & keywordTfList) const {
     // get the correct byte array position for current keyword + attribute combination
     unsigned piOffset = 0;
-    vector<unsigned> currKeywordAttributeIdsList;
-    for (unsigned j = 0; j <  this->getNumberOfKeywords() ; ++j) {
-        getKeywordAttributeIdsList(j, currKeywordAttributeIdsList);
+    vector<vector<unsigned> > keywordAttributeIdsLists;
+    getKeywordAttributeIdsLists(this->getNumberOfKeywords(),keywordAttributeIdsLists) ;
+
+    for (vector<vector<unsigned> >::iterator it = keywordAttributeIdsLists.begin();it !=  keywordAttributeIdsLists.end(); ++it) {
 
         // If keyword's attribute bitmap is 0 ( highly unlikely)
-        if (currKeywordAttributeIdsList.size() == 0){
+        if ((*it).size() == 0){
             keywordTfList.push_back(0);
             continue;
         }
 
         unsigned totalKeywordOccurTime = 0;
 
-        for (unsigned k = 0; k < currKeywordAttributeIdsList.size(); ++k){
+        for (unsigned k = 0; k < (*it).size(); ++k){
             unsigned value;
             short byteRead;
             vector<unsigned> pl;
@@ -1432,7 +1478,6 @@ void ForwardList::getKeywordTfListFromVLBArray(const uint8_t * piPtr,
             piOffset += byteRead + value;
         }
         keywordTfList.push_back(sqrtf(totalKeywordOccurTime));
-        currKeywordAttributeIdsList.clear();
     }
 }
 

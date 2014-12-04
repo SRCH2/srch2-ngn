@@ -351,6 +351,8 @@ public:
     }
 
     void getKeywordAttributeIdsList(unsigned keywordOffset, vector<unsigned>& attributeIdList) const;
+    void getKeywordAttributeIdsLists(const unsigned numOfKeywords,  //Get all the attribute id lists in one loop
+            vector<vector<unsigned> > & attributeIdsLists) const;
 
     void getKeywordAttributeIdsByteArray(unsigned keywordOffset, vector<uint8_t>& attributesVLBarray);
     void getKeyWordPostionsByteArray(unsigned keywordOffset, vector<uint8_t>& positionsVLBarray);

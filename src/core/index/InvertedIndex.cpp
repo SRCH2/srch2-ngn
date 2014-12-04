@@ -120,7 +120,6 @@ void InvertedListContainer::sortAndMerge(const unsigned keywordId, ForwardIndex 
 
         float idf = Ranker::computeIdf(totalNumberOfDocuments, writeViewListSize);
         unsigned recordLength = forwardList->getNumberOfKeywords();
-        vector<unsigned> attributeIds;
 
         /*
          * Find the keyword offset using binary search on keyword ids. If the record is an
@@ -144,7 +143,6 @@ void InvertedListContainer::sortAndMerge(const unsigned keywordId, ForwardIndex 
         	keywordOffset = forwardList->getKeywordOffsetByLinearScan(keywordId);
         	ASSERT(keywordOffset < recordLength);
         }
-        forwardList->getKeywordAttributeIdsList(keywordOffset, attributeIds);
         float recordBoost = forwardList->getRecordBoost();
         float tfBoostProduct = ((ForwardList*)forwardList)->getKeywordTfBoostProduct(keywordOffset);
         float textRelevance =  Ranker::computeTextRelevance(tfBoostProduct, idf);
