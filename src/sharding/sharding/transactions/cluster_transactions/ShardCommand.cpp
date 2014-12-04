@@ -33,6 +33,7 @@ void ShardCommand::produce(){
 			return;
 		}
 	}
+	notifications.clear();
 	for(unsigned i = 0 ; i < targets.size() ; ++i){
 		notifications.push_back(std::make_pair(SP(CommandNotification)
 				(new CommandNotification(clusterReadview, targets.at(i), commandCode, filePath)), targets.at(i).getNodeId()));
