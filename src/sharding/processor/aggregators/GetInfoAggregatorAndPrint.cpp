@@ -21,6 +21,10 @@ GetInfoResponseAggregator::GetInfoResponseAggregator(ConfigManager * configurati
     this->criterion = GetInfoAggregateCriterion_Core_Shard;
 }
 
+
+GetInfoResponseAggregator::~GetInfoResponseAggregator(){
+	this->brokerSideInformationJson->printHTTP();
+}
 /*
  * This function is always called by RoutingManager as the first call back function
  */

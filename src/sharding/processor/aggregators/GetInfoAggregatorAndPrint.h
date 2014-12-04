@@ -22,6 +22,8 @@ public:
     		boost::shared_ptr<const ClusterResourceMetadata_Readview> clusterReadview,
     		unsigned coreId, bool debugRequest = false);
 
+    ~GetInfoResponseAggregator();
+
     /*
      * This function is always called by RoutingManager as the first call back function
      */

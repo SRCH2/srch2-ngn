@@ -220,6 +220,10 @@ JsonResponseHandler::JsonResponseHandler(evhttp_request *req) :
 
 
 void JsonResponseHandler::printHTTP(evhttp_request *req, evkeyvalq * headers ) {
+	if(req == NULL){
+		req = this->req;
+		ASSERT(req);
+	}
 	if (headers != NULL) {
 		vector<const Json::Value *> allRoots;
 		if(this->hasMultiRoots(allRoots)){

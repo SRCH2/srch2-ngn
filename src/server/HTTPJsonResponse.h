@@ -60,7 +60,7 @@ public:
 	virtual ~JsonResponseHandler(){
 //		printHTTP(req, headers);
 	};
-	void printHTTP(evhttp_request *req, evkeyvalq * headers = NULL);
+	void printHTTP(evhttp_request *req = NULL, evkeyvalq * headers = NULL);
 
 	void setResponseAttribute(const char * attributeName, const Json::Value & resAttr);
 
