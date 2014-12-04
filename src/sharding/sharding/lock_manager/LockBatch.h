@@ -114,12 +114,12 @@ public:
 		if(grantedLocks.find(resource) == grantedLocks.end()){
 			return false;
 		}
-		if(grantedLocks.at(resource).size() == 0){
+		if(grantedLocks.find(resource)->second.empty()){
 			return false;
 		}
 		// vector<pair<NodeOperationId, LockLevel> >
-		for(unsigned i = 0 ; i < grantedLocks.at(resource).size(); ++i){
-			if(conflict(grantedLocks.at(resource).second, lockLevel)){
+		for(unsigned i = 0 ; i < grantedLocks.find(resource)->second.size(); ++i){
+			if(conflict(grantedLocks.find(resource)->second.at(i).second, lockLevel)){
 				return true;
 			}
 		}
@@ -262,7 +262,7 @@ public:
 
 private:
 	map<Resource, vector<pair<NodeOperationId, LockLevel> > > grantedLocks;
-	bool conflict(const LockLevel & level1, const LockLevel & level2){
+	bool conflict(const LockLevel & level1, const LockLevel & level2) const{
 		if(level1 == LockLevel_X){
 			return true;
 		}
