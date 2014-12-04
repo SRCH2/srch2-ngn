@@ -102,7 +102,15 @@ void GetInfoResponseAggregator::finalize(ResponseAggregatorMetadata metadata){
 		case GetInfoAggregateCriterion_Core_Shard:
 		{
 			vector<const CoreInfo_t *> allCores;
-			getClusterReadview()->getAllCores(allCores);
+			if(this->getCoreId() == (unsigned)-1){
+				getClusterReadview()->getAllCores(allCores);
+			}else{
+				if(getClusterReadview()->getCore(this->getCoreId()) != NULL){
+					allCores.push_back(getClusterReadview()->getCore(this->getCoreId()));
+				}else{
+					ASSERT(false);
+				}
+			}
 
 			unsigned totalNumDocsInCluster = 0;
 
