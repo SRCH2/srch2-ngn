@@ -59,7 +59,7 @@ AtomicLock::AtomicLock(const vector<string> & primaryKeys,
 	ASSERT(this->getTransaction());
 
 	this->pid = pid;
-	if(primaryKeys.size() > 0){
+	if(primaryKeys.empty()){
 		lockNotification.reset();
 		return;
 	}
