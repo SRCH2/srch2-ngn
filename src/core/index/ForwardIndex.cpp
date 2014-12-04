@@ -526,7 +526,7 @@ void ForwardIndex::addRecord(const Record *record, const unsigned recordId,
 
     // Get term frequency list for all keywords
     vector<float> tfList;
-    forwardList->getTermFrequency(uniqueKeywordIdList.size(), tfList);
+    forwardList->computeTermFrequencies(uniqueKeywordIdList.size(), tfList);
     ASSERT(uniqueKeywordIdList.size() == tfList.size());
 
     //Add Score List
@@ -1006,13 +1006,13 @@ unsigned ForwardList::getKeywordOffsetByLinearScan(unsigned keywordId) const {
  *   term occurrences in all attributes. If keyword is not found then
  *   set to 0.0. If position index is not enabled then set to 1.0.
  */
-void ForwardList::getTermFrequency(const unsigned numOfKeywords,
+void ForwardList::computeTermFrequencies(const unsigned numOfKeywords,
         vector<float> & keywordTfList) const {
 	ASSERT(numOfKeywords <= this->getNumberOfKeywords());
 
     this->getKeywordTfListInRecordField(keywordTfList);
 
-    //Keyword not found, set to 0
+    //For those attribute ids after keywordTfList.size(), they don't have this keyword, so we set their TF's to be 0.
     for(int i = keywordTfList.size(); i < numOfKeywords; i++ ){
         keywordTfList.push_back(0.0);
     }
@@ -1466,7 +1466,7 @@ void ForwardList::getKeywordTfListFromVLBArray(const uint8_t * piPtr,
             continue;
         }
 
-        unsigned totalKeywordOccurTime = 0;
+        unsigned totalKeywordOccurrences = 0;
 
         for (unsigned k = 0; k < (*it).size(); ++k){
             unsigned value;
@@ -1474,10 +1474,10 @@ void ForwardList::getKeywordTfListFromVLBArray(const uint8_t * piPtr,
             vector<unsigned> pl;
             ULEB128::varLengthBytesToUInt32(piPtr + piOffset , &value, &byteRead);
             ULEB128::varLenByteArrayToInt32Vector((uint8_t *)(piPtr + piOffset + byteRead), value, pl);
-            totalKeywordOccurTime += pl.size();
+            totalKeywordOccurrences += pl.size();
             piOffset += byteRead + value;
         }
-        keywordTfList.push_back(sqrtf(totalKeywordOccurTime));
+        keywordTfList.push_back(sqrtf(totalKeywordOccurrences));
     }
 }
 
