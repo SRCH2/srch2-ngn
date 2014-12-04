@@ -705,6 +705,9 @@ void Cluster_Writeview::printNodeShards(JsonResponseHandler * response) const{
 
 
 void Cluster_Writeview::printLocalShards(JsonResponseHandler * response) const{
+	if(response != NULL){
+		return;// TODO add local information later.
+	}
 	if(localClusterDataShards.size() != 0){
 		//////// Cluster physical shards
 		vector<string> localClusterShardHeaders;
