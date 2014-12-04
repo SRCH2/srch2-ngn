@@ -509,10 +509,10 @@ void LockingNotification::ACK::setGranted(bool granted){
 	this->granted = granted;
 }
 
-unsigned LockingNotification::ACK::getIndexOfLastGrantedItem() const{
+int LockingNotification::ACK::getIndexOfLastGrantedItem() const{
 	return indexOfLastGrantedItem;
 }
-void LockingNotification::ACK::setIndexOfLastGrantedItem(const unsigned index){
+void LockingNotification::ACK::setIndexOfLastGrantedItem(const int index){
 	this->indexOfLastGrantedItem = index;
 }
 

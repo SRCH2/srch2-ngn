@@ -44,6 +44,10 @@ AtomicRelease::AtomicRelease(const NodeOperationId & newNodeOpId,
 AtomicRelease::AtomicRelease(const vector<string> & primaryKeys, const NodeOperationId & writerAgent, const ClusterPID & pid,
 		ConsumerInterface * consumer): ProducerInterface(consumer){
 	ASSERT(this->getTransaction());
+	if(primaryKeys.empty()){
+		this->releaseNotification.reset();
+		return;
+	}
 	// prepare the locker and locking notification
 	this->releaseNotification = SP(LockingNotification)(new LockingNotification(primaryKeys, writerAgent, pid, true));
 	this->lockType = LockRequestType_PrimaryKey;
@@ -80,6 +84,12 @@ void AtomicRelease::produce(){
     Logger::sharding(Logger::Detail, "AtomicRelease| starts. Consumer is %s",
     		this->getConsumer() == NULL ? "NULL" : this->getConsumer()->getName().c_str());
 
+    if(! releaseNotification){
+        Logger::sharding(Logger::Detail, "AtomicLock| ends at the beginning, primary keys input list was empty.");
+        finalize();
+    	return;
+    }
+
     SP(const ClusterNodes_Writeview) nodesWriteview = ShardManager::getNodesWriteview_read();
     for(int nodeIdx = 0; nodeIdx < participants.size(); ++nodeIdx){
     	if(! nodesWriteview->isNodeAlive(participants.at(nodeIdx))){
@@ -89,7 +99,7 @@ void AtomicRelease::produce(){
     }
     nodesWriteview.reset();
     if(participants.empty()){
-        Logger::sharding(Logger::Detail, "AtomicLock| ends unattached, no participant found.");
+        Logger::sharding(Logger::Detail, "AtomicLock| ends at the beginning, no participant found.");
         finalize();
     	return;
     }

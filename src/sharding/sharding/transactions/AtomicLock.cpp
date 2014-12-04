@@ -57,6 +57,10 @@ AtomicLock::AtomicLock(const vector<string> & primaryKeys,
 		const ClusterPID & pid,
 		ConsumerInterface * consumer): ProducerInterface(consumer){
 	ASSERT(this->getTransaction());
+	if(primaryKeys.size() > 0){
+		lockNotification.reset();
+		return;
+	}
 	/*
 	 * list of primary keys must be ascending
 	 */
@@ -102,8 +106,14 @@ SP(Transaction) AtomicLock::getTransaction(){
 void AtomicLock::produce(){
     Logger::sharding(Logger::Detail, "AtomicLock| starts.");
 
+    if(! lockNotification){
+        Logger::sharding(Logger::Detail, "AtomicLock| ends at the beginning, primary key input list was empty.");
+        finalize(getDefaultStatusValue());
+    	return;
+    }
+
     if(participants.empty()){
-        Logger::sharding(Logger::Detail, "AtomicLock| ends unattached, no participant found.");
+        Logger::sharding(Logger::Detail, "AtomicLock| ends at the beginning, no participant found.");
         finalize(getDefaultStatusValue());
     	return;
     }

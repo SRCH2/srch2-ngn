@@ -327,7 +327,7 @@ void LockManager::setPendingForRVRelease(LockBatch * lockBatch){
 bool LockManager::canAcquireAllBatch(LockBatch * lockBatch){
 
 	ASSERT(lockBatch->lastGrantedItemIndex == -1);
-	unsigned lastGrantedPreValue = lockBatch->lastGrantedItemIndex ;
+	int lastGrantedPreValue = lockBatch->lastGrantedItemIndex ;
 
 	while(true){
 		switch (lockBatch->batchType) {
@@ -346,7 +346,7 @@ bool LockManager::canAcquireAllBatch(LockBatch * lockBatch){
 						return false;
 					}else{
 						lastGrantedPreValue++;
-						if(lastGrantedPreValue == lockBatch->tokens.size() - 1){
+						if(lastGrantedPreValue == ((int)lockBatch->tokens.size()) - 1){
 							return true;
 						}
 					}
@@ -379,7 +379,8 @@ bool LockManager::canAcquireAllBatch(LockBatch * lockBatch){
 				if(! primaryKeyLocks.canLock(ss.str() , nxtToken.second)){
 					return false;
 				}else{
-					if(lastGrantedPreValue == lockBatch->pkTokens.size() - 1){
+					lastGrantedPreValue++;
+					if(lastGrantedPreValue == ((int)lockBatch->pkTokens.size()) - 1){
 						return true;
 					}
 				}
@@ -395,9 +396,10 @@ bool LockManager::canAcquireAllBatch(LockBatch * lockBatch){
  */
 bool LockManager::moveLockBatchForward(LockBatch * lockBatch){
 
-	unsigned lastGrantedPreValue = lockBatch->lastGrantedItemIndex ;
+	int lastGrantedPreValue = lockBatch->lastGrantedItemIndex ;
 
-	while(true){
+	bool continueMovingForward = true;
+	while(continueMovingForward){
 		switch (lockBatch->batchType) {
 			case LockRequestType_Copy:
 			case LockRequestType_Move:
@@ -413,7 +415,7 @@ bool LockManager::moveLockBatchForward(LockBatch * lockBatch){
 				if(clusterShardLocks.lock(nxtToken.first, lockBatch->opIds, nxtToken.second)){
 					// one more token was granted.
 					lockBatch->lastGrantedItemIndex++;
-					if(lockBatch->lastGrantedItemIndex == lockBatch->tokens.size() - 1){
+					if(lockBatch->lastGrantedItemIndex == ((int)lockBatch->tokens.size()) - 1){
 
 						lockBatch->versionId = ShardManager::getShardManager()->getMetadataManager()->getClusterWriteviewVersionID();
 						ASSERT(lockBatch->isReadviewPending());
@@ -467,14 +469,15 @@ bool LockManager::moveLockBatchForward(LockBatch * lockBatch){
 			}
 			case LockRequestType_PrimaryKey:
 			{
-				ASSERT(lockBatch->lastGrantedItemIndex < (int)(lockBatch->pkTokens.size()));
+				ASSERT(lockBatch->pkTokens.size() > 0);
+				ASSERT(lockBatch->lastGrantedItemIndex < ((int)lockBatch->pkTokens.size()) - 1);
 				pair<string, LockLevel> & nxtToken = lockBatch->pkTokens.at(lockBatch->lastGrantedItemIndex + 1);
 				stringstream ss;
 				ss << nxtToken.first << PRIMARY_KEY_SHARD_DELIMITER << lockBatch->pid.toString();
 				if(primaryKeyLocks.lock(ss.str(), lockBatch->opIds, nxtToken.second)){
 					// one more token was granted.
 					lockBatch->lastGrantedItemIndex++;
-					if(lockBatch->lastGrantedItemIndex == lockBatch->pkTokens.size()-1){
+					if(lockBatch->lastGrantedItemIndex == ((int)lockBatch->pkTokens.size())-1){
 						// let's send the last update and we are done.
 						return true;
 					}

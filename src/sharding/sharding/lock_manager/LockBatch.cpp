@@ -111,6 +111,7 @@ LockBatch * LockBatch::generateLockBatch(SP(LockingNotification) notif){
 			for(unsigned pkIdx = 0; pkIdx < primaryKeys.size(); ++pkIdx){
 				lockBatch->pkTokens.push_back(std::make_pair(primaryKeys.at(pkIdx), LockLevel_X));
 			}
+			ASSERT(lockBatch->pkTokens.size() > 0);
 			return lockBatch;
 		}
 		case LockRequestType_GeneralPurpose:

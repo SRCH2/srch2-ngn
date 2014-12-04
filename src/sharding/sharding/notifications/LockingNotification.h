@@ -164,12 +164,12 @@ public:
 	    bool hasResponse() const {
 				return true;
 		}
-	    unsigned getIndexOfLastGrantedItem() const;
-	    void setIndexOfLastGrantedItem(const unsigned index);
+	    int getIndexOfLastGrantedItem() const;
+	    void setIndexOfLastGrantedItem(const int index);
 
 	private:
 	    bool granted;
-	    unsigned indexOfLastGrantedItem;
+	    int indexOfLastGrantedItem;
 	};
 
 };
