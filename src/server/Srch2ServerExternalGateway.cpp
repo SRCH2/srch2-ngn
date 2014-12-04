@@ -86,7 +86,6 @@ void Srch2ServerGateway::cb_coreSpecificOperations(struct evhttp_request * req, 
     	    if(req->type == EVHTTP_REQ_PUT){
         		WriteCommandHttp::insert(clusterReadview, req, coreId);
     	    }else if(req->type == EVHTTP_REQ_DELETE){
-    	    	Logger::console("Delete request came ...");
     	    	WriteCommandHttp::deleteRecord(clusterReadview, req, coreId);
     	    }
     		break;
