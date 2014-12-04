@@ -236,10 +236,10 @@ void MetadataInitializer::loadShards(Cluster_Writeview * newWriteview){
 
 	// 1. load all shards
 	for(unsigned i = 0; i < clusterShardsToLoad.size(); ++i){
-		clusterShardsToLoad.at(i).second->prepare();
+		clusterShardsToLoad.at(i).second->prepare(false);
 	}
 	for( unsigned i = 0 ; i < nodeShardsToLoad.size(); ++i){
-		nodeShardsToLoad.at(i).second->prepare();
+		nodeShardsToLoad.at(i).second->prepare(false);
 	}
 	// 2. fix the writeview if any loads failed.
 	for(unsigned  i = 0; i < clusterShardsToLoad.size() ; ++i){
