@@ -57,6 +57,8 @@ AtomicLock::AtomicLock(const vector<string> & primaryKeys,
 		const ClusterPID & pid,
 		ConsumerInterface * consumer): ProducerInterface(consumer){
 	ASSERT(this->getTransaction());
+
+	this->pid = pid;
 	if(primaryKeys.size() > 0){
 		lockNotification.reset();
 		return;
@@ -73,7 +75,6 @@ AtomicLock::AtomicLock(const vector<string> & primaryKeys,
 	// prepare the locker and locking notification
 	lockNotification = SP(LockingNotification)(new LockingNotification(primaryKeys, writerAgent, pid));
 	releaseNotification = SP(LockingNotification)(new LockingNotification(primaryKeys, writerAgent, pid, true));
-	this->pid = pid;
 	this->lockType = LockRequestType_PrimaryKey;
 	init();
 
