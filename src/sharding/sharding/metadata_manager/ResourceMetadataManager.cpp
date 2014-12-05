@@ -221,8 +221,8 @@ unsigned ResourceMetadataManager::applyAndCommit(MetadataChange * metadataChange
 	}
 	metadataChange->doChange(writeview);
     Logger::sharding(Logger::Detail, "MetadataManager| Applying the change : %s", metadataChange->toString().c_str() );
-	this->commitClusterMetadata(writeview->getNewReadview());
     writeview->versionId++;
+	this->commitClusterMetadata(writeview->getNewReadview());
 	return writeview->versionId - 1;
 }
 
