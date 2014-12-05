@@ -164,8 +164,8 @@ void ResourceMetadataManager::commitClusterMetadata(const bool shouldLock, const
 		writeviewMutex.lock_shared();
 		nodesMutex.lock();
 	}
-	ClusterResourceMetadata_Readview * newReadview = this->writeview->getNewReadview(shouldLockMutexOfLockManager);
 	this->writeview->versionId++;
+	ClusterResourceMetadata_Readview * newReadview = this->writeview->getNewReadview(shouldLockMutexOfLockManager);
     pthread_spin_lock(&m_spinlock_writeview);
     writeviewVersionId = this->writeview->versionId;
     pthread_spin_unlock(&m_spinlock_writeview);
