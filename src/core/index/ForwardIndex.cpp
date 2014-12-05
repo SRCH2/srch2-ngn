@@ -1338,7 +1338,7 @@ void ForwardList::getKeywordTfListInRecordField(
         for (int i = 0; i < this->getNumberOfKeywords(); i++) {
             keywordTfList.push_back(1.0);
         }
-        Logger::warn("Position Index not found in forward index!!");
+        Logger::debug("Position Index not found in forward index!!");
         return;
     }
 
@@ -1360,7 +1360,7 @@ void ForwardList::getKeyWordPostionsInRecordField(unsigned keyOffset, unsigned a
 		 vector<unsigned>& pl) const{
 
 	if (positionIndexSize == 0){
-		Logger::warn("Position Index not found in forward index!!");
+		Logger::debug("Position Index not found in forward index!!");
 		return;
 	}
 
@@ -1819,7 +1819,7 @@ void ForwardList::getKeywordAttributeIdsByteArray(unsigned keywordOffset, vector
 // API to fetch VLB array of word positions in all attributes for a keyword.
 void ForwardList::getKeyWordPostionsByteArray(unsigned keywordOffset, vector<uint8_t>& positionsVLBarray){
 	if (positionIndexSize == 0){
-		Logger::warn("Position Index not found in forward index!!");
+		Logger::debug("Position Index not found in forward index!!");
 		return;
 	}
 
