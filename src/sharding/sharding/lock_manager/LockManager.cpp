@@ -277,37 +277,44 @@ void LockManager::movePendingLockBatchesForward(unsigned pendingLockBatchIdx){
 		lockManagerMutex.unlock();
 		return;
 	}
-	LockBatch * lockBatch = pendingLockBatches.at(pendingLockBatchIdx);
 
-	bool shouldCommit = false;
+	unsigned nextPendingLockBatchIdx = 0;
+	LockBatch * lockBatch = pendingLockBatches.at(pendingLockBatchIdx);
+	pendingLockBatches.erase(pendingLockBatches.begin()+pendingLockBatchIdx);
+
 	ASSERT(! lockBatch->release);
-	if(moveLockBatchForward(lockBatch)){
-		Logger::sharding(Logger::Detail, "LockManager| GRANTED : %s", (lockBatch->getLockHoldersStr() + "/" + lockBatch->getBatchTypeStr()).c_str());
-		shouldCommit = lockBatch->shouldCommitReadview;
+	bool lockBatchMoveResult = moveLockBatchForward(lockBatch);
+	bool shouldCommit = lockBatch->shouldCommitReadview;
+	if(lockBatchMoveResult){
+		Logger::sharding(Logger::Detail, "LockManager| GRANTED : %s",
+				(lockBatch->getLockHoldersStr() + "/" + lockBatch->getBatchTypeStr()).c_str());
 		lockBatch->shouldFinalize = true;
 		lockBatch->finalizeResult = true;
+		// RV pending : we will just commit and move to the next request
+		nextPendingLockBatchIdx = pendingLockBatchIdx;
 	}else{
-		shouldCommit = lockBatch->shouldCommitReadview;
-
-		if(lockBatch->isReadviewPending()){
+		if(lockBatch->isReadviewPending()){ // lock is acquired but must wait for rv release
 			// erase it from pendingLockRequests and put it in readview release
 			Logger::sharding(Logger::Detail, "LockManager| %s gone to RV release pending list. ",
 					(lockBatch->getLockHoldersStr() + "/" + lockBatch->getBatchTypeStr()).c_str());
+
+			// it's already placed in rv pending requests
+			// RV pending : we will just commit and move to the next request
+			nextPendingLockBatchIdx = pendingLockBatchIdx;
+		}else{ // lock is not acquired and must stay in pending requests
+			pendingLockBatches.insert(pendingLockBatches.begin() + pendingLockBatchIdx, lockBatch);
+			nextPendingLockBatchIdx = pendingLockBatchIdx + 1;
 		}
 	}
 
 	if(shouldCommit){
 		ShardManager::getShardManager()->getMetadataManager()->commitClusterMetadata(true, false);
 	}
-	unsigned nextPendingLockBatchIdx = 0;
-	if(lockBatch->shouldFinalize){
+	if(lockBatchMoveResult){
 		finalize(lockBatch);
 		delete lockBatch;
-		pendingLockBatches.erase(pendingLockBatches.begin() + pendingLockBatchIdx);
-		nextPendingLockBatchIdx = pendingLockBatchIdx;
-	}else{
-		nextPendingLockBatchIdx = pendingLockBatchIdx + 1;
 	}
+
 	lockManagerMutex.unlock();
 	movePendingLockBatchesForward(nextPendingLockBatchIdx);
 }
