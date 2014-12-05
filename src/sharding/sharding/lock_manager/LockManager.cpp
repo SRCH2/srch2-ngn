@@ -174,7 +174,7 @@ void LockManager::resolveLock(LockBatch * lockBatch){
 		// if we must wait for rv-release
 		if(lockBatch->isReadviewPending()){
 			// just put it in rv release pending lock batches
-			Logger::sharding(Logger::Detail, "LockManager| lock request pending for RV release.");
+			Logger::sharding(Logger::Detail, "LockManager| lock request pending for RV release. readview vid : %d", lockBatch->versionId);
 			return;
 		}else{
 			Logger::sharding(Logger::Detail, "LockManager| lock request gone to waiting list ...");
