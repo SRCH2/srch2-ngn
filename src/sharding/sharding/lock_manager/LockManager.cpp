@@ -52,14 +52,14 @@ void LockManager::resolve(SP(LockingNotification)  notif){
 	}
 	bool shouldCommit = lockBatch->shouldCommitReadview;
 	bool shouldFinalize = lockBatch->shouldFinalize;
-	lockManagerMutex.unlock();
 	if(shouldCommit){
-		ShardManager::getShardManager()->getMetadataManager()->commitClusterMetadata();
+		ShardManager::getShardManager()->getMetadataManager()->commitClusterMetadata(true, false);
 	}
 	if(shouldFinalize){
 		finalize(lockBatch);
 		delete lockBatch;
 	}
+	lockManagerMutex.unlock();
 	if(releaseHappended){
 		movePendingLockBatchesForward();
 	}
@@ -121,11 +121,11 @@ void LockManager::resolveNodeFailure(const NodeId & failedNode){
 		passedInitialization.erase(passedInitialization.find(failedNode));
 	}
 
-	lockManagerMutex.unlock();
 	// reflect changes on the readview
 	if(releaseHappenned){
-		ShardManager::getShardManager()->getMetadataManager()->commitClusterMetadata();
+		ShardManager::getShardManager()->getMetadataManager()->commitClusterMetadata(true, false);
 	}
+	lockManagerMutex.unlock();
 
 	// maybe some other pending lock requests can move forward
 	if(releaseHappenned2){
@@ -175,7 +175,6 @@ void LockManager::resolveLock(LockBatch * lockBatch){
 		if(lockBatch->isReadviewPending()){
 			// just put it in rv release pending lock batches
 			Logger::sharding(Logger::Detail, "LockManager| lock request pending for RV release.");
-			setPendingForRVRelease(lockBatch);
 			return;
 		}else{
 			Logger::sharding(Logger::Detail, "LockManager| lock request gone to waiting list ...");
@@ -254,8 +253,10 @@ bool LockManager::isPartitionLocked(const ClusterPID & pid){
 	lockManagerMutex.unlock();
 	return false;
 }
-void LockManager::getLockedPartitions(vector<ClusterPID> & lockedPartitions){
-	lockManagerMutex.lock();
+void LockManager::getLockedPartitions(vector<ClusterPID> & lockedPartitions, bool shouldLock){
+	if(shouldLock){
+		lockManagerMutex.lock();
+	}
 	vector<ClusterShardId> allLockedShards;
 	clusterShardLocks.getAllLockedResource(allLockedShards);
 	for(unsigned i = 0 ; i < allLockedShards.size(); ++ i){
@@ -263,7 +264,9 @@ void LockManager::getLockedPartitions(vector<ClusterPID> & lockedPartitions){
 			lockedPartitions.push_back(allLockedShards.at(i).getPartitionId());
 		}
 	}
-	lockManagerMutex.unlock();
+	if(shouldLock){
+		lockManagerMutex.unlock();
+	}
 }
 
 
@@ -290,31 +293,23 @@ void LockManager::movePendingLockBatchesForward(unsigned pendingLockBatchIdx){
 			// erase it from pendingLockRequests and put it in readview release
 			Logger::sharding(Logger::Detail, "LockManager| %s gone to RV release pending list. ",
 					(lockBatch->getLockHoldersStr() + "/" + lockBatch->getBatchTypeStr()).c_str());
-			setPendingForRVRelease(lockBatch);
 		}
 	}
 
-	lockManagerMutex.unlock();
 	if(shouldCommit){
-		ShardManager::getShardManager()->getMetadataManager()->commitClusterMetadata();
+		ShardManager::getShardManager()->getMetadataManager()->commitClusterMetadata(true, false);
 	}
+	unsigned nextPendingLockBatchIdx = 0;
 	if(lockBatch->shouldFinalize){
 		finalize(lockBatch);
-	}
-	movePendingLockBatchesForward(pendingLockBatchIdx + 1);
-	if(pendingLockBatchIdx > 0){
-		return;
-	}
-	lockManagerMutex.lock();
-	for(vector<LockBatch *>::iterator pItr = pendingLockBatches.begin(); pItr != pendingLockBatches.end();){
-		if((*pItr)->shouldFinalize){
-			delete (*pItr);
-			pItr = pendingLockBatches.erase(pItr);
-		}else{
-			++pItr;
-		}
+		delete lockBatch;
+		pendingLockBatches.erase(pendingLockBatches.begin() + pendingLockBatchIdx);
+		nextPendingLockBatchIdx = pendingLockBatchIdx;
+	}else{
+		nextPendingLockBatchIdx = pendingLockBatchIdx + 1;
 	}
 	lockManagerMutex.unlock();
+	movePendingLockBatchesForward(nextPendingLockBatchIdx);
 }
 
 
@@ -443,6 +438,7 @@ bool LockManager::moveLockBatchForward(LockBatch * lockBatch){
 
 						lockBatch->versionId = ShardManager::getShardManager()->getMetadataManager()->getClusterWriteviewVersionID();
 						ASSERT(lockBatch->isReadviewPending());
+						setPendingForRVRelease(lockBatch);
 						lockBatch->shouldCommitReadview = true;
 						return false; // because we should still wait for the release of readview
 					}else{

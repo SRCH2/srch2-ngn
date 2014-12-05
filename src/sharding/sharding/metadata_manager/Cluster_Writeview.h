@@ -248,7 +248,7 @@ public:
 	void setNodeShardServer(const NodeShardId & nodeShardId, boost::shared_ptr<Srch2Server> server);
 	void fixAfterDiskLoad(Cluster_Writeview * newWrireview);
 	void fixClusterMetadataOfAnotherNode(Cluster_Writeview * cluster) const;
-	ClusterResourceMetadata_Readview * getNewReadview() const;
+	ClusterResourceMetadata_Readview * getNewReadview(bool shouldLockLockManagerMutex = true) const;
 
 	// this function also required nodesMutex to be acquired before invocation
 	void getPatitionInvolvedNodes(const ClusterShardId & shardId, vector<NodeId> & participants) const;

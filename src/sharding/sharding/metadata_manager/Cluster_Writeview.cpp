@@ -1307,7 +1307,7 @@ void Cluster_Writeview::fixClusterMetadataOfAnotherNode(Cluster_Writeview * clus
 	cluster->cores = cores;
 }
 
-ClusterResourceMetadata_Readview * Cluster_Writeview::getNewReadview() const{
+ClusterResourceMetadata_Readview * Cluster_Writeview::getNewReadview(bool shouldLockLockManagerMutex) const{
 	// we need cores for construction
 	vector<const CoreInfo_t *> coresVector;
 	for(map<unsigned, CoreInfo_t *>::const_iterator coreItr = this->cores.begin(); coreItr != this->cores.end(); ++coreItr){
@@ -1364,7 +1364,7 @@ ClusterResourceMetadata_Readview * Cluster_Writeview::getNewReadview() const{
 
 		// set locks of partitions of this core
 		vector<ClusterShardId> lockedPartitions;
-		ShardManager::getShardManager()->_getLockManager()->getLockedPartitions(lockedPartitions);
+		ShardManager::getShardManager()->_getLockManager()->getLockedPartitions(lockedPartitions, shouldLockLockManagerMutex);
 		for(unsigned i = 0 ; i < lockedPartitions.size(); i++){
 			if(lockedPartitions.at(i).coreId == coreId){
 				corePartitionContainer->setPartitionLock(lockedPartitions.at(i).partitionId, PartitionLock_Locked);

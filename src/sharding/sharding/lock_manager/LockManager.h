@@ -31,7 +31,7 @@ public:
 	void resolveLock(LockBatch * lockBatch);
 	bool resolveRelease(LockBatch * lockBatch);
 	bool isPartitionLocked(const ClusterPID & pid);
-	void getLockedPartitions(vector<ClusterPID> & lockedPartitions);
+	void getLockedPartitions(vector<ClusterPID> & lockedPartitions, bool shouldLock = true);
 	void setNodePassedInitialization(const NodeId & nodeId);
 	void initialize();
 	void print(JsonResponseHandler * response = NULL);

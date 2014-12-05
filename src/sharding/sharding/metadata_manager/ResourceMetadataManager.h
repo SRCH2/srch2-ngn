@@ -50,7 +50,7 @@ public:
 	void resolve(SP(NodeFailureNotification) nodeFailureNotif, const bool shouldLock = true);
 
 
-	void commitClusterMetadata(const bool shouldLock = true);
+	void commitClusterMetadata(const bool shouldLock = true, const bool shouldLockMutexOfLockManager = true);
 	void getClusterReadView(boost::shared_ptr<const ClusterResourceMetadata_Readview> & clusterReadview) const;
 	/*
 	 * if shouldLock is false it assumes we already have both writeview and nodes X locked.
