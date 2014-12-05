@@ -35,7 +35,7 @@ void IndexHealthInfo::populateReport(IndexHealthInfo & report, IndexData *index)
 	report.readCount = index->_getReadCount();
 	report.writeCount = index->_getWriteCount();
     time_t timer = time(NULL);
-    struct std::tm* timenow = gmtime(&timer);
+    struct std::tm* timenow = localtime(&timer);
     report.getString(timenow, report.lastMergeTimeString);
     report.docCount = index->_getNumberOfDocumentsInIndex();
 	report.isMergeRequired = index->isMergeRequired();
@@ -141,7 +141,7 @@ void IndexHealthInfo::getString(struct std::tm *timenow, string &in)
 void IndexHealthInfo::getLatestHealthInfo(unsigned doc_count)
 {
     time_t timer = time(NULL);
-    struct std::tm* timenow = gmtime(&timer);
+    struct std::tm* timenow = localtime(&timer);
     IndexHealthInfo::getString(timenow, this->lastMergeTimeString);
     this->docCount = doc_count;
 }
