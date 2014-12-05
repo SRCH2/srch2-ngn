@@ -18,10 +18,9 @@ ShardCommand::ShardCommand(ConsumerInterface * consumer,
 	ASSERT(this->getTransaction() != NULL);
 	this->filePath = filePath;
 	this->dataSavedFlag = false;
-	clusterReadview = ((ReadviewTransaction *)(this->getTransaction().get()))->getReadview();
 	this->locker = NULL;
 	this->releaser = NULL;
-	this->currentOpId = NodeOperationId(clusterReadview->getCurrentNodeId(), OperationState::getNextOperationId());
+	this->currentOpId = NodeOperationId(ShardManager::getCurrentNodeId(), OperationState::getNextOperationId());
 }
 
 ShardCommand::~ShardCommand(){}
@@ -53,6 +52,8 @@ void ShardCommand::produce(){
 }
 
 void ShardCommand::performCommand(){
+	boost::shared_ptr<const ClusterResourceMetadata_Readview> clusterReadview;
+	ShardManager::getReadview(clusterReadview);
 	notifications.clear();
 	for(unsigned i = 0 ; i < targets.size() ; ++i){
 		notifications.push_back(std::make_pair(SP(CommandNotification)
@@ -126,6 +127,9 @@ void ShardCommand::consume(bool granted){
 };
 
 bool ShardCommand::computeTargets(vector<NodeTargetShardInfo> & targets){
+
+	boost::shared_ptr<const ClusterResourceMetadata_Readview> clusterReadview;
+	ShardManager::getReadview(clusterReadview);
 	if(coreId == (unsigned)-1){
 		ASSERT(false); // we don't support this for now.
 		vector<const CoreInfo_t *> cores;

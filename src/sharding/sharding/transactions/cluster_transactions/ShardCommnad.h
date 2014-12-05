@@ -61,7 +61,6 @@ private:
 	ShardCommandCode commandCode;
 	vector<NodeTargetShardInfo> targets;
 	vector<std::pair<SP(ShardingNotification) , NodeId> > notifications;
-	boost::shared_ptr<const ClusterResourceMetadata_Readview> clusterReadview;
 
 	string filePath ; // holds either jsonFilePath or the newLogFilePath
 

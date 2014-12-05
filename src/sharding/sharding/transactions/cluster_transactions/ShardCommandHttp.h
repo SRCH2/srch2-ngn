@@ -24,13 +24,12 @@ namespace httpwrapper {
  * 2. When all nodes saved their indices, request all nodes to save their cluster metadata
  * 3. When all nodes acked metadata save, write the metadata on disk and done.
  */
-class ShardCommandHttp: public ReadviewTransaction, public ConsumerInterface {
+class ShardCommandHttp: public WriteviewTransaction, public ConsumerInterface {
 public:
 
-	static void runCommand(boost::shared_ptr<const ClusterResourceMetadata_Readview> clusterReadview,
-			evhttp_request *req, unsigned coreId , ShardCommandCode commandCode){
+	static void runCommand(evhttp_request *req, unsigned coreId , ShardCommandCode commandCode){
 		SP(ShardCommandHttp) commandHttpHandler =
-				SP(ShardCommandHttp) (new ShardCommandHttp(clusterReadview, req, coreId, commandCode));
+				SP(ShardCommandHttp) (new ShardCommandHttp(req, coreId, commandCode));
 		Transaction::startTransaction(commandHttpHandler);
 		return ;
 	}
@@ -41,14 +40,11 @@ public:
 		}
 	}
 private:
-	ShardCommandHttp(boost::shared_ptr<const ClusterResourceMetadata_Readview> clusterReadview,
-			evhttp_request *req, unsigned coreId , ShardCommandCode commandCode):
-			ReadviewTransaction(clusterReadview){
+	ShardCommandHttp(evhttp_request *req, unsigned coreId , ShardCommandCode commandCode){
 		this->req = req;
 		this->coreId = coreId;
 		this->commandCode = commandCode;
 		this->shardCommand = NULL;
-		this->clusterReadview = this->getReadview();
 		initActionName();
 	}
 
@@ -73,6 +69,8 @@ private:
 	}
 
 	bool _run(){
+		boost::shared_ptr<const ClusterResourceMetadata_Readview> clusterReadview;
+		ShardManager::getReadview(clusterReadview);
 	    const CoreInfo_t *indexDataContainerConf = clusterReadview->getCore(coreId);
 	    if(indexDataContainerConf == NULL){
 			brokerSideInformationJson->finalizeInvalid();
@@ -179,7 +177,6 @@ private:
 
 private:
 	ShardOperationJsonResponse * brokerSideInformationJson;
-	boost::shared_ptr<const ClusterResourceMetadata_Readview> clusterReadview;
 	evhttp_request *req;
 	unsigned coreId;
 	ShardCommandCode commandCode;

@@ -93,20 +93,20 @@ void Srch2ServerGateway::cb_coreSpecificOperations(struct evhttp_request * req, 
     		WriteCommandHttp::update(clusterReadview, req, coreId);
     		break;
     	case srch2http::SavePort:
-    		ShardCommandHttp::runCommand(clusterReadview, req, coreId, ShardCommandCode_SaveData_SaveMetadata);
+    		ShardCommandHttp::runCommand(req, coreId, ShardCommandCode_SaveData_SaveMetadata);
     		break;
     	case srch2http::ExportPort:
 //    		ShardCommandHttp::runCommand(clusterReadview, req, coreId, ShardCommandCode_Export);
     	    bmhelper_evhttp_send_reply2(req, HTTP_OK, "OK", "This command is not supported anymore. Please refer to SRCH2 documentation.");
     		break;
     	case srch2http::ResetLoggerPort:
-    		ShardCommandHttp::runCommand(clusterReadview, req, coreId, ShardCommandCode_ResetLogger);
+    		ShardCommandHttp::runCommand(req, coreId, ShardCommandCode_ResetLogger);
     		break;
     	case srch2http::CommitPort:
-    		ShardCommandHttp::runCommand(clusterReadview, req, coreId, ShardCommandCode_Commit);
+    		ShardCommandHttp::runCommand(req, coreId, ShardCommandCode_Commit);
     		break;
     	case srch2http::MergePort: // also includes mergeSetOn and mergeSetOff
-    		ShardCommandHttp::runCommand(clusterReadview, req, coreId, ShardCommandCode_Merge);
+    		ShardCommandHttp::runCommand(req, coreId, ShardCommandCode_Merge);
     		break;
     	case srch2http::AttributeAclAdd:
     	case srch2http::AttributeAclDelete:
