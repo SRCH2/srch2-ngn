@@ -192,6 +192,8 @@ public:
     virtual INDEXWRITE_RETVAL merge() = 0;
     virtual INDEXWRITE_RETVAL disableMerge() = 0;
     virtual INDEXWRITE_RETVAL enableMerge() = 0;
+    virtual bool isMergeEnabled() = 0;
+    virtual string getLastMergeTime() = 0;
     /*
     * Deletes all the records.*/
     /*virtual int deleteAll() = 0;*/

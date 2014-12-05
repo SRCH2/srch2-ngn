@@ -172,6 +172,8 @@ public:
     
     inline void getIndexHealthObj(IndexHealthInfo & report) const{
     	IndexHealthInfo::populateReport(report, this->index);
+    	report.lastMergeTimeString = indexHealthInfo.lastMergeTimeString;
+    	report.isMergeEnabled = this->mergeEnabledFlag;
     }
 
     inline const bool isCommited() const { return this->index->isBulkLoadDone(); }
@@ -225,6 +227,22 @@ public:
         this->mergeEnabledFlag = true;
         pthread_mutex_unlock(&lockForWriters);
     	return OP_SUCCESS;
+    }
+
+    bool isMergeEnabled(){
+    	bool tmp = true;
+        pthread_mutex_lock(&lockForWriters);
+        tmp = this->mergeEnabledFlag;
+        pthread_mutex_unlock(&lockForWriters);
+        return tmp;
+    }
+
+    string getLastMergeTime(){
+    	string tmp = "";
+        pthread_mutex_lock(&lockForWriters);
+        tmp = indexHealthInfo.lastMergeTimeString;
+        pthread_mutex_unlock(&lockForWriters);
+        return tmp;
     }
 
     boost::shared_ptr<QuadTreeRootNodeAndFreeLists> getQuadTree_ReadView(){

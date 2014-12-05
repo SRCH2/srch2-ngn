@@ -97,7 +97,7 @@ void Srch2ServerGateway::cb_coreSpecificOperations(struct evhttp_request * req, 
     		break;
     	case srch2http::ExportPort:
 //    		ShardCommandHttp::runCommand(clusterReadview, req, coreId, ShardCommandCode_Export);
-    	    bmhelper_evhttp_send_reply2(req, HTTP_OK, "OK", "This command is not supported anymore. Please refer to SRCH2 documentation.");
+    	    bmhelper_evhttp_send_reply2(req, HTTP_OK, "OK", "This command is not supported anymore. Please refer to SRCH2 documentation.\n");
     		break;
     	case srch2http::ResetLoggerPort:
     		ShardCommandHttp::runCommand(req, coreId, ShardCommandCode_ResetLogger);

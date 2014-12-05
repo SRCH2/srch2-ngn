@@ -47,6 +47,7 @@ public:
 	std::string lastMergeTimeString;
 	bool isMergeRequired;
 	bool isBulkLoadDone;
+	bool isMergeEnabled;
 
 
 	static void populateReport(IndexHealthInfo & report, IndexData *index);
