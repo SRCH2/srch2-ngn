@@ -664,6 +664,8 @@ void Cluster_Writeview::printNodeShards(JsonResponseHandler * response) const{
 					shardJson["index-directory"] = localNodeDataShards.at(nodeShardId.partitionId).indexDirectory;
 					shardJson["json-file-path"] = localNodeDataShards.at(nodeShardId.partitionId).jsonFileCompletePath;
 					shardJson["num-records"] = localNodeDataShards.at(nodeShardId.partitionId).server->getIndexer()->getNumberOfDocumentsInIndex();
+					shardJson["merge-flag"] = localNodeDataShards.at(nodeShardId.partitionId).server->getIndexer()->isMergeEnabled();
+					shardJson["last-merge-time"] = localNodeDataShards.at(nodeShardId.partitionId).server->getIndexer()->getLastMergeTime();
 				}
 				shardJson["local"] = "YES";
 			}else{
