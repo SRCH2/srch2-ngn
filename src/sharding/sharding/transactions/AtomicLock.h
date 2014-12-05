@@ -56,6 +56,11 @@ public:
 			const NodeOperationId & agent, const LockLevel & lockLevel,
 			ConsumerInterface * lockRequester);
 
+	/// general purpose cluster shard locking 2 ( a list of shards with same lock type and requester)
+	AtomicLock(const vector<ClusterShardId> & shardIds,
+			const NodeOperationId & agent, const LockLevel & lockLevel,
+			ConsumerInterface * consumer);
+
 	~AtomicLock();
 
 	SP(Transaction) getTransaction();

@@ -19,6 +19,9 @@ ShardCommand::ShardCommand(ConsumerInterface * consumer,
 	this->filePath = filePath;
 	this->dataSavedFlag = false;
 	clusterReadview = ((ReadviewTransaction *)(this->getTransaction().get()))->getReadview();
+	this->locker = NULL;
+	this->releaser = NULL;
+	this->currentOpId = NodeOperationId(clusterReadview->getCurrentNodeId(), OperationState::getNextOperationId());
 }
 
 ShardCommand::~ShardCommand(){}
@@ -27,12 +30,29 @@ ShardCommand::~ShardCommand(){}
 void ShardCommand::produce(){
 	Logger::sharding(Logger::Step, "ShardCommand(code : %d)| Starting core shard command operation", commandCode);
 	if(! dataSavedFlag){
-		if (!  partition(this->targets)){
+		if (!  computeTargets(this->targets)){
 			map<NodeOperationId , SP(ShardingNotification)> emptyResult;
 			finalize(emptyResult);
 			return;
 		}
+		switch (commandCode) {
+			case ShardCommandCode_SaveData:
+			case ShardCommandCode_SaveMetadata:
+			case ShardCommandCode_SaveData_SaveMetadata:
+			case ShardCommandCode_Merge:
+			case ShardCommandCode_MergeSetOn:
+			case ShardCommandCode_MergeSetOff:
+				lock();
+				return;
+			default:
+				break;
+		}
 	}
+
+	performCommand();
+}
+
+void ShardCommand::performCommand(){
 	notifications.clear();
 	for(unsigned i = 0 ; i < targets.size() ; ++i){
 		notifications.push_back(std::make_pair(SP(CommandNotification)
@@ -47,7 +67,65 @@ void ShardCommand::produce(){
 	ShardManager::getShardManager()->getStateMachine()->registerOperation(commandSender);
 }
 
-bool ShardCommand::partition(vector<NodeTargetShardInfo> & targets){
+void ShardCommand::lock(){
+	vector<ClusterShardId> shardIds;
+	getSortedListOfClusterShardIDs(shardIds);
+	if(shardIds.empty()){
+		performCommand();
+		return;
+	}
+	stringstream ss;
+	for(unsigned i = 0 ; i < shardIds.size(); ++i){
+		if(i > 0){
+			ss << "|";
+		}
+		ss << shardIds.at(i).toString();
+	}
+	this->locker = new AtomicLock(shardIds, currentOpId, LockLevel_S , this);
+	Logger::sharding(Logger::Step, "ShardCommand(code : %d)| locking sorted list of shard Ids : %s", commandCode, ss.str().c_str());
+	this->locker->produce();
+}
+
+void ShardCommand::release(){
+	vector<ClusterShardId> shardIds;
+	getSortedListOfClusterShardIDs(shardIds);
+	stringstream ss;
+	for(unsigned i = 0 ; i < shardIds.size(); ++i){
+		if(i > 0){
+			ss << "|";
+		}
+		ss << shardIds.at(i).toString();
+	}
+	this->releaser = new AtomicRelease(shardIds, currentOpId , this);
+	Logger::sharding(Logger::Step, "ShardCommand(code : %d)| releasing sorted list of shard Ids : %s", commandCode, ss.str().c_str());
+	this->releaser->produce();
+}
+
+void ShardCommand::consume(bool granted){
+	if(! granted){
+		// lock step : abort
+		// release step : finish normally.
+		if(releaser == NULL){
+		    this->getTransaction()->getSession()->response->addError(JsonResponseHandler::getJsonSingleMessage(HTTP_Json_Cannot_Acquire_Locks));
+			map<NodeOperationId , SP(ShardingNotification)> emptyResult;
+			finalize(emptyResult);
+			return;
+		}else{
+			finalize(aggregatedResult);
+			return;
+		}
+	}else{
+		if(releaser == NULL){
+			performCommand();
+			return;
+		}else{
+			finalize(aggregatedResult);
+			return;
+		}
+	}
+};
+
+bool ShardCommand::computeTargets(vector<NodeTargetShardInfo> & targets){
 	if(coreId == (unsigned)-1){
 		ASSERT(false); // we don't support this for now.
 		vector<const CoreInfo_t *> cores;
@@ -89,11 +167,6 @@ bool ShardCommand::partition(vector<NodeTargetShardInfo> & targets){
 // process coming back from distributed conversation to aggregate the results of
 // this command
 void ShardCommand::end_(map<NodeOperationId , SP(ShardingNotification)> & replies){
-	if(replies.empty()){
-		map<NodeOperationId , SP(ShardingNotification)> emptyResult;
-		finalize(emptyResult);
-		return;
-	}
 	switch (this->commandCode) {
 		case ShardCommandCode_SaveData_SaveMetadata:
 		{
@@ -104,32 +177,40 @@ void ShardCommand::end_(map<NodeOperationId , SP(ShardingNotification)> & replie
 					dataSavedFlag = true;
 					// now let's start metadata save
 					this->commandCode = ShardCommandCode_SaveMetadata;
-					produce();
+					if(replies.empty()){
+						map<NodeOperationId , SP(ShardingNotification)> emptyResult;
+						finalize(emptyResult);
+						return;
+					}
+					performCommand();
 					return;
 				}else{
 			    	Logger::sharding(Logger::Detail, "ShardCommand(code : %d)| Data shards save was NOT successful.", commandCode);
+			    	this->getTransaction()->getSession()->response->addError(JsonResponseHandler::
+			    			getJsonSingleMessage(HTTP_Json_Cannot_Acquire_Locks));
+					release();
+					return;
 				}
+			}else{
+				ASSERT(false);
+				this->aggregatedResult = replies;
+				release();
+				return;
 			}
-			// state : metadata save replies
-			// state : saving data was not successful
-			// 		just return the results, wrapper layer will use messages
-			// 		to notify the requester properly.
-			// we are done
-			finalize(replies);
-			return;
 		}
-		case ShardCommandCode_SaveData:
 		case ShardCommandCode_SaveMetadata:
-		case ShardCommandCode_Export:
-	    case ShardCommandCode_Commit:
+		case ShardCommandCode_SaveData:
 	    case ShardCommandCode_Merge:
 	    case ShardCommandCode_MergeSetOn:
 	    case ShardCommandCode_MergeSetOff:
+			this->aggregatedResult = replies;
+			release();
+			return;
+		case ShardCommandCode_Export:
+	    case ShardCommandCode_Commit:
 	    case ShardCommandCode_ResetLogger:
-	    {
 	    	finalize(replies);
 			return;
-	    }
 	    default:
 	    {
 	    	ASSERT(false);

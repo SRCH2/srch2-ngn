@@ -94,6 +94,32 @@ AtomicLock::AtomicLock(const ClusterShardId & shardId,
 }
 
 
+/// general purpose cluster shard locking 2 ( a list of shards with same lock type and requester)
+AtomicLock::AtomicLock(const vector<ClusterShardId> & shardIds,
+		const NodeOperationId & agent, const LockLevel & lockLevel,
+		ConsumerInterface * consumer): ProducerInterface(consumer){
+	ASSERT(this->getTransaction());
+	if(shardIds.empty()){
+		lockNotification.reset();
+		return;
+	}
+	/*
+	 * list of primary keys must be ascending
+	 */
+	for(unsigned i = 0 ; i < shardIds.size() - 1; ++i){
+		if(shardIds.at(i) > shardIds.at(i+1)){
+			ASSERT(false);
+			return;
+		}
+	}
+	// prepare the locker and locking notification
+	lockNotification = SP(LockingNotification)(new LockingNotification(shardIds, agent, lockLevel));
+	releaseNotification = SP(LockingNotification)(new LockingNotification(shardIds, agent));
+	lockType = LockRequestType_ShardIdList;
+	init();
+}
+
+
 AtomicLock::~AtomicLock(){
 }
 

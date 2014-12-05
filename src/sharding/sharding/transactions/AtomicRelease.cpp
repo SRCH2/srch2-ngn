@@ -67,6 +67,17 @@ AtomicRelease::AtomicRelease(const ClusterShardId & shardId, const NodeOperation
 }
 
 
+/// general purpose cluster shard releasing 2 (list of shardIds)
+AtomicRelease::AtomicRelease(const vector<ClusterShardId> & shardIds, const NodeOperationId & agent,
+		ConsumerInterface * consumer): ProducerInterface(consumer){
+	ASSERT(this->getTransaction());
+	// prepare the locker and locking notification
+	this->releaseNotification = SP(LockingNotification)(new LockingNotification(shardIds, agent));
+	this->lockType = LockRequestType_ShardIdList;
+	init();
+}
+
+
 AtomicRelease::~AtomicRelease(){
     if(releaser != NULL){
         delete releaser;

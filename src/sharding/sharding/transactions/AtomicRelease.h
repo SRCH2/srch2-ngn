@@ -42,6 +42,10 @@ public:
 	AtomicRelease(const ClusterShardId & shardId, const NodeOperationId & agent,
 			ConsumerInterface * consumer);
 
+	/// general purpose cluster shard releasing 2 (list of shardIds)
+	AtomicRelease(const vector<ClusterShardId> & shardIds, const NodeOperationId & agent,
+			ConsumerInterface * consumer);
+
 	~AtomicRelease();
 
 	SP(Transaction) getTransaction();

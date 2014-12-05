@@ -7,6 +7,8 @@
 #include "../../notifications/CommandStatusNotification.h"
 #include "../../metadata_manager/Shard.h"
 #include "../Transaction.h"
+#include "../AtomicLock.h"
+#include "../AtomicRelease.h"
 #include "core/util/Logger.h"
 #include "core/util/Assert.h"
 #include "server/HTTPJsonResponse.h"
@@ -46,9 +48,15 @@ public:
 	// this command
 	void end_(map<NodeOperationId , SP(ShardingNotification)> & replies);
 	string getName() const {return "shard-command";};
-private:
 
-	bool partition(vector<NodeTargetShardInfo> & targets);
+	void consume(bool granted);
+
+private:
+	void performCommand();
+	void lock();
+	void release();
+
+	bool computeTargets(vector<NodeTargetShardInfo> & targets);
 	const unsigned coreId;
 	ShardCommandCode commandCode;
 	vector<NodeTargetShardInfo> targets;
@@ -59,9 +67,23 @@ private:
 
 	bool dataSavedFlag;
 
+	AtomicLock * locker;
+	AtomicRelease * releaser;
+	NodeOperationId currentOpId;
+	map<NodeOperationId , SP(ShardingNotification)> aggregatedResult;
+
 	bool isSaveSuccessful(map<NodeOperationId , SP(ShardingNotification)> & replies) const;
 
 	void finalize(map<NodeOperationId , SP(ShardingNotification)> & replies);
+
+
+	void getSortedListOfClusterShardIDs(vector<ClusterShardId> & shardIds){
+		for(unsigned i = 0 ; i < targets.size(); ++i){
+			vector<ClusterShardId> clusterShards = targets.at(i).getTargetClusterShards();
+			shardIds.insert(shardIds.begin(), clusterShards.begin(), clusterShards.end());
+		}
+		std::sort(shardIds.begin(), shardIds.end());
+	}
 
 };
 
