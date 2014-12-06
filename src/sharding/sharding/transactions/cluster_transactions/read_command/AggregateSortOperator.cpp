@@ -45,10 +45,12 @@ bool ClusterSortOperator::open(ClusterPhysicalPlanExecutionParameter * params){
 }
 
 QueryResult* ClusterSortOperator::getNext(ClusterPhysicalPlanExecutionParameter * params){
-	if(++this->sortedItemsItr == this->sortedItems.end()){
+	if(this->sortedItemsItr == this->sortedItems.end()){
 		return NULL;
 	}
-	return *(this->sortedItemsItr);
+	QueryResult* result = *(this->sortedItemsItr);
+	this->sortedItemsItr++;
+	return result;
 }
 
 bool ClusterSortOperator::close(ClusterPhysicalPlanExecutionParameter * params){
