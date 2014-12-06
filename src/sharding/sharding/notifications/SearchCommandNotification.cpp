@@ -92,7 +92,7 @@ void * SearchCommand::deserializeBody(void* buffer){
 
 //Returns the type of message which uses this kind of object as transport
 ShardingMessageType SearchCommand::messageType() const {
-    return SearchCommandMessageType;
+    return ShardingSearchCommandMessageType;
 }
 
 

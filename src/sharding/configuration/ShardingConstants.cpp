@@ -8,8 +8,6 @@ namespace httpwrapper {
 
 std::map<ShardingMessageType,std::string> __shardingMessageTypeEnumNames = boost::assign::map_list_of
 	(NULLType, "NULLType")
-	(SearchCommandMessageType, "SearchCommandMessageType")
-	(SearchResultsMessageType, "SearchResultsMessageType")
 	(DeleteCommandMessageType, "DeleteCommandMessageType")
 	(GetInfoCommandMessageType, "GetInfoCommandMessageType")
 	(GetInfoResultsMessageType, "GetInfoResultsMessageType")

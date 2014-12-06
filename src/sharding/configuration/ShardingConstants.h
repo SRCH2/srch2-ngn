@@ -24,8 +24,8 @@ class SynchronizationManager{
 
 enum ShardingMessageType{
     NULLType,
-    SearchCommandMessageType, // -> for LogicalPlan object
-    SearchResultsMessageType, // -> for SerializedQueryResults object
+    ShardingSearchCommandMessageType,
+    ShardingSearchResultsMessageType,
     DeleteCommandMessageType, // -> for DeleteCommandInput object (used for delete)
     GetInfoCommandMessageType,
     GetInfoResultsMessageType,
@@ -83,8 +83,6 @@ enum ShardingMessageType{
     InsertUpdateCommandMessageType,
     ShardingWriteCommand2PCMessageType,
     ShardingWriteCommand2PCACKMessageType,
-    ShardingSearchCommandMessageType,
-    ShardingSearchResultsMessageType,
 
     // just notifications
     ShardingMMNotificationMessageType,
