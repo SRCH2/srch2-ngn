@@ -533,6 +533,9 @@ void IndexReaderWriter::startMergeThreadLoop()
         rc = pthread_cond_timedwait(&countThresholdConditionVariable,
             &lockForWriters, &ts);
 
+        if(! this->mergeEnabledFlag){
+            continue;
+        }
         if (mergeThreadStarted == false)
             break;
         else
