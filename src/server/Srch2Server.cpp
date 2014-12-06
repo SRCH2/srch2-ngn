@@ -281,11 +281,11 @@ void Srch2Server::bootStrapShardComponentFromByteStream(std::istream& input, con
 		IndexMetaData *indexMetaData = createIndexMetaData(this->directoryPath);
 		indexer = Indexer::create(indexMetaData);
 	}
-	if (input.peek() != std::ifstream::traits_type::eof()) {
+	if (component == "SCHEMA.IDX") {
+		indexer->setSchema(indexDataConfig->getSchema());
+	} else if (input.peek() != std::ifstream::traits_type::eof()){
 		indexer->bootStrapComponentFromByteSteam(input, component);
         Logger::sharding(Logger::Detail, "Srch2Server | component %s is bootStrap from byte stream.");
-	} else if (component == "SCHEMA.IDX"){
-		indexer->setSchema(indexDataConfig->getSchema());
 	}
 }
 
