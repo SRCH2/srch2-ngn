@@ -99,7 +99,12 @@ void * DPInternalRequestHandler::searchInShardThreadWork(void * args){
     // search in core
     // TODO : is it possible to make executor and planGen singleton ?
     const CoreInfo_t *indexDataContainerConf = shardSearchArgs->server->getCoreInfo();
-    QueryExecutor qe(*(shardSearchArgs->logicalPlan), &(shardSearchArgs->shardResults->resultsFactory),
+
+    /*
+     * TODO : we can remove this copy in future to improve the performance.
+     */
+    LogicalPlan logicalPlanClone(*(shardSearchArgs->logicalPlan));
+    QueryExecutor qe(&logicalPlanClone, &(shardSearchArgs->shardResults->resultsFactory),
     		shardSearchArgs->server , indexDataContainerConf);
     // in here just allocate an empty QueryResults object, it will be initialized in execute.
     qe.execute(&(shardSearchArgs->shardResults->queryResults));
