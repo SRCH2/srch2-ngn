@@ -187,14 +187,6 @@ private:
     static void * resolveLocalRequest(void * args){
     	LocalRequestHandlerArgs * reqHandlerArgs = (LocalRequestHandlerArgs *) args;
     	switch (reqHandlerArgs->type) {
-			case SearchCommandMessageType:
-				reqHandlerArgs->requestMessageHandler->resolveMessage((SearchCommand*)reqHandlerArgs->requestObj,
-						reqHandlerArgs->node, reqHandlerArgs->requestMessageId,
-						reqHandlerArgs->target, reqHandlerArgs->type,
-						reqHandlerArgs->clusterReadview);
-				delete (SearchCommand*)reqHandlerArgs->requestObj;
-				delete reqHandlerArgs;
-				return NULL;
 			case GetInfoCommandMessageType:
 				reqHandlerArgs->requestMessageHandler->resolveMessage((GetInfoCommand*)reqHandlerArgs->requestObj,
 						reqHandlerArgs->node, reqHandlerArgs->requestMessageId,

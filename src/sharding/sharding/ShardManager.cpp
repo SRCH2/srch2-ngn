@@ -21,6 +21,8 @@
 #include "./notifications/AclAttributeReadNotification.h"
 #include "./notifications/AclAttributeReplaceNotification.h"
 #include "./notifications/Write2PCNotification.h"
+#include "./notifications/SearchCommandNotification.h"
+#include "./notifications/SearchCommandResultsNotification.h"
 #include "./transactions/cluster_transactions/LoadBalancer.h"
 #include "./transactions/ShardMoveOperation.h"
 #include "./transactions/cluster_transactions/NodeJoiner.h"
@@ -427,6 +429,12 @@ bool ShardManager::resolveMessage(Message * msg, NodeId senderNode){
 			break;
 		case ShardingWriteCommand2PCACKMessageType:
 			notif = ShardingNotification::deserializeAndConstruct<Write2PCNotification::ACK>(msg);
+			break;
+		case ShardingSearchCommandMessageType:
+			notif = ShardingNotification::deserializeAndConstruct<SearchCommand>(msg);
+			break;
+		case ShardingSearchResultsMessageType:
+			notif = ShardingNotification::deserializeAndConstruct<SearchCommandResults>(msg);
 			break;
 		default:
 			ASSERT(false);

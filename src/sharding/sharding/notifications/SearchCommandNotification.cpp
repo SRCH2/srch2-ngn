@@ -14,13 +14,15 @@ using namespace std;
 namespace srch2 {
 namespace httpwrapper {
 
-SearchCommand::SearchCommand(LogicalPlan * logicalPlan, NodeTargetShardInfo target,
+SearchCommand::SearchCommand(unsigned coreId, LogicalPlan * logicalPlan, NodeTargetShardInfo target,
 		boost::shared_ptr<const ClusterResourceMetadata_Readview> clusterReadview){
+	this->coreId = coreId;
     this->logicalPlan = logicalPlan;
     this->target = target;
     this->clusterReadview = clusterReadview;
 }
 SearchCommand::SearchCommand(){
+	this->coreId = (unsigned)-1;
 	this->logicalPlan = NULL;
 	this->schema = NULL;
 	ShardManager::getReadview(this->clusterReadview);
@@ -41,6 +43,8 @@ SearchCommand::~SearchCommand(){
  * | isLogicalPlanNULL | LogicalPlan(only is isLogicalPlanNULL is true) |
  */
 void* SearchCommand::serializeBody(void * buffer) const{
+    buffer = srch2::util::serializeFixedTypes(coreId, buffer);
+
     buffer = srch2::util::serializeFixedTypes((bool)(logicalPlan == NULL), buffer);
     if(logicalPlan != NULL){
 		buffer = logicalPlan->serializeForNetwork(buffer);
@@ -52,6 +56,7 @@ void* SearchCommand::serializeBody(void * buffer) const{
 
 unsigned SearchCommand::getNumberOfBytesBody() const{
     unsigned numberOfBytes = 0;
+    numberOfBytes += sizeof(coreId);
     numberOfBytes += sizeof(bool); // NULL or Not NULL
     if(logicalPlan != NULL){
 		numberOfBytes += logicalPlan->getNumberOfBytesForSerializationForNetwork();
@@ -64,8 +69,17 @@ unsigned SearchCommand::getNumberOfBytesBody() const{
 //       wont be deserialized
 void * SearchCommand::deserializeBody(void* buffer){
 
+    buffer = srch2::util::deserializeFixedTypes(buffer, coreId);
     bool isNull = false;
     buffer = srch2::util::deserializeFixedTypes(buffer, isNull);
+
+    const CoreInfo_t * coreInfo = clusterReadview->getCore(coreId);
+	if(coreInfo != NULL){
+		this->setSchema(coreInfo->getSchema());
+	}else{
+		this->setSchema(NULL);
+	}
+
     if(! isNull || schema == NULL){
         this->logicalPlan = new LogicalPlan();
         buffer = LogicalPlan::deserializeForNetwork(*(this->logicalPlan), buffer, schema);

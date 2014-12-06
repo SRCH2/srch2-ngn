@@ -19,7 +19,7 @@ class ClusterResourceMetadata_Readview;
 class SearchCommand : public ShardingNotification{
 public:
 
-    SearchCommand(LogicalPlan * logicalPlan, NodeTargetShardInfo target,
+    SearchCommand(unsigned coreId, LogicalPlan * logicalPlan, NodeTargetShardInfo target,
     		boost::shared_ptr<const ClusterResourceMetadata_Readview> clusterReadview);
     SearchCommand();
     ~SearchCommand();
@@ -50,6 +50,7 @@ public:
     LogicalPlan * getLogicalPlan() const;
     void setSchema(const Schema * schema);
 private:
+    unsigned coreId ;
     srch2::instantsearch::LogicalPlan * logicalPlan;
     NodeTargetShardInfo target;
 	boost::shared_ptr<const ClusterResourceMetadata_Readview> clusterReadview;

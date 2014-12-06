@@ -90,7 +90,7 @@ void ReadCommand::search(){
     // prepare search notifications
     vector<pair<SP(ShardingNotification), NodeId> > participants;
     for(vector<NodeTargetShardInfo>::iterator targetItr = targets.begin(); targetItr != targets.end(); ++targetItr){
-    	SP(SearchCommand) notif = SP(SearchCommand)( new SearchCommand(this->logicalPlan, *targetItr, clusterReadview));
+    	SP(SearchCommand) notif = SP(SearchCommand)( new SearchCommand(coreInfo->getCoreId(), this->logicalPlan, *targetItr, clusterReadview));
     	notif->setDest(NodeOperationId(targetItr->getNodeId()));
     	participants.push_back(std::make_pair(notif, targetItr->getNodeId()));
     }

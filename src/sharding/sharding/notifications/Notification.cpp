@@ -261,7 +261,7 @@ unsigned ShardingNotification::getNumberOfBytesHeader() const{
 	unsigned numberOfBytes = 0;
 	numberOfBytes += srcOperationId.getNumberOfBytes();
 	numberOfBytes += destOperationId.getNumberOfBytes();
-	numberOfBytes += sizeof(bool);
+	numberOfBytes += sizeof(bounced);
 	return numberOfBytes;
 }
 void * ShardingNotification::deserializeHeader(void * buffer) {
