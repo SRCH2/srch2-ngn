@@ -534,6 +534,7 @@ void IndexReaderWriter::startMergeThreadLoop()
             &lockForWriters, &ts);
 
         if(! this->mergeEnabledFlag){
+            pthread_mutex_unlock(&lockForWriters);
             continue;
         }
         if (mergeThreadStarted == false)
