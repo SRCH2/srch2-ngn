@@ -21,7 +21,9 @@ public:
 
 			SortEvaluator* sortEvaluator;
 
-			ClusterSortOperatorItemCmp() {};
+			ClusterSortOperatorItemCmp(SortEvaluator* sortEvaluator) {
+				this->sortEvaluator = sortEvaluator;
+			};
 
 	        bool operator() (const QueryResult *lhs, const QueryResult *rhs) const {
 	        	if(this->sortEvaluator == NULL){

@@ -39,7 +39,7 @@ bool ClusterSortOperator::open(ClusterPhysicalPlanExecutionParameter * params){
 			this->sortedItems.push_back(queryResult);
 		}
 	}
-	sort(this->sortedItems.begin(), this->sortedItems.end(), ClusterSortOperator::ClusterSortOperatorItemCmp());
+	sort(this->sortedItems.begin(), this->sortedItems.end(), ClusterSortOperator::ClusterSortOperatorItemCmp(this->sortEvaluator));
 	this->sortedItemsItr = this->sortedItems.begin();
 	return true;
 }
