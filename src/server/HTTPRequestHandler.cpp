@@ -742,7 +742,7 @@ void HTTPRequestHandler::writeCommand(evhttp_request *req,
                     Json::Value each_response = IndexWriteUtil::_insertCommand(server->indexer,
                                                 server->indexDataConfig, doc, record );
 
-                    //Do not append acl_log if acl is not enabled in config file.
+                    //Append acl_log only if acl is enabled in the config file.
                     if(server->indexDataConfig->getHasRecordAcl()){
                         each_response["acl_log"] = log_str.str();
                     }
@@ -775,7 +775,7 @@ void HTTPRequestHandler::writeCommand(evhttp_request *req,
                 Json::Value each_response = IndexWriteUtil::_insertCommand(server->indexer,
                         server->indexDataConfig, doc, record);
 
-                //Do not append acl_log if acl is not enabled in config file.
+                //Append acl_log only if acl is enabled in the config file
                 if(server->indexDataConfig->getHasRecordAcl()){
                     each_response["acl_log"] = log_str.str();
                 }
