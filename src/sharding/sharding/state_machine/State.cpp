@@ -11,6 +11,7 @@ namespace httpwrapper {
 
 
 unsigned OperationState::nextOperationId = 10;
+pthread_mutex_t OperationState::operationIdMutex;
 const unsigned OperationState::DataRecoveryOperationId = 1;
 
 unsigned OperationState::getOperationId() const{
@@ -44,12 +45,20 @@ void OperationState::unlock(){
 	this->operationContentLock.unlock();
 }
 
+void OperationState::initOperationStateStaticEnv(){
+	pthread_mutex_init(&operationIdMutex, 0);
+}
+
 unsigned OperationState::getNextOperationId(){
+	pthread_mutex_lock(&operationIdMutex);
 	if(nextOperationId + 1 == (unsigned) -1){
 		nextOperationId = 0;
-		return nextOperationId;
+		pthread_mutex_unlock(&operationIdMutex);
+		return 0;
 	}
-	return nextOperationId++;
+	unsigned tmp = nextOperationId++;
+	pthread_mutex_unlock(&operationIdMutex);
+	return tmp;
 }
 
 }

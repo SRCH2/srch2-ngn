@@ -12,6 +12,7 @@ namespace httpwrapper {
 
 
 StateMachine::StateMachine(){
+	OperationState::initOperationStateStaticEnv();
 }
 
 StateMachine::~StateMachine(){

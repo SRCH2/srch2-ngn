@@ -45,12 +45,14 @@ public:
 	void setTransaction(SP(Transaction) sp);
 	void lock();
 	void unlock();
+	static void initOperationStateStaticEnv();
 	static unsigned getNextOperationId();
 	static const unsigned DataRecoveryOperationId;
 
 private:
 	unsigned operationId;
 	static unsigned nextOperationId;
+	static pthread_mutex_t operationIdMutex;
 	SP(Transaction) transaction;
 	boost::mutex operationContentLock;
 };
