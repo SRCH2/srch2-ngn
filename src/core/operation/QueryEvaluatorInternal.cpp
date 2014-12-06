@@ -227,20 +227,20 @@ int QueryEvaluatorInternal::search(LogicalPlan * logicalPlan , QueryResults *que
 
 			topOperator = bottomOfChain =  facetOperatorPtr;
 		}
-//		if(logicalPlan->getPostProcessingInfo()->getSortEvaluator() != NULL){
-//			sortOperator = new SortByRefiningAttributeOperator(logicalPlan->getPostProcessingInfo()->getSortEvaluator());
-//			SortByRefiningAttributeOptimizationOperator * sortOpOperator =
-//					new SortByRefiningAttributeOptimizationOperator();
-//			sortOperator->setPhysicalPlanOptimizationNode(sortOpOperator);
-//			sortOpOperator->setExecutableNode(sortOperator);
-//
-//			if(bottomOfChain != NULL){
-//				bottomOfChain->getPhysicalPlanOptimizationNode()->addChild(sortOpOperator);
-//				bottomOfChain = bottomOfChain->getPhysicalPlanOptimizationNode()->getChildAt(0)->getExecutableNode();
-//			}else{
-//				topOperator = bottomOfChain = sortOperator;
-//			}
-//		}
+		if(logicalPlan->getPostProcessingInfo()->getSortEvaluator() != NULL){
+			sortOperator = new SortByRefiningAttributeOperator(logicalPlan->getPostProcessingInfo()->getSortEvaluator());
+			SortByRefiningAttributeOptimizationOperator * sortOpOperator =
+					new SortByRefiningAttributeOptimizationOperator();
+			sortOperator->setPhysicalPlanOptimizationNode(sortOpOperator);
+			sortOpOperator->setExecutableNode(sortOperator);
+
+			if(bottomOfChain != NULL){
+				bottomOfChain->getPhysicalPlanOptimizationNode()->addChild(sortOpOperator);
+				bottomOfChain = bottomOfChain->getPhysicalPlanOptimizationNode()->getChildAt(0)->getExecutableNode();
+			}else{
+				topOperator = bottomOfChain = sortOperator;
+			}
+		}
 	}
 
 
