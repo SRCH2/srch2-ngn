@@ -57,7 +57,6 @@ private:
 		coreReadCommands[coreId] = coreReadCommand;
 		this->clusterReadview = this->getReadview();
 		this->req = req;
-		this->response = this->getSession()->response;
 	}
 	ReadCommandHttp(boost::shared_ptr<const ClusterResourceMetadata_Readview> clusterReadview,
 			evhttp_request *req):ReadviewTransaction(clusterReadview){
@@ -74,6 +73,10 @@ private:
 		this->response = this->getSession()->response;
 	}
 
+	void init(){
+		ReadviewTransaction::init();
+		this->response = this->getSession()->response;
+	}
 	void run(){
 		for(map<unsigned , CoreReadCommandInfo *>::iterator coreReadCmdItr = coreReadCommands.begin();
 				coreReadCmdItr != coreReadCommands.end(); ++coreReadCmdItr){
