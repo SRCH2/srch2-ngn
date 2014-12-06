@@ -32,9 +32,6 @@ public:
 	}
 	~ReadCommandHttp(){
 		finalize();
-		if(req != NULL){
-			delete req;
-		}
 		for(map<unsigned , CoreReadCommandInfo *>::iterator coreReadCmdItr = coreReadCommands.begin();
 				coreReadCmdItr != coreReadCommands.end(); ++coreReadCmdItr){
 			delete coreReadCmdItr->second;
