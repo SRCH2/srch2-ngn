@@ -55,7 +55,7 @@ private:
 		CoreReadCommandInfo * coreReadCommand = new CoreReadCommandInfo();
 		coreReadCommand->coreInfo = clusterReadview->getCore(coreId);
 		coreReadCommands[coreId] = coreReadCommand;
-		this->clusterReadview = ((ReadviewTransaction *)(this->getTransaction().get()))->getReadview();
+		this->clusterReadview = this->getReadview();
 		this->req = req;
 		this->response = this->getSession()->response;
 	}
@@ -69,7 +69,7 @@ private:
 			coreReadCommand->coreInfo = cores.at(i);
 			coreReadCommands[cores.at(i)->getCoreId()] = coreReadCommand;
 		}
-		this->clusterReadview = ((ReadviewTransaction *)(this->getTransaction().get()))->getReadview();
+		this->clusterReadview = this->getReadview();
 		this->req = req;
 		this->response = this->getSession()->response;
 	}
