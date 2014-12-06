@@ -104,7 +104,7 @@ void * DPInternalRequestHandler::searchInShardThreadWork(void * args){
      * TODO : we can remove this copy in future to improve the performance.
      */
     LogicalPlan logicalPlanClone(*(shardSearchArgs->logicalPlan));
-    QueryExecutor qe(&logicalPlanClone, &(shardSearchArgs->shardResults->resultsFactory),
+    QueryExecutor qe(logicalPlanClone, &(shardSearchArgs->shardResults->resultsFactory),
     		shardSearchArgs->server , indexDataContainerConf);
     // in here just allocate an empty QueryResults object, it will be initialized in execute.
     qe.execute(&(shardSearchArgs->shardResults->queryResults));
