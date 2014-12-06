@@ -440,6 +440,7 @@ void * QueryResult::deserializeForNetwork(QueryResult * &queryResult, void * buf
 		TypedValue typedValueValue;
 		buffer = srch2::util::deserializeString(buffer, stringKey);
 		buffer = srch2::util::deserializeFixedTypes(buffer, typedValueValue);
+		queryResult->valuesOfParticipatingRefiningAttributes[stringKey] = typedValueValue;
 	}
 
 	return buffer;
