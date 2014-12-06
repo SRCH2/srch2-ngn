@@ -972,10 +972,10 @@ bool JSONRecordParser::getJsonValueString(const Json::Value &jsonValue,
         //If the key does not exist in the JSON object, parse should be failed.
         //And the Record will not be inserted into the engine.
         stringValues.clear();
-        Logger::warn(
+        Logger::debug(
                 "[Warning] Wrong value setting for %s. There is no such attribute %s.\n",
                 configName.c_str(), key.c_str());
-        Logger::warn(
+        Logger::debug(
                 "Please set it to IGNORE in the configure file if you don't need it.");
         return false;
     }

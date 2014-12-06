@@ -741,7 +741,12 @@ void HTTPRequestHandler::writeCommand(evhttp_request *req,
 
                     Json::Value each_response = IndexWriteUtil::_insertCommand(server->indexer,
                                                 server->indexDataConfig, doc, record );
-                    each_response["acl_log"] = log_str.str();
+
+                    //Append acl_log only if acl is enabled in the config file.
+                    if(server->indexDataConfig->getHasRecordAcl()){
+                        each_response["acl_log"] = log_str.str();
+                    }
+
                     insert_responses[index] = each_response;
 
                     record->clear();
@@ -769,7 +774,11 @@ void HTTPRequestHandler::writeCommand(evhttp_request *req,
 
                 Json::Value each_response = IndexWriteUtil::_insertCommand(server->indexer,
                         server->indexDataConfig, doc, record);
-                each_response["acl_log"] = log_str.str();
+
+                //Append acl_log only if acl is enabled in the config file
+                if(server->indexDataConfig->getHasRecordAcl()){
+                    each_response["acl_log"] = log_str.str();
+                }
                 insert_responses.append(each_response);
 
                 record->clear();
