@@ -422,6 +422,21 @@ INDEXWRITE_RETVAL IndexData::_deleteRecord(const std::string &externalRecordId)
 	if (success == OP_SUCCESS) {
 		ForwardList * fwdList = this->forwardIndex->getForwardList_ForCommit(internalRecordId);
 		if (fwdList) {
+            // Before calling function getKeywordCorrespondingPathToTrieNode_WriteView, if
+            // there are keywords whose ids need to be assigned, we need to call
+            // reassignKeywordIds() to make sure the ids of the trie lead nodes
+            // are ordered properly. This order can make sure the function
+            // getKeywordCorrespondingPathToTrieNode_WriteView() works properly.
+            if (this->trie->needToReassignKeywordIds()) {
+                // reassign id is not thread safe so we need to grab an exclusive lock
+                // NOTE : all index structure commits are happened before reassign id phase. Only QuadTree is left
+                //        because we need new ids in quadTree commit phase.
+                boost::unique_lock<boost::shared_mutex> lock(globalRwMutexForReadersWriters);
+                this->reassignKeywordIds();
+                lock.unlock();
+            }
+
+            // iterate through the keyword ids
 			unsigned keywordsCount = fwdList->getNumberOfKeywords();
 			const unsigned * listofKeywordIds = fwdList->getKeywordIds();
 			// Loop over the keyword-ids for the current forward list and get
