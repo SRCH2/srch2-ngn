@@ -279,7 +279,7 @@ void Srch2Server::bootStrapShardComponentFromByteStream(std::istream& input, con
 	if (indexer == NULL) {
 		// this is first call on this shard.
 		IndexMetaData *indexMetaData = createIndexMetaData(this->directoryPath);
-		indexer = Indexer::create(indexMetaData);
+		indexer = Indexer::create(indexMetaData, indexDataConfig->getSchema());
 	}
 	if (component == "SCHEMA.IDX") {
 		indexer->setSchema(indexDataConfig->getSchema());
