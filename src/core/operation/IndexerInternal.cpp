@@ -34,9 +34,6 @@ namespace instantsearch
 void IndexHealthInfo::populateReport(IndexHealthInfo & report, IndexData *index){
 	report.readCount = index->_getReadCount();
 	report.writeCount = index->_getWriteCount();
-    time_t timer = time(NULL);
-    struct std::tm* timenow = localtime(&timer);
-    report.getString(timenow, report.lastMergeTimeString);
     report.docCount = index->_getNumberOfDocumentsInIndex();
 	report.isMergeRequired = index->isMergeRequired();
 	report.isBulkLoadDone = index->isBulkLoadDone();
