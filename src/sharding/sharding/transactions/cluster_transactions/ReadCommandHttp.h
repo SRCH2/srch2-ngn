@@ -120,6 +120,7 @@ private:
 			return;
 		}
 		CoreReadCommandInfo * coreReadCommandInfo = coreReadCommands.find(coreId)->second;
+		this->response->setRoot(jsonResponse.get());
 		for(vector<JsonMessageCode>::const_iterator msgItr = messageCodes.begin(); msgItr != messageCodes.end(); ++msgItr){
 			this->response->addMessage(JsonResponseHandler::getJsonSingleMessageStr(*msgItr));
 		}
@@ -129,7 +130,6 @@ private:
 		this->response->addMessage(coreReadCommandInfo->paramContainer.getMessageString());
 		this->response->setResponseAttribute(c_status, Json::Value(booleanResult));
 		// and finally, write the results to the response
-		this->response->setRoot(jsonResponse.get());
 	    Logger::info(
 	            "ip: %s, port: %d GET query: %s, searcher_time: %d ms, payload_access_time: %d ms",
 	            req->remote_host, req->remote_port, req->uri + 1,

@@ -259,16 +259,19 @@ void JsonResponseHandler::setRoot(Json::Value * root){
 		ASSERT(false);
 		return;
 	}
-	for( Json::ValueIterator itr = jsonResponse->begin() ; itr != jsonResponse->end() ; itr++ ) {
-		if(root->get(itr.key().asString(), nullJsonValue) != nullJsonValue ){
-			//TODO : this case is not needed now
-			continue;
-		}
-		(*root)[itr.key().asString()] = (*jsonResponse)[itr.key().asString()];
-	}
+//	for( Json::ValueIterator itr = jsonResponse->begin() ; itr != jsonResponse->end() ; itr++ ) {
+//		if(root->get(itr.key().asString(), nullJsonValue) != nullJsonValue ){
+//			//TODO : this case is not needed now
+//			continue;
+//		}
+//		if(! ((*jsonResponse)[itr.key().asString()]).empty()){
+//			(*root)[itr.key().asString()] = (*jsonResponse)[itr.key().asString()];
+//		}
+//	}
 	delete jsonResponse;
-	multiRoots.push_back(root);
-	jsonResponse = new Json::Value(Json::objectValue);
+	jsonResponse = new Json::Value(*root);
+//	multiRoots.push_back(root);
+//	jsonResponse = new Json::Value(Json::objectValue);
 }
 
 void JsonResponseHandler::finalizeInvalid() {
