@@ -8,7 +8,7 @@
 	<!-- Make sure to specify the home of your SRCH2 installation. Example: 
 		<srch2Home>/home/joe/srch2</srch2Home> -->
 
-	<listeningHostname>0.0.0.0</listeningHostname>
+	<listeningHostname>127.0.0.1</listeningHostname>
 	<listeningPort>8087</listeningPort>
 
 
