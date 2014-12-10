@@ -200,6 +200,16 @@ void StateMachine::unlockStateMachine(){
 	}
 }
 
+void StateMachine::clear(){
+	while(! lockStateMachine()){
+		sleep(0.5);
+	}
+	for(unsigned i = 0; i < ACTIVE_OPERATINS_GROUP_COUNT; ++i){
+		activeOperationGroups[i].clear(false);
+	}
+	unlockStateMachine();
+}
+
 StateMachine::ActiveOperationGroup & StateMachine::getOperationGroup(unsigned opid){
 	unsigned groupId = opid % ACTIVE_OPERATINS_GROUP_COUNT;
 	return activeOperationGroups[groupId];
@@ -260,10 +270,14 @@ unsigned StateMachine::ActiveOperationGroup::size(){
 	return numberActiveOperations;
 }
 
-void StateMachine::ActiveOperationGroup::clear(){
-	contentMutex.lock();
+void StateMachine::ActiveOperationGroup::clear(bool shouldLock){
+	if(shouldLock){
+		contentMutex.lock();
+	}
 	activeOperations.clear();
-	contentMutex.unlock();
+	if(shouldLock){
+		contentMutex.unlock();
+	}
 }
 
 

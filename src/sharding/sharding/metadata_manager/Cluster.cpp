@@ -51,7 +51,12 @@ ClusterResourceMetadata_Readview::~ClusterResourceMetadata_Readview(){
 		delete localShardContainers[coreId];
 	}
 
-	pthread_t rvReleaseThread;
+	boost::shared_lock<boost::shared_mutex> sLock(ShardManager::getShardManagerGuard());
+	ShardManager * shardManager = ShardManager::getShardManager();
+	if(shardManager == NULL || shardManager->isCancelled()){
+		return;
+	}
+	pthread_t & rvReleaseThread = *(shardManager->getNewThread());
 	unsigned * vid = new unsigned;
 	*vid = this->versionId;
     if (pthread_create(&rvReleaseThread, NULL, ShardManager::resolveReadviewRelease , vid) != 0){

@@ -17,11 +17,11 @@ export DATA_FILE_PREFIX="statemedia-1000"
 # config file constants
 export CONF_FILE_PREFIX="conf-"
 export CLUSTER_NAME="SRCH2_Cluster"
-export NODE_NAME_PREFIX="Node-"
+export NODE_NAME_PREFIX="Node-group-201-"
 export TM_PORT_BASE=4000
-export TM_IP_ADDRESS="127.0.0.1"
-export WELL_KNOWN_HOSTS="127.0.0.1:54000"
-export EXT_HOSTNAME="127.0.0.1"
+export TM_IP_ADDRESS="192.168.1.201"
+export WELL_KNOWN_HOSTS="192.168.1.201:54000"
+export EXT_HOSTNAME="192.168.1.201"
 export EXT_PORT_BASE=7000
 export NUM_PARTITIONS=8
 export NUM_REPLICAS=4
@@ -42,14 +42,14 @@ export ENV_CLEAR_EXE="clear.sh"
 
 
 # desktop test constants
-export DESKTOP_ROW_SIZE=4
-export DESKTOP_COL_SIZE=2
-export DESKTOP_OFFSET=1
-export DESKTOP_W=`wmctrl -d | head -n 1 | cut -d ' ' -f 12 | cut -d 'x' -f 1`
-export DESKTOP_H=`wmctrl -d | head -n 1 | cut -d ' ' -f 12 | cut -d 'x' -f 2`
-export WIN_PER_DESKTOP=4
-export WIN_W=$(( DESKTOP_W / 3))
-export WIN_H=$(( DESKTOP_H / 4))
+#export DESKTOP_ROW_SIZE=4
+#export DESKTOP_COL_SIZE=2
+#export DESKTOP_OFFSET=1
+#export DESKTOP_W=`wmctrl -d | head -n 1 | cut -d ' ' -f 12 | cut -d 'x' -f 1`
+#export DESKTOP_H=`wmctrl -d | head -n 1 | cut -d ' ' -f 12 | cut -d 'x' -f 2`
+#export WIN_PER_DESKTOP=4
+#export WIN_W=$(( DESKTOP_W / 3))
+#export WIN_H=$(( DESKTOP_H / 4))
 ############################################################################
 export CONSTANTS_DEFINED="SET"
 fi

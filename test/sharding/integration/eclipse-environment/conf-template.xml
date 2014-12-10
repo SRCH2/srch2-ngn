@@ -16,11 +16,11 @@
  
 <config>
     <cluster-name>SRCH2_Cluster</cluster-name><!-- SRCH2_CLUSTER_PLACE_HOLDER -->
-    <srch2Home>/home/jamshid/srch2/sharding-demo/dilbert/node-A/</srch2Home><!-- SRCH2HOME_PLACE_HOLDER -->
+    <srch2Home>/home/jamshid/srch2_home/</srch2Home><!-- SRCH2HOME_PLACE_HOLDER -->
         <!-- Make sure to specify the home of your SRCH2 installation.  Example: 
           <srch2Home>/home/joe/srch2</srch2Home>
         -->
-    <node-name>node-A</node-name><!-- NODE_NAME_PLACE_HOLDER -->
+    <node-name>node-group-201-1</node-name><!-- NODE_NAME_PLACE_HOLDER -->
     <ping>
         <ping-interval>2</ping-interval><!-- PING_INTERVAL_PLACE_HOLDER -->
 
@@ -29,11 +29,11 @@
     </ping>
     <transport>
         <port>4001</port><!-- TM-PORT_PLACE_HOLDER -->
-        <ipaddress>127.0.0.1</ipaddress><!-- IPADDRESS_PLACE_HOLDER -->
+        <ipaddress>192.169.1.202</ipaddress><!-- IPADDRESS_PLACE_HOLDER -->
     </transport>
 
-    <WellKnownHosts>127.0.0.1:54000</WellKnownHosts><!-- WELL-KNOWN-HOSTS_PLACE_HOLDER -->
-    <listeningHostname>127.0.0.1</listeningHostname><!-- LISTENING-HOSTNAME_PLACE_HOLDER -->
+    <WellKnownHosts>192.168.1.201:54000, 192.168.1.202:54000</WellKnownHosts><!-- WELL-KNOWN-HOSTS_PLACE_HOLDER -->
+    <listeningHostname>192.168.1.201</listeningHostname><!-- LISTENING-HOSTNAME_PLACE_HOLDER -->
     <listeningPort>7001</listeningPort><!-- LISTENING-PORT_PLACE_HOLDER -->
 
  

@@ -60,7 +60,8 @@ void ShardManager::deleteShardManager(){
 	}
 	sLock.unlock();
 	singleInstance->setCancelled();
-	boost::unique_lock<boost::shared_mutex> xLock(singleInstanceLock);
+//	boost::unique_lock<boost::shared_mutex> xLock(singleInstanceLock);
+	singleInstanceLock.lock();
 	delete singleInstance;
 	singleInstance = NULL;
 	return;
@@ -69,7 +70,6 @@ void ShardManager::deleteShardManager(){
 ShardManager * ShardManager::getShardManager(){
 	boost::shared_lock<boost::shared_mutex> sLock(singleInstanceLock);
 	if(singleInstance == NULL){
-		ASSERT(false);
 		return NULL;
 	}
 	return singleInstance;
@@ -230,6 +230,9 @@ bool ShardManager::isJoined() {
 void ShardManager::setCancelled(){
 	boost::unique_lock<boost::shared_mutex> xLock(shardManagerMembersMutex);
 	this->cancelledFlag = true;
+	this->getStateMachine()->clear();
+	this->clearMMRegistrations();
+	this->cancelAllThreads(false);
 }
 bool ShardManager::isCancelled() {
 	boost::shared_lock<boost::shared_mutex> sLock(shardManagerMembersMutex);
@@ -300,6 +303,9 @@ void ShardManager::start(){
 	Logger::info("Starting data processor ...");
 	// lock the ShardManager root pointer to avoid its deletion before we are done.
 	boost::shared_lock<boost::shared_mutex> sLock(singleInstanceLock);
+	if(isCancelled()){
+		return;
+	}
 	// insert this node and all older nodes in the lock manager in the beginning.
 	ShardManager::getShardManager()->_lockManager->initialize();
 
@@ -338,6 +344,9 @@ bool ShardManager::resolveMessage(Message * msg, NodeId senderNode){
 	}
 
 	boost::shared_lock<boost::shared_mutex> sLock(singleInstanceLock);
+	if(isCancelled()){
+		return true;
+	}
 
 	SP(const ClusterNodes_Writeview) nodesWriteview = ShardManager::getNodesWriteview_read();
 	// if a node fails, we don't accept any more messages from it.
@@ -467,6 +476,9 @@ void * ShardManager::resolveReadviewRelease(void * vidPtr){
 	unsigned metadataVersion = *(unsigned *)vidPtr;
 	delete (unsigned *)vidPtr;
 	boost::shared_lock<boost::shared_mutex> sLock(singleInstanceLock);
+	if(ShardManager::getShardManager()->isCancelled()){
+		return NULL;
+	}
 
 	Logger::sharding(Logger::Detail, "SHM| Metadata release VID=%d", metadataVersion);
 	ShardManager::getShardManager()->_getLockManager()->resolve(metadataVersion);
@@ -484,6 +496,9 @@ void ShardManager::resolveMMNotification(const ShardMigrationStatus & migrationS
 	Logger::sharding(Logger::Detail, "SHM| MM (%d => %d) was %s", migrationStatus.sourceNodeId, migrationStatus.destinationNodeId,
 			(migrationStatus.status == MM_STATUS_SUCCESS)? "Done."  : "Failed.");
 	boost::shared_lock<boost::shared_mutex> sLock(singleInstanceLock);
+	if(isCancelled()){
+		return;
+	}
 
 	unsigned groupId = migrationStatus.dstOperationId % MAX_NUM_TRANS_GROUPS;
 
@@ -512,6 +527,15 @@ void ShardManager::resolveMMNotification(const ShardMigrationStatus & migrationS
 //    cout << "======================================================================" << endl;
 }
 
+void ShardManager::clearMMRegistrations(){
+	for(unsigned i = 0 ; i < MAX_NUM_TRANS_GROUPS; ++i){
+		boost::unique_lock<boost::mutex> xLock(*(mmSessionListenersGroup.at(i).second));
+		map<unsigned , ConsumerInterface *> & mmSessionListeners = mmSessionListenersGroup.at(i).first;
+		map<unsigned, SP(Transaction)> & mmSessionListeners_TransHolder = mmSessionListenersGroup_TransSharedPointers.at(i);
+		mmSessionListeners_TransHolder.clear();
+	}
+}
+
 void ShardManager::registerMMSessionListener(const unsigned operationId, ConsumerInterface * listener){
 	if(listener == NULL){
 		ASSERT(false);
@@ -533,6 +557,9 @@ void ShardManager::registerMMSessionListener(const unsigned operationId, Consume
 
 void ShardManager::resolveSMNodeArrival(const Node & newNode){
 	boost::shared_lock<boost::shared_mutex> sLock(singleInstanceLock);
+	if(isCancelled()){
+		return;
+	}
 	boost::unique_lock<boost::shared_mutex> xLock;
 	Cluster_Writeview * writeview = ShardManager::getWriteview_write(xLock);
 	SP(ClusterNodes_Writeview) nodesWriteview = ShardManager::getNodesWriteview_write();
@@ -547,6 +574,9 @@ void ShardManager::resolveSMNodeArrival(const Node & newNode){
 void ShardManager::resolveSMNodeFailure(const NodeId failedNodeId){
 	Logger::sharding(Logger::Detail, "SHM| SM Node %d failure.", failedNodeId);
 	boost::shared_lock<boost::shared_mutex> sLock(singleInstanceLock);
+	if(isCancelled()){
+		return ;
+	}
 	SP(Notification) nodeFailureNotif(new NodeFailureNotification(failedNodeId));
 
 	// 1. metadata manager
@@ -571,7 +601,7 @@ bool ShardManager::resolveLocal(SP(ShardingNotification) request){
 		return false;
 	}
 	// NOTE : we must detach the local notif handling thread here. And this must be the ONLY detachment point.
-	pthread_t localThread;
+	pthread_t & localThread= *(this->getNewThread());
 	ResolveLocalArgs * args = new ResolveLocalArgs(request);
     if (pthread_create(&localThread, NULL, _resolveLocal , args) != 0){
         // Logger::console("Cannot create thread for handling local message");
@@ -588,12 +618,55 @@ void * ShardManager::_resolveLocal(void * _args){
 	SP(ShardingNotification) request = args->notif;
 	delete args;
 	boost::shared_lock<boost::shared_mutex> sLock(singleInstanceLock);
+	if(ShardManager::getShardManager()->isCancelled()){
+		return NULL;
+	}
 	if(! request->resolveNotification(request)){
 		Logger::sharding(Logger::Detail, "SHM| Notification resolve returned false : %s", request->getDescription().c_str());
 	}
 	return NULL;
 }
 
+
+pthread_t * ShardManager::getNewThread(bool shouldLock ){
+	pthread_t * newThread = new pthread_t;
+	if(shouldLock){
+		shardManagerMembersMutex.lock();
+	}
+	shardManagerThreads.push_back(newThread);
+
+	if(shouldLock){
+		shardManagerMembersMutex.unlock();
+	}
+	return newThread;
+}
+
+void ShardManager::cancelAllThreads(bool shouldLock ){
+	if(shouldLock){
+		shardManagerMembersMutex.lock();
+	}
+
+//	for(unsigned i = 0 ; shardManagerThreads.size(); ++i){
+//		Logger::console("ShardManager threads are canceled.");
+//		// Surendra -May be the code below is not required
+//		#ifdef ANDROID
+//			pthread_kill(*(this->shardManagerThreads[i]), SIGUSR2);
+//		#else
+//			pthread_cancel(*(this->shardManagerThreads[i]));
+//		#endif
+//	}
+    // Surendra -May be the code below is not required
+	#ifdef ANDROID
+		pthread_kill(*(this->loloadBalancingThread), SIGUSR2);
+	#else
+		pthread_cancel(*(this->loadBalancingThread));
+	#endif
+		Logger::console("Loadbalancing thread is canceled.");
+	if(shouldLock){
+		shardManagerMembersMutex.unlock();
+	}
+
+}
 
 void * ShardManager::periodicWork(void *args) {
 

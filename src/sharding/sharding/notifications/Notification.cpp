@@ -202,6 +202,9 @@ bool ShardingNotification::send(SP(ShardingNotification) notification){
 		ASSERT(false);
 		return false;
 	}
+	if(ShardManager::getShardManager()->isCancelled()){
+		return true;
+	}
 	if(notification->messageType() == ShardingNewNodeReadMetadataReplyMessageType ||
 	        notification->messageType() == ShardingNewNodeReadMetadataRequestMessageType){
 	    if(notification->getSrc().nodeId == notification->getDest().nodeId){
@@ -232,6 +235,9 @@ bool ShardingNotification::send(SP(ShardingNotification) notification){
 }
 
 bool ShardingNotification::send(SP(ShardingNotification) notification, const vector<NodeOperationId> & destinations ){
+	if(ShardManager::getShardManager()->isCancelled()){
+		return true;
+	}
 	TransportManager * tm = ShardManager::getShardManager()->getTransportManager();
 	// first serialize the body
 	Message * notificationMessage = notification->serialize(tm->getMessageAllocator());

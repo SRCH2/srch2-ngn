@@ -42,6 +42,8 @@ public:
 	bool lockStateMachine();
 	void unlockStateMachine();
 
+	void clear();
+
 private:
 
 	struct ActiveOperationGroup{
@@ -52,7 +54,7 @@ private:
 		SP(OperationState) getActiveOperation(const unsigned operationId);
 		void getAllActiveOperations(map<unsigned , SP(OperationState)> & activeOperations);
 		unsigned size();
-		void clear();
+		void clear(bool shouldLock = true);
 
 	};
 

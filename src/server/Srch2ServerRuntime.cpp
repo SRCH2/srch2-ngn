@@ -241,8 +241,8 @@ void Srch2ServerRuntime::waitForKillSignal(){
 		Logger::console("Hear beat thread stopped.");
 	}
 
-	pthread_join(*(shardManager->getLoadbalancingThread()), NULL);
-	Logger::console("Load balancing thread stopped.");
+//	pthread_join(*(shardManager->getLoadbalancingThread()), NULL);
+//	Logger::console("Load balancing thread stopped.");
 }
 
 void Srch2ServerRuntime::gracefulExit(){
@@ -252,7 +252,8 @@ void Srch2ServerRuntime::gracefulExit(){
 //    //Call the save function implemented by each database connector.
 //    DataConnectorThread::saveConnectorTimestamps();
 
-	ShardManager::deleteShardManager();
+    Logger::console("Stopping server gracefully.");
+
     if (synchronizerThread != NULL){
         delete synchronizerThread;
         synchronizerThread = NULL;
@@ -274,6 +275,8 @@ void Srch2ServerRuntime::gracefulExit(){
     AnalyzerContainer::freeAll();
     delete serverConf;
 	delete metadataManager ;
+    Logger::console("MetadataManager is destroyed successfully.");
+	ShardManager::deleteShardManager();
 	//ShardManager::deleteShardManager();
 	delete syncManager ;
 	delete transportManager;
@@ -564,14 +567,8 @@ void Srch2ServerRuntime::killServer(int signal) {
 #endif
     }
 
-    getInstance()->shardManager->setCancelled(); // stops the load balancing thread
-
-    // Surendra -May be the code below is not required
-#ifdef ANDROID
-    pthread_kill(*(getInstance()->shardManager->getLoadbalancingThread()), SIGUSR2);
-#else
-    pthread_cancel(*(getInstance()->shardManager->getLoadbalancingThread()));
-#endif
+//    getInstance()->shardManager->setCancelled(); // stops the load balancing thread
+//    ShardManager::deleteShardManager();
 
 }
 

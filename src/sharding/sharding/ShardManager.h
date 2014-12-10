@@ -105,6 +105,8 @@ public:
 	 */
 	void resolveMMNotification(const ShardMigrationStatus & migrationStatus);
 
+	void clearMMRegistrations();
+
 	// not an entry point.
 	// lock to shardManagerMembersMutex must be acquired because we work with mmSessionListeners
 	void registerMMSessionListener(const unsigned operationId, ConsumerInterface * listener);
@@ -226,7 +228,12 @@ private:
 	bool cancelledFlag;
 	bool loadBalancingFlag;
 	pthread_t * loadBalancingThread;
+	vector<pthread_t *> shardManagerThreads;
+public:
+	pthread_t * getNewThread(bool shouldLock = true);
 
+	void cancelAllThreads(bool shouldLock = true);
+private:
 
 	/*
 	 * Periodically runs a piece of code on shard manager mainly for load balancing.
