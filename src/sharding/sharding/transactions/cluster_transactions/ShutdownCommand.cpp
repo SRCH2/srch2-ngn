@@ -39,7 +39,7 @@ void ShutdownCommand::run(){
     default: {
         Logger::error(
                 "The request has an invalid or missing argument. See Srch2 API documentation for details");
-        this->getTransaction()->getSession()->response->finalizeInvalid();
+        this->getSession()->response->finalizeInvalid();
         return ;
     }
     }
@@ -60,9 +60,9 @@ void ShutdownCommand::save(){
 
 void ShutdownCommand::consume(bool status, map<NodeId, vector<CommandStatusNotification::ShardStatus *> > & result) {
 	if(! status && ! force){
-    	this->getTransaction()->getSession()->response->addMessage(
+    	this->getSession()->response->addMessage(
     			"Could not successfully save the indices. Will not shutdown. Either use force=true in the request or try again.");
-        this->getTransaction()->getSession()->response->finalizeOK();
+        this->getSession()->response->finalizeOK();
         shouldShutdown = false;
 	}
 	shouldShutdown = true;
@@ -71,7 +71,7 @@ void ShutdownCommand::consume(bool status, map<NodeId, vector<CommandStatusNotif
 
 void ShutdownCommand::finalizeWork(Transaction::Params * arg){
 	if(! shouldShutdown){
-		this->getTransaction()->getSession()->response->printHTTP(req);
+		this->getSession()->response->printHTTP(req);
 		return;
 	}
 
@@ -87,7 +87,7 @@ void ShutdownCommand::finalizeWork(Transaction::Params * arg){
 	ConcurrentNotifOperation * commandSender = new ConcurrentNotifOperation(shutdownNotif, NULLType, arrivedNodes, NULL, false);
 	ShardManager::getStateMachine()->registerOperation(commandSender);
 
-	this->getTransaction()->getSession()->response->printHTTP(req);
+	this->getSession()->response->printHTTP(req);
 	this->_shutdown();
 	return; // it never reaches this point because before that the engine dies.
 }
