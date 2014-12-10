@@ -661,7 +661,6 @@ void ShardManager::cancelAllThreads(bool shouldLock ){
 	#else
 		pthread_cancel(*(this->loadBalancingThread));
 	#endif
-		Logger::console("Loadbalancing thread is canceled.");
 	if(shouldLock){
 		shardManagerMembersMutex.unlock();
 	}

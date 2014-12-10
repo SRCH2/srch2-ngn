@@ -252,8 +252,6 @@ void Srch2ServerRuntime::gracefulExit(){
 //    //Call the save function implemented by each database connector.
 //    DataConnectorThread::saveConnectorTimestamps();
 
-    Logger::console("Stopping server gracefully.");
-
     if (synchronizerThread != NULL){
         delete synchronizerThread;
         synchronizerThread = NULL;
@@ -275,7 +273,6 @@ void Srch2ServerRuntime::gracefulExit(){
     AnalyzerContainer::freeAll();
     delete serverConf;
 	delete metadataManager ;
-    Logger::console("MetadataManager is destroyed successfully.");
 	ShardManager::deleteShardManager();
 	//ShardManager::deleteShardManager();
 	delete syncManager ;
