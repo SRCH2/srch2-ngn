@@ -225,7 +225,7 @@ void MetadataInitializer::loadShards(Cluster_Writeview * newWriteview){
     NodeShardIterator nShardItr(newWriteview);
     nShardItr.beginNodeShardsIteration();
 	while(nShardItr.getNextLocalNodeShard(nodeShardId, load, physicalShard)){
-		InitialShardLoader * initialShardLoader = new InitialShardLoader(new ClusterShardId(id), physicalShard.indexDirectory);
+		InitialShardLoader * initialShardLoader = new InitialShardLoader(new NodeShardId(nodeShardId), physicalShard.indexDirectory);
 		nodeShardsToLoad.push_back(std::make_pair(nodeShardId, initialShardLoader));
 	}
 

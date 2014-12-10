@@ -38,6 +38,8 @@ const char* const URLParser::radiusParamName = "radius";
 const char* const URLParser::nameParamName = "exported_data_file";
 const char* const URLParser::logNameParamName = "log_data_file";
 const char* const URLParser::setParamName = "set";
+const char* const URLParser::shutdownForceParamName = "force";
+const char* const URLParser::shutdownSaveParamName = "save";
 
 // Schema will be used in Attribute-based search to set attribute bitmap.
 

@@ -12,6 +12,7 @@
 #include "./ShardCommnad.h"
 #include "core/util/Logger.h"
 #include "core/util/Assert.h"
+#include "wrapper/URLParser.h"
 
 namespace srch2is = srch2::instantsearch;
 using namespace srch2is;
@@ -35,14 +36,17 @@ public:
 		if(saveOperation != NULL){
 			delete saveOperation;
 		}
-		if(req != NULL){
-			delete req;
-		}
+//		if(req != NULL){
+//			delete req;
+//		}
 	}
 
 	ShutdownCommand(evhttp_request *req){
 		this->saveOperation = NULL;
 		this->req = req;
+		this->force = false;
+		this->shouldShutdown = false;
+		this->shouldSave = true;
 	}
 
 public:
@@ -58,8 +62,7 @@ public:
 	}
 
 	void save();
-	void consume(map<NodeId, vector<CommandStatusNotification::ShardStatus *> > & result) ;
-	void clusterShutdown();
+	void consume(bool status, map<NodeId, vector<CommandStatusNotification::ShardStatus *> > & result) ;
 	string getName() const {return "cluster-shutdown-command";};
 
 	void finalizeWork(Transaction::Params * arg);
@@ -70,6 +73,9 @@ private:
 	ShardCommand * saveOperation;
 	SP(ShutdownNotification) shutdownNotif;
 	evhttp_request *req;
+	bool force ;
+	bool shouldSave;
+	bool shouldShutdown;
 
 
 };

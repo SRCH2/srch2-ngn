@@ -124,8 +124,9 @@ typedef enum {
 	HTTP_JSON_PK_Does_Not_Exist,
 	HTTP_Json_Data_File_Does_Not_Exist,
 	HTTP_Json_Node_Failure,
-	HTTP_Json_Cannot_Acquire_Locks,
+	HTTP_Json_Cannot_Acquire_Locks, // OPERATION NOT SUPPORTED TO BE ADDED TODO
 	HTTP_Json_Cannot_Save_Data,
+	HTTP_Json_NOT_SUPPORTED,
 	HTTP_Json_General_Error
 } JsonMessageCode;
 

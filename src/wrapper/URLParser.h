@@ -40,6 +40,8 @@ public:
     static const char* const nameParamName;
     static const char* const logNameParamName ;
     static const char* const setParamName;
+    static const char* const shutdownForceParamName;
+    static const char* const shutdownSaveParamName;
 };
 
 }

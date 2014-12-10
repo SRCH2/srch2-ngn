@@ -19,6 +19,7 @@ public:
 	virtual void consume(const ClusterPID & pid){};
 	virtual void consume(bool booleanResult){};
 	virtual void consume(const vector<string> & rejectedPKs){};
+	virtual void consume(bool status, map<NodeId, vector<CommandStatusNotification::ShardStatus *> > & result) {};
 	virtual void consume(map<NodeId, vector<CommandStatusNotification::ShardStatus *> > & result) {};
 	virtual void consume(const ShardMigrationStatus & migrationStatus){};
 	virtual void consume(bool booleanResult, const ClusterPID & pid){};

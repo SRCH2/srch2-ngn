@@ -28,7 +28,7 @@ def testSaveShutdownRestart(binary_path):
     request.get_method = lambda: 'PUT'
     response = opener.open(request).read()
     jsonResponse = json.loads(response)
-    if jsonResponse['log'][0]['save'] != "success":
+    if jsonResponse['status'] != True:
         print "Save operation failed: " + response
         exit(-1)
     
@@ -59,15 +59,15 @@ def testSaveShutdownRestart(binary_path):
         print 'server start'
 
     #export data to json
-    exportQuery='http://localhost:' + port + '/export?exported_data_file=exportData.json'
-    opener = urllib2.build_opener(urllib2.HTTPHandler)
-    request = urllib2.Request(exportQuery, '')
-    request.get_method = lambda: 'PUT'
-    response = opener.open(request).read()
-    jsonResponse = json.loads(response)
-    if jsonResponse['log'][0]['export'] != "success":
-        print "Export operation failed: " + response
-        exit(-1)
+    #exportQuery='http://localhost:' + port + '/export?exported_data_file=exportData.json'
+    #opener = urllib2.build_opener(urllib2.HTTPHandler)
+    #request = urllib2.Request(exportQuery, '')
+    #request.get_method = lambda: 'PUT'
+    #response = opener.open(request).read()
+    #jsonResponse = json.loads(response)
+    #if jsonResponse['log'][0]['export'] != "success":
+    #    print "Export operation failed: " + response
+    #    exit(-1)
 
     #get pid of srch2-search-server and kill the process
 
@@ -75,8 +75,8 @@ def testSaveShutdownRestart(binary_path):
     killQuery = 'http://localhost:' + port + '/_all/shutdown'
     opener = urllib2.build_opener(urllib2.HTTPHandler)
     request = urllib2.Request(killQuery, '')
-    request.get_method = lambda: 'PUT'
     response = opener.open(request)
+    request.get_method = lambda: 'PUT'
     print response.read()
     import time
     time.sleep(2)

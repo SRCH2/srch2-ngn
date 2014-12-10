@@ -124,6 +124,7 @@ Json::Value JsonResponseHandler::getJsonSingleMessage(const JsonMessageCode code
 		break;
 	case HTTP_JSON_Merge_Parameter_Not_Recognized:
 	case HTTP_Json_Cannot_Acquire_Locks:
+	case HTTP_Json_NOT_SUPPORTED:
 	default:
 		msgValue[c_error] = getJsonSingleMessageStr(code);
 		break;

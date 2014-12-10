@@ -249,7 +249,7 @@ ConfigManager::PortNameMap_t ConfigManager::portNameMap[] = {
     { InfoPort_Cluster_Stats, ConfigManager::clusterStatsPortString , "/_cluster/stats"},
     { DebugStatsPort, ConfigManager::debugStatsPortString , "/_debug/stats"},
     { SearchAllPort, ConfigManager::searchAllPortString, "/search_all"},
-	{ ShutdownPort, ConfigManager::shutdownPortString, "/shutdown"},
+	{ ShutdownPort, ConfigManager::shutdownPortString, "/_all/shutdown"},
 	{ NodeShutdownPort, ConfigManager::nodeShutdownPortString , "node_shutdown"},
     { EndOfPortType, NULL }
 };

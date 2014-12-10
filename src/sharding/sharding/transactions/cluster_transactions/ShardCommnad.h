@@ -73,7 +73,7 @@ private:
 
 	bool isSaveSuccessful(map<NodeOperationId , SP(ShardingNotification)> & replies) const;
 
-	void finalize(map<NodeOperationId , SP(ShardingNotification)> & replies);
+	void finalize(map<NodeOperationId , SP(ShardingNotification)> & replies, bool status );
 
 
 	void getSortedListOfClusterShardIDs(vector<ClusterShardId> & shardIds){

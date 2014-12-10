@@ -128,11 +128,13 @@ private:
 						Logger::sharding(Logger::Detail, "ShardCommand(%s, core:%s)| set flag ON",
 								action_name.c_str() , indexDataContainerConf->getName().c_str());
                 	}else{
+                		evhttp_clear_headers(&headers);
     	                brokerSideInformationJson->addError(JsonResponseHandler::getJsonSingleMessage(HTTP_JSON_Merge_Parameter_Not_Recognized));
     	            	brokerSideInformationJson->finalizeOK();
     	            	return false;
                 	}
                 }
+        		evhttp_clear_headers(&headers);
 	    	}
 			Logger::sharding(Logger::Step, "ShardCommand(%s, core:%s)| Calling the core module ...",
 					action_name.c_str() , indexDataContainerConf->getName().c_str());
@@ -150,7 +152,7 @@ private:
 	}
 
 
-	void consume(map<NodeId, vector<CommandStatusNotification::ShardStatus *> > & shardsStatus){
+	void consume(bool status, map<NodeId, vector<CommandStatusNotification::ShardStatus *> > & shardsStatus){
 		for(map<NodeId, vector<CommandStatusNotification::ShardStatus *> >::iterator nodeItr =
 				shardsStatus.begin(); nodeItr != shardsStatus.end(); ++nodeItr){
 			for(unsigned i = 0 ; i < nodeItr->second.size(); ++i){

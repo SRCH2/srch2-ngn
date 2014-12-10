@@ -38,7 +38,8 @@ std::map<JsonMessageCode, std::string> __jsonMessageCodeStrings = boost::assign:
         (HTTP_Json_Data_File_Does_Not_Exist, "Data file does not exist.")
         (HTTP_Json_Node_Failure, "Node failure.")
         (HTTP_Json_Cannot_Acquire_Locks, "Could not acquire necessary locks. Please try again later.")
-        (HTTP_Json_Cannot_Save_Data, "Could not save indices. Please try again.");
+        (HTTP_Json_Cannot_Save_Data, "Could not save indices. Please try again.")
+        (HTTP_Json_NOT_SUPPORTED, "Operation not supported.");
 
 const std::string getJsonMessageCodeStr(const JsonMessageCode code){
 	if(__jsonMessageCodeStrings.find(code) == __jsonMessageCodeStrings.end()){
