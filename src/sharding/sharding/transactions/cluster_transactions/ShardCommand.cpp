@@ -148,7 +148,7 @@ bool ShardCommand::computeTargets(vector<NodeTargetShardInfo> & targets){
 		for(unsigned cid = 0 ; cid < cores.size() ; ++cid){
 
 			CorePartitioner * partitioner = new CorePartitioner(clusterReadview->getPartitioner(cores.at(cid)->getCoreId()));
-			if(partitioner == NULL || clusterReadview->getPartitioner(coreId)->isCoreLocked()){
+			if(partitioner == NULL || clusterReadview->getPartitioner(cores.at(cid)->getCoreId())->isCoreLocked()){
 				Logger::sharding(Logger::Detail, "ShardCommand(code : %d)| Core is currently locked. Request rejected.", commandCode);
 			    this->getTransaction()->getSession()->response->addError(JsonResponseHandler::getJsonSingleMessage(HTTP_JSON_All_Shards_Down_Error));
 			    this->getTransaction()->getSession()->response->finalizeOK();
