@@ -228,8 +228,9 @@ bool ShardManager::isJoined() {
 }
 
 void ShardManager::setCancelled(){
-	boost::unique_lock<boost::shared_mutex> xLock(shardManagerMembersMutex);
+	shardManagerMembersMutex.lock();
 	this->cancelledFlag = true;
+	shardManagerMembersMutex.unlock();
 	this->getStateMachine()->clear();
 	this->clearMMRegistrations();
 	this->cancelAllThreads(false);
