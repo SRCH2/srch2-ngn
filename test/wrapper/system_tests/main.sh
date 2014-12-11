@@ -273,7 +273,7 @@ test_case "multi valued attribute" "python ./test_multi_valued_attributes/test_m
 #TODO: failed
 sleep 3
 rm -fr SRCH2Cluster
-test_case "save_shutdown_restart" "python ./save_shutdown_restart_export_test/save_shutdown_restart_export_test.py $SRCH2_ENGINE" 
+test_case "save_shutdown_restart" "python ./save_shutdown_restart_test/save_shutdown_restart_test.py $SRCH2_ENGINE" 
 
 #TODO: failed
 sleep 3

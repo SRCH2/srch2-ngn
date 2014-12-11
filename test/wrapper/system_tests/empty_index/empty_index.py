@@ -27,7 +27,7 @@ def testEmptyIndex(binary_path):
     request.get_method = lambda: 'PUT'
     response = opener.open(request).read()
     jsonResponse = json.loads(response)
-    if jsonResponse['log'][0]['insert'] != "success":
+    if jsonResponse['items'][0]['status'] != True:
         print "/docs operation failed: " + response
         return -1
 
@@ -38,9 +38,10 @@ def testEmptyIndex(binary_path):
     query='http://localhost:' + str(port) + '/search?q=toy'
     response = urllib2.urlopen(query).read()
     response_json = json.loads(response)
+    print response
     if len(response_json['results']) != 1 or response_json['results'][0]['record']['id'] != "1234":
        print 'test failed'
-       exitCode = 1
+       return 1
 
     test_lib.killServer(serverHandle)
     print 'test pass'
