@@ -131,6 +131,11 @@ const string CoreInfo_t::getLicenseKeyFileName() const {
 const string CoreInfo_t::getHTTPServerAccessLogFile() const {
 	return configManager->getHTTPServerAccessLogFile();
 }
+
+const string CoreInfo_t::getNewHTTPServerAccessLogFile(const string & newFile) const {
+	return configManager->getNewHTTPServerAccessLogFile(newFile);
+}
+
 const Logger::LogLevel& CoreInfo_t::getHTTPServerLogLevel() const{
 	return configManager->getHTTPServerLogLevel();
 }

@@ -397,7 +397,7 @@ void * DPInternalRequestHandler::serializeRecordsInShardThreadWork(void * args){
  * 3. Sends the results to the shard which initiated this reset-log request(Failure or Success)
  */
 SP(CommandStatusNotification) DPInternalRequestHandler::internalResetLogCommand(const NodeTargetShardInfo & target,
-		boost::shared_ptr<const ClusterResourceMetadata_Readview> clusterReadview){
+		boost::shared_ptr<const ClusterResourceMetadata_Readview> clusterReadview, const string & newLogFilePath){
 
 	// 0. use target and readview to get Srch2Server pointers
 	vector<const Shard *> shards;
@@ -409,6 +409,7 @@ SP(CommandStatusNotification) DPInternalRequestHandler::internalResetLogCommand(
 		const Shard * shard = shards.at(shardIdx);
 		ShardStatusOnlyArgs * shardResetLogsArgs =
 				new ShardStatusOnlyArgs(shard->getSrch2Server().get(), shard->cloneShardId());
+		shardResetLogsArgs->newLogFileName = newLogFilePath;
 		allShardsResetLogsArguments.push_back(shardResetLogsArgs);
 
 		if (pthread_create(&shardResetLogsThreads[shardIdx], NULL, resetLogInShardThreadWork, shardResetLogsArgs) != 0){
@@ -517,9 +518,9 @@ SP(CommandStatusNotification) DPInternalRequestHandler::internalMergeCommand(con
 
 void * DPInternalRequestHandler::resetLogInShardThreadWork(void * args){
 	ShardStatusOnlyArgs * shardArgs = (ShardStatusOnlyArgs * )args;
-
+	string newLogFilePath = shardArgs->server->getCoreInfo()->getNewHTTPServerAccessLogFile(shardArgs->newLogFileName);
     // create a FILE* pointer to point to the new logger file "logger.txt"
-    FILE *logFile = fopen(shardArgs->server->getCoreInfo()->getHTTPServerAccessLogFile().c_str(),"a");
+    FILE *logFile = fopen(newLogFilePath.c_str(),"a");
 
     if (logFile == NULL) {
         srch2::util::Logger::error("Reopen Log file %s failed.",
@@ -631,7 +632,7 @@ SP(CommandStatusNotification) DPInternalRequestHandler::resolveShardCommand(SP(C
 			return internalMergeCommand(notif->getTarget(), clusterReadview, false, false);
 		case ShardCommandCode_ResetLogger:
 			Logger::sharding(Logger::Step, "DP-Internal| Resetting logger");
-			return internalResetLogCommand(notif->getTarget(), clusterReadview);
+			return internalResetLogCommand(notif->getTarget(), clusterReadview, notif->getNewLogFilePath());
 	}
 	ASSERT(false);
 	return SP(CommandStatusNotification)(); // NULL

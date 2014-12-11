@@ -271,6 +271,7 @@ public:
 	const string getSrch2Home() const ;
 	const string getLicenseKeyFileName() const ;
 	const string getHTTPServerAccessLogFile() const ;
+	const string getNewHTTPServerAccessLogFile(const string & newFile) const ;
 	const Logger::LogLevel& getHTTPServerLogLevel() const;
 
 	bool getIsFuzzyTermsQuery() const;

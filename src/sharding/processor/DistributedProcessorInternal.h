@@ -89,7 +89,7 @@ public:
      * 3. Sends the results to the shard which initiated this reset-log request(Failure or Success)
      */
     SP(CommandStatusNotification) internalResetLogCommand(const NodeTargetShardInfo & target,
-    		boost::shared_ptr<const ClusterResourceMetadata_Readview> clusterReadview);
+    		boost::shared_ptr<const ClusterResourceMetadata_Readview> clusterReadview, const string & newLogFilePath);
 
 
     /*
@@ -193,6 +193,7 @@ private:
     	Srch2Server * server;
     	CommandStatusNotification::ShardStatus * shardResults;
     	MergeActionType mergeAction;
+    	string newLogFileName;
     };
 
     void handleStatusOnlyCommands();

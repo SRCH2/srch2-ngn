@@ -447,6 +447,7 @@ public:
 	const std::string& getLicenseKeyFileName() const;
 
 	const std::string& getHTTPServerAccessLogFile() const;
+	const std::string& getNewHTTPServerAccessLogFile(const string & newFile) const;
 	const Logger::LogLevel& getHTTPServerLogLevel() const;
 	const std::string& getHTTPServerListeningHostname() const;
 	unsigned short int getHTTPServerDefaultListeningPort() const;

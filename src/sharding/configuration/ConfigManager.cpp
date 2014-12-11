@@ -2889,6 +2889,10 @@ const string& ConfigManager::getHTTPServerAccessLogFile() const {
     return httpServerAccessLogFile;
 }
 
+const std::string& ConfigManager::getNewHTTPServerAccessLogFile(const string & newFile) const{
+	return getSrch2Home() + "/" + newFile;
+}
+
 const Logger::LogLevel& ConfigManager::getHTTPServerLogLevel() const {
     return loglevel;
 }
