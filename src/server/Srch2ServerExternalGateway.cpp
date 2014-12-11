@@ -183,6 +183,7 @@ void Srch2ServerGateway::cb_globalOperations(struct evhttp_request * req, void *
     		srch2http::ShutdownCommand::runShutdown(req);
     		break;
     	case srch2http::NodeShutdownPort:
+    		bmhelper_evhttp_send_reply2(req, HTTP_OK, "OK", "{\"details\":\"Server shutting down peacefully\"}.\n");
     		srch2http::ShutdownCommand::_shutdown();
     		break;
     	default:
