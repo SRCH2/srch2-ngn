@@ -212,8 +212,8 @@ void QueryOptimizer::buildIncompleteSubTreeOptionsAndOr(LogicalPlanNode * root, 
         }
     }
 
-    delete domains;
-    delete cartProductResults;
+    delete [] domains;
+    delete [] cartProductResults;
 
 }
 
