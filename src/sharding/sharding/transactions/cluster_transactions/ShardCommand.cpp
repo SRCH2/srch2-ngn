@@ -99,7 +99,7 @@ void ShardCommand::release(){
 	vector<ClusterShardId> shardIds;
 	getSortedListOfClusterShardIDs(shardIds);
 	if(shardIds.empty()){
-		consume(true);
+		finalize(aggregatedResult, true);
 		return;
 	}
 	stringstream ss;
