@@ -250,7 +250,7 @@ ConfigManager::PortNameMap_t ConfigManager::portNameMap[] = {
     { DebugStatsPort, ConfigManager::debugStatsPortString , "/_debug/stats"},
     { SearchAllPort, ConfigManager::searchAllPortString, "/search_all"},
 	{ ShutdownPort, ConfigManager::shutdownPortString, "/_all/shutdown"},
-	{ NodeShutdownPort, ConfigManager::nodeShutdownPortString , "node_shutdown"},
+	{ NodeShutdownPort, ConfigManager::nodeShutdownPortString , "/node_shutdown"},
     { EndOfPortType, NULL }
 };
 
