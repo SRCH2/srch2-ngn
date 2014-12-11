@@ -21,6 +21,19 @@ void ClusterNodes_Writeview::getArrivedNodes(vector<NodeId> & arrivedNodes, bool
 	}
 }
 
+
+void ClusterNodes_Writeview::getNonFailedNodes(vector<NodeId> & nonFailedNodes, bool returnThisNode) const{
+	for(map<NodeId, std::pair<ShardingNodeState, Node *> >::const_iterator nodeItr = nodes.begin();
+			nodeItr != nodes.end(); ++nodeItr){
+		if(! returnThisNode && nodeItr->first == currentNodeId){
+			continue;
+		}
+		if(nodeItr->second.first != ShardingNodeStateFailed){
+			nonFailedNodes.push_back(nodeItr->first);
+		}
+	}
+}
+
 void ClusterNodes_Writeview::getAllNodes(std::vector<const Node *> & localCopy) const{
 	for(map<NodeId, std::pair<ShardingNodeState, Node *> >::const_iterator nodeItr = nodes.begin();
 			nodeItr != nodes.end(); ++nodeItr){

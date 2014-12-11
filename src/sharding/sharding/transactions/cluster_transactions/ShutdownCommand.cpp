@@ -86,15 +86,15 @@ void ShutdownCommand::finalizeWork(Transaction::Params * arg){
 	// shut down the cluster.
 	// 1. send shut down message to every body.
 	// a) prepare list of nodes that we must send shutdown to them
-	vector<NodeId> arrivedNodes;
+	vector<NodeId> nonFailedNodes;
 	SP(const ClusterNodes_Writeview) nodesWriteview = this->getNodesWriteview_read();
-	nodesWriteview->getArrivedNodes(arrivedNodes, false);
+	nodesWriteview->getNonFailedNodes(nonFailedNodes, false);
 
-	if(! arrivedNodes.empty()){
+	if(! nonFailedNodes.empty()){
 		// b) send shut down message to everybody
 		shutdownNotif = SP(ShutdownNotification)(new ShutdownNotification());
 
-		ConcurrentNotifOperation * commandSender = new ConcurrentNotifOperation(shutdownNotif, NULLType, arrivedNodes, NULL, false);
+		ConcurrentNotifOperation * commandSender = new ConcurrentNotifOperation(shutdownNotif, NULLType, nonFailedNodes, NULL, false);
 		ShardManager::getStateMachine()->registerOperation(commandSender);
 	}
 

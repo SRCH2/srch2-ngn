@@ -175,6 +175,7 @@ public:
 	}
 
 	void getArrivedNodes(vector<NodeId> & allNodes, bool returnThisNode = false) const;
+	void getNonFailedNodes(vector<NodeId> & nonFailedNodes, bool returnThisNode) const;
 	void getAllNodes(std::vector<const Node *> & localCopy) const;
 	unsigned getNumberOfAliveNodes() const;
 	bool isNodeAlive(const NodeId & nodeId) const;
