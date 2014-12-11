@@ -89,12 +89,17 @@ void ShutdownCommand::finalizeWork(Transaction::Params * arg){
 	vector<NodeId> arrivedNodes;
 	SP(const ClusterNodes_Writeview) nodesWriteview = this->getNodesWriteview_read();
 	nodesWriteview->getArrivedNodes(arrivedNodes, false);
-	// b) send shut down message to everybody
-	shutdownNotif = SP(ShutdownNotification)(new ShutdownNotification());
 
-	ConcurrentNotifOperation * commandSender = new ConcurrentNotifOperation(shutdownNotif, NULLType, arrivedNodes, NULL, false);
-	ShardManager::getStateMachine()->registerOperation(commandSender);
+	if(! arrivedNodes.empty()){
+		// b) send shut down message to everybody
+		shutdownNotif = SP(ShutdownNotification)(new ShutdownNotification());
 
+		ConcurrentNotifOperation * commandSender = new ConcurrentNotifOperation(shutdownNotif, NULLType, arrivedNodes, NULL, false);
+		ShardManager::getStateMachine()->registerOperation(commandSender);
+	}
+
+	this->getSession()->response->addMessage("Cluster will shutdowns peacefully.");
+	this->getSession()->response->finalizeOK();
 	this->getSession()->response->printHTTP(req);
 	this->_shutdown();
 	return; // it never reaches this point because before that the engine dies.
