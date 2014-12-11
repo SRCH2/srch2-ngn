@@ -112,7 +112,7 @@ if __name__ == '__main__':
     queriesAndResultsPath = sys.argv[2]  
   
     exitCode = testTermType(queriesAndResultsPath, './term_type/conf.xml', binary_path)
-    time.sleep(1)
+    time.sleep(5)
     print '--------Term type test  for attribute_based_search--------------'  
     exitCode += testTermType(queriesAndResultsPath, './term_type/conf_for_attribute_based_search.xml', binary_path)
     os._exit(exitCode)

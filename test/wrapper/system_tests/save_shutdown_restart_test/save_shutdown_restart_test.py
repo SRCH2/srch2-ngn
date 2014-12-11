@@ -10,7 +10,7 @@ port = '8087'
 
 def testSaveShutdownRestart(binary_path):
     #Start the engine server
-    binary= [ binary_path, '--config-file=./save_shutdown_restart_export_test/conf.xml' ]
+    binary= [ binary_path, '--config-file=./save_shutdown_restart_test/conf.xml' ]
 
     if test_lib.confirmPortAvailable(port) == False:
         print 'Port ' + str(port) + ' already in use - aborting'

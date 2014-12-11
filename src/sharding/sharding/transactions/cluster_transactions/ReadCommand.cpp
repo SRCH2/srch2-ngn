@@ -224,7 +224,8 @@ void ReadCommand::preparePhysicalPlan(vector<QueryResults * > & networkOperators
 	// make the tree which outputs the records
 	sortOperator = new ClusterSortOperator();
 
-	if(logicalPlan->getPostProcessingInfo()->getSortEvaluator() != NULL){
+	if(logicalPlan->getPostProcessingInfo() != NULL &&
+			logicalPlan->getPostProcessingInfo()->getSortEvaluator() != NULL){
 		sortOperator->setSortEvaluator(logicalPlan->getPostProcessingInfo()->getSortEvaluator());
 	}
 

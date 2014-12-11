@@ -116,7 +116,7 @@ if __name__ == '__main__':
 
     exitCode = testExactAttributeBasedSearch(queriesAndResultsPath, binary_path,
         './exact_attribute_based_search/conf.xml')
-    time.sleep(1) # give first server time to shutdown
+    time.sleep(5) # give first server time to shutdown
     exitCode += testExactAttributeBasedSearch(queriesAndResultsPath, binary_path,
         './exact_attribute_based_search/conf_w_positional_info.xml')
 

@@ -66,7 +66,7 @@ def testNewFeatures( binary_path):
 
     ## first look for id=2
     print "#1: search for id=2 and should find it"
-    query = 'http://localhost:' + port + '/search?docid=2'    
+    query = 'http://localhost:' + port + '/search?docid=2'
     # do the query
     response = urllib2.urlopen(query).read()
     response_json = json.loads(response)
@@ -92,7 +92,7 @@ def testNewFeatures( binary_path):
     request.get_method = lambda: 'PUT'
     response = opener.open(request).read()
     jsonResponse = json.loads(response)
-    if jsonResponse['log'][0]['insert'] != "success":
+    if jsonResponse['items'][0]['status'] != True:
         print "Insertion of record 200 failed: " + response
         failCount += 1
     time.sleep(10)
@@ -115,7 +115,7 @@ def testNewFeatures( binary_path):
     request.get_method = lambda: 'DELETE'
     response = opener.open(request).read()
     jsonResponse = json.loads(response)
-    if jsonResponse['log'][0]['delete'] != "success":
+    if jsonResponse['items'][0]['status'] != True:
         print "Deletion of record 2 failed: " + response
         failCount += 1
     time.sleep(10)
@@ -138,7 +138,7 @@ def testNewFeatures( binary_path):
     request.get_method = lambda: 'PUT'
     response = opener.open(request).read()
     jsonResponse = json.loads(response)
-    if jsonResponse['log'][0]['insert'] != "success":
+    if jsonResponse['items'][0]['status'] != True:
         print "Insertion of record 2 failed: " + response
         failCount += 1
     time.sleep(10)
