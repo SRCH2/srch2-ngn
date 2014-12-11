@@ -68,6 +68,7 @@ public:
 	void finalizeWork(Transaction::Params * arg);
 
 	static void _shutdown();
+	static void * _shutdownAnotherThread(void * args);
 private:
 
 	ShardCommand * saveOperation;

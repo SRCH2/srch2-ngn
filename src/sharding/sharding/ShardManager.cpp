@@ -462,9 +462,6 @@ bool ShardManager::resolveMessage(Message * msg, NodeId senderNode){
 		return true;
 	}
 
-	if(msg->getType() == ShardingShutdownMessageType){
-		sLock.unlock();
-	}
 	if(! notif->resolveNotification(notif)){
 		Logger::sharding(Logger::Detail, "SHM| Notification resolve returned false : %s", notif->getDescription().c_str());
 	}
