@@ -71,7 +71,7 @@ void Srch2ServerGateway::cb_coreSpecificOperations(struct evhttp_request * req, 
 
     evhttp_add_header(req->output_headers, "Content-Type",
             "application/json; charset=UTF-8");
-    try{
+//    try{
     	switch (portType){
     	case srch2http::SearchPort:
     		ReadCommandHttp::search(clusterReadview, req, coreId);
@@ -135,11 +135,11 @@ void Srch2ServerGateway::cb_coreSpecificOperations(struct evhttp_request * req, 
     		cb_notfound(req, NULL);
     		break;
     	}
-    }catch(exception & e){
-    	// exception caught
-    	Logger::error(e.what());
-    	srch2http::Srch2ServerRuntime::handleException(req);
-    }
+//    }catch(exception & e){
+//    	// exception caught
+//    	Logger::error(e.what());
+//    	srch2http::Srch2ServerRuntime::handleException(req);
+//    }
 
 
 }

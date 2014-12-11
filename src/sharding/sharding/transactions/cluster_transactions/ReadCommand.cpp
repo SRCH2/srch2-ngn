@@ -75,14 +75,14 @@ void ReadCommand::search(){
 
 	this->logicalPlan = prepareLogicalPlan();
 
-	logicalPlan->accessibleRefiningAttributes = aclApprovedRefiningAttributes;
-	logicalPlan->accessibleSearchableAttributes = aclApprovedSearchAttributes;
 
 	if(this->logicalPlan == NULL){
 		finalize();
 		return;
 	}
 
+	logicalPlan->accessibleRefiningAttributes = aclApprovedRefiningAttributes;
+	logicalPlan->accessibleSearchableAttributes = aclApprovedSearchAttributes;
 
 	// find targets of this search query
     CorePartitioner partitioner(clusterReadview->getPartitioner(coreInfo->getCoreId()));

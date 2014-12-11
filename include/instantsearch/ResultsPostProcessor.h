@@ -154,6 +154,13 @@ class PhraseInfo{
 		this->phraseKeywordPositionIndex = info.phraseKeywordPositionIndex;
 		this->phraseKeyWords = info.phraseKeyWords;
 	}
+	PhraseInfo& operator=(const PhraseInfo & right){
+    	if(this == &right){
+    		return *this;
+    	}
+    	new (this) PhraseInfo(right);
+    	return *this;
+	}
 	PhraseInfo(){
 
 	}

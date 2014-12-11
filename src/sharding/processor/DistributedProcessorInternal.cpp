@@ -66,7 +66,6 @@ SP(SearchCommandResults) DPInternalRequestHandler::internalSearchCommand(SP(Sear
 	        return SP(SearchCommandResults)();
 	    }
 	}
-	delete tstarts;
 
 	//2. When all threads are done, aggregate QueryResult objects and in-memory strings
 	//        and put them in a new SearchCommand object;
@@ -78,7 +77,8 @@ SP(SearchCommandResults) DPInternalRequestHandler::internalSearchCommand(SP(Sear
 	            + (tend.tv_nsec - tstarts[shardIdx].tv_nsec) / 1000000;
 	    allShardsSearchArguments.at(shardIdx)->shardResults->searcherTime = ts1;
 	}
-	delete shardSearchThreads;
+	delete [] tstarts;
+	delete [] shardSearchThreads;
 	// at this point all shard searches are done.
 	// aggregate query results and etc ...
     // search results to be serialized and sent over the network

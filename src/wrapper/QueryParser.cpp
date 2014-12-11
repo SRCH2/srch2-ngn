@@ -217,7 +217,7 @@ bool QueryParser::parse(const Schema * schema) {
 
     // do some parsing
 
-    try {
+//    try {
         if(this->docIdParser()){
             return true;
         }
@@ -249,14 +249,14 @@ bool QueryParser::parse(const Schema * schema) {
             this->isParsedError = ! attachParseTreeAndMainQueryParallelVectors();
         }
 
-    } catch (exception& e) {
-        Logger::error(e.what());
-        // error msg
-        this->isParsedError = true;
-        this->container->messages.push_back(
-                make_pair(MessageError,
-                        "Ooops! Something went wrong while parsing the query. If you face this again, please contact srch2."));
-    }
+//    } catch (exception& e) {
+//        Logger::error(e.what());
+//        // error msg
+//        this->isParsedError = true;
+//        this->container->messages.push_back(
+//                make_pair(MessageError,
+//                        "Ooops! Something went wrong while parsing the query. If you face this again, please contact srch2."));
+//    }
     return !this->isParsedError; // return true for success, false for parse error
 }
 

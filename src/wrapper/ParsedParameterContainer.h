@@ -124,6 +124,26 @@ public:
 	 this->geoIntermediateStructure  = NULL;
 //	 objectCount++;
 	}
+	ParseTreeNode(	const ParseTreeNode & right){
+	 this->type = right.type;
+	 this->parent = NULL;
+	 for(unsigned childIdx = 0 ; childIdx < right.children.size(); ++childIdx){
+		 ParseTreeNode * childClone = new ParseTreeNode(*(right.children.at(childIdx)));
+		 this->children.push_back(childClone);
+		 childClone->parent = this;
+	 }
+	 if(right.termIntermediateStructure == NULL){
+		 this->termIntermediateStructure = NULL;
+	 }else{
+		 this->termIntermediateStructure = new TermIntermediateStructure(*(right.termIntermediateStructure));
+	 }
+
+	 if(right.geoIntermediateStructure == NULL){
+		 this->geoIntermediateStructure = NULL;
+	 }else{
+		 this->geoIntermediateStructure = new GeoIntermediateStructure(*(right.geoIntermediateStructure));
+	 }
+	}
     ~ParseTreeNode(){
 		for(vector<ParseTreeNode *>::iterator child = children.begin() ; child != children.end() ; ++child){
 			if(*child != NULL) delete *child;
@@ -236,9 +256,22 @@ class FilterQueryContainer {
 public:
     FilterQueryContainer() {
         evaluator = NULL;
+        parametersInQuery = NULL;
     }
     ~FilterQueryContainer() {
         // do not free evaluator here, it's freed in filter
+    }
+    FilterQueryContainer(const FilterQueryContainer & right) {
+    	if(right.evaluator != NULL){
+			evaluator = new FilterQueryEvaluator(*(right.evaluator));
+    	}else{
+    		evaluator = NULL;
+    	}
+    	if(right.parametersInQuery != NULL){
+    		parametersInQuery = new std::vector<ParameterName> (*(right.parametersInQuery));
+    	}else{
+    		parametersInQuery = NULL;
+    	}
     }
     // this object is created in planGenerator but freed when the filter is being destroyed.
     FilterQueryEvaluator * evaluator;
@@ -259,6 +292,13 @@ class SortQueryContainer
 public:
     SortQueryContainer() {
         evaluator = NULL;
+    }
+    SortQueryContainer(const SortQueryContainer & right) {
+    	if(right.evaluator == NULL){
+			evaluator = NULL;
+    	}else{
+    		evaluator = new SortFilterEvaluator(*(right.evaluator));
+    	}
     }
     ~SortQueryContainer() {
         // do not free evaluator here, it's freed in filter
@@ -350,6 +390,66 @@ public:
         hasRoleCore = false;
         attrAclOn = true;
     }
+
+    ParsedParameterContainer& operator=(const ParsedParameterContainer & right){
+    	if(this == &right){
+    		return *this;
+    	}
+    	new (this) ParsedParameterContainer(right);
+    	return *this;
+    }
+
+    ParsedParameterContainer(const ParsedParameterContainer & right) {
+        filterQueryContainer = NULL;
+        if(right.filterQueryContainer != NULL){
+        	filterQueryContainer = new FilterQueryContainer(*(right.filterQueryContainer));
+        }
+    	facetQueryContainer = NULL;
+        if(right.facetQueryContainer != NULL){
+        	facetQueryContainer = new FacetQueryContainer(*(right.facetQueryContainer));
+        }
+    	sortQueryContainer = NULL;
+        if(right.sortQueryContainer != NULL){
+        	sortQueryContainer = new SortQueryContainer(*(right.sortQueryContainer));
+        }
+    	geoParameterContainer = NULL;
+        if(right.geoParameterContainer != NULL){
+        	geoParameterContainer = new GeoParameterContainer(*(right.geoParameterContainer));
+        }
+        onlyFacets = right.onlyFacets ;
+        isFuzzy= right.isFuzzy;
+        prefixMatchPenalty= right.prefixMatchPenalty;
+        isOmitHeader=right.isOmitHeader;
+        maxTimeAllowed= right.maxTimeAllowed;
+        lengthBoost= right.lengthBoost;
+        responseResultsFormat= right.responseResultsFormat;
+        isDebugEnabled=right.isDebugEnabled;
+        termFQBooleanOperator=right.termFQBooleanOperator;
+        termBooleanOperator = right.termBooleanOperator;
+        docIdForRetrieveByIdSearchType = right.docIdForRetrieveByIdSearchType;
+        queryDebugLevel= right.queryDebugLevel;
+        isTermBooleanOperatorSet=right.isTermBooleanOperatorSet;
+        isFqBooleanOperatorSet=right.isTermBooleanOperatorSet;
+        resultsStartOffset=right.resultsStartOffset; // defaults to 0
+        numberOfResults=right.numberOfResults; // defaults to 10
+        parseTreeRoot = NULL;
+        if(right.parseTreeRoot != NULL){
+        	parseTreeRoot = new ParseTreeNode(*(right.parseTreeRoot));
+        }
+        qfContainer= NULL;
+        if(right.qfContainer != NULL){
+        	qfContainer = new QueryFieldBoostContainer(*(right.qfContainer));
+        }
+        isHighlightOn=right.isHighlightOn;
+        hasRoleCore = right.hasRoleCore;
+        attrAclOn = right.attrAclOn;
+
+        messages = right.messages;
+        PhraseKeyWordsInfoMap = right.PhraseKeyWordsInfoMap;
+        parametersInQuery = right.parametersInQuery;
+    }
+
+
 
     ~ParsedParameterContainer() {
         if (filterQueryContainer != NULL)
