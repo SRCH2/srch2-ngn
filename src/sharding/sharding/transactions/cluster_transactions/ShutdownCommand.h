@@ -33,19 +33,15 @@ public:
 	}
 	~ShutdownCommand(){
 		finalize();
-		if(saveOperation != NULL){
-			delete saveOperation;
+		for(unsigned i = 0 ; i < saveOperations.size(); ++i){
+			delete saveOperations.at(i);
 		}
-//		if(req != NULL){
-//			delete req;
-//		}
 	}
 
 	ShutdownCommand(evhttp_request *req){
-		this->saveOperation = NULL;
 		this->req = req;
 		this->force = false;
-		this->shouldShutdown = false;
+		this->shouldShutdown = true;
 		this->shouldSave = true;
 	}
 
@@ -71,14 +67,12 @@ public:
 	static void * _shutdownAnotherThread(void * args);
 private:
 
-	ShardCommand * saveOperation;
+	vector<ShardCommand *> saveOperations;
 	SP(ShutdownNotification) shutdownNotif;
 	evhttp_request *req;
 	bool force ;
 	bool shouldSave;
 	bool shouldShutdown;
-
-
 };
 
 

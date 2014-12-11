@@ -143,21 +143,23 @@ bool ShardCommand::computeTargets(vector<NodeTargetShardInfo> & targets){
 	boost::shared_ptr<const ClusterResourceMetadata_Readview> clusterReadview;
 	ShardManager::getReadview(clusterReadview);
 	if(coreId == (unsigned)-1){
-		vector<const CoreInfo_t *> cores;
-		clusterReadview->getAllCores(cores);
-		for(unsigned cid = 0 ; cid < cores.size() ; ++cid){
-
-			CorePartitioner * partitioner = new CorePartitioner(clusterReadview->getPartitioner(cores.at(cid)->getCoreId()));
-			if(partitioner == NULL || clusterReadview->getPartitioner(cores.at(cid)->getCoreId())->isCoreLocked()){
-				Logger::sharding(Logger::Detail, "ShardCommand(code : %d)| Core is currently locked. Request rejected.", commandCode);
-			    this->getTransaction()->getSession()->response->addError(JsonResponseHandler::getJsonSingleMessage(HTTP_JSON_All_Shards_Down_Error));
-			    this->getTransaction()->getSession()->response->finalizeOK();
-				delete partitioner;
-				return false;
-			}
-			partitioner->getAllTargets(targets);
-			delete partitioner;
-		}
+		ASSERT(false);
+		return false;
+//		vector<const CoreInfo_t *> cores;
+//		clusterReadview->getAllCores(cores);
+//		for(unsigned cid = 0 ; cid < cores.size() ; ++cid){
+//
+//			CorePartitioner * partitioner = new CorePartitioner(clusterReadview->getPartitioner(cores.at(cid)->getCoreId()));
+//			if(partitioner == NULL || clusterReadview->getPartitioner(cores.at(cid)->getCoreId())->isCoreLocked()){
+//				Logger::sharding(Logger::Detail, "ShardCommand(code : %d)| Core is currently locked. Request rejected.", commandCode);
+//			    this->getTransaction()->getSession()->response->addError(JsonResponseHandler::getJsonSingleMessage(HTTP_JSON_All_Shards_Down_Error));
+//			    this->getTransaction()->getSession()->response->finalizeOK();
+//				delete partitioner;
+//				return false;
+//			}
+//			partitioner->getAllTargets(targets);
+//			delete partitioner;
+//		}
 	}else{
 		CorePartitioner * partitioner = new CorePartitioner(clusterReadview->getPartitioner(coreId));
 		if(partitioner == NULL || clusterReadview->getPartitioner(coreId)->isCoreLocked()){

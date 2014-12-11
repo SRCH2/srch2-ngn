@@ -46,26 +46,34 @@ void ShutdownCommand::run(){
 
     if(shouldSave){
 		save();
-    }else{
-    	shouldShutdown = true;
     }
 	return ;
 }
 
 void ShutdownCommand::save(){
 
-	saveOperation = new ShardCommand(this, -1, ShardCommandCode_SaveData_SaveMetadata );
-	saveOperation->produce();
+	Cluster_Writeview * writeview = this->getWriteview();
+	for(map<unsigned, CoreInfo_t *>::iterator coreItr = writeview->cores.begin();
+			coreItr != writeview->cores.end(); ++coreItr){
+		unsigned coreId = coreItr->first;
+		ShardCommand *saveOperation = new ShardCommand(this, coreId, ShardCommandCode_SaveData_SaveMetadata );
+		saveOperations.push_back(saveOperation);
+		saveOperation->produce();
+	}
 }
 
 void ShutdownCommand::consume(bool status, map<NodeId, vector<CommandStatusNotification::ShardStatus *> > & result) {
-	if(! status && ! force){
-    	this->getSession()->response->addMessage(
-    			"Could not successfully save the indices. Will not shutdown. Either use force=true in the request or try again.");
-        this->getSession()->response->finalizeOK();
-        shouldShutdown = false;
+
+	if(status && shouldShutdown){
+		shouldShutdown = true;
 	}
-	shouldShutdown = true;
+	if(! status && ! force){
+		this->getSession()->response->addMessage(
+				"Could not successfully save the indices. Will not shutdown. Either use force=true in the request or try again.");
+		this->getSession()->response->finalizeOK();
+		shouldShutdown = false;
+		return;
+	}
 	return;
 }
 
