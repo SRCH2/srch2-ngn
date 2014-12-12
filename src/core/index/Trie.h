@@ -526,7 +526,8 @@ public:
     //  Range 2: [x + 1, 2^32 - 1], for new keywords that can get an order-preserving integer ids;
     // Here "x" is MAX_ALLOCATED_KEYWORD_ID.
     static const unsigned MAX_KEYWORD_ID = ~0;  // should be 2^32 - 1
-    static const unsigned MAX_ALLOCATED_KEYWORD_ID = 0xffff0000;
+    //static const unsigned MAX_ALLOCATED_KEYWORD_ID = 0xffff0000;
+    static const unsigned MAX_ALLOCATED_KEYWORD_ID = 100;
 
     static const unsigned KEYWORD_ID_SPARSITY = 10;
 

@@ -431,14 +431,14 @@ INDEXWRITE_RETVAL IndexData::_deleteRecord(
             // reassignKeywordIds() to make sure the ids of the trie lead nodes
             // are ordered properly. This order can make sure the function
             // getKeywordCorrespondingPathToTrieNode_WriteView() works properly.
-            if (this->trie->needToReassignKeywordIds()) {
+                  /*if (this->trie->needToReassignKeywordIds()) {
                 // reassign id is not thread safe so we need to grab an exclusive lock
                 // NOTE : all index structure commits are happened before reassign id phase. Only QuadTree is left
                 //        because we need new ids in quadTree commit phase.
                 boost::unique_lock<boost::shared_mutex> lock(globalRwMutexForReadersWriters);
                 this->reassignKeywordIds();
                 lock.unlock();
-            }
+                }*/
 
             // iterate through the keyword ids
             unsigned keywordsCount = fwdList->getNumberOfKeywords();
