@@ -16,10 +16,9 @@ def checkResult(query, responseJson,resultValue):
     isPass=1
     if  len(responseJson) == len(resultValue):
         for i in range(0, len(resultValue)):
-            data = json.dumps(responseJson[i]['record'])
-            #print response_json['results'][i]['record']['id']
             resultValue[i] = resultValue[i].rstrip('\n')
-            if (data !=  resultValue[i]):
+            expectedRecordJson=json.loads(resultValue[i])
+            if (responseJson[i]['record']['id'] !=  expectedRecordJson['id']):
                 isPass=0
                 print query+' test failed'
                 print 'query results||given results'
@@ -96,6 +95,7 @@ def testFieldList(queriesAndResultsPath, binary_path, configFile):
         #print query
         #do the query
         response = urllib2.urlopen(query).read()
+        #print response
         response_json = json.loads(response)
 
         #check the result
@@ -111,9 +111,9 @@ if __name__ == '__main__':
     binary_path = sys.argv[1]
     queriesAndResultsPath = sys.argv[2]
     exitCode = testFieldList(queriesAndResultsPath, binary_path, "./test_fieldList_inQuery/conf.xml")
-    time.sleep(1)
+    time.sleep(5)
     exitCode = testFieldList(queriesAndResultsPath, binary_path, "./test_fieldList_inQuery/conf1.xml")
-    time.sleep(1)
+    time.sleep(5)
     exitCode = testFieldList(queriesAndResultsPath, binary_path, "./test_fieldList_inQuery/conf2.xml")
-    time.sleep(1)
+    time.sleep(5)
     os._exit(exitCode)

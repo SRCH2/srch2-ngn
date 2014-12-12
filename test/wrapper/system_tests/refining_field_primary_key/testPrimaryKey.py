@@ -153,6 +153,6 @@ if __name__ == '__main__':
     queriesAndResultsPath = sys.argv[2]
     exitCode = testRefiningPrimaryKey(queriesAndResultsPath, binary_path)
     import time
-    time.sleep(2)
+    time.sleep(5)
     exitCode = testSearchablePrimaryKey(queriesAndResultsPath, binary_path)
     os._exit(exitCode)

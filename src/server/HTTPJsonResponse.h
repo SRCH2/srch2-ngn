@@ -93,6 +93,7 @@ public:
 		}
 		return false;
 	}
+	virtual Json::Value & getRoot();
 
 protected:
 	// HTTP reply properties
@@ -107,7 +108,6 @@ protected:
     evhttp_request *req;
     evkeyvalq * headers;
 
-	virtual Json::Value & getRoot();
 
 };
 

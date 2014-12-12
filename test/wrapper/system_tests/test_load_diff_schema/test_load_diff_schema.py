@@ -50,14 +50,14 @@ if __name__ == '__main__':
 	binary_path = sys.argv[1]
 	startSrch2Engine('test_load_diff_schema/conf1.xml')
 	shutdownSrch2Engine()
-	time.sleep(2)
+	time.sleep(5)
 	startSrch2Engine('test_load_diff_schema/conf2.xml')
 	shutdownSrch2Engine()
-	time.sleep(2) # sleep to wait for the engine to shutdown
+	time.sleep(5) # sleep to wait for the engine to shutdown
 	errorMsg = 'The schema in the config file is different from the serialized schema on the disk'
 	testIfErrorLogExists('data/test_load_diff_schema/log.txt',errorMsg)
 	print '=============================='
-	time.sleep(2) # sleep to wait for the engine to shutdown
+	time.sleep(5) # sleep to wait for the engine to shutdown
 	if(os.path.exists("data")):
 		shutil.rmtree("data")
 	os._exit(totalFailCount)

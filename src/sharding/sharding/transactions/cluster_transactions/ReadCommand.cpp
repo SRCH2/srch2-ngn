@@ -408,7 +408,7 @@ boost::shared_ptr<Json::Value> ReadCommand::printResults(const LogicalPlan &quer
                     --resultFound;
                     continue;
                 }
-                (*root)["results"][counter]["record_id"] = allResults.at(i)->internalRecordId;
+                (*root)["results"][counter]["record_id"] = allResults.at(i)->externalRecordId;
                 (*root)["results"][counter]["score"] = (0
                         - allResults.at(i)->_score.getFloatTypedValue()); //the actual distance between the point of record and the center point of the range
                 if (indexDataConfig->getSearchResponseFormat() == RESPONSE_WITH_STORED_ATTR){
@@ -458,7 +458,7 @@ boost::shared_ptr<Json::Value> ReadCommand::printResults(const LogicalPlan &quer
                     --resultFound;
                     continue;
                 }
-                (*root)["results"][counter]["record_id"] = allResults.at(i)->internalRecordId;
+                (*root)["results"][counter]["record_id"] = allResults.at(i)->externalRecordId;
                 (*root)["results"][counter]["score"] = allResults.at(i)->_score.getFloatTypedValue();
 
                 // print edit distance vector
@@ -697,7 +697,7 @@ boost::shared_ptr<Json::Value> ReadCommand::printOneResultRetrievedById(const Lo
             --resultFound;
             continue;
         }
-        (*root)["results"][counter]["record_id"] = allResults.at(i)->internalRecordId;
+        (*root)["results"][counter]["record_id"] = allResults.at(i)->externalRecordId;
 
         if (indexDataConfig->getSearchResponseFormat() == RESPONSE_WITH_STORED_ATTR) {
             unsigned internalRecordId = allResults.at(i)->internalRecordId;

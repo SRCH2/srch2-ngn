@@ -443,7 +443,7 @@ public:
         isHighlightOn=right.isHighlightOn;
         hasRoleCore = right.hasRoleCore;
         attrAclOn = right.attrAclOn;
-
+        responseAttributesList = right.responseAttributesList;
         messages = right.messages;
         PhraseKeyWordsInfoMap = right.PhraseKeyWordsInfoMap;
         parametersInQuery = right.parametersInQuery;

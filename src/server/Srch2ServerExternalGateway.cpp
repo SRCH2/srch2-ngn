@@ -315,7 +315,7 @@ bool Srch2ServerGateway::checkOperationPermission(Srch2ServerRuntime * runtime ,
 		string coreName = coreInfo->getName();
 		Logger::warn("/%s request for %s core arriving on port %d"
 				" denied (port %d will permit)",
-				ConfigManager::portNameMap[portType], coreName.c_str(),
+				ConfigManager::portNameMap[portType].portPath, coreName.c_str(),
 				arrivalPort, configuredPort);
 
 		return false;

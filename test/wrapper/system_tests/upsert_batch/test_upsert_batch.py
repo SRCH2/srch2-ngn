@@ -69,7 +69,7 @@ if __name__ == '__main__':
     command1 = 'curl "http://127.0.0.1:' + str(port) + '/update" -i -X PUT -d ' + '\'{"id":"101","post_type_id":"2","parent_id":"6272262","accepted_answer_id":"NULL","creation_date":"06/07/2011","score":"3","view_count":"0","body":"february monday","owner_user_id":"356674","last_editor_user_id":"NULL","last_editor_display_name":"NULL","last_edit_date":"NULL","last_activity_date":"06/07/2011","community_owned_date":"NULL","closed_date":"NULL","title":"NULL","tags":"NULL","answer_count":"NULL","comment_count":"NULL","favorite_count":"NULL"}\'';
     status1, output1 = commands.getstatusoutput(command1)
     #print 'output1 --- ' + str(output1) + "\n-----------------";
-    expect = '{"rid":"101","update":"Existing record updated successfully"}';
+    expect = '{"action":"update","coreName":"__DEFAULTCORE__","details":[],"rid":"101","status":true}'
     #print flag
     assert verify_insert_response(expect, output1), 'Error, rid 101 is not updated correctly!'
 
@@ -88,7 +88,7 @@ if __name__ == '__main__':
 
     status3, output3 = commands.getstatusoutput(command3)
     #print 'output3 -----' + output3 + '\n-----------------'
-    expect = '{"rid":"111","update":"New record inserted successfully"}';
+    expect = '{"action":"update","coreName":"__DEFAULTCORE__","details":[{"info":"Existing record updated successfully.","message_code":7}],"rid":"111","status":true}'
     assert verify_insert_response(expect, output3), 'Error, rid 111 is not updated correctly!'
 
     time.sleep(1.5)
@@ -104,20 +104,20 @@ if __name__ == '__main__':
 
     status5, output5 = commands.getstatusoutput(command5)
     #print 'output5 -----' + output5 + '\n-----------------'
-    expect = '{"rid":"102","update":"Existing record updated successfully"}';
+    expect = '{"action":"update","coreName":"__DEFAULTCORE__","details":[],"rid":"102","status":true}'
     assert verify_insert_response(expect, output5), 'Error, rid 102 is not updated correctly!'
-    expect = '{"rid":"103","update":"Existing record updated successfully"}';
+    expect = '{"action":"update","coreName":"__DEFAULTCORE__","details":[],"rid":"103","status":true}'
     assert verify_insert_response(expect, output5), 'Error, rid 103 is not updated correctly!'
-    expect = '{"rid":"115","update":"New record inserted successfully"}';
+    expect = '{"action":"update","coreName":"__DEFAULTCORE__","details":[{"info":"Existing record updated successfully.","message_code":7}],"rid":"115","status":true}'
     assert verify_insert_response(expect, output5), 'Error, rid 115 is not updated correctly!'
-    expect = '{"rid":"116","update":"New record inserted successfully"}';
+    expect = '{"action":"update","coreName":"__DEFAULTCORE__","details":[{"info":"Existing record updated successfully.","message_code":7}],"rid":"116","status":true}'
     assert verify_insert_response(expect, output5), 'Error, rid 116 is not updated correctly!'
 
 
     time.sleep(1.5)
     command6 = 'curl -i http://127.0.0.1:' + str(port) + '/search?q=wonderful'
     status6, output6 = commands.getstatusoutput(command6)
-    #print 'output4 -----' + output4 + '\n----------------'
+    #print 'output6 -----' + output6 + '\n----------------'
     expect = '"id":"102"'
     assert verify_search_rid(expect, output6), 'Error, rid 102 is not updated correctly!'
     expect = '"id":"103"'

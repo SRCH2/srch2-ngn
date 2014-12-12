@@ -111,7 +111,7 @@ def testMultipleCores(queriesAndResultsPath, binary_path):
         print 'Port ' + str(port) + ' already in use - aborting'
         return -1
 
-    print 'starting engine: ' + args[0] + ' ' + args[1]
+    #print 'starting engine: ' + args[0] + ' ' + args[1]
     serverHandle = test_lib.startServer(args)
 
     test_lib.pingServer(port)
@@ -162,9 +162,9 @@ def testMultipleCores(queriesAndResultsPath, binary_path):
     #print response
     response_json = json.loads(response)
     if len(response_json) > 0:
-        if int(response_json['engine_status']['docs_in_index']) != 244:
+        if int(response_json['totalNumberOfDocumentsInCluster']) != 244:
             failCount += 1
-            print "Info request did not return expected document count: Got " + str(response_json['engine_status']['docs_in_index']) + " but expected 244."
+            print "Info request did not return expected document count: Got " + str(response_json['totalNumberOfDocumentsInCluster']) + " but expected 244."
         else:
             print query + ' test pass'
     else:
@@ -212,9 +212,9 @@ def testMultipleCores(queriesAndResultsPath, binary_path):
     #print response
     response_json = json.loads(response)
     if len(response_json) > 0:
-        if int(response_json['engine_status']['docs_in_index']) != 244:
+        if int(response_json['totalNumberOfDocumentsInCluster']) != 244:
             failCount += 1
-            print "Info request did not return expected document count: Got " + str(response_json['engine_status']['docs_in_index']) + " but expected 244."
+            print "Info request did not return expected document count: Got " + str(response_json['totalNumberOfDocumentsInCluster']) + " but expected 244."
         else:
             print query + ' test pass'
     else:
@@ -283,7 +283,7 @@ def testMultipleCores(queriesAndResultsPath, binary_path):
     #print response
     response_json = json.loads(response)
     if len(response_json) > 0:
-        if response_json['log'][0]['save'] != 'success':
+        if response_json['status'] != True:
             failCount += 1
             print "/save request did not return success"
         else:
@@ -293,29 +293,29 @@ def testMultipleCores(queriesAndResultsPath, binary_path):
         print "Null response to info request"
 
     # /export
-    query='http://localhost:' + core2ControlPort + '/core2/export?exported_data_file=core2-exported.json'
-    opener = urllib2.build_opener(urllib2.HTTPHandler)
-    request = urllib2.Request(query, '')
+    #query='http://localhost:' + core2ControlPort + '/core2/export?exported_data_file=core2-exported.json'
+    #opener = urllib2.build_opener(urllib2.HTTPHandler)
+    #request = urllib2.Request(query, '')
     #request.add_header('Content-Type', 'your/contenttype')
-    request.get_method = lambda: 'PUT'
+    #request.get_method = lambda: 'PUT'
     #do the query
     #print query
-    response = opener.open(request).read()
+    #response = opener.open(request).read()
     # response = urllib2.urlopen(request).read()
     #print response
-    response_json = json.loads(response)
-    if len(response_json) > 0:
-        if response_json['log'][0]['export'] != 'success':
-            failCount += 1
-            print "/export request did not return success"
-        else:
-            print query + ' test pass'
-    else:
-        failCount += 1
-        print "Null response to save request"
+    #response_json = json.loads(response)
+    #if len(response_json) > 0:
+    #    if response_json['log'][0]['export'] != 'success':
+    #        failCount += 1
+    #        print "/export request did not return success"
+    #    else:
+    #        print query + ' test pass'
+    #else:
+    #    failCount += 1
+    #    print "Null response to save request"
 
     # /resetLogger test
-    query='http://localhost:' + core2ControlPort + '/core2/resetLogger'
+    query='http://localhost:' + core2ControlPort + '/core2/resetLogger?log_data_file=newFile.txt'
     opener = urllib2.build_opener(urllib2.HTTPHandler)
     request = urllib2.Request(query, '')
     #request.add_header('Content-Type', 'your/contenttype')
@@ -327,7 +327,7 @@ def testMultipleCores(queriesAndResultsPath, binary_path):
     #print response
     response_json = json.loads(response)
     if len(response_json) > 0:
-        if response_json['log']:
+        if response_json['status']:
             print query + ' test pass'
         else:
             failCount += 1
@@ -357,24 +357,24 @@ def testMultipleCores(queriesAndResultsPath, binary_path):
             raise
 
     # /core2/export on protected port test
-    query='http://localhost:' + port + '/core2/export?exported_data_file=core2-exported.json'
-    opener = urllib2.build_opener(urllib2.HTTPHandler)
-    request = urllib2.Request(query, '')
+    #query='http://localhost:' + port + '/core2/export?exported_data_file=core2-exported.json'
+    #opener = urllib2.build_opener(urllib2.HTTPHandler)
+    #request = urllib2.Request(query, '')
     #request.add_header('Content-Type', 'your/contenttype')
-    request.get_method = lambda: 'PUT'
+    #request.get_method = lambda: 'PUT'
     #do the query
     #print query
-    try:
-        response = opener.open(request).read()
-        #print response
-        response_json = json.loads(response)
-    except urllib2.HTTPError as err:
-        if err.code == 404:
-            print query + ' test pass'
-        else:
-            # did not get expected file not found error
-            failcount += 1
-            raise
+    #try:
+    #    response = opener.open(request).read()
+    #    #print response
+    #    response_json = json.loads(response)
+    #except urllib2.HTTPError as err:
+    #    if err.code == 404:
+    #        print query + ' test pass'
+    #    else:
+    #        # did not get expected file not found error
+    #        failcount += 1
+    #        raise
 
     # /core2/resetLogger on protected port test
     query='http://localhost:' + port + '/core2/resetLogger'
@@ -417,24 +417,24 @@ def testMultipleCores(queriesAndResultsPath, binary_path):
             raise
 
     # /core2/export on protected port test
-    query='http://localhost:' + core1InfoPort + '/core2/export?exported_data_file=core2-exported.json'
-    opener = urllib2.build_opener(urllib2.HTTPHandler)
-    request = urllib2.Request(query, '')
-    #request.add_header('Content-Type', 'your/contenttype')
-    request.get_method = lambda: 'PUT'
-    #do the query
-    #print query
-    try:
-        response = opener.open(request).read()
-        #print response
-        response_json = json.loads(response)
-    except urllib2.HTTPError as err:
-        if err.code == 404:
-            print query + ' test pass'
-        else:
-            # did not get expected file not found error
-            failcount += 1
-            raise
+    #query='http://localhost:' + core1InfoPort + '/core2/export?exported_data_file=core2-exported.json'
+    #opener = urllib2.build_opener(urllib2.HTTPHandler)
+    #request = urllib2.Request(query, '')
+    ##request.add_header('Content-Type', 'your/contenttype')
+    #request.get_method = lambda: 'PUT'
+    ##do the query
+    ##print query
+    #try:
+    #    response = opener.open(request).read()
+    #    #print response
+    #    response_json = json.loads(response)
+    #except urllib2.HTTPError as err:
+    #    if err.code == 404:
+    #        print query + ' test pass'
+    #    else:
+    #        # did not get expected file not found error
+    #        failcount += 1
+    #        raise
 
     # /core2/resetLogger on protected port test
     query='http://localhost:' + core1InfoPort + '/core2/resetLogger'

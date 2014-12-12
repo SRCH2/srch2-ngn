@@ -248,7 +248,7 @@ ConfigManager::PortNameMap_t ConfigManager::portNameMap[] = {
     { InfoPort_Nodes_NodeID, ConfigManager::nodesStatsPortString , "/_nodes/nodeId"},
     { InfoPort_Cluster_Stats, ConfigManager::clusterStatsPortString , "/_cluster/stats"},
     { DebugStatsPort, ConfigManager::debugStatsPortString , "/_debug/stats"},
-    { SearchAllPort, ConfigManager::searchAllPortString, "/search_all"},
+    { SearchAllPort, ConfigManager::searchAllPortString, "/_all/search"},
 	{ ShutdownPort, ConfigManager::shutdownPortString, "/_all/shutdown"},
 	{ NodeShutdownPort, ConfigManager::nodeShutdownPortString , "/node_shutdown"},
     { EndOfPortType, NULL }
@@ -2889,7 +2889,7 @@ const string& ConfigManager::getHTTPServerAccessLogFile() const {
     return httpServerAccessLogFile;
 }
 
-const std::string& ConfigManager::getNewHTTPServerAccessLogFile(const string & newFile) const{
+const std::string ConfigManager::getNewHTTPServerAccessLogFile(const string & newFile) const{
 	return getSrch2Home() + "/" + newFile;
 }
 

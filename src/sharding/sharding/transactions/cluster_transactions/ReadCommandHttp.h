@@ -58,6 +58,7 @@ private:
 	ReadCommandHttp(boost::shared_ptr<const ClusterResourceMetadata_Readview> clusterReadview,
 			evhttp_request *req):ReadviewTransaction(clusterReadview){
 		// search all case
+		this->clusterReadview = this->getReadview();
 		vector<const CoreInfo_t *> cores;
 		this->clusterReadview->getAllCores(cores);
 		for(unsigned i = 0 ; i < cores.size(); ++i){
@@ -65,9 +66,7 @@ private:
 			coreReadCommand->coreInfo = cores.at(i);
 			coreReadCommands[cores.at(i)->getCoreId()] = coreReadCommand;
 		}
-		this->clusterReadview = this->getReadview();
 		this->req = req;
-		this->response = this->getSession()->response;
 	}
 
 	void init(){
@@ -120,16 +119,28 @@ private:
 			return;
 		}
 		CoreReadCommandInfo * coreReadCommandInfo = coreReadCommands.find(coreId)->second;
-		this->response->setRoot(jsonResponse.get());
+		// core name :
+
+		JsonResponseHandler * coreResponse = NULL;
+		if(coreReadCommands.size() == 1){
+			coreResponse = this->response;
+		}else{
+			coreResponse = new JsonResponseHandler();
+		}
+		coreResponse->setRoot(jsonResponse.get());
 		for(vector<JsonMessageCode>::const_iterator msgItr = messageCodes.begin(); msgItr != messageCodes.end(); ++msgItr){
-			this->response->addMessage(JsonResponseHandler::getJsonSingleMessageStr(*msgItr));
+			coreResponse->addMessage(JsonResponseHandler::getJsonSingleMessageStr(*msgItr));
 		}
 		for(vector<string>::const_iterator msgItr = customMessageStrings.begin(); msgItr != customMessageStrings.end(); ++msgItr){
-			this->response->addMessage(*msgItr);
+			coreResponse->addMessage(*msgItr);
 		}
-		this->response->addMessage(coreReadCommandInfo->paramContainer.getMessageString());
-		this->response->setResponseAttribute(c_status, Json::Value(booleanResult));
+		coreResponse->addMessage(coreReadCommandInfo->paramContainer.getMessageString());
+		coreResponse->setResponseAttribute(c_status, Json::Value(booleanResult));
 		// and finally, write the results to the response
+		if(coreReadCommands.size() > 1){
+			this->response->setResponseAttribute(coreReadCommandInfo->coreInfo->getName().c_str(), coreResponse->getRoot());
+			delete coreResponse;
+		}
 	    Logger::info(
 	            "ip: %s, port: %d GET query: %s, searcher_time: %d ms, payload_access_time: %d ms",
 	            req->remote_host, req->remote_port, req->uri + 1,
