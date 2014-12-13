@@ -587,6 +587,40 @@ void ShardManager::resolveSMNodeFailure(const NodeId failedNodeId){
 	Logger::sharding(Logger::Detail, "SHM| SM Node %d failure. Processed.", failedNodeId);
 }
 
+void ShardManager::resolveTimeoutNotification(){
+	boost::shared_lock<boost::shared_mutex> sLock(singleInstanceLock);
+
+	SP(const ClusterNodes_Writeview) nodesWriteview = ShardManager::getNodesWriteview_read();
+	vector<NodeId> failedNodes;
+	nodesWriteview->getFailedNodes(failedNodes);
+	nodesWriteview.reset();
+	boost::unique_lock<boost::shared_mutex> shardMngrContentXLock(shardManagerMembersMutex);
+	for(vector<NodeId>::iterator nodeItr = failedNodes.begin();  nodeItr != failedNodes.end();){
+		if(failedNodesHandledByTimeout.find(*nodeItr) == failedNodesHandledByTimeout.end()){
+			failedNodesHandledByTimeout[*nodeItr] = 1;
+			 ++nodeItr;
+		}else{
+			if(failedNodesHandledByTimeout.at(*nodeItr) > 2){
+				nodeItr = failedNodes.erase(nodeItr);
+			}else{
+				failedNodesHandledByTimeout[*nodeItr]++;
+				++nodeItr;
+			}
+		}
+	}
+	shardMngrContentXLock.unlock();
+	if(failedNodes.empty()){
+		return;
+	}
+
+	for(vector<NodeId>::iterator nodeItr = failedNodes.begin();  nodeItr != failedNodes.end(); ++nodeItr){
+		this->resolveSMNodeFailure(*nodeItr);
+	}
+//
+//	SP(TimeoutNotification) timeoutNotif = SP(TimeoutNotification)(new TimeoutNotification());
+//	ShardManager::getStateMachine()->handle(boost::dynamic_pointer_cast<Notification>(timeoutNotif));
+}
+
 
 
 bool ShardManager::resolveLocal(SP(ShardingNotification) request){
@@ -680,10 +714,9 @@ void * ShardManager::periodicWork(void *args) {
 		// 1. Resend bounced notifications.
 		ShardManager::getShardManager()->resendBouncedNotifications();
 
+		// 2. give timeout notification to shard manager
+		ShardManager::getShardManager()->resolveTimeoutNotification();
 
-
-		SP(TimeoutNotification) timeoutNotif = SP(TimeoutNotification)(new TimeoutNotification());
-		ShardManager::getStateMachine()->handle(boost::dynamic_pointer_cast<Notification>(timeoutNotif));
 		// 2. if we are joined, start load balancing.
 		if(ShardManager::getShardManager()->isJoined() && ! ShardManager::getShardManager()->isLoadBalancing()){
 			ShardManager::getShardManager()->setLoadBalancing();

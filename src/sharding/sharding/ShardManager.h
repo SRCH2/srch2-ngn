@@ -125,6 +125,7 @@ public:
 	 * S lock on singleInstanceMutex
 	 */
 	void resolveSMNodeFailure(const NodeId failedNodeId);
+	void resolveTimeoutNotification();
 
 	struct ResolveLocalArgs{
 		ResolveLocalArgs(SP(ShardingNotification) notif){
@@ -214,6 +215,7 @@ private:
 
 	NodeId currentNodeId;
     vector<SP(ShardingNotification)> bouncedNotifications;
+    map<NodeId, unsigned> failedNodesHandledByTimeout;
 	void saveBouncedNotification(SP(ShardingNotification) notif);
 	void resendBouncedNotifications();
 	void bounceNotification(SP(ShardingNotification) notif);
