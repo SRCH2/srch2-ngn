@@ -1,0 +1,251 @@
+<!DOCTYPE html>
+<html>
+<head>
+<script src="./jquery-2.1.1.min.js"></script>
+<script>
+function refereshInfo() {
+//    document.getElementById("demo").innerHTML = "Paragraph changed.";
+var xmlhttp;
+if (window.XMLHttpRequest)Light
+  {// code for IE7+, Firefox, Chrome, Opera, Safari
+  xmlhttp=new XMLHttpRequest();
+  }
+else
+  {// code for IE6, IE5
+  xmlhttp=new ActiveXObject("Microsoft.XMLHTTP");
+  }
+xmlhttp.onreadystatechange=function()
+  {
+  if (xmlhttp.readyState==4 && xmlhttp.status==200)
+    {
+    document.getElementById("info").innerHTML=xmlhttp.responseText;
+    }
+  }
+xmlhttp.open("GET","/getNodeInfo.php?node-port=" + $("#nodePortTagId option:selected").val(),true);
+//xmlhttp.open("GET","http://www.google.com",true);
+xmlhttp.send();
+}
+</script>
+<style>
+* {
+	font-weight:bold;
+	
+}
+div {
+	border:solid;
+	width: calc(100% - 15px);
+}
+.DATA{
+	border:none;
+}
+
+</style>
+</head>
+
+<body style="width:650px"><!-- 700 pixel is the total width -->
+
+<h1>Cluster Node Information Viewer</h1>
+
+<div id="top-administrator" style="display:block;padding:5px">
+
+	<div style="padding:5px">
+		<span>Choose node port value :</span>
+		<select id="nodePortTagId">
+		  <option value="7049">7049</option>
+		  <option value="7050">7050</option>
+		  <option value="7051">7051</option>
+		  <option value="7052">7052</option>
+		</select>
+	</div>
+	<hr> <!-- Line separating cluster and node local shards -->
+	<div style="border:none">Cluster nodes :</div>
+	<div id="node_container" style="display:block;padding:5px">
+	   	<div id="node_template_id" style="background-color:LightBlue;width:70px;display:table-cell;padding:2px;">
+			<div class="DATA" id="node_port_id">7049</div>
+			<hr>
+			<div class="DATA" id="node_name">Node-A</div>
+			<!--
+				master -> blue background
+				thisNode -> green background
+				NotArrived -> white background
+				Arrived -> Khaki background
+				Failed -> Tomato background
+			-->
+		</div>
+		<div style="width:2px;display:table-cell;border:none"></div> <!-- going to next cell in same row -->
+	   	<div id="node_template_id" style="background-color:LimeGreen;width:70px;display:table-cell;padding:2px">
+			<div class="DATA" id="node_port_id">7050</div>
+			<hr>
+			<div class="DATA" id="node_name">Node-B</div>
+			<!--
+				master -> blue background
+				thisNode -> green background
+				NotArrived -> white background
+				Arrived -> Khaki background
+				Failed -> Tomato background
+			-->
+		</div>
+		<div style="width:2px;display:table-cell;border:none"></div> <!-- going to next cell in same row -->
+	   	<div id="node_template_id" style="background-color:Khaki;width:70px;display:table-cell;padding:2px">
+			<div class="DATA" id="node_port_id">7050</div>
+			<hr>
+			<div class="DATA" id="node_name">Node-B</div>
+			<!--
+				master -> blue background
+				thisNode -> green background
+				NotArrived -> white background
+				Arrived -> Khaki background
+				Failed -> Tomato background
+			-->
+		</div>
+		<div style="width:2px;display:table-cell;border:none"></div> <!-- going to next cell in same row -->
+	   	<div id="node_template_id" style="background-color:white;width:70px;display:table-cell;padding:2px">
+			<div class="DATA" id="node_port_id">7053</div>
+			<hr>
+			<div class="DATA" id="node_name">Node-C</div>
+			<!--
+				master -> blue background
+				thisNode -> green background
+				NotArrived -> white background
+				Arrived -> Khaki background
+				Failed -> Tomato background
+			-->
+		</div>
+		<div style="border:none;height:3px"></div> <!-- going to next cell in a new row -->
+	   	<div id="node_template_id" style="background-color:Tomato;width:70px;display:table-cell;padding:2px">
+			<div class="DATA" id="node_port_id">7053</div>
+			<hr>
+			<div class="DATA" id="node_name">Node-C</div>
+			<!--
+				master -> blue background
+				thisNode -> green background
+				NotArrived -> white background
+				Arrived -> Khaki background
+				Failed -> Tomato background
+			-->
+		</div>
+	</div>
+</div>
+
+<hr> <!-- Line separating cluster and node local shards -->
+
+<div id="core_info" style="display:block;padding:5px">
+	<div style="border:none">Stackoverflow</div>
+	<div id="core_stackoverflow_id" style="padding:5px;">
+		<div id="shard_template_id" title="Index Directory Address" 
+		     style="width:70px;display:table-cell;background-color:white;">
+			<div class="DATA" id="shard_ID">C0_0_0</div>
+			<hr>
+			<div class="DATA" id="shard_SIZE">-</div>
+
+			<div class="DATA" id="shard_options_id" style="border-top:dotted">
+			|
+				<span id="shard_options_locked_id" style="visibility: hidden" title="Shard is locked by node 1">L</span>
+			|
+				<span id="shard_options_locked_id" style="visibility: hidden" title="Merge flag set to off">M</span>
+			|
+			</div>
+		</div>
+		<div style="width:2px;display:table-cell;border:none"></div> <!-- going to next cell in same row -->
+		<div id="shard_template_id" title="Index Directory Address" 
+		     style="width:70px;display:table-cell;background-color:orange;">
+			<div class="DATA" id="shard_ID">C0_1_0</div>
+			<hr>
+			<div class="DATA" id="shard_SIZE">-</div>
+
+			<div class="DATA" id="shard_options_id" style="border-top:dotted">
+			|
+				<span id="shard_options_locked_id" style="visibility: hidden" title="Shard is locked by node 1">L</span>
+			|
+				<span id="shard_options_locked_id" style="visibility: hidden" title="Merge flag set to off">M</span>
+			|
+			</div>
+		</div>
+		<div style="width:2px;display:table-cell;border:none"></div> <!-- going to next cell in same row -->
+		<div id="shard_template_id" title="Index Directory Address" 
+		     style="width:70px;display:table-cell;background-color:Khaki;">
+			<div class="DATA" id="shard_ID">C0_2_0</div>
+			<hr>
+			<div class="DATA" id="shard_SIZE">Node-B</div>
+
+			<div class="DATA" id="shard_options_id" style="border-top:dotted">
+			|
+				<span id="shard_options_locked_id" style="visibility: hidden" title="Shard is locked by node 1">L</span>
+			|
+				<span id="shard_options_locked_id" style="visibility: hidden" title="Merge flag set to off">M</span>
+			|
+			</div>
+		</div>
+		<div style="width:2px;display:table-cell;border:none"></div> <!-- going to next cell in same row -->
+		<div id="shard_template_id" title="Index Directory Address" 
+		     style="width:70px;display:table-cell;background-color:LimeGreen;">
+			<div class="DATA" id="shard_ID">C0_3_0</div>
+			<hr>
+			<div class="DATA" id="shard_SIZE">32435</div>
+
+			<div class="DATA" id="shard_options_id" style="border-top:dotted">
+			|
+				<span id="shard_options_locked_id" style="visibility: hidden" title="Shard is locked by node 1">L</span>
+			|
+				<span id="shard_options_locked_id" style="visibility: hidden" title="Merge flag set to off">M</span>
+			|
+			</div>
+		</div>
+	</div>
+	<hr>
+	<div style="border:none">Statemedia</div>
+	<div id="core_statemedia_id" style="padding:5px">
+		<div id="shard_template_id" title="Index Directory Address" 
+						style="width:75px;height:70px;display:table-cell;background-color:Khaki;">
+			<div class="DATA" id="shard_ID">N1_100_23</div>
+			<hr>
+			<div class="DATA" id="shard_SIZE">Node-B</div>
+		</div>
+		<div style="width:2px;display:table-cell;border:none"></div> <!-- going to next cell in same row -->
+		<div id="shard_template_id" title="Index Directory Address" 
+					style="width:75px;height:70px;display:table-cell;background-color:LimeGreen;">
+			<div class="DATA" id="shard_ID">N0_300_2</div>
+			<hr>
+			<div class="DATA" id="shard_SIZE">240</div>
+		</div>
+	</div>
+	<hr>
+	<div style="border:none">acl_Stackoverflow</div>
+	<div id="core_stackoverflow_id" style="background-color:LightGray;padding:5px;">
+		<div id="shard_template_id" title="Index Directory Address" 
+		     style="width:70px;display:table-cell;background-color:white;">
+			<div class="DATA" id="shard_ID">C0_0_0</div>
+			<hr>
+			<div class="DATA" id="shard_SIZE">-</div>
+
+			<div class="DATA" id="shard_options_id" style="border-top:dotted">
+			|
+				<span id="shard_options_locked_id" style="visibility: hidden" title="Shard is locked by node 1">L</span>
+			|
+				<span id="shard_options_locked_id" style="visibility: hidden" title="Merge flag set to off">M</span>
+			|
+			</div>
+		</div>
+		<div style="width:2px;display:table-cell;border:none"></div> <!-- going to next cell in same row -->
+		<div id="shard_template_id" title="Index Directory Address" 
+		     style="width:70px;display:table-cell;background-color:orange;">
+			<div class="DATA" id="shard_ID">C0_1_0</div>
+			<hr>
+			<div class="DATA" id="shard_SIZE">-</div>
+
+			<div class="DATA" id="shard_options_id" style="border-top:dotted">
+			|
+				<span id="shard_options_locked_id" style="visibility: hidden" title="Shard is locked by node 1">L</span>
+			|
+				<span id="shard_options_locked_id" style="visibility: hidden" title="Merge flag set to off">M</span>
+			|
+			</div>
+		</div>
+	</div>
+
+</div>
+
+<button type="button" onclick="refereshInfo()">Referesh Info</button>
+
+</body>
+</html>

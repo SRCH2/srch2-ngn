@@ -1,0 +1,28 @@
+#!/bin/bash
+. ./cluster_config.sh
+
+whatToDo=$1
+for i in "${__GROUPS[@]}"
+do
+#    echo $i
+    if [[ $whatToDo == "-s" ]]; then
+        command=$2
+        __IP_ADDRESS=${__IP_ADDRESSES[$i]}
+        __GROUP_NAME=${__GROUP_NAMES[$i]}
+        __GROUP=$i
+        __LOGIN_USER=${__LOGIN_USERS[$i]}
+        __SRCH2_HOME=${__SRCH2_HOMES[$i]}
+        __GROUP_PROCESS_COUNT=${__GROUP_PROCESS_COUNTS[$i]}
+        __DATA_FILE_REL_PATH=${__DATA_FILE_REL_PATHS[$i]}
+        __LOG_DIR_REL_PATH=${__LOG_DIR_REL_PATHS[$i]}
+        __SRC_DIR=${__SRC_DIRS[$i]}
+        __BINARY_FILE=${__BINARY_FILES[$i]}
+#        echo "ssh ${__LOGIN_USERS[$i]}@${__IP_ADDRESSES[$i]} -C bash $__SRCH2_HOME/run_cluster_command $__IP_ADDRESS $__GROUP_NAME $__GROUP $__LOGIN_USER $__SRCH2_HOME $__GROUP_PROCESS_COUNT $__DATA_FILE_REL_PATH $__LOG_DIR_REL_PATH $__SRC_DIR $__CORE_NAME '$command'"
+        ssh ${__LOGIN_USERS[$i]}@${__IP_ADDRESSES[$i]} -C bash $__SRCH2_HOME/bin/run_cluster_command $__IP_ADDRESS $__GROUP_NAME $__GROUP $__LOGIN_USER $__SRCH2_HOME $__GROUP_PROCESS_COUNT $__DATA_FILE_REL_PATH $__LOG_DIR_REL_PATH $__SRC_DIR $__BINARY_FILE $__CORE_NAME \"$command\"
+    else
+        command=$whatToDo
+        #echo ssh -t ${__LOGIN_USERS[$i]}@${__IP_ADDRESSES[$i]} "'$command'"
+        ssh ${__LOGIN_USERS[$i]}@${__IP_ADDRESSES[$i]} -C $command
+        #echo ssh ${__LOGIN_USERS[$i]}@${__IP_ADDRESSES[$i]} "$command"
+    fi
+done

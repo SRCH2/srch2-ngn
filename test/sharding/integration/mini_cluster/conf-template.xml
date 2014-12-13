@@ -1,0 +1,147 @@
+<!--
+    Configuration file for SRCH2 search server. 
+
+    For more information about how to use this configuration file, please
+    visit http://www.srch2.com/downloads.html and select the correct
+    documentation version.
+
+    Please email contact@srch2.com if you have questions.
+
+    This configuration file defines 4 separate cores (data sources) in order to allow testing of
+    basic multi-core functionality.  Core1 uses the movie demo database.  Core2 loads a small sample
+    of the StackOverflow posts database.  Core3 is a fictitious business directoy (or most common
+    test database).  Core4 also loads the movie demo database, however in addition to some
+    configuration setting differences, it uses a different stop words file.
+-->
+ 
+<config>
+    <cluster-name>SRCH2_Cluster</cluster-name><!-- SRCH2_CLUSTER_PLACE_HOLDER -->
+    <srch2Home>/home/jamshid/srch2_home/</srch2Home><!-- SRCH2HOME_PLACE_HOLDER -->
+        <!-- Make sure to specify the home of your SRCH2 installation.  Example: 
+          <srch2Home>/home/joe/srch2</srch2Home>
+        -->
+    <node-name>node-group-201-1</node-name><!-- NODE_NAME_PLACE_HOLDER -->
+    <ping>
+        <ping-interval>2</ping-interval><!-- PING_INTERVAL_PLACE_HOLDER -->
+
+        <ping-timeout>20</ping-timeout><!-- PING_TIMEOUT_PLACE_HOLDER -->
+        <retry-count>3</retry-count><!-- RETRY_COUNT_PLACE_HOLDER -->
+    </ping>
+    <transport>
+        <port>4001</port><!-- TM-PORT_PLACE_HOLDER -->
+        <ipaddress>192.169.1.202</ipaddress><!-- IPADDRESS_PLACE_HOLDER -->
+    </transport>
+
+<WellKnownHosts>192.168.1.201:54000,192.168.1.202:54000,192.168.1.203:54000,192.168.1.204:54000,192.168.1.205:54000,192.168.1.206:54000</WellKnownHosts>
+    <listeningHostname>0.0.0.0</listeningHostname><!-- LISTENING-HOSTNAME_PLACE_HOLDER -->
+    <listeningPort>7001</listeningPort><!-- LISTENING-PORT_PLACE_HOLDER -->
+
+ 
+    <licenseFile>../srch2_license_key.txt</licenseFile><!-- LICENSE-FILE_PLACE_HOLDER -->
+ 
+
+    <!-- moved from <query> which is now per core -->
+    <maxSearchThreads>2</maxSearchThreads>
+        
+    <!-- Testing multiple cores here -->
+    <cores defaultCoreName="stackoverflow">
+        <core name="stackoverflow">
+      
+            <!--<multiple-data-file>stackoverflow-1000-A.json</multiple-data-file>-->
+            <core-number_of_shards>8</core-number_of_shards><!-- CORE-NUM_SHARDS_PLACE_HOLDER -->
+            <core-number_of_replicas>1</core-number_of_replicas><!-- CORE-NUM_REPLICAS_PLACE_HOLDER -->
+ 
+            <!--<dataDir>./nodeIntensive/stackoverflow-1</dataDir>
+            <dataSourceType>1</dataSourceType>-->
+            <!--<dataFile>stackoverflow-1000-A.json</dataFile>-->
+            <indexConfig>
+                <indexType>0</indexType>
+                <supportSwapInEditDistance>true</supportSwapInEditDistance>
+                <!--  <fieldBoost>title^12 tags^16</fieldBoost> -->
+                <fieldBoost>title^30 tags^20</fieldBoost>
+                <recordBoostField>votes_count</recordBoostField>
+                <defaultQueryTermBoost>1</defaultQueryTermBoost>
+                <enablePositionIndex>1</enablePositionIndex> 
+            </indexConfig>
+            
+	    <query>
+	        <rankingalgorithm>
+		    <recordScoreExpression>(idf_score*(log(doc_boost+1)^1.5))/(idf_score+log(doc_boost+1))</recordScoreExpression>
+		</rankingalgorithm>
+		<fuzzyMatchPenalty>0.75</fuzzyMatchPenalty>
+		<queryTermSimilarityThreshold>0.8</queryTermSimilarityThreshold>
+		<prefixMatchPenalty>0.85</prefixMatchPenalty>
+		<cacheSize>65536000</cacheSize>
+		<rows>10</rows>
+		<fieldBasedSearch>0</fieldBasedSearch>
+		<searcherType>0</searcherType>
+
+		<!-- 0: exact match; 1: fuzzy match.-->
+		<queryTermFuzzyType>1</queryTermFuzzyType>
+
+		<!-- 0: prefix match; 1: complete match -->
+		<queryTermPrefixType>1</queryTermPrefixType>
+
+		<queryResponseWriter>
+		    <responseFormat>1</responseFormat>
+		</queryResponseWriter>
+	    </query>
+
+            <KeywordPopularityThreshold>10000</KeywordPopularityThreshold>
+            <getAllResultsMaxResultsThreshold>2000</getAllResultsMaxResultsThreshold>
+            <getAllResultsKAlternative>500</getAllResultsKAlternative>
+            <schema>
+                <fields>
+                    <field name="title"          type="text"    indexed="true"/>
+                    <field name="body"           type="text"    indexed="true"/>
+                    <field name="author_name"    type="text"    indexed="true"/>
+                    <field name="tags"           type="text"    indexed="true"    refining="true"
+                           required="false" multivalued="true"/>
+                    <field name="creation_date"  type="time"    indexed="false"   refining="true" default="01/01/2000"  required="false"/>
+                    <field name="view_count"     type="integer" indexed="false"   refining="true"
+                           default="0"           required="false"/>
+                    <field name="answer_count"   type="integer" indexed="false"   refining="true"
+                           default="0"           required="false"/>
+                    <field name="votes_count"    type="float" indexed="false"   refining="true"
+                           default="0"           required="false"/>
+                    <field name="id" type="text" required="false" searchable="true" refining="true" />  
+                </fields>
+              
+                <uniqueKey>id</uniqueKey>
+                <facetEnabled>true</facetEnabled>
+                <facetFields>
+                    <facetField name="tags" facetType="categorical"/>
+                </facetFields>
+              
+                <types>
+                    <fieldType name="text_standard">
+                      <analyzer>
+                        <filter name="PorterStemFilter" dictionary="" />
+                        <filter name="StopFilter" words="../stop-words.txt" /><!-- STOP_WORDS_PLACE_HOLDER -->
+                        <filter name="protectedKeyWordsFilter" words="../srch2_protected_words.txt" /><!-- PROTECTED_WORDS_PLACE_HOLDER -->
+                      </analyzer>
+                    </fieldType>
+                </types>
+            </schema>
+	    <updatehandler>
+	        <maxDocs>15000000</maxDocs>
+		<maxMemory>10000000</maxMemory>
+		<mergePolicy>
+		    <mergeEveryNSeconds>10</mergeEveryNSeconds>
+		    <mergeEveryMWrites>100</mergeEveryMWrites>
+		</mergePolicy>
+		<updateLog>
+		    <logLevel>3</logLevel>
+		    <accessLogFile>srch2-log.txt</accessLogFile>
+		</updateLog>
+	    </updatehandler>
+        </core>
+
+    </cores>
+    <updateLog>
+           <logLevel>3</logLevel>
+           <accessLogFile>srch2-log.txt</accessLogFile><!-- ACCESS-LOG-FILE_PLACE_HOLDER -->
+    </updateLog>
+
+
+</config>

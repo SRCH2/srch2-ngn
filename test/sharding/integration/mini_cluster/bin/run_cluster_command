@@ -1,0 +1,16 @@
+#!/bin/bash
+export __IP_ADDRESS=$1
+export __GROUP_NAME=$2
+export __GROUP=$3
+export __LOGIN_USER=$4
+export __SRCH2_HOME=$5
+export __GROUP_PROCESS_COUNT=$6
+export __DATA_FILE_REL_PATH=$7
+export __LOG_DIR_REL_PATH=$8
+export __SRC_DIR=$9
+export __BINARY_FILE=${10}
+export __CORE_NAME=${11}
+command=${12}
+cd $__SRCH2_HOME
+#echo $__SRCH2_HOME
+$command
