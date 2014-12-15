@@ -39,3 +39,12 @@ bash run-workspaces.sh
 
 ## This script removes all the folder structure created in installation process.
 bash uninstall-env.sh
+
+## cbash, for 'cluster bash'. This command has two modes. 
+## 1 == Bash command mode
+./cbash "mkdir -p example"
+## 2 == Node side script mode
+## ./path/to/command.sh must be added to the array in the beginning of init-cluster.sh 
+## so that initializer copies the file on the group srch2Home bin directory. The root 
+## from which this script is executed is srch2Home.
+./cbash -s "bash ./path/to/command.sh"

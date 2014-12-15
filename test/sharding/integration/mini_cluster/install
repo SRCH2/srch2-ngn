@@ -1,23 +1,43 @@
 #!/bin/bash
 . ./cluster_config.sh
 
-## prepare the config file template
-python ./prepareConfTemplate.py "${__IP_ADDRESSES[*]}" $__DISCOVERY_PORT $__CONF_TEMP_BASE_NAME > $__CONF_TEMP_NAME
-data_copy=$1
+
 ## initialize the cluster
-if [[ $data_copy == "yes" ]]; then
-   bash init-cluster.sh
+reinstall=1
+forceUpdate='-nf'
+for var in "$@"
+do 
+   case $var in
+   -nr)
+      reinstall=0
+      continue
+   ;;
+   -f)
+      forceUpdate='-f'
+      continue
+   ;;
+   *)
+      echo "Option not recognized.\nUsage : bash init-cluster.sh [-r{format all}] [-f{force update all}]"
+      exit
+   ;;
+   esac
+done
+
+if [[ $reinstall -eq 1 ]] ; then
+   ############ Do all needed preprocessing on 
+   ############ the environment before starting the install
+   ########################################################
+   ## prepare the config file template
+   python ./prepareConfTemplate.py "${__IP_ADDRESSES[*]}" $__DISCOVERY_PORT $__CONF_TEMP_BASE_NAME > $__CONF_TEMP_NAME
+   ## initialize groups by giving the setup scripts to them
+   bash init-cluster.sh -na $forceUpdate
+   ## remove the generated config file
+   rm $__CONF_TEMP_NAME
 fi
 
-## initialize the machines (aka groups)
-####### Generate configuration files
+############### Start ssh sessions and doing operations that are 
+############### per group (each group is in fact all the processes 
+############### that run on one machine and is determined by its ip address )
+####### Generate directory structure and configuration files
 ./cbash -s "bash ./$__BIN_DIR_NAME/init-group.sh"
-
-####### Prepare the binary
-#./cbash -s "bash ./git-operation.sh -c"
-#./cbash -s "bash ./git-operation.sh -p"
-#./cbash -s "bash ./git-operation.sh -cm"
-#./cbash -s "bash ./git-operation.sh -m"
-
-####### TODO : 
 

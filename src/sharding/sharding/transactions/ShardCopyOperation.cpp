@@ -162,7 +162,7 @@ void ShardCopyOperation::commit(){
 
 	// start metadata commit
 	// prepare the shard change
-	ShardAssignChange * shardAssignChange = new ShardAssignChange(unassignedShardId, ShardManager::getCurrentNodeId(), 0);
+	ShardAssignChange * shardAssignChange = new ShardAssignChange(unassignedShardId, ShardManager::getCurrentNodeId());
 	shardAssignChange->setPhysicalShard(physicalShard);
 	this->committer = new AtomicMetadataCommit(vector<NodeId>(), shardAssignChange, this, true); // last true arg : skip lock
 	currentAction = "commit";

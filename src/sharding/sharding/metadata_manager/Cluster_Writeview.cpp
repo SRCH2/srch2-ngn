@@ -1000,7 +1000,7 @@ void Cluster_Writeview::unassignClusterShard(const ClusterShardId & shardId){
 	shard->nodeId = (unsigned)-1;
 }
 
-void Cluster_Writeview::assignExternalClusterShard(const ClusterShardId & shardId, const NodeId & nodeId, const double & load){
+void Cluster_Writeview::assignExternalClusterShard(const ClusterShardId & shardId, const NodeId & nodeId, const double load){
 	unsigned indexOfShard = INDEX(shardId);
 	ClusterShard_Writeview * shard = this->clusterShards[indexOfShard];
 	ASSERT(shard->id == shardId);

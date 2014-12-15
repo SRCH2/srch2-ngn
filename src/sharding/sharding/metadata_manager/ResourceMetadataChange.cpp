@@ -66,7 +66,7 @@ bool NodeAddChange::doChange(Cluster_Writeview * metadata){
         if(state != SHARDSTATE_READY){
             if(std::find(localClusterShardIds.begin(), localClusterShardIds.end(), id) !=
                     localClusterShardIds.end()){
-                metadata->assignExternalClusterShard(id, newNodeId, 0);
+                metadata->assignExternalClusterShard(id, newNodeId);
             }
         }
     }
@@ -180,7 +180,7 @@ bool ShardAssignChange::doChange(Cluster_Writeview * metadata){
 		// local node
 		metadata->assignLocalClusterShard(logicalShardToAssign, physicalShard);
 	}else{
-		metadata->assignExternalClusterShard(logicalShardToAssign, location, load);
+		metadata->assignExternalClusterShard(logicalShardToAssign, location);
 	}
 
 	return true;

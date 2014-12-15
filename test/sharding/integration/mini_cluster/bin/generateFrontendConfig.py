@@ -1,5 +1,6 @@
 #!/usr/bin/python
 
+
 import sys
 import os
 
@@ -16,7 +17,7 @@ while i < numberOfNodes:
    if i > 0 :
       portsInfo=portsInfo+' '
       hostsInfo=hostsInfo+' '
-   portsInfo=portsInfo+str(int(portBase)+i)
+   portsInfo=portsInfo+str(int(portBase)+i+1)
    hostsInfo=hostsInfo+ipAddress
    i=i+1
 print portsInfo

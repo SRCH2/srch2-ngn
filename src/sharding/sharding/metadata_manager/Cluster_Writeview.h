@@ -238,7 +238,7 @@ public:
 
 	void assignLocalClusterShard(const ClusterShardId & shardId,
 			const LocalPhysicalShard & physicalShardInfo, const double load = 1);
-	void assignExternalClusterShard(const ClusterShardId & shardId, const NodeId & nodeId, const double & load);
+	void assignExternalClusterShard(const ClusterShardId & shardId, const NodeId & nodeId, const double load = 1);
 	void unassignClusterShard(const ClusterShardId & shardId);
 	void setClusterShardServer(const ClusterShardId & shardId, boost::shared_ptr<Srch2Server> server);
 	void moveClusterShard(const ClusterShardId & shardId, const NodeId & destNodeId);

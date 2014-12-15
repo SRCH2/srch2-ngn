@@ -23,17 +23,9 @@ EXCEPT_LIST=();
 ############## Declare constants #####################
 . ./$__BIN_DIR/env-constants.sh
 . ./$__BIN_DIR/env-util.sh
-############### Make the folder structure #############
-#Making directory structure and initializing env files
-echo "Preparing directory structure ..."
-#mkdir ./$__DATA_FILE_REL_PATH
-#mkdir ./$__DATA_FILE_REL_PATH/$__CORE_NAME
-#mkdir ./$__LOG_DIR_REL_PATH
-#mkdir $(_ENV_LOG_ROOT)
-#touch $(_ENV_PULL_LOG)
-#touch $(_ENV_MAKE_LOG)
-#mkdir $(_ENV_DATA_ROOT)
-#mkdir $(_DATA_DIR)
+
+
+############## Operation #############################
 if [ $1 -a $1 == "-k" ]; then
     bash $( _KILL_COMMAND $__GROUP_NAME)
     exit

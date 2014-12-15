@@ -10,7 +10,13 @@ export __LOG_DIR_REL_PATH=$8
 export __SRC_DIR=$9
 export __BINARY_FILE=${10}
 export __CORE_NAME=${11}
+export __DBUILD64BIT=${12}
 command=${12}
+
+###### All arguments of $command arguments ######
+###### must be relative to srch2Home ##########
 cd $__SRCH2_HOME
 #echo $__SRCH2_HOME
+
+###### Master command executing on group ########
 $command

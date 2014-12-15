@@ -21,7 +21,7 @@ ROOT=$( pwd )
 . ./$__BIN_DIR/env-util.sh
 ############### Make the folder structure #############
 #Making directory structure and initializing env files
-echo "Preparing directory structure ..."
+echo "Group $__GROUP_NAME | Preparing the directory structure ..."
 #mkdir ./$__DATA_FILE_REL_PATH
 #mkdir ./$__DATA_FILE_REL_PATH/$__CORE_NAME
 #mkdir ./$__LOG_DIR_REL_PATH
@@ -41,7 +41,7 @@ mkdir $(_DATA_DIR)
 
 cd $__SRCH2_HOME
 # make srch2 home directories
-echo "Generating config files for $NODE_END nodes."
+echo "Group $__GROUP_NAME | Generating config files for $NODE_END nodes."
 for i in `seq $NODE_START $NODE_END`
 do
 #   ln -s $( _DATA_SOURCE_FILE $i ) $( _DATA_FILE $i )
@@ -53,5 +53,5 @@ done
 python $INSTALL_DIR/$__BIN_DIR/generateFrontendConfig.py $__IP_ADDRESS $EXT_PORT_BASE $__GROUP_PROCESS_COUNT > $INSTALL_DIR/$__BIN_DIR/$FRONTEND_CONF_FILE
 
 #echo "bash $INSTALL_DIR/$__BIN_DIR/monitor.sh" >> ~/.bashrc
-echo "Testing environment is ready to use."
+echo "Group $__GROUP_NAME | Initialization done."
 cd $currentPath

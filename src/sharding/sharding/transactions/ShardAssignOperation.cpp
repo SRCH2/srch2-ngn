@@ -99,7 +99,7 @@ void ShardAssignOperation::commit(){
 	emptyShard.prepare(false);
 	LocalPhysicalShard physicalShard(emptyShard.getShardServer(), emptyShard.getIndexDirectory(), "");
 	// prepare the shard change
-	ShardAssignChange * shardAssignChange = new ShardAssignChange(shardId, ShardManager::getCurrentNodeId(), 0);
+	ShardAssignChange * shardAssignChange = new ShardAssignChange(shardId, ShardManager::getCurrentNodeId());
 	shardAssignChange->setPhysicalShard(physicalShard);
 	currentAction = Commit;
 	this->committer = new AtomicMetadataCommit(vector<NodeId>(), shardAssignChange,  this, true);
