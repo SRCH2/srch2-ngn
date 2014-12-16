@@ -13,7 +13,8 @@ __INSTALL_FILES_SCRIPTS=( run_cluster_command \
                   run-group.sh \
                   generateFrontendConfig.py \
                   frontend \
-                  monitor.sh)
+                  monitor.sh \
+                  truncate-logs.sh)
 __INSTALL_FILES_DATA=( $__LICENSE_FILE \
                   $__STOP_WORDS \
                   $__PROTECTED_WORDS \

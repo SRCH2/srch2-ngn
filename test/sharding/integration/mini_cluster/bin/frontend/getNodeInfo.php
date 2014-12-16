@@ -203,15 +203,45 @@ printTop();
 </body>
 </html>
 <?php exit(0); ?>
+<?php
 
+function getNodesLoads($jsonData){
+		$clusterShardsInfo = $jsonData->cluster_shards;
+		$nodeShardsInfo = $jsonData->node_shards;
+		$nodeLoads=array();
+		for($coreIdx = 0 ; $coreIdx < count($clusterShardsInfo); $coreIdx++){
+			$clusterShardsArray = $clusterShardsInfo[$coreIdx]->cluster_shards;
+			$coreName = $clusterShardsInfo[$coreIdx]->core_name;
+			$distributed = ($clusterShardsInfo[$coreIdx]->distributed == "YES");
+			$isAclCore = ($clusterShardsInfo[$coreIdx]->is_acl_core == "YES");
+			if(! $distributed){
+				continue;
+			}
+			for($shardIdx = 0 ; $shardIdx < count($clusterShardsArray); $shardIdx++){
+				$location = $clusterShardsArray[$shardIdx]->location;
+                if($location < 10000){
+                        if(array_key_exists($location, $nodeLoads)){
+                                $nodeLoads[$location]++;
+                        }else{
+                                $nodeLoads[$location]=1;
+                        }
+                }
+				
+			} // for on cluster shards
+
+      } // for on cores 
+    return $nodeLoads;
+}
+
+?>
 <?php
 function printShard($shardId, $isLocal, $indexSize, $location, $comments, $bgColor, $L, $M, $X ){
 ?>
-	<div id="<?php echo $shardId; ?>" title="<?php echo $comments; ?>" style="padding:5px;width:70px;display:table-cell;background-color:<?php echo $bgColor; ?>;">
+	<div id="<?php echo $shardId; ?>" title="<?php echo $comments; ?>" style="font-size: 12px;padding:5px;width:70px;display:table-cell;background-color:<?php echo $bgColor; ?>;">
 
 		<div class="DATA" id="shard_ID"><?php echo $shardId; ?></div>
 		<hr>
-		<div class="DATA" id="shard_SIZE_location"><?php echo ($isLocal ? $indexSize." r" : ($location > 30000 ? "-" : "Node ".$location)) ; ?>
+		<div class="DATA" id="shard_SIZE_location"><?php echo ($isLocal ? $indexSize." r" : ($location > 30000 ? "-" : "N ".$location)) ; ?>
 		</div>					
 		<div class="DATA" id="shard_options_id_<?php echo $shardId; ?>" style="border-top:dotted;display:table-cell;width:70px">
 			<?php
@@ -297,6 +327,7 @@ global $batch_index;
 function printBody($resp, $nodeInfoObj){
 $resp = str_replace("-" , "_" , $resp);
 $jsonData = json_decode($resp);
+$nodesLoads=getNodesLoads($jsonData);
 if(isset($jsonData->error)){
 	echo $jsonData->error;
 	return;
@@ -354,12 +385,14 @@ if(property_exists($jsonData, 'metadata_locks')){
 				}
 			}
 ?>
-		   	<div id="node_template_id" style="background-color:<?php echo $bgColor; ?>;width:70px;display:table-cell;padding:2px;"
+		   	<div id="node_id_<?php echo $ID; ?>" style="font-size: 12px;background-color:<?php echo $bgColor; ?>;width:70px;display:table-cell;padding:2px;"
 						title="<?php echo $titleValue; ?>" >
 				<div class="DATA" id="node_port_id"><?php echo $ID." ".($NodeInfoAvailable && $State == "FAILED"? "" : "| ".$Port); ?></div>
 				<?php if($NodeInfoAvailable && $State != "FAILED"){?>
 				<hr>
 				<div class="DATA" id="node_name"><?php echo $NodeName; ?></div>
+				<hr>
+				<div class="DATA" name="node_load"><?php echo "Load:<b>".$nodesLoads[$ID]."</b>"; ?></div>
 				<?php }?>
 			</div>
 <?php
@@ -510,12 +543,12 @@ if(property_exists($jsonData, 'metadata_locks')){
 				<div style="border:none;height:3px;display:block;"></div> <!-- going to next cell in a new row -->	
 <?php
 			} // for on cluster shards
+
 ?>
 			</div>
 	</div>
 	<hr>
 	<?php } // for on cores 
-
 	      for($coreIdx = 0 ; $coreIdx < count($clusterShardsInfo); $coreIdx++){
 			$clusterShardsArray = $clusterShardsInfo[$coreIdx]->cluster_shards;
 			$coreName = $clusterShardsInfo[$coreIdx]->core_name;
@@ -559,6 +592,18 @@ if(property_exists($jsonData, 'metadata_locks')){
 				<?php }else{ ?>
 				<div style="width:2px;display:table-cell;border:none"></div> <!-- going to next cell in same row -->
 				<?php }
+			}
+			echo "Node Loads :";
+                        echo "<div>".var_dump($nodeLoads)."</div>";
+                        foreach ($nodeLoads as $nodeId => $nodeLoad){
+				?>
+					<script type="text/javascript">
+	                                        alert("hello");
+                        			var nodeElement=document.getElementById("node_id_<?php echo $nodeId; ?>");
+                                                var loadElement=querySelectorAll('[name=node_load]')[0];
+                                                loadElement.innerHTML=<?php echo $nodeLoad; ?>;
+					</script>
+				<?php
 			}
 ?>
 			</div>
@@ -688,7 +733,7 @@ function addPendingLockRequests($pendingLockRequests){
 			break;
 		}
 ?>
-	   	<div id="node_template_id" style="background-color:<?php echo $bgColor; ?>;width:70px;display:table-cell;padding:2px;"
+	   	<div id="pending_lock_request" style="background-color:<?php echo $bgColor; ?>;width:70px;display:table-cell;padding:2px;"
 					title="<?php echo $resourcesDump; ?>" >
 			<?php 
 				echo "From node ".$requester;

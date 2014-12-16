@@ -501,11 +501,11 @@ void ClientMessageHandler::lookForCallbackMessages(SMCallBackHandler* callBackHa
 	// Listening for heartbeat requests from master
 	case SM_MASTER_AVAILABLE:
 	{
-		std::time_t timeNow = time(NULL);
 		/*
 		 *  Check the time elapsed since last heart beat request was received
 		 */
 		unsigned lastHeartBeatFromMaster = callBackHandler->getHeartBeatMessageTime();
+		std::time_t timeNow = time(NULL);
 		signed timeElapsed = timeNow - lastHeartBeatFromMaster;
 
 		if (timeElapsed > _syncMgrObj->getTimeout()) {
@@ -680,7 +680,7 @@ void ClientMessageHandler::handleElectionRequest() {
 		Message * message;
 		_syncMgrObj->callBackHandler->getQueuedMessages(&message, smLocalNodes[i].getId());
 		if (message != NULL) {
-			if (message->getBodySize() >= 4 &&
+			if (message->getBodySize() >= sizeof(NodeId) &&
 					message->getType() == LeaderElectionProposalMessageType) {
 				Logger::console("SM-C%d got master election proposal from node = %d", _syncMgrObj->currentNodeId
 						, smLocalNodes[i].getId());
@@ -704,7 +704,7 @@ void ClientMessageHandler::handleElectionRequest() {
 	if (masterElectionProposers.size() >= smLocalNodes.size() / 2) {
 		MessageAllocator msgAllocator = MessageAllocator();
 		Message * proposalAckMessage = msgAllocator.allocateMessage(sizeof(NodeId));
-		proposalAckMessage->setBodySize(4);
+		proposalAckMessage->setBodySize(sizeof(NodeId));
 		char *messageBody = proposalAckMessage->getMessageBody();
 		*(unsigned *)messageBody = _syncMgrObj->currentNodeId;
 		proposalAckMessage->setType(LeaderElectionAckMessageType);
@@ -799,7 +799,7 @@ void ClientMessageHandler::startMasterElection(NodeId oldMasterNodeId) {
 		itselfInitiatedMasterElection = true;
 	} else {
 		MessageAllocator msgAllocator = MessageAllocator();
-		Message * leaderElectionMessage = msgAllocator.allocateMessage(4);
+		Message * leaderElectionMessage = msgAllocator.allocateMessage(sizeof(NodeId));
 		leaderElectionMessage->setType(LeaderElectionProposalMessageType);
 		FETCH_UNSIGNED(leaderElectionMessage->getMessageBody()) = _syncMgrObj->currentNodeId;
 		_syncMgrObj->route(expectedMasterNodeId, leaderElectionMessage);
@@ -820,7 +820,7 @@ void ClientMessageHandler::processHeartBeat(Message *message) {
 	}
 	Logger::debug("SM-C%d: heart beat request from %d received", _syncMgrObj->currentNodeId, masterId);
 	MessageAllocator msgAllocator = MessageAllocator();
-	Message * heartBeatResponse = msgAllocator.allocateMessage(4);
+	Message * heartBeatResponse = msgAllocator.allocateMessage(sizeof(NodeId));
 	heartBeatResponse->setType(ClientStatusMessageType);
 	heartBeatResponse->setBodyAndBodySize(&_syncMgrObj->currentNodeId, sizeof(NodeId));
 	_syncMgrObj->route(masterId, heartBeatResponse);

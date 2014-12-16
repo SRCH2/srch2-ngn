@@ -42,16 +42,16 @@ __SRCH2_HOMES=(/home/jamshid/mini_cluster \
 __GROUP_PROCESS_COUNTS=(4 4  \
                    1 \
                    4 \
-                   1 \
+                   4 \
                    4 \
                    4)
-__DATA_FILE_REL_PATHS=( ./data \
-                     ./data \
-                     ./data \
-                     ./data \
-                     ./data \
-                     ./data \
-                     ./data )
+__DATA_FILE_REL_PATHS=( data \
+                     data \
+                     data \
+                     data \
+                     data \
+                     data \
+                     data )
 __LOG_DIR_REL_PATHS=( ./logs/ \
                     ./logs/ \
                     ./logs/ \

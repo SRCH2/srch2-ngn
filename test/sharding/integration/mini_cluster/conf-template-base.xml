@@ -32,7 +32,7 @@
         <ipaddress>192.169.1.202</ipaddress><!-- IPADDRESS_PLACE_HOLDER -->
     </transport>
 
-    <WellKnownHosts>192.168.1.201:54000, 192.168.1.202:54000</WellKnownHosts><!-- WELL-KNOWN-HOSTS_PLACE_HOLDER -->
+    <WellKnownHosts>192.168.1.203:54000</WellKnownHosts><!-- WELL-KNOWN-HOSTSXXXXXXXXXXXXXXXXXXXXXXX_PLACE_HOLDER -->
     <listeningHostname>0.0.0.0</listeningHostname><!-- LISTENING-HOSTNAME_PLACE_HOLDER -->
     <listeningPort>7001</listeningPort><!-- LISTENING-PORT_PLACE_HOLDER -->
 
