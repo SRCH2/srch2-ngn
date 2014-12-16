@@ -266,8 +266,7 @@ void SyncManager::run(){
 					discoveryMgr->stopDiscovery();
 					break;
 				}
-				unsigned sleepTime = (pingInterval / 2) + 1;
-				sleep(sleepTime);
+				sleep(pingInterval);
 			}
 			((MasterMessageHandler *)messageHandler)->stopMasterMessageHandler();
 			pthread_join(masterCbHandlerThread, NULL);
@@ -281,8 +280,7 @@ void SyncManager::run(){
 			 */
 			while(!stopSynchManager) {
 				messageHandler->lookForCallbackMessages(callBackHandler);
-				unsigned sleepTime = (pingInterval / 2) + 1;
-				sleep(sleepTime);
+				sleep(pingInterval);
 				if (isCurrentNodeMaster) { // if this node get elected as leader.
 					localNodesCopyMutex.lock();
 					this->uniqueNodeId = localNodesCopy.back().getId() + 1;
@@ -506,9 +504,8 @@ void ClientMessageHandler::lookForCallbackMessages(SMCallBackHandler* callBackHa
 		/*
 		 *  Check the time elapsed since last heart beat request was received
 		 */
-		unsigned lastHeartBeatFromMaster = callBackHandler->getHeartBeatMessageTime();
-		std::time_t timeNow = time(NULL);
-		signed timeElapsed = timeNow - lastHeartBeatFromMaster;
+		std::time_t lastHeartBeatFromMaster = callBackHandler->getHeartBeatMessageTime();
+		double timeElapsed = difftime(time(NULL) , lastHeartBeatFromMaster);
 
 		if (timeElapsed > _syncMgrObj->getTimeout()) {
 			/*
@@ -591,7 +588,7 @@ void ClientMessageHandler::lookForCallbackMessages(SMCallBackHandler* callBackHa
 	}
 	case SM_PROPOSED_NEW_MASTER:
 	{
-		signed timeElapsed = time(NULL) - proposalInitationTime;
+		double timeElapsed = difftime(time(NULL) , proposalInitationTime);
 		/*
 		 *  wait for n times the original timeout to compensate for the load due to master failure
 		 */
@@ -628,7 +625,7 @@ void ClientMessageHandler::lookForCallbackMessages(SMCallBackHandler* callBackHa
 	}
 	case SM_WAITING_FOR_VOTES:
 	{
-		signed timeElapsed = time(NULL) - proposalInitationTime;
+		double timeElapsed = difftime(time(NULL) , proposalInitationTime);
 		_syncMgrObj->localNodesCopyMutex.lock();
 		unsigned totalNodes = _syncMgrObj->localNodesCopy.size();
 		_syncMgrObj->localNodesCopyMutex.unlock();
@@ -985,12 +982,12 @@ void MasterMessageHandler::lookForCallbackMessages(SMCallBackHandler* /*not used
 				 *  node or check again later. Also, if there was no previous timestamp for this
 				 *  node, create one now.
 				 */
-				unsigned timeElapsed;
+				double timeElapsed;
 				boost::unordered_map<unsigned, unsigned>::iterator iter =
 						perNodeTimeStampEntry.find(nodeId);
 				if (iter != perNodeTimeStampEntry.end()) {
 					std::time_t timeNow = time(NULL);
-					timeElapsed = timeNow - (*iter).second;
+					timeElapsed = difftime(timeNow , (*iter).second);
 					Logger::debug("SM-M%d-message queue is empty for node %d",
 											_syncMgrObj->currentNodeId, nodeId);
 				} else {

@@ -22,7 +22,7 @@ namespace srch2 {
 namespace httpwrapper {
 
 
-int readUDPPacketWithSenderInfo(int listenSocket, char *buffer, unsigned bufferSize, int flag,
+int readUDPPacketWithSenderInfo(int listenSocket, char *buffer, unsigned & bufferSize, int flag,
 		 struct sockaddr_in& senderAddress) {
 
 	unsigned int senderAddressLen = sizeof(senderAddress);
@@ -39,25 +39,34 @@ int readUDPPacketWithSenderInfo(int listenSocket, char *buffer, unsigned bufferS
 				return -1;
 			}
 		}
-		if (status < bufferSize) {
+		if (status > 1 && status < bufferSize) {
 			// incomplete read
 			//Logger::console("incomplete read ...continuing");
-			buffer += status;
-			bufferSize -= status;
+			buffer = (unsigned)status + buffer;
+			bufferSize = bufferSize - (unsigned)status;
 			continue;
 		}
+		ASSERT(status == bufferSize);
+		bufferSize = bufferSize - (unsigned)status;
 		break;
 	}
+
 	return 0;
 }
 
-int readUDPPacketWithSenderInfo(int listenSocket, char *buffer, unsigned bufferSize,
+int readUDPPacketWithSenderInfo(int listenSocket, char *buffer, unsigned & bufferSize,
 		struct sockaddr_in& senderAddress)
 {
-	return readUDPPacketWithSenderInfo(listenSocket, buffer, bufferSize, 0, senderAddress);
+	// blocking API,
+	int status = readUDPPacketWithSenderInfo(listenSocket, buffer, bufferSize, 0, senderAddress);
+	if(status == 1){
+		ASSERT(false);
+		return -1;
+	}
+	return status;
 }
 
-int sendUDPPacketToDestination(int sendSocket, char *buffer, unsigned bufferSize,
+int sendUDPPacketToDestination(int sendSocket, char *buffer, unsigned & bufferSize,
 		struct sockaddr_in& destinationAddress) {
 
 	while(1) {
@@ -82,8 +91,11 @@ int sendUDPPacketToDestination(int sendSocket, char *buffer, unsigned bufferSize
 			continue;
 		}
 		//Logger::console("UDP multicast data send");
+		ASSERT(bufferSize == status);
+		bufferSize = 0;
 		break;
 	}
+
 	return 0;
 
 }
@@ -115,7 +127,7 @@ int checkSocketIsReady(int socket, bool checkForRead) {
 	if (result == -1) {
 		perror("error while waiting for a socket to become available for read/write!");
 	}
-	return result;
+	return FD_ISSET(socket,&selectSet) ? 1 : 0;
 }
 
 bool DiscoveryService::isLoopbackMessage(DiscoveryMessage &msg){
@@ -124,7 +136,7 @@ bool DiscoveryService::isLoopbackMessage(DiscoveryMessage &msg){
 }
 
 bool DiscoveryService::isCurrentClusterMessage(DiscoveryMessage &msg) {
-	return string(msg.clusterIdent) == this->clusterIdentifier;
+	return (string(msg._clusterIdent).compare(this->clusterIdentifier) == 0);
 }
 
 } /* namespace sharding */

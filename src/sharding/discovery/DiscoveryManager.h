@@ -20,6 +20,7 @@
 
 #include "configuration/ShardingConstants.h"
 #include "synchronization/SynchronizerManager.h"
+#include "core/util/SerializationHelper.h"
 
 namespace srch2 {
 namespace httpwrapper {
@@ -34,11 +35,11 @@ static const short DISCOVERY_JOIN_CLUSTER_YIELD =  0x2;
 /*
  *  Read/Write APIs for UDP sockets
  */
-int readUDPPacketWithSenderInfo(int listenSocket, char *buffer, unsigned bufferSize, int flag,
+int readUDPPacketWithSenderInfo(int listenSocket, char *buffer, unsigned & bufferSize, int flag,
 		 struct sockaddr_in& senderAddress);
-int readUDPPacketWithSenderInfo(int listenSocket, char *buffer, unsigned bufferSize,
+int readUDPPacketWithSenderInfo(int listenSocket, char *buffer, unsigned & bufferSize,
 		 struct sockaddr_in& senderAddress) ;
-int sendUDPPacketToDestination(int sendSocket, char *buffer, unsigned bufferSize,
+int sendUDPPacketToDestination(int sendSocket, char *buffer, unsigned & bufferSize,
 		struct sockaddr_in& destinationAddress);
 int checkSocketIsReady(int socket, bool checkForRead);
 
@@ -53,10 +54,71 @@ struct DiscoveryMessage {
 	short flag;
 	unsigned interfaceNumericAddress;
 	unsigned internalCommunicationPort;
-	unsigned nodeId;
-	unsigned masterNodeId;
+	NodeId nodeId;
+	NodeId masterNodeId;
 	unsigned ackMessageIdentifier;  // to be used for ACK messsages only
-	char clusterIdent[100];         // cluster name.
+	char _clusterIdent[100];
+
+	DiscoveryMessage(){
+		this->flag = 0;
+		this->interfaceNumericAddress = 0;
+		this->internalCommunicationPort = 0;
+		this->nodeId = 0;
+		this->masterNodeId = 0;
+		this->ackMessageIdentifier = 0;
+		memset(this->_clusterIdent, 0 , 100);
+	}
+	DiscoveryMessage(const DiscoveryMessage & right){
+		this->flag = right.flag;
+		this->interfaceNumericAddress = right.interfaceNumericAddress;
+		this->internalCommunicationPort = right.internalCommunicationPort;
+		this->nodeId = right.nodeId;
+		this->masterNodeId = right.masterNodeId;
+		this->ackMessageIdentifier = right.ackMessageIdentifier;
+		memcpy(this->_clusterIdent, right._clusterIdent , 100);
+	}
+	DiscoveryMessage & operator=(const DiscoveryMessage & right){
+		if(this == &right){
+			return *this;
+		}
+		new (this) DiscoveryMessage(right);
+		return *this;
+	}
+	//
+	unsigned getNumberOfBytes() const{
+		unsigned numberOfBytes = 0;
+		numberOfBytes += sizeof(flag) ;
+		numberOfBytes += sizeof(interfaceNumericAddress) ;
+		numberOfBytes += sizeof(internalCommunicationPort) ;
+		numberOfBytes += sizeof(nodeId) ;
+		numberOfBytes += sizeof(masterNodeId) ;
+		numberOfBytes += sizeof(ackMessageIdentifier) ;
+		numberOfBytes += 100;
+		return numberOfBytes;
+	}
+
+	void * serialize(void * buffer) const{
+		buffer = srch2::util::serializeFixedTypes(flag, buffer);
+		buffer = srch2::util::serializeFixedTypes(interfaceNumericAddress, buffer);
+		buffer = srch2::util::serializeFixedTypes(internalCommunicationPort, buffer);
+		buffer = srch2::util::serializeFixedTypes(nodeId, buffer);
+		buffer = srch2::util::serializeFixedTypes(masterNodeId, buffer);
+		buffer = srch2::util::serializeFixedTypes(ackMessageIdentifier, buffer);
+		memcpy(buffer, _clusterIdent, 100);
+		buffer = buffer + 100;
+		return buffer;
+	}
+	void * deserialize(void * buffer){
+		buffer = srch2::util::deserializeFixedTypes(buffer ,flag);
+		buffer = srch2::util::deserializeFixedTypes(buffer ,interfaceNumericAddress);
+		buffer = srch2::util::deserializeFixedTypes(buffer ,internalCommunicationPort);
+		buffer = srch2::util::deserializeFixedTypes(buffer ,nodeId);
+		buffer = srch2::util::deserializeFixedTypes(buffer ,masterNodeId);
+		buffer = srch2::util::deserializeFixedTypes(buffer ,ackMessageIdentifier);
+		memcpy(_clusterIdent, buffer, 100);
+		buffer = buffer + 100;
+		return buffer;
+	}
 };
 
 /*
