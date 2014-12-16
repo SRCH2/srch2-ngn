@@ -76,3 +76,13 @@ __BINARY_FILES=( /home/jamshid/src/srch2-ngn/build/src/server/srch2-search-serve
 __DBUILD64BITiS=(0 0 1 1 0 1 0)
 
 
+
+
+
+
+############################# Work Environment #############################
+############# NOTE : This section must not be shipped with the product #####
+
+
+__WORK_ENVIRONMENT_MASTER=4
+__SYNERGY_CONF_PATH=/etc/synergy.conf
