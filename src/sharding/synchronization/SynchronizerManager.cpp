@@ -266,7 +266,8 @@ void SyncManager::run(){
 					discoveryMgr->stopDiscovery();
 					break;
 				}
-				sleep(pingInterval);
+				unsigned sleepTime = (pingInterval / 2) + 1;
+				sleep(sleepTime);
 			}
 			((MasterMessageHandler *)messageHandler)->stopMasterMessageHandler();
 			pthread_join(masterCbHandlerThread, NULL);
@@ -280,7 +281,8 @@ void SyncManager::run(){
 			 */
 			while(!stopSynchManager) {
 				messageHandler->lookForCallbackMessages(callBackHandler);
-				sleep(pingInterval);
+				unsigned sleepTime = (pingInterval / 2) + 1;
+				sleep(sleepTime);
 				if (isCurrentNodeMaster) { // if this node get elected as leader.
 					localNodesCopyMutex.lock();
 					this->uniqueNodeId = localNodesCopy.back().getId() + 1;

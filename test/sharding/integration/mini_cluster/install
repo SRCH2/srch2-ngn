@@ -39,5 +39,5 @@ fi
 ############### per group (each group is in fact all the processes 
 ############### that run on one machine and is determined by its ip address )
 ####### Generate directory structure and configuration files
-./cbash -s "bash ./$__BIN_DIR_NAME/init-group.sh"
+./cbash -s -c "bash ./$__BIN_DIR_NAME/init-group.sh"
 

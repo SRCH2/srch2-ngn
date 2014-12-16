@@ -1,12 +1,56 @@
 #!/bin/bash
 . ./cluster_config.sh
 
-whatToDo=$1
-for i in "${__GROUPS[@]}"
+############# read the arguments #################
+
+__abort()
+{
+    echo "Usage: $0 --data[-d] inputDataFile --prefix[-p] outputNamePrefix --suffix[-d] outputNameSuffix "
+}
+isScript=false
+IFS=' ' read -a nodes <<< "${__GROUPS[@]}"
+command="ls"
+while [[ $1 ]] ; do
+    case $1 in
+    '--script')
+    ;;
+    '-s')
+        isScript=true
+        shift
+        continue
+    ;;
+    '--nodes')
+    ;;
+    '-n')
+        IFS=' ' read -a nodes <<< "$(echo $2 | tr ',' ' ')"
+        shift
+        shift
+        continue
+    ;;
+    '--command');;
+    '-c')
+        command="$2"
+        shift
+        shift
+ 	while [[ $1 ]] ; do
+		command="$command $1"
+                shift
+	done
+        shift
+        continue
+    ;;
+    esac
+    shift
+done
+
+echo "Command is going to be : ---$command---"
+echo "Target groups are : ${nodes[@]}"
+for i in "${nodes[@]}"
 do
+    echo "Group ID $i"
 #    echo $i
-    if [[ $whatToDo == "-s" ]]; then
-        command=$2
+    if [[ $isScript == true ]]; then
+        echo "Script mode."
         __IP_ADDRESS=${__IP_ADDRESSES[$i]}
         __GROUP_NAME=${__GROUP_NAMES[$i]}
         __GROUP=$i
@@ -34,9 +78,7 @@ do
 				$__DBUILD64BIT \
 				\"$command\"
     else
-        command=$whatToDo
-        #echo ssh -t ${__LOGIN_USERS[$i]}@${__IP_ADDRESSES[$i]} "'$command'"
-        ssh ${__LOGIN_USERS[$i]}@${__IP_ADDRESSES[$i]} -C $command
-        #echo ssh ${__LOGIN_USERS[$i]}@${__IP_ADDRESSES[$i]} "$command"
+        ssh ${__LOGIN_USERS[$i]}@${__IP_ADDRESSES[$i]} -C "$command"
+        echo ssh ${__LOGIN_USERS[$i]}@${__IP_ADDRESSES[$i]} -C "$command"
     fi
 done
