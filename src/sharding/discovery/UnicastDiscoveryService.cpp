@@ -102,7 +102,6 @@ void UnicastDiscoveryService::sendJoinRequest(const string& knownHost, unsigned 
 
     int retry = 3;
     while(retry) {
-
         int status = sendUDPPacketToDestination(sendSocket, joinMessageBuffer, joinMessageBufferLen, destinationAddress);
         if (status == 1) {
         	joinMessageBuffer = messageTempBuffer + (sizeOfMessage - joinMessageBufferLen);
@@ -220,7 +219,14 @@ void * unicastListener(void * arg) {
         }
         // initial discovery loop
         while(retryCount) {
-            checkSocketIsReady(listenSocket, true);
+        	int socketReady = checkSocketIsReady(listenSocket, true);
+            if( socketReady != 1){
+            	if(socketReady == -1){
+                    delete [] messageTempBuffer;
+                    exit(0);
+            	}
+            	continue;
+            }
             int status = readUDPPacketWithSenderInfo(listenSocket, buffer, bufferLen, MSG_DONTWAIT, senderAddress);
             if (status == -1) {
                 delete [] messageTempBuffer;

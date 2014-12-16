@@ -273,7 +273,14 @@ void * multicastListener(void * arg) {
         // initial discovery loop
         bool stop = false;
         while(retryCount) {
-            checkSocketIsReady(listenSocket, true);
+        	int socketReady = checkSocketIsReady(listenSocket, true);
+            if( socketReady != 1){
+            	if(socketReady == -1){
+                	delete [] tempMessageBuffer;
+                    exit(0); // TODO : we exit ?
+            	}
+            	continue;
+            }
             int status = readUDPPacketWithSenderInfo(listenSocket, buffer, bufferLen, MSG_DONTWAIT, senderAddress);
             if (status == 1) {
             	ASSERT(bufferLen > 0);
@@ -530,7 +537,6 @@ void MulticastDiscoveryService::sendJoinRequest() {
     int retry = 3;
     //Logger::console("sending MC UDP to %s , %d",discoveryConfig.multiCastAddress.c_str(),  getMulticastPort());
     while(retry) {
-
         int status = sendUDPPacketToDestination(sendSocket, joinMessageBuffer,
         		joinMessageBufferLen, multicastGroupAddress);
         if (status == 1) {

@@ -105,7 +105,7 @@ struct DiscoveryMessage {
 		buffer = srch2::util::serializeFixedTypes(masterNodeId, buffer);
 		buffer = srch2::util::serializeFixedTypes(ackMessageIdentifier, buffer);
 		memcpy(buffer, _clusterIdent, 100);
-		buffer = buffer + 100;
+		buffer = ((char *)buffer) + 100;
 		return buffer;
 	}
 	void * deserialize(void * buffer){
@@ -116,7 +116,7 @@ struct DiscoveryMessage {
 		buffer = srch2::util::deserializeFixedTypes(buffer ,masterNodeId);
 		buffer = srch2::util::deserializeFixedTypes(buffer ,ackMessageIdentifier);
 		memcpy(_clusterIdent, buffer, 100);
-		buffer = buffer + 100;
+		buffer = ((char *)buffer) + 100;
 		return buffer;
 	}
 };

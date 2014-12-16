@@ -42,12 +42,12 @@ int readUDPPacketWithSenderInfo(int listenSocket, char *buffer, unsigned & buffe
 		if (status > 1 && status < bufferSize) {
 			// incomplete read
 			//Logger::console("incomplete read ...continuing");
-			buffer = (unsigned)status + buffer;
-			bufferSize = bufferSize - (unsigned)status;
+			buffer = static_cast<unsigned>(status) + buffer;
+			bufferSize = bufferSize - static_cast<unsigned>(status);
 			continue;
 		}
 		ASSERT(status == bufferSize);
-		bufferSize = bufferSize - (unsigned)status;
+		bufferSize = 0;
 		break;
 	}
 
@@ -70,6 +70,13 @@ int sendUDPPacketToDestination(int sendSocket, char *buffer, unsigned & bufferSi
 		struct sockaddr_in& destinationAddress) {
 
 	while(1) {
+    	int socketReady = checkSocketIsReady(sendSocket, false);
+        if( socketReady != 1){
+        	if(socketReady == -1){
+        		return -1;
+        	}
+        	continue;
+        }
 		int status = sendto(sendSocket, buffer, bufferSize, MSG_DONTWAIT,
 				(const sockaddr *)&destinationAddress, sizeof(destinationAddress));
 
@@ -83,11 +90,11 @@ int sendUDPPacketToDestination(int sendSocket, char *buffer, unsigned & bufferSi
 			}
 		}
 
-		if (status < bufferSize) {
+		if (static_cast<unsigned>(status) < bufferSize) {
 			// incomplete read
 			//Logger::console("incomplete send ...continuing");
-			buffer += status;
-			bufferSize -= status;
+			buffer = buffer + static_cast<unsigned>(status);
+			bufferSize = bufferSize - static_cast<unsigned>(status);
 			continue;
 		}
 		//Logger::console("UDP multicast data send");
@@ -126,6 +133,7 @@ int checkSocketIsReady(int socket, bool checkForRead) {
 	}
 	if (result == -1) {
 		perror("error while waiting for a socket to become available for read/write!");
+		return -1;
 	}
 	return FD_ISSET(socket,&selectSet) ? 1 : 0;
 }
