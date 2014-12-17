@@ -28,18 +28,18 @@ namespace httpwrapper {
 /*
  *  Discovery message flags used for identifying message type
  */
-static const short DISCOVERY_JOIN_CLUSTER_REQ = 0x0;
-static const short DISCOVERY_JOIN_CLUSTER_ACK = 0x1;
-static const short DISCOVERY_JOIN_CLUSTER_YIELD =  0x2;
+static const int16_t DISCOVERY_JOIN_CLUSTER_REQ = 0x0;
+static const int16_t DISCOVERY_JOIN_CLUSTER_ACK = 0x1;
+static const int16_t DISCOVERY_JOIN_CLUSTER_YIELD =  0x2;
 
 /*
  *  Read/Write APIs for UDP sockets
  */
-int readUDPPacketWithSenderInfo(int listenSocket, char *buffer, unsigned & bufferSize, int flag,
+int readUDPPacketWithSenderInfo(int listenSocket, char *buffer, unsigned bufferSize, int flag,
 		 struct sockaddr_in& senderAddress);
-int readUDPPacketWithSenderInfo(int listenSocket, char *buffer, unsigned & bufferSize,
+int readUDPPacketWithSenderInfo(int listenSocket, char *buffer, unsigned bufferSize,
 		 struct sockaddr_in& senderAddress) ;
-int sendUDPPacketToDestination(int sendSocket, char *buffer, unsigned & bufferSize,
+int sendUDPPacketToDestination(int sendSocket, char *buffer, unsigned bufferSize,
 		struct sockaddr_in& destinationAddress);
 int checkSocketIsReady(int socket, bool checkForRead);
 
@@ -51,12 +51,12 @@ static const int DISCOVERY_YIELD_WAIT_SECONDS = 3;
  *  discovery of nodes.
  */
 struct DiscoveryMessage {
-	short flag;
-	unsigned interfaceNumericAddress;
-	unsigned internalCommunicationPort;
+	int16_t flag;
+	uint32_t interfaceNumericAddress;
+	uint32_t internalCommunicationPort;
 	NodeId nodeId;
 	NodeId masterNodeId;
-	unsigned ackMessageIdentifier;  // to be used for ACK messsages only
+	uint32_t ackMessageIdentifier;  // to be used for ACK messsages only
 	char _clusterIdent[100];
 
 	DiscoveryMessage(){

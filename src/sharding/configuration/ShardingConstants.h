@@ -2,13 +2,14 @@
 #define __SHARDING_CONFIGURATION_SHARDING_CONSTANTS_H__
 #include <map>
 #include <string>
+#include "inttypes.h"
 namespace srch2 {
 namespace httpwrapper {
 
 
 ///////////////////////////////////////// TEMPORARY ////////////////////////////////////////////
 typedef unsigned TimeoutValue;
-typedef unsigned NodeId;
+typedef uint32_t NodeId;
 // zero and negative numbers are reserved for error.
 // positive numbers are used for handles
 // 0 : not found

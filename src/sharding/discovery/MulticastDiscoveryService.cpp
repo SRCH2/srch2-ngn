@@ -262,8 +262,6 @@ void * multicastListener(void * arg) {
     struct sockaddr_in senderAddress;
 
     // two variables for buffer and buffer index that are copies and it's ok to move them
-    char * buffer = tempMessageBuffer;
-    unsigned bufferLen = sizeOfMessage;
 
     if (!discovery->skipInitialDiscovery) {
 
@@ -274,29 +272,13 @@ void * multicastListener(void * arg) {
         bool stop = false;
         while(retryCount) {
         	int socketReady = checkSocketIsReady(listenSocket, true);
-            if( socketReady != 1){
-            	if(socketReady == -1){
-                	delete [] tempMessageBuffer;
-                    exit(0); // TODO : we exit ?
-            	}
-            	continue;
-            }
-            int status = readUDPPacketWithSenderInfo(listenSocket, buffer, bufferLen, MSG_DONTWAIT, senderAddress);
-            if (status == 1) {
-            	ASSERT(bufferLen > 0);
-            	buffer = tempMessageBuffer + (sizeOfMessage - bufferLen);
-            	retryCount--;
-            	continue;
-            }
+            int status = readUDPPacketWithSenderInfo(listenSocket, tempMessageBuffer, sizeOfMessage, MSG_DONTWAIT, senderAddress);
             if (status == -1) {
             	delete [] tempMessageBuffer;
                 exit(0); // TODO : we exit ?
             }
             if (status == 0) {
-            	ASSERT(bufferLen == 0);
             	message.deserialize(tempMessageBuffer);
-                bufferLen = sizeOfMessage;
-                buffer = tempMessageBuffer;
             	// ignore looped back messages.
                 if (discovery->isLoopbackMessage(message)) {
                     Logger::console("loopback message ...continuing");
@@ -374,7 +356,7 @@ void * multicastListener(void * arg) {
             return NULL;
         }
 
-        unsigned masterNodeID = discovery->syncManager->getNextNodeId();
+        uint32_t masterNodeID = discovery->syncManager->getNextNodeId();
         discovery->syncManager->addNodeToAddressMappping(masterNodeID, senderAddress);
         discovery->syncManager->setCurrentNodeId(masterNodeID);
         discovery->syncManager->setMasterNodeId(masterNodeID);
@@ -392,13 +374,11 @@ void * multicastListener(void * arg) {
     val &= ~O_NONBLOCK;;
     fcntl(listenSocket, F_SETFL, val);
 
-    bufferLen = sizeOfMessage;
-    buffer = tempMessageBuffer;
     while(!discovery->shutdown) {
         memset(&senderAddress, 0, sizeof(senderAddress));
         memset(tempMessageBuffer, 0, sizeOfMessage);
 
-        int status = readUDPPacketWithSenderInfo(listenSocket, buffer, bufferLen, senderAddress);
+        int status = readUDPPacketWithSenderInfo(listenSocket, tempMessageBuffer, sizeOfMessage, senderAddress);
 
         if (status == -1) {
         	delete [] tempMessageBuffer;
@@ -406,10 +386,7 @@ void * multicastListener(void * arg) {
         }
 
         if (status == 0) {
-        	ASSERT(bufferLen == 0);
             message.deserialize(tempMessageBuffer);
-            bufferLen = sizeOfMessage;
-            buffer = tempMessageBuffer;
         	// ignore looped back messages.
         	if (discovery->isLoopbackMessage(message)) {
         		Logger::console("loopback message ...continuing");
@@ -451,22 +428,18 @@ void * multicastListener(void * arg) {
         			char * ackMessageTempBuffer = new char[sizeOfAckMessage];
         			// write message on buffer
         			ackMessage.serialize(ackMessageTempBuffer);
-        			unsigned ackBufferLen = sizeOfAckMessage;
-        			char * ackBuffer = ackMessageTempBuffer ;
         			tryAckAgain:
         			// send multicast acknowledgment
-        			int sendStatus = sendUDPPacketToDestination(discovery->sendSocket, ackBuffer,
-        					ackBufferLen, discovery->multicastGroupAddress);
+        			int sendStatus = sendUDPPacketToDestination(discovery->sendSocket, ackMessageTempBuffer,
+        					sizeOfAckMessage, discovery->multicastGroupAddress);
         			if (sendStatus == -1) {
         	        	delete [] tempMessageBuffer;
             			delete [] ackMessageTempBuffer;
         				exit(-1); // TODO : just exit ?
         			}
         			if (sendStatus == 1) {
-        				ackBuffer = ackMessageTempBuffer + (sizeOfAckMessage - ackBufferLen);
         				goto tryAckAgain;
         			}
-        			ASSERT(sendStatus == 0 && ackBufferLen == 0);
         			senderAddress.sin_port = htons(message.internalCommunicationPort);
         			discovery->syncManager->addNodeToAddressMappping(ackMessage.nodeId, senderAddress);
         			delete [] ackMessageTempBuffer;
@@ -531,21 +504,20 @@ void MulticastDiscoveryService::sendJoinRequest() {
 
     message.serialize(messageTempBuffer);
 
-    char * joinMessageBuffer = messageTempBuffer;
-    unsigned joinMessageBufferLen = sizeOfMessage;
-
     int retry = 3;
     //Logger::console("sending MC UDP to %s , %d",discoveryConfig.multiCastAddress.c_str(),  getMulticastPort());
     while(retry) {
-        int status = sendUDPPacketToDestination(sendSocket, joinMessageBuffer,
-        		joinMessageBufferLen, multicastGroupAddress);
+        int status = sendUDPPacketToDestination(sendSocket, messageTempBuffer,
+        		sizeOfMessage, multicastGroupAddress);
         if (status == 1) {
-        	joinMessageBuffer = messageTempBuffer + (sizeOfMessage - joinMessageBufferLen);
             --retry;
             continue;
         } else {
             break;
         }
+    }
+    if(retry == 0){
+        Logger::sharding(Logger::Warning, "Multicast : Sending join request of %d bytes FAILED" , sizeOfMessage);
     }
 	delete [] messageTempBuffer;
 }

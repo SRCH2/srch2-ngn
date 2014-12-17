@@ -22,7 +22,7 @@ namespace srch2 {
 namespace httpwrapper {
 
 
-int readUDPPacketWithSenderInfo(int listenSocket, char *buffer, unsigned & bufferSize, int flag,
+int readUDPPacketWithSenderInfo(int listenSocket, char *buffer, unsigned bufferSize, int flag,
 		 struct sockaddr_in& senderAddress) {
 
 	unsigned int senderAddressLen = sizeof(senderAddress);
@@ -39,22 +39,18 @@ int readUDPPacketWithSenderInfo(int listenSocket, char *buffer, unsigned & buffe
 				return -1;
 			}
 		}
-		if (status > 1 && status < bufferSize) {
-			// incomplete read
-			//Logger::console("incomplete read ...continuing");
-			buffer = static_cast<unsigned>(status) + buffer;
-			bufferSize = bufferSize - static_cast<unsigned>(status);
-			continue;
+		if (static_cast<unsigned>(status) < bufferSize) {
+		    Logger::sharding(Logger::Warning,"Discovery | %d bytes was read instead of expected %d bytes.", status, bufferSize );
+			// incomplete read : this datagram is lost, return to caller to handle next one
+			return 1;
 		}
-		ASSERT(status == bufferSize);
-		bufferSize = 0;
 		break;
 	}
 
 	return 0;
 }
 
-int readUDPPacketWithSenderInfo(int listenSocket, char *buffer, unsigned & bufferSize,
+int readUDPPacketWithSenderInfo(int listenSocket, char *buffer, unsigned bufferSize,
 		struct sockaddr_in& senderAddress)
 {
 	// blocking API,
@@ -66,17 +62,10 @@ int readUDPPacketWithSenderInfo(int listenSocket, char *buffer, unsigned & buffe
 	return status;
 }
 
-int sendUDPPacketToDestination(int sendSocket, char *buffer, unsigned & bufferSize,
+int sendUDPPacketToDestination(int sendSocket, char *buffer, unsigned bufferSize,
 		struct sockaddr_in& destinationAddress) {
 
 	while(1) {
-    	int socketReady = checkSocketIsReady(sendSocket, false);
-        if( socketReady != 1){
-        	if(socketReady == -1){
-        		return -1;
-        	}
-        	continue;
-        }
 		int status = sendto(sendSocket, buffer, bufferSize, MSG_DONTWAIT,
 				(const sockaddr *)&destinationAddress, sizeof(destinationAddress));
 
@@ -91,11 +80,9 @@ int sendUDPPacketToDestination(int sendSocket, char *buffer, unsigned & bufferSi
 		}
 
 		if (static_cast<unsigned>(status) < bufferSize) {
-			// incomplete read
-			//Logger::console("incomplete send ...continuing");
-			buffer = buffer + static_cast<unsigned>(status);
-			bufferSize = bufferSize - static_cast<unsigned>(status);
-			continue;
+		    Logger::sharding(Logger::Warning,"Discovery | %d bytes was sent instead of expected %d bytes.", status, bufferSize );
+			// incomplete read : this datagram is lost, return to caller to handle next one
+			return 1;
 		}
 		//Logger::console("UDP multicast data send");
 		ASSERT(bufferSize == status);

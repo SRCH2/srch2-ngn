@@ -97,19 +97,19 @@ void UnicastDiscoveryService::sendJoinRequest(const string& knownHost, unsigned 
     inet_aton(knownHost.c_str(), &destinationAddress.sin_addr);
     destinationAddress.sin_port = htons(port);
 
-    char * joinMessageBuffer = messageTempBuffer;
-    unsigned joinMessageBufferLen = sizeOfMessage;
-
+    Logger::sharding(Logger::Detail, "Sending join request of %d bytes." , sizeOfMessage);
     int retry = 3;
     while(retry) {
-        int status = sendUDPPacketToDestination(sendSocket, joinMessageBuffer, joinMessageBufferLen, destinationAddress);
+        int status = sendUDPPacketToDestination(sendSocket, messageTempBuffer, sizeOfMessage, destinationAddress);
         if (status == 1) {
-        	joinMessageBuffer = messageTempBuffer + (sizeOfMessage - joinMessageBufferLen);
             --retry;
             continue;
         } else {
             break;
         }
+    }
+    if(retry == 0){
+        Logger::sharding(Logger::Warning, "Unicast : Sending join request of %d bytes FAILED" , sizeOfMessage);
     }
 
     delete [] messageTempBuffer;
@@ -195,13 +195,11 @@ void * unicastListener(void * arg) {
     DiscoveryMessage message;
     unsigned sizeOfMessage = message.getNumberOfBytes();
     char * messageTempBuffer = new char[sizeOfMessage];
+    Logger::console("getNumberOfBytes : %d , sizeof : %d", sizeOfMessage , sizeof(DiscoveryMessage) );
     memset(messageTempBuffer, 0, sizeOfMessage);
 
     int retryCount = DISCOVERY_RETRY_COUNT;
     struct sockaddr_in senderAddress;
-
-    char * buffer = messageTempBuffer;
-    unsigned bufferLen = sizeOfMessage;
 
     if (!discovery->skipInitialDiscovery) {
 
@@ -209,7 +207,7 @@ void * unicastListener(void * arg) {
         bool masterDetected = false;
 
         const vector<HostAndPort>& knownHosts = discovery->discoveryConfig.knownHosts;
-        InitialDiscovery:
+InitialDiscovery:
         for (unsigned i = 0 ; i < knownHosts.size(); ++i) {
             if (knownHosts[i].ipAddress.compare(discovery->matchedKnownHostIp) == 0 &&
                     knownHosts[i].port == discovery->discoveryPort)
@@ -219,27 +217,14 @@ void * unicastListener(void * arg) {
         }
         // initial discovery loop
         while(retryCount) {
-        	int socketReady = checkSocketIsReady(listenSocket, true);
-            if( socketReady != 1){
-            	if(socketReady == -1){
-                    delete [] messageTempBuffer;
-                    exit(0);
-            	}
-            	continue;
-            }
-            int status = readUDPPacketWithSenderInfo(listenSocket, buffer, bufferLen, MSG_DONTWAIT, senderAddress);
+        	checkSocketIsReady(listenSocket, true);
+            int status = readUDPPacketWithSenderInfo(listenSocket, messageTempBuffer, sizeOfMessage, MSG_DONTWAIT, senderAddress);
             if (status == -1) {
                 delete [] messageTempBuffer;
                 exit(0);
             }
-            if (status == 1) {
-                buffer = messageTempBuffer + (sizeOfMessage - bufferLen);
-                continue;
-            }
             if (status == 0) {
                 message.deserialize(messageTempBuffer);
-                buffer = messageTempBuffer;
-                bufferLen = sizeOfMessage;
                 // ignore looped back messages.
                 if (discovery->isLoopbackMessage(message)) {
                     ASSERT(false);
@@ -306,18 +291,15 @@ void * unicastListener(void * arg) {
                                 unsigned sizeOfYeildMessage = yeildMessage.getNumberOfBytes();
                                 char * yeildMessageTempBuffer = new char[sizeOfYeildMessage];
                                 yeildMessage.serialize(yeildMessageTempBuffer);
-                                char * yeildBuffer = yeildMessageTempBuffer;
-                                unsigned yeildBufferLen = sizeOfYeildMessage;
                                 tryYieldMsgAgain:
-                                int sendStatus = sendUDPPacketToDestination(discovery->sendSocket, yeildBuffer,
-                                        yeildBufferLen, senderAddress);
+                                int sendStatus = sendUDPPacketToDestination(discovery->sendSocket, yeildMessageTempBuffer,
+                                		sizeOfYeildMessage, senderAddress);
                                 if (sendStatus == -1) {
                                     delete [] messageTempBuffer;
                                     delete [] yeildMessageTempBuffer;
                                     exit(-1);
                                 }
                                 if (sendStatus == 1) {
-                                    yeildBuffer = yeildMessageTempBuffer + (sizeOfYeildMessage - yeildBufferLen);
                                     goto tryYieldMsgAgain;
                                 }
                                 delete [] yeildMessageTempBuffer;
@@ -386,8 +368,6 @@ void * unicastListener(void * arg) {
         discovery->getSyncManager()->setMasterNodeId(masterNodeID);
     }
     discovery->_discoveryDone = true;
-    buffer = messageTempBuffer;
-    bufferLen = sizeOfMessage;
 
     // Make the listening socket blocking now.
     int val = fcntl(listenSocket, F_GETFL);
@@ -399,7 +379,7 @@ void * unicastListener(void * arg) {
         memset(&senderAddress, 0, sizeof(senderAddress));
         memset(messageTempBuffer, 0, sizeOfMessage);
 
-        int status = readUDPPacketWithSenderInfo(listenSocket, buffer, bufferLen, senderAddress);
+        int status = readUDPPacketWithSenderInfo(listenSocket, messageTempBuffer, sizeOfMessage, senderAddress);
 
         if (status == -1) {
             delete [] messageTempBuffer;
@@ -408,8 +388,6 @@ void * unicastListener(void * arg) {
 
         if (status == 0) {
             message.deserialize(messageTempBuffer);
-            buffer = messageTempBuffer;
-            bufferLen = sizeOfMessage;
             if (discovery->isLoopbackMessage(message)) {
                 ASSERT(false);
                 //Logger::console("loopback message ...continuing");
@@ -448,9 +426,6 @@ void * unicastListener(void * arg) {
                     ackMessage._clusterIdent[byteToCopy] = '\0';
                     ackMessage.serialize(ackMessageTempBuffer);
 
-                    char * ackBuffer = ackMessageTempBuffer;
-                    unsigned ackBufferLen = sizeOfAckMessage;
-
                     tryAckAgain:
                     // send multicast acknowledgment
                     struct sockaddr_in destinationAddress;
@@ -459,15 +434,14 @@ void * unicastListener(void * arg) {
                     destinationAddress.sin_family = AF_INET;
                     destinationAddress.sin_port = htons(message.internalCommunicationPort);
 
-                    int sendStatus = sendUDPPacketToDestination(discovery->sendSocket, ackBuffer,
-                            ackBufferLen, senderAddress);
+                    int sendStatus = sendUDPPacketToDestination(discovery->sendSocket, ackMessageTempBuffer,
+                    		sizeOfAckMessage, senderAddress);
                     if (sendStatus == -1) {
                         delete [] messageTempBuffer;
                         delete [] ackMessageTempBuffer;
                         exit(-1);
                     }
                     if (sendStatus == 1) {
-                    	ackBuffer = ackMessageTempBuffer + (sizeOfAckMessage - ackBufferLen);
                         goto tryAckAgain;
                     }
 
