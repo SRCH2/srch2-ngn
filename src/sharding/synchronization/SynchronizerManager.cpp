@@ -507,11 +507,11 @@ void ClientMessageHandler::lookForCallbackMessages(SMCallBackHandler* callBackHa
 		std::time_t lastHeartBeatFromMaster = callBackHandler->getHeartBeatMessageTime();
 		double timeElapsed = difftime(time(NULL) , lastHeartBeatFromMaster);
 
-		if (timeElapsed > _syncMgrObj->getTimeout()) {
+		if (timeElapsed > ((double)_syncMgrObj->getTimeout())) {
 			/*
 			 *  If the time elapsed is more than TimeOut then handle time out
 			 */
-			Logger::console("SM-C%d: Timeout!!. No heart beat received from master for %d secs",
+			Logger::console("SM-C%d: Timeout!!. No heart beat received from master for %f secs",
 					_syncMgrObj->currentNodeId, timeElapsed);
 
 			// On master timeout, the current node is without master. It should initiate master
@@ -596,7 +596,7 @@ void ClientMessageHandler::lookForCallbackMessages(SMCallBackHandler* callBackHa
 		unsigned totalNodes = _syncMgrObj->localNodesCopy.size();
 		_syncMgrObj->localNodesCopyMutex.unlock();
 
-		if (timeElapsed > _syncMgrObj->getTimeout() * totalNodes) {
+		if (timeElapsed > ((double)_syncMgrObj->getTimeout() * totalNodes)) {
 			// Timeout occurred while waiting for the new master.  find next eligible master
 			// and start master election again.
 			NodeId oldMasterNodeId = expectedMasterNodeId;
@@ -629,7 +629,7 @@ void ClientMessageHandler::lookForCallbackMessages(SMCallBackHandler* callBackHa
 		_syncMgrObj->localNodesCopyMutex.lock();
 		unsigned totalNodes = _syncMgrObj->localNodesCopy.size();
 		_syncMgrObj->localNodesCopyMutex.unlock();
-		if (timeElapsed > _syncMgrObj->getTimeout() * totalNodes ) {
+		if (timeElapsed > ((double)_syncMgrObj->getTimeout() * totalNodes )) {
 			this->nodeState = SM_MASTER_UNAVAILABLE;
 		} else {
 			handleElectionRequest();
@@ -997,7 +997,7 @@ void MasterMessageHandler::lookForCallbackMessages(SMCallBackHandler* /*not used
 					perNodeTimeStampEntry.insert(make_pair(nodeId, time(NULL)));
 				}
 
-				if (timeElapsed > _syncMgrObj->getTimeout()) {
+				if (timeElapsed > ((double)_syncMgrObj->getTimeout())) {
 					// mark node as inactive.
 					++failedNodesCount;
 					handleNodeFailure(nodeId);
