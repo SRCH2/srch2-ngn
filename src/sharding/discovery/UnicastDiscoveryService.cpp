@@ -220,7 +220,7 @@ InitialDiscovery:
 //        unsigned retryCount
         while(retryCount) {
         	int selectResult = checkSocketIsReady(listenSocket, true, waitTime);
-        	waitTime = waitTime * 2;
+        	waitTime += 2;
         	if( selectResult == -1){
             	delete [] messageTempBuffer;
                 exit(0); // TODO : we exit ?
