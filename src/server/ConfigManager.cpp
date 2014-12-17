@@ -82,7 +82,7 @@ const char* const ConfigManager::indexedString = "indexed";
 const char* const ConfigManager::multiValuedString = "multivalued";
 const char* const ConfigManager::aclString = "acl";
 const char* const ConfigManager::indexTypeString = "indextype";
-//const char* const ConfigManager::licenseFileString = "licensefile";
+const char* const ConfigManager::licenseFileString = "licensefile";
 const char* const ConfigManager::listenerWaitTimeString = "listenerwaittime";
 const char* const ConfigManager::listeningHostStringString = "listeninghostname";
 const char* const ConfigManager::listeningPortString = "listeningport";
@@ -2343,18 +2343,17 @@ void ConfigManager::parse(const pugi::xml_document& configDoc,
      * <Config> in config.xml file
      */
     // licenseFile is a required field
-    // Note: Due to freemium project, we are disabling license key check.
-    //
-    //    childNode = configNode.child(licenseFileString);
-    //    if (childNode && childNode.text()) { // checks if config/licenseFile exists and have any text value or not
-    //        tempUse = string(childNode.text().get());
-    //        trimSpacesFromValue(tempUse, licenseFileString, parseWarnings);
-    //        this->licenseKeyFile = this->srch2Home + tempUse;
-    //    } else {
-    //        parseError << "License key is not set.\n";
-    //        configSuccess = false;
-    //        return;
-    //    }
+    childNode = configNode.child(licenseFileString);
+    if (childNode && childNode.text()) { // checks if config/licenseFile exists and have any text value or not
+        string tempUse = string(childNode.text().get());
+        trimSpacesFromValue(tempUse, licenseFileString, parseWarnings);
+        this->licenseKeyFile = this->srch2Home + tempUse;
+    } else {
+        parseError << "License key is not set.\n";
+        configSuccess = false;
+        return;
+    }
+
     // listeningHostname is a required field
     childNode = configNode.child(listeningHostStringString);
     if (childNode && childNode.text()) { // checks if config/listeningHostname exists and have any text value or not
