@@ -466,6 +466,15 @@ void MigrationService::receiveShard(ClusterShardId shardId, unsigned remoteNode)
 
 	currentSessionInfo.listeningPort = receivePort;
 
+	int listenStatus = migrationMgr->listenTCPConnection(receiveSocket, receivePort);
+	if (listenStatus == -1) {
+		//close socket
+		Logger::debug("Migration: Network error while trying to listen. For shard %s", shardId.toString().c_str());
+		close(receiveSocket);
+		migrationMgr->notifySHMAndCleanup(sessionKey, MM_STATUS_FAILURE);
+		return;
+	}
+
     Logger::sharding(Logger::Detail, "MM | Receiving shard %s from %d, sending first ack.", shardId.toString().c_str(), remoteNode);
 	migrationMgr->sendInitMessageAck(currentSessionInfo);
 
@@ -474,7 +483,7 @@ void MigrationService::receiveShard(ClusterShardId shardId, unsigned remoteNode)
 	int commSocket = migrationMgr->acceptTCPConnection(receiveSocket, receivePort);
 	if (commSocket == -1) {
 		//close socket
-		Logger::debug("Migration: Network error while migrating shard %s", shardId.toString().c_str());
+		Logger::debug("Migration: Network error while trying to accept. For migrating shard %s", shardId.toString().c_str());
 		close(receiveSocket);
 		migrationMgr->notifySHMAndCleanup(sessionKey, MM_STATUS_FAILURE);
 		return;
@@ -876,18 +885,22 @@ void MigrationManager::doInitialHandShake(MigrationSessionInfo& currentSessionIn
 	delete initMessageBody;
 	unsigned destinationNodeId = currentSessionInfo.remoteNode;
 	currentSessionInfo.status = MM_STATE_INIT_ACK_WAIT;
+
 	//int tryCount = 5;
 	int timewait = 10;
 	time_t beg  = time(NULL);
 	time_t end = beg;
 	do {
 		sendMessage(destinationNodeId, initMessage);
-		if (end - beg > timewait)
+		if (difftime(end , beg) > timewait){
 			break;
+		}
 		end = time(NULL);
-		usleep(500);
+		sleep(1);
 	} while(currentSessionInfo.status != MM_STATE_INIT_ACK_RCVD);
 	deAllocateMessage(initMessage);
+
+	return;
 }
 
 void MigrationManager::sendInitMessageAck(MigrationSessionInfo& currentSessionInfo) {
@@ -999,23 +1012,20 @@ void MigrationManager::openTCPReceiveChannel(int& tcpSocket , short& receivePort
 }
 int MigrationManager::acceptTCPConnection(int tcpSocket , short receivePort) {
 	int tcpReceiveSocket;
-	if(listen(tcpSocket, 20) == -1) {
-		close(tcpSocket);
-		perror("");
-		tcpReceiveSocket = -1;
-		return tcpReceiveSocket;
-	}
-
 	fcntl(tcpSocket, F_SETFL, O_NONBLOCK);
 	struct sockaddr_in senderAddress;
 	unsigned sizeOfAddr = sizeof(senderAddress);
 	unsigned timeWaitInSec = 10;  // TODO: define in header file.
 	time_t beg = time(NULL);
 	time_t end = beg;
-	while(end - beg < timeWaitInSec) {
+	unsigned waitTime = 1;
+	while(difftime(end , beg) < timeWaitInSec) {
+		transport->checkSocketIsReadyForRead(tcpSocket,waitTime);
 		tcpReceiveSocket = accept(tcpSocket, (struct sockaddr *) &senderAddress, &sizeOfAddr);
 		if (tcpReceiveSocket == -1) {
-			if (errno != EAGAIN && errno != EWOULDBLOCK) {
+			if (errno == EAGAIN || errno == EWOULDBLOCK) {
+				waitTime += 2;
+			}else{
 				perror("");
 				return tcpReceiveSocket;
 			}
@@ -1026,15 +1036,20 @@ int MigrationManager::acceptTCPConnection(int tcpSocket , short receivePort) {
 		}
 		end = time(NULL);
 	}
-
-	/*
-	 *   Make socket non blocking
-	 */
-
-	//fcntl(tcpReceiveSocket, F_SETFL, O_NONBLOCK);
 	return tcpReceiveSocket;
-
 }
+
+int MigrationManager::listenTCPConnection(int tcpSocket , short receivePort) {
+	int tcpReceiveSocket;
+	if(listen(tcpSocket, 20) == -1) {
+		close(tcpSocket);
+		perror("Listening on socket returned -1 : acceptTCPConnection");
+		Logger::sharding(Logger::Error, "MM | Listening on socket %d returned -1", tcpSocket);
+		return -1;
+	}
+	return 0;
+}
+
 
 void MigrationManager::openReceiveChannel(int& udpSocket , short& receivePort) {
 	/*

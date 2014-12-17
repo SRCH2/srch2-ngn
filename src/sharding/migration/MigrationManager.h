@@ -160,6 +160,7 @@ private:
 	void sendInitMessageAck(MigrationSessionInfo& currentSessionInfo);
 	void sendInfoAckMessage(MigrationSessionInfo& currentSessionInfo);
 	int acceptTCPConnection(int tcpSocket , short receivePort);
+	int listenTCPConnection(int tcpSocket , short receivePort);
 	void doInitialHandShake(MigrationSessionInfo& currentSessionInfo);
 	string initMigrationSession(const ClusterShardId& currentShardId,
 			const ClusterShardId& destShardId, unsigned srcOperationId, unsigned dstOperationId,

@@ -150,7 +150,7 @@ private:
 //    *   The function reads the message body which follows the message header.
 //    */
 //   int readMessageBody(int fd, MessageBuffer &readBuffer);
-
+public:
    int checkSocketIsReadyForRead(int fd, int time = 1) {
 	   return checkSocketIsReady(fd, true, time);
    }
@@ -164,7 +164,7 @@ private:
     *  checkForRead = true -> check whether socket is ready for read
     */
    int checkSocketIsReady(int socket, bool checkForRead, int timeToWait = 1);
-
+private:
    /*
     *   fetches IPv4 addresses of all NIC interfaces on the local host.
     */
