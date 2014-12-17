@@ -217,7 +217,13 @@ InitialDiscovery:
         }
         // initial discovery loop
         while(retryCount) {
-        	checkSocketIsReady(listenSocket, true);
+        	int selectResult = checkSocketIsReady(listenSocket, true);
+        	if( selectResult == -1){
+            	delete [] messageTempBuffer;
+                exit(0); // TODO : we exit ?
+        	}else if (selectResult == 0){
+        		continue;
+        	}
             int status = readUDPPacketWithSenderInfo(listenSocket, messageTempBuffer, sizeOfMessage, MSG_DONTWAIT, senderAddress);
             if (status == -1) {
                 delete [] messageTempBuffer;

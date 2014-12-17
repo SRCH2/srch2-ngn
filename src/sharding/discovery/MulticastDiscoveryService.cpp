@@ -271,8 +271,14 @@ void * multicastListener(void * arg) {
         // initial discovery loop
         bool stop = false;
         while(retryCount) {
-        	int socketReady = checkSocketIsReady(listenSocket, true);
-            int status = readUDPPacketWithSenderInfo(listenSocket, tempMessageBuffer, sizeOfMessage, MSG_DONTWAIT, senderAddress);
+        	int selectResult = checkSocketIsReady(listenSocket, true);
+        	if( selectResult == -1){
+            	delete [] tempMessageBuffer;
+                exit(0); // TODO : we exit ?
+        	}else if (selectResult == 0){
+        		continue;
+        	}
+        	int status = readUDPPacketWithSenderInfo(listenSocket, tempMessageBuffer, sizeOfMessage, MSG_DONTWAIT, senderAddress);
             if (status == -1) {
             	delete [] tempMessageBuffer;
                 exit(0); // TODO : we exit ?
