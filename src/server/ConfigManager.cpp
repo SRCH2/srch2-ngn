@@ -1742,6 +1742,7 @@ void ConfigManager::parseSchema(const xml_node &schemaNode,
     vector<string> RefiningAttributesDefaultVector;
     vector<bool> RefiningAttributesIsMultiValued;
     vector<bool> refiningAttributesAclEnabledFlags;
+    set<string> fieldNames;
 
     /*
      * <field>  in config.xml file
@@ -1754,6 +1755,20 @@ void ConfigManager::parseSchema(const xml_node &schemaNode,
         for (xml_node field = fieldsNode.first_child(); field;
                 field = field.next_sibling()) {
             if (string(field.name()).compare(fieldString) == 0) {
+
+                /*
+                 * Each field in the core should be unique.
+                 * Return error and stop the engine if the check fails.
+                 */
+                string fieldName = string(field.attribute(nameString).value());
+                if (fieldNames.find(fieldName) == fieldNames.end()) {
+                    fieldNames.insert(fieldName);
+                } else {
+                    parseError << "The field \"" << fieldName.c_str()
+                            << "\" in the schema of config.xml is not unique.";
+                    configSuccess = false;
+                    return;    //The field is already exist. Exit.
+                }
 
                 bool isMultiValued = false;
                 bool isSearchable = false;
