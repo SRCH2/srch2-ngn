@@ -270,8 +270,10 @@ void * multicastListener(void * arg) {
 
         // initial discovery loop
         bool stop = false;
+        unsigned waitTime = 1;
         while(retryCount) {
-        	int selectResult = checkSocketIsReady(listenSocket, true);
+        	int selectResult = checkSocketIsReady(listenSocket, true, waitTime);
+			waitTime = waitTime * 2;
         	if( selectResult == -1){
             	delete [] tempMessageBuffer;
                 exit(0); // TODO : we exit ?

@@ -93,14 +93,14 @@ int sendUDPPacketToDestination(int sendSocket, char *buffer, unsigned bufferSize
 	return 0;
 
 }
-int checkSocketIsReady(int socket, bool checkForRead) {
+int checkSocketIsReady(int socket, bool checkForRead, unsigned waitTime) {
 	/*
 	 *  Prepare data structure for select system call.
 	 *  http://man7.org/linux/man-pages/man2/select.2.html
 	 */
 	fd_set selectSet;
 	timeval waitTimeout;
-	waitTimeout.tv_sec = 2;
+	waitTimeout.tv_sec = waitTime;
 	waitTimeout.tv_usec = 0;
 	FD_ZERO(&selectSet);
 	FD_SET(socket, &selectSet);

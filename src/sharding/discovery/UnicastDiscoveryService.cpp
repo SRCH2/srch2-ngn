@@ -216,12 +216,16 @@ InitialDiscovery:
             discovery->sendJoinRequest(knownHosts[i].ipAddress, knownHosts[i].port);
         }
         // initial discovery loop
+        unsigned waitTime = 1;
+//        unsigned retryCount
         while(retryCount) {
-        	int selectResult = checkSocketIsReady(listenSocket, true);
+        	int selectResult = checkSocketIsReady(listenSocket, true, waitTime);
+        	waitTime = waitTime * 2;
         	if( selectResult == -1){
             	delete [] messageTempBuffer;
                 exit(0); // TODO : we exit ?
         	}else if (selectResult == 0){
+        		retryCount --;
         		continue;
         	}
             int status = readUDPPacketWithSenderInfo(listenSocket, messageTempBuffer, sizeOfMessage, MSG_DONTWAIT, senderAddress);

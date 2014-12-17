@@ -41,7 +41,7 @@ int readUDPPacketWithSenderInfo(int listenSocket, char *buffer, unsigned bufferS
 		 struct sockaddr_in& senderAddress) ;
 int sendUDPPacketToDestination(int sendSocket, char *buffer, unsigned bufferSize,
 		struct sockaddr_in& destinationAddress);
-int checkSocketIsReady(int socket, bool checkForRead);
+int checkSocketIsReady(int socket, bool checkForRead , unsigned waitTime = 1);
 
 static const int DISCOVERY_RETRY_COUNT = 5;
 static const int DISCOVERY_YIELD_WAIT_SECONDS = 3;
