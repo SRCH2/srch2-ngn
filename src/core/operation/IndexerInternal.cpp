@@ -102,6 +102,12 @@ INDEXWRITE_RETVAL IndexReaderWriter::deleteRoleRecord(const std::string &rolePri
 
 INDEXWRITE_RETVAL IndexReaderWriter::deleteRecord(const std::string &primaryKeyID)
 {
+    unsigned internalRecordId;
+    return this->deleteRecordGetInternalId(primaryKeyID, internalRecordId);
+}
+
+INDEXWRITE_RETVAL IndexReaderWriter::deleteRecordGetInternalId(const std::string &primaryKeyID, unsigned &internalRecordId)
+{
     pthread_mutex_lock(&lockForWriters);
 
     // if the trie needs to reassign ids, we need to call merge() first to make sure
@@ -111,23 +117,6 @@ INDEXWRITE_RETVAL IndexReaderWriter::deleteRecord(const std::string &primaryKeyI
     if (this->index->trie->needToReassignKeywordIds()) {
         this->doMerge();
     }
-
-    INDEXWRITE_RETVAL returnValue = this->index->_deleteRecord(primaryKeyID);
-    if (returnValue == OP_SUCCESS) {
-    	this->writesCounterForMerge++;
-    	this->needToSaveIndexes = true;
-    	if (this->mergeThreadStarted && writesCounterForMerge >= mergeEveryMWrites) {
-    		pthread_cond_signal(&countThresholdConditionVariable);
-    	}
-    }
-    
-    pthread_mutex_unlock(&lockForWriters);
-    return returnValue;
-}
-
-INDEXWRITE_RETVAL IndexReaderWriter::deleteRecordGetInternalId(const std::string &primaryKeyID, unsigned &internalRecordId)
-{
-    pthread_mutex_lock(&lockForWriters);
 
     INDEXWRITE_RETVAL returnValue = this->index->_deleteRecordGetInternalId(primaryKeyID, internalRecordId);
     if (returnValue == OP_SUCCESS) {
