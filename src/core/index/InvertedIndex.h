@@ -352,6 +352,8 @@ public:
      *   that need to be merged.
      */
     void appendInvertedListIdsForMerge(const vector<unsigned>& invertedListIds);
+    InvertedListContainer* getInvertedListFromWriteView(unsigned invertedListId);
+
 private:
 
     float getIdf(const unsigned totalNumberOfDocuments, const unsigned keywordId) const;
