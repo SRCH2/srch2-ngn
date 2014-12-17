@@ -26,25 +26,24 @@ int readUDPPacketWithSenderInfo(int listenSocket, char *buffer, unsigned bufferS
 		 struct sockaddr_in& senderAddress) {
 
 	unsigned int senderAddressLen = sizeof(senderAddress);
-	while(1) {
-		int status = recvfrom(listenSocket, buffer, bufferSize, flag,
-				(struct sockaddr *)&senderAddress, &senderAddressLen);
 
-		if (status == -1) {
-			if(errno == EAGAIN || errno == EWOULDBLOCK) {
-				//perror("Recv");
-				return 1;
-			} else {
-				perror("Discovery : Error while reading data from UDP socket : ");
-				return -1;
-			}
-		}
-		if (static_cast<unsigned>(status) < bufferSize) {
-		    Logger::sharding(Logger::Warning,"Discovery | %d bytes was read instead of expected %d bytes.", status, bufferSize );
-			// incomplete read : this datagram is lost, return to caller to handle next one
+	int status = recvfrom(listenSocket, buffer, bufferSize, flag,
+			(struct sockaddr *)&senderAddress, &senderAddressLen);
+
+	if (status == -1) {
+		if(errno == EAGAIN || errno == EWOULDBLOCK) {
+			//perror("Recv");
+			ASSERT(flag != 0);
 			return 1;
+		} else {
+			perror("Discovery : Error while reading data from UDP socket : ");
+			return -1;
 		}
-		break;
+	}
+	if (static_cast<unsigned>(status) < bufferSize) {
+	    Logger::sharding(Logger::Warning,"Discovery | %d bytes was read instead of expected %d bytes.", status, bufferSize );
+		// incomplete read : this datagram is lost, return to caller to handle next one
+		return 1;
 	}
 
 	return 0;
@@ -54,42 +53,32 @@ int readUDPPacketWithSenderInfo(int listenSocket, char *buffer, unsigned bufferS
 		struct sockaddr_in& senderAddress)
 {
 	// blocking API,
-	int status = readUDPPacketWithSenderInfo(listenSocket, buffer, bufferSize, 0, senderAddress);
-	if(status == 1){
-		ASSERT(false);
-		return -1;
-	}
-	return status;
+	return readUDPPacketWithSenderInfo(listenSocket, buffer, bufferSize, 0, senderAddress);
 }
 
 int sendUDPPacketToDestination(int sendSocket, char *buffer, unsigned bufferSize,
 		struct sockaddr_in& destinationAddress) {
 
-	while(1) {
-		int status = sendto(sendSocket, buffer, bufferSize, MSG_DONTWAIT,
-				(const sockaddr *)&destinationAddress, sizeof(destinationAddress));
+	int status = sendto(sendSocket, buffer, bufferSize, MSG_DONTWAIT,
+			(const sockaddr *)&destinationAddress, sizeof(destinationAddress));
 
-		if (status == -1) {
-			if(errno == EAGAIN || errno == EWOULDBLOCK) {
-				//perror("Send");
-				return 1;
-			} else {
-				perror("Discovery : Error while sending data from UDP socket : ");
-				return -1;
-			}
-		}
-
-		if (static_cast<unsigned>(status) < bufferSize) {
-		    Logger::sharding(Logger::Warning,"Discovery | %d bytes was sent instead of expected %d bytes.", status, bufferSize );
-			// incomplete read : this datagram is lost, return to caller to handle next one
+	if (status == -1) {
+		if(errno == EAGAIN || errno == EWOULDBLOCK) {
+			//perror("Send");'
 			return 1;
+		} else {
+			perror("Discovery : Error while sending data from UDP socket : ");
+			return -1;
 		}
-		//Logger::console("UDP multicast data send");
-		ASSERT(bufferSize == status);
-		bufferSize = 0;
-		break;
 	}
 
+	if (static_cast<unsigned>(status) < bufferSize) {
+	    Logger::sharding(Logger::Warning,"Discovery | %d bytes was sent instead of expected %d bytes. This datagram is lost.", status, bufferSize );
+		// incomplete read : this datagram is lost, return to caller to handle next one
+		return 1; // come back
+	}
+	//Logger::console("UDP multicast data send");
+	ASSERT(bufferSize == status);
 	return 0;
 
 }

@@ -273,11 +273,12 @@ void * multicastListener(void * arg) {
         unsigned waitTime = 1;
         while(retryCount) {
         	int selectResult = checkSocketIsReady(listenSocket, true, waitTime);
-			waitTime += 2;
         	if( selectResult == -1){
             	delete [] tempMessageBuffer;
                 exit(0); // TODO : we exit ?
         	}else if (selectResult == 0){
+				waitTime += 2;
+				retryCount--;
         		continue;
         	}
         	int status = readUDPPacketWithSenderInfo(listenSocket, tempMessageBuffer, sizeOfMessage, MSG_DONTWAIT, senderAddress);
@@ -295,15 +296,17 @@ void * multicastListener(void * arg) {
                 	Logger::console("message from different network using same multicast setting...continuing");
                 	continue;
                 } else {
+					waitTime = 1;
                 	switch(message.flag)
                 	{
                 	case DISCOVERY_JOIN_CLUSTER_ACK:
                 	{
-                		Logger::console("Ack received !");
+                		Logger::console("Cluster Join Ack Received !");
                 		/*
                 		 *   Master node is detected. Stop listening to discovery.
                 		 *   Start SM messaging with master to get nodeIds and other cluster related info.
                 		 */
+                		// internalCommunicationPort TODO ???
                 		if (message.ackMessageIdentifier == discovery->getTransport()->getCommunicationPort()) {
                 			shouldElectItselfAsMaster = false;
                 			masterDetected = true;
@@ -313,7 +316,7 @@ void * multicastListener(void * arg) {
                 	case DISCOVERY_JOIN_CLUSTER_REQ:
                 	{
                 		/*
-                		 * if we receive this message then their is another node which is also
+                		 * if we receive this message then there is another node which is also
                 		 * in process of joining the cluster. If there is already a master for this
                 		 * cluster then it should be fine. Otherwise, there is a race condition for
                 		 * becoming the master. How to deal with it? solution. use ip address + port as
@@ -328,6 +331,7 @@ void * multicastListener(void * arg) {
                 				shouldElectItselfAsMaster = false;
                 				sleep((DISCOVERY_RETRY_COUNT + 2) * 2);
                 				retryCount = DISCOVERY_RETRY_COUNT;
+                				waitTime = 2;
                 				discovery->sendJoinRequest();
                 				continue;
                 			}
@@ -446,6 +450,7 @@ void * multicastListener(void * arg) {
         				exit(-1); // TODO : just exit ?
         			}
         			if (sendStatus == 1) {
+        				sleep(1);
         				goto tryAckAgain;
         			}
         			senderAddress.sin_port = htons(message.internalCommunicationPort);
@@ -512,9 +517,10 @@ void MulticastDiscoveryService::sendJoinRequest() {
 
     message.serialize(messageTempBuffer);
 
-    int retry = 3;
+    int retry = DISCOVERY_RETRY_COUNT;
     //Logger::console("sending MC UDP to %s , %d",discoveryConfig.multiCastAddress.c_str(),  getMulticastPort());
     while(retry) {
+		sleep(DISCOVERY_RETRY_COUNT - retry);
         int status = sendUDPPacketToDestination(sendSocket, messageTempBuffer,
         		sizeOfMessage, multicastGroupAddress);
         if (status == 1) {
@@ -525,7 +531,7 @@ void MulticastDiscoveryService::sendJoinRequest() {
         }
     }
     if(retry == 0){
-        Logger::sharding(Logger::Warning, "Multicast : Sending join request of %d bytes FAILED" , sizeOfMessage);
+        Logger::sharding(Logger::Warning, "DM | Multicast : Sending join request of %d bytes FAILED" , sizeOfMessage);
     }
 	delete [] messageTempBuffer;
 }

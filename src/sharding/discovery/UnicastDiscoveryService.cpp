@@ -97,9 +97,11 @@ void UnicastDiscoveryService::sendJoinRequest(const string& knownHost, unsigned 
     inet_aton(knownHost.c_str(), &destinationAddress.sin_addr);
     destinationAddress.sin_port = htons(port);
 
-    Logger::sharding(Logger::Detail, "Sending join request of %d bytes." , sizeOfMessage);
-    int retry = 3;
+    Logger::sharding(Logger::Detail, "DM | Sending join request of %d bytes." , sizeOfMessage);
+    int retry = DISCOVERY_RETRY_COUNT;
+    //Logger::console("sending MC UDP to %s , %d",discoveryConfig.multiCastAddress.c_str(),  getMulticastPort());
     while(retry) {
+		sleep(DISCOVERY_RETRY_COUNT - retry);
         int status = sendUDPPacketToDestination(sendSocket, messageTempBuffer, sizeOfMessage, destinationAddress);
         if (status == 1) {
             --retry;
@@ -109,7 +111,7 @@ void UnicastDiscoveryService::sendJoinRequest(const string& knownHost, unsigned 
         }
     }
     if(retry == 0){
-        Logger::sharding(Logger::Warning, "Unicast : Sending join request of %d bytes FAILED" , sizeOfMessage);
+        Logger::sharding(Logger::Warning, "DM | Unicast : Sending join request of %d bytes FAILED" , sizeOfMessage);
     }
 
     delete [] messageTempBuffer;
@@ -216,15 +218,15 @@ InitialDiscovery:
             discovery->sendJoinRequest(knownHosts[i].ipAddress, knownHosts[i].port);
         }
         // initial discovery loop
-        unsigned waitTime = 1;
+        unsigned waitTime = 2;
 //        unsigned retryCount
         while(retryCount) {
         	int selectResult = checkSocketIsReady(listenSocket, true, waitTime);
-        	waitTime += 2;
         	if( selectResult == -1){
             	delete [] messageTempBuffer;
                 exit(0); // TODO : we exit ?
         	}else if (selectResult == 0){
+        		waitTime += 2;
         		retryCount --;
         		continue;
         	}
@@ -245,6 +247,7 @@ InitialDiscovery:
                     Logger::console("message from different network using same multicast setting...continuing");
                     continue;
                 } else {
+                	waitTime = 2;
                     switch(message.flag)
                     {
                     case DISCOVERY_JOIN_CLUSTER_ACK:
@@ -276,14 +279,14 @@ InitialDiscovery:
                                 shouldElectItselfAsMaster = false;
                                 retryCount = DISCOVERY_RETRY_COUNT;
                                 sleep(DISCOVERY_YIELD_WAIT_SECONDS);
-
+                                waitTime = 2;
                                 for (unsigned i = 0 ; i < knownHosts.size(); ++i) {
                                     if (knownHosts[i].ipAddress.compare(discovery->matchedKnownHostIp) == 0 &&
                                             knownHosts[i].port == discovery->discoveryPort)
                                         continue;
                                     discovery->sendJoinRequest(knownHosts[i].ipAddress, knownHosts[i].port);
                                 }
-                                continue;
+                                continue; // go to next try to read a DATA_GRAM which is a discovery message
                             } else {
                                 // if not yielding then ask others to yield.
                                 Logger::console("Send Yield message");
@@ -310,8 +313,10 @@ InitialDiscovery:
                                     exit(-1);
                                 }
                                 if (sendStatus == 1) {
+                                	sleep(1);
                                     goto tryYieldMsgAgain;
                                 }
+                                ASSERT(sendStatus);
                                 delete [] yeildMessageTempBuffer;
                             }
 
@@ -359,16 +364,15 @@ InitialDiscovery:
 
             discovery->getSyncManager()->setCurrentNodeId(message.nodeId);
             discovery->getSyncManager()->setMasterNodeId(message.masterNodeId);
-            discovery->_discoveryDone = true;
 
             close(listenSocket);
+            discovery->_discoveryDone = true;
             delete [] messageTempBuffer;
             return NULL;
         }
         //master was not detected and we had timeout in the discovery loop
         ASSERT(retryCount == 0);
         discovery->isCurrentNodeMaster(true);
-        Logger::console("Current Node is master node");
         if (!shouldElectItselfAsMaster){
             Logger::console("Cluster may have other masters!.");
         }
@@ -376,16 +380,21 @@ InitialDiscovery:
         unsigned masterNodeID = discovery->getSyncManager()->getNextNodeId();
         discovery->getSyncManager()->setCurrentNodeId(masterNodeID);
         discovery->getSyncManager()->setMasterNodeId(masterNodeID);
+        Logger::console("Current Node (message : %d) is master node and chooses %d as it id.", message.nodeId, masterNodeID);
     }
-    discovery->_discoveryDone = true;
 
     // Make the listening socket blocking now.
     int val = fcntl(listenSocket, F_GETFL);
     val &= ~O_NONBLOCK;;
     fcntl(listenSocket, F_SETFL, val);
 
+
+    // ****** release the execution for other modules ***********************************
+    discovery->_discoveryDone = true;
+    // ***********************************************************************************
+
     while(!discovery->shutdown) {
-        Logger::console("discovering new nodes");
+        Logger::console("discovering new nodes at [ >> %d , %d >> ]", listenSocket, discovery->sendSocket);
         memset(&senderAddress, 0, sizeof(senderAddress));
         memset(messageTempBuffer, 0, sizeOfMessage);
 
@@ -451,7 +460,8 @@ InitialDiscovery:
                         delete [] ackMessageTempBuffer;
                         exit(-1);
                     }
-                    if (sendStatus == 1) {
+                    if (sendStatus == 1) { // may return one in case we miss one corrupted message
+                    	sleep(1);
                         goto tryAckAgain;
                     }
 
