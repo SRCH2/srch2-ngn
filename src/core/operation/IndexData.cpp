@@ -426,33 +426,22 @@ INDEXWRITE_RETVAL IndexData::_deleteRecord(
 	if (success == OP_SUCCESS) {
 		ForwardList * fwdList = this->forwardIndex->getForwardList_ForCommit(internalRecordId);
 		if (fwdList) {
-<<<<<<< Updated upstream
             // Before calling function getKeywordCorrespondingPathToTrieNode_WriteView, if
             // there are keywords whose ids need to be assigned, we need to call
             // reassignKeywordIds() to make sure the ids of the trie lead nodes
             // are ordered properly. This order can make sure the function
             // getKeywordCorrespondingPathToTrieNode_WriteView() works properly.
                   /*if (this->trie->needToReassignKeywordIds()) {
-=======
-
-            if (this->trie->needToReassignKeywordIds()) {
->>>>>>> Stashed changes
                 // reassign id is not thread safe so we need to grab an exclusive lock
                 // NOTE : all index structure commits are happened before reassign id phase. Only QuadTree is left
                 //        because we need new ids in quadTree commit phase.
                 boost::unique_lock<boost::shared_mutex> lock(globalRwMutexForReadersWriters);
                 this->reassignKeywordIds();
                 lock.unlock();
-<<<<<<< Updated upstream
                 }*/
 
             // iterate through the keyword ids
             unsigned keywordsCount = fwdList->getNumberOfKeywords();
-=======
-            }
-
-			unsigned keywordsCount = fwdList->getNumberOfKeywords();
->>>>>>> Stashed changes
 			const unsigned * listofKeywordIds = fwdList->getKeywordIds();
 			// Loop over the keyword-ids for the current forward list and get
 			// the inverted-list-ids from the trie.
@@ -731,66 +720,8 @@ INDEXWRITE_RETVAL IndexData::_merge(bool updateHistogram) {
 
 	invertedIndex = this->invertedIndex;
 
-<<<<<<< Updated upstream
 	// check if we need to reassign some keyword ids
 	if (this->trie->needToReassignKeywordIds()) {
-=======
-	shared_ptr<vectorview<ForwardListPtr> > forwardListDirectoryReadView;
-    this->forwardIndex->getForwardListDirectory_ReadView(forwardListDirectoryReadView);
-
-    for (map<TrieNode *, unsigned>::const_iterator iter = trieNodeIdMapper.begin();
-            iter != trieNodeIdMapper.end(); ++ iter)
-    {
-        TrieNode *node = iter->first;
-
-        // the following code is based on TermVirtualList.cpp
-        unsigned invertedListId = node->getInvertedListOffset();
-        // change the keywordId for given invertedListId
-        map<unsigned, unsigned>::const_iterator keywordIdMapperIter = keywordIdMapper.find(invertedListId);
-        keywordIDsWriteView->at(invertedListId) = keywordIdMapperIter->second;
-
-	InvertedListContainer* ilc = this->invertedIndex->getInvertedListFromWriteView(invertedListId);
-	vectorview<unsigned> *writeView = ilc->invList->getWriteView();
-        unsigned invertedListSize = writeView->size();
-        // go through each record id on the inverted list
-        InvertedListElement invertedListElement;
-        for (unsigned i = 0; i < invertedListSize; i ++) {
-            unsigned recordId = writeView->at(i);
-
-            // re-map it only it is not done before
-            if (processedRecordIds.find (recordId) == processedRecordIds.end()) {
-	      this->forwardIndex->reassignKeywordIds(forwardListDirectoryReadView, recordId,keywordIdMapper); // TODO: WriteView?
-                processedRecordIds[recordId] = 0; // add it to the set 
-            }
-        }
-
-
-	/*
-        // Jamshid : since it happens after the commit of other index structures it uses read view
-        shared_ptr<vectorview<unsigned> > readview;
-    	shared_ptr<vectorview<InvertedListContainerPtr> > invertedListDirectoryReadView;
-    	this->invertedIndex->getInvertedIndexDirectory_ReadView(invertedListDirectoryReadView);
-        this->invertedIndex->getInvertedListReadView(invertedListDirectoryReadView,
-        		invertedListId, readview);
-        unsigned invertedListSize = readview->size();
-        // go through each record id on the inverted list
-        InvertedListElement invertedListElement;
-        for (unsigned i = 0; i < invertedListSize; i ++) {
-            unsigned recordId = readview->getElement(i);
-
-            // re-map it only it is not done before
-            if (processedRecordIds.find (recordId) == processedRecordIds.end()) {
-
-                this->forwardIndex->reassignKeywordIds(forwardListDirectoryReadView, recordId,keywordIdMapper);
-                processedRecordIds[recordId] = 0; // add it to the set 
-            }
-	    }*/
-
-
-
-
-    }
->>>>>>> Stashed changes
 
 		// struct timespec tstart;
 		// clock_gettime(CLOCK_REALTIME, &tstart);

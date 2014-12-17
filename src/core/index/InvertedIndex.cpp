@@ -621,11 +621,6 @@ void InvertedIndex::appendInvertedListIdsForMerge(const vector<unsigned>& invert
 	}
 }
 
-
-InvertedListContainer* InvertedIndex::getInvertedListFromWriteView(unsigned invertedListId) {
-  return this->invertedIndexVector->getWriteView()->getElement(invertedListId);
-}
-
 }
 }
 
