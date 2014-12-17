@@ -1,46 +1,26 @@
 /*
- * This is the basic demo for srch2 javascript library.
- * To use the srch2lib, please visit:
- *  http://srch2.com/releases/4.4.2/docs/library/
- *
- * For more information about Search API, please visit: 
- *  http://srch2.com/releases/4.4.2/docs/restful-search/
+ * This js is used for the basic movie demo for SRCH2 javascript library.
+ * It uses the SRCH2 search API as described at
+ *     http://srch2.com/releases/4.4.2/docs/restful-search/
  */
+
 client = {
     init : function() {
         /*
-         * Initialize the srch2lib, serverUrl must be set.
+         * Initialize the server setting
          */ 
-        var config = {
+        var srch2ServerSetting = {
             serverUrl : "http://127.0.0.1:8081/",
-            debug : true, // enable the debug mode which will display the debug msg to the console. 
-                            //IE may not have "console.log" function. If you are using IE, please set it to false.
+            debug : true, // enable the debug mode which will display tdebug messages to the console. 
+                          // IE may not have "console.log" function. If you are using IE, please set it to false.
         };
-        srch2lib.init(config);  //Initialize the srch2lib with config.
-        srch2lib.setSearchType("getAll");   //Set the search type to "getAll"
-        srch2lib.setEnablePrefixSearch(true);   //Enable the prefix search 
-        srch2lib.setEnableFuzzySearch(true);    //Enable the fuzzy search
-        this.bindInput();
+        srch2lib.init(srch2ServerSetting);    // Initialize server
+        srch2lib.setSearchType("getAll");     // Set the search type to "getAll"
+        srch2lib.setEnablePrefixSearch(true); // Enable prefix search 
+        srch2lib.setEnableFuzzySearch(true);  // Enable fuzzy search
+        this.bindInput(); // bind input events to a function
     },
-    log : function(msg, debug) {
-        /*
-         handy debug function. use this instead of using alers or console.log
-         */
-        if (debug == "debug") {
-            console.log(msg);
-        }
-    },
-    /*
-     * Bind the event "type" to the HTTP element "element",
-     * if the "type" event is triggered, call the function "handler".
-     */
-    bindEvent : function(element, type, handler) {
-        if (element.addEventListener) {
-            element.addEventListener(type, handler, false);
-        } else {
-            element.attachEvent('on' + type, handler);
-        }
-    },
+
     /*
      * Bind the input box "query_box" key up event with 
      * a function which sending the query to the server. 
@@ -54,18 +34,31 @@ client = {
             var query = client.sendQuery();
         });
     },
+
     /*
-     * "sendQuery" is called by "bindInput".
-     * This function gets the keyword from the "query_box"
-     * and send it to the server. The response results 
+     * Bind the event "type" to the HTTP element "element".
+     * If the "type" event is triggered, call the function "handler".
+     */
+    bindEvent : function(element, type, handler) {
+        if (element.addEventListener) {
+            element.addEventListener(type, handler, false);
+        } else {
+            element.attachEvent('on' + type, handler);
+        }
+    },
+
+    /*
+     * This function gets the keyword query from the "query_box"
+     * and sends the query to the server. The response 
      * will trigger the function "this.responseHandler".
      */
     sendQuery : function() {
-        var keyword = document.getElementById('query_box').value;
-        srch2lib.sendQuery(keyword, this.responseHandler);
+        var query = document.getElementById('query_box').value;
+        srch2lib.sendQuery(query, this.responseHandler);
     },
+
     /*
-     * "responseHandler" is called by the server response.
+     * "responseHandler" is called after we get the server response.
      * The "responseText" contains all the results in JSON format. 
      */
     responseHandler : function(responseText) {
@@ -105,6 +98,7 @@ client = {
             client.log("empty response", "debug");
         }
     },    
+
     /*
      * Highlight the prefix in the search results.
      */
@@ -112,7 +106,7 @@ client = {
         if (input) {
             input = input.toString();
             var words = input.split(/[ ]+/);
-            // split by space(s)
+            // split by space
             var output = "";
             for (var wordIndex in words) {
                 var word = words[wordIndex];
@@ -182,6 +176,15 @@ client = {
             }
         }
         return false;
+    },
+
+    log : function(msg, debug) {
+        /*
+         Handy debug function. Use this function instead of alert or console.log
+         */
+        if (debug == "debug") {
+            console.log(msg);
+        }
     },
 };
 

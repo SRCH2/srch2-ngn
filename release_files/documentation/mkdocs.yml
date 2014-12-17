@@ -11,7 +11,7 @@ pages:
     - [geo.mkd, Geo]
     - [acl.mkd, ACL]
     - [connectors.mkd, Connectors]
-    - [library.mkd, Library]
+    - [js-lib.mkd, JS-Lib]
 
 theme_dir : './srch2-theme'
 

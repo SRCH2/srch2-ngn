@@ -1,33 +1,78 @@
-#SRCH2 Library
+#SRCH2 Javascript Library (```src2lib.js```)
 
-##1. Javascript Library
-###1.1. Overview
-This instruction shows how to use SRCH2 Javascript library to communicate with the SRCH2 engine. The library is using [RESTful API](restful-search.mkd#restful-api-search) to talk with the server side by [jsonp](http://en.wikipedia.org/wiki/JSONP) communication technique. Here is a [movie demo](http://demo.srch2.com/movies/) that using the SRCH2 Javascript library. 
+##1.1. Overview
 
-<span ><center><img style="float: center" width="100%" src="../images/javascript-library.png" /></center></span>
+SRCH2 provides a javascript library to help programmers develop an
+interactive, user-friendly UI easily.
+The library talks to the SRCH2 server using its 
+[RESTful API](restful-search.mkd#restful-api-search) and
+the [jsonp](http://en.wikipedia.org/wiki/JSONP) communication
+technique. We will use the sample [movie
+demo](http://demo.srch2.com/movies/) to explain how to use the
+library.
 
-There are 6 steps to talk with the SRCH2 server:  
+The following figure illustrates the files used in the demo, and
+steps the frontend follows to communicate with the server using the library.
 
-1. Bind event  
-Bind the input box event with the ```inputEvent()``` function so that each event can trigger the function.  
+ - [index.html](../example-demo/basic/index.html): main HTML page;
+ - [index.js](../example-demo/basic/index.js): javascript file used by ```index.html```;
+ - [srch2lib.js](../example-demo/basic/srch2lib.js): SRCH2 javascript library to talk to the server.
 
-2. Call srch2lib API  
-In the ```inputEvent()``` function, first we set the required parameters(e.g. setServerUrl(url)). Then call the ```srch2lib.sendQuery(keyword, responseHandler)``` function to prepare and send the query to the SRCH2 server. The second parameter is the callback function which will handle the response from the SRCH2 server.  
+<span><center><img style="float: center" width="100%" src="../images/javascript-library.png"/></center></span>
 
-3. Send RESTful query  
-The srch2lib will make a query based on the previous setting and send the query to the SRCH2 server by using jsonp.  
+The first time the movie demo page is loaded, it calls the function
+```srch2lib.init()``` to  initialize the library.  After that, the
+frontend communicates with the server in the following steps:
 
-4. Get JSON Response  
-The server will send the JSON format response to the front-end and the ```srch2ResponseHandler(response)``` will catch the response.  
+ 1. <b>Bind Event</b>: Bind the ```keyup``` event on the
+   input box using the ```bindInput()``` function so that each
+   keystroke in the box can trigger a function call.
 
-5. Call responseHandler  
-The ```srch2ResponseHandler(response)``` will call the function ```responseHandler()``` which set in the step 2 and pass the JSON format response to it.  
+ 2. <b>Call ```srch2.sendQuery()```</b>: For each event, the function
+   calls ```srch2.srch2Query()``` provided by the
+   library, and passes a callback function ```responseHandler()``` for
+   the response.
 
-6. Display results  
-The ```responseHandler()``` will format the JSON response and display the results on the webpage.
+ 3. <b>Send Restful Query</b>: The library sends a query to the SRCH2
+   server.
 
-###1.2. Basic Movie demo sample Code
-The following code is a basic example to use the SRCH2 Javascript library. It binds the input box "input_box" with event "key up" which will send the query to the engine. And the ```responseHandler``` will print the response in the "resultContainer" in JSON format.
+ 4. <b>Receive Response</b>: The client receives the response from
+   the server.
+
+ 5. <b>Call ```responseHandler```</b>: The library invokes the callback
+   function ```responseHandler``` to process the response.
+
+ 6. <b>Display Results</b>: The function uses the results in the
+   response and update the interface.
+
+TOMOVE
+In the ```inputEvent()``` function, first we set
+   the required parameters(e.g. setServerUrl(url)). Then call the
+   ```srch2lib.sendQuery(keyword, responseHandler)``` function to
+   prepare and send the query to the SRCH2 server. The second
+   parameter is the callback function which will handle the response
+   from the SRCH2 server.
+
+ Send RESTful query: The srch2lib will make a query based on the
+   previous setting and send the query to the SRCH2 server by using
+   jsonp.
+
+ - <b>4. Get Server Response</b>: When the server returns the response, the
+   function ```responseHandler()``` is called to process the results.
+   It consumes the data in the response and updates the user interface.
+
+##1.2. Basic Movie Demo
+
+We explain how the library is used in the [basic movie
+demo](../example-demo/basic/index.html). 
+
+
+The following code is a basic example to use the SRCH2 Javascript
+library. It binds the input box "input_box" with event "key up" which
+will send the query to the engine. And the ```responseHandler``` will
+print the response in the "resultContainer" in JSON format. 
+
+
 ```
 client = {
     init : function() {
