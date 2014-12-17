@@ -1,23 +1,15 @@
-#SRCH2 Javascript Library
+#SRCH2 Library
 
+##1. Javascript Library
 ###1.1. Overview
+This instruction shows how to use SRCH2 Javascript library to communicate with the SRCH2 engine. The library is using [RESTful API](restful-search.mkd#restful-api-search) to talk with the server side by [jsonp](http://en.wikipedia.org/wiki/JSONP) communication technique. Here is a [movie demo](http://demo.srch2.com/movies/) that using the SRCH2 Javascript library. 
 
-The SRCH2 javascript library, "srch2lib.js", is provided to help
-programmers develop a user-friendly browser-based front to interact
-with the backend engine. The library is using the [RESTful
-API](restful-search.mkd#restful-api-search) to communicate with the
-server side using [jsonp](http://en.wikipedia.org/wiki/JSONP). Here is
-a [movie demo](http://demo.srch2.com/movies/) that
-uses the library.  
+<span ><center><img style="float: center" width="100%" src="../images/javascript-library.png" /></center></span>
 
-Here we use the movie demo to explain how to use 
-the library to interact with the SRCH2 server.  The following figure
-shows the files used in the demo and the 
+There are 6 steps to talk with the SRCH2 server:  
 
-<span><center><img style="float: center" width="100%" src="../images/javascript-library.png" /></center></span>
-
-1. Bind event: Bind the input box event with the ```inputEvent()```
-function so that each event can trigger the function.
+1. Bind event  
+Bind the input box event with the ```inputEvent()``` function so that each event can trigger the function.  
 
 2. Call srch2lib API  
 In the ```inputEvent()``` function, first we set the required parameters(e.g. setServerUrl(url)). Then call the ```srch2lib.sendQuery(keyword, responseHandler)``` function to prepare and send the query to the SRCH2 server. The second parameter is the callback function which will handle the response from the SRCH2 server.  
