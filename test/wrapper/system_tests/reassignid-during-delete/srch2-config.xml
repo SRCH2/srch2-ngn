@@ -23,9 +23,7 @@
     <listeningHostname>127.0.0.1</listeningHostname>
     <listeningPort>7049</listeningPort>
 
- 
-    <licenseFile>../../../wrapper/conf/srch2_license_key.txt</licenseFile>
- 
+    <licenseFile>../conf/srch2_license_key.txt</licenseFile>
 
     <!-- moved from <query> which is now per core -->
     <maxSearchThreads>2</maxSearchThreads>
@@ -97,8 +95,8 @@
                     <fieldType name="text_standard">
                       <analyzer>
                         <filter name="PorterStemFilter" dictionary="" />
-                        <filter name="StopFilter" words="./stop-words.txt" />
-                        <filter name="protectedKeyWordsFilter" words="./srch2_protected_words.txt" />
+			<filter name="StopFilter" words="./reassignid-during-delete/srch2_stop_words.txt" />
+			<filter name="protectedKeyWordsFilter" words="./reassignid-during-delete/srch2_protected_words.txt" />
                       </analyzer>
                     </fieldType>
                 </types>
