@@ -316,7 +316,7 @@ InitialDiscovery:
                                 	sleep(1);
                                     goto tryYieldMsgAgain;
                                 }
-                                ASSERT(sendStatus);
+                                ASSERT(sendStatus == 0);
                                 delete [] yeildMessageTempBuffer;
                             }
 
