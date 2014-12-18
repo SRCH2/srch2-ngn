@@ -86,7 +86,7 @@ client = {
                     fqObj.valueRight = value.split(" ")[1];
                     fqObj.valueLeft = fqObj.valueLeft.substring(1);
                     if (fqObj.valueLeft.indexOf('b>') != -1) {
-                        fqObj.valueLeft = fqObj.valueLeft.substring(2);
+                        fqObj.valueLeft = fqObj.valueLeft.substring(fqObj.valueLeft.indexOf('b>') + 3);
                         //alert(fqObj.valueLeft + " TO "+fqObj.valueRight);
                     }
                     fqObj.valueRight = fqObj.valueRight.substring(0, fqObj.valueRight.length - 1);
@@ -382,6 +382,30 @@ client = {
             fqRng = fqRngField + ':[ ' + fqRngStart + ' TO ' + fqRngEnd + ' ]';
         }
 
+         // Get and set the boolean expressions
+
+        var fqCmp = "";
+        var op = "";
+        if (filterQueryIsthere == 1) {
+            filterQuery += fqAss + fqRng + fqCmp;
+        } else if (filterQueryIsthere > 1) {
+            var opRadios = document.getElementsByName('filter_op');
+            for (var i = 0; opRadios.length; i++) {
+                if (opRadios[i].checked) {
+                    op = opRadios[i].value;
+                    break;
+                }
+            }
+            if (fqAss == "") {
+                filterQuery += fqRng + " " + op + " " + fqCmp;
+            } else if (fqRng == "") {
+                filterQuery += fqAss + " " + op + " " + fqCmp;
+            } else if (fqCmp == "") {
+                filterQuery += fqAss + " " + op + " " + fqRng;
+            } else {
+                filterQuery += fqAss + " " + op + " " + fqRng + " " + op + " " + fqCmp;
+            }
+        }
 
         // Append more filters if a function is called when the user
         // clicks the facet category.
