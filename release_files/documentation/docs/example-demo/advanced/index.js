@@ -1,6 +1,6 @@
 /*
  * This is the advanced demo for srch2 javascript library.
- * To use the srch2lib, please visit:
+ * To use the srch2, please visit:
  *  http://srch2.com/releases/4.4.2/docs/library/
  *
  * For more information about Search API, please visit: 
@@ -11,14 +11,14 @@ client = {
         _client_this = this;
         
         /*
-         * Initialize the srch2lib, serverUrl must be set.
+         * Initialize the srch2, serverUrl must be set.
          */ 
-        this.srch2 = srch2lib;
+        this.srch2 = srch2;
         var config = {
             serverUrl : "http://127.0.0.1:8081/",
             debug : true, // true /false
         };        
-        this.srch2.init(config);  //Initialize the srch2lib with config.
+        this.srch2.init(config);  //Initialize the srch2 with config.
         _client_this.srch2.setServerUrl("http://localhost:8081/");  
         //_client_this.srch2.setServerUrl("http://simpson.calit2.uci.edu/srch2_movies_engine/");  //Server URL also can be set by setServerUrl
         _client_this.srch2.setSearchType("getAll"); //Set the search type to "getAll"
@@ -328,13 +328,13 @@ client = {
      */
     sendQuery : function(params) {
        
-        // Get the facet range values from the page and pass it to srch2lib.
+        // Get the facet range values from the page and pass it to srch2.
         var start = document.getElementById('facet_year_start').value;
         var end = document.getElementById('facet_year_end').value;
         var gap = document.getElementById('facet_year_gap').value;
         _client_this.srch2.setFacetRange("year", start, end, gap);
         
-        // Get the order setting from the page and pass it to srch2lib.
+        // Get the order setting from the page and pass it to srch2.
         var orderRadios = document.getElementsByName('sort_filter_order');
         var setSort = false;
         for (var j = 0; j < orderRadios.length; j++) {
@@ -354,7 +354,7 @@ client = {
         }
         
         /*
-         * Get the filter info from the page, generate a query, and pass it to the srch2lib.
+         * Get the filter info from the page, generate a query, and pass it to the srch2.
          * For the syntax of filter query, please refer to : 
          * http://srch2.com/releases/4.4.2/docs/restful-search/#62-fq-filter-query-parameter
          */
@@ -441,7 +441,7 @@ client = {
             }
         }
         
-        // Pass the filterQuery to srch2lib
+        // Pass the filterQuery to srch2
         _client_this.srch2.setFilterQueryParam(filterQuery);
         
         // Get the query from the "query_box" and send it to the server.

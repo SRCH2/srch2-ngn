@@ -2,7 +2,7 @@
 // Check http://srch2.com/releases/4.4.2/docs/ for more information
 // about the API of the SRCH server.
 
-srch2lib = {
+srch2 = {
     init : function(serverSetting){
         this.jsonpScriptId = "srch2ResponseHandlerScriptTagId";
         this.addScriptTag("");
@@ -604,13 +604,13 @@ srch2lib = {
         var name = "srch2_" + this.jsonpCallbacks.counter++;
 
         this.jsonpCallbacks[name] = function(response){
-            //srch2lib.queryWaitingForResponse--;
+            //srch2.queryWaitingForResponse--;
             responseHandler(response);
-            delete srch2lib.jsonpCallbacks[name];
-            //srch2lib.log("Query waiting for response : " + srch2lib.queryWaitingForResponse);
+            delete srch2.jsonpCallbacks[name];
+            //srch2.log("Query waiting for response : " + srch2.queryWaitingForResponse);
         }
 
-        return this.jsonpCall(query, "srch2lib.jsonpCallbacks." + name + "");
+        return this.jsonpCall(query, "srch2.jsonpCallbacks." + name + "");
     },
 
     /* make query to srch2 server */
@@ -634,7 +634,7 @@ srch2lib = {
 
     log : function(s) {
         if (this.debugMode == true) {
-            console.log("srch2lib log : " + s);
+            console.log("srch2 log : " + s);
         }
     },
 

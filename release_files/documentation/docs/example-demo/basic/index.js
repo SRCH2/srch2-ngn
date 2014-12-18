@@ -14,10 +14,10 @@ client = {
             debug : true, // enable the debug mode which will display debug messages to the console. 
                           // IE may not have "console.log" function. If you are using IE, please set it to false.
         };
-        srch2lib.init(srch2ServerSetting);    // Initialize server
-        srch2lib.setSearchType("getAll");     // Set the search type to "getAll"
-        srch2lib.setEnablePrefixSearch(true); // Enable prefix search 
-        srch2lib.setEnableFuzzySearch(true);  // Enable fuzzy search
+        srch2.init(srch2ServerSetting);    // Initialize server
+        srch2.setSearchType("getAll");     // Set the search type to "getAll"
+        srch2.setEnablePrefixSearch(true); // Enable prefix search 
+        srch2.setEnableFuzzySearch(true);  // Enable fuzzy search
         this.bindInput(); // bind input events to a function
     },
 
@@ -54,7 +54,7 @@ client = {
      */
     sendQuery : function() {
         var query = document.getElementById('query_box').value;
-        srch2lib.sendQuery(query, this.responseHandler);
+        srch2.sendQuery(query, this.responseHandler);
     },
 
     /*
