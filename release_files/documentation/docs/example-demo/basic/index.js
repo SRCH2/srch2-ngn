@@ -11,7 +11,7 @@ client = {
          */ 
         var srch2ServerSetting = {
             serverUrl : "http://127.0.0.1:8081/",
-            debug : true, // enable the debug mode which will display tdebug messages to the console. 
+            debug : true, // enable the debug mode which will display debug messages to the console. 
                           // IE may not have "console.log" function. If you are using IE, please set it to false.
         };
         srch2lib.init(srch2ServerSetting);    // Initialize server

@@ -322,19 +322,19 @@ client = {
     /*
      * "sendQuery" is called when the event is triggered.
      * This function gets the keyword, facet, filter and sort 
-     * info from the webpage, and send them to the server.
+     * info from the page, and send them to the server.
      * The response results will trigger the function 
      * "this.responseHandler".
      */
     sendQuery : function(params) {
        
-       //Get the facet range values from webpage and set it in the srch2lib.
+        // Get the facet range values from the page and pass it to srch2lib.
         var start = document.getElementById('facet_year_start').value;
         var end = document.getElementById('facet_year_end').value;
         var gap = document.getElementById('facet_year_gap').value;
         _client_this.srch2.setFacetRange("year", start, end, gap);
         
-        //Get the order value from webpage and set it in the srch2lib.
+        // Get the order setting from the page and pass it to srch2lib.
         var orderRadios = document.getElementsByName('sort_filter_order');
         var setSort = false;
         for (var j = 0; j < orderRadios.length; j++) {
@@ -354,12 +354,12 @@ client = {
         }
         
         /*
-         * Get the filter info from webpage, generate a query and set it in the srch2lib.
+         * Get the filter info from the page, generate a query, and pass it to the srch2lib.
          * For the syntax of filter query, please refer to : 
          * http://srch2.com/releases/4.4.2/docs/restful-search/#62-fq-filter-query-parameter
          */
          
-         //Get and set the filter value
+         // Get and set the filter value
         var filterQuery = "";
         var filterQueryIsthere = 0;
         var fqAssField = document.getElementById('filter_assignment_field').value;
@@ -372,7 +372,7 @@ client = {
             fqAss = fqAssField + ':' + fqAssValue;
         }
 
-        //Get and set the filter range field
+        // Get and set the filter range field
         var fqRngField = document.getElementById('filter_range_field').value;
         var fqRngStart = document.getElementById('filter_range_start').value;
         var fqRngEnd = document.getElementById('filter_range_end').value;
@@ -383,7 +383,7 @@ client = {
         }
 
 
-         //Get and set the boolean expressions
+         // Get and set the boolean expressions
         var fqComplex = document.getElementById('filter_complex').value;
         var fqCmp = "";
         if (fqComplex != null && fqComplex != "" ) {
@@ -413,7 +413,8 @@ client = {
             }
         }
 
-        //Append more filters if function is called by click facet category event.
+        // Append more filters if a function is called when the user
+        // clicks the facet category.
         if ("fq" in params) {
             var fqObj = params['fq'];
             var fqStr = fqObj['field'] + ":[ " + fqObj['valueLeft'] + " TO " + fqObj['valueRight'] + " ]";
@@ -440,12 +441,12 @@ client = {
             }
         }
         
-        //Set the filterQuery to srch2lib
+        // Pass the filterQuery to srch2lib
         _client_this.srch2.setFilterQueryParam(filterQuery);
         
-        //Get the keywords from the "query_box" and send the query to the server.
-        var keyword = document.getElementById('query_box').value;
-        _client_this.srch2.sendQuery(keyword, _client_this.responseHandler);
+        // Get the query from the "query_box" and send it to the server.
+        var query = document.getElementById('query_box').value;
+        _client_this.srch2.sendQuery(query, _client_this.responseHandler);
        
     },
 

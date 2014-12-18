@@ -1,6 +1,9 @@
+
+// Check http://srch2.com/releases/4.4.2/docs/ for more information
+// about the API of the SRCH server.
+
 srch2lib = {
-    init : function(config){
-        //Constructor
+    init : function(serverSetting){
         this.jsonpScriptId = "srch2ResponseHandlerScriptTagId";
         this.addScriptTag("");
         this.debugMode = false;
@@ -29,25 +32,25 @@ srch2lib = {
 
         this.jsonpCallbacks = {counter : 0};
         
-        if(config != null){
-            this.setConfig(config);
+        if(serverSetting != null){
+            this.setServerSetting(serverSetting);
         }        
     },
     
-    setConfig : function(config){
-        if(config.defaultResultContainer != null && config.defaultResultContainer != ""){
-            this.defaultResultContainer = config.defaultResultContainer;
+    setServerSetting : function(serverSetting){
+        if(serverSetting.defaultResultContainer != null && serverSetting.defaultResultContainer != ""){
+            this.defaultResultContainer = serverSetting.defaultResultContainer;
         }
 
-        if(config.serverUrl != null && config.serverUrl != ""){
-            this.setServerUrl(config.serverUrl);
+        if(serverSetting.serverUrl != null && serverSetting.serverUrl != ""){
+            this.setServerUrl(serverSetting.serverUrl);
         }
 
-        if(config.debug != null){
-            if(config.debug == true || config.debug == "true"){
+        if(serverSetting.debug != null){
+            if(serverSetting.debug == true || serverSetting.debug == "true"){
                 this.debugMode = true;
             }
-            if(config.debug == false || config.debug == "false"){
+            if(serverSetting.debug == false || serverSetting.debug == "false"){
                 this.debugMode = false;
             }
         }
@@ -64,7 +67,9 @@ srch2lib = {
     },
     
     /********************************************************/
-    //Send query with pre-setted parameters and return the response json to the callback function "responseHandler"
+    // It sends a query using the pre-defined parameters in the
+    // ```init()``` function and specifies a callback function
+    // "responseHandler" for handling the response.
     sendQuery : function(keyword, responseHandler){
         // deal with the query
         if (this.queryWaitingForResponse == 0) {
@@ -82,7 +87,7 @@ srch2lib = {
         }
     },
     
-    //Do not use the params setting, directly use the keyword for advanced search 
+    //Do not use the params setting. Directly use the keyword for advanced search 
     //TODO : no multi core
     sendRawQuery : function(keyword, responseHandler){
         if (this.queryWaitingForResponse == 0) {
@@ -110,32 +115,22 @@ srch2lib = {
         return this;
     },
     
-    /*
-     * A field that is labeled as "searchable" or "indexed" can be searched.
-     * For example, suppose the data contains two fields, title and year. 
-     * To find the records with "star" and "wars" in the "title" field, 
-     * we can use the following query:
-     *  title:star AND wars
-     */
+    // It sets the fields in which the keywords have to appear.
     setSearchFields : function(searchFields){
         this.searchFieldsStr = encodeURIComponent(searchFields);
         return this;
     },
 
-    /*
-     * To enable prefix search for each term
-     */
+
+    // It turns on/off prefix search for each keyword.  If enabled,
+    // each keyword by default is treated as a prefix.
     setEnablePrefixSearch : function(isEnablePrefixSearch){
         this.isEnablePrefixSearch = isEnablePrefixSearch;
         return this;
     },
 
-    /*
-     * To enable fuzzy search for each term. Fuzzy similarity can 
-     * be set in the second parameter.
-     * For different fuzzy similarity on each term, please use function "sendRawQuery"
-     * for advanced search.
-     */
+    // It turns on/off fuzzy search for each keyword. If it is on, the
+    // fuzzy similarity can  be set in the second parameter.
     setEnableFuzzySearch : function(isEnableFuzzySearch, fuzzySimilarityThreshold){
         this.isEnableFuzzySearch = isEnableFuzzySearch;
         if(typeof(fuzzySimilarityThreshold) != undefined){
@@ -144,11 +139,8 @@ srch2lib = {
         return this;
     },
 
-    /*
-     * This parameter is used to specify a filter restricting the set of records returned.
-     * For more information, please visit: 
-     * http://srch2.com/releases/4.4.2/docs/restful-search/#62-fq-filter-query-parameter
-     */
+    // This parameter is used to specify a filter restricting the set
+    // of records to be returned.
     setFilterQueryParam : function(filterQuery){
         if(filterQuery == null || filterQuery == ""){
             this.filterQueryStr = null;
@@ -158,14 +150,12 @@ srch2lib = {
         return this;
     },
 
-    /*
-     * This parameter in a query is used to specify fields or attributes 
-     * that the user wants the engine to return for this query.
-     */
+    // This query parameter is used to specify fields the server
+    // should return for each result.
     setFieldList : function(fieldList){ 
         this.fieldListStr = '';
 
-        //Clean field list str
+        // Clean field list string
         if(fieldList == null || fieldList == ""){
             this.fieldListStr = null;
             return this;
@@ -197,16 +187,15 @@ srch2lib = {
         return this;
     },
 
-    /*
-     * This parameter specifies a field to be treated as a categorical facet. 
-     * It finds the number of distinct values in the specified field and returns 
-     * the number of records that match each value. This parameter can be 
-     * specified multiple times to indicate multiple facet fields.
-     */
+    // This parameter specifies a field to be treated as a categorical
+    // facet.  The server finds the number of distinct values in the
+    // specified field and returns the number of records for each
+    // value. This parameter can be specified with multiple values in
+    // a list to indicate multiple facet fields. 
     setFacetFieldList : function(facetFieldList){
         this.facetFieldStr = "";
 
-        //Clean facet field list str 
+        // Clean facet field list string
         if(facetFieldList == null || facetFieldList == ""){
             this.facetFieldStr = null;
             return this;
@@ -222,15 +211,11 @@ srch2lib = {
         return this;
     },
 
-    /*
-     * This is the maximum number of categories with maximal 
-     * frequencies to be returned. All categories are returned 
-     * by default. Example: adding the following parameter to 
-     * the query will tell the engine to return the top 10 most 
-     * popular genres.
-     * 
-     * f.genre.rows=10
-     */
+    // This function sets the maximum number of categories with
+    // maximal frequencies to be returned for a given field.  All
+    // categories are returned by default. For example, adding the
+    // following condition ```f.genre.rows=10``` to the query will
+    // tell the engine to return the top 10 most popular genres.
     setFacetCategoryRows : function(category, rows){
         this.facetCategoryRows = "";
 
@@ -244,11 +229,8 @@ srch2lib = {
         return this;
     },
 
-    /*
-     * This parameter can be used to specify a field that should be treated as a range facet.
-     * For detail info, please visit:
-     * http://srch2.com/releases/4.4.2/docs/restful-search/#73-facet-by-range
-     */
+    // These parameters can be used to specify a field that should be
+    // treated as a range facet.
     setFacetRange : function(category, start, end, gap){
         if(category == null || category == ""){
             this.facetRangeCategoryStr = null;
@@ -278,13 +260,11 @@ srch2lib = {
         return this;
     },
 
-    /*
-     * The engine offers two different strategies for searching records:
-     * topK: The results will be sorted descending by their score. 
-     *  This score is calculated for each record. This approach has a 
-     *  high performance, but does not support facet and sort operations. 
-     * getAll: Use this strategy if facets and sort query parameters are needed.
-     */
+    // The engine supports two different strategies to do search: 
+    // (1) "topK": The results will be sorted in the descending order
+    // by their score.  This approach has a high performance, but does
+    // not support facet and sort operations.  (2) "getAll": Use this
+    // strategy if facets and sort query parameters are needed. 
     setSearchType : function(searchType){
         if(searchType == null || searchType == ""){
             this.searchTypeStr = null;
@@ -301,16 +281,14 @@ srch2lib = {
         return this;
     },
 
-    /*
-     * The engine's default behavior is to sort the results using a 
-     * descending order by the overall score of each record. 
-     * The user can specify sorting by other fields. For example:
-     * sort=director,year,title
-     */
+    // The engine's default behavior is to sort the results using a 
+    // descending order by the overall score of each record.  
+    // The user can specify sorting by other fields, e.g.,
+    // ```sort=director,year,title```. 
     setSortList : function(categoryList){
         this.sortStr = '';
 
-        //Clean field list str
+        // Clean field list string
         if(categoryList == null || categoryList == ""){
             this.sortStr = null;
             return this;
@@ -326,11 +304,9 @@ srch2lib = {
         return this;
     },
 
-    /*
-     * It specifies the order in which the result set should be sorted. 
-     * Its default value is "desc" (descending). This order is valid 
-     * for all the fields specified in the sort parameter.
-     */
+    // It specifies the order in which the result set should be
+    // sorted.  Its default value is "desc" (descending). This order
+    // is valid for all the fields specified in the "sort" parameter.
     setOrderBy : function(orderBy){
         if(orderBy == null || orderBy == ""){
             this.orderByStr = null;
@@ -347,10 +323,8 @@ srch2lib = {
         return this;
     },
 
-    /*
-     * It is the offset in the complete result set of the query, 
-     * where the set of returned records should begin. The default value is 0.
-     */
+    // It specifies the offset in the complete result set of the
+    // query,  where the set of returned records should begin.
     setStart : function(start){
         if(start == null || start == ""){
             this.startStr = null;
@@ -360,10 +334,8 @@ srch2lib = {
         return this;
     },
 
-    /*
-     * It indicates the number of records to return from the 
-     * complete result set. Its default value is 0.
-     */
+    // The parameter indicates the number of records to return from
+    // the complete result set.
     setRows : function(rows){
         if(rows == null || rows == ""){
             this.rowsStr = null;
@@ -373,19 +345,13 @@ srch2lib = {
         return this;
     },
 
-    /*
-     * The "Cores" tag set in the configuration file allows the user to 
-     * search on multiple "cores" within the same server. A query can 
-     * specify a particular core. For instance, the following query:
-     * http://localhost:8081/example-core/search?q=term
-     * If a user wants to get results from all the cores, the query 
-     * should add a prefix "/_all/search" to the request. 
-     * For instance, the following query:
-     * http://localhost:8081/_all/search?q=martn~
-     *
-     * For more information, please visit : 
-     * http://srch2.com/releases/4.4.2/docs/restful-search/#14-multi-core
-     */
+    // The "Cores" tag set in the server configuration file allows the
+    // user to search on multiple "cores" within the same server. A
+    // query can specify a particular core. Here is an example query:
+    // ```http://localhost:8081/example-core/search?q=term```.
+    // If a user wants to get results from all the cores, the query 
+    // should add a prefix "/_all/search" to the request, e.g., 
+    // ```http://localhost:8081/_all/search?q=martn~```.
     setSearchCore : function(coreName){
         if(coreName == null || coreName == ""){
             this.coreNameStr = null;
@@ -395,10 +361,9 @@ srch2lib = {
         return this;
     },
 
-    /*
-     * When record-based access control or attribute-based access control is 
-     * enabled in the config file, the role-id can be specified using roleId parameter.
-     */
+    // The function specifies the "role" of the user who issues the
+    // query. This paramter is used for record-based access control or
+    // attribute-based access control. 
     setRoleId : function(roleId){
         if(roleId == null || roleId == ""){
             this.roleIdStr = null;
@@ -408,7 +373,7 @@ srch2lib = {
         return this;
     },
 
-    //Set all Params to null
+    // This function sets all the parameters to null.
     clearAllParams : function(){
         this.serverUrlStr = null;
         this.searchFieldsStr = null;

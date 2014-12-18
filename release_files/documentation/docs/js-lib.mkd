@@ -1,4 +1,4 @@
-#SRCH2 Javascript Library (```src2lib.js```)
+#SRCH2 Javascript Library (```srch2lib.js```)
 
 ##1.1. Overview
 
@@ -21,8 +21,11 @@ steps the frontend follows to communicate with the server using the library.
 <span><center><img style="float: center" width="100%" src="../images/javascript-library.png"/></center></span>
 
 The first time the movie demo page is loaded, it calls the function
-```srch2lib.init()``` to  initialize the library.  After that, the
-frontend communicates with the server in the following steps:
+```srch2lib.init()``` to  initialize the library by passing a
+"srch2ServerSetting" object that incldues parameters related to the
+server, such as its URL.  It also calls several functions provided the
+library to set parameters used by queries to the server.
+After that, the frontend communicates with the server in the following steps:
 
  1. <b>Bind Event</b>: Bind the ```keyup``` event on the
    input box using the ```bindInput()``` function so that each
@@ -33,75 +36,81 @@ frontend communicates with the server in the following steps:
    library, and passes a callback function ```responseHandler()``` for
    the response.
 
- 3. <b>Send Restful Query</b>: The library sends a query to the SRCH2
-   server.
+ 3. <b>Send Restful Query</b>: The library formulates a query 
+   based on the previous setting and sends the query to the SRCH2
+   server by using jsonp.
 
  4. <b>Receive Response</b>: The client receives the response from
    the server.
 
- 5. <b>Call ```responseHandler```</b>: The library invokes the callback
-   function ```responseHandler``` to process the response.
+ 5. <b>Call ```responseHandler()```</b>: The library invokes the callback
+   function ```responseHandler()``` to process the response.
 
  6. <b>Display Results</b>: The function uses the results in the
-   response and update the interface.
-
-TOMOVE
-In the ```inputEvent()``` function, first we set
-   the required parameters(e.g. setServerUrl(url)). Then call the
-   ```srch2lib.sendQuery(keyword, responseHandler)``` function to
-   prepare and send the query to the SRCH2 server. The second
-   parameter is the callback function which will handle the response
-   from the SRCH2 server.
-
- Send RESTful query: The srch2lib will make a query based on the
-   previous setting and send the query to the SRCH2 server by using
-   jsonp.
-
- - <b>4. Get Server Response</b>: When the server returns the response, the
-   function ```responseHandler()``` is called to process the results.
-   It consumes the data in the response and updates the user interface.
+   response to update the interface.
 
 ##1.2. Basic Movie Demo
 
-We explain how the library is used in the [basic movie
-demo](../example-demo/basic/index.html). 
-
-
-The following code is a basic example to use the SRCH2 Javascript
-library. It binds the input box "input_box" with event "key up" which
-will send the query to the engine. And the ```responseHandler``` will
-print the response in the "resultContainer" in JSON format. 
-
+The following code is a part of the [basic movie demo](../example-demo/basic/index.html)
+to use the SRCH2 javascript library. 
 
 ```
 client = {
     init : function() {
         /*
-         * Initialize the srch2lib, serverUrl must be set.
+         * Initialize the server setting
          */ 
-        var config = {
+        var srch2ServerSetting = {
             serverUrl : "http://127.0.0.1:8081/",
-            debug : true, // enable the debug mode which will display the debug msg to the console. 
-                            //IE may not have "console.log" function. If you are using IE, please set it to false.
+            debug : true, // enable the debug mode which will display debug messages to the console. 
+                          // IE may not have "console.log" function. 
+                          // If you are using IE, please set it to false.
         };
-        srch2lib.init(config);  //Initialize the srch2lib with config.
-        srch2lib.setSearchType("getAll");   //Set the search type to "getAll"
-        srch2lib.setEnablePrefixSearch(true);   //Enable the prefix search 
-        srch2lib.setEnableFuzzySearch(true);    //Enable the fuzzy search
-        this.bindInput();
+        srch2lib.init(srch2ServerSetting);    // Initialize server
+        srch2lib.setSearchType("getAll");     // Set the search type to "getAll"
+        srch2lib.setEnablePrefixSearch(true); // Enable prefix search 
+        srch2lib.setEnableFuzzySearch(true);  // Enable fuzzy search
+        this.bindInput(); // bind input events to a function
     },
+
     /*
      * Bind the input box "query_box" key up event with 
      * a function which sending the query to the server. 
      */
     bindInput : function() {
         var element = document.getElementById("query_box");
-        element.addEventListener("keyup", function(event) {
-            srch2lib.sendQuery(document.getElementById("query_box").value, client.responseHandler);
-        }, false);
+        this.bindEvent(element, "keyup", function(event) {
+            if (event.keyCode == 13) {
+                return;
+            }
+            var query = client.sendQuery();
+        });
     },
+
     /*
-     * "responseHandler" is called by the server response.
+     * Bind the event "type" to the HTTP element "element".
+     * If the "type" event is triggered, call the function "handler".
+     */
+    bindEvent : function(element, type, handler) {
+        if (element.addEventListener) {
+            element.addEventListener(type, handler, false);
+        } else {
+            element.attachEvent('on' + type, handler);
+        }
+    },
+
+    /*
+     * This function gets the keyword query from the "query_box"
+     * and sends the query to the server. The response 
+     * will trigger the function "this.responseHandler".
+     */
+    sendQuery : function() {
+        var query = document.getElementById('query_box').value;
+        srch2lib.sendQuery(query, this.responseHandler);
+    },
+
+    /*
+     * "responseHandler" is called after we get the server response.
      * The "responseText" contains all the results in JSON format. 
      */
     responseHandler : function(responseText) {
@@ -120,11 +129,14 @@ client = {
                 output += "<tr class='result_row'>";
                 var record = results[i].record;
                 var prefix = results[i].matching_prefix;
-                //Find the prefix in the records to highlight it. 
-                output += "<td style='border-bottom:thin dotted'>" + client.addHighlighting(prefix, record.title) + "</td>";
-                output += "<td style='border-bottom:thin dotted '>" + client.addHighlighting(prefix, record.genre) + "</td>";
-                output += "<td style='border-bottom:thin dotted '>" + client.addHighlighting(prefix, record.director) + "</td>";
-                output += "<td style='border-bottom:thin dotted '>" + client.addHighlighting(prefix, record.year) + "</td>";
+                output += "<td style='border-bottom:thin dotted'>" 
+                       + client.addHighlighting(prefix, record.title) + "</td>";
+                output += "<td style='border-bottom:thin dotted '>" 
+                       + client.addHighlighting(prefix, record.genre) + "</td>";
+                output += "<td style='border-bottom:thin dotted '>" 
+                       + client.addHighlighting(prefix, record.director) + "</td>";
+                output += "<td style='border-bottom:thin dotted '>" 
+                       + client.addHighlighting(prefix, record.year) + "</td>";
                 output += "</tr>";
             }
             output += "</table>";
@@ -142,51 +154,35 @@ client = {
             client.log("empty response", "debug");
         }
     },    
-}
 ```
-There are 3 basic steps to send a query to the server and get the results from it.  
 
-1. Initialize the src2lib.  
-For example, set the serverUrl, set enable the 
-debug mode, etc. One way to Initialize the srch2lib is to use a config object which contains 
-the key value pairs of the parameters. The other way is to call the "setter" function 
-such as "setSearchType", "setEnableFuzzySearch" and "setServerUrl". 
-To use the library, the ```serverUrl``` is required.  
+##1.3. Advanced Movie demo
 
-2. Send query.  
-A general way to send query is to call the function 
-"srch2lib.sendQuery(keyword, responseHandler)", the "keyword" is the string keyword to 
-be searched and the "responseHandler" is the function handling the response (JSON Object).  
+This section describes how the [advanced demo](../example-demo/advanced/index.html)
+uses the SRCH2 javascript library.  The following is the user interface:
 
-3. Get response.  
-The response is caught by "responseHandler". User must define their own "responseHandler" 
-function to display or analysis the response.  
+<span><center><img style="float: center" width="100%" src="../images/Srch2-FullDemoFront.png"/></center></span>
 
-For more example, please see the "movie basic demo" and "movie advanced demo" under the <i>example-demo</i> folder. 
-The advanced demo has more features like "sorting", "filter" and "facet".
+Now we explain the different areas and related javascript code.
 
-###1.3. Advanced Movie demo
+###1.3.1. Search box
 
-This section shows how to set the advanced parameters using SRCH2 Javascript library.
-
-Here is the advanced UI for the movie demo:
-
-<span ><center><img style="float: center" width="100%" src="../images/Srch2-FullDemoFront.png" /></center></span>
-
-The screen has the following regions:
-
-####1.3.1. Main search box  
 ```
-//Get the keywords from the "query_box" and send the query to the server.
-var keyword = document.getElementById('query_box').value;
-srch2lib.sendQuery(keyword, this.responseHandler);
+// Get the query from the "query_box" and send it to the server.
+var query = document.getElementById('query_box').value;
+srch2lib.sendQuery(query, this.responseHandler);
 ```
-####1.3.2. Search results.  
-This area will show the search results.
 
-####1.3.3. Sorting option using the "year" field.  
+###1.3.2. Search results
+
+This area shows the search results.
+
+###1.3.3. Sorting option
+
+This area allows the user to set the sorting condition on the "year" field.
+
 ```
-//Get the order value from webpage and set it in the srch2lib.
+// Get the order setting from the page and pass it to srch2lib.
 var orderRadios = document.getElementsByName('sort_filter_order');
 var setSort = false;
 for (var j = 0; j < orderRadios.length; j++) {
@@ -203,15 +199,19 @@ srch2lib.setSortList(['year']);
 srch2lib.setOrderBy(value);
 ```
 
-####1.3.4. Filter option to post-process results, e.g., "year in the interval [2001, 2004]".
+###1.3.4. Filter option
+
+This area allows the user to set a filter option to post-process results, e.g., "year in the
+interval [2001, 2004]".
+
 ```
 /*
- * Get the filter info from webpage, generate a query and set it in the srch2lib.
+ * Get the filter info from the page, generate a query, and pass it to the srch2lib.
  * For the syntax of filter query, please refer to : 
  * http://srch2.com/releases/4.4.2/docs/restful-search/#62-fq-filter-query-parameter
  */
  
- //Get and set the filter value
+// Get and set the filter value
 var filterQuery = "";
 var filterQueryIsthere = 0;
 var fqAssField = document.getElementById('filter_assignment_field').value;
@@ -224,7 +224,7 @@ if (!(fqAssField == "" || fqAssValue == "")) {
     fqAss = fqAssField + ':' + fqAssValue;
 }
 
-//Get and set the filter range field
+// Get and set the filter range field
 var fqRngField = document.getElementById('filter_range_field').value;
 var fqRngStart = document.getElementById('filter_range_start').value;
 var fqRngEnd = document.getElementById('filter_range_end').value;
@@ -235,7 +235,7 @@ if (!(fqRngField == "" || fqRngStart == "" || fqRngEnd == "")) {
 }
 
 
- //Get and set the boolean expressions
+// Get and set the boolean expressions
 var fqComplex = document.getElementById('filter_complex').value;
 var fqCmp = "";
 if (fqComplex != null && fqComplex != "" ) {
@@ -265,7 +265,8 @@ if (filterQueryIsthere == 1) {
     }
 }
 
-//Append more filters if function is called by click facet category event.
+// Append more filters if a function is called when the user
+// clicks the facet category.
 if ("fq" in params) {
     var fqObj = params['fq'];
     var fqStr = fqObj['field'] + ":[ " + fqObj['valueLeft'] + " TO " + fqObj['valueRight'] + " ]";
@@ -292,160 +293,235 @@ if ("fq" in params) {
     }
 }
 
-//Set the filterQuery to srch2lib
+// pass the filterQuery to srch2lib
 srch2lib.setFilterQueryParam(filterQuery);
 ```
-####1.3.5. Facet option on the year field by providing a start year, an end year, and a year gap;
+
+###1.3.5. Facet option
+
+This area allows the user to specify the facet option on the "year"
+field by providing a start year, an end year, and a year gap.
+
 ```
-//Get the facet range values from webpage and set it in the srch2lib.
+// Get the facet range values from webpage and pass it to srch2lib.
 var start = document.getElementById('facet_year_start').value;
 var end = document.getElementById('facet_year_end').value;
 var gap = document.getElementById('facet_year_gap').value;
 srch2lib.setFacetRange("year", start, end, gap);
 ```
 
-####1.3.6. Facet results.
-This area will show the facet results.
+###1.3.6. Facet results
 
-###1.4. SRCH2 Javascript library API
+This area shows the facet results.
+
+##1.4. Library API
+
+This javascript API is based on the server API as described at <a href="http://srch2.com/releases/4.4.2/docs/">here</a>.
+
+###1.4.1. ```init()```:
+
 ```
-//Initialize the SRCH2 library with config object, if no config, the library will use the default config.
-init : function(config)	
+init : function(serverSetting)	
+```
 
-//If debug mode is enabled, log message will be printed in the console.
+It initializes the SRCH2 library with a "serverSetting" object with
+parameters for the SRCH2 server. If this object is not provided, the
+library will use default parameters.
+
+###1.4.2. ```setEnableDebugMode()```:
+
+```
 setEnableDebugMode : function(enableDebugMode)
+```
 
-//Send query with pre-setted parameters and return the response json to the callback function "responseHandler"
-sendQuery : function(keyword, responseHandler)
+The function turns on/off the debug mode for the server.  If it's on,
+log messages will be printed in the console.
 
-//Set Server Url. For example : http://localhost:8087/
+###1.4.3. ```sendQuery()```:
+
+```
+sendQuery : function(query, responseHandler)
+```
+
+It sends a query using the pre-defined parameters in the ```init()```
+function and specifies a callback function "responseHandler" for
+handling the response.
+
+###1.4.4. ```setServerUrl()```:
+
+```
 setServerUrl : function(serverUrl)
+```
 
-/*
- * A field that is labeled as "searchable" or "indexed" can be searched.
- * For example, suppose the data contains two fields, title and year. 
- * To find the records with "star" and "wars" in the "title" field, 
- * we can use the following query:
- *  title:star AND wars
- */
+It sets the URL of the server.
+
+###1.4.5. ```setSearchFields()```:
+
+```
 setSearchFields : function(searchFields)
+```
+It sets the fields in which the keywords have to appear.
+For more information, please visit this
+<a href="http://srch2.com/releases/4.4.2/docs/restful-search/#61-q-main-query-parameter">page</a>.
 
-/*
- * To enable prefix search for each term
- */
+###1.4.5. ```setEnablePrefixSearch()```:
+
+```
 setEnablePrefixSearch : function(isEnablePrefixSearch)
+```
+It turns on/off prefix search for each keyword.  If enabled, each keyword by
+default is treated as a prefix.
 
-/*
- * To enable fuzzy search for each term. Fuzzy similarity can 
- * be set in the second parameter.
- */
+###1.4.6. ```setEnableFuzzySearch()```:
+
+```
 setEnableFuzzySearch : function(isEnableFuzzySearch, fuzzySimilarityThreshold)
+```
 
-/*
- * This parameter is used to specify a filter restricting the set of records returned.
- * For more information, please visit: 
- * http://srch2.com/releases/4.4.2/docs/restful-search/#62-fq-filter-query-parameter
- */
+It turns on/off fuzzy search for each keyword. If it is on, the fuzzy similarity can 
+be set in the second parameter.
+
+###1.4.7. ```setFilterQueryParam()```:
+
+```
 setFilterQueryParam : function(filterQuery)
+```
 
-/*
- * This parameter in a query is used to specify fields or attributes 
- * that the user wants the engine to return for this query.
- * The type of "fieldList" must be list. 
- */
+This parameter is used to specify a filter restricting the set of
+records to be returned.
+For more information, please visit this <a href="http://srch2.com/releases/4.4.2/docs/restful-search/#62-fq-filter-query-parameter">page</a>.
+
+
+###1.4.8. ```setFieldList()```:
+
+```
 setFieldList : function(fieldList)
+```
+This query parameter is used to specify fields the server should
+return for each result.
 
-/*
- * This value is "true", "false" or "only", indicating whether we want to enable faceting. 
- */
+###1.4.9. ```enableFacetParam()```:
+
+```
 enableFacetParam : function(facetType)
+```
+This value can be "true", "false", or "only", indicating whether we want to enable faceting. 
 
-/*
- * This parameter specifies a field to be treated as a categorical facet. 
- * It finds the number of distinct values in the specified field and returns 
- * the number of records that match each value. This parameter can be 
- * specified with multiple value in a list to indicate multiple facet fields.
- * The type of "facetFieldList" must be list. 
- */
+
+###1.4.10. ```setFacetFieldList()```:
+
+```
 setFacetFieldList : function(facetFieldList)
+```
 
-/*
- * This is the maximum number of categories with maximal 
- * frequencies to be returned. All categories are returned 
- * by default. Example: adding the following parameter to 
- * the query will tell the engine to return the top 10 most 
- * popular genres.
- * 
- * f.genre.rows=10
- */
+This parameter specifies a field to be treated as a categorical facet. 
+The server finds the number of distinct values in the specified field and returns 
+the number of records for each value. This parameter can be 
+specified with multiple values in a list to indicate multiple facet fields.
+
+###1.4.11. ```setFacetCategoryRows()```:
+
+```
 setFacetCategoryRows : function(category, rows)
+```
 
-/*
- * This parameter can be used to specify a field that should be treated as a range facet.
- * For detail info, please visit:
- * http://srch2.com/releases/4.4.2/docs/restful-search/#73-facet-by-range
- */
+This function sets the maximum number of categories with maximal 
+frequencies to be returned for a given field.  All categories are returned 
+by default. For example, adding the following condition ```f.genre.rows=10```
+to the query will tell the engine to return the top 10 most 
+popular genres.
+
+
+###1.4.12. ```setFacetRange()```:
+
+```
 setFacetRange : function(category, start, end, gap)
+```
 
-/*
- * The engine offers two different strategies for searching records:
- * topK: The results will be sorted descending by their score. 
- *  This score is calculated for each record. This approach has a 
- *  high performance, but does not support facet and sort operations. 
- * getAll: Use this strategy if facets and sort query parameters are needed.
- */
+These parameters can be used to specify a field that should be treated as a range facet.
+For more information, please visit the <a href="http://srch2.com/releases/4.4.2/docs/restful-search/#73-facet-by-range">page</a>.
+
+
+###1.4.13. ```setSearchType()```:
+
+```
 setSearchType : function(searchType)
+```
 
-/*
- * The engine's default behavior is to sort the results using a 
- * descending order by the overall score of each record. 
- * The user can specify sorting by other fields. For example:
- * sort=director,year,title
- * The type of "categoryList" must be list. 
- */
+The engine supports two different strategies to do search:
+(1) "topK": The results will be sorted in the descending order by their score. 
+This approach has a high performance, but does not support facet and sort operations. 
+(2) "getAll": Use this strategy if facets and sort query parameters are needed.
+
+###1.4.14. ```setSortList()```:
+
+```
 setSortList : function(categoryList)
+```
 
-/*
- * It specifies the order in which the result set should be sorted. 
- * Its default value is "desc" (descending). This order is valid 
- * for all the fields specified in the sort parameter.
- */
+The engine's default behavior is to sort the results using a 
+descending order by the overall score of each record. 
+The user can specify sorting by other fields, e.g., ```sort=director,year,title```.
+
+###1.4.15. ```setOrderBy()```:
+
+```
 setOrderBy : function(orderBy)
+```
 
-/*
- * It is the offset in the complete result set of the query, 
- * where the set of returned records should begin.
- */
+It specifies the order in which the result set should be sorted. 
+Its default value is "desc" (descending). This order is valid
+for all the fields specified in the "sort" parameter.
+
+###1.4.16. ```setStart()```:
+
+```
 setStart : function(start)
+```
 
-/*
- * It indicates the number of records to return from the 
- * complete result set.
- */
+It specifies the offset in the complete result set of the query, 
+ where the set of returned records should begin.
+
+
+###1.4.17. ```setRows()```:
+
+```
 setRows : function(rows)
+```
 
-/*
- * The "Cores" tag set in the configuration file allows the user to 
- * search on multiple "cores" within the same server. A query can 
- * specify a particular core. For instance, the following query:
- * http://localhost:8081/example-core/search?q=term
- * If a user wants to get results from all the cores, the query 
- * should add a prefix "/_all/search" to the request. 
- * For instance, the following query:
- * http://localhost:8081/_all/search?q=martn~
- *
- * For more information, please visit : 
- * http://srch2.com/releases/4.4.2/docs/restful-search/#14-multi-core
- */
+The parameter indicates the number of records to return from the 
+ complete result set.
+
+###1.4.18. ```setSearchCore()```:
+
+```
 setSearchCore : function(coreName)
+```
 
-/*
- * When record-based access control or attribute-based access control is 
- * enabled in the config file, the role-id can be specified using roleId parameter.
- */
+ The "Cores" tag set in the server configuration file allows the user to 
+ search on multiple "cores" within the same server. A query can 
+ specify a particular core. Here is an example query:
+ ```http://localhost:8081/example-core/search?q=term```.
+ If a user wants to get results from all the cores, the query 
+ should add a prefix "/_all/search" to the request, e.g., 
+ ```http://localhost:8081/_all/search?q=martn~```.
+ For more information, please visit the <a href="http://srch2.com/releases/4.4.2/docs/restful-search/#14-multi-core">page</a>.
+
+###1.4.18. ```setRoleId()```:
+
+```
 setRoleId : function(roleId)
+```
 
-//Set all Params to null
+The function specifies the "role" of the user who issues the query.
+This paramter is used for record-based access control or attribute-based access control.
+
+
+###1.4.19. ```clearAllParams()```:
+
+```
 clearAllParams : function()
 ```
+
+This function sets all the parameters to null.
 
