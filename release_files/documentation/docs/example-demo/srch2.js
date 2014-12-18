@@ -362,7 +362,7 @@ srch2 = {
     },
 
     // The function specifies the "role" of the user who issues the
-    // query. This paramter is used for record-based access control or
+    // query. This parameter is used for record-based access control or
     // attribute-based access control. 
     setRoleId : function(roleId){
         if(roleId == null || roleId == ""){
@@ -570,7 +570,7 @@ srch2 = {
             query += "&" + this.facetRangeGapStr;
         } 
 
-        //Apend sort
+        //Append sort
         if(this.sortStr != null && this.sortStr != ""){
             query += "&" + this.sortStr;
         }
@@ -599,7 +599,7 @@ srch2 = {
         return query;
     },
 
-    /* JSONP call with calback function */
+    /* JSONP call with callback function */
     jsonpCallWithCallbackFuntion : function(query, responseHandler){
         var name = "srch2_" + this.jsonpCallbacks.counter++;
 

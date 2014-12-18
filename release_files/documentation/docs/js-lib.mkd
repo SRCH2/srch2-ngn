@@ -22,7 +22,7 @@ steps the frontend follows to communicate with the server using the library.
 
 The first time the movie demo page is loaded, it calls the function
 ```srch2.init()``` to  initialize the library by passing a
-"srch2ServerSetting" object that incldues parameters related to the
+"srch2ServerSetting" object that includes parameters related to the
 server, such as its URL.  It also calls several functions provided the
 library to set parameters used by queries to the server.
 After that, the frontend communicates with the server in the following steps:
@@ -303,7 +303,7 @@ This area allows the user to specify the facet option on the "year"
 field by providing a start year, an end year, and a year gap.
 
 ```
-// Get the facet range values from webpage and pass it to srch2.
+// Get the facet range values from the page and pass it to srch2.
 var start = document.getElementById('facet_year_start').value;
 var end = document.getElementById('facet_year_end').value;
 var gap = document.getElementById('facet_year_gap').value;
@@ -514,7 +514,7 @@ setRoleId : function(roleId)
 ```
 
 The function specifies the "role" of the user who issues the query.
-This paramter is used for record-based access control or attribute-based access control.
+This parameter is used for record-based access control or attribute-based access control.
 
 
 ###1.4.19. ```clearAllParams()```:
