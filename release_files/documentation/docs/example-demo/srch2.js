@@ -240,20 +240,20 @@ srch2 = {
         this.facetRangeCategoryStr = "facet.range=" + encodeURIComponent(category);
 
         if(typeof(start) != undefined && start != ""){
-            this.facetRangeStartStr = "f." + encodeURIComponent(category) + ".start=" + encodeURIComponent(start);
+            this.facetRangeStartStr = "f." + encodeURIComponent(category) + ".facet.start=" + encodeURIComponent(start);
         } else {
             this.facetRangeStartStr = null;
         }
 
         if(typeof(end) != undefined && end != ""){
-            this.facetRangeEndStr = "f." + encodeURIComponent(category) + ".end=" + encodeURIComponent(end);
+            this.facetRangeEndStr = "f." + encodeURIComponent(category) + ".facet.end=" + encodeURIComponent(end);
         } else {
             this.facetRangeEndStr = null;
         }
 
 
         if(typeof(gap) != undefined && gap != ""){
-            this.facetRangeGapStr = "f." + encodeURIComponent(category) + ".gap=" + encodeURIComponent(gap);
+            this.facetRangeGapStr = "f." + encodeURIComponent(category) + ".facet.gap=" + encodeURIComponent(gap);
         } else {
             this.facetRangeGapStr= null;
         }

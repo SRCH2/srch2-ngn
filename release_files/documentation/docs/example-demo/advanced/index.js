@@ -19,7 +19,7 @@ client = {
             debug : true, // true /false
         };        
         this.srch2.init(config);  //Initialize the srch2 with config.
-        _client_this.srch2.setServerUrl("http://localhost:8081/");  
+        _client_this.srch2.setServerUrl("http://localhost:8081/");
         //_client_this.srch2.setServerUrl("http://simpson.calit2.uci.edu/srch2_movies_engine/");  //Server URL also can be set by setServerUrl
         _client_this.srch2.setSearchType("getAll"); //Set the search type to "getAll"
         _client_this.srch2.setEnablePrefixSearch(true); //Enable the prefix search 
@@ -382,36 +382,6 @@ client = {
             fqRng = fqRngField + ':[ ' + fqRngStart + ' TO ' + fqRngEnd + ' ]';
         }
 
-
-         // Get and set the boolean expressions
-        var fqComplex = document.getElementById('filter_complex').value;
-        var fqCmp = "";
-        if (fqComplex != null && fqComplex != "" ) {
-            filterQueryIsthere += 1;
-            fqCmp = "boolexp$" + fqComplex + "$";
-        }
-        var op = "";
-        if (filterQueryIsthere == 1) {
-            filterQuery += fqAss + fqRng + fqCmp;
-        } else if (filterQueryIsthere > 1) {
-
-            var opRadios = document.getElementsByName('filter_op');
-            for (var i = 0; opRadios.length; i++) {
-                if (opRadios[i].checked) {
-                    op = opRadios[i].value;
-                    break;
-                }
-            }
-            if (fqAss == "") {
-                filterQuery += fqRng + " " + op + " " + fqCmp;
-            } else if (fqRng == "") {
-                filterQuery += fqAss + " " + op + " " + fqCmp;
-            } else if (fqCmp == "") {
-                filterQuery += fqAss + " " + op + " " + fqRng;
-            } else {
-                filterQuery += fqAss + " " + op + " " + fqRng + " " + op + " " + fqCmp;
-            }
-        }
 
         // Append more filters if a function is called when the user
         // clicks the facet category.
