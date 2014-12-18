@@ -236,34 +236,23 @@ INDEXWRITE_RETVAL IndexReaderWriter::deleteRoleRecord(const std::string &rolePri
 
 INDEXWRITE_RETVAL IndexReaderWriter::deleteRecord(const std::string &primaryKeyID)
 {
-    pthread_mutex_lock(&lockForWriters);
-
-    INDEXWRITE_RETVAL returnValue = this->index->_deleteRecord(primaryKeyID);
-    if (returnValue == OP_SUCCESS) {
-    	this->writesCounterForMerge++;
-    	this->needToSaveIndexes = true;
-    	if (this->mergeThreadStarted && writesCounterForMerge >= mergeEveryMWrites) {
-    		pthread_cond_signal(&countThresholdConditionVariable);
-    	}
-    }
-    
-    pthread_mutex_unlock(&lockForWriters);
-    return returnValue;
+	unsigned internalRecordId;
+	return this->deleteRecordGetInternalId(primaryKeyID, internalRecordId);
 }
 
 INDEXWRITE_RETVAL IndexReaderWriter::deleteRecordGetInternalId(const std::string &primaryKeyID, unsigned &internalRecordId)
 {
     pthread_mutex_lock(&lockForWriters);
 
-    INDEXWRITE_RETVAL returnValue = this->index->_deleteRecordGetInternalId(primaryKeyID, internalRecordId);
-    if (returnValue == OP_SUCCESS) {
-    	this->writesCounterForMerge++;
-    	this->needToSaveIndexes = true;
-    	if (this->mergeThreadStarted && writesCounterForMerge >= mergeEveryMWrites){
-    		pthread_cond_signal(&countThresholdConditionVariable);
-    	}
+    // if the trie needs to reassign ids, we need to call merge() first to make sure
+    // those keyword ids are preserving order, since the logic inside
+    // deleteRecord() to find leaf nodes of the keywords in the deleted
+    // record relies on this order.
+    if (this->index->trie->needToReassignKeywordIds()) {
+        this->doMerge();
     }
 
+    INDEXWRITE_RETVAL returnValue = this->index->_deleteRecordGetInternalId(primaryKeyID, internalRecordId);
     pthread_mutex_unlock(&lockForWriters);
     return returnValue;
 }
@@ -541,14 +530,7 @@ void IndexReaderWriter::startMergeThreadLoop()
             break;
         else
         {
-        	// check to see if it's the time to update histogram information
-        	// if so, reset the merge counter for future.
-            bool updateHistogramFlag = shouldUpdateHistogram();
-            if(updateHistogramFlag == true){
-            	this->resetMergeCounterForHistogram();
-            }
-            this->merge(updateHistogramFlag);
-            writesCounterForMerge = 0;
+        	this->doMerge();
             pthread_mutex_unlock(&lockForWriters);
         }
     }
@@ -557,7 +539,17 @@ void IndexReaderWriter::startMergeThreadLoop()
     return;
 }
 
-
+void IndexReaderWriter::doMerge()
+{
+    // check to see if it's the time to update histogram information
+    // if so, reset the merge counter for future.
+    bool updateHistogramFlag = shouldUpdateHistogram();
+    if(updateHistogramFlag == true){
+        this->resetMergeCounterForHistogram();
+    }
+    this->merge(updateHistogramFlag);
+    writesCounterForMerge = 0;
+}
 
 }
 }

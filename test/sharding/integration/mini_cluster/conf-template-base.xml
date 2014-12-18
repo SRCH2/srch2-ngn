@@ -22,10 +22,10 @@
         -->
     <node-name>node-group-201-1</node-name><!-- NODE_NAME_PLACE_HOLDER -->
     <ping>
-        <ping-interval>2</ping-interval><!-- PING_INTERVAL_PLACE_HOLDER -->
+        <ping-interval>5</ping-interval><!-- PING_INTERVAL_PLACE_HOLDER -->
 
-        <ping-timeout>20</ping-timeout><!-- PING_TIMEOUT_PLACE_HOLDER -->
-        <retry-count>3</retry-count><!-- RETRY_COUNT_PLACE_HOLDER -->
+        <ping-timeout>60</ping-timeout><!-- PING_TIMEOUT_PLACE_HOLDER -->
+        <retry-count>5</retry-count><!-- RETRY_COUNT_PLACE_HOLDER -->
     </ping>
     <transport>
         <port>4001</port><!-- TM-PORT_PLACE_HOLDER -->

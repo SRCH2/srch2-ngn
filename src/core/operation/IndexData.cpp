@@ -381,97 +381,8 @@ INDEXWRITE_RETVAL IndexData::_addRecordWithoutLock(const Record *record, Analyze
 // delete a record with a specific id //TODO Give the correct return message for delete pass/fail
 INDEXWRITE_RETVAL IndexData::_deleteRecord(const std::string &externalRecordId)
 {
-
 	unsigned int internalRecordId;
-	bool hasRecord = this->forwardIndex->getInternalRecordIdFromExternalRecordId(externalRecordId, internalRecordId);
-	if(hasRecord){
-		const ForwardList* forwardList = this->forwardIndex->getForwardList_ForCommit(internalRecordId);
-//		this->permissionMap->deleteResourceFromRoles(externalRecordId, forwardList->getAccessList()->getRoles());
-		if (this->schemaInternal->getIndexType()
-						== srch2::instantsearch::LocationIndex) {
-			StoredRecordBuffer buffer = forwardList->getInMemoryData();
-
-			Schema * storedSchema = Schema::create();
-			srch2::util::RecordSerializerUtil::populateStoredSchema(storedSchema, this->getSchema());
-			srch2::util::RecordSerializer compactRecDeserializer = srch2::util::RecordSerializer(*storedSchema);
-#if 0
-			if(record->hasRoleIds()){
-				this->permissionMap->appendResourceToRoles(record->getPrimaryKey(), *(record->getRoleIds()));
-			}
-#endif
-
-			// get the name of the attributes
-			const string* nameOfLatitudeAttribute = this->getSchema()->getNameOfLatituteAttribute();
-			const string* nameOfLongitudeAttribute = this->getSchema()->getNameOfLongitudeAttribute();
-
-			unsigned idLat = storedSchema->getRefiningAttributeId(*nameOfLatitudeAttribute);
-			unsigned latOffset = compactRecDeserializer.getRefiningOffset(idLat);
-
-			unsigned idLong = storedSchema->getRefiningAttributeId(*nameOfLongitudeAttribute);
-			unsigned longOffset = compactRecDeserializer.getRefiningOffset(idLong);
-			Point point;
-			point.x = *((float *)(buffer.start.get() + latOffset));
-			point.y = *((float *)(buffer.start.get() + longOffset));
-			this->quadTree->remove_ThreadSafe(point, internalRecordId);
-		}
-	}
-
-    INDEXWRITE_RETVAL success = this->forwardIndex->deleteRecord(externalRecordId)  ? OP_SUCCESS: OP_FAIL;
-
-
-	if (success == OP_SUCCESS) {
-		ForwardList * fwdList = this->forwardIndex->getForwardList_ForCommit(internalRecordId);
-		if (fwdList) {
-            // Before calling function getKeywordCorrespondingPathToTrieNode_WriteView, if
-            // there are keywords whose ids need to be assigned, we need to call
-            // reassignKeywordIds() to make sure the ids of the trie lead nodes
-            // are ordered properly. This order can make sure the function
-            // getKeywordCorrespondingPathToTrieNode_WriteView() works properly.
-            if (this->trie->needToReassignKeywordIds()) {
-                // reassign id is not thread safe so we need to grab an exclusive lock
-                // NOTE : all index structure commits are happened before reassign id phase. Only QuadTree is left
-                //        because we need new ids in quadTree commit phase.
-                boost::unique_lock<boost::shared_mutex> lock(globalRwMutexForReadersWriters);
-                this->reassignKeywordIds();
-                lock.unlock();
-            }
-//
-//            // iterate through the keyword ids
-			unsigned keywordsCount = fwdList->getNumberOfKeywords();
-			const unsigned * listofKeywordIds = fwdList->getKeywordIds();
-			// Loop over the keyword-ids for the current forward list and get
-			// the inverted-list-ids from the trie.
-			TrieNodePath trieNodePath;
-			trieNodePath.path = new vector<TrieNode *>();
-			vector<unsigned> invertedListIdsToMerge;
-			for (unsigned i = 0; i < keywordsCount; ++i) {
-				unsigned keywordId = *(listofKeywordIds + i);
-				// get the TrieNode path of the current keyword in write view based on its id.
-				this->trie->getKeywordCorrespondingPathToTrieNode_WriteView(keywordId, &trieNodePath);
-				if (trieNodePath.path->size() == 0) {
-					// should not happen.
-					ASSERT(false);
-					continue;
-				}
-				TrieNode * leafNode = trieNodePath.path->back();
-				if(leafNode && leafNode->isTerminalNode()) {
-					invertedListIdsToMerge.push_back(leafNode->invertedListOffset);
-				} else {
-					// should not happen.
-					ASSERT(false);
-				}
-				trieNodePath.path->clear();
-			}
-			delete trieNodePath.path;
-			this->invertedIndex->appendInvertedListIdsForMerge(invertedListIdsToMerge);
-		}
-
-		this->mergeRequired = true; // need to tell the merge thread to merge
-		this->writeCounter->decDocsCounter();
-		this->writeCounter->incWritesCounter();
-	}
-
-    return success;
+	return this->_deleteRecordGetInternalId(externalRecordId, internalRecordId);
 }
 
 // delete a record with a specific id //TODO Give the correct return message for delete pass/fail
@@ -508,6 +419,37 @@ INDEXWRITE_RETVAL IndexData::_deleteRecordGetInternalId(const std::string &exter
     INDEXWRITE_RETVAL success = this->forwardIndex->deleteRecordGetInternalId(externalRecordId, internalRecordId)  ? OP_SUCCESS: OP_FAIL;
 
     if (success == OP_SUCCESS) {
+        ForwardList * fwdList = this->forwardIndex->getForwardList_ForCommit(internalRecordId);
+        if (fwdList) {
+            // iterate through the keyword ids
+            unsigned keywordsCount = fwdList->getNumberOfKeywords();
+            const unsigned * listofKeywordIds = fwdList->getKeywordIds();
+            // Loop over the keyword-ids for the current forward list and get
+            // the inverted-list-ids from the trie.
+            TrieNodePath trieNodePath;
+            trieNodePath.path = new vector<TrieNode *>();
+            vector<unsigned> invertedListIdsToMerge;
+            for (unsigned i = 0; i < keywordsCount; ++i) {
+                unsigned keywordId = *(listofKeywordIds + i);
+                // get the TrieNode path of the current keyword in write view based on its id.
+                this->trie->getKeywordCorrespondingPathToTrieNode_WriteView(keywordId, &trieNodePath);
+                if (trieNodePath.path->size() == 0) {
+                    // should not happen.
+                    ASSERT(false);
+                    continue;
+                }
+                TrieNode * leafNode = trieNodePath.path->back();
+                if(leafNode && leafNode->isTerminalNode()) {
+                    invertedListIdsToMerge.push_back(leafNode->invertedListOffset);
+                } else {
+                    // should not happen.
+                    ASSERT(false);
+                }
+                trieNodePath.path->clear();
+            }
+            delete trieNodePath.path;
+            this->invertedIndex->appendInvertedListIdsForMerge(invertedListIdsToMerge);
+        }
         this->mergeRequired = true; // need to tell the merge thread to merge
         this->writeCounter->decDocsCounter();
         this->writeCounter->incWritesCounter();
