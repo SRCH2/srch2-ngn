@@ -152,41 +152,51 @@ The above delete command modifies the access control map in the engine as shown 
 
 ##7. Adding feedback for search results
 
-The API <code>feedback</code> allows users to add feedback for a query. 
+The SRCH2 engine has a unique, powerful feature to dynamically
+boost the ranking of records based on user feedback.  Please refer 
+to [feedback configuration](../configuration/#15-user-feedback-optional) and
+[feedback ranking](../ranking/#4-feedback-based-ranking)
+for details.
 
-
-For example, for a query 
+The <code>feedback</code> API allows users to add a feedback for a
+query. For example, consider the following query:
 
 ```
  curl -i "http://server:port/search?q=trip"
 ```
 
-The query feedback can be added to the engine as shown below.
-
+If the user selects a record with id "5" as the answer, the client
+can send a feedback (possibly using javascript) to the engine by
+sending the following request:
 
 ```
  curl "http://server:port/feedback" -X PUT -d  '{ query = "trip" , recordId = "5"}' 
 ```
 
-Multiple feedbacks can also be submitted for a same query as shown below.
+The client can also send multiple feedbacks to the server in a single
+request.  The following is an example:
 
 ```
  curl "http://server:port/feedback" -X PUT -d  '[{ query = "trip" , recordId = "5"}, { query = "trip" , recordId = "7"}]' 
 ```
 
-<b>Note:</b> The query field in a feedback control's JSON data should be exactly same as the text in the search query (including the operators).
+It sends to the server two feedbacks, with records "5" and "7" for the same query
+"trip".  This API can be used to reduce the number of interactions
+between the client and the server, when multiple feedback tuples are
+stored on the client and sent to the server in a batch.
 
-
-For example, feedback for a multi-word query with boolean operator AND
+Notice that the query field in a feedback control's JSON data should
+be exactly the same as the text in the search query (including the
+operators), since the engine uses this query field as a key to find
+queries to boost records. For example, consider the
+following multi-word query with the "AND" boolean operator:
 
 ```
  curl -i "http://server:port/search?q=trip%20AND%20advisor"
 ```
 
-should be added as shown below.
-
+In the example, "%20" is the URL encoding for the white space.
+A feedback for this query should have exactly the same query field, e.g.:
 ```
  curl "http://server:port/feedback" -X PUT -d  '{ query = "trip%20AND%20advisor", recordId = "5"}' 
 ```
-
-<b>Note:</b> <code>%20</code> is url encoding for <code>whitespace</code>.
