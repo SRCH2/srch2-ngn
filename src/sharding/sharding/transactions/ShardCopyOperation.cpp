@@ -10,7 +10,7 @@
 #include "sharding/migration/MigrationManager.h"
 #include "../state_machine/node_iterators/ConcurrentNotifOperation.h"
 #include "../state_machine/StateMachine.h"
-
+#include "../metadata_manager/DataShardInitializer.h"
 
 namespace srch2is = srch2::instantsearch;
 using namespace srch2is;
@@ -147,7 +147,7 @@ void ShardCopyOperation::consume(const ShardMigrationStatus & status){
         	}
         	EmptyShardBuilder emptyShard(new ClusterShardId(unassignedShardId), indexDirectory);
         	emptyShard.prepare(false);
-        	physicalShard(emptyShard.getShardServer(), emptyShard.getIndexDirectory(), "");
+        	physicalShard = LocalPhysicalShard(emptyShard.getShardServer(), emptyShard.getIndexDirectory(), "");
 
 
             if(physicalShard.server->__debugShardingInfo != NULL){
