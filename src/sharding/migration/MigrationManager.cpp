@@ -682,19 +682,31 @@ void MigrationManager::notifySHMAndCleanup(string sessionKey, MIGRATION_STATUS m
 	sessionLock.unlock();
 	shardManager->resolveMMNotification(migrationStatus);
 }
+void * MigrationManager::testThread(void * args ){
+	ShardMigrationStatus * status = (ShardMigrationStatus *)args;
 
+	shardManager->resolveMMNotification(*status);
+	return NULL;
+}
 void MigrationManager::migrateShard(const ClusterShardId& currentShardId ,
 		const boost::shared_ptr<Srch2Server>& shardPtr,
 		const ClusterShardId& destShardId, const NodeOperationId & currentAddress,
 		const NodeOperationId & requesterAddress) {
 
 	Logger::console("Migrating shard %s to node %d", currentShardId.toString().c_str(), requesterAddress.nodeId);
-
 	ShardMigrationStatus status;
 	populateStatus(status, currentAddress.operationId, requesterAddress.operationId,
 			currentAddress.nodeId, requesterAddress.nodeId, shardPtr,
 			MM_STATUS_SUCCESS);
-	shardManager->resolveMMNotification(status);
+	pthread_t localThread;
+    if (pthread_create(&localThread, NULL, testThread , &status) != 0){
+        // Logger::console("Cannot create thread for handling local message");
+        perror("Cannot create thread for handling local message");
+        Logger::sharding(Logger::Error, "SHM| Cannot create thread for handling local message");
+        return ;
+    }
+    pthread_detach(localThread);
+
 	return;
 //	/*
 //	 *  Initialize the migration session info
