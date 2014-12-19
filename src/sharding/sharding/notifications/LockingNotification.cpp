@@ -186,7 +186,7 @@ void * LockingNotification::serializeBody(void * buffer) const{
 }
 unsigned LockingNotification::getNumberOfBytesBody() const{
 	unsigned numberOfBytes = 0 ;
-	numberOfBytes += srch2::util::getNumberOfBytesFixedTypes(lockRequestType);
+	numberOfBytes += srch2::util::getNumberOfBytesFixedTypes((uint32_t)lockRequestType);
 	numberOfBytes += srch2::util::getNumberOfBytesFixedTypes(blocking);
 	numberOfBytes += srch2::util::getNumberOfBytesFixedTypes(releaseRequestFlag);
 	switch(lockRequestType){
@@ -224,7 +224,9 @@ unsigned LockingNotification::getNumberOfBytesBody() const{
 	return numberOfBytes;
 }
 void * LockingNotification::deserializeBody(void * buffer){
-	buffer = srch2::util::deserializeFixedTypes(buffer, lockRequestType);
+	uint32_t intVar = 0;
+	buffer = srch2::util::deserializeFixedTypes(buffer, intVar);
+	lockRequestType = (LockRequestType)intVar;
 	buffer = srch2::util::deserializeFixedTypes(buffer, blocking);
 	buffer = srch2::util::deserializeFixedTypes(buffer, releaseRequestFlag);
 	switch(lockRequestType){
@@ -242,7 +244,7 @@ void * LockingNotification::deserializeBody(void * buffer){
 	{
 		buffer = newNodeOpId.deserialize(buffer);
 		buffer = srch2::util::deserializeVectorOfFixedTypes(buffer, listOfOlderNodes);
-		uint32_t intVar;
+		uint32_t intVar = 0;
 		buffer = srch2::util::deserializeFixedTypes(buffer, intVar);
 		metadataLockLevel = (LockLevel)intVar;
 		break;
@@ -256,7 +258,7 @@ void * LockingNotification::deserializeBody(void * buffer){
 	{
 		buffer = generalPurposeShardId.deserialize(buffer);
 		buffer = generalPurposeAgent.deserialize(buffer);
-		uint32_t intVar;
+		uint32_t intVar = 0;
 		buffer = srch2::util::deserializeFixedTypes(buffer, intVar);
 		generalPurposeLockLevel = (LockLevel)intVar;
 		break;
@@ -265,8 +267,8 @@ void * LockingNotification::deserializeBody(void * buffer){
 	{
 		buffer = srch2::util::deserializeVectorOfDynamicTypes(buffer, shardIdList);
 		buffer = shardIdListLockHolder.deserialize(buffer);
-		uint32_t intVar;
-		buffer = srch2::util::deserializeFixedTypes(buffer, shardIdListLockLevel);
+		uint32_t intVar = 0;
+		buffer = srch2::util::deserializeFixedTypes(buffer, intVar);
 		shardIdListLockLevel = (LockLevel)intVar;
 		break;
 	}

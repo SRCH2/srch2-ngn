@@ -134,12 +134,12 @@ public:
 	   memcpy(this->getMessageBody(), src, *this->_getBodySize());
    }
    ShardingMessageType getType(){
-	   uint32_t intVar = *((uint32_t *)_getShardingMessageType());
+	   uint32_t intVar = *_getShardingMessageType();
 	   return (ShardingMessageType)intVar;
    }
    void setType(ShardingMessageType type){
-	   ShardingMessageType * typeRef = _getShardingMessageType();
-	   *typeRef = type;
+	   uint32_t * typeRef = (uint32_t *)_getShardingMessageType();
+	   *typeRef = (uint32_t)type;
    }
    void setBodySize(unsigned bodySize){
 	   unsigned int * bodySizeRef = _getBodySize();
@@ -172,13 +172,13 @@ public:
    }
 
    string getDescription(){
-	   return string(getShardingMessageTypeStr(*_getShardingMessageType()));
+	   return string(getShardingMessageTypeStr((ShardingMessageType)*_getShardingMessageType()));
    }
 
 
 private:
-   inline ShardingMessageType * _getShardingMessageType(){
-	   return (ShardingMessageType *)(headerData + _getShardingMessageTypeOffset());
+   inline uint32_t * _getShardingMessageType(){
+	   return (uint32_t *)(headerData + _getShardingMessageTypeOffset());
    }
    inline unsigned _getShardingMessageTypeOffset(){
 	   return 0;

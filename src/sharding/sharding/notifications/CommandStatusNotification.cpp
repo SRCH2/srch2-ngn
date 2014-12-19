@@ -122,9 +122,9 @@ void * CommandStatusNotification::deserializeBody(void* buffer){
 	uint32_t intVar;
     buffer = srch2::util::deserializeFixedTypes(buffer, intVar);
     commandCode = (ShardCommandCode)intVar;
-    unsigned vectorSize = 0;
+    uint32_t vectorSize = 0;
     buffer = srch2::util::deserializeFixedTypes(buffer, vectorSize);
-    for(unsigned shardIdx = 0; shardIdx < vectorSize ; ++shardIdx){
+    for(uint32_t shardIdx = 0; shardIdx < vectorSize ; ++shardIdx){
     	ShardStatus * newShardResult = ShardStatus::deserialize(buffer);
     	buffer = (void*)((char*)buffer +  newShardResult->getNumberOfBytes());
     	shardResults.push_back(newShardResult);
