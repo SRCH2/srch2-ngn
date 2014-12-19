@@ -685,7 +685,7 @@ void MigrationManager::notifySHMAndCleanup(string sessionKey, MIGRATION_STATUS m
 void * MigrationManager::testThread(void * args ){
 	ShardMigrationStatus * status = (ShardMigrationStatus *)args;
 
-	shardManager->resolveMMNotification(*status);
+	ShardManager::getShardManager()->resolveMMNotification(*status);
 	return NULL;
 }
 void MigrationManager::migrateShard(const ClusterShardId& currentShardId ,
