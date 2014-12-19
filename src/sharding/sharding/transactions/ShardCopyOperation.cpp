@@ -128,14 +128,27 @@ void ShardCopyOperation::consume(const ShardMigrationStatus & status){
             this->successFlag = false;
             release();
         }else if(status.status == MM_STATUS_SUCCESS){
+//        	const Cluster_Writeview * writeview = ((WriteviewTransaction *)(this->getTransaction().get()))->getWriteview();
+//            string indexDirectory = ShardManager::getShardManager()->getConfigManager()->getShardDir(writeview->clusterName,
+//                    writeview->cores.at(unassignedShardId.coreId)->getName(), &unassignedShardId);
+//            if(indexDirectory.compare("") == 0){
+//                indexDirectory = ShardManager::getShardManager()->getConfigManager()->createShardDir(writeview->clusterName,
+//                        writeview->cores.at(unassignedShardId.coreId)->getName(), &unassignedShardId);
+//            }
+//            physicalShard = LocalPhysicalShard(status.shard, indexDirectory, "");
+
+
         	const Cluster_Writeview * writeview = ((WriteviewTransaction *)(this->getTransaction().get()))->getWriteview();
-            string indexDirectory = ShardManager::getShardManager()->getConfigManager()->getShardDir(writeview->clusterName,
-                    writeview->cores.at(unassignedShardId.coreId)->getName(), &unassignedShardId);
-            if(indexDirectory.compare("") == 0){
-                indexDirectory = ShardManager::getShardManager()->getConfigManager()->createShardDir(writeview->clusterName,
-                        writeview->cores.at(unassignedShardId.coreId)->getName(), &unassignedShardId);
-            }
-            physicalShard = LocalPhysicalShard(status.shard, indexDirectory, "");
+        	string indexDirectory = ShardManager::getShardManager()->getConfigManager()->getShardDir(writeview->clusterName,
+        			writeview->cores.at(unassignedShardId.coreId)->getName(), &unassignedShardId);
+        	if(indexDirectory.compare("") == 0){
+        		indexDirectory = ShardManager::getShardManager()->getConfigManager()->createShardDir(writeview->clusterName,
+        				writeview->cores.at(unassignedShardId.coreId)->getName(), &unassignedShardId);
+        	}
+        	EmptyShardBuilder emptyShard(new ClusterShardId(unassignedShardId), indexDirectory);
+        	emptyShard.prepare(false);
+        	physicalShard(emptyShard.getShardServer(), emptyShard.getIndexDirectory(), "");
+
 
             if(physicalShard.server->__debugShardingInfo != NULL){
             	physicalShard.server->__debugShardingInfo->shardName = unassignedShardId.toString();

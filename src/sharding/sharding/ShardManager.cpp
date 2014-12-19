@@ -718,10 +718,10 @@ void * ShardManager::periodicWork(void *args) {
 		ShardManager::getShardManager()->resolveTimeoutNotification();
 
 		// 2. if we are joined, start load balancing.
-//		if(ShardManager::getShardManager()->isJoined() && ! ShardManager::getShardManager()->isLoadBalancing()){
-//			ShardManager::getShardManager()->setLoadBalancing();
-//			LoadBalancer::runLoadBalancer();
-//		}
+		if(ShardManager::getShardManager()->isJoined() && ! ShardManager::getShardManager()->isLoadBalancing()){
+			ShardManager::getShardManager()->setLoadBalancing();
+			LoadBalancer::runLoadBalancer();
+		}
 
 		/*
 		 * NOTE : all debug info can now be collected through
