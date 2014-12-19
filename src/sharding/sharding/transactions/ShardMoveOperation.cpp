@@ -10,7 +10,7 @@
 #include "../../configuration/ShardingConstants.h"
 #include "../state_machine/node_iterators/ConcurrentNotifOperation.h"
 #include "../state_machine/StateMachine.h"
-#include "../metadata_manager/DataShardInitializer.h"
+
 
 namespace srch2is = srch2::instantsearch;
 using namespace srch2is;
@@ -113,31 +113,18 @@ void ShardMoveOperation::consume(bool granted){
 void ShardMoveOperation::transfer(){
 	Logger::sharding(Logger::Step, "ShardMove(opid=%s, mv {%s in %s} to self )| Starting transfer", currentOpId.toString().c_str(),
 			shardId.toString().c_str(), srcAddress.toString().c_str());
-//	// transfer data by ordering MM
-//	// 1. register this transaction in shard manager to receive MM notification
-//	ShardManager::getShardManager()->registerMMSessionListener(currentOpId.operationId, this);
-//	// 2. send copyToMe notification to the srcNode to start transferring the data
-//	this->moveToMeNotif = SP(MoveToMeNotification)(new MoveToMeNotification(shardId));
-//
-//	// NOTE : this is deallocated by the state machine
-//	ConcurrentNotifOperation * copyer = new ConcurrentNotifOperation(moveToMeNotif,
-//			ShardingMoveToMeACKMessageType, srcAddress.nodeId , this);
-//	copyer->setOperationId(currentOpId.operationId);
-//	this->currentOp = Transfer;
-//	ShardManager::getShardManager()->getStateMachine()->registerOperation(copyer);
+	// transfer data by ordering MM
+	// 1. register this transaction in shard manager to receive MM notification
+	ShardManager::getShardManager()->registerMMSessionListener(currentOpId.operationId, this);
+	// 2. send copyToMe notification to the srcNode to start transferring the data
+	this->moveToMeNotif = SP(MoveToMeNotification)(new MoveToMeNotification(shardId));
 
-	const Cluster_Writeview * writeview = ((WriteviewTransaction *)(this->getTransaction().get()))->getWriteview();
-	string indexDirectory = ShardManager::getShardManager()->getConfigManager()->getShardDir(writeview->clusterName,
-			writeview->cores.at(shardId.coreId)->getName(), &shardId);
-	if(indexDirectory.compare("") == 0){
-		indexDirectory = ShardManager::getShardManager()->getConfigManager()->createShardDir(writeview->clusterName,
-				writeview->cores.at(shardId.coreId)->getName(), &shardId);
-	}
-	EmptyShardBuilder emptyShard(new ClusterShardId(shardId), indexDirectory);
-	emptyShard.prepare(false);
-	physicalShard = LocalPhysicalShard(emptyShard.getShardServer(), emptyShard.getIndexDirectory(), "");
-
-	commit();
+	// NOTE : this is deallocated by the state machine
+	ConcurrentNotifOperation * copyer = new ConcurrentNotifOperation(moveToMeNotif,
+			ShardingMoveToMeACKMessageType, srcAddress.nodeId , this);
+	copyer->setOperationId(currentOpId.operationId);
+	this->currentOp = Transfer;
+	ShardManager::getShardManager()->getStateMachine()->registerOperation(copyer);
 }
 
 
