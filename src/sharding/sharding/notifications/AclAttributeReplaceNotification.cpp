@@ -45,7 +45,7 @@ void * AclAttributeReplaceNotification::serializeBody(void * buffer) const{
 unsigned AclAttributeReplaceNotification::getNumberOfBytesBody() const{
 	unsigned numberOfBytes = 0;
 	numberOfBytes += srch2::util::getNumberOfBytesVectorOfString(attributes);
-	numberOfBytes += sizeof(coreId);
+	numberOfBytes += srch2::util::getNumberOfBytesFixedTypes(coreId);
 	return numberOfBytes;
 }
 void * AclAttributeReplaceNotification::deserializeBody(void * buffer) {

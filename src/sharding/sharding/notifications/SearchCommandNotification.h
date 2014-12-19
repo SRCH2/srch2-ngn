@@ -50,7 +50,7 @@ public:
     LogicalPlan * getLogicalPlan() const;
     void setSchema(const Schema * schema);
 private:
-    unsigned coreId ;
+    uint32_t coreId ;
     srch2::instantsearch::LogicalPlan * logicalPlan;
     NodeTargetShardInfo target;
 	boost::shared_ptr<const ClusterResourceMetadata_Readview> clusterReadview;

@@ -43,7 +43,7 @@ void * AclAttributeReadNotification::serializeBody(void * buffer) const{
 unsigned AclAttributeReadNotification::getNumberOfBytesBody() const{
 	unsigned numberOfBytes = 0;
 	numberOfBytes += target.getNumberOfBytes();
-	numberOfBytes += (sizeof(unsigned) +roleId.size());
+	numberOfBytes += srch2::util::getNumberOfBytesString(roleId);
 	return numberOfBytes;
 }
 

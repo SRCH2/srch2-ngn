@@ -158,20 +158,21 @@ unsigned RecordWriteOpHandle::getNumberOfBytes(const WriteNotificationMode mode)
 		{
 			// only transferring primary keys
 			string primaryKey = this->getPrimaryKey();
-			numberOfBytes += sizeof(unsigned) + primaryKey.size();
+			numberOfBytes += srch2::util::getNumberOfBytesString(primaryKey);
 			break;
 		}
 		case WriteNotificationModePerformWrite:
 		{
-			numberOfBytes += sizeof(bool);
+			bool boolVar;
+			numberOfBytes += srch2::util::getNumberOfBytesFixedTypes(boolVar);
 			if(this->record == NULL){
-				numberOfBytes += sizeof(bool);
+				numberOfBytes += srch2::util::getNumberOfBytesFixedTypes(boolVar);
 				if(recordAclCommandFlag){
 					// acl record
 					// serialize the roleIds
 					numberOfBytes += srch2::util::getNumberOfBytesVectorOfString(roleIds);
 				}else{
-					numberOfBytes += sizeof(unsigned) + this->primaryKey.size();
+					numberOfBytes += srch2::util::getNumberOfBytesString(this->primaryKey);
 				}
 			}else{
 				numberOfBytes += this->record->getNumberOfBytesSize();
@@ -220,7 +221,7 @@ void * Write2PCNotification::serializeBody(void * buffer) const{
 	buffer = srch2::util::serializeFixedTypes(commandType, buffer);
 	buffer = targets.serialize(buffer);
 	buffer = srch2::util::serializeFixedTypes(mode, buffer);
-	buffer = srch2::util::serializeFixedTypes((unsigned)(recordHandles.size()), buffer);
+	buffer = srch2::util::serializeFixedTypes((uint32_t)(recordHandles.size()), buffer);
 	for(unsigned i = 0 ; i < recordHandles.size(); ++i){
 		buffer = recordHandles.at(i)->serialize(buffer, mode);
 	}
@@ -228,22 +229,26 @@ void * Write2PCNotification::serializeBody(void * buffer) const{
 }
 unsigned Write2PCNotification::getNumberOfBytesBody() const{
 	unsigned numberOfBytes = 0;
-	numberOfBytes += sizeof(commandType);
+	numberOfBytes += srch2::util::getNumberOfBytesFixedTypes((uint32_t)commandType);
 	numberOfBytes += targets.getNumberOfBytes();
-	numberOfBytes += sizeof(mode);
-	numberOfBytes += sizeof(unsigned);
+	numberOfBytes += srch2::util::getNumberOfBytesFixedTypes((uint32_t)mode);
+	uint32_t intVar;
+	numberOfBytes += srch2::util::getNumberOfBytesFixedTypes(intVar);
 	for(unsigned i = 0 ; i < recordHandles.size(); ++i){
 		numberOfBytes += recordHandles.at(i)->getNumberOfBytes(mode);
 	}
 	return numberOfBytes;
 }
 void * Write2PCNotification::deserializeBody(void * buffer){
-	buffer = srch2::util::deserializeFixedTypes(buffer, commandType);
+	uint32_t intVar;
+	buffer = srch2::util::deserializeFixedTypes(buffer, intVar);
+	commandType = (ClusterRecordOperation_Type)intVar;
 	buffer = targets.deserialize(buffer);
-	buffer = srch2::util::deserializeFixedTypes(buffer, mode);
+	buffer = srch2::util::deserializeFixedTypes(buffer, intVar);
+	mode = (WriteNotificationMode)intVar;
 
 	const Schema * schema = clusterReadview->getCore(targets.getCoreId())->getSchema();
-	unsigned recordHandlesSize = 0;
+	uint32_t recordHandlesSize = 0;
 	buffer = srch2::util::deserializeFixedTypes(buffer, recordHandlesSize);
 	for(unsigned i = 0 ; i < recordHandlesSize; ++i){
 		RecordWriteOpHandle * newHandle = new RecordWriteOpHandle();
@@ -289,17 +294,24 @@ void * Write2PCNotification::ACK::ShardResult::serialize(void * buffer) const{
 	ASSERT(shardId != NULL);
 	buffer = srch2::util::serializeFixedTypes((bool)shardId->isClusterShard(), buffer);
 	buffer = shardId->serialize(buffer);
-	buffer = srch2::util::serializeFixedTypes(statusValue, buffer);
-    buffer = srch2::util::serializeVectorOfFixedTypes(messageCodes, buffer);
+	buffer = srch2::util::serializeFixedTypes((bool)statusValue, buffer);
+	buffer = srch2::util::serializeFixedTypes((uint32_t)messageCodes.size(), buffer);
+	for(uint32_t i=0; i < messageCodes.size() ; ++i){
+		buffer = srch2::util::serializeFixedTypes((uint32_t)messageCodes.at(i), buffer);
+	}
     return buffer;
 }
 unsigned Write2PCNotification::ACK::ShardResult::getNumberOfBytes() const{
 	ASSERT(shardId != NULL);
 	unsigned numberOfBytes = 0;
-	numberOfBytes += sizeof(bool);
+	bool boolVar = false;
+	numberOfBytes += srch2::util::getNumberOfBytesFixedTypes(boolVar);
 	numberOfBytes += shardId->getNumberOfBytes();
-	numberOfBytes += sizeof(statusValue);
-	numberOfBytes += srch2::util::getNumberOfBytesVectorOfFixedTypes(messageCodes);
+	numberOfBytes += srch2::util::getNumberOfBytesFixedTypes(boolVar);
+	JsonMessageCode codeVar;
+	numberOfBytes +=
+			srch2::util::getNumberOfBytesFixedTypes((uint32_t)messageCodes.size()) +
+			srch2::util::getNumberOfBytesFixedTypes((uint32_t)codeVar)*messageCodes.size();
 	return numberOfBytes;
 }
 void * Write2PCNotification::ACK::ShardResult::deserialize(void * buffer){
@@ -312,7 +324,15 @@ void * Write2PCNotification::ACK::ShardResult::deserialize(void * buffer){
 	}
 	buffer = shardId->deserialize(buffer);
 	buffer = srch2::util::deserializeFixedTypes(buffer, statusValue);
-    buffer = srch2::util::deserializeVectorOfFixedTypes(buffer, messageCodes);
+	// first deserialize size of vector
+	uint32_t sizeOfVector = 0;
+	buffer = srch2::util::deserializeFixedTypes(buffer, sizeOfVector);
+	// and deserialize objects one by one
+	for(uint32_t i=0; i < sizeOfVector ; ++i){
+		uint32_t obj;
+		buffer = srch2::util::deserializeFixedTypes(buffer, obj);
+		messageCodes.push_back((JsonMessageCode)obj);
+	}
     return buffer;
 }
 
@@ -337,7 +357,7 @@ bool Write2PCNotification::ACK::resolveNotification(SP(ShardingNotification) _no
 }
 
 void * Write2PCNotification::ACK::serializeBody(void * buffer) const{
-	buffer = srch2::util::serializeFixedTypes((unsigned)primaryKeyShardResults.size() , buffer);
+	buffer = srch2::util::serializeFixedTypes((uint32_t)primaryKeyShardResults.size() , buffer);
 	for(map<string, vector<ShardResult *> >::const_iterator pItr = primaryKeyShardResults.begin();
 			pItr != primaryKeyShardResults.end(); ++pItr){
 		buffer = srch2::util::serializeString(pItr->first, buffer);
@@ -347,16 +367,17 @@ void * Write2PCNotification::ACK::serializeBody(void * buffer) const{
 }
 unsigned Write2PCNotification::ACK::getNumberOfBytesBody() const{
 	unsigned numberOfBytes = 0;
-	numberOfBytes += sizeof(unsigned);
+	uint32_t intVar = 0;
+	numberOfBytes += srch2::util::getNumberOfBytesFixedTypes(intVar);
 	for(map<string, vector<ShardResult *> >::const_iterator pItr = primaryKeyShardResults.begin();
 			pItr != primaryKeyShardResults.end(); ++pItr){
-		numberOfBytes += sizeof(unsigned ) + pItr->first.size();
+		numberOfBytes += srch2::util::getNumberOfBytesString(pItr->first);
 		numberOfBytes += srch2::util::getNumberOfBytesVectorOfDynamicTypePointers(pItr->second);
 	}
 	return numberOfBytes;
 }
 void * Write2PCNotification::ACK::deserializeBody(void * buffer){
-	unsigned sizeOfMap;
+	uint32_t sizeOfMap = 0;
 	buffer = srch2::util::deserializeFixedTypes(buffer, sizeOfMap);
 	for(unsigned i = 0 ; i < sizeOfMap ; i++){
 		string key;

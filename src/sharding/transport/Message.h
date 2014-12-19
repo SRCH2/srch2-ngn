@@ -3,11 +3,12 @@
 
 #include "src/sharding/configuration/ShardingConstants.h"
 #include "src/sharding/configuration/ConfigManager.h"
+#include "src/core/util/SerializationHelper.h"
 
 namespace srch2 {
 namespace httpwrapper {
 
-typedef unsigned int MessageID_t;
+typedef uint32_t MessageID_t;
 
 const int MSG_HEADER_CONST_SIZE = 17;
 
@@ -133,7 +134,8 @@ public:
 	   memcpy(this->getMessageBody(), src, *this->_getBodySize());
    }
    ShardingMessageType getType(){
-	   return *_getShardingMessageType();
+	   uint32_t intVar = *((uint32_t *)_getShardingMessageType());
+	   return (ShardingMessageType)intVar;
    }
    void setType(ShardingMessageType type){
 	   ShardingMessageType * typeRef = _getShardingMessageType();
@@ -185,25 +187,29 @@ private:
 	   return headerData + _getMaskOffset();
    }
    inline unsigned _getMaskOffset(){
-	   return _getShardingMessageTypeOffset() + sizeof(ShardingMessageType);
+	   uint32_t intVar;
+	   return _getShardingMessageTypeOffset() +
+			   srch2::util::getNumberOfBytesFixedTypes(intVar);
    }
-   inline unsigned * _getBodySize(){
+   inline uint32_t * _getBodySize(){
 	   return (unsigned *)(headerData + _getBodySizeOffset());
    }
    inline unsigned _getBodySizeOffset(){
 	   return _getMaskOffset() + sizeof(char);
    }
-   inline unsigned * _getMessageId(){
+   inline uint32_t * _getMessageId(){
 	   return (MessageID_t *)(headerData + _getMessageIdOffset());
    }
    inline unsigned _getMessageIdOffset(){
-	   return _getBodySizeOffset() + sizeof(unsigned);
+	   uint32_t intVar;
+	   return _getBodySizeOffset() + srch2::util::getNumberOfBytesFixedTypes(intVar);
    }
-   inline unsigned * _getReqMessageId(){
+   inline uint32_t * _getReqMessageId(){
 	   return (MessageID_t *)(headerData + _getReqMessageIdOffset());
    }
    inline unsigned _getReqMessageIdOffset(){
-	   return _getMessageIdOffset() + sizeof(MessageID_t);
+	   uint32_t intVar;
+	   return _getMessageIdOffset() + srch2::util::getNumberOfBytesFixedTypes(intVar);
    }
    // 4 + 1 + 4 + 4 + 4 = 17 = MSG_CONST_SIZE
    // because different architectures can have different alignments

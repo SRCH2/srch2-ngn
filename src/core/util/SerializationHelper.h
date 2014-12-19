@@ -4,15 +4,91 @@
 #include<string.h>
 #include <map>
 
+#include <inttypes.h>
+
+
 namespace srch2is = srch2::instantsearch;
 using namespace std;
 
 namespace srch2 {
 namespace util {
+#define pack754_32(f) (pack754((f), 32, 8))
+#define pack754_64(f) (pack754((f), 64, 11))
+#define unpack754_32(i) (unpack754((i), 32, 8))
+#define unpack754_64(i) (unpack754((i), 64, 11))
+
+inline uint64_t pack754(long double f, unsigned bits, unsigned expbits)
+{
+	long double fnorm;
+	int shift;
+	long long sign, exp, significand;
+	unsigned significandbits = bits - expbits - 1; // -1 for sign bit
+
+	if (f == 0.0) return 0; // get this special case out of the way
+
+	// check sign and begin normalization
+	if (f < 0) { sign = 1; fnorm = -f; }
+	else { sign = 0; fnorm = f; }
+
+	// get the normalized form of f and track the exponent
+	shift = 0;
+	while(fnorm >= 2.0) { fnorm /= 2.0; shift++; }
+	while(fnorm < 1.0) { fnorm *= 2.0; shift--; }
+	fnorm = fnorm - 1.0;
+
+	// calculate the binary form (non-float) of the significand data
+	significand = fnorm * ((1LL<<significandbits) + 0.5f);
+
+	// get the biased exponent
+	exp = shift + ((1<<(expbits-1)) - 1); // shift + bias
+
+	// return the final answer
+	return (sign<<(bits-1)) | (exp<<(bits-expbits-1)) | significand;
+}
+
+inline long double unpack754(uint64_t i, unsigned bits, unsigned expbits)
+{
+	long double result;
+	long long shift;
+	unsigned bias;
+	unsigned significandbits = bits - expbits - 1; // -1 for sign bit
+
+	if (i == 0) return 0.0;
+
+	// pull the significand
+	result = (i&((1LL<<significandbits)-1)); // mask
+	result /= (1LL<<significandbits); // convert back to float
+	result += 1.0f; // add the one back on
+
+	// deal with the exponent
+	bias = (1<<(expbits-1)) - 1;
+	shift = ((i>>significandbits)&((1LL<<expbits)-1)) - bias;
+	while(shift > 0) { result *= 2.0; shift--; }
+	while(shift < 0) { result /= 2.0; shift++; }
+
+	// sign it
+	result *= (i>>(bits-1))&1? -1.0: 1.0;
+
+	return result;
+}
 
 template<class FixedType>
 inline void * serializeFixedTypes(const FixedType & obj, void * buffer){
 	memcpy(buffer, (char *)(&obj), sizeof(obj));
+	return ((char *)buffer) + sizeof(obj);
+}
+
+inline void * serializeFixedTypes(const double & obj, void * buffer){
+	uint64_t packed;
+	packed = pack754_64(obj);
+	memcpy(buffer, (char *)(&obj), sizeof(packed));
+	return ((char *)buffer) + sizeof(obj);
+}
+
+inline void * serializeFixedTypes(const float & obj, void * buffer){
+	uint32_t packed;
+	packed = pack754_32(obj);
+	memcpy(buffer, (char *)(&obj), sizeof(packed));
 	return ((char *)buffer) + sizeof(obj);
 }
 
@@ -21,6 +97,34 @@ inline void * deserializeFixedTypes(void * buffer, FixedType & obj){
 	obj = *((FixedType *)(buffer));
 	return ((char *)buffer) + sizeof(FixedType);
 }
+
+inline void * derializeFixedTypes(void * buffer, double & obj){
+	uint64_t unpacked;
+	unpacked = *((uint64_t *)(buffer));
+	obj = pack754_64(unpacked);
+	return ((char *)buffer) + sizeof(uint64_t);
+}
+
+inline void * derializeFixedTypes(void * buffer, float & obj){
+	uint32_t unpacked;
+	unpacked = *((uint32_t *)(buffer));
+	obj = pack754_32(unpacked);
+	return ((char *)buffer) + sizeof(uint32_t);
+}
+
+template<class FixedType>
+inline size_t getNumberOfBytesFixedTypes(const FixedType & obj){
+	return sizeof(FixedType);
+}
+
+inline size_t getNumberOfBytesFixedTypes(const double & obj){
+	return sizeof(uint64_t);
+}
+
+inline size_t getNumberOfBytesFixedTypes(const float & obj){
+	return sizeof(uint32_t);
+}
+
 
 #ifdef ANDROID
 // This is template specialization of double. On android devices, dereferencing double pointer
@@ -34,7 +138,7 @@ inline void * deserializeFixedTypes<double>(void * buffer, double & obj){
 
 inline void * serializeString(const string & msg, void * buffer){
 	// first serialize size
-	unsigned msgSize = msg.size();
+	uint32_t msgSize = msg.size();
 	buffer = serializeFixedTypes(msgSize, buffer);
 	// now serialize the body
 	memcpy(buffer, msg.c_str() , msgSize);
@@ -43,8 +147,9 @@ inline void * serializeString(const string & msg, void * buffer){
 
 inline void * deserializeString(void * buffer, string & msg){
 	// first deserialize size
-	unsigned msgSize = *((unsigned *)buffer);
-	buffer = ((char *)buffer) + sizeof(unsigned);
+	uint32_t msgSize = *((uint32_t *)buffer);
+	uint32_t intVar;
+	buffer = ((char *)buffer) + getNumberOfBytesFixedTypes(intVar);
 	// now deserialize body
 	char * msgBody = new char[msgSize];
 	memcpy(msgBody , buffer, msgSize);
@@ -53,13 +158,18 @@ inline void * deserializeString(void * buffer, string & msg){
 	return ((char *)buffer) + msgSize;
 }
 
+inline size_t getNumberOfBytesString(const string & obj){
+	return sizeof(uint32_t) + obj.size();
+}
+
+
 template<class FixedType>
 inline void * serializeVectorOfFixedTypes(const vector<FixedType> & vectorObj, void * buffer){
 
 	// first store the size
-	buffer = serializeFixedTypes(unsigned(vectorObj.size()) , buffer);
+	buffer = serializeFixedTypes(uint32_t(vectorObj.size()) , buffer);
 	// and then store the elements
-	for(unsigned objIndex = 0 ; objIndex < vectorObj.size() ; objIndex ++){
+	for(uint32_t objIndex = 0 ; objIndex < vectorObj.size() ; objIndex ++){
 		buffer = serializeFixedTypes(vectorObj.at(objIndex), buffer);
 	}
 
@@ -70,10 +180,10 @@ template<class FixedType>
 inline void * deserializeVectorOfFixedTypes(void * buffer, vector<FixedType> & objVector){
 
 	// first deserialize size of vector
-	unsigned sizeOfVector = 0;
+	uint32_t sizeOfVector = 0;
 	buffer = deserializeFixedTypes(buffer, sizeOfVector);
 	// and deserialize objects one by one
-	for(unsigned i=0; i < sizeOfVector ; ++i){
+	for(uint32_t i=0; i < sizeOfVector ; ++i){
 		FixedType obj;
 		buffer = deserializeFixedTypes(buffer, obj);
 		objVector.push_back(obj);
@@ -84,10 +194,10 @@ inline void * deserializeVectorOfFixedTypes(void * buffer, vector<FixedType> & o
 
 inline void * serializeVectorOfString(const vector<string> & msgVector, void * buffer){
 	// first serialize size
-	unsigned vectorSize = msgVector.size();
+	uint32_t vectorSize = msgVector.size();
 	buffer = serializeFixedTypes(vectorSize, buffer);
 	//now serialize elements
-	for(unsigned msgIndex = 0; msgIndex < vectorSize; msgIndex++){
+	for(uint32_t msgIndex = 0; msgIndex < vectorSize; msgIndex++){
 		buffer = serializeString(msgVector.at(msgIndex), buffer);
 	}
 
@@ -97,10 +207,10 @@ inline void * serializeVectorOfString(const vector<string> & msgVector, void * b
 
 inline void * deserializeVectorOfString(void * buffer, vector<string> & msgVector){
 	// first deserialize size
-	unsigned vectorSize = 0;
+	uint32_t vectorSize = 0;
 	buffer = deserializeFixedTypes(buffer, vectorSize);
 	// now deserialize elements
-	for(unsigned msgIndex = 0; msgIndex < vectorSize; msgIndex++){
+	for(uint32_t msgIndex = 0; msgIndex < vectorSize; msgIndex++){
 		string msg;
 		buffer = deserializeString(buffer, msg);
 		msgVector.push_back(msg);
@@ -109,10 +219,11 @@ inline void * deserializeVectorOfString(void * buffer, vector<string> & msgVecto
 }
 
 template<class FixedType>
-inline unsigned getNumberOfBytesVectorOfFixedTypes(const vector<FixedType> & vectorObj){
-	unsigned numberOfBytes = 0;
-	numberOfBytes += sizeof(unsigned); // size of vector
-	numberOfBytes += sizeof(FixedType)*vectorObj.size(); // size of elements
+inline uint32_t getNumberOfBytesVectorOfFixedTypes(const vector<FixedType> & vectorObj){
+	uint32_t numberOfBytes = 0;
+	numberOfBytes += getNumberOfBytesFixedTypes(numberOfBytes); // size of vector
+	FixedType a;
+	numberOfBytes += getNumberOfBytesFixedTypes(a)*vectorObj.size(); // size of elements
 	return numberOfBytes;
 }
 
@@ -120,9 +231,9 @@ template<class DynamicType>
 inline void * serializeVectorOfDynamicTypes(const vector<DynamicType> & vectorObj, void * buffer){
 
 	// first store the size
-	buffer = serializeFixedTypes(unsigned(vectorObj.size()) , buffer);
+	buffer = serializeFixedTypes(uint32_t(vectorObj.size()) , buffer);
 	// and then store the elements
-	for(unsigned objIndex = 0 ; objIndex < vectorObj.size() ; objIndex ++){
+	for(uint32_t objIndex = 0 ; objIndex < vectorObj.size() ; objIndex ++){
 		buffer = vectorObj.at(objIndex).serialize(buffer);
 	}
 
@@ -133,10 +244,10 @@ template<class DynamicType>
 inline void * deserializeVectorOfDynamicTypes(void * buffer, vector<DynamicType> & objVector){
 
 	// first deserialize size of vector
-	unsigned sizeOfVector = 0;
+	uint32_t sizeOfVector = 0;
 	buffer = deserializeFixedTypes(buffer, sizeOfVector);
 	// and deserialize objects one by one
-	for(unsigned i=0; i < sizeOfVector ; ++i){
+	for(uint32_t i=0; i < sizeOfVector ; ++i){
 		DynamicType obj;
 		buffer = obj.deserialize(buffer);
 		objVector.push_back(obj);
@@ -146,10 +257,10 @@ inline void * deserializeVectorOfDynamicTypes(void * buffer, vector<DynamicType>
 }
 
 template<class DynamicType>
-inline unsigned getNumberOfBytesVectorOfDynamicTypes(const vector<DynamicType> & vectorObj){
-	unsigned numberOfBytes = 0;
-	numberOfBytes += sizeof(unsigned); // size of vector
-	for(unsigned i = 0 ; i < vectorObj.size() ; ++i){
+inline uint32_t getNumberOfBytesVectorOfDynamicTypes(const vector<DynamicType> & vectorObj){
+	uint32_t numberOfBytes = 0;
+	numberOfBytes += getNumberOfBytesFixedTypes(numberOfBytes); // size of vector
+	for(uint32_t i = 0 ; i < vectorObj.size() ; ++i){
 		numberOfBytes += vectorObj.at(i).getNumberOfBytes();
 	}
 	return numberOfBytes;
@@ -159,7 +270,7 @@ inline unsigned getNumberOfBytesVectorOfDynamicTypes(const vector<DynamicType> &
 
 template<class DynamicType, class FixedType>
 inline void * serializeMapDynamicToFixed(const map<DynamicType, FixedType> & mapObj, void * buffer){
-	buffer = serializeFixedTypes((unsigned)(mapObj.size()), buffer);
+	buffer = serializeFixedTypes((uint32_t)(mapObj.size()), buffer);
 	for(typename map<DynamicType, FixedType>::const_iterator itr = mapObj.begin();
 			itr != mapObj.end(); ++itr){
 		buffer = itr->first.serialize(buffer);
@@ -170,9 +281,9 @@ inline void * serializeMapDynamicToFixed(const map<DynamicType, FixedType> & map
 
 template<class DynamicType, class FixedType>
 inline void * deserializeMapDynamicToFixed(void * buffer, map<DynamicType, FixedType> & mapObj){
-	unsigned sizeTemp;
+	uint32_t sizeTemp;
 	buffer = deserializeFixedTypes(buffer, sizeTemp);
-	for(unsigned i = 0 ; i < sizeTemp ; ++i){
+	for(uint32_t i = 0 ; i < sizeTemp ; ++i){
 		DynamicType key;
 		FixedType value;
 		buffer = key.deserialize(buffer);
@@ -183,13 +294,14 @@ inline void * deserializeMapDynamicToFixed(void * buffer, map<DynamicType, Fixed
 }
 
 template<class DynamicType, class FixedType>
-inline unsigned getNumberOfBytesMapDynamicToFixed(const map<DynamicType, FixedType> & mapObj){
-	unsigned numberOfBytes = 0;
-	numberOfBytes += sizeof(unsigned);
+inline uint32_t getNumberOfBytesMapDynamicToFixed(const map<DynamicType, FixedType> & mapObj){
+	uint32_t numberOfBytes = 0;
+	numberOfBytes += getNumberOfBytesFixedTypes(numberOfBytes);
 	for(typename map<DynamicType, FixedType>::const_iterator itr = mapObj.begin();
 			itr != mapObj.end(); ++itr){
 		numberOfBytes += itr->first.getNumberOfBytes();
-		numberOfBytes += sizeof(FixedType);
+		FixedType a;
+		numberOfBytes += getNumberOfBytesFixedTypes(a);
 	}
 	return numberOfBytes;
 }
@@ -197,7 +309,7 @@ inline unsigned getNumberOfBytesMapDynamicToFixed(const map<DynamicType, FixedTy
 
 template<class DynamicType, class DynamicType2>
 inline void * serializeMapDynamicToDynamic(const map<DynamicType, DynamicType2> & mapObj, void * buffer){
-	buffer = serializeFixedTypes((unsigned)(mapObj.size()), buffer);
+	buffer = serializeFixedTypes((uint32_t)(mapObj.size()), buffer);
 	for(typename map<DynamicType, DynamicType2>::const_iterator itr = mapObj.begin();
 			itr != mapObj.end(); ++itr){
 		buffer = itr->first.serialize(buffer);
@@ -208,9 +320,9 @@ inline void * serializeMapDynamicToDynamic(const map<DynamicType, DynamicType2> 
 
 template<class DynamicType, class DynamicType2>
 inline void * deserializeMapDynamicToDynamic(void * buffer, map<DynamicType, DynamicType2> & mapObj){
-	unsigned sizeTemp;
+	uint32_t sizeTemp;
 	buffer = deserializeFixedTypes(buffer, sizeTemp);
-	for(unsigned i = 0 ; i < sizeTemp ; ++i){
+	for(uint32_t i = 0 ; i < sizeTemp ; ++i){
 		DynamicType key;
 		DynamicType2 value;
 		buffer = key.deserialize(buffer);
@@ -221,9 +333,9 @@ inline void * deserializeMapDynamicToDynamic(void * buffer, map<DynamicType, Dyn
 }
 
 template<class DynamicType, class DynamicType2>
-inline unsigned getNumberOfBytesMapDynamicToDynamic(const map<DynamicType, DynamicType2> & mapObj){
-	unsigned numberOfBytes = 0;
-	numberOfBytes += sizeof(unsigned);
+inline uint32_t getNumberOfBytesMapDynamicToDynamic(const map<DynamicType, DynamicType2> & mapObj){
+	uint32_t numberOfBytes = 0;
+	numberOfBytes += getNumberOfBytesFixedTypes(numberOfBytes);
 	for(typename map<DynamicType, DynamicType2>::const_iterator itr = mapObj.begin();
 			itr != mapObj.end(); ++itr){
 		numberOfBytes += itr->first.getNumberOfBytes();
@@ -236,7 +348,7 @@ inline unsigned getNumberOfBytesMapDynamicToDynamic(const map<DynamicType, Dynam
 
 template<class FixedType, class DynamicType>
 inline void * serializeMapFixedToDynamic(const map<FixedType, DynamicType> & mapObj, void * buffer){
-	buffer = serializeFixedTypes((unsigned)(mapObj.size()), buffer);
+	buffer = serializeFixedTypes((uint32_t)(mapObj.size()), buffer);
 	for(typename map<FixedType, DynamicType>::const_iterator itr = mapObj.begin();
 			itr != mapObj.end(); ++itr){
 		buffer = serializeFixedTypes(itr->first, buffer);
@@ -247,9 +359,9 @@ inline void * serializeMapFixedToDynamic(const map<FixedType, DynamicType> & map
 
 template<class FixedType, class DynamicType>
 inline void * deserializeMapFixedToDynamic(void * buffer, map<FixedType, DynamicType> & mapObj){
-	unsigned sizeTemp;
+	uint32_t sizeTemp;
 	buffer = deserializeFixedTypes(buffer, sizeTemp);
-	for(unsigned i = 0 ; i < sizeTemp ; ++i){
+	for(uint32_t i = 0 ; i < sizeTemp ; ++i){
 		FixedType key;
 		DynamicType value;
 		buffer = deserializeFixedTypes(buffer, key);
@@ -260,12 +372,13 @@ inline void * deserializeMapFixedToDynamic(void * buffer, map<FixedType, Dynamic
 }
 
 template<class FixedType, class DynamicType>
-inline unsigned getNumberOfBytesMapFixedToDynamic(const map<FixedType, DynamicType> & mapObj){
-	unsigned numberOfBytes = 0;
-	numberOfBytes += sizeof(unsigned);
+inline uint32_t getNumberOfBytesMapFixedToDynamic(const map<FixedType, DynamicType> & mapObj){
+	uint32_t numberOfBytes = 0;
+	numberOfBytes += getNumberOfBytesFixedTypes(numberOfBytes);
 	for(typename map<FixedType, DynamicType>::const_iterator itr = mapObj.begin();
 			itr != mapObj.end(); ++itr){
-		numberOfBytes += sizeof(FixedType);
+		FixedType a;
+		numberOfBytes += getNumberOfBytesFixedTypes(a);
 		numberOfBytes += itr->second.getNumberOfBytes();
 	}
 	return numberOfBytes;
@@ -275,7 +388,7 @@ inline unsigned getNumberOfBytesMapFixedToDynamic(const map<FixedType, DynamicTy
 
 template<class FixedType, class FixedType2>
 inline void * serializeMapFixedToFixed(const map<FixedType, FixedType2> & mapObj, void * buffer){
-	buffer = serializeFixedTypes((unsigned)(mapObj.size()), buffer);
+	buffer = serializeFixedTypes((uint32_t)(mapObj.size()), buffer);
 	for(typename map<FixedType, FixedType2>::const_iterator itr = mapObj.begin();
 			itr != mapObj.end(); ++itr){
 		buffer = serializeFixedTypes(itr->first, buffer);
@@ -286,9 +399,9 @@ inline void * serializeMapFixedToFixed(const map<FixedType, FixedType2> & mapObj
 
 template<class FixedType, class FixedType2>
 inline void * deserializeMapFixedToFixed(void * buffer, map<FixedType, FixedType2> & mapObj){
-	unsigned sizeTemp;
+	uint32_t sizeTemp;
 	buffer = deserializeFixedTypes(buffer, sizeTemp);
-	for(unsigned i = 0 ; i < sizeTemp ; ++i){
+	for(uint32_t i = 0 ; i < sizeTemp ; ++i){
 		FixedType key;
 		FixedType2 value;
 		buffer = deserializeFixedTypes(key, buffer);
@@ -299,13 +412,15 @@ inline void * deserializeMapFixedToFixed(void * buffer, map<FixedType, FixedType
 }
 
 template<class FixedType, class FixedType2>
-inline unsigned getNumberOfBytesMapFixedToFixed(const map<FixedType, FixedType2> & mapObj){
-	unsigned numberOfBytes = 0;
-	numberOfBytes += sizeof(unsigned);
+inline uint32_t getNumberOfBytesMapFixedToFixed(const map<FixedType, FixedType2> & mapObj){
+	uint32_t numberOfBytes = 0;
+	numberOfBytes += getNumberOfBytesFixedTypes(numberOfBytes);
 	for(typename map<FixedType, FixedType2>::const_iterator itr = mapObj.begin();
 			itr != mapObj.end(); ++itr){
-		numberOfBytes += sizeof(FixedType);
-		numberOfBytes += sizeof(FixedType2);
+		FixedType a;
+		FixedType2 b;
+		numberOfBytes += getNumberOfBytesFixedTypes(a);
+		numberOfBytes += getNumberOfBytesFixedTypes(b);
 	}
 	return numberOfBytes;
 }
@@ -314,9 +429,9 @@ template<class DynamicType>
 inline void * serializeVectorOfDynamicTypePointers(const vector<DynamicType *> & vectorObj, void * buffer){
 
 	// first store the size
-	buffer = serializeFixedTypes(unsigned(vectorObj.size()) , buffer);
+	buffer = serializeFixedTypes(uint32_t(vectorObj.size()) , buffer);
 	// and then store the elements
-	for(unsigned objIndex = 0 ; objIndex < vectorObj.size() ; objIndex ++){
+	for(uint32_t objIndex = 0 ; objIndex < vectorObj.size() ; objIndex ++){
 		buffer = vectorObj.at(objIndex)->serialize(buffer);
 	}
 
@@ -327,10 +442,10 @@ template<class DynamicType>
 inline void * deserializeVectorOfDynamicTypePointers(void * buffer, vector<DynamicType *> & objVector){
 
 	// first deserialize size of vector
-	unsigned sizeOfVector = 0;
+	uint32_t sizeOfVector = 0;
 	buffer = deserializeFixedTypes(buffer, sizeOfVector);
 	// and deserialize objects one by one
-	for(unsigned i=0; i < sizeOfVector ; ++i){
+	for(uint32_t i=0; i < sizeOfVector ; ++i){
 		DynamicType * obj = new DynamicType();
 		buffer = obj->deserialize(buffer);
 		objVector.push_back(obj);
@@ -340,21 +455,22 @@ inline void * deserializeVectorOfDynamicTypePointers(void * buffer, vector<Dynam
 }
 
 template<class DynamicType>
-inline unsigned getNumberOfBytesVectorOfDynamicTypePointers(const vector<DynamicType *> & vectorObj){
-	unsigned numberOfBytes = 0;
-	numberOfBytes += sizeof(unsigned); // size of vector
-	for(unsigned i = 0 ; i < vectorObj.size() ; ++i){
+inline uint32_t getNumberOfBytesVectorOfDynamicTypePointers(const vector<DynamicType *> & vectorObj){
+	uint32_t numberOfBytes = 0;
+	numberOfBytes += getNumberOfBytesFixedTypes(numberOfBytes); // size of vector
+	for(uint32_t i = 0 ; i < vectorObj.size() ; ++i){
 		numberOfBytes += vectorObj.at(i)->getNumberOfBytes();
 	}
 	return numberOfBytes;
 }
 
 
-inline unsigned getNumberOfBytesVectorOfString(const vector<string> & msgVector){
-	unsigned numberOfBytes = 0;
-	numberOfBytes += sizeof(unsigned); // size of vector
-	for(unsigned msgIndex = 0 ; msgIndex < msgVector.size() ; msgIndex++){
-		numberOfBytes += sizeof(unsigned) + sizeof(char)*msgVector.at(msgIndex).size();
+inline uint32_t getNumberOfBytesVectorOfString(const vector<string> & msgVector){
+	uint32_t numberOfBytes = 0;
+	numberOfBytes += getNumberOfBytesFixedTypes(numberOfBytes); // size of vector
+	for(uint32_t msgIndex = 0 ; msgIndex < msgVector.size() ; msgIndex++){
+		char a;
+		numberOfBytes += getNumberOfBytesString(msgVector.at(msgIndex));
 	}
 	return numberOfBytes;
 }

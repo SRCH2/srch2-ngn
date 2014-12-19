@@ -26,9 +26,9 @@ void* SearchCommandResults::ShardResults::serialize(void * buffer){
 
 unsigned SearchCommandResults::ShardResults::getNumberOfBytes() const{
     unsigned numberOfBytes = 0;
-    numberOfBytes += sizeof(unsigned) + shardIdentifier.size();
+    numberOfBytes += srch2::util::getNumberOfBytesString(shardIdentifier);
     numberOfBytes += queryResults.getNumberOfBytesForSerializationForNetwork();
-    numberOfBytes += sizeof(unsigned);
+    numberOfBytes += srch2::util::getNumberOfBytesFixedTypes(searcherTime);
     return numberOfBytes;
 }
 
@@ -66,7 +66,7 @@ vector<SearchCommandResults::ShardResults *> & SearchCommandResults::getShardRes
 //serializes the object to a byte array and places array into the region
 //allocated by given allocator
 void* SearchCommandResults::serializeBody(void * buffer) const{
-    buffer = srch2::util::serializeFixedTypes((unsigned)shardResults.size(), buffer);
+    buffer = srch2::util::serializeFixedTypes((uint32_t)shardResults.size(), buffer);
     for(unsigned qrIdx = 0; qrIdx < shardResults.size(); ++qrIdx){
     	buffer = shardResults.at(qrIdx)->serialize(buffer);
     }
@@ -75,7 +75,8 @@ void* SearchCommandResults::serializeBody(void * buffer) const{
 
 unsigned SearchCommandResults::getNumberOfBytesBody() const{
     unsigned numberOfBytes = 0;
-    numberOfBytes += sizeof(unsigned);// number of shardresults
+    uint32_t intVar;
+    numberOfBytes += srch2::util::getNumberOfBytesFixedTypes(intVar);// number of shardresults
     for(unsigned qrIdx = 0; qrIdx < shardResults.size(); ++qrIdx){
     	numberOfBytes += shardResults.at(qrIdx)->getNumberOfBytes();
     }

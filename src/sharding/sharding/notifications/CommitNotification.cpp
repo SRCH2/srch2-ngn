@@ -24,19 +24,22 @@ CommitNotification::~CommitNotification(){
 
 void * CommitNotification::serializeBody(void * buffer) const{
 	ASSERT(metadataChange != NULL);
-	buffer = srch2::util::serializeFixedTypes(metadataChange->getType(), buffer);
+	buffer = srch2::util::serializeFixedTypes((uint32_t)metadataChange->getType(), buffer);
 	buffer = metadataChange->serialize(buffer);
 	return buffer;
 }
 unsigned CommitNotification::getNumberOfBytesBody() const{
 	unsigned numberOfBytes = 0;
-	numberOfBytes += sizeof(MetadataChangeType);
+	uint32_t intVar;
+	numberOfBytes += srch2::util::getNumberOfBytesFixedTypes(intVar);
 	numberOfBytes += metadataChange->getNumberOfBytes();
 	return numberOfBytes;
 }
 void * CommitNotification::deserializeBody(void * buffer){
 	MetadataChangeType type;
-	buffer = srch2::util::deserializeFixedTypes(buffer, type);
+	uint32_t intVar;
+	buffer = srch2::util::deserializeFixedTypes(buffer, intVar);
+	type = (MetadataChangeType)intVar;
 	switch (type) {
 		case ShardingChangeTypeNodeAdd:
 			metadataChange = new NodeAddChange();

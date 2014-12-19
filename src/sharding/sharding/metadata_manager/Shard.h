@@ -25,7 +25,7 @@ class Srch2Server;
 
 struct NodeOperationId{
 	NodeId nodeId;
-	unsigned operationId;
+	uint32_t operationId;
 	NodeOperationId();
 	NodeOperationId(const NodeOperationId & id);
 	NodeOperationId & operator=(const NodeOperationId & rhs);
@@ -43,7 +43,7 @@ class ShardId{
 public:
 	ShardId(unsigned coreId);
 	ShardId(const ShardId & copy);
-	unsigned coreId;
+	uint32_t coreId;
 	virtual ~ShardId(){};
 	virtual std::string toString() const = 0;
 	virtual bool isClusterShard() const = 0 ;
@@ -85,9 +85,9 @@ public:
 	ClusterShardId(const ClusterShardId & copy) ;
 	ClusterShardId(unsigned coreId, unsigned partitionId, unsigned replicaId=0) ;
 
-	unsigned partitionId; // ID for a partition, numbered 0, 1, 2, ...
+	uint32_t partitionId; // ID for a partition, numbered 0, 1, 2, ...
 	// ID for a specific primary/replica for a partition; assume #0 is always the primary shard.  For V0, replicaId is always 0
-	unsigned replicaId;
+	uint32_t replicaId;
 
 	bool isPrimaryShard() const;
 	std::string toString() const;
@@ -134,7 +134,7 @@ public:
 	NodeShardId(unsigned coreId, NodeId nodeId, unsigned partitionId);
 
 	NodeId nodeId;
-	unsigned partitionId;
+	uint32_t partitionId;
 
 	std::string toString() const;
 	std::string _toString() const;
@@ -287,7 +287,7 @@ public:
 
 private:
 	NodeId nodeId;
-	unsigned coreId;
+	uint32_t coreId;
 	vector<ClusterShardId> targetClusterShards;
 	vector<NodeShardId> targetNodeShards;
 

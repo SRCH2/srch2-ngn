@@ -164,7 +164,7 @@ void * LockingNotification::serializeBody(void * buffer) const{
 	case LockRequestType_Metadata:
 		buffer = newNodeOpId.serialize(buffer);
 		buffer = srch2::util::serializeVectorOfFixedTypes(listOfOlderNodes, buffer);
-		buffer = srch2::util::serializeFixedTypes(metadataLockLevel, buffer);
+		buffer = srch2::util::serializeFixedTypes((uint32_t)metadataLockLevel, buffer);
 		break;
 	case LockRequestType_PrimaryKey:
 		buffer = srch2::util::serializeVectorOfString(primaryKeys , buffer);
@@ -174,21 +174,21 @@ void * LockingNotification::serializeBody(void * buffer) const{
 	case LockRequestType_GeneralPurpose:
 		buffer = generalPurposeShardId.serialize(buffer);
 		buffer = generalPurposeAgent.serialize(buffer);
-		buffer = srch2::util::serializeFixedTypes(generalPurposeLockLevel, buffer);
+		buffer = srch2::util::serializeFixedTypes((uint32_t)generalPurposeLockLevel, buffer);
 		break;
 	case LockRequestType_ShardIdList:
 		buffer = srch2::util::serializeVectorOfDynamicTypes(shardIdList, buffer);
 		buffer = shardIdListLockHolder.serialize(buffer);
-		buffer = srch2::util::serializeFixedTypes(shardIdListLockLevel, buffer);
+		buffer = srch2::util::serializeFixedTypes((uint32_t)shardIdListLockLevel, buffer);
 		break;
 	}
 	return buffer;
 }
 unsigned LockingNotification::getNumberOfBytesBody() const{
 	unsigned numberOfBytes = 0 ;
-	numberOfBytes += sizeof(lockRequestType);
-	numberOfBytes += sizeof(blocking);
-	numberOfBytes += sizeof(releaseRequestFlag);
+	numberOfBytes += srch2::util::getNumberOfBytesFixedTypes(lockRequestType);
+	numberOfBytes += srch2::util::getNumberOfBytesFixedTypes(blocking);
+	numberOfBytes += srch2::util::getNumberOfBytesFixedTypes(releaseRequestFlag);
 	switch(lockRequestType){
 	case LockRequestType_Copy:
 		numberOfBytes += srcShardId.getNumberOfBytes();
@@ -203,7 +203,7 @@ unsigned LockingNotification::getNumberOfBytesBody() const{
 	case LockRequestType_Metadata:
 		numberOfBytes += newNodeOpId.getNumberOfBytes();
 		numberOfBytes += srch2::util::getNumberOfBytesVectorOfFixedTypes(listOfOlderNodes);
-		numberOfBytes += sizeof(metadataLockLevel);
+		numberOfBytes += srch2::util::getNumberOfBytesFixedTypes((uint32_t)metadataLockLevel);
 		break;
 	case LockRequestType_PrimaryKey:
 		numberOfBytes += srch2::util::getNumberOfBytesVectorOfString(primaryKeys);
@@ -213,12 +213,12 @@ unsigned LockingNotification::getNumberOfBytesBody() const{
 	case LockRequestType_GeneralPurpose:
 		numberOfBytes += generalPurposeShardId.getNumberOfBytes();
 		numberOfBytes += generalPurposeAgent.getNumberOfBytes();
-		numberOfBytes += sizeof(generalPurposeLockLevel);
+		numberOfBytes += srch2::util::getNumberOfBytesFixedTypes((uint32_t)generalPurposeLockLevel);
 		break;
 	case LockRequestType_ShardIdList:
 		numberOfBytes += srch2::util::getNumberOfBytesVectorOfDynamicTypes(shardIdList);
 		numberOfBytes += shardIdListLockHolder.getNumberOfBytes();
-		numberOfBytes += sizeof(shardIdListLockLevel);
+		numberOfBytes += srch2::util::getNumberOfBytesFixedTypes((uint32_t)shardIdListLockLevel);
 		break;
 	}
 	return numberOfBytes;
@@ -239,25 +239,37 @@ void * LockingNotification::deserializeBody(void * buffer){
 		buffer = destMoveAgent.deserialize(buffer);
 		break;
 	case LockRequestType_Metadata:
+	{
 		buffer = newNodeOpId.deserialize(buffer);
 		buffer = srch2::util::deserializeVectorOfFixedTypes(buffer, listOfOlderNodes);
-		buffer = srch2::util::deserializeFixedTypes(buffer, metadataLockLevel);
+		uint32_t intVar;
+		buffer = srch2::util::deserializeFixedTypes(buffer, intVar);
+		metadataLockLevel = (LockLevel)intVar;
 		break;
+	}
 	case LockRequestType_PrimaryKey:
 		buffer = srch2::util::deserializeVectorOfString( buffer, primaryKeys);
 		buffer = writerAgent.deserialize(buffer);
 		buffer = pid.deserialize(buffer);
 		break;
 	case LockRequestType_GeneralPurpose:
+	{
 		buffer = generalPurposeShardId.deserialize(buffer);
 		buffer = generalPurposeAgent.deserialize(buffer);
-		buffer = srch2::util::deserializeFixedTypes(buffer, generalPurposeLockLevel);
+		uint32_t intVar;
+		buffer = srch2::util::deserializeFixedTypes(buffer, intVar);
+		generalPurposeLockLevel = (LockLevel)intVar;
 		break;
+	}
 	case LockRequestType_ShardIdList:
+	{
 		buffer = srch2::util::deserializeVectorOfDynamicTypes(buffer, shardIdList);
 		buffer = shardIdListLockHolder.deserialize(buffer);
+		uint32_t intVar;
 		buffer = srch2::util::deserializeFixedTypes(buffer, shardIdListLockLevel);
+		shardIdListLockLevel = (LockLevel)intVar;
 		break;
+	}
 	}
 	return buffer;
 }
@@ -491,8 +503,8 @@ void * LockingNotification::ACK::serializeBody(void * buffer) const{
 }
 unsigned LockingNotification::ACK::getNumberOfBytesBody() const{
 	unsigned numberOfBytes = 0;
-	numberOfBytes += sizeof(granted);
-	numberOfBytes += sizeof(indexOfLastGrantedItem);
+	numberOfBytes += srch2::util::getNumberOfBytesFixedTypes(granted);
+	numberOfBytes += srch2::util::getNumberOfBytesFixedTypes(indexOfLastGrantedItem);
 	return numberOfBytes;
 }
 void * LockingNotification::ACK::deserializeBody(void * buffer){

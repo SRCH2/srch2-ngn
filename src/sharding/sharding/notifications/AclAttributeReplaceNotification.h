@@ -35,7 +35,7 @@ public:
 	boost::shared_ptr<const ClusterResourceMetadata_Readview> getReadview() const;
 private:
 	vector<string> attributes;
-	unsigned coreId; // the coreId the attribute core
+	uint32_t coreId; // the coreId the attribute core
 	boost::shared_ptr<const ClusterResourceMetadata_Readview> clusterReadview;
 
 

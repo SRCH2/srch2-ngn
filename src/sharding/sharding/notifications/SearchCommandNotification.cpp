@@ -56,8 +56,9 @@ void* SearchCommand::serializeBody(void * buffer) const{
 
 unsigned SearchCommand::getNumberOfBytesBody() const{
     unsigned numberOfBytes = 0;
-    numberOfBytes += sizeof(coreId);
-    numberOfBytes += sizeof(bool); // NULL or Not NULL
+    numberOfBytes += srch2::util::getNumberOfBytesFixedTypes(coreId);
+    bool boolVar;
+    numberOfBytes += srch2::util::getNumberOfBytesFixedTypes(boolVar); // NULL or Not NULL
     if(logicalPlan != NULL){
 		numberOfBytes += logicalPlan->getNumberOfBytesForSerializationForNetwork();
     }

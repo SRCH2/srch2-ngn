@@ -89,8 +89,8 @@ struct NodeShard_Writeview{
 	unsigned getNumberOfBytes() const{
 		unsigned numberOfBytes= 0 ;
 		numberOfBytes += id.getNumberOfBytes();
-		numberOfBytes += sizeof(isLocal);
-		numberOfBytes += sizeof(load);
+		numberOfBytes += srch2::util::getNumberOfBytesFixedTypes(isLocal);;
+		numberOfBytes += srch2::util::getNumberOfBytesFixedTypes(load);;
 		return numberOfBytes;
 	}
 	void * deserialize(void * buffer){
@@ -205,7 +205,7 @@ class Cluster_Writeview{
 public:
 	string clusterName;
 	NodeId currentNodeId;
-	unsigned versionId;
+	uint32_t versionId;
 
 	// Contains an entry for each one of those cluster shards that exist on this node
 	// with server information.
@@ -215,11 +215,11 @@ public:
 	// Server information for those independent shards that are on the current node
 	// NodeShardId{currentNodeId, coreId, int-partitionId} => server information
 	// internal partition id
-	map<unsigned,  LocalPhysicalShard > localNodeDataShards;
+	map<uint32_t,  LocalPhysicalShard > localNodeDataShards;
 
 
 	//////////////////// Runtime information which should be serialized /////////////////////////
-	map<unsigned, CoreInfo_t *> cores;
+	map<uint32_t, CoreInfo_t *> cores;
 
 	Cluster_Writeview(unsigned versionId, string clusterName, vector<CoreInfo_t *> cores);
 	Cluster_Writeview(const Cluster_Writeview & copy);
@@ -283,7 +283,7 @@ public:
 private:
 	unsigned clusterShardsCursor;
 	vector<ClusterShard_Writeview *> clusterShards;
-	map<ClusterShardId, unsigned> clusterShardIdIndexes;
+	map<ClusterShardId, uint32_t> clusterShardIdIndexes;
 	vector<NodeShard_Writeview *> nodeShards;
 
 	map<NodeId, std::pair<ShardingNodeState, Node *> > nodes;

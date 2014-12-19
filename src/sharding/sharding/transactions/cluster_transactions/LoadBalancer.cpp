@@ -103,7 +103,7 @@ void LoadBalancer::end_(map<NodeOperationId, SP(ShardingNotification) > & replie
 	}
 
     Logger::sharding(Logger::Step, "LoadBalancer| Load information : %s", ss.str().c_str());
-//	balance();
+	balance();
 }
 
 // decides on shard copy or shard movements

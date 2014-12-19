@@ -40,8 +40,8 @@ void * NodeOperationId::serialize(void * buffer) const{
 }
 unsigned NodeOperationId::getNumberOfBytes() const{
 	unsigned numberOfBytes = 0 ;
-	numberOfBytes += sizeof(nodeId);
-	numberOfBytes += sizeof(operationId);
+	numberOfBytes += srch2::util::getNumberOfBytesFixedTypes(nodeId);
+	numberOfBytes += srch2::util::getNumberOfBytesFixedTypes(operationId);
 	return numberOfBytes;
 }
 void * NodeOperationId::deserialize(void * buffer){
@@ -100,11 +100,11 @@ void * ShardMigrationStatus::serialize(void * buffer) const{
 }
 unsigned ShardMigrationStatus::getNumberOfBytes() const{
     unsigned numberOfBytes = 0;
-    numberOfBytes += sizeof(unsigned);
-    numberOfBytes += sizeof(unsigned);
-    numberOfBytes += sizeof(NodeId);
-    numberOfBytes += sizeof(NodeId);
-    numberOfBytes += sizeof(MIGRATION_STATUS);
+    numberOfBytes += srch2::util::getNumberOfBytesFixedTypes(srcOperationId);
+    numberOfBytes += srch2::util::getNumberOfBytesFixedTypes(dstOperationId);
+    numberOfBytes += srch2::util::getNumberOfBytesFixedTypes(sourceNodeId);
+    numberOfBytes += srch2::util::getNumberOfBytesFixedTypes(destinationNodeId);
+    numberOfBytes += srch2::util::getNumberOfBytesFixedTypes((uint32_t)status);
     return numberOfBytes;
 }
 void * ShardMigrationStatus::deserialize(void * buffer) {
@@ -112,7 +112,9 @@ void * ShardMigrationStatus::deserialize(void * buffer) {
     buffer = srch2::util::deserializeFixedTypes(buffer, dstOperationId);
     buffer = srch2::util::deserializeFixedTypes(buffer, sourceNodeId);
     buffer = srch2::util::deserializeFixedTypes(buffer, destinationNodeId);
-    buffer = srch2::util::deserializeFixedTypes(buffer, status);
+    uint32_t intVar;
+    buffer = srch2::util::deserializeFixedTypes(buffer, intVar);
+    status = (MIGRATION_STATUS)intVar;
     return buffer;
 }
 
@@ -267,7 +269,7 @@ unsigned ShardingNotification::getNumberOfBytesHeader() const{
 	unsigned numberOfBytes = 0;
 	numberOfBytes += srcOperationId.getNumberOfBytes();
 	numberOfBytes += destOperationId.getNumberOfBytes();
-	numberOfBytes += sizeof(bounced);
+	numberOfBytes += srch2::util::getNumberOfBytesFixedTypes(bounced);
 	return numberOfBytes;
 }
 void * ShardingNotification::deserializeHeader(void * buffer) {

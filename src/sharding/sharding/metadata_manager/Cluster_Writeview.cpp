@@ -57,8 +57,8 @@ void * LocalPhysicalShard::serialize(void * buffer) const{
 }
 unsigned LocalPhysicalShard::getNumberOfBytes() const{
 	unsigned numberOfBytes = 0 ;
-	numberOfBytes += sizeof(unsigned) + indexDirectory.size();
-	numberOfBytes += sizeof(unsigned) + jsonFileCompletePath.size();
+	numberOfBytes += srch2::util::getNumberOfBytesString(indexDirectory);
+	numberOfBytes += srch2::util::getNumberOfBytesString(jsonFileCompletePath);
 	return numberOfBytes;
 }
 void * LocalPhysicalShard::deserialize(void * buffer){
@@ -102,15 +102,17 @@ void * ClusterShard_Writeview::serialize(void * buffer) const{
 unsigned ClusterShard_Writeview::getNumberOfBytes() const{
 	unsigned numberOfBytes= 0 ;
 	numberOfBytes += this->id.getNumberOfBytes();
-	numberOfBytes += sizeof(this->state);
-	numberOfBytes += sizeof(this->isLocal);
-	numberOfBytes += sizeof(this->nodeId);
-	numberOfBytes += sizeof(this->load);
+	numberOfBytes += srch2::util::getNumberOfBytesFixedTypes((uint32_t)this->state);
+	numberOfBytes += srch2::util::getNumberOfBytesFixedTypes(this->isLocal);
+	numberOfBytes += srch2::util::getNumberOfBytesFixedTypes(this->nodeId);
+	numberOfBytes += srch2::util::getNumberOfBytesFixedTypes(this->load);
 	return numberOfBytes;
 }
 void * ClusterShard_Writeview::deserialize(void * buffer){
 	buffer = this->id.deserialize(buffer);
-	buffer = srch2::util::deserializeFixedTypes(buffer, this->state);
+	uint32_t intVar;
+	buffer = srch2::util::deserializeFixedTypes(buffer, intVar);
+	this->state = (ShardState)intVar;
 	buffer = srch2::util::deserializeFixedTypes(buffer, this->isLocal);
 	buffer = srch2::util::deserializeFixedTypes(buffer, this->nodeId);
 	buffer = srch2::util::deserializeFixedTypes(buffer, this->load);
@@ -936,9 +938,9 @@ void * Cluster_Writeview::serialize(void * buffer, bool includeLocalInfoFlag) co
 }
 unsigned Cluster_Writeview::getNumberOfBytes(bool includeLocalInfoFlag) const{
 	unsigned numberOfBytes = 0;
-	numberOfBytes += sizeof(unsigned) + clusterName.size();
-	numberOfBytes += sizeof(currentNodeId);
-	numberOfBytes += sizeof(versionId);
+	numberOfBytes += srch2::util::getNumberOfBytesString(clusterName);
+	numberOfBytes += srch2::util::getNumberOfBytesFixedTypes(currentNodeId);
+	numberOfBytes += srch2::util::getNumberOfBytesFixedTypes(versionId);
 	if(includeLocalInfoFlag){
 		numberOfBytes += srch2::util::getNumberOfBytesMapDynamicToDynamic(localClusterDataShards);
 		numberOfBytes += srch2::util::getNumberOfBytesMapFixedToDynamic(localNodeDataShards);

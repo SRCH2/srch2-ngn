@@ -22,7 +22,7 @@ public:
 	    QueryResults queryResults;
 	    QueryResultFactory resultsFactory;
 	    // extra information to be added later
-	    unsigned searcherTime;
+	    uint32_t searcherTime;
 
 
 	    //serializes the object to a byte array and places array into the region

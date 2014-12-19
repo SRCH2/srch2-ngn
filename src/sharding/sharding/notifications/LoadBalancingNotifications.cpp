@@ -87,7 +87,7 @@ void * LoadBalancingReport::serializeBody(void * buffer) const{
 }
 unsigned LoadBalancingReport::getNumberOfBytesBody() const{
 	unsigned numberOfBytes = 0;
-	numberOfBytes += sizeof(double);
+	numberOfBytes += srch2::util::getNumberOfBytesFixedTypes(load);
 	return numberOfBytes;
 }
 void * LoadBalancingReport::deserializeBody(void * buffer){

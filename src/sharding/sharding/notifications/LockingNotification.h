@@ -169,7 +169,7 @@ public:
 
 	private:
 	    bool granted;
-	    int indexOfLastGrantedItem;
+	    int32_t indexOfLastGrantedItem;
 	};
 
 };

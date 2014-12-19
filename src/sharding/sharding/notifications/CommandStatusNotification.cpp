@@ -46,13 +46,14 @@ void* CommandStatusNotification::ShardStatus::serialize(void * buffer) const{
 
 unsigned CommandStatusNotification::ShardStatus::getNumberOfBytes() const{
     unsigned numberOfBytes = 0;
-    numberOfBytes += sizeof(bool);
+    bool boolVar;
+    numberOfBytes += srch2::util::getNumberOfBytesFixedTypes(boolVar);
     if(shardId != NULL){
-		numberOfBytes += sizeof(bool);
+		numberOfBytes += srch2::util::getNumberOfBytesFixedTypes(boolVar);
 		numberOfBytes += shardId->getNumberOfBytes();
     }
     numberOfBytes += srch2::util::getNumberOfBytesVectorOfFixedTypes(statusValues);
-    numberOfBytes += sizeof(unsigned) + global_customized_writer.write(messages).size();
+    numberOfBytes += srch2::util::getNumberOfBytesString(global_customized_writer.write(messages));
     return numberOfBytes;
 }
 
@@ -93,8 +94,8 @@ CommandStatusNotification::CommandStatusNotification(){}
 //serializes the object to a byte array and places array into the region
 //allocated by given allocator
 void* CommandStatusNotification::serializeBody(void * buffer) const{
-    buffer = srch2::util::serializeFixedTypes(commandCode, buffer);
-    buffer = srch2::util::serializeFixedTypes((unsigned)(shardResults.size()), buffer);
+    buffer = srch2::util::serializeFixedTypes((uint32_t)commandCode, buffer);
+    buffer = srch2::util::serializeFixedTypes((uint32_t)(shardResults.size()), buffer);
     for(unsigned shardIdx = 0; shardIdx < shardResults.size() ; ++shardIdx){
     	buffer = shardResults.at(shardIdx)->serialize(buffer);
     }
@@ -103,8 +104,9 @@ void* CommandStatusNotification::serializeBody(void * buffer) const{
 
 unsigned CommandStatusNotification::getNumberOfBytesBody() const{
     unsigned numberOfBytes = 0;
-    numberOfBytes += sizeof(ShardCommandCode);
-    numberOfBytes += sizeof(unsigned);
+    numberOfBytes += srch2::util::getNumberOfBytesFixedTypes((uint32_t)commandCode);
+    uint32_t intVar = 0;
+    numberOfBytes += srch2::util::getNumberOfBytesFixedTypes((uint32_t)intVar);
     for(unsigned shardIdx = 0; shardIdx < shardResults.size() ; ++shardIdx){
     	numberOfBytes += shardResults.at(shardIdx)->getNumberOfBytes();
     }
@@ -117,7 +119,9 @@ void * CommandStatusNotification::deserializeBody(void* buffer){
 		ASSERT(false);
 		return NULL;
 	}
-    buffer = srch2::util::deserializeFixedTypes(buffer, commandCode);
+	uint32_t intVar;
+    buffer = srch2::util::deserializeFixedTypes(buffer, intVar);
+    commandCode = (ShardCommandCode)intVar;
     unsigned vectorSize = 0;
     buffer = srch2::util::deserializeFixedTypes(buffer, vectorSize);
     for(unsigned shardIdx = 0; shardIdx < vectorSize ; ++shardIdx){

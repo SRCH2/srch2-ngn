@@ -64,12 +64,12 @@ void * CommandNotification::serializeBody(void * buffer) const{
 unsigned CommandNotification::getNumberOfBytesBody() const{
 	unsigned numberOfBytes = 0;
 	numberOfBytes += target.getNumberOfBytes();
-	numberOfBytes += sizeof(commandCode);
+	numberOfBytes += srch2::util::getNumberOfBytesFixedTypes((uint32_t)commandCode);
 	if(commandCode == ShardCommandCode_Export){
-		numberOfBytes += sizeof(unsigned) + jsonFilePath.size();
+		numberOfBytes += srch2::util::getNumberOfBytesString(jsonFilePath);
 	}
 	if(commandCode == ShardCommandCode_ResetLogger){
-		numberOfBytes += sizeof(unsigned) + newLogFilePath.size();
+		numberOfBytes += srch2::util::getNumberOfBytesString(newLogFilePath);
 	}
 	return numberOfBytes;
 }
