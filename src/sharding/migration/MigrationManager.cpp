@@ -682,59 +682,41 @@ void MigrationManager::notifySHMAndCleanup(string sessionKey, MIGRATION_STATUS m
 	sessionLock.unlock();
 	shardManager->resolveMMNotification(migrationStatus);
 }
-void * MigrationManager::testThread(void * args ){
-	ShardMigrationStatus * status = (ShardMigrationStatus *)args;
 
-	ShardManager::getShardManager()->resolveMMNotification(*status);
-	return NULL;
-}
 void MigrationManager::migrateShard(const ClusterShardId& currentShardId ,
 		const boost::shared_ptr<Srch2Server>& shardPtr,
 		const ClusterShardId& destShardId, const NodeOperationId & currentAddress,
 		const NodeOperationId & requesterAddress) {
 
 	Logger::console("Migrating shard %s to node %d", currentShardId.toString().c_str(), requesterAddress.nodeId);
-	ShardMigrationStatus status;
-	populateStatus(status, currentAddress.operationId, requesterAddress.operationId,
-			currentAddress.nodeId, requesterAddress.nodeId, shardPtr,
-			MM_STATUS_SUCCESS);
-	pthread_t localThread;
-    if (pthread_create(&localThread, NULL, testThread , &status) != 0){
-        // Logger::console("Cannot create thread for handling local message");
-        perror("Cannot create thread for handling local message");
-        Logger::sharding(Logger::Error, "SHM| Cannot create thread for handling local message");
-        return ;
-    }
-    pthread_detach(localThread);
 
-	return;
-//	/*
-//	 *  Initialize the migration session info
-//	 */
-//	sessionLock.lock();
-//	if (hasActiveSession(currentShardId, requesterAddress.nodeId)) {
-//		sessionLock.unlock();
-//		ShardMigrationStatus status;
-//		populateStatus(status, currentAddress.operationId, requesterAddress.operationId,
-//				currentAddress.nodeId, requesterAddress.nodeId, shardPtr,
-//				MM_STATUS_BUSY);
-//		shardManager->resolveMMNotification(status);
-//		return;
-//	}
-//	string sessionKey = this->initMigrationSession(currentShardId, destShardId,
-//			currentAddress.operationId, requesterAddress.operationId,
-//			currentAddress.nodeId, requesterAddress.nodeId, requesterAddress.nodeId, 0);
-//	migrationSession[sessionKey].status = MM_STATE_INIT_RCVD;
-//	migrationSession[sessionKey].shard = shardPtr;
-//	sessionLock.unlock();
-//
-//	pthread_t senderThread;
-//	MigrationThreadArguments * arg = new MigrationThreadArguments();
-//	arg->mm = this;
-//	arg->shardId = currentShardId;
-//	arg->remotedNode = requesterAddress.nodeId;
-//	pthread_create(&senderThread, NULL, senderThreadEntryPoint, arg);
-//	pthread_detach(senderThread);
+	/*
+	 *  Initialize the migration session info
+	 */
+	sessionLock.lock();
+	if (hasActiveSession(currentShardId, requesterAddress.nodeId)) {
+		sessionLock.unlock();
+		ShardMigrationStatus status;
+		populateStatus(status, currentAddress.operationId, requesterAddress.operationId,
+				currentAddress.nodeId, requesterAddress.nodeId, shardPtr,
+				MM_STATUS_BUSY);
+		shardManager->resolveMMNotification(status);
+		return;
+	}
+	string sessionKey = this->initMigrationSession(currentShardId, destShardId,
+			currentAddress.operationId, requesterAddress.operationId,
+			currentAddress.nodeId, requesterAddress.nodeId, requesterAddress.nodeId, 0);
+	migrationSession[sessionKey].status = MM_STATE_INIT_RCVD;
+	migrationSession[sessionKey].shard = shardPtr;
+	sessionLock.unlock();
+
+	pthread_t senderThread;
+	MigrationThreadArguments * arg = new MigrationThreadArguments();
+	arg->mm = this;
+	arg->shardId = currentShardId;
+	arg->remotedNode = requesterAddress.nodeId;
+	pthread_create(&senderThread, NULL, senderThreadEntryPoint, arg);
+	pthread_detach(senderThread);
 
 }
 void MigrationService::sendShard(ClusterShardId shardId, unsigned destinationNodeId) {

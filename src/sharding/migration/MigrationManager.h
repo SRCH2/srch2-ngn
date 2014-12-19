@@ -144,7 +144,7 @@ public:
 			const boost::shared_ptr<Srch2Server>& shardPtr,
 			const ClusterShardId& destShardId, const NodeOperationId & currentAddress,
 			const NodeOperationId & requesterAddress);
-	static void * testThread(void * );
+
 	MigrationManager(TransportManager *transport, ConfigManager *config);
 
 	~MigrationManager();
