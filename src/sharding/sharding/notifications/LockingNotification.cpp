@@ -147,7 +147,7 @@ bool LockingNotification::resolveNotification(SP(ShardingNotification) _notif){
 }
 
 void * LockingNotification::serializeBody(void * buffer) const{
-	buffer = srch2::util::serializeFixedTypes(lockRequestType, buffer);
+	buffer = srch2::util::serializeFixedTypes((uint32_t)lockRequestType, buffer);
 	buffer = srch2::util::serializeFixedTypes(blocking, buffer);
 	buffer = srch2::util::serializeFixedTypes(releaseRequestFlag, buffer);
 	switch(lockRequestType){
