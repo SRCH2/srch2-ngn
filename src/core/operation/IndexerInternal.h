@@ -260,7 +260,7 @@ private:
     volatile unsigned mergeCounterForUpdatingHistogram;
 
     INDEXWRITE_RETVAL merge(bool updateHistogram);
-
+    void doMerge();
 
 };
 

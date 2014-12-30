@@ -23,6 +23,8 @@
 
     <maxSearchThreads>2</maxSearchThreads>
     
+    <userFeedback maxFeedbackQueries="100" maxFeedbackRecordsPerQuery="20" />
+
     <schema>
        <fields>
           <field name="title" type="text" indexed="true"/>

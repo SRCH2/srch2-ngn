@@ -121,17 +121,17 @@ int main(int argc, char *argv[])
     bool dummy = false;
     shared_ptr<vectorview<ForwardListPtr> > readView;
     forwardIndex->getForwardListDirectory_ReadView(readView);
-    float boost1 = forwardIndex->getForwardList(readView, 0, dummy)->getKeywordRecordStaticScore(0);
-    float boost2 = forwardIndex->getForwardList(readView, 0, dummy)->getKeywordRecordStaticScore(1);
-    float boost3 = forwardIndex->getForwardList(readView, 0, dummy)->getKeywordRecordStaticScore(2);
+    float keywordTfBoostProduct1 = forwardIndex->getForwardList(readView, 0, dummy)->getKeywordTfBoostProduct(0);
+    float keywordTfBoostProduct2 = forwardIndex->getForwardList(readView, 0, dummy)->getKeywordTfBoostProduct(1);
+    float keywordTfBoostProduct3 = forwardIndex->getForwardList(readView, 0, dummy)->getKeywordTfBoostProduct(2);
 
-    ASSERT(approximateFloatEqual(boost1, 1.8));
-    ASSERT(approximateFloatEqual(boost2, 1.2));
-    ASSERT(approximateFloatEqual(boost3, 2));
+    ASSERT(approximateFloatEqual(keywordTfBoostProduct1, 1.8));
+    ASSERT(approximateFloatEqual(keywordTfBoostProduct2, 1.2));
+    ASSERT(approximateFloatEqual(keywordTfBoostProduct3, 2));
 
-    (void)boost1;
-    (void)boost2;
-    (void)boost3;
+    (void)keywordTfBoostProduct1;
+    (void)keywordTfBoostProduct2;
+    (void)keywordTfBoostProduct3;
 
     delete forwardIndex;
     delete trie;

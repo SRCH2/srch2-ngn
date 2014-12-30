@@ -420,6 +420,8 @@ test_case "test query parser split" "python query_parser_split/query_parser_spli
 
 sleep 3
 
+test_case "reassignid-during-delete" " python reassignid-during-delete/reassignid-during-delete.py $SRCH2_ENGINE reassignid-during-delete/stackoverflow-100.json"
+
 test_case "adapter_mysql" "python ./adapter_mysql/adapter_mysql.py $SRCH2_ENGINE \
     ./adapter_sqlite/testCreateIndexes_sql.txt ./adapter_sqlite/testCreateIndexes.txt \
     ./adapter_sqlite/testRunListener_sql.txt ./adapter_sqlite/testRunListener.txt \
