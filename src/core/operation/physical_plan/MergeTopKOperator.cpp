@@ -71,6 +71,11 @@ bool MergeTopKOperator::open(QueryEvaluatorInternal * queryEvaluator, PhysicalPl
 		//2. initialize self
 		for(unsigned i = 0 ; i < mergeTopKCacheEntry->candidatesList.size() ; ++i){
 
+			// make a writeable copy. We should not write directly to cache entry as it may be shared with
+			// other threads.
+			PhysicalPlanRecordItem * localRecordCopyOfCache = queryEvaluator->getPhysicalPlanRecordItemPool()->
+														clone(mergeTopKCacheEntry->candidatesList.at(i));
+
 			if(mergeTopKCacheEntry->children.size() < numberOfChildren){
 				bool valid = true;
 				std::vector<float> runTimeTermRecordScores;
@@ -118,14 +123,16 @@ bool MergeTopKOperator::open(QueryEvaluatorInternal * queryEvaluator, PhysicalPl
 
 				}
 				if(valid == false){
+					delete localRecordCopyOfCache;
 					continue;
 				}
+
 				// set the members
-				mergeTopKCacheEntry->candidatesList.at(i)->setRecordMatchAttributeBitmaps(attributeIdsList);
-				mergeTopKCacheEntry->candidatesList.at(i)->setRecordMatchEditDistances(prefixEditDistances);
-				mergeTopKCacheEntry->candidatesList.at(i)->setRecordMatchingPrefixes(termRecordMatchingKeywords);
-				mergeTopKCacheEntry->candidatesList.at(i)->setPositionIndexOffsets(positionIndexOffsets);
-				mergeTopKCacheEntry->candidatesList.at(i)->setTermTypes(termTypes);
+				localRecordCopyOfCache->setRecordMatchAttributeBitmaps(attributeIdsList);
+				localRecordCopyOfCache->setRecordMatchEditDistances(prefixEditDistances);
+				localRecordCopyOfCache->setRecordMatchingPrefixes(termRecordMatchingKeywords);
+				localRecordCopyOfCache->setPositionIndexOffsets(positionIndexOffsets);
+				localRecordCopyOfCache->setTermTypes(termTypes);
 				// nextRecord->setRecordStaticScore() Should we set static score as well ?
 				float runtimeScore = params.ranker->computeAggregatedRuntimeScoreForAnd( runTimeTermRecordScores);
 				if (this->feedbackRanker) {
@@ -133,12 +140,11 @@ bool MergeTopKOperator::open(QueryEvaluatorInternal * queryEvaluator, PhysicalPl
 							mergeTopKCacheEntry->candidatesList.at(i)->getRecordId());
 					runtimeScore = Ranker::computeFeedbackBoostedScore(runtimeScore, feedbackBoost);
 				}
-				mergeTopKCacheEntry->candidatesList.at(i)->setRecordRuntimeScore(runtimeScore);
+				localRecordCopyOfCache->setRecordRuntimeScore(runtimeScore);
 
 			}
 
-			candidatesList.push_back(queryEvaluator->getPhysicalPlanRecordItemPool()->
-					clone(mergeTopKCacheEntry->candidatesList.at(i)));
+			candidatesList.push_back(localRecordCopyOfCache);
 			fullCandidatesListForCache.push_back(candidatesList.at(candidatesList.size()-1));
 		}
 
