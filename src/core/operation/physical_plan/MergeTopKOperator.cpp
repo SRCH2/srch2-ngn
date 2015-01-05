@@ -123,7 +123,6 @@ bool MergeTopKOperator::open(QueryEvaluatorInternal * queryEvaluator, PhysicalPl
 
 				}
 				if(valid == false){
-					delete localRecordCopyOfCache;
 					continue;
 				}
 
