@@ -27,6 +27,7 @@ void test_feedback_list() {
 	unsigned maxFeedbackInfoCountPerQuery = 5;
 	Indexer * indexer = NULL; // not used in this test.
 	FeedbackIndex userFeedbackIndex(maxFeedbackInfoCountPerQuery, 10, indexer);
+	userFeedbackIndex.finalize();
 
 	/* ----------------------------------------------------------------------------------
 	 *
@@ -302,6 +303,7 @@ void test_query_replacement() {
 	unsigned maxFeedbackQueriesCount = 5;
 	Indexer * indexer = NULL ; // not used in this test.
 	FeedbackIndex userFeedbackIndex(maxFeedbackInfoCountPerQuery, maxFeedbackQueriesCount, indexer);
+	userFeedbackIndex.finalize();
 
 	/* ----------------------------------------------------------------------------------
 	 *
