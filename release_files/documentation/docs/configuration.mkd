@@ -853,10 +853,15 @@ for details.
 
 We can use the following setting in the configuration file to enable feedback ranking:
 ```
-<userFeedback maxFeedbackRecordsPerQuery = "20"/>
+<userFeedback maxFeedbackQueries = "30"  maxFeedbackRecordsPerQuery = "20" />
 ```
 
-The "maxFeedbackRecordsPerQuery" value specifies the maximal number of
+The ```maxFeedbackRecordsPerQuery``` value specifies the maximal number of
 unique records that the engine stores per query as feedbacks.  If the number
 of feedback records grows more than this parameter, then the engine will discard
 the oldest feedback record.
+
+The ```maxFeedbackQueries``` value specifies the maximal number of
+queries that the engine stores at any give time.  If the number
+of feedback queries grows more than this parameter, then the engine will discard
+the oldest query.

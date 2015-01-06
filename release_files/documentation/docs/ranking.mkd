@@ -174,11 +174,10 @@ The engine uses the following formula to calculate the boost factor for the reco
 
 where:
 
- - &Delta;T =  1  &frasl; (1 + (T<sub>Q</sub> - T<sub>f</sub><sup>R<sub>i</sub></sup>));
- - T<sub>Q</sub>: arrival time of the current query <i>Q</i> (in minutes);
- - T<sub>f</sub><sup>R<sub>i</sub></sup>: the most recent time (in
-   minutes) when R<sub>i</sub> was submitted as a feedback for the query <i>Q</i>;
- - F<sub>Q</sub><sup>R<sub>i</sub></sup>: sqrt(number of times R<sub>i</sub> is selected for query <i>Q</i>).
+ - &Delta;T =  1 - ((T<sub>Q</sub> - T<sub>f</sub><sup>R<sub>i</sub></sup>) / K)<sup>2</sup>;
+ - T<sub>Q</sub> : arrival time of the current query <i>Q</i>;
+ - T<sub>f</sub><sup>R<sub>i</sub></sup> : the most recent time when R<sub>i</sub> was submitted as a feedback for the query <i>Q</i>;
+ - F<sub>Q</sub><sup>R<sub>i</sub></sup> : sqrt(number of times R<sub>i</sub> is selected for query <i>Q</i>).
 
 The final score of the record R<sub>i</sub> will be its original score
 multiplied by this boost factor.  Based on the formula, the more times R<sub>i</sub> is selected for
