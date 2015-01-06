@@ -1,0 +1,156 @@
+2014-12-12 18:03:16 SHARDING-DETAIL	P26742/T2672 || 	NodeAggregator(opid=(0,32))| Done.
+2014-12-12 18:03:16 SHARDING-STEP	P26742/T2672 || 	ShardCommand(code : 8)| Done. giving the results to the consumer : shard-command-httpreset_logger
+2014-12-12 18:03:16 SHARDING-DETAIL	P26742/T2672 || 	ShardCommand(reset_logger)| Finalizing.
+2014-12-12 18:03:16 WARN	//save request for core2 core arriving on port 8087 denied (port 9087 will permit)
+2014-12-12 18:03:16 WARN	//resetLogger request for core2 core arriving on port 8087 denied (port 9087 will permit)
+2014-12-12 18:03:16 WARN	//save request for core2 core arriving on port 8088 denied (port 9087 will permit)
+2014-12-12 18:03:16 WARN	//resetLogger request for core2 core arriving on port 8088 denied (port 9087 will permit)
+2014-12-12 18:03:16 WARN	//search request for core1 core arriving on port 8088 denied (port 8087 will permit)
+2014-12-12 18:03:16 WARN	//search request for core1 core arriving on port 8088 denied (port 8087 will permit)
+2014-12-12 18:03:16 WARN	//search request for core1 core arriving on port 8088 denied (port 8087 will permit)
+2014-12-12 18:03:16 WARN	//search request for core1 core arriving on port 8088 denied (port 8087 will permit)
+2014-12-12 18:03:16 WARN	//search request for core2 core arriving on port 8088 denied (port 8087 will permit)
+2014-12-12 18:03:16 WARN	//search request for core1 core arriving on port 8088 denied (port 8087 will permit)
+2014-12-12 18:03:16 WARN	//search request for core1 core arriving on port 8088 denied (port 8087 will permit)
+2014-12-12 18:03:16 WARN	//search request for core2 core arriving on port 8088 denied (port 8087 will permit)
+2014-12-12 18:03:16 WARN	//search request for core1 core arriving on port 9087 denied (port 8087 will permit)
+2014-12-12 18:03:16 WARN	//search request for core1 core arriving on port 9087 denied (port 8087 will permit)
+2014-12-12 18:03:16 WARN	//search request for core1 core arriving on port 9087 denied (port 8087 will permit)
+2014-12-12 18:03:16 WARN	//search request for core1 core arriving on port 9087 denied (port 8087 will permit)
+2014-12-12 18:03:16 WARN	//search request for core2 core arriving on port 9087 denied (port 8087 will permit)
+2014-12-12 18:03:16 WARN	//search request for core1 core arriving on port 9087 denied (port 8087 will permit)
+2014-12-12 18:03:16 WARN	//search request for core1 core arriving on port 9087 denied (port 8087 will permit)
+2014-12-12 18:03:16 WARN	//search request for core2 core arriving on port 9087 denied (port 8087 will permit)
+2014-12-12 18:03:16 INFO	Stopping server.
+2014-12-12 18:03:16 INFO	Thread = <931129088> stopped
+2014-12-12 18:03:16 INFO	Thread = <922736384> stopped
+2014-12-12 18:03:16 INFO	Thread = <1275066112> stopped
+2014-12-12 18:03:16 INFO	Thread = <1266673408> stopped
+2014-12-12 18:03:16 INFO	Thread = <1258280704> stopped
+2014-12-12 18:03:17 SHARDING-STEP	P26742/T4288 || 	LoadBalancer| collecting information.
+2014-12-12 18:03:17 SHARDING-DETAIL	P26742/T4288 || 	NodeAggregator(opid=(0,34))| Sending ShardingLoadBalancingReportRequestMessageType to (0,0) . Consumer is load-balancer. ExpectResponse(YES)
+2014-12-12 18:03:17 SHARDING-DETAIL	P26742/T4288 || 	NodeAggregator| entry
+2014-12-12 18:03:17 SHARDING-DETAIL	P26742/T5104 || 	NodeAggregator(opid=(0,34))| Done.
+2014-12-12 18:03:17 SHARDING-STEP	P26742/T5104 || 	LoadBalancer| Load information : (0:2)
+2014-12-12 18:03:17 SHARDING-DETAIL	P26742/T5104 || 	LoadBalancer| Only this node, checking for assignments.
+2014-12-12 18:03:17 SHARDING-STEP	P26742/T5104 || 	LoadBalancer| Load balancer is finalizing.
+2014-12-12 18:03:17 INFO	SM-M0 master stepping down ...
+2014-12-12 18:03:17 INFO	synch thread stopped.
+2014-12-12 18:03:18 INFO	Server stopped successfully
+2014-12-15 16:57:00 SHARDING-DETAIL	P22962/T688 || 	NodeAggregator(opid=(0,32))| Done.
+2014-12-15 16:57:00 SHARDING-STEP	P22962/T688 || 	ShardCommand(code : 8)| Done. giving the results to the consumer : shard-command-httpreset_logger
+2014-12-15 16:57:00 SHARDING-DETAIL	P22962/T688 || 	ShardCommand(reset_logger)| Finalizing.
+2014-12-15 16:57:00 WARN	//save request for core2 core arriving on port 8087 denied (port 9087 will permit)
+2014-12-15 16:57:00 WARN	//resetLogger request for core2 core arriving on port 8087 denied (port 9087 will permit)
+2014-12-15 16:57:00 WARN	//save request for core2 core arriving on port 8088 denied (port 9087 will permit)
+2014-12-15 16:57:00 WARN	//resetLogger request for core2 core arriving on port 8088 denied (port 9087 will permit)
+2014-12-15 16:57:00 WARN	//search request for core1 core arriving on port 8088 denied (port 8087 will permit)
+2014-12-15 16:57:00 WARN	//search request for core1 core arriving on port 8088 denied (port 8087 will permit)
+2014-12-15 16:57:00 WARN	//search request for core1 core arriving on port 8088 denied (port 8087 will permit)
+2014-12-15 16:57:00 WARN	//search request for core1 core arriving on port 8088 denied (port 8087 will permit)
+2014-12-15 16:57:00 WARN	//search request for core2 core arriving on port 8088 denied (port 8087 will permit)
+2014-12-15 16:57:00 WARN	//search request for core1 core arriving on port 8088 denied (port 8087 will permit)
+2014-12-15 16:57:00 WARN	//search request for core1 core arriving on port 8088 denied (port 8087 will permit)
+2014-12-15 16:57:00 WARN	//search request for core2 core arriving on port 8088 denied (port 8087 will permit)
+2014-12-15 16:57:00 WARN	//search request for core1 core arriving on port 9087 denied (port 8087 will permit)
+2014-12-15 16:57:00 WARN	//search request for core1 core arriving on port 9087 denied (port 8087 will permit)
+2014-12-15 16:57:00 WARN	//search request for core1 core arriving on port 9087 denied (port 8087 will permit)
+2014-12-15 16:57:00 WARN	//search request for core1 core arriving on port 9087 denied (port 8087 will permit)
+2014-12-15 16:57:00 WARN	//search request for core2 core arriving on port 9087 denied (port 8087 will permit)
+2014-12-15 16:57:00 WARN	//search request for core1 core arriving on port 9087 denied (port 8087 will permit)
+2014-12-15 16:57:00 WARN	//search request for core1 core arriving on port 9087 denied (port 8087 will permit)
+2014-12-15 16:57:00 WARN	//search request for core2 core arriving on port 9087 denied (port 8087 will permit)
+2014-12-15 16:57:00 INFO	Stopping server.
+2014-12-15 16:57:00 INFO	Thread = <587192064> stopped
+2014-12-15 16:57:00 INFO	Thread = <578799360> stopped
+2014-12-15 16:57:01 INFO	Thread = <861951744> stopped
+2014-12-15 16:57:01 INFO	Thread = <853559040> stopped
+2014-12-15 16:57:01 INFO	Thread = <845166336> stopped
+2014-12-15 16:57:02 SHARDING-STEP	P22962/T4960 || 	LoadBalancer| collecting information.
+2014-12-15 16:57:02 SHARDING-DETAIL	P22962/T4960 || 	NodeAggregator(opid=(0,34))| Sending ShardingLoadBalancingReportRequestMessageType to (0,0) . Consumer is load-balancer. ExpectResponse(YES)
+2014-12-15 16:57:02 SHARDING-DETAIL	P22962/T4960 || 	NodeAggregator| entry
+2014-12-15 16:57:02 SHARDING-DETAIL	P22962/T5776 || 	NodeAggregator(opid=(0,34))| Done.
+2014-12-15 16:57:02 SHARDING-STEP	P22962/T5776 || 	LoadBalancer| Load information : (0:2)
+2014-12-15 16:57:02 SHARDING-DETAIL	P22962/T5776 || 	LoadBalancer| Only this node, checking for assignments.
+2014-12-15 16:57:02 SHARDING-STEP	P22962/T5776 || 	LoadBalancer| Load balancer is finalizing.
+2014-12-15 16:57:02 INFO	SM-M0 master stepping down ...
+2014-12-15 16:57:02 INFO	synch thread stopped.
+2014-12-15 16:57:03 INFO	Server stopped successfully
+2014-12-15 17:14:35 SHARDING-DETAIL	P25441/T2720 || 	NodeAggregator(opid=(0,32))| Done.
+2014-12-15 17:14:35 SHARDING-STEP	P25441/T2720 || 	ShardCommand(code : 8)| Done. giving the results to the consumer : shard-command-httpreset_logger
+2014-12-15 17:14:35 SHARDING-DETAIL	P25441/T2720 || 	ShardCommand(reset_logger)| Finalizing.
+2014-12-15 17:14:35 WARN	//save request for core2 core arriving on port 8087 denied (port 9087 will permit)
+2014-12-15 17:14:35 WARN	//resetLogger request for core2 core arriving on port 8087 denied (port 9087 will permit)
+2014-12-15 17:14:35 WARN	//save request for core2 core arriving on port 8088 denied (port 9087 will permit)
+2014-12-15 17:14:35 WARN	//resetLogger request for core2 core arriving on port 8088 denied (port 9087 will permit)
+2014-12-15 17:14:35 WARN	//search request for core1 core arriving on port 8088 denied (port 8087 will permit)
+2014-12-15 17:14:35 WARN	//search request for core1 core arriving on port 8088 denied (port 8087 will permit)
+2014-12-15 17:14:35 WARN	//search request for core1 core arriving on port 8088 denied (port 8087 will permit)
+2014-12-15 17:14:35 WARN	//search request for core1 core arriving on port 8088 denied (port 8087 will permit)
+2014-12-15 17:14:35 WARN	//search request for core2 core arriving on port 8088 denied (port 8087 will permit)
+2014-12-15 17:14:36 WARN	//search request for core1 core arriving on port 8088 denied (port 8087 will permit)
+2014-12-15 17:14:36 WARN	//search request for core1 core arriving on port 8088 denied (port 8087 will permit)
+2014-12-15 17:14:36 WARN	//search request for core2 core arriving on port 8088 denied (port 8087 will permit)
+2014-12-15 17:14:36 WARN	//search request for core1 core arriving on port 9087 denied (port 8087 will permit)
+2014-12-15 17:14:36 WARN	//search request for core1 core arriving on port 9087 denied (port 8087 will permit)
+2014-12-15 17:14:36 WARN	//search request for core1 core arriving on port 9087 denied (port 8087 will permit)
+2014-12-15 17:14:36 WARN	//search request for core1 core arriving on port 9087 denied (port 8087 will permit)
+2014-12-15 17:14:36 WARN	//search request for core2 core arriving on port 9087 denied (port 8087 will permit)
+2014-12-15 17:14:36 WARN	//search request for core1 core arriving on port 9087 denied (port 8087 will permit)
+2014-12-15 17:14:36 WARN	//search request for core1 core arriving on port 9087 denied (port 8087 will permit)
+2014-12-15 17:14:36 WARN	//search request for core2 core arriving on port 9087 denied (port 8087 will permit)
+2014-12-15 17:14:36 INFO	Stopping server.
+2014-12-15 17:14:36 INFO	Thread = <2952787712> stopped
+2014-12-15 17:14:36 INFO	Thread = <2944395008> stopped
+2014-12-15 17:14:36 INFO	Thread = <3364329216> stopped
+2014-12-15 17:14:36 INFO	Thread = <3288332032> stopped
+2014-12-15 17:14:36 INFO	Thread = <3279939328> stopped
+2014-12-15 17:14:37 SHARDING-STEP	P25441/T4336 || 	LoadBalancer| collecting information.
+2014-12-15 17:14:37 SHARDING-DETAIL	P25441/T4336 || 	NodeAggregator(opid=(0,34))| Sending ShardingLoadBalancingReportRequestMessageType to (0,0) . Consumer is load-balancer. ExpectResponse(YES)
+2014-12-15 17:14:37 SHARDING-DETAIL	P25441/T4336 || 	NodeAggregator| entry
+2014-12-15 17:14:37 SHARDING-DETAIL	P25441/T5152 || 	NodeAggregator(opid=(0,34))| Done.
+2014-12-15 17:14:37 SHARDING-STEP	P25441/T5152 || 	LoadBalancer| Load information : (0:2)
+2014-12-15 17:14:37 SHARDING-DETAIL	P25441/T5152 || 	LoadBalancer| Only this node, checking for assignments.
+2014-12-15 17:14:37 SHARDING-STEP	P25441/T5152 || 	LoadBalancer| Load balancer is finalizing.
+2014-12-15 17:14:37 INFO	SM-M0 master stepping down ...
+2014-12-15 17:14:37 INFO	synch thread stopped.
+2014-12-15 17:14:38 INFO	Server stopped successfully
+2014-12-15 17:52:24 SHARDING-DETAIL	P29868/T7072 || 	NodeAggregator(opid=(0,32))| Done.
+2014-12-15 17:52:24 SHARDING-STEP	P29868/T7072 || 	ShardCommand(code : 8)| Done. giving the results to the consumer : shard-command-httpreset_logger
+2014-12-15 17:52:24 SHARDING-DETAIL	P29868/T7072 || 	ShardCommand(reset_logger)| Finalizing.
+2014-12-15 17:52:24 WARN	//save request for core2 core arriving on port 8087 denied (port 9087 will permit)
+2014-12-15 17:52:24 WARN	//resetLogger request for core2 core arriving on port 8087 denied (port 9087 will permit)
+2014-12-15 17:52:24 WARN	//save request for core2 core arriving on port 8088 denied (port 9087 will permit)
+2014-12-15 17:52:24 WARN	//resetLogger request for core2 core arriving on port 8088 denied (port 9087 will permit)
+2014-12-15 17:52:24 WARN	//search request for core1 core arriving on port 8088 denied (port 8087 will permit)
+2014-12-15 17:52:24 WARN	//search request for core1 core arriving on port 8088 denied (port 8087 will permit)
+2014-12-15 17:52:24 WARN	//search request for core1 core arriving on port 8088 denied (port 8087 will permit)
+2014-12-15 17:52:24 WARN	//search request for core1 core arriving on port 8088 denied (port 8087 will permit)
+2014-12-15 17:52:24 WARN	//search request for core2 core arriving on port 8088 denied (port 8087 will permit)
+2014-12-15 17:52:24 WARN	//search request for core1 core arriving on port 8088 denied (port 8087 will permit)
+2014-12-15 17:52:24 WARN	//search request for core1 core arriving on port 8088 denied (port 8087 will permit)
+2014-12-15 17:52:24 WARN	//search request for core2 core arriving on port 8088 denied (port 8087 will permit)
+2014-12-15 17:52:24 WARN	//search request for core1 core arriving on port 9087 denied (port 8087 will permit)
+2014-12-15 17:52:24 WARN	//search request for core1 core arriving on port 9087 denied (port 8087 will permit)
+2014-12-15 17:52:24 WARN	//search request for core1 core arriving on port 9087 denied (port 8087 will permit)
+2014-12-15 17:52:24 WARN	//search request for core1 core arriving on port 9087 denied (port 8087 will permit)
+2014-12-15 17:52:24 WARN	//search request for core2 core arriving on port 9087 denied (port 8087 will permit)
+2014-12-15 17:52:24 WARN	//search request for core1 core arriving on port 9087 denied (port 8087 will permit)
+2014-12-15 17:52:24 WARN	//search request for core1 core arriving on port 9087 denied (port 8087 will permit)
+2014-12-15 17:52:24 WARN	//search request for core2 core arriving on port 9087 denied (port 8087 will permit)
+2014-12-15 17:52:24 INFO	Stopping server.
+2014-12-15 17:52:24 INFO	Thread = <1602217728> stopped
+2014-12-15 17:52:24 INFO	Thread = <1593825024> stopped
+2014-12-15 17:52:25 INFO	Thread = <1811937024> stopped
+2014-12-15 17:52:25 INFO	Thread = <1803544320> stopped
+2014-12-15 17:52:25 INFO	Thread = <1795151616> stopped
+2014-12-15 17:52:26 SHARDING-STEP	P29868/T960 || 	LoadBalancer| collecting information.
+2014-12-15 17:52:26 SHARDING-DETAIL	P29868/T960 || 	NodeAggregator(opid=(0,34))| Sending ShardingLoadBalancingReportRequestMessageType to (0,0) . Consumer is load-balancer. ExpectResponse(YES)
+2014-12-15 17:52:26 SHARDING-DETAIL	P29868/T960 || 	NodeAggregator| entry
+2014-12-15 17:52:26 SHARDING-DETAIL	P29868/T1776 || 	NodeAggregator(opid=(0,34))| Done.
+2014-12-15 17:52:26 SHARDING-STEP	P29868/T1776 || 	LoadBalancer| Load information : (0:2)
+2014-12-15 17:52:26 SHARDING-DETAIL	P29868/T1776 || 	LoadBalancer| Only this node, checking for assignments.
+2014-12-15 17:52:26 SHARDING-STEP	P29868/T1776 || 	LoadBalancer| Load balancer is finalizing.
+2014-12-15 17:52:26 INFO	SM-M0 master stepping down ...
+2014-12-15 17:52:26 INFO	synch thread stopped.
+2014-12-15 17:52:27 INFO	Server stopped successfully

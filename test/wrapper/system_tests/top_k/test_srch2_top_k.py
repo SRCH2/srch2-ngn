@@ -36,11 +36,8 @@ import sys, urllib2, json, time, subprocess, os, commands, signal
 sys.path.insert(0, 'srch2lib')
 import test_lib
 
-port = '8087'
-
 def resultsScoreToRecordMap(json_response):
-     decoded_json = json.loads(json_response)
-     results = decoded_json["results"]
+     results = json_response["results"]
      resultsScoreToRecordMap = {}
      for item in results:
          try:
@@ -70,18 +67,12 @@ def verify(jsonA, topk_A, jsonB, topk_B):
    
 if __name__ == "__main__":
     #Start the engine server
-    args = [ sys.argv[1], '--config-file=./top_k/conf.xml' ]
-
-    if test_lib.confirmPortAvailable(port) == False:
-        print 'Port ' + str(port) + ' already in use - aborting'
-        os._exit(-1)
+    args = [ sys.argv[1], './top_k/conf.xml', './top_k/conf-A.xml', './top_k/conf-B.xml']
 
     serverHandle = test_lib.startServer(args)
-    test_lib.pingServer(port)
+    if serverHandle == None:
+        os._exit(-1)
 
-    base = 'http://localhost:' + port
-    #base = "http://shrek.calit2.uci.edu:8081"
-    
     query = "obam"
     topk_A = str(10)
     topk_B = str(20)
@@ -95,12 +86,10 @@ if __name__ == "__main__":
             topk_B = str(sys.argv[3])
             topk_A = str(sys.argv[4])
 
-        base_url = base + "/search?fuzzy=1&start=0&q=%7BdefaultPrefixComplete=COMPLETE%7D"+query
-        url_A = base_url + "&rows="+topk_A
-        print 'URL A : ' + url_A
-        url_B = base_url + "&rows="+topk_B
-        jsonTop10 = urllib2.urlopen(url_A).read()
-        jsonTop20 = urllib2.urlopen(url_B).read()
+        query_A = "fuzzy=1&start=0&q=%7BdefaultPrefixComplete=COMPLETE%7D"+query+ "&rows="+topk_A
+        query_B = "fuzzy=1&start=0&q=%7BdefaultPrefixComplete=COMPLETE%7D"+query+ "&rows="+topk_B
+        jsonTop10 = test_lib.searchRequest(query_A)
+        jsonTop20 = test_lib.searchRequest(query_B)
         if ( verify(jsonTop10, topk_A,  jsonTop20, topk_B) ):
             print "Test passed."
             exitCode = 0

@@ -24,9 +24,9 @@ def testShouldShutDownWhenTimerDown(binary_path, conf_file, port, timer):
     print 'testShouldShutDownWhenTimerDown'
     print 'starting engine: ' + binary_path + ' ' + conf_file
 
-    serverHandle = test_lib.startServer([binary_path, '--config=' + conf_file])
+    serverHandle = test_lib.startServer([binary_path, conf_file])
     import time
-    time.sleep(timer+1) 
+    time.sleep(timer+3) 
     try:
         urllib2.urlopen('http://127.0.0.1:'+ str(port) + '/info')
         test_lib.killServer(serverHandle)
@@ -42,7 +42,7 @@ def testShouldNotShutDownIfHasAnyPing(binary_path, conf_file, port, timer):
         return -1
     
     pingtimer = timer - 1 
-    serverHandle = test_lib.startServer([binary_path, '--config=' + conf_file])
+    serverHandle = test_lib.startServer([binary_path, conf_file])
     import time
     for x in xrange(0,4):
         time.sleep(pingtimer) 
@@ -62,10 +62,6 @@ if __name__ == '__main__':
     port = test_lib.detectPort(conf_file)
     timer = detectHeartBeatTimer(conf_file)
     print 'config:' , conf_file, 'port:', port, 'timer:', timer
-
-    if test_lib.confirmPortAvailable(port) == False:
-        print 'Port ' + str(port) + ' already in use - aborting'
-        ox._exit(-1)
 
     exitCode =  testShouldShutDownWhenTimerDown(binary_path, conf_file, port, timer)
     exitCode += testShouldNotShutDownIfHasAnyPing(binary_path, conf_file, port, timer)

@@ -37,8 +37,6 @@ import sys, urllib2, json, time, subprocess, os, commands, signal
 sys.path.insert(0, 'srch2lib')
 import test_lib
 
-port = '8087'
-
 #Function of checking the results
 def checkResult(query, responseJson,resultValue):
 #    for key, value in responseJson:
@@ -110,14 +108,9 @@ def testQF(queriesAndResultsPath, binary_path):
     #Start the engine server
     args = [ binary_path, '--config-file=./qf_dynamic_ranking/conf.xml' ]
 
-    if test_lib.confirmPortAvailable(port) == False:
-        print 'Port ' + str(port) + ' already in use - aborting'
+    serverHandle = test_lib.startServer(args)
+    if serverHandle == None:
         return -1
-
-    # print 'starting engine: ' + args[0] + ' ' + args[1]
-    serverHandle = test_lib.startServer(args);
-
-    test_lib.pingServer(port)
 
     #construct the query
     failCount = 0
@@ -131,12 +124,8 @@ def testQF(queriesAndResultsPath, binary_path):
         boostValue=value[1]
 
         #construct the query
-        query='http://localhost:' + port + '/search?'
-        query = query + prepareQuery(queryValue, boostValue) 
-        print query
-        #do the query
-        response = urllib2.urlopen(query).read()
-        response_json = json.loads(response)
+        query = prepareQuery(queryValue, boostValue)
+        response_json = test_lib.searchRequest(query)
 
         #check the result
         failCount += checkResult(query, response_json['results'], resultValue)

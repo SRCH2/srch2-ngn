@@ -10,8 +10,6 @@ import sys, urllib2, json, time, subprocess, os, commands, signal
 sys.path.insert(0, 'srch2lib')
 import test_lib
 
-port = '8087'
-
 #Function of checking the results
 def checkResult(query, responseJson,resultValue):
 #    for key, value in responseJson:
@@ -73,16 +71,11 @@ def prepareQuery(queryKeywords):
 
 def testRefiningPrimaryKey(queriesAndResultsPath, binary_path):
     #Start the engine server
-    args = [ binary_path, '--config-file=./refining_field_primary_key/conf.xml' ]
+    args = [ binary_path, './refining_field_primary_key/conf.xml','./refining_field_primary_key/conf-A.xml' ,'./refining_field_primary_key/conf-B.xml'  ]
 
-    if test_lib.confirmPortAvailable(port) == False:
-        print 'Port ' + str(port) + ' already in use - aborting'
-        return -1
-
-    print 'starting engine: ' + args[0] + ' ' + args[1]
     serverHandle = test_lib.startServer(args)
-
-    test_lib.pingServer(port)
+    if serverHandle == None:
+        return -1
 
     #construct the query
     failCount = 0
@@ -93,12 +86,8 @@ def testRefiningPrimaryKey(queriesAndResultsPath, binary_path):
         queryValue=value[0].split()
         resultValue=(value[1]).split()
         #construct the query
-        query='http://localhost:' + port + '/search?'
-        query = query + prepareQuery(queryValue) 
-        #print query
-        #do the query
-        response = urllib2.urlopen(query).read()
-        response_json = json.loads(response)
+        query = prepareQuery(queryValue) 
+        response_json = test_lib.searchRequest(query)
 
         #check the result
         failCount += checkResult(query, response_json['results'], resultValue )
@@ -110,16 +99,10 @@ def testRefiningPrimaryKey(queriesAndResultsPath, binary_path):
 
 def testSearchablePrimaryKey(queriesAndResultsPath, binary_path):
     #Start the engine server
-    args = [ binary_path, '--config-file=./refining_field_primary_key/conf1.xml' ]
-
-    if test_lib.confirmPortAvailable(port) == False:
-        print 'Port ' + str(port) + ' already in use - aborting'
-        return -1
+    args = [ binary_path, './refining_field_primary_key/conf1.xml','./refining_field_primary_key/conf1-A.xml','./refining_field_primary_key/conf1-B.xml' ]
 
     print 'starting engine: ' + args[0] + ' ' + args[1]
     serverHandle = test_lib.startServer(args)
-
-    test_lib.pingServer(port)
 
     #construct the query
     failCount = 0
@@ -130,12 +113,8 @@ def testSearchablePrimaryKey(queriesAndResultsPath, binary_path):
         queryValue=value[0].split()
         resultValue=(value[1]).split()
         #construct the query
-        query='http://localhost:' + port + '/search?'
-        query = query + prepareQuery(queryValue)
-        #print query
-        #do the query
-        response = urllib2.urlopen(query).read()
-        response_json = json.loads(response)
+        query = prepareQuery(queryValue)
+        response_json = test_lib.searchRequest(query)
 
         #check the result
         failCount += checkResult(query, response_json['results'], resultValue )

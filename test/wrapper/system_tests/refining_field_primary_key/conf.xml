@@ -33,6 +33,12 @@
     -->
     <listeningHostname>127.0.0.1</listeningHostname>
     <listeningPort>8087</listeningPort>
+    <transport>
+        <port>4001</port>
+        <ipaddress>127.0.0.1</ipaddress>
+    </transport>
+    <wellknownhosts>127.0.0.1:54000</wellknownhosts>
+    <node-name>node-with-data</node-name>
  
     <!--
         Index Directoy Path

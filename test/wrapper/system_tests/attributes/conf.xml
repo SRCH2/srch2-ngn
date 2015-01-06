@@ -25,6 +25,13 @@
     
     <dataFile>./attributes/data.json</dataFile>
 
+    <transport>
+        <port>4001</port>
+        <ipaddress>127.0.0.1</ipaddress>
+    </transport>
+    <wellknownhosts>127.0.0.1:54000</wellknownhosts>
+    <node-name>node-with-data</node-name>
+
     <!-- 
         Mongo DB settings
         Required if dataSourceType = 2

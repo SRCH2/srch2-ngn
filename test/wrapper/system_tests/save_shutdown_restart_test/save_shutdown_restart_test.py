@@ -6,40 +6,26 @@ import sys, urllib2, json, time, subprocess, os, commands, signal, subprocess
 sys.path.insert(0, 'srch2lib')
 import test_lib
 
-port = '8087'
-
 def testSaveShutdownRestart(binary_path):
     #Start the engine server
-    binary= [ binary_path, '--config-file=./save_shutdown_restart_test/conf.xml' ]
+    binary= [ binary_path, './save_shutdown_restart_test/conf.xml', './save_shutdown_restart_test/conf-A.xml', './save_shutdown_restart_test/conf-B.xml' ]
 
-    if test_lib.confirmPortAvailable(port) == False:
-        print 'Port ' + str(port) + ' already in use - aborting'
+    serverHandle = test_lib.startServer(binary)
+    if serverHandle == None:
         return -1
 
-    print 'starting engine: ' + binary[0] + ' ' + binary[1]
-    proc = subprocess.Popen(binary)
-
-    test_lib.pingServer(port)
-
     #save the index
-    saveQuery='http://localhost:' + port + '/save'
-    opener = urllib2.build_opener(urllib2.HTTPHandler)
-    request = urllib2.Request(saveQuery, '')
-    request.get_method = lambda: 'PUT'
-    response = opener.open(request).read()
-    jsonResponse = json.loads(response)
+    
+    jsonResponse = test_lib.saveRequest()
     if jsonResponse['status'] != True:
         print "Save operation failed: " + response
         exit(-1)
-    
     #shutdown use system kill 
-    subprocess.call(["kill", "-2", "%d" % proc.pid])
-    proc.wait()
+    test_lib.kill9Server(serverHandle)
 
     #search a query for checking if the server is shutdown
     try:
-        query='http://localhost:' + port + '/search?q=good'
-        response = urllib2.urlopen(query).read()
+        response = test_lib.searchRequest('q=good')
         print response
     except:
         print 'server has been shutdown'
@@ -47,11 +33,9 @@ def testSaveShutdownRestart(binary_path):
         print 'server is not shutdown'
         exit(-1)
     #restart
-    proc = subprocess.Popen(binary)
-    test_lib.pingServer(port)
+    serverHandle = test_lib.startServer(binary)
     #search a query for checking if the server is shutdown
-    query='http://localhost:' + port + '/search?q=good'
-    response = urllib2.urlopen(query).read()
+    response = test_lib.searchRequest('q=good')
     if response == 0:
         print 'server does not start'
         exit(-1)
@@ -59,12 +43,8 @@ def testSaveShutdownRestart(binary_path):
         print 'server start'
 
     #export data to json
-    #exportQuery='http://localhost:' + port + '/export?exported_data_file=exportData.json'
-    #opener = urllib2.build_opener(urllib2.HTTPHandler)
-    #request = urllib2.Request(exportQuery, '')
-    #request.get_method = lambda: 'PUT'
-    #response = opener.open(request).read()
-    #jsonResponse = json.loads(response)
+    #exportQuery='export?exported_data_file=exportData.json'
+    #jsonResponse = test_lib.sendPutRequest(exportQuery, '')
     #if jsonResponse['log'][0]['export'] != "success":
     #    print "Export operation failed: " + response
     #    exit(-1)
@@ -72,19 +52,14 @@ def testSaveShutdownRestart(binary_path):
     #get pid of srch2-search-server and kill the process
 
     #shutdown use restful API
-    killQuery = 'http://localhost:' + port + '/_all/shutdown'
-    opener = urllib2.build_opener(urllib2.HTTPHandler)
-    request = urllib2.Request(killQuery, '')
-    response = opener.open(request)
-    request.get_method = lambda: 'PUT'
-    print response.read()
+    response = test_lib.shutdownRequest()
+    print response
     import time
     time.sleep(2)
 
     #search a query for checking if the server is shutdown
     try:
-        query='http://localhost:' + port + '/search?q=good'
-        response = urllib2.urlopen(query).read()
+        response = test_lib.searchRequest('q=good')
         print response
     except:
         print 'server has been shutdown'

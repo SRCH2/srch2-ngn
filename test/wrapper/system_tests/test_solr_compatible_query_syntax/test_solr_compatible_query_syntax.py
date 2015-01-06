@@ -5,8 +5,6 @@ import sys, urllib2, json, time, subprocess, os, commands,signal
 sys.path.insert(0, 'srch2lib')
 import test_lib
 
-port = '8087'
-
 #the function of checking the results
 def checkResult(query, responseJsonAll,resultValue, facetResultValue):
     responseJson = responseJsonAll['results']
@@ -85,16 +83,11 @@ def prepareQuery(queryKeywords):
 
 def testNewFeatures(queriesAndResultsPath,facetResultsPath, binary_path):
     # Start the engine server
-    args = [ binary_path, '--config-file=./test_solr_compatible_query_syntax/conf.xml' ]
+    args = [ binary_path, './test_solr_compatible_query_syntax/conf.xml','./test_solr_compatible_query_syntax/conf-A.xml','./test_solr_compatible_query_syntax/conf-B.xml' ]
 
-    if test_lib.confirmPortAvailable(port) == False:
-        print 'Port ' + str(port) + ' already in use - aborting'
-        return -1
-
-    print 'starting engine: ' + args[0] + ' ' + args[1]
     serverHandle = test_lib.startServer(args)
-    #make sure that start the engine up
-    test_lib.pingServer(port)
+    if serverHandle == None:
+        return -1
 
     # get facet correct result from file
     f_facet = open(facetResultsPath , 'r')
@@ -112,13 +105,8 @@ def testNewFeatures(queriesAndResultsPath,facetResultsPath, binary_path):
         queryValue=value[0]
         resultValue=(value[1]).split()
         #construct the query
-        query='http://localhost:' + port + '/search?'
-        query = query + prepareQuery(queryValue)
-        #print query
-        
-        # do the query
-        response = urllib2.urlopen(query).read()
-        response_json = json.loads(response)
+        query = prepareQuery(queryValue)
+        response_json = test_lib.searchRequest(query)
         #check the result
         failCount += checkResult(query, response_json, resultValue, facetResultValue[j])
         j=j+1

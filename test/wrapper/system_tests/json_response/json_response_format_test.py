@@ -7,7 +7,7 @@
 import sys, urllib2, json, time, subprocess, os, commands, signal
 import inspect
 sys.path.insert(0, 'srch2lib')
-from test_lib import *
+import test_lib
 
 def check_keys( json, keys):
     for key in keys:
@@ -16,18 +16,17 @@ def check_keys( json, keys):
             return False
     return True
 
-def testSearchResponds(host_url):
-    search_url = host_url + '/search'
+def testSearchResponds():
     print inspect.stack()[0][3]
     
     def testInvalidSearch():
         print inspect.stack()[0][3]
-        response = open_url_get(search_url)
+        response = test_lib.sendGetRequest('search')
         return check_keys(response, ['error'])
 
     def testValidSearch():
         print inspect.stack()[0][3]
-        response = open_url_get(search_url + '?q=men')
+        response = test_lib.searchRequest('q=men')
         return check_keys(response, ['estimated_number_of_results', \
                 'fuzzy', 'limit', 'message', 'offset', 'payload_access_time', \
                 'query_keywords', 'query_keywords_complete', 'results', 'results_found',\
@@ -37,33 +36,30 @@ def testSearchResponds(host_url):
 
     return testInvalidSearch() and testValidSearch()
 
-def testSuggestResponds(host_url):
-    suggest_url = host_url +  '/suggest'
+def testSuggestResponds():
     print inspect.stack()[0][3]
 
     def testInvalidSuggest():
         print inspect.stack()[0][3]
-        response = open_url_get(suggest_url)
+        response = test_lib.sendGetRequest('suggest')
         return check_keys(response, ['error'])
 
     def testValidSuggest():
         print inspect.stack()[0][3]
-        response = open_url_get(suggest_url + "?k=man")
+        response = test_lib.sendGetRequest('suggest?k=man')
         return check_keys(response, ["message","payload_access_time","searcher_time","suggestions","suggestions_found"])
 
 
     return testInvalidSuggest() and testValidSuggest()
 
-def testInfoResponds(host_url):
-    info_url = host_url + '/info'
+def testInfoResponds():
     print inspect.stack()[0][3]
-    response = open_url_get(info_url)
+    response = test_lib.infoRequest()
     return check_keys( response, ['engine_status', 'version']) and \
         check_keys( response['engine_status'], \
         ['doc_count','docs_in_index', 'last_merge', 'search_requests', 'write_requests'])
 
-def testDocsResponds(host_url):
-    docs_url = host_url + '/docs'
+def testDocsResponds():
     print inspect.stack()[0][3]
     insert_doc = '{"category": "pet", "name": "Pet", "relevance": 7, "lat": 64.8, "lng": -147.7, "id": "2014"}'
 
@@ -72,7 +68,7 @@ def testDocsResponds(host_url):
         
         def testInsertSuccessResponds():
             print inspect.stack()[0][3]
-            response = open_url_put(docs_url, insert_doc)
+            response = test_lib.insertRequest(insert_doc)
             return check_keys(response, ['log', 'message']) and \
                     check_keys(response['log'][0], ['insert', 'rid'])
 
@@ -81,7 +77,7 @@ def testDocsResponds(host_url):
             print inspect.stack()[0][3]
             def testRepeatInsertFailResponds():
                 print inspect.stack()[0][3]
-                response = open_url_put(docs_url, insert_doc)
+                response = test_lib.insertRequest(insert_doc)
                 return check_keys(response, ['log', 'message']) and \
                         check_keys(response['log'][0], ['insert','reason', 'rid'])
 
@@ -91,14 +87,14 @@ def testDocsResponds(host_url):
                 def testMalformedJsonRecord():
                     print inspect.stack()[0][3]
                     invalid_record = '{"category": "pet", "name": "Pet", "id": }'
-                    response = open_url_put(docs_url, invalid_record)
+                    response = test_lib.insertRequest(invalid_record)
                     # expected: {"message":"JSON object parse error"}
                     return check_keys(response, ['message'])
 
                 def testNoPrimaryKeyProvided():
                     print inspect.stack()[0][3]
                     invalid_record = '{"category": "pet", "name": "Pet"}'
-                    response = open_url_put(docs_url, invalid_record)
+                    response = test_lib.insertRequest(invalid_record)
                     # expected: {"log":[{"details":"No primary key found.","insert":"failed","reason":"parse: The record is not in a correct json format","rid":""}],"message":"..."}
                     return check_keys(response, ['log', 'message']) and \
                         check_keys(response['log'][0], ['insert','reason', 'details', 'rid'])
@@ -115,14 +111,14 @@ def testDocsResponds(host_url):
 
         def testDeleteSuccessResponds():
             print inspect.stack()[0][3]
-            response = open_url_delete(docs_url + '?id=2014')
+            response = test_lib.deleteRequest('id=2014')
             # expected: {"log":[{"delete":"success","rid":"2014"}],"message":"The delete was processed successfully"}
             return check_keys(response, ['log', 'message']) and\
                     check_keys(response['log'][0], ['delete', 'rid'])
 
         def testDeleteFailResponds():
             print inspect.stack()[0][3]
-            response = open_url_delete(docs_url + '?id=2014')
+            response = test_lib.deleteRequest('id=2014')
             # expected: {"log":[{"delete":"failed","reason":"no record with given primary key","rid":"2014"}],"message":"The delete was processed successfully"}
             return check_keys(response, ['log', 'message']) and \
                     check_keys(response['log'][0], ['delete', 'reason', 'rid'])
@@ -131,8 +127,7 @@ def testDocsResponds(host_url):
 
     return testInsertResponds() and testDeleteResponds()
 
-def testUpdateResponds(host_url):
-    update_url = host_url + '/update'
+def testUpdateResponds():
     print inspect.stack()[0][3]
 
     def testUpdateSuccessResponds():
@@ -142,14 +137,14 @@ def testUpdateResponds(host_url):
 
         def testUpsertRecord():
             print inspect.stack()[0][3]
-            response = open_url_put(update_url, update_doc)
+            response = test_lib.updateRequeset(update_doc)
             # expected: {"log":[{"rid":"2014","update":"New record inserted successfully"}],"message":"The update was processed successfully"}
             return check_keys(response, ['log', 'message']) and \
                     check_keys(response['log'][0], ['rid', 'update'])
 
         def testUpdateExistedRecord():
             print inspect.stack()[0][3]
-            response = open_url_put(update_url, update_doc)
+            response = test_lib.updateRequeset(update_doc)
             # expected: {"log":[{"rid":"2014","update":"Existing record updated successfully"}],"message":"The update was processed successfully"}
             return check_keys(response, ['log', 'message']) and \
                     check_keys(response['log'][0], ['rid', 'update'])
@@ -162,14 +157,14 @@ def testUpdateResponds(host_url):
         def testMalformedJsonRecord():
             print inspect.stack()[0][3]
             record = '{"category": }'
-            response = open_url_put( update_url, record)
+            response = test_lib.updateRequeset(record)
             # expected: {"message":"JSON object parse error"}
             return check_keys(response, ['message'])
 
         def testNoPrimaryKeyProvided():
             print inspect.stack()[0][3]
             record = '{"category": "pet"}'
-            response = open_url_put( update_url, record)
+            response = test_lib.updateRequeset(record)
             return check_keys(response, ['log', 'message']) and \
                     check_keys(response['log'][0], ['reason', 'rid', 'update', 'details'])
 
@@ -177,53 +172,49 @@ def testUpdateResponds(host_url):
 
     return testUpdateFailResponds() and testUpdateSuccessResponds()
 
-def testSaveResponds(host_url):
+def testSaveResponds():
     print inspect.stack()[0][3]
-    save_url = host_url + '/save'
-    response = open_url_put(save_url, '')
+    response = test_lib.saveRequest()
     # expected: {"log":[{"save":"success"}],"message":"The indexes have been saved to disk successfully"}
     return check_keys(response, ['log', 'message']) and \
             check_keys(response['log'][0], ['save'])
 
-def testExportResponds(host_url):
+def testExportResponds():
     print inspect.stack()[0][3]
-    export_url = host_url + '/export'
 
     def testInvalidExportRequest():
-        response = open_url_put(export_url, '')
+        response = test_lib.sendPutRequest('export')
         # {"error":"The request has an invalid or missing argument. See Srch2 API documentation for details."}
         return check_keys(response, ['error'])
 
     def testValidExport():
-        response = open_url_put(export_url + '?exported_data_file=./data/mydata.json', '')
+        response = test_lib.sendPutRequest('export?exported_data_file=./data/mydata.json')
         # {"log":[{"export":"success"}],"message":"The indexed data has been exported to the file ./data/abc/mydatax.json successfully."}
         return check_keys(response, ['log', 'message']) and \
                 check_keys(response['log'][0], ['export'])
 
     return testInvalidExportRequest() and testValidExport()
 
-def testResetLoggerResponds(host_url):
+def testResetLoggerResponds():
     print inspect.stack()[0][3]
-    reset_url = host_url + '/resetLogger'
-    response = open_url_put(reset_url, '')
+    response =  test_lib.resetLoggerRequest()
     #{"log":[".////./data/exact_a1/log.txt"],"message":"The logger file repointing succeeded"}
     return check_keys(response, ['log', 'message'] )
 
-def testSearchAllResponds(host_url):
+def testSearchAllResponds():
     print inspect.stack()[0][3]
-    search_all_url = host_url +  '/_all/search'
 
     def testInvalidSearch():
 
         print inspect.stack()[0][3]
-        response = open_url_get(search_all_url)
+        response = test_lib.sendGetRequest('search','_all')
         #{"__DEFAULTCORE__":{"error":"NOTICE : topK queryWARNING : After ignoring stop words no keyword is left to search."}}
         return check_keys(response, ['__DEFAULTCORE__']) and \
                 check_keys(response['__DEFAULTCORE__'], ['error'])
 
     def testValidSearch():
         print inspect.stack()[0][3]
-        response = open_url_get(search_all_url + '?q=men')
+        response = test_lib.searchRequest('q=men','_all')
         return check_keys(response, ['__DEFAULTCORE__']) and \
                 check_keys(response['__DEFAULTCORE__'], ['estimated_number_of_results', \
                     'fuzzy', 'limit', 'message', 'offset', 'payload_access_time', \
@@ -234,19 +225,18 @@ def testSearchAllResponds(host_url):
 
     return testInvalidSearch() and testValidSearch()
 
-def testShutDownResponds(host_url):
+def testShutDownResponds():
     print inspect.stack()[0][3]
-    shutdown_url = host_url + '/_all/shutdown'
 
     def testInvalidShutdown():
         print inspect.stack()[0][3]
-        response = open_url_get(shutdown_url)
+        response = test_lib.sendGetRequest('shutdown','_all')
         #{"error":"The request has an invalid or missing argument. See Srch2 API documentation for details."}
         return check_keys(response, ['error'])
 
     def testValidShutdown():
         print inspect.stack()[0][3]
-        response = open_url_put( shutdown_url,'')
+        response = test_lib.shutdownRequest()
         # {"message":"Bye"}
         return check_keys(response, ['message'])
 
@@ -254,28 +244,22 @@ def testShutDownResponds(host_url):
 
 if __name__ == '__main__':
     binary_path = sys.argv[1]
-    conf = './json_response/conf.xml'
-    port = detectPort(conf)
-    if confirmPortAvailable(port) == False:
-        print 'Port ' + str(port) + ' already in use - aborting'
-        os._exit(-1)
 
-    serverHandle = startServer([binary_path, '--config=' + conf]) 
-    host_url = 'http://127.0.0.1:' + str(port) 
-    pingServer(port)
-    print 'starting engine: ' + host_url + ' ' + conf
+    serverHandle = test_lib.startServer([binary_path, './json_response/conf.xml','./json_response/conf-A.xml','./json_response/conf-B.xml']) 
+    if serverHandle == None:
+        os._exit(-1)
     exit_code = 0;
     try :
-        if  testSearchResponds(host_url) and \
-            testSuggestResponds(host_url) and \
-            testInfoResponds(host_url) and \
-            testDocsResponds(host_url) and \
-            testUpdateResponds(host_url) and \
-            testSaveResponds(host_url) and \
-            testExportResponds(host_url) and \
-            testResetLoggerResponds(host_url) and \
-            testSearchAllResponds(host_url) and \
-            testShutDownResponds(host_url) :
+        if  testSearchResponds() and \
+            testSuggestResponds() and \
+            testInfoResponds() and \
+            testDocsResponds() and \
+            testUpdateResponds() and \
+            testSaveResponds() and \
+            testExportResponds() and \
+            testResetLoggerResponds() and \
+            testSearchAllResponds() and \
+            testShutDownResponds() :
 
             exit_code = 0
         else:
@@ -284,7 +268,7 @@ if __name__ == '__main__':
         print 'ERROR:', e
         exit_code = -1
     finally:
-        killServer(serverHandle)  
+        test_lib.killServer(serverHandle)  
         if exit_code == 0:
             print '\033[92m'+ "All passed", '\033[0m'
         else:

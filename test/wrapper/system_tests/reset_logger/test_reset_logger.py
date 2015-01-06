@@ -4,23 +4,17 @@ import os, time, sys, commands, urllib2, signal
 sys.path.insert(0, 'srch2lib')
 import test_lib
 
-port = '8087'
-
 class logTester():
     def __init__(self, binary_path):
-	self.args = [ binary_path, '--config-file=./reset_logger/srch2-config.xml' ]
+	self.args = [ binary_path, './reset_logger/srch2-config.xml', './reset_logger/srch2-config-A.xml', './reset_logger/srch2-config-B.xml' ]
 
     def startServer(self):
 	os.popen('rm -rf ./reset_logger/logs/')
 	os.popen('rm -rf ./reset_logger/indexes/')
         #print ('starting engine: {0}'.format(self.startServerCommand))
         self.serverHandle = test_lib.startServer(self.args);
-
-
-    #make sure the server is started
-    def pingServer(self):
-        test_lib.pingServer(port)
-        #print 'server is built!'
+        if self.serverHandle == None:
+            return -1
 
     #fire a single query
     def fireQuery(self, query):
@@ -29,8 +23,7 @@ class logTester():
         #urllib2.urlopen(queryCommand)
         #print 'fired query ' + query
         # Method 2 using curl
-        curlCommand = 'curl -s http://127.0.0.1:' + str(port) + '/search?q=' + query
-        os.popen(curlCommand)
+        test_lib.searchRequest('q=' + query)
 
 
     def killServer(self):
@@ -44,13 +37,8 @@ if __name__ == '__main__':
     #each line like "trust||01c90b4effb2353742080000" ---- query||record_ids(results)
     binary_path = sys.argv[1]
 
-    if test_lib.confirmPortAvailable(port) == False:
-        print 'Port ' + str(port) + ' already in use - aborting'
-        os._exit(-1)
-
     tester = logTester(binary_path)
     tester.startServer()
-    tester.pingServer()
 
     #we assume the configuration file is using './logs/srch2-log.txt' as default log file
     logFileName = './reset_logger/logs/srch2-log.txt'

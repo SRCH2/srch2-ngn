@@ -13,8 +13,6 @@ import sys,shutil, urllib2, json, time, subprocess, os, commands, signal, re
 sys.path.insert(0, 'srch2lib')
 import test_lib
 
-port = '8087'
-
 #Function of checking the results
 def checkResult(query, responseJson,resultValue):
 #    for key, value in responseJson:
@@ -78,20 +76,11 @@ def prepareQuery(queryKeywords, fuzzy):
 
 def testMultipleCores(queriesAndResultsPath, queriesAndResultsPath2, binary_path):
     #Start the engine server
-    args = [ binary_path, '--config-file=./multicore/conf-multicore.xml' ]
+    args = [ binary_path, './multicore/conf-multicore.xml','./multicore/conf-multicore-A.xml','./multicore/conf-multicore-B.xml' ]
 
-    if test_lib.confirmPortAvailable(port) == False:
-        print 'Port ' + str(port) + ' already in use - aborting'
-        return -1
-
-    print 'starting engine: ' + args[0] + ' ' + args[1]
     serverHandle = test_lib.startServer(args)
-    # sometime it fails, it might be that the multicore need more time to load ? 
-    time.sleep(2)
-
-    if test_lib.pingServer(port) != 0:
-        print 'pingServer failed, here is the args:'
-        print args
+    if serverHandle == None:
+        return -1
     failCount = 0
 
     #######################################
@@ -110,22 +99,17 @@ def testMultipleCores(queriesAndResultsPath, queriesAndResultsPath2, binary_path
         for coreResult in allResults:
             resultValue=coreResult.split()
             #construct the query
-            if coreNum == 0:
-                # test default core (unnamed core) on 0th iteration
-                query='http://localhost:' + port + '/search?'
-            else:
-                query='http://localhost:' + port + '/core' + str(coreNum) + '/search?'
-            query = query + prepareQuery(queryValue, False)
-
-            #do the query
-            response = urllib2.urlopen(query).read()
+            query = prepareQuery(queryValue, False)
 
             # TODO - Replace srch2 bad JSON (spurious comma).  Ticket SRCN-335 already filed.
             #response = re.sub('[,][}]', '}', response)
             #print query + ' Got ==> ' + response
-
-            response_json = json.loads(response)
-
+            if coreNum == 0:
+                # test default core (unnamed core) on 0th iteration
+                response_json = test_lib.searchRequest(query)
+            else:
+                response_json = test_lib.searchRequest(query,'core'+str(coreNum))
+           
             #check the result
             failCount += checkResult(query, response_json['results'], resultValue)
 
@@ -167,17 +151,13 @@ def testMultipleCores(queriesAndResultsPath, queriesAndResultsPath2, binary_path
         for coreResult in allResults:
             resultValue=coreResult.split()
             #construct the query
-            query='http://localhost:' + port + '/core' + str(coreNum[index]) + '/search?'
-            query = query + prepareQuery(queryValue, False)
-
-            #do the query
-            response = urllib2.urlopen(query).read()
+            query = prepareQuery(queryValue, False)
 
             # TODO - Replace srch2 bad JSON (spurious comma).  Ticket SRCN-335 already filed.
             #response = re.sub('[,][}]', '}', response)
             # print query + ' Got ==> ' + response
 
-            response_json = json.loads(response)
+            response_json = test_lib.searchRequest(query, 'core' + str(coreNum[index]))
 
             #check the result
             failCount += checkResult(query, response_json['results'], resultValue)
@@ -185,9 +165,8 @@ def testMultipleCores(queriesAndResultsPath, queriesAndResultsPath2, binary_path
             index += 1
 
         # Test search_all functionality
-        query='http://localhost:' + port + '/_all/search?' + prepareQuery(queryValue, False)
-        response = urllib2.urlopen(query).read()
-        response_json = json.loads(response)
+        query =  prepareQuery(queryValue, False)
+        response_json = test_lib.searchRequest(query, '_all')
         # Check the search_all result 
         index = 0
         for coreResult in allResults:

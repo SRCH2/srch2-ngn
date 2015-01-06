@@ -5,8 +5,6 @@ import sys, urllib2, json, time, subprocess, os, commands,signal
 sys.path.insert(0, 'srch2lib')
 import test_lib
 
-port = '8087'
-
 #the function of checking the results
 def checkResult(query, responseJson,resultValue):
     isPass=1
@@ -70,15 +68,11 @@ def prepareQuery(queryKeywords):
 
 def testFuzzyAttributeBasedSearch(queriesAndResultsPath, binary_path):
     # Start the engine server
-    args = [ binary_path, '--config-file=./fuzzy_attribute_based_search/conf.xml' ]
-
-    if test_lib.confirmPortAvailable(port) == False:
-        print 'Port ' + str(port) + ' already in use - aborting'
-        return -1
+    args = [ binary_path, './fuzzy_attribute_based_search/conf.xml', './fuzzy_attribute_based_search/conf-A.xml', './fuzzy_attribute_based_search/conf-B.xml']
 
     serverHandle = test_lib.startServer(args)
-    #make sure that start the engine up
-    test_lib.pingServer(port)
+    if serverHandle == None:
+        return -1
 
     #construct the query
     failCount = 0
@@ -89,14 +83,8 @@ def testFuzzyAttributeBasedSearch(queriesAndResultsPath, binary_path):
         queryValue=value[0].split()
         resultValue=(value[1]).split()
         #construct the query
-        query='http://localhost:' + port + '/search?'
-        query = query + prepareQuery(queryValue)
-
-        #print query
-        
-        # do the query
-        response = urllib2.urlopen(query).read()
-        response_json = json.loads(response)
+        query = prepareQuery(queryValue)
+        response_json = test_lib.searchRequest(query)
       
         #check the result
         failCount += checkResult(query, response_json['results'], resultValue )

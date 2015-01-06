@@ -4,8 +4,6 @@ import sys, urllib2, json, time, subprocess, os, commands, signal
 sys.path.insert(0, 'srch2lib')
 import test_lib
 
-port = '8087'
-
 #Function of checking the results
 def checkResult(query, responseJson,resultValue):
 #    for key, value in responseJson:
@@ -111,14 +109,9 @@ def test(queriesAndResultsPath, binary_path, configFilePath):
     #Start the engine server
     args = [ binary_path, '--config-file=' + configFilePath]
 
-    if test_lib.confirmPortAvailable(port) == False:
-        print 'Port ' + str(port) + ' already in use - aborting'
-        return -1
-
-    print 'starting engine: ' + args[0] + ' ' + args[1]
     serverHandle = test_lib.startServer(args)
-
-    test_lib.pingServer(port, 'q=garbage', 30)
+    if serverHandle == None:
+        return -1
 
     #construct the query
     failCount = 0
@@ -142,15 +135,7 @@ def test(queriesAndResultsPath, binary_path, configFilePath):
             if len(value) > 3:
                 coreName = value[3].strip('\n').strip()
 
-            if coreName == "":
-                query='http://localhost:' + port + '/' + command
-            else:
-                query='http://localhost:' + port + '/' + coreName + '/' + command
-            print query
-            request = urllib2.Request(query, data=payload)
-            request.get_method = lambda: 'PUT'
-            opener = urllib2.build_opener(urllib2.HTTPHandler)
-            url = opener.open(request)
+            test_lib.sendPutRequest(command, payload, coreName)
             time.sleep(1)
         else:
             # the line is a search query
@@ -161,25 +146,17 @@ def test(queriesAndResultsPath, binary_path, configFilePath):
                 coreName = value[3].strip('\n').strip()
 
             #construct the query
-            if coreName == '':
-                query='http://localhost:' + port + '/search?'
-            else:
-                query='http://localhost:' + port + '/' + coreName  + '/' + 'search?'
-            query = query + prepareQuery(queryValue) 
-            print query
-            #do the query
-            response = urllib2.urlopen(query).read()
-            response_json = json.loads(response)
+            response_json = test_lib.searchRequest(prepareQuery(queryValue),coreName)
 
             #check the result
             if value[0] == 'F': # test case for facet query
-                failCount += checkFacetResults(query, response_json, resultValue )
+                failCount += checkFacetResults(prepareQuery(queryValue), response_json, resultValue )
             elif value[0] == 'H': # test case for checking highlighting only
-                failCount += checkFieldsInResults(query, response_json['results'], resultValue, 'snippet')
+                failCount += checkFieldsInResults(prepareQuery(queryValue), response_json['results'], resultValue, 'snippet')
             elif value[0] == 'R': # test case for only checking fields in response
-                failCount += checkFieldsInResults(query, response_json['results'], resultValue, 'record' )
+                failCount += checkFieldsInResults(prepareQuery(queryValue), response_json['results'], resultValue, 'record' )
             else:
-                failCount += checkResult(query, response_json['results'], resultValue )
+                failCount += checkResult(prepareQuery(queryValue), response_json['results'], resultValue )
 
     test_lib.killServer(serverHandle)
     print '=============================='

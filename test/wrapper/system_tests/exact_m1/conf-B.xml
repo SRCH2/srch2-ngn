@@ -23,12 +23,7 @@
             In this config file it should be as "data/sample-data.json"
     -->
     <srch2Home>./</srch2Home>
-  
-    <transport>
-        <port>4002</port>
-        <ipaddress>127.0.0.1</ipaddress>
-    </transport>
-
+ 
     <!--
         License Key File
         Required
@@ -63,9 +58,15 @@
         Path for a data file to be loaded. The file must be in the json format.
         REQUIRED, when "index-load-or-create" is set to 0.
     -->
-    <dataFile>./exact_m1/empty.json</dataFile>
+    <licenseFile>../../wrapper/conf/srch2_license_key.txt</licenseFile>
+    <transport>
+        <port>4003</port>
+        <ipaddress>127.0.0.1</ipaddress>
+    </transport>
+    <dataFile>./empty.json</dataFile>
     <node-name>node-B</node-name>
- 
+    <wellknownhosts>127.0.0.1:54000</wellknownhosts>
+     
     <!--
 	Maximum Number of Threads
 	Optional

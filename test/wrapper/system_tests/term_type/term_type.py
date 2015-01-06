@@ -8,8 +8,6 @@ import sys, urllib2, json, time, subprocess, os, commands, signal
 sys.path.insert(0, 'srch2lib')
 import test_lib
 
-port = '8087'
-
 #Function of checking the results
 def checkResult(query, responseJson, resultValue):
     isPass = 1
@@ -72,15 +70,11 @@ def prepareQuery(queryKeywords):
     ##################################
     return query
 
-def testTermType(queriesAndResultsPath, conf, binary_path):
+def testTermType(queriesAndResultsPath, args):
 	#Start the engine server
-	args = [ binary_path, '--config-file=' + conf ]
-        if test_lib.confirmPortAvailable(port) == False:
-            print 'Port ' + str(port) + ' already in use - aborting'
-            return -1
-
 	serverHandle = test_lib.startServer(args)
-	test_lib.pingServer(port)
+	if serverHandle == None:
+		return -1
 
 	#construct the query
 	failCount = 0
@@ -91,11 +85,8 @@ def testTermType(queriesAndResultsPath, conf, binary_path):
 	    queryValue = value[0].split()
 	    resultValue = (value[1]).split()
 	    #construct the query
-            query = 'http://localhost:' + port + '/search?'
-	    query = query + prepareQuery(queryValue)
-	    #do the query
-	    response = urllib2.urlopen(query).read()
-	    response_json = json.loads(response)
+	    query = prepareQuery(queryValue)
+	    response_json = test_lib.searchRequest(query)
 
 	    #check the result
 	    failCount += checkResult(query, response_json['results'], resultValue)
@@ -111,9 +102,9 @@ if __name__ == '__main__':
     binary_path = sys.argv[1]    
     queriesAndResultsPath = sys.argv[2]  
   
-    exitCode = testTermType(queriesAndResultsPath, './term_type/conf.xml', binary_path)
+    exitCode = testTermType(queriesAndResultsPath, [ binary_path, './term_type/conf.xml', './term_type/conf-A.xml', './term_type/conf-B.xml'])
     time.sleep(5)
     print '--------Term type test  for attribute_based_search--------------'  
-    exitCode += testTermType(queriesAndResultsPath, './term_type/conf_for_attribute_based_search.xml', binary_path)
+    exitCode += testTermType(queriesAndResultsPath, [ binary_path, './term_type/conf_for_attribute_based_search.xml', './term_type/conf_for_attribute_based_search-A.xml', './term_type/conf_for_attribute_based_search-B.xml' ])
     os._exit(exitCode)
 

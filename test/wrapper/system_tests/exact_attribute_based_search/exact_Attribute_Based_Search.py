@@ -5,8 +5,6 @@ import sys, urllib2, json, time, subprocess, os, commands,signal
 sys.path.insert(0, 'srch2lib')
 import test_lib
 
-port = '8087'
-
 #the function of checking the results
 def checkResult(query, responseJson, resultValue):
     isPass=1
@@ -69,19 +67,12 @@ def prepareQuery(queryKeywords):
     return query
 
 
-def testExactAttributeBasedSearch(queriesAndResultsPath, binary_path,
-    configFile):
+def testExactAttributeBasedSearch(queriesAndResultsPath, args):
     # Start the engine server
-    args = [ binary_path, '--config-file=' + configFile ]
-
-    if test_lib.confirmPortAvailable(port) == False:
-        print 'Port ' + str(port) + ' already in use - aborting'
-        return -1
 
     serverHandle = test_lib.startServer(args)
-
-    #make sure that start the engine up
-    test_lib.pingServer(port)
+    if serverHandle == None:
+        return -1
 
     #construct the query
     failCount = 0
@@ -92,13 +83,8 @@ def testExactAttributeBasedSearch(queriesAndResultsPath, binary_path,
         queryValue=value[0].split()
         resultValue=(value[1]).split()
         #construct the query
-        query='http://localhost:' + str(port) + '/search?'
-        query = query + prepareQuery(queryValue)
-        #print query
-        
-        # do the query
-        response = urllib2.urlopen(query).read()
-        response_json = json.loads(response)
+        query = prepareQuery(queryValue)
+        response_json = test_lib.searchRequest(query)
       
         #check the result
         failCount += checkResult(query, response_json['results'], resultValue )
@@ -114,10 +100,10 @@ if __name__ == '__main__':
     binary_path = sys.argv[1]
     queriesAndResultsPath = sys.argv[2]
 
-    exitCode = testExactAttributeBasedSearch(queriesAndResultsPath, binary_path,
-        './exact_attribute_based_search/conf.xml')
+    args = [ binary_path, './exact_attribute_based_search/conf.xml', './exact_attribute_based_search/conf-A.xml', './exact_attribute_based_search/conf-B.xml']
+    exitCode = testExactAttributeBasedSearch(queriesAndResultsPath, args)
     time.sleep(5) # give first server time to shutdown
-    exitCode += testExactAttributeBasedSearch(queriesAndResultsPath, binary_path,
-        './exact_attribute_based_search/conf_w_positional_info.xml')
+    args = [ binary_path, './exact_attribute_based_search/conf_w_positional_info.xml', './exact_attribute_based_search/conf_w_positional_info-A.xml', './exact_attribute_based_search/conf_w_positional_info-B.xml']
+    exitCode += testExactAttributeBasedSearch(queriesAndResultsPath, args)
 
     os._exit(exitCode)

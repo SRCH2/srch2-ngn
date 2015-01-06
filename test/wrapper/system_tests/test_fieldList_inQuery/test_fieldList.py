@@ -67,18 +67,12 @@ def prepareQuery(queryKeywords):
     ##################################
     return query
     
-def testFieldList(queriesAndResultsPath, binary_path, configFile):
+def testFieldList(queriesAndResultsPath, args):
     #Start the engine server
-    args = [ binary_path, '--config-file=' + configFile ]
 
-    if test_lib.confirmPortAvailable(port) == False:
-        print 'Port ' + str(port) + ' already in use - aborting'
-        return -1
-
-    print 'starting engine: ' + args[0] + ' ' + args[1]
     serverHandle = test_lib.startServer(args)
-
-    test_lib.pingServer(port)
+    if serverHandle == None:
+        return -1
 
     #construct the query
     failCount = 0
@@ -90,13 +84,8 @@ def testFieldList(queriesAndResultsPath, binary_path, configFile):
         queryValue=value[0]
         resultValue=(value[1])
         #construct the query
-        query='http://localhost:' + port + '/search?'
-        query = query + prepareQuery([queryValue]) 
-        #print query
-        #do the query
-        response = urllib2.urlopen(query).read()
-        #print response
-        response_json = json.loads(response)
+        query = prepareQuery([queryValue])
+        response_json = test_lib.searchRequest(query)
 
         #check the result
         failCount += checkResult(query, response_json['results'], [resultValue] )
@@ -110,10 +99,10 @@ if __name__ == '__main__':
     #each line like "trust||01c90b4effb2353742080000" ---- query||record_ids(results)
     binary_path = sys.argv[1]
     queriesAndResultsPath = sys.argv[2]
-    exitCode = testFieldList(queriesAndResultsPath, binary_path, "./test_fieldList_inQuery/conf.xml")
+    exitCode = testFieldList(queriesAndResultsPath, [ binary_path, "./test_fieldList_inQuery/conf.xml","./test_fieldList_inQuery/conf-A.xml","./test_fieldList_inQuery/conf-B.xml"])
     time.sleep(5)
-    exitCode = testFieldList(queriesAndResultsPath, binary_path, "./test_fieldList_inQuery/conf1.xml")
+    exitCode = testFieldList(queriesAndResultsPath, [ binary_path, "./test_fieldList_inQuery/conf1.xml","./test_fieldList_inQuery/conf1-A.xml","./test_fieldList_inQuery/conf1-B.xml"])
     time.sleep(5)
-    exitCode = testFieldList(queriesAndResultsPath, binary_path, "./test_fieldList_inQuery/conf2.xml")
+    exitCode = testFieldList(queriesAndResultsPath, [ binary_path, "./test_fieldList_inQuery/conf2.xml","./test_fieldList_inQuery/conf2-A.xml","./test_fieldList_inQuery/conf2-B.xml"])
     time.sleep(5)
     os._exit(exitCode)

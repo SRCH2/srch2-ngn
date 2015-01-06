@@ -66,16 +66,11 @@ def prepareQuery(queryKeywords):
     
 def testEmptyRecordBoostField(queriesAndResultsPath, binary_path):
     #Start the engine server
-    args = [ binary_path, '--config-file=./empty_recordBoostField/conf.xml' ]
+    args = [ binary_path, './empty_recordBoostField/conf.xml','./empty_recordBoostField/conf-A.xml','./empty_recordBoostField/conf-B.xml' ]
 
-    if test_lib.confirmPortAvailable(port) == False:
-        print 'Port ' + str(port) + ' already in use - aborting'
-        return -1
-
-    print 'starting engine: ' + args[0] + ' ' + args[1]
     serverHandle = test_lib.startServer(args)
-
-    test_lib.pingServer(port)
+    if serverHandle == None:
+        return -1
 
     #construct the query
     failCount = 0
@@ -86,12 +81,8 @@ def testEmptyRecordBoostField(queriesAndResultsPath, binary_path):
         queryValue=value[0].split()
         resultValue=(value[1]).split()
         #construct the query
-        query='http://localhost:' + port + '/search?'
-        query = query + prepareQuery(queryValue) 
-        #print query
-        #do the query
-        response = urllib2.urlopen(query).read()
-        response_json = json.loads(response)
+        query = prepareQuery(queryValue)
+        response_json = test_lib.searchRequest(query)
 
         #check the result
         failCount += checkResult(query, response_json['results'], resultValue )
