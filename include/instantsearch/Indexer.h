@@ -79,6 +79,8 @@ public:
 
 
         directoryName = _directoryName;
+        maxFeedbackRecordsPerQuery = 1; // set for test cases
+        maxCountOfFeedbackQueries = 1; // set for test cases
     }
     
     ~IndexMetaData()
