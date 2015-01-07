@@ -327,7 +327,7 @@ void * dispatchMergeWorkerThread(void *arg) {
 	MergeWorkersThreadArgs *info = (MergeWorkersThreadArgs *) arg;
 	IndexData * index = (IndexData *)info->index;
 	pthread_mutex_lock(&info->perThreadMutex);
-	while(1) {
+	while(!info->stopExecuting) {
 		pthread_cond_wait(&info->waitConditionVar, &info->perThreadMutex);
 		if (info->stopExecuting)
 			break;
@@ -352,7 +352,6 @@ void * dispatchMergeWorkerThread(void *arg) {
 		}
 	}
 	pthread_mutex_unlock(&info->perThreadMutex);
-	pthread_mutex_destroy(&info->perThreadMutex);
 	return NULL;
 }
 /*
@@ -400,7 +399,6 @@ void IndexReaderWriter::startMergeThreadLoop()
       Logger::warn("Merge thread can be called only after first commit!");
       return;
     }
-    pthread_mutex_unlock(&lockForWriters);
     mergeThreadStarted = true;
 
     createAndStartMergeWorkerThreads();
@@ -409,7 +407,6 @@ void IndexReaderWriter::startMergeThreadLoop()
      *  Initialize condition variable for the first time before loop starts.
      */
     pthread_cond_init(&countThresholdConditionVariable, NULL);
-
     while (1)
     {
         rc =  gettimeofday(&tp, NULL);
@@ -418,7 +415,7 @@ void IndexReaderWriter::startMergeThreadLoop()
         ts.tv_nsec = tp.tv_usec * 1000;
         ts.tv_sec += this->mergeEveryNSeconds;
 
-        pthread_mutex_lock(&lockForWriters);
+
         rc = pthread_cond_timedwait(&countThresholdConditionVariable,
             &lockForWriters, &ts);
 
@@ -427,7 +424,6 @@ void IndexReaderWriter::startMergeThreadLoop()
         else
         {
             this->doMerge();
-            pthread_mutex_unlock(&lockForWriters);
         }
     }
     pthread_cond_destroy(&countThresholdConditionVariable);
@@ -444,6 +440,9 @@ void IndexReaderWriter::startMergeThreadLoop()
     // make sure all worker threads are stopped.
     for (unsigned i = 0; i < mergeWorkersCount; ++i) {
     	pthread_join(mergerWorkerThreads[i], NULL);
+    	// release resources when worker thread is gone.
+    	pthread_mutex_destroy(&mergeWorkersArgs[i].perThreadMutex);
+    	pthread_cond_destroy(&mergeWorkersArgs[i].waitConditionVar);
     }
     // free allocate memory
     delete[] mergerWorkerThreads;
