@@ -1,6 +1,7 @@
 
 #include "PhysicalOperators.h"
 #include "cmath"
+#include "FeedbackRankingOperator.h"
 
 namespace srch2 {
 namespace instantsearch {
@@ -11,9 +12,18 @@ namespace instantsearch {
 SortByScoreOperator::SortByScoreOperator() {
 }
 SortByScoreOperator::~SortByScoreOperator(){
+	delete this->feedbackRanker;
 }
 bool SortByScoreOperator::open(QueryEvaluatorInternal * queryEvaluator, PhysicalPlanExecutionParameters & params){
 	ASSERT(this->getPhysicalPlanOptimizationNode()->getChildrenCount() == 1);
+
+	if (params.feedbackRanker) {
+		// store the ranker object and do not pass it to children.
+		this->feedbackRanker = params.feedbackRanker;
+		params.feedbackRanker = NULL;
+	} else {
+		this->feedbackRanker = NULL;
+	}
 
 	// open the single child
 	this->getPhysicalPlanOptimizationNode()->getChildAt(0)->getExecutableNode()->open(queryEvaluator,params);
@@ -24,6 +34,14 @@ bool SortByScoreOperator::open(QueryEvaluatorInternal * queryEvaluator, Physical
 		if(nextRecord == NULL){
 			break;
 		}
+
+		if (this->feedbackRanker) {
+			float runtimeScore = nextRecord->getRecordRuntimeScore();
+			float feedbackBoost = feedbackRanker->getFeedbackBoostForRecord(nextRecord->getRecordId());
+			runtimeScore = Ranker::computeFeedbackBoostedScore(runtimeScore, feedbackBoost);
+			nextRecord->setRecordRuntimeScore(runtimeScore);
+		}
+
 		// if topKBestRecords has less than K records insert this record into topKBestRecords
 		// ---- and if the size becomes K heapify it
 		// else

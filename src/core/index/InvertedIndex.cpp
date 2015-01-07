@@ -73,7 +73,9 @@ void InvertedListContainer::sortAndMergeBeforeCommit(const unsigned keywordId, c
 // Sort them assuming those from the read view are already sorted.
 // 4) Copy them back to the write view, which is resized based on the
 // total number of valid records.
-void InvertedListContainer::sortAndMerge(const unsigned keywordId, ForwardIndex *forwardIndex,
+//
+// Return: number of elements in the final write view
+int InvertedListContainer::sortAndMerge(const unsigned keywordId, ForwardIndex *forwardIndex,
 		shared_ptr<vectorview<ForwardListPtr> >& forwardListDirectoryReadView,
 	    vector<InvertedListIdAndScore>& invertedListElements,
         unsigned totalNumberOfDocuments,
@@ -171,7 +173,7 @@ void InvertedListContainer::sortAndMerge(const unsigned keywordId, ForwardIndex 
     // In this case, instead of calling "merge()", we call "commit()" to let this COWvector commit.
     if (readView.get() == writeView) {
         this->invList->commit();
-        return;
+        return this->invList->getWriteView()->size();
     }
 
     std::inplace_merge (invertedListElements.begin(),
@@ -190,6 +192,7 @@ void InvertedListContainer::sortAndMerge(const unsigned keywordId, ForwardIndex 
     }
 
     this->invList->merge();
+    return this->invList->getWriteView()->size();
 }
 
 
@@ -372,7 +375,7 @@ void InvertedIndex::finalCommit(bool needToSortEachInvertedList)
 }
 
 void InvertedIndex::merge(RankerExpression *rankerExpression, unsigned totalNumberOfDocuments,
-		const Schema *schema)
+		const Schema *schema, Trie *trie)
 {
     this->invertedIndexVector->merge();
     this->keywordIds->merge();
@@ -383,19 +386,25 @@ void InvertedIndex::merge(RankerExpression *rankerExpression, unsigned totalNumb
     shared_ptr<vectorview<ForwardListPtr> > forwardListDirectoryReadView;
     forwardIndex->getForwardListDirectory_ReadView(forwardListDirectoryReadView);
     vector<InvertedListIdAndScore> invertedListElements;
-    for (set<unsigned>::const_iterator iter = this->invertedListSetToMerge.begin();
-        iter != this->invertedListSetToMerge.end(); ++iter) {
-    	ASSERT(*iter < writeView->size());
-    	writeView->at(*iter)->sortAndMerge(keywordIdsWriteView->getElement(*iter),
+    for (set<pair<unsigned, unsigned> >::const_iterator iter = this->invertedListKeywordSetToMerge.begin();
+        iter != this->invertedListKeywordSetToMerge.end(); ++iter) {
+    	ASSERT(iter->first < writeView->size()); // iter->first is invertedListId
+    	int finalInvListWriteViewSize =
+             writeView->at(iter->first)->sortAndMerge(keywordIdsWriteView->getElement(iter->first),
     			this->forwardIndex, forwardListDirectoryReadView, invertedListElements,
     			totalNumberOfDocuments, rankerExpression, schema);
     	invertedListElements.clear();
+    	if (finalInvListWriteViewSize == 0) {
+            // This inverted list is empty, so we add it to the list
+            // of empty leaf node ids to delete later
+            trie->addEmptyLeafNodeId(iter->second); // add the keyword Id
+    	}
     }
-    this->invertedListSetToMerge.clear();
+    this->invertedListKeywordSetToMerge.clear();
 }
 
-unsigned  InvertedIndex::workerMergeTask( RankerExpression *rankerExpression,
-		unsigned totalNumberOfDocuments, const Schema *schema) {
+unsigned  InvertedIndex::workerMergeTask(RankerExpression *rankerExpression,
+		unsigned totalNumberOfDocuments, const Schema *schema, Trie *trie) {
 	unsigned totalListProcessed = 0;
 	shared_ptr<vectorview<ForwardListPtr> > forwardListDirectoryReadView;
 	forwardIndex->getForwardListDirectory_ReadView(forwardListDirectoryReadView);
@@ -423,13 +432,22 @@ unsigned  InvertedIndex::workerMergeTask( RankerExpression *rankerExpression,
 		}
 
 		++totalListProcessed;
-		unsigned invertedListId = *(mergeWorkersSharedQueue.data + cursor);
+		unsigned invertedListId = mergeWorkersSharedQueue.invertedListKeywordIds[cursor].first;
+		unsigned keywordId = mergeWorkersSharedQueue.invertedListKeywordIds[cursor].second;
 		ASSERT(invertedListId < writeView->size());
 		if (invertedListId < writeView->size()) {
-			writeView->at(invertedListId)->sortAndMerge(keywordIdsWriteView->getElement(invertedListId),
-					this->forwardIndex,forwardListDirectoryReadView, invertedListElements,
-					totalNumberOfDocuments, rankerExpression, schema);
-			invertedListElements.clear();
+            int finalInvListWriteViewSize =
+                    writeView->at(invertedListId)->sortAndMerge(keywordIdsWriteView->getElement(invertedListId),
+                      this->forwardIndex,forwardListDirectoryReadView, invertedListElements,
+                      totalNumberOfDocuments, rankerExpression, schema);
+            invertedListElements.clear();
+
+            if (finalInvListWriteViewSize == 0) {
+	            // This inverted list is empty, so we add it to the list
+	            // of empty leaf node ids to delete later
+	            trie->addEmptyLeafNodeId(keywordId); // add the keyword Id
+	    	}
+
 		} else {
 			Logger::info("Invalid list Id = %d for merge", invertedListId);
 		}
@@ -442,21 +460,21 @@ void InvertedIndex::parallelMerge()
     this->invertedIndexVector->merge();
     this->keywordIds->merge();
 
-    unsigned totalLoad = this->invertedListSetToMerge.size();
+    unsigned totalLoad = this->invertedListKeywordSetToMerge.size();
 
     if (totalLoad == 0)
     	return;
 
-    // copy inverted list ids to an array from the set.
-    unsigned *workerIdsList =  new unsigned[totalLoad];
+    // copy inverted list ids and keyword ids to an array from the set.
+    pair<unsigned, unsigned> *workerIdsList = new pair<unsigned, unsigned>[totalLoad];
     unsigned i = 0;
-    for (set<unsigned>::const_iterator iter = this->invertedListSetToMerge.begin();
-        iter != this->invertedListSetToMerge.end(); ++iter) {
-    	workerIdsList[i++] = *iter;
+    for (set<pair<unsigned, unsigned> >::const_iterator iter = this->invertedListKeywordSetToMerge.begin();
+        iter != this->invertedListKeywordSetToMerge.end(); ++iter) {
+    	workerIdsList[i++] = *iter; // <invertedListId, keywordId>
     }
 
-    // intitalize worker queue
-    mergeWorkersSharedQueue.data = workerIdsList;
+    // initialize worker queue
+    mergeWorkersSharedQueue.invertedListKeywordIds = workerIdsList;
     mergeWorkersSharedQueue.dataLen = totalLoad;
     mergeWorkersSharedQueue.cursor = 0;
 
@@ -484,12 +502,12 @@ void InvertedIndex::parallelMerge()
     pthread_mutex_unlock(&dispatcherMutex);
 
     // reset workers queue
-    mergeWorkersSharedQueue.data = NULL;
+    mergeWorkersSharedQueue.invertedListKeywordIds = NULL;
     mergeWorkersSharedQueue.dataLen = 0;
     mergeWorkersSharedQueue.cursor = 0;
 
     delete workerIdsList;
-    this->invertedListSetToMerge.clear();
+    this->invertedListKeywordSetToMerge.clear();
 }
 
 // recordInternalId is same as forwardIndeOffset
@@ -518,7 +536,7 @@ void InvertedIndex::addRecord(ForwardList* forwardList, Trie * trie,
 
             writeView->at(invertedListId) = keywordId;
             this->addInvertedListElement(invertedListId, forwardListOffset);
-            this->invertedListSetToMerge.insert(invertedListId);
+            this->invertedListKeywordSetToMerge.insert(make_pair(invertedListId, keywordId));
 
             float idf = this->getIdf(totalNumberOfDocuments, invertedListId);
             float tfBoostProduct = forwardList->getKeywordTfBoostProduct(counter);
@@ -605,14 +623,15 @@ void InvertedIndex::print_test() const
     }
 }
 /*
- *   This API appends the inverted lists supplied as an input to a set of inverted list ids
- *   that need to be merged.
+ *   This API appends the inverted lists supplied as an input to a set of inverted list ids and
+ *   their keyword ids that need to be merged.
  */
-void InvertedIndex::appendInvertedListIdsForMerge(const vector<unsigned>& invertedListIds ){
-	for (unsigned i = 0; i < invertedListIds.size(); ++i) {
-			invertedListSetToMerge.insert(invertedListIds[i]);
-	}
-}
+void InvertedIndex::appendInvertedListKeywordIdsForMerge(const vector<pair<unsigned, unsigned> >& invertedListKeywordIds){
+    for (unsigned i = 0; i < invertedListKeywordIds.size(); ++i) {
+       invertedListKeywordSetToMerge.insert(invertedListKeywordIds[i]);
+    }
+ }
+
 
 }
 }

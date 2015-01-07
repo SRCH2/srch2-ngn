@@ -1302,7 +1302,7 @@ void ForwardList::getKeywordAttributeIdsLists(const unsigned numOfKeywords,
 void ForwardList::getKeywordAttributeIdsList(unsigned keywordOffset, vector<unsigned>& attributeIdsList) const{
 
 	if (attributeIdsIndexSize == 0){
-		Logger::warn("Attribute Index not found in forward index!!");
+		// Logger::warn("Attribute Index not found in forward index!!"); // TODO
 		return;
 	}
 	const uint8_t * piPtr = getKeywordAttributeIdsPointer();  // pointer to position index for the record
@@ -1668,11 +1668,11 @@ bool ForwardIndex::recoverRecord(const std::string &externalRecordId,
 
 // check if a record with a specific internal id exists
 INDEXLOOKUP_RETVAL ForwardIndex::lookupRecord(
-        const std::string &externalRecordId) const {
+        const std::string &externalRecordId, unsigned& internalRecordId) const {
     if (externalRecordId.empty())
         return LU_ABSENT_OR_TO_BE_DELETED;
 
-    unsigned internalRecordId;
+
     bool isInMap = this->externalToInternalRecordIdMap.getValue(externalRecordId , internalRecordId);
 
     if(isInMap == false){
@@ -1785,7 +1785,7 @@ bool isAttributesListsMatching(const vector<unsigned>& list1, const vector<unsig
 void ForwardList::getKeywordAttributeIdsByteArray(unsigned keywordOffset, vector<uint8_t>& attributesVLBarray){
 
 	if (attributeIdsIndexSize == 0){
-		Logger::warn("Attribute Index not found in forward index!!");
+		// Logger::warn("Attribute Index not found in forward index!!"); // TODO
 		return;
 	}
 	const uint8_t * piPtr = getKeywordAttributeIdsPointer();  // pointer to position index for the record

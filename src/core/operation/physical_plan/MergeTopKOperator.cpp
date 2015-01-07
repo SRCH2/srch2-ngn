@@ -4,6 +4,7 @@
 #include "operation/QueryEvaluatorInternal.h"
 #include "PhysicalOperatorsHelper.h"
 #include <cmath>
+#include "FeedbackRankingOperator.h"
 
 namespace srch2 {
 namespace instantsearch {
@@ -15,6 +16,7 @@ MergeTopKOperator::MergeTopKOperator() {
 }
 
 MergeTopKOperator::~MergeTopKOperator(){
+	delete this->feedbackRanker;
 }
 bool MergeTopKOperator::open(QueryEvaluatorInternal * queryEvaluator, PhysicalPlanExecutionParameters & params){
 
@@ -22,6 +24,14 @@ bool MergeTopKOperator::open(QueryEvaluatorInternal * queryEvaluator, PhysicalPl
 
 	if(this->queryEvaluator != NULL){ // only for mergeTopK ctest queryEvaluator can be NULL
 		queryEvaluator->getForwardIndex()->getForwardListDirectory_ReadView(forwardListDirectoryReadView);
+	}
+
+	if (params.feedbackRanker) {
+		// store the ranker object and do not pass it to children.
+		this->feedbackRanker = params.feedbackRanker;
+		params.feedbackRanker = NULL;
+	} else {
+		this->feedbackRanker = NULL;
 	}
 
 	/*
@@ -123,7 +133,13 @@ bool MergeTopKOperator::open(QueryEvaluatorInternal * queryEvaluator, PhysicalPl
 				localRecordCopyOfCache->setPositionIndexOffsets(positionIndexOffsets);
 				localRecordCopyOfCache->setTermTypes(termTypes);
 				// nextRecord->setRecordStaticScore() Should we set static score as well ?
-				localRecordCopyOfCache->setRecordRuntimeScore(params.ranker->computeAggregatedRuntimeScoreForAnd( runTimeTermRecordScores));
+				float runtimeScore = params.ranker->computeAggregatedRuntimeScoreForAnd( runTimeTermRecordScores);
+				if (this->feedbackRanker) {
+					float feedbackBoost = this->feedbackRanker->getFeedbackBoostForRecord(
+							mergeTopKCacheEntry->candidatesList.at(i)->getRecordId());
+					runtimeScore = Ranker::computeFeedbackBoostedScore(runtimeScore, feedbackBoost);
+				}
+				localRecordCopyOfCache->setRecordRuntimeScore(runtimeScore);
 
 			}
 
@@ -208,7 +224,10 @@ PhysicalPlanRecordItem * MergeTopKOperator::getNext(const PhysicalPlanExecutionP
 		topRecordToReturn= candidatesList.at(0);
 		candidatesList.erase(candidatesList.begin());
 		float maxScore = 0;
-		if( getMaximumScoreOfUnvisitedRecords(maxScore) == false){
+		float maxFeedbackBoostForQuery = 1.0;
+		if (this->feedbackRanker)
+			maxFeedbackBoostForQuery = feedbackRanker->getMaxBoostForThisQuery();
+		if( getMaximumScoreOfUnvisitedRecords(maxScore, maxFeedbackBoostForQuery) == false){
 			listsHaveMoreRecordsInThem = false;
 		}
 		if(maxScore < topRecordToReturn->getRecordRuntimeScore()){
@@ -266,7 +285,13 @@ PhysicalPlanRecordItem * MergeTopKOperator::getNext(const PhysicalPlanExecutionP
 		nextRecord->setPositionIndexOffsets(positionIndexOffsets);
 		nextRecord->setTermTypes(termTypes);
 		// nextRecord->setRecordStaticScore() Should we set static score as well ?
-		nextRecord->setRecordRuntimeScore(params.ranker->computeAggregatedRuntimeScoreForAnd( runTimeTermRecordScores));
+		float runtimeScore = params.ranker->computeAggregatedRuntimeScoreForAnd( runTimeTermRecordScores);
+		if (this->feedbackRanker) {
+			float feedbackBoost = this->feedbackRanker->getFeedbackBoostForRecord(
+					nextRecord->getRecordId());
+			runtimeScore = Ranker::computeFeedbackBoostedScore(runtimeScore, feedbackBoost);
+		}
+		nextRecord->setRecordRuntimeScore(runtimeScore);
 
 		// 4.1
 		if(topRecordToReturn == NULL){
@@ -282,7 +307,10 @@ PhysicalPlanRecordItem * MergeTopKOperator::getNext(const PhysicalPlanExecutionP
 
 		//5.
 		float maxScore = 0;
-		if( getMaximumScoreOfUnvisitedRecords(maxScore) == false){
+		float maxFeedbackBoostForQuery = 1.0;
+		if (this->feedbackRanker)
+			maxFeedbackBoostForQuery = feedbackRanker->getMaxBoostForThisQuery();
+		if( getMaximumScoreOfUnvisitedRecords(maxScore, maxFeedbackBoostForQuery) == false){
 			listsHaveMoreRecordsInThem = false;
 			break;
 		}
@@ -423,7 +451,7 @@ bool MergeTopKOperator::verifyRecordWithChildren(PhysicalPlanRecordItem * record
 
 }
 
-bool MergeTopKOperator::getMaximumScoreOfUnvisitedRecords(float & score){
+bool MergeTopKOperator::getMaximumScoreOfUnvisitedRecords(float & score, float maxFeedbackBoostForQuery){
 	// we just get the summation of all nextRecords in nextItemsFromChildren
 	score = 0;
 	for(vector<PhysicalPlanRecordItem * >::iterator nextRecord = nextItemsFromChildren.begin() ;
@@ -433,6 +461,7 @@ bool MergeTopKOperator::getMaximumScoreOfUnvisitedRecords(float & score){
 		}
 		score += (*nextRecord)->getRecordRuntimeScore();
 	}
+	score = Ranker::computeFeedbackBoostedScore(score, maxFeedbackBoostForQuery);
 	return true;
 }
 

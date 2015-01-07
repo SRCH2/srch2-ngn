@@ -30,6 +30,7 @@
 #include <vector>
 #include <memory>
 #include "util/mypthread.h"
+#include "index/FeedbackIndex.h"
 
 using std::vector;
 using std::string;
@@ -109,6 +110,7 @@ public:
 	  pthread_join(mergerThread, NULL); // waiting to JOINABLE merge thread.
     	}
         delete this->index;
+        delete this->userFeedbackIndex;
     };
 
     uint32_t getNumberOfDocumentsInIndex() const;
@@ -144,6 +146,10 @@ public:
     INDEXWRITE_RETVAL recoverRecord(const std::string &primaryKeyID, unsigned internalRecordId);
 
     INDEXLOOKUP_RETVAL lookupRecord(const std::string &primaryKeyID);
+
+    INDEXLOOKUP_RETVAL lookupRecord(const std::string &primaryKeyID, unsigned& internalRecordId);
+
+    FeedbackIndex * getFeedbackIndexer() { return userFeedbackIndex; }
 
     inline const IndexData *getReadView(IndexReadStateSharedPtr_Token &readToken)
     {
@@ -230,6 +236,7 @@ public:
 
 private:
     IndexData *index;
+    FeedbackIndex* userFeedbackIndex;
     CacheManager *cache;
 
     IndexHealthInfo indexHealthInfo;
@@ -246,6 +253,7 @@ private:
     bool needToSaveIndexes;
     unsigned mergeEveryNSeconds;
     unsigned mergeEveryMWrites;
+    string indexDirectoryName;
 
     unsigned updateHistogramEveryPMerges;
     unsigned updateHistogramEveryQWrites;

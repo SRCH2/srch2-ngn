@@ -6,7 +6,7 @@
 #include "QueryEvaluatorInternal.h"
 #include "physical_plan/FilterQueryOperator.h"
 #include "util/Logger.h"
-
+#include  "physical_plan/FeedbackRankingOperator.h"
 namespace srch2 {
 namespace instantsearch {
 
@@ -112,6 +112,17 @@ void QueryOptimizer::buildIncompleteTreeOptions(vector<PhysicalPlanOptimizationN
 
     // now we should inject SORT operators to make these plans functional
     injectRequiredSortOperators(treeOptions);
+
+    if(logicalPlan->getPostProcessingInfo() == NULL ||
+    		logicalPlan->getPostProcessingInfo()->getSortEvaluator() == NULL){
+    	// If external sort criteria is not specified by the user, only then we will do feedback boosting.
+    	// e.g if sort-by-refining-attribute is present in query then ignore feedback boosting.
+    	for(vector<PhysicalPlanOptimizationNode *>::iterator treeOption = treeOptions.begin();
+    			treeOption != treeOptions.end(); ++treeOption){
+    		if (!isLogicalPlanBoosted(*treeOption))
+    			injectSortOperatorsForFeedback(&(*treeOption), *treeOption,  -1 /*dummy*/);
+    	}
+    }
 //    // print for test
 //    cout << "Number of initial plans : " << treeOptions.size() << endl;
 //    cout << "========================================================" << endl;
@@ -286,6 +297,99 @@ void QueryOptimizer::buildIncompleteSubTreeOptionsGeo(LogicalPlanNode * root, ve
 		PhysicalPlanOptimizationNode *op = (PhysicalPlanOptimizationNode *)this->queryEvaluator->getPhysicalOperatorFactory()->createRandomAccessVerificationGeoOptimizationOperator();
 		op->setLogicalPlanNode(root);
 		treeOptions.push_back(op);
+	}
+}
+
+/*
+ *  Determine whether the logical plan is feedback boosted.
+ */
+bool QueryOptimizer::isLogicalPlanBoosted(PhysicalPlanOptimizationNode *node) {
+
+	if (isNodeFeedbackCapable(node)){
+		node->setFeedbackBoosted();
+		return true;
+	}
+
+	if (node->getChildrenCount() == 0) {
+		// nodes are marked not boosted by default.
+		return false;
+	}
+
+	bool isAllChildBoosted = true;
+	for (unsigned i = 0; i < node->getChildrenCount(); ++i) {
+		if (!isLogicalPlanBoosted(node->getChildAt(i))) {
+			isAllChildBoosted = false;
+			break;
+		}
+	}
+
+	if (isAllChildBoosted) {
+		node->setFeedbackBoosted();
+		return true;
+	} else {
+		return false;
+	}
+}
+
+void QueryOptimizer::injectSortOperatorsForFeedback(PhysicalPlanOptimizationNode **root,
+		PhysicalPlanOptimizationNode *node, unsigned childOffset){
+
+	bool atLeastOneChildBoosted = false;
+	for(unsigned i = 0 ; i < node->getChildrenCount() ; ++i){
+		if (node->getChildAt(i)->isFeedbackBoosted()) {
+			atLeastOneChildBoosted = true;
+			break;
+		}
+	}
+
+	if (atLeastOneChildBoosted) {
+		// There are some children which are boosted and some are not boosted.
+		// traverse to the non-boosted children and fix them by inserting sort operator..
+		for(unsigned i = 0 ; i < node->getChildrenCount() ; ++i) {
+			if (node->getChildAt(i)->isFeedbackBoosted() == false) {
+				injectSortOperatorsForFeedback(root, node->getChildAt(i), i);
+			}
+		}
+	} else {
+		// ALL nodes are NOT boosted or there are no children.
+		// fix this node by injecting a sortByScore operator here
+		SortByScoreOptimizationOperator * sortByScoreOp =
+				this->queryEvaluator->getPhysicalOperatorFactory()->createSortByScoreOptimizationOperator();
+		sortByScoreOp->setLogicalPlanNode(node->getLogicalPlanNode());
+		sortByScoreOp->addChild(node);
+
+		PhysicalPlanOptimizationNode* parentNode = node->getParent();
+		if (parentNode != NULL) {
+			parentNode->setChildAt(childOffset, sortByScoreOp);
+		} else {
+			// must be root node. make sort-by-score new root.
+			(*root) = sortByScoreOp;
+		}
+	}
+}
+
+// Operator is feedback capable iff
+// 1. it does NOT have sorted-by-score output property.
+// OR
+// 2. it is either MergeTopK or SortByScore operators. ( These operators have feedback logic in it)
+//
+bool QueryOptimizer::isNodeFeedbackCapable(PhysicalPlanOptimizationNode *node) {
+
+	IteratorProperties nodeOutputProp;
+	node->getOutputProperties(nodeOutputProp);
+
+	bool hasSortByScoreProperty = false;
+	for (unsigned i = 0; i < nodeOutputProp.properties.size(); ++i) {
+		if (nodeOutputProp.properties[i] == PhysicalPlanIteratorProperty_SortByScore) {
+			hasSortByScoreProperty = true;
+			break;
+		}
+	}
+	if (!hasSortByScoreProperty || node->getType() == PhysicalPlanNode_SortByScore
+			|| node->getType() == PhysicalPlanNode_MergeTopK) {
+		return true;
+	} else {
+		return false;
 	}
 }
 

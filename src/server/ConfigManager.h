@@ -144,6 +144,7 @@ enum PortType_t {
     AclAddRecordsForRole,
     AclAppendRecordsForRole,
     AclDeleteRecordsForRole,
+    FeedbackPort,
     EndOfPortType // stop value - not valid (also used to indicate all/default ports)
 };
 
@@ -561,6 +562,8 @@ private:
     static const char* const defaultExactPostTag;
 
     static const char* const heartBeatTimerTag;
+
+    static const char* const userFeedbackString;
 public:
     static const char* const defaultCore;
 };
@@ -580,7 +583,11 @@ public:
 class CoreInfo_t {
 
 public:
-    CoreInfo_t(class ConfigManager *manager) : configManager(manager), accessControlInfo(NULL) {};
+    CoreInfo_t(class ConfigManager *manager) : configManager(manager), accessControlInfo(NULL) {
+    	maxFeedbackRecordsPerQuery = 0;
+    	maxFeedbackQueriesCount = 0;
+    	userFeedbackEnabledFlag = false;
+    };
     CoreInfo_t(const CoreInfo_t &src);
 
     friend class ConfigManager;
@@ -751,6 +758,12 @@ public:
     	return hasRecordAcl;
     }
 
+    bool isUserFeedbackEnabled() const { return userFeedbackEnabledFlag; }
+
+    unsigned getMaxFeedbackRecordsPerQuery() const { return maxFeedbackRecordsPerQuery; }
+
+    unsigned getMaxFeedbackQueriesCount() const { return maxFeedbackQueriesCount; }
+
 protected:
     string name; // of core
 
@@ -874,6 +887,9 @@ protected:
     bool hasRecordAcl;
     string recordAclFilePath;
 
+    bool userFeedbackEnabledFlag;
+    unsigned maxFeedbackRecordsPerQuery;
+    unsigned maxFeedbackQueriesCount;
 
 };
 

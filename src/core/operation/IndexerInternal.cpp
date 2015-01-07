@@ -32,6 +32,7 @@ INDEXWRITE_RETVAL IndexReaderWriter::commit()
     INDEXWRITE_RETVAL commitReturnValue;
     if (!this->index->isBulkLoadDone()) {
     	commitReturnValue = this->index->finishBulkLoad();
+    	this->userFeedbackIndex->finalize();
     } else {
     	/*
     	 *  If bulk load is done, then we are in past bulk load stage. We should call merge function
@@ -148,7 +149,11 @@ INDEXWRITE_RETVAL IndexReaderWriter::recoverRecord(const std::string &primaryKey
     return returnValue;
 }
 
-INDEXLOOKUP_RETVAL IndexReaderWriter::lookupRecord(const std::string &primaryKeyID)
+INDEXLOOKUP_RETVAL IndexReaderWriter::lookupRecord(const std::string &primaryKeyID) {
+	unsigned internalRecordId;
+	return lookupRecord(primaryKeyID, internalRecordId);
+}
+INDEXLOOKUP_RETVAL IndexReaderWriter::lookupRecord(const std::string &primaryKeyID, unsigned& internalRecordId)
 {
     // although it's a read-only OP, since we need to check the writeview
     // we need to acquire the writelock
@@ -156,7 +161,7 @@ INDEXLOOKUP_RETVAL IndexReaderWriter::lookupRecord(const std::string &primaryKey
 
     pthread_mutex_lock(&lockForWriters);
     
-    INDEXLOOKUP_RETVAL returnValue = this->index->_lookupRecord(primaryKeyID);
+    INDEXLOOKUP_RETVAL returnValue = this->index->_lookupRecord(primaryKeyID, internalRecordId);
 
     pthread_mutex_unlock(&lockForWriters);
 
@@ -185,7 +190,8 @@ void IndexReaderWriter::save()
     pthread_mutex_lock(&lockForWriters);
 
     // If no insert/delete/update is performed, we don't need to save.
-    if(this->needToSaveIndexes == false){
+    bool needToSaveFeedbackIndex = userFeedbackIndex->getSaveIndexFlag();
+    if(this->needToSaveIndexes == false && needToSaveFeedbackIndex == false){
       pthread_mutex_unlock(&lockForWriters);
     	return;
     }
@@ -195,13 +201,17 @@ void IndexReaderWriter::save()
     writesCounterForMerge = 0;
 
     srch2::util::Logger::console("Saving Indexes ...");
-    this->index->_save();
+    if (this->needToSaveIndexes)
+    	this->index->_save(this->cache);
+    if (needToSaveFeedbackIndex)
+    	this->userFeedbackIndex->save(indexDirectoryName);
 
     // Since one save is done, we need to set needToSaveIndexes back to false
     // we need this line because of bulk-load. Because in normal save, the engine will be killed after save
     // so we don't need this flag (the engine will die anyways); but in the save which happens after bulk-load,
     // we should set this flag back to false for future save calls.
     this->needToSaveIndexes = false;
+    userFeedbackIndex->setSaveIndexFlag(false);
 
     pthread_mutex_unlock(&lockForWriters);
 }
@@ -214,7 +224,7 @@ void IndexReaderWriter::save(const std::string& directoryName)
     this->merge(false);
     writesCounterForMerge = 0;
 
-    this->index->_save(directoryName);
+    this->index->_save(this->cache, directoryName);
 
     pthread_mutex_unlock(&lockForWriters);
 }
@@ -235,7 +245,9 @@ INDEXWRITE_RETVAL IndexReaderWriter::merge(bool updateHistogram)
     struct timespec tstart;
     clock_gettime(CLOCK_REALTIME, &tstart);
 
-    INDEXWRITE_RETVAL returnValue = this->index->_merge(updateHistogram);
+    this->userFeedbackIndex->merge();
+
+    INDEXWRITE_RETVAL returnValue = this->index->_merge(this->cache, updateHistogram);
 
     struct timespec tend;
     clock_gettime(CLOCK_REALTIME, &tend);
@@ -258,6 +270,8 @@ IndexReaderWriter::IndexReaderWriter(IndexMetaData* indexMetaData, Analyzer *ana
                                       schema,
                                       srch2::instantsearch::DISABLE_STEMMER_NORMALIZER
                                       );
+     this->userFeedbackIndex = new FeedbackIndex(indexMetaData->maxFeedbackRecordsPerQuery,
+    		 indexMetaData->maxCountOfFeedbackQueries, this);
      this->initIndexReaderWriter(indexMetaData);
      // start merge threads after commit
  }
@@ -266,6 +280,9 @@ IndexReaderWriter::IndexReaderWriter(IndexMetaData* indexMetaData)
 {
     // LOAD Index
     this->index = IndexData::load(indexMetaData->directoryName);
+    this->userFeedbackIndex = new FeedbackIndex(indexMetaData->maxFeedbackRecordsPerQuery,
+    		indexMetaData->maxCountOfFeedbackQueries, this);
+    this->userFeedbackIndex->load(indexMetaData->directoryName);
     this->initIndexReaderWriter(indexMetaData);
     //this->startMergerThreads();
 }
@@ -280,6 +297,7 @@ void IndexReaderWriter::initIndexReaderWriter(IndexMetaData* indexMetaData)
      this->writesCounterForMerge = 0;
      this->mergeCounterForUpdatingHistogram = 0;
      this->needToSaveIndexes = false;
+     this->indexDirectoryName = indexMetaData->directoryName;
 
      this->mergeThreadStarted = false; // No threads running
      //zero indicates that the lockForWriters is unset
@@ -315,8 +333,8 @@ void * dispatchMergeWorkerThread(void *arg) {
 			break;
 		if (info->isDataReady == true) {
 			//Logger::console("Worker %d : Starting Merge of Inverted Lists", info->workerId);
-			unsigned processedCount  = index->invertedIndex->workerMergeTask( index->rankerExpression,
-						index->_getNumberOfDocumentsInIndex(), index->schemaInternal);
+			unsigned processedCount  = index->invertedIndex->workerMergeTask(index->rankerExpression,
+						index->_getNumberOfDocumentsInIndex(), index->schemaInternal, index->trie);
 			info->isDataReady = false;
 			// acquire the lock to make sure that main merge thread is waiting for this condition.
 			// When the main thread is waiting on the condition then this lock is in unlocked state
