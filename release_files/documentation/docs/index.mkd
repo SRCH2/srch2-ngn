@@ -29,6 +29,8 @@ the [JSON](http://json.org/) format.
 - Filtering (e.g., "price < 20")
 - Sorting
 - Geo search
+- User feedback ranking
+- Proximity ranking
 - Server-side highlighting
 - Query logging
 - Configurable ranking (including prefix and fuzzy predicates)
@@ -44,15 +46,16 @@ the [JSON](http://json.org/) format.
 - Access control (record based and attribute based)
 - Connectors to MySQL, SQLite, MongoDB, with connectors for other data sources coming soon
 
-##What's new in SRCH2 4.4.2
-####Features
-- Added support of Chinese language with a [Chinese tokenizer](./configuration/#116-analyzer).
+##What's new in SRCH2 4.4.3
+####Features:
+- Added support of [proximity ranking](./ranking/#3-proximity-ranking) in phrase search.
+- Added support for user [feedback ranking](./ranking/#4-feedback-based-ranking).
+- Added MySQL and MS SQL server [data connectors](./connectors).
+- Added new [JavaScript library](./jslib) to enable UI to communicate with SRCH2's server.
 
-####Improvements
-- Removed  the requirement to specify "roleCore" for the record-based acl in the config file.
-- Changed API aclRecordRoleAdd to aclRecordRoleReplace.
-- Changed API aclAttributeRoleAdd to aclAttributeRoleReplace.
-- Improved documentation.
+####Improvements:
+- Shrink memory consumption on record deletion.
+- Improved documentation for Chinese tokenizer.
 
 ##Platforms
 
