@@ -478,6 +478,13 @@ void InvertedIndex::parallelMerge()
     mergeWorkersSharedQueue.dataLen = totalLoad;
     mergeWorkersSharedQueue.cursor = 0;
 
+    // Acquire mutex before notifying worker threads to start processing the task. It will avoid a
+    // race condition which can occur if the worker threads finish executing before
+    // this main thread starts waiting (using pthread_cond_wait) for the 'done' signal from workers.
+    // All the workers will try to acquire this mutex before notifying the main thread about completion
+    // of the task. The mutex is released by main thread only when it is actually waiting for
+    // 'done' signal.
+    pthread_mutex_lock(&dispatcherMutex);
     // Notify each worker that queue is ready.
     for (unsigned i = 0; i < mergeWorkersCount; ++i) {
     	pthread_mutex_lock(&mergeWorkersArgs[i].perThreadMutex);
@@ -488,8 +495,8 @@ void InvertedIndex::parallelMerge()
 
     // wait for all workers to finish
     bool allDone;
-    pthread_mutex_lock(&dispatcherMutex);
     do{
+    	// dispatcherMutex is released in this function and acquired again before returning.
     	pthread_cond_wait(&dispatcherConditionVar, &dispatcherMutex);
     	allDone = true;
     	for (unsigned i = 0; i < mergeWorkersCount; ++i) {
