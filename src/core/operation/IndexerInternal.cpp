@@ -386,6 +386,7 @@ void IndexReaderWriter::createAndStartMergeWorkerThreads() {
 		for (unsigned i = 0; i < mergeWorkersCount; ++i) {
 			if (mergeWorkersArgs[i].workerReady == false) {
 				allReady = false;
+				sleep(1);
 				break;
 			}
 		}
@@ -429,7 +430,8 @@ void IndexReaderWriter::startMergeThreadLoop()
         ts.tv_nsec = tp.tv_usec * 1000;
         ts.tv_sec += this->mergeEveryNSeconds;
 
-
+        // lockForWriters mutex is unlocked inside pthread_cond_timedwait function and
+        // acquired again before returning. We do not need to explicitly lock/unlock the mutex.
         rc = pthread_cond_timedwait(&countThresholdConditionVariable,
             &lockForWriters, &ts);
 
