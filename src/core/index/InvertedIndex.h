@@ -212,6 +212,7 @@ struct MergeWorkersThreadArgs {
 	unsigned workerId;   // worker Id
 	bool isDataReady;    // flag when set true indicates inverted list queue is ready.
 	bool stopExecuting;  // flag when set true stops the worker threads.
+	bool workerReady;
 };
 // Queue which holds data for merge workers.
 struct MergeWorkersSharedQueue {

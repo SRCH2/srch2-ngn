@@ -327,6 +327,7 @@ void * dispatchMergeWorkerThread(void *arg) {
 	MergeWorkersThreadArgs *info = (MergeWorkersThreadArgs *) arg;
 	IndexData * index = (IndexData *)info->index;
 	pthread_mutex_lock(&info->perThreadMutex);
+	info->workerReady = true;
 	while(!info->stopExecuting) {
 		pthread_cond_wait(&info->waitConditionVar, &info->perThreadMutex);
 		if (info->stopExecuting)
@@ -370,11 +371,24 @@ void IndexReaderWriter::createAndStartMergeWorkerThreads() {
 		mergeWorkersArgs[i].isDataReady = false;
 		mergeWorkersArgs[i].stopExecuting = false;
 		mergeWorkersArgs[i].workerId = i;
+		mergeWorkersArgs[i].workerReady = false;
 		pthread_mutex_init(&mergeWorkersArgs[i].perThreadMutex, NULL);
 		pthread_cond_init(&mergeWorkersArgs[i].waitConditionVar, NULL);
 		pthread_create(&mergerWorkerThreads[i], NULL,
 				dispatchMergeWorkerThread, &mergeWorkersArgs[i]);
 		// Logger::console("created merge worker thread %d", i);
+	}
+
+	// make sure all worker threads are ready before returning.
+	bool allReady = false;
+	while (!allReady) {
+		allReady = true;
+		for (unsigned i = 0; i < mergeWorkersCount; ++i) {
+			if (mergeWorkersArgs[i].workerReady == false) {
+				allReady = false;
+				break;
+			}
+		}
 	}
 }
 
