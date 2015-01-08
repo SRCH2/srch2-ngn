@@ -50,6 +50,9 @@ public:
 
     static const char* const normalizerFileName;
     static const char* const stemmerFileName;
+
+    static const char* const queryTrieFileName;
+    static const char* const queryFeedbackFileName;
 };
 }}
 

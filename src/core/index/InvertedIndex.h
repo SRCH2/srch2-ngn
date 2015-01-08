@@ -46,6 +46,7 @@ using std::vector;
 using std::string;
 using std::ifstream;
 using std::ofstream;
+using std::pair;
 using srch2::util::Logger;
 using namespace half_float;
 
@@ -132,7 +133,7 @@ public:
     //CowInvertedList *invList;
     cowvector<unsigned> *invList;
 
-    InvertedListContainer() // TODO for serialization. Remove dependancy
+    InvertedListContainer() // TODO for serialization. Remove dependency
     {
     	this->invList = new cowvector<unsigned>;
     };
@@ -183,7 +184,8 @@ public:
 
     void sortAndMergeBeforeCommit(const unsigned keywordId, const ForwardIndex *forwardIndex, bool needToSortEachInvertedList);
 
-    void sortAndMerge(const unsigned keywordId, ForwardIndex *forwardIndex,
+    // return value: # of elements in the final write view
+    int sortAndMerge(const unsigned keywordId, ForwardIndex *forwardIndex,
     		shared_ptr<vectorview<ForwardListPtr> >& fwdIdxReadView,
     		vector<InvertedListIdAndScore>& invertedListElements,
     		unsigned totalNumberOfDocuments,
@@ -213,15 +215,16 @@ struct MergeWorkersThreadArgs {
 };
 // Queue which holds data for merge workers.
 struct MergeWorkersSharedQueue {
-	unsigned *data;     // Array which holds all the inverted list Ids
-	unsigned dataLen;   // max size of the array.
-	unsigned cursor;    // max value of the array index processed by threads
-	boost::mutex _lock;
-	MergeWorkersSharedQueue() {
-		data = NULL;
-		cursor = 0;
-		dataLen = 0;
-	}
+    // Array of pairs of inverted list Id and keyword Id
+    pair<unsigned, unsigned> *invertedListKeywordIds;
+    unsigned dataLen;   // max size of the array.
+    unsigned cursor;    // max value of the array index processed by threads
+    boost::mutex _lock;
+    MergeWorkersSharedQueue() {
+        invertedListKeywordIds = NULL;
+        cursor = 0;
+        dataLen = 0;
+    }
 };
 
 class InvertedIndex
@@ -282,10 +285,10 @@ public:
 	// When we load the inverted index from disk, we do NOT need to sort each inverted list since it's already sorted,
     // i.e., needToSortEachInvertedList = false.
     void finalCommit(bool needToSortEachInvertedList = true);
-    void merge(RankerExpression *rankerExpression,  unsigned totalNumberOfDocuments, const Schema *schema);
+    void merge(RankerExpression *rankerExpression,  unsigned totalNumberOfDocuments, const Schema *schema, Trie *trie);
     void parallelMerge();
     unsigned workerMergeTask(RankerExpression *rankerExpression,  unsigned totalNumberOfDocuments,
-    		const Schema *schema);
+    		const Schema *schema, Trie *trie);
     // Array of per thread arguments. It will be allocated and freed by the main merge thread at runtime.
     MergeWorkersThreadArgs *mergeWorkersArgs;
     MergeWorkersSharedQueue  mergeWorkersSharedQueue;
@@ -346,12 +349,13 @@ public:
 	}
 
     // Merge is required if the list is not empty
-    bool mergeRequired() const  { return !(invertedListSetToMerge.empty()); }
+    bool mergeRequired() const  { return !(invertedListKeywordSetToMerge.empty()); }
     /*
      *   This API appends the inverted lists supplied as an input to a set of inverted list ids
      *   that need to be merged.
      */
-    void appendInvertedListIdsForMerge(const vector<unsigned>& invertedListIds);
+    void appendInvertedListKeywordIdsForMerge(const vector<pair<unsigned, unsigned> >& invertedListKeywordIds);
+
 private:
 
     float getIdf(const unsigned totalNumberOfDocuments, const unsigned keywordId) const;
@@ -370,8 +374,9 @@ private:
     // Index Build time
     vector<unsigned> invertedListSizeDirectory;
 
-    // Used by InvertedIndex::merge()
-    set<unsigned> invertedListSetToMerge;
+    // Used by InvertedIndex::merge(). The first unsigned is invertedListId,
+    // the second unsigned is keywordId.
+    set<pair<unsigned, unsigned> > invertedListKeywordSetToMerge;
 
     friend class boost::serialization::access;
     template<class Archive>

@@ -44,6 +44,9 @@ class MergeTopKOptimizationOperator;
 class FilterQueryOperator;
 class FilterQueryOptimizationOperator;
 class PhysicalOperatorFactory;
+class FeedbackRankingOperator;
+class FeedbackRankingOptimizationOperator;
+class FeedbackIndex;
 
 /*
  * The following two operators are used for verifying a term/record match using forward index.
@@ -343,6 +346,7 @@ private:
 	vector< PhysicalPlanRecordItem * > recordsAfterTopK;
 	bool isRecordsAfterTopKVectorSorted ;
 	vector< PhysicalPlanRecordItem * > topKBestRecords;
+	FeedbackRanker *feedbackRanker;
 };
 
 class SortByScoreOptimizationOperator : public PhysicalPlanOptimizationNode {
@@ -628,7 +632,6 @@ public:
 	GeoNearestNeighborOptimizationOperator * createGeoNearestNeighborOptimizationOperator();
 	GeoSimpleScanOperator * createGeoSimpleScanOperator();
 	GeoSimpleScanOptimizationOperator * createGeoSimpleScanOptimizationOperator();
-
 
 private:
 	vector<PhysicalPlanNode *> executionNodes;

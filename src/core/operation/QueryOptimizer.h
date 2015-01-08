@@ -76,6 +76,10 @@ private:
 	void injectRequiredSortOperators(vector<PhysicalPlanOptimizationNode *> & treeOptions);
 	void injectRequiredSortOperators(PhysicalPlanOptimizationNode * root);
 
+	void injectSortOperatorsForFeedback(PhysicalPlanOptimizationNode **root,
+			PhysicalPlanOptimizationNode *node, unsigned childOffset);
+	bool isNodeFeedbackCapable(PhysicalPlanOptimizationNode *node);
+	bool isLogicalPlanBoosted(PhysicalPlanOptimizationNode *node);
 
 	PhysicalPlanOptimizationNode * findTheMinimumCostTree(vector<PhysicalPlanOptimizationNode *> & treeOptions, PhysicalPlan & physicalPlan, unsigned planOffset);
 

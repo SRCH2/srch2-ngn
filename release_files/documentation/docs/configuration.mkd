@@ -843,3 +843,25 @@ match the key in the config file.  A valid authorization key should include alph
 authorization is case sensitive.  If no authorization key is provided in the 
 config file, then an HTTP request doesn't need to provide a key.
 
+##15. User Feedback (Optional)
+
+The SRCH2 engine has a unique, powerful feature to dynamically
+boost the ranking of records based on user feedback.  Please refer 
+to [feedback ranking](../ranking/#4-feedback-based-ranking) 
+and [feedback API](../restful-control/#7-adding-feedback-for-search-results)
+for details.
+
+We can use the following setting in the configuration file to enable feedback ranking:
+```
+<userFeedback maxFeedbackQueries = "30"  maxFeedbackRecordsPerQuery = "20" />
+```
+
+The ```maxFeedbackRecordsPerQuery``` value specifies the maximal number of
+unique records that the engine stores per query as feedbacks.  If the number
+of feedback records grows more than this parameter, then the engine will discard
+the oldest feedback record.
+
+The ```maxFeedbackQueries``` value specifies the maximal number of
+queries that the engine stores at any give time.  If the number
+of feedback queries grows more than this parameter, then the engine will discard
+the oldest query.

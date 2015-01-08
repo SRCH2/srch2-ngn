@@ -35,4 +35,7 @@ const char* const IndexConfig::schemaFileName = "Schema.idx";
 const char* const IndexConfig::analyzerFileName = "Analyzer.idx";
 const char* const IndexConfig::AccessControlFile = "aclAttributes.idx";
 
+const char* const IndexConfig::queryTrieFileName = "Query.idx";
+const char* const IndexConfig::queryFeedbackFileName = "Feedback.idx";
+
 }}

@@ -40,7 +40,7 @@ class Schema;
 class Record;
 class GlobalCache;
 class AttributeAccessControl;
-
+class FeedbackIndex;
 class IndexMetaData
 {
 public:
@@ -79,6 +79,8 @@ public:
 
 
         directoryName = _directoryName;
+        maxFeedbackRecordsPerQuery = 1; // set for test cases
+        maxCountOfFeedbackQueries = 1; // set for test cases
     }
     
     ~IndexMetaData()
@@ -92,6 +94,8 @@ public:
     unsigned mergeEveryMWrites;
     unsigned updateHistogramEveryPMerges;
     unsigned updateHistogramEveryQWrites;
+    unsigned maxFeedbackRecordsPerQuery;
+    unsigned maxCountOfFeedbackQueries;
 };
 
 
@@ -138,6 +142,8 @@ public:
     virtual INDEXLOOKUP_RETVAL lookupRecord(const std::string &primaryKeyID) = 0;
 
     virtual uint32_t getNumberOfDocumentsInIndex() const = 0;
+
+    virtual FeedbackIndex* getFeedbackIndexer() = 0;
 
     virtual const std::string getIndexHealth() const = 0;
 

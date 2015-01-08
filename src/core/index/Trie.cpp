@@ -581,14 +581,14 @@ bool Trie::needToReassignKeywordIds()
 
 void Trie::printTriePath(vector<TrieNode* > *pathTrace)
 {
-    /* cout << "trie path = "; */
-    /* if (pathTrace == NULL) */
-    /*   cout << " NULL "; */
-    /* else { */
-    /*   for (unsigned i = 0; i < pathTrace->size(); i ++) */
-    /*     cout << pathTrace->at(i)->character; */
-    /*   cout << ". Leaf node id = " << pathTrace->at(pathTrace->size() - 1)->getId() << "\n"; */
-    /* } */
+//     cout << "trie path = ";
+//     if (pathTrace == NULL)
+//       cout << " NULL ";
+//     else {
+//       for (unsigned i = 0; i < pathTrace->size(); i ++)
+//         cout << (char)pathTrace->at(i)->character << " , ";
+//       cout << ". Leaf node id = " << pathTrace->at(pathTrace->size() - 1)->getId() << "\n";
+//     }
 }
 
 unsigned Trie::computeIdForNewKeyword(TrieNode* prevNode, TrieNode* nextNode)
@@ -714,7 +714,9 @@ unsigned Trie::addKeyword_ThreadSafe(const std::vector<CharType> &keyword, unsig
     return addKeyword_ThreadSafe(keyword, invertedListOffset, isNewTrieNode, isNewInternalTerminalNode);
 }
 
-unsigned Trie::addKeyword_ThreadSafe(const std::vector<CharType> &keyword, unsigned &invertedListOffset, bool &isNewTrieNode, bool &isNewInternalTerminalNode)
+unsigned Trie::addKeyword_ThreadSafe(const std::vector<CharType> &keyword,
+		unsigned &invertedListOffset, bool &isNewTrieNode, bool &isNewInternalTerminalNode,
+		TrieNodePtr *terminalNode)
 {
     /// corner case to check invalid empty string
     if (keyword.size() == 0)
@@ -735,7 +737,7 @@ unsigned Trie::addKeyword_ThreadSafe(const std::vector<CharType> &keyword, unsig
 
     // it's a map from original nodes in the trie to the copy nodes in the pathTrace
     // The reason we need this map is related to reassign ID. Since we create a new cloned path each time we
-    // add a keyword, we need this map from origianl nodes to new nodes to merge new paths (to map original nodes to
+    // add a keyword, we need this map from original nodes to new nodes to merge new paths (to map original nodes to
     // same new nodes ...)
     OldToNewTrieNodeMap oldToNewTrieNodeMap;
     // it keeps a copy of the path to the new node
@@ -811,6 +813,8 @@ unsigned Trie::addKeyword_ThreadSafe(const std::vector<CharType> &keyword, unsig
     // Flip the dummy root node to the newly created path
     // this->root.reset(trieRootNode_WriteView);
 
+    if (terminalNode)  // return terminal node pointer.
+    	*terminalNode = node;
     return node->getId();
 }
 
@@ -821,6 +825,14 @@ unsigned Trie::addKeyword_ThreadSafe(const std::string &keyword, unsigned &inver
     return addKeyword_ThreadSafe(getCharTypeVector(keyword), invertedListOffset, isNewTrieNode, isNewInternalTerminalNode);
 }
 
+// addKeyword_ThreadSafe overload which returns terminal node pointer. It is used by feedback index.
+unsigned Trie::addKeyword_ThreadSafe(const std::string &keyword, TrieNodePtr *terminalNode) {
+	bool isNewTrieNode = false;
+	bool isNewInternalTerminalNode = false;
+	unsigned invertedListOffset;
+	return addKeyword_ThreadSafe(getCharTypeVector(keyword), invertedListOffset,
+			isNewTrieNode, isNewInternalTerminalNode, terminalNode);
+}
 
 void Trie::remapPathForTrieNodesToReassign(OldToNewTrieNodeMap &oldToNewTrieNodeMap)
 {
@@ -1584,6 +1596,173 @@ void Trie::finalCommit_finalizeHistogramInformation(const InvertedIndex * invert
 	// now set the commit flag to true to indicate commit is finished
     this->commited = true;
 }
+
+
+void Trie::applyKeywordIdMapperOnEmptyLeafNodes(map<unsigned, unsigned> &keywordIdMapper) {
+      for (int i = 0; i < emptyLeafNodeIds.size(); i++) {
+        map<unsigned, unsigned>::const_iterator keywordIdMapperIter =
+           keywordIdMapper.find(emptyLeafNodeIds.at(i));
+        // if this keyword ID is in the mapper, we use the new id
+        if (keywordIdMapperIter != keywordIdMapper.end())
+           emptyLeafNodeIds.at(i) = keywordIdMapperIter->second;
+      }
+ }
+
+void Trie::removeDeletedNodes()
+{
+    // sort the ids of the empty leaf nodes
+    std::sort(emptyLeafNodeIds.begin(), emptyLeafNodeIds.end());
+
+    TrieNode *writeViewRoot = this->getTrieRootNode_WriteView();
+    if (removeDeletedNodes(writeViewRoot)) {
+        // The whole trie becomes empty. We need to repeat the logic
+        // in the constructor of the trie.
+        // We create a root (for the write view) by copying the trie root of the read view.
+        // Initially both root views have an empty trie with a "$" sign at the root.
+        if(writeViewRoot) {
+            delete writeViewRoot;
+        }
+        this->root_readview.reset(new TrieRootNodeAndFreeList());
+        this->root_writeview = new TrieNode(this->root_readview.get()->root);
+    } else {
+        // The trie is not empty.
+        // Similar to the operations in trie.merge(), we need to "merge"
+        // the read view and write view
+        writeViewRoot->resetCopyFlag();
+        this->root_readview.reset(new TrieRootNodeAndFreeList(writeViewRoot));
+        if(writeViewRoot) {
+            delete writeViewRoot;
+        }
+        this->root_writeview = new TrieNode(this->root_readview.get()->root);
+    }
+    // remove these empty leaf nodes
+    emptyLeafNodeIds.clear();
+}
+
+// return TRUE if the subtrie of t becomes empty, and FALSE otherwise
+bool Trie::removeDeletedNodes(TrieNode *trieNode)
+{
+  if (trieNode == NULL)
+    return true;
+
+  /* [child_0] [child_1] ... [child_k]   --- sorted
+       /   \     /   \          /  \
+     min   max  min  max       min  max
+    
+     emptyLeafNodeIds:
+      [v_0, v_1, v_2, ..., v_n]   --- sorted
+    
+     Find a range of children [a,b] that need to shrink based on their
+     [min, max] interval and the list emptyLeafNodeIds. A child needs to shrink
+     if its interval overlaps with the id of one of the empty leaf nodes.
+  */
+    unsigned minEmptyNodeId = emptyLeafNodeIds.front();
+    unsigned maxEmptyNodeId = emptyLeafNodeIds.back();
+
+    // do a binary search to find the first child "a"
+    int low = 0;
+    int high = trieNode->getChildrenCount() - 1;
+    while (low <= high) {
+        int mid = (low + high) / 2;
+        if (trieNode->getChild(mid)->getMinId() >= minEmptyNodeId)
+            high = mid - 1;
+        else
+            low = mid + 1;
+    }
+
+    // scan the children whose [min, max] interval
+    // overlaps [minEmptyNodeId, maxEmptyNodeId]
+    int childCursor = low;
+    int numberOfNulledChildren = 0;
+    while (childCursor < trieNode->getChildrenCount()
+          && trieNode->getChild(childCursor)->getMinId() <= maxEmptyNodeId) {
+        // Interval relationship:
+        //             [minId,                  maxId]
+    	// [minEmptyNodeId,    maxEmptyNodeId]
+        unsigned minId = trieNode->getChild(childCursor)->getMinId();
+        unsigned maxId = trieNode->getChild(childCursor)->getMaxId();
+        ASSERT(minEmptyNodeId <= minId);
+
+        // check if there is an empty leaf node id in the range [minId, maxId]
+        bool found = this->findEmptyLeafNodeIds(minId, maxId);
+        if (found && removeDeletedNodes(trieNode->getChild(childCursor))) {
+           // this subtrie is empty. Then delete this child, and
+           // shift the children from right to left.
+           delete trieNode->getChild(childCursor);
+           trieNode->setChild(childCursor, NULL);
+           numberOfNulledChildren ++;
+        }
+       childCursor ++;
+    }
+
+    // remove the nulled children
+    if (numberOfNulledChildren > 0) {
+        // find the first nulled child
+        int first = low;
+        while (first < trieNode->getChildrenCount()
+                && trieNode->getChild(first) != NULL)
+            first ++;
+
+        // move the non-null children to the left
+        for (int second = first + 1; second < trieNode->getChildrenCount();
+                second ++) {
+            if (trieNode->getChild(second) != NULL) {
+                trieNode->setChild(first, trieNode->getChild(second));
+                first ++;//
+            }
+        }
+
+        // remove the last children since they have been copied to the left
+        for (int i = 0; i < numberOfNulledChildren; i++)
+            trieNode->childrenPointerList.pop_back();
+    }
+
+    if (trieNode->isTerminalNode()) {
+      // if it is one of the empty leaf nodes, then it should no longer be a terminal node
+      if (std::binary_search(emptyLeafNodeIds.begin(), emptyLeafNodeIds.end(), trieNode->id)) {
+          trieNode->setTerminalFlag(false);
+      }
+    }
+
+    // This subtrie becomes empty if it doesn't have children any more
+    // and it is not a terminal node
+    if (trieNode->getChildrenCount() == 0 && trieNode->isTerminalNode() == false) {
+        return true;
+    }
+
+    // this subtrie is not empty.
+
+    // Set the two pointers
+    if (trieNode->isTerminalNode())
+        trieNode->setLeftMostDescendant(trieNode); // set it to itself
+    else // t.leftMostNode = t.firstChild.leftMostNode;
+        trieNode->setLeftMostDescendant(trieNode->getChild(0)->getLeftMostDescendant());
+
+    // t.rightMostNode = t.lastChild.rightMostNode
+    if (trieNode->getChildrenCount() > 0) {
+        unsigned childCount = trieNode->getChildrenCount();
+        trieNode->setRightMostDescendant(trieNode->getChild(childCount - 1)->getRightMostDescendant());
+    } else {
+        trieNode->setRightMostDescendant(trieNode); // set it to itself
+    }
+
+    // tell the caller this subtrie is not empty
+    return false;
+}
+
+// the logic is similar to ForwardList::haveWordInRange()
+bool Trie::findEmptyLeafNodeIds(unsigned minId, unsigned maxId) 
+{
+  //             [minId,                  maxId]
+  // [minEmptyNodeId,    maxEmptyNodeId]
+  std::vector<unsigned>::iterator iter = lower_bound(emptyLeafNodeIds.begin(),
+						     emptyLeafNodeIds.end(),
+						     minId);
+  if ((iter != emptyLeafNodeIds.end()) && (*iter <= maxId))
+      return true;
+  return false;
+}
+
 
 const std::vector<unsigned> *Trie::getOldIdToNewIdMapVector() const
 {

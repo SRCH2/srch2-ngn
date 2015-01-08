@@ -43,6 +43,8 @@
 #include <boost/thread/shared_mutex.hpp>
 #include <boost/thread/locks.hpp>
 
+#include "operation/CacheManager.h"
+
 using std::string;
 using std::vector;
 using std::map;
@@ -372,9 +374,11 @@ INDEXWRITE_RETVAL IndexData::_addRecordWithoutLock(const Record *record,
 }
 
 // delete a record with a specific id //TODO Give the correct return message for delete pass/fail
-INDEXWRITE_RETVAL IndexData::_deleteRecord(const std::string &externalRecordId) {
-    unsigned int internalRecordId;
-    return this->_deleteRecordGetInternalId(externalRecordId, internalRecordId);
+INDEXWRITE_RETVAL IndexData::_deleteRecord(
+		const std::string &externalRecordId) {
+
+	unsigned int internalRecordId;
+	return this->_deleteRecordGetInternalId(externalRecordId, internalRecordId);
 }
 
 // delete a record with a specific id //TODO Give the correct return message for delete pass/fail
@@ -388,11 +392,11 @@ INDEXWRITE_RETVAL IndexData::_deleteRecordGetInternalId(
 		ForwardList* forwardList =
 				this->forwardIndex->getForwardList_ForCommit(
 						internalRecordId);
-
 		this->permissionMap->deleteResourceFromRoles(externalRecordId, forwardList->getAccessList()->getRoles());
 
 		if (this->schemaInternal->getIndexType()
 				== srch2::instantsearch::LocationIndex) {
+
 				StoredRecordBuffer buffer = forwardList->getInMemoryData();
 
 				Schema * storedSchema = Schema::create();
@@ -421,50 +425,51 @@ INDEXWRITE_RETVAL IndexData::_deleteRecordGetInternalId(
 				point.y = *((float *) (buffer.start.get() + longOffset));
 				this->quadTree->remove_ThreadSafe(point, internalRecordId);
 		}
-
 	}
 
 	INDEXWRITE_RETVAL success =
-			this->forwardIndex->deleteRecordGetInternalId(externalRecordId,
-					internalRecordId) ? OP_SUCCESS : OP_FAIL;
+			this->forwardIndex->deleteRecord(externalRecordId) ?
+					OP_SUCCESS : OP_FAIL;
+
 
 	if (success == OP_SUCCESS) {
-        ForwardList * fwdList = this->forwardIndex->getForwardList_ForCommit(internalRecordId);
-        if (fwdList) {
-            // iterate through the keyword ids
-            unsigned keywordsCount = fwdList->getNumberOfKeywords();
-            const unsigned * listofKeywordIds = fwdList->getKeywordIds();
-            // Loop over the keyword-ids for the current forward list and get
-            // the inverted-list-ids from the trie.
-            TrieNodePath trieNodePath;
-            trieNodePath.path = new vector<TrieNode *>();
-            vector<unsigned> invertedListIdsToMerge;
-            for (unsigned i = 0; i < keywordsCount; ++i) {
-                unsigned keywordId = *(listofKeywordIds + i);
-                // get the TrieNode path of the current keyword in write view based on its id.
-                this->trie->getKeywordCorrespondingPathToTrieNode_WriteView(keywordId, &trieNodePath);
-                if (trieNodePath.path->size() == 0) {
-                    // should not happen.
-                    ASSERT(false);
-                    continue;
-                }
-                TrieNode * leafNode = trieNodePath.path->back();
-                if(leafNode && leafNode->isTerminalNode()) {
-                    invertedListIdsToMerge.push_back(leafNode->invertedListOffset);
-                } else {
-                    // should not happen.
-                    ASSERT(false);
-                }
-                trieNodePath.path->clear();
-            }
-            delete trieNodePath.path;
-            this->invertedIndex->appendInvertedListIdsForMerge(invertedListIdsToMerge);
-        }
+		ForwardList * fwdList = this->forwardIndex->getForwardList_ForCommit(internalRecordId);
+		if (fwdList) {
+			unsigned keywordsCount = fwdList->getNumberOfKeywords();
+			const unsigned * listofKeywordIds = fwdList->getKeywordIds();
+			// Loop over the keyword-ids for the current forward list and get
+			// the inverted-list-ids from the trie.
+			TrieNodePath trieNodePath;
+			trieNodePath.path = new vector<TrieNode *>();
+			// first id: invertedListId; second id: keywordId
+			vector<pair<unsigned, unsigned> > invertedListIdsToMerge;
+			for (unsigned i = 0; i < keywordsCount; ++i) {
+				unsigned keywordId = *(listofKeywordIds + i);
+				// get the TrieNode path of the current keyword in write view based on its id.
+				this->trie->getKeywordCorrespondingPathToTrieNode_WriteView(keywordId, &trieNodePath);
+				if (trieNodePath.path->size() == 0) {
+					// should not happen.
+					ASSERT(false);
+					continue;
+				}
+				TrieNode * leafNode = trieNodePath.path->back();
+				if(leafNode && leafNode->isTerminalNode()) {
+					invertedListIdsToMerge.push_back(make_pair(leafNode->invertedListOffset, leafNode->id));
+				} else {
+					// should not happen.
+					ASSERT(false);
+				}
+				trieNodePath.path->clear();
+			}
+			delete trieNodePath.path;
+			this->invertedIndex->appendInvertedListKeywordIdsForMerge(invertedListIdsToMerge);
+		}
 
-        this->mergeRequired = true; // need to tell the merge thread to merge
+		this->mergeRequired = true; // need to tell the merge thread to merge
 		this->writeCounter->decDocsCounter();
 		this->writeCounter->incWritesCounter();
 	}
+
 	return success;
 }
 
@@ -529,8 +534,8 @@ INDEXWRITE_RETVAL IndexData::_recoverRecord(const std::string &externalRecordId,
 
 // check if the record exists
 INDEXLOOKUP_RETVAL IndexData::_lookupRecord(
-		const std::string &externalRecordId) const {
-	return this->forwardIndex->lookupRecord(externalRecordId);
+		const std::string &externalRecordId, unsigned& internalRecordId) const {
+	return this->forwardIndex->lookupRecord(externalRecordId, internalRecordId);
 }
 
 /* build the index. After commit(), no more records can be added.
@@ -611,9 +616,7 @@ INDEXWRITE_RETVAL IndexData::finishBulkLoad() {
 	}
 }
 
-INDEXWRITE_RETVAL IndexData::_merge(bool updateHistogram) {
-	Logger::debug("Merge begins--------------------------------");
-
+INDEXWRITE_RETVAL IndexData::_merge(CacheManager *cache, bool updateHistogram) {
 	if (!this->mergeRequired)
 		return OP_FAIL;
 
@@ -636,7 +639,7 @@ INDEXWRITE_RETVAL IndexData::_merge(bool updateHistogram) {
 
 	if (this->invertedIndex->mergeWorkersCount <= 1) {
 		this->invertedIndex->merge( this->rankerExpression,
-				this->writeCounter->getNumberOfDocuments(), this->schemaInternal);
+				this->writeCounter->getNumberOfDocuments(), this->schemaInternal, this->trie);
 	} else {
 		this->invertedIndex->parallelMerge();
 	}
@@ -678,14 +681,28 @@ INDEXWRITE_RETVAL IndexData::_merge(bool updateHistogram) {
 			this->forwardIndex->getTotalNumberOfForwardLists_ReadView(),
 			updateHistogram);
 
+    // If some leaf nodes have an empty inverted list, we need to get rid of them
+    if (this->trie->getEmptyLeafNodeIdSize() > 0) {
+        // we need to acquire the global lock to block all other readers and writers
+        // TODO for future optimization: Instead of taking global rw lock.
+        // We could take the same approach as write operation. i.e., copying the
+        // affected TrieNode paths. Let the read view read the old paths
+        // (which will be freed after the last reader)
+        boost::unique_lock<boost::shared_mutex> lock(globalRwMutexForReadersWriters);
+        this->trie->removeDeletedNodes();
+
+	// since we are deleting trie nodes, we need to clear the cache while
+	// holding the global RW lock.
+	if (cache != NULL)
+	  cache->clear();
+    }
+
 	if (this->schemaInternal->getIndexType()
 			== srch2::instantsearch::LocationIndex) {
 		this->quadTree->merge();
 	}
 
 	this->mergeRequired = false;
-
-	Logger::debug("Merge ends--------------------------------");
 
 	return OP_SUCCESS;
 }
@@ -721,6 +738,8 @@ void IndexData::reassignKeywordIds() {
 	changeKeywordIdsOnForwardLists(trieNodeIdMapper, keywordIdMapper,
 			processedRecordIds);
 
+	// apply the ID mapper on the keyword ids of empty leaf nodes
+	this->trie->applyKeywordIdMapperOnEmptyLeafNodes(keywordIdMapper);
 }
 
 /*
@@ -781,20 +800,10 @@ void IndexData::_exportData(const string &exportedDataFileName) const {
 	ForwardIndex::exportData(*this->forwardIndex, exportedDataFileName);
 }
 
-void IndexData::_save(const string &directoryName) const {
+void IndexData::_save(CacheManager *cache, const string &directoryName) const {
 	Serializer serializer;
-	if (this->trie->isMergeRequired())
-		this->trie->merge(NULL, NULL, 0, false);
-	// serialize the data structures to disk
-	try {
-		serializer.save(*this->trie,
-				directoryName + "/" + IndexConfig::trieFileName);
-	} catch (exception &ex) {
-		Logger::error("Error writing trie index file: %s/%s",
-				directoryName.c_str(), IndexConfig::trieFileName);
-		// can keep running - don't rethrow exception
-	}
 
+    // ---------- save forwardIndex -----------
 	if (this->forwardIndex->isMergeRequired()) {
 		this->forwardIndex->merge();
 		if (this->forwardIndex->hasDeletedRecords()) {
@@ -814,6 +823,7 @@ void IndexData::_save(const string &directoryName) const {
 				directoryName.c_str(), IndexConfig::forwardIndexFileName);
 	}
 
+    // ---------- save schema -----------
 	try {
 		serializer.save(*this->schemaInternal,
 				directoryName + "/" + IndexConfig::schemaFileName);
@@ -822,9 +832,10 @@ void IndexData::_save(const string &directoryName) const {
 				directoryName.c_str(), IndexConfig::schemaFileName);
 	}
 
+    // ---------- save invertedIndex -----------
 	if (this->invertedIndex->mergeRequired())
 		this->invertedIndex->merge(this->rankerExpression,
-				this->writeCounter->getNumberOfDocuments(), this->schemaInternal);
+				this->writeCounter->getNumberOfDocuments(), this->schemaInternal, this->trie);
 	try {
 		serializer.save(*this->invertedIndex,
 				directoryName + "/" + IndexConfig::invertedIndexFileName);
@@ -833,7 +844,38 @@ void IndexData::_save(const string &directoryName) const {
 				directoryName.c_str(), IndexConfig::invertedIndexFileName);
 	}
 
-	try {
+
+    // ---------- save trie -----------
+    // We save the trie after saving the inverted index since
+    // the step of merging inverted index tells us what leaf nodes have an empty
+    // inverted list, thus become removable.
+    if (this->trie->isMergeRequired()) {
+        this->trie->merge(NULL, NULL, 0, false);
+
+        // shrink the trie if needed
+        if (this->trie->getEmptyLeafNodeIdSize() > 0) {
+            // we need to acquire the global lock to block all other readers and writers
+            boost::unique_lock<boost::shared_mutex> lock(globalRwMutexForReadersWriters);
+            this->trie->removeDeletedNodes();
+
+	    // since we are deleting trie nodes, we need to clear the cache while
+	    // holding the global RW lock.
+	    if (cache != NULL)
+	      cache->clear();
+        }
+    }
+
+    try {
+        serializer.save(*this->trie,
+                directoryName + "/" + IndexConfig::trieFileName);
+    } catch (exception &ex) {
+        Logger::error("Error writing trie index file: %s/%s",
+                directoryName.c_str(), IndexConfig::trieFileName);
+        // can keep running - don't rethrow exception
+    }
+
+    // ---------- save quadTree -----------
+    try {
 		serializer.save(*this->quadTree,
 				directoryName + "/" + IndexConfig::quadTreeFileName);
 	} catch (exception &ex) {
@@ -841,6 +883,7 @@ void IndexData::_save(const string &directoryName) const {
 				directoryName.c_str(), IndexConfig::quadTreeFileName);
 	}
 
+    // ---------- save index counts file  -----------
 	try {
 		this->saveCounts(
 				directoryName + "/" + IndexConfig::indexCountsFileName);
@@ -849,6 +892,7 @@ void IndexData::_save(const string &directoryName) const {
 				directoryName.c_str(), IndexConfig::indexCountsFileName);
 	}
 
+    // ---------- save permissionMap  -----------
 	try {
 		serializer.save(*this->permissionMap,
 				directoryName + "/" + IndexConfig::permissionMapFileName);
@@ -857,6 +901,7 @@ void IndexData::_save(const string &directoryName) const {
 				directoryName.c_str(), IndexConfig::permissionMapFileName);
 	}
 
+    // ---------- save attributeAcl  -----------
 	try{
 		serializer.save(*(this->attributeAcl), directoryName + "/" + IndexConfig::AccessControlFile);
 	} catch (exception &ex) {
