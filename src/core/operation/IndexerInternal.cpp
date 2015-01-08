@@ -316,6 +316,10 @@ pthread_t IndexReaderWriter::createAndStartMergeThreadLoop() {
 	pthread_attr_setdetachstate(&mergeThreadAttributes, PTHREAD_CREATE_JOINABLE);
 	pthread_create(&mergerThread, &mergeThreadAttributes, dispatchMergeThread, this);
 	pthread_attr_destroy(&mergeThreadAttributes);
+	// wait till merge thread is actually ready.
+	while(!mergeThreadStarted) {
+		sleep(1);
+	}
 	return mergerThread;
 }
 
@@ -414,7 +418,6 @@ void IndexReaderWriter::startMergeThreadLoop()
       Logger::warn("Merge thread can be called only after first commit!");
       return;
     }
-    mergeThreadStarted = true;
 
     createAndStartMergeWorkerThreads();
 
@@ -422,6 +425,7 @@ void IndexReaderWriter::startMergeThreadLoop()
      *  Initialize condition variable for the first time before loop starts.
      */
     pthread_cond_init(&countThresholdConditionVariable, NULL);
+    mergeThreadStarted = true;
     while (1)
     {
         rc =  gettimeofday(&tp, NULL);
