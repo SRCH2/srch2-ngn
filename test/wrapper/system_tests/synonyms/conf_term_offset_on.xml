@@ -14,7 +14,10 @@
 	  <srch2Home>/home/joe/srch2</srch2Home>
         -->
  
-    <listeningHostname>127.0.0.1</listeningHostname>
+   <licenseFile>../conf/srch2_license_key.txt</licenseFile>
+
+    <listeningHostname>0.0.0.0</listeningHostname>
+
     <listeningPort>8087</listeningPort>
  
     <maxSearchThreads>8</maxSearchThreads>

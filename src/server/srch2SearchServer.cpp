@@ -144,6 +144,13 @@ int main(int argc, char** argv) {
 	}
 
 	/*
+	 *  Check whether the license file is valid
+	 */
+
+	LicenseVerifier::testFile(runtime->getConfigManager()->getLicenseKeyFileName());
+
+
+	/*
 	 *  Check whether another process is holding the lock on node-name
 	 */
 
@@ -239,7 +246,6 @@ int main(int argc, char** argv) {
 	 * Open external HTTP channels to accept requests.
 	 */
 	runtime->openExternalChannels();
-
 
 
 	/**************

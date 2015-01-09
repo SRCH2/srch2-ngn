@@ -24,6 +24,8 @@
     -->
     <srch2Home>./</srch2Home> 
  
+    <licenseFile>../conf/srch2_license_key.txt</licenseFile>
+
     <!--
         Hostname and Port Number
         Required
