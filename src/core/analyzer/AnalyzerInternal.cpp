@@ -73,23 +73,6 @@ AnalyzerInternal::AnalyzerInternal(const StemmerContainer *stemmer,
     this->synonyms = synonyms;
 }
 
-string AnalyzerInternal::applyFilters(string input, bool isPrefix) {
-
-    this->tokenStream->fillInCharacters(input, isPrefix);
-
-    string result = "";
-    while (tokenStream->processToken()) {
-        vector<CharType> charVector;
-        charVector = tokenStream->getProcessedToken();
-        string tmp;
-        charTypeVectorToUtf8String(charVector, tmp);
-        result += tmp;
-        break; //only returns the first output of filters
-    }
-    return result;
-}
-
-
 void AnalyzerInternal::clearFilterStates() {
   // clear the state of each filter on the chain
   if (tokenStream != NULL) {
@@ -216,7 +199,7 @@ void AnalyzerInternal::tokenizeRecord(const Record *record,
 void AnalyzerInternal::tokenizeQuery(const string &queryString,
         vector<AnalyzedTermInfo> &queryKeywords, bool isPrefix) const {
     queryKeywords.clear();
-    this->tokenStream->fillInCharacters(queryString);
+	this->tokenStream->fillInCharacters(queryString, isPrefix);
     string currentToken = "";
     while (tokenStream->processToken()) //process the token one by one
     {

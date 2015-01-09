@@ -467,9 +467,12 @@ sleep 3
 rm -fr SRCH2Cluster
 test_case "test Chinese" "python ./chinese/chinese_analyzer.py $SRCH2_ENGINE"
 
+sleep 3
+
+test_case "test query parser split" "python query_parser_split/query_parser_split.py $SRCH2_ENGINE query_parser_split/queryResults.txt"
+
 #TODO: disabled for now
 #sleep 3
-
 #test_case "adapter_mysql" "python ./adapter_mysql/adapter_mysql.py $SRCH2_ENGINE \
 #    ./adapter_sqlite/testCreateIndexes_sql.txt ./adapter_sqlite/testCreateIndexes.txt \
 #    ./adapter_sqlite/testRunListener_sql.txt ./adapter_sqlite/testRunListener.txt \
