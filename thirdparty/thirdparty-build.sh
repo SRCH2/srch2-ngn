@@ -79,9 +79,11 @@ tar -xvf mysql-connector-c++-1.1.4.tar.gz
 rm -rf mysql-connector-c++
 mv mysql-connector-c++-1.1.4 mysql-connector-c++
 cd mysql-connector-c++
-cmake -DCMAKE_INSTALL_PREFIX=./build
+#Centos has different MYSQL_LIB path.
+python -mplatform | grep centos && cmake -DMYSQL_LIB=/usr/lib/mysql/libmysqlclient.so -DCMAKE_INSTALL_PREFIX=./build . || cmake -DCMAKE_INSTALL_PREFIX=./build
 make install
-mv ./build/lib/*/* ./build/lib/
+#Centos is built under lib64 instead of lib
+python -mplatform | grep centos && mv ./build/lib64 ./build/lib || mv ./build/lib/*/* ./build/lib/
 
 cd ../../mysql-connector-c++
 CURRENTDIR=$(pwd)
