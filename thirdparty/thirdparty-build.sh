@@ -1,4 +1,4 @@
-n#!/bin/bash
+#!/bin/bash
 
 
 echo "BUILDING JSONCPP..."
