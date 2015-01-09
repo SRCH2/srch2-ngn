@@ -1,4 +1,4 @@
-#!/bin/bash
+n#!/bin/bash
 
 
 echo "BUILDING JSONCPP..."
@@ -80,7 +80,7 @@ rm -rf mysql-connector-c++
 mv mysql-connector-c++-1.1.4 mysql-connector-c++
 cd mysql-connector-c++
 #Centos has different MYSQL_LIB path.
-python -mplatform | grep centos && cmake -DMYSQL_LIB=/usr/lib/mysql/libmysqlclient.so -DCMAKE_INSTALL_PREFIX=./build . || cmake -DCMAKE_INSTALL_PREFIX=./build
+python -mplatform | grep centos && cmake -DMYSQL_LIB=/usr/lib64/mysql/libmysqlclient.so -DCMAKE_INSTALL_PREFIX=./build . || cmake -DCMAKE_INSTALL_PREFIX=./build
 make install
 #Centos is built under lib64 instead of lib
 python -mplatform | grep centos && mv ./build/lib64 ./build/lib || mv ./build/lib/*/* ./build/lib/
@@ -106,6 +106,7 @@ cd mysql-connector-python
 python setup.py install
 mv build/*/* build
 
+#Package python-dev is needed. Do sh ../runme-to-init-env.sh first 
 cd ../../pyodbc
 CURRENTDIR=$(pwd)
 echo "BUILDING SQL Server connector/Python for SQL Server system test... in $CURRENTDIR"
