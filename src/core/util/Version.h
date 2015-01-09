@@ -1,8 +1,8 @@
 #ifndef __CORE_UTIL_VERSION_H__
 #define __CORE_UTIL_VERSION_H__
 
-#define ENGINE_VERSION "4.4.2"
-#define INDEX_VERSION 6 // Increment this every time we make some changes to indexes
+#define ENGINE_VERSION "4.4.3"
+#define INDEX_VERSION 7 // Increment this every time we make some changes to indexes
 #include <string>
 /**
  *  Helper class for version system. 
