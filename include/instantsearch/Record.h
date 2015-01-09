@@ -46,7 +46,6 @@ struct array_deleter
   }
 };
 
-
 struct StoredRecordBuffer {
   boost::shared_ptr<const char> start;
   size_t length;
