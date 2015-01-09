@@ -135,8 +135,8 @@ def testCreateIndexes(conn,sqlQueriesPath,testQueriesPath):
 	time.sleep(2)
 	print '=============================='
 
-#Test 2: Start the engine, update the record in sqlite, time
-#then the listener should fetch the results, then engine exits without saving changes.
+#Test 2: Start the engine, update the record in sqlite, 
+#and the listener should fetch the results, then engine exits without saving changes.
 def testRunListener(conn,sqlQueriesPath,testQueriesPath):
 	startSrch2Engine()
 	#Modify the table while the srch2 engine is running.

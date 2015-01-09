@@ -19,6 +19,7 @@ libunwind/include/
 libunwind/lib/
 libunwind/share/
 pymongo/pymongo/
+pyodbc/pyodbc/
 
 # ignore mysql files
 mysql-connector-c++/mysql-connector-c++/

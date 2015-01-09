@@ -179,7 +179,6 @@ int MySQLConnector::createNewIndexes() {
             }
             Logger::info("MYSQLCONNECTOR: Total indexed %d / %d records. ",
                     indexedRecordsCount, totalRecordsCount);
-
             return 0;
         } catch (sql::SQLException &e) {
             Logger::error(

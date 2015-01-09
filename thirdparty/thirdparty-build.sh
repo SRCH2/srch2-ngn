@@ -103,3 +103,13 @@ mv mysql-connector-python-2.0.1 mysql-connector-python
 cd mysql-connector-python
 python setup.py install
 mv build/*/* build
+
+cd ../../pyodbc
+CURRENTDIR=$(pwd)
+echo "BUILDING SQL Server connector/Python for SQL Server system test... in $CURRENTDIR"
+tar -xvf pyodbc-3.0.7.tar.gz
+rm -rf pyodbc
+mv pyodbc-3.0.7 pyodbc
+cd pyodbc
+python setup.py build
+mv build/*/* build
