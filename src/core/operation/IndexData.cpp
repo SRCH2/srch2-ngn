@@ -602,7 +602,13 @@ INDEXWRITE_RETVAL IndexData::_merge(bool updateHistogram){
       this->forwardIndex->freeSpaceOfDeletedRecords();
     }
 
-    this->invertedIndex->merge();
+    if (this->invertedIndex->mergeWorkersCount <= 1) {
+    	this->invertedIndex->merge( this->rankerExpression,
+    			this->writeCounter->getNumberOfDocuments(), this->schemaInternal);
+    } else {
+    	this->invertedIndex->parallelMerge();
+    }
+
     
     // Since trie is the entry point of every search, trie merge should be done after all other merges.
     // If forwardIndex or invertedIndex is merged before trie, then users can see an inconsistent state of
@@ -871,6 +877,7 @@ void IndexData::_deSerializeAttributeAclPermissions(std::istream& inputStream) {
 	ia >> *(this->attributeAcl);
 }
 
+// Surendra- This function seems to be not used by MM. Todo: cleanup.
 void IndexData::_serialize(std::ostream& outputStream) const{
 	boost::archive::binary_oarchive oa(outputStream);
 	//1. Index Version
@@ -901,7 +908,8 @@ void IndexData::_serialize(std::ostream& outputStream) const{
 	//5. Inverted Index or Quad Tree
 	if (this->schemaInternal->getIndexType() == srch2::instantsearch::DefaultIndex) {
 		if(this->invertedIndex->mergeRequired())
-			this->invertedIndex->merge();
+			this->invertedIndex->merge(this->rankerExpression,
+					this->writeCounter->getNumberOfDocuments(), this->schemaInternal);
 		oa << *this->invertedIndex;
 
 	}else {
@@ -952,7 +960,8 @@ void IndexData::_save(const string &directoryName) const
     }
 
     if(this->invertedIndex->mergeRequired())
-    	this->invertedIndex->merge();
+    	this->invertedIndex->merge(this->rankerExpression,
+				this->writeCounter->getNumberOfDocuments(), this->schemaInternal);
     try {
     	serializer.save(*this->invertedIndex, directoryName + "/" +  IndexConfig::invertedIndexFileName);
     } catch (exception &ex) {
