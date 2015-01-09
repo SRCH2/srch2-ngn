@@ -206,7 +206,7 @@ if __name__ == '__main__':
         conn = mysql.connector.connect(host="127.0.0.1",user=myUserName, password=myPassword)
     except :
         print 'Access denied while connecting to the MySQL database. Set the MySQL user name and password in ./adapter_mysql/conf.xml'
-        os._exit(-2)
+        os._exit(-1)
         
     #Remove the srch2Test database and tables
     conn.cursor().execute('DROP DATABASE IF EXISTS srch2Test ')
