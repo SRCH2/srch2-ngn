@@ -26,7 +26,7 @@ Released   : 20090327
 
             window.onload = removeHistory();
         </script>
-        <script type="text/javascript" src="srch2service.js"></script>
+        <script type="text/javascript" src="../srch2.js"></script>
         <script language="javascript" src="index.js"></script>
     </head>
     <body>
@@ -107,12 +107,6 @@ Released   : 20090327
                                                 TO
                                                 <input type="text" size="2" id="filter_range_end" />
                                                 ]
-                                                <br/>
-                                                <span style="font-size:70%">Example: boolexp$ (price - discount)*rate < 100 $</span>
-                                                <br/>
-                                                boolexp <br/>$
-                                                <input type="text" size="15" id="filter_complex" />
-                                                $
                                             </form>
                                         </div>
                                         <!-- Filter Query -->
@@ -151,7 +145,7 @@ Released   : 20090327
                                         <!-- Search box -->
                                         <h3>Search</h3>
                                         <form>
-                                            <input type="text" id="query_box" size="47"  />
+                                            <input type="text" id="query_box" size="47" autofocus/>
                                         </form>
                                         <hr/>
                                         <div id="resultContainer">
@@ -230,21 +224,6 @@ Released   : 20090327
         </div>
         <script type="text/javascript">
             client.init();
-            var config = {
-                enableLog : true, // true / false
-                logType : "console", // console or alert. Note: console.log might not work on IE.
-                jsonPsrc : "http://127.0.0.1:8081/search?",
-                inputElementId : "query_box",
-                getQueryString : client.getQueryString, // should be a function, not string
-                debug : true, // true /false
-                evenNameToBindInputElement : "keyup",
-                searchType : "topK",
-                isFuzzy : true,
-                resultContainer : 'resultContainer',
-                responseHandler : 'client.responseHandler', // should a string
-                //cleanup : _srch2_this.cleanup, // should be a function, not string
-            };
-            srch2service.init(config);
         </script>
     </body>
 </html>

@@ -1,22 +1,43 @@
+/*
+ * This is the advanced demo for srch2 javascript library.
+ * To use the srch2, please visit:
+ *  http://srch2.com/releases/4.4.2/docs/library/
+ *
+ * For more information about Search API, please visit: 
+ *  http://srch2.com/releases/4.4.2/docs/restful-search/
+ */
 client = {
     init : function() {
         _client_this = this;
+        
+        /*
+         * Initialize the srch2, serverUrl must be set.
+         */ 
+        this.srch2 = srch2;
+        var config = {
+            serverUrl : "http://127.0.0.1:8081/",
+            debug : true, // true /false
+        };        
+        this.srch2.init(config);  //Initialize the srch2 with config.
+        _client_this.srch2.setServerUrl("http://localhost:8081/");
+        //_client_this.srch2.setServerUrl("http://simpson.calit2.uci.edu/srch2_movies_engine/");  //Server URL also can be set by setServerUrl
+        _client_this.srch2.setSearchType("getAll"); //Set the search type to "getAll"
+        _client_this.srch2.setEnablePrefixSearch(true); //Enable the prefix search 
+        _client_this.srch2.setEnableFuzzySearch(true);  //Enable the fuzzy search
+        
+        /*
+         * Set facet parameters, for more information, please visit : 
+         * http://srch2.com/releases/4.4.2/docs/restful-search/#7-facet-parameters
+         */
+        _client_this.srch2.enableFacetParam(true);//Enable Facet
+        _client_this.srch2.setFacetFieldList(['genre']);    //Set the facet field list
+        
+        _client_this.bindInput();
         _client_this.bindSortEvents();
         _client_this.bindFacetCat();
         _client_this.bindFacetFilterRemove();
 
-    },
-    bindSortEvents : function() {
-        _client_this.log("binding sort event", "debug");
-        var elements = document.getElementsByName('sort_filter_order');
-        for (var j = 0; j < elements.length; j++) {
-            _client_this.log("button clicked", "debug");
-            _client_this.bindEvent(elements[j], 'click', function(event) {
-                _client_this.log("clicked", "debug");
-                var query = _client_this.getQueryString({});
-                srch2service.jsonpCall(query);
-            });
-        }
+
     },
     log : function(msg, debug) {
         /*
@@ -26,6 +47,25 @@ client = {
             console.log(msg);
         }
     },
+    /*
+     * Bind the "Ascending", "Descending" buttons click event with 
+     * a function which sending the query with order parameters to the server. 
+     */    
+    bindSortEvents : function() {
+        _client_this.log("binding sort event", "debug");
+        var elements = document.getElementsByName('sort_filter_order');
+        for (var j = 0; j < elements.length; j++) {
+            _client_this.log("button clicked", "debug");
+            _client_this.bindEvent(elements[j], 'click', function(event) {
+                _client_this.log("clicked", "debug");
+                _client_this.sendQuery({});
+            });
+        }
+    },
+    /*
+     * Bind the facet category buttons click event with 
+     * a function which sending the query with facet parameters to the server. 
+     */    
     bindFacetCat : function() {
         _client_this.log("binding facet_cat click event", "debug");
         var elements = document.getElementsByClassName('facet_cat');
@@ -46,7 +86,7 @@ client = {
                     fqObj.valueRight = value.split(" ")[1];
                     fqObj.valueLeft = fqObj.valueLeft.substring(1);
                     if (fqObj.valueLeft.indexOf('b>') != -1) {
-                        fqObj.valueLeft = fqObj.valueLeft.substring(2);
+                        fqObj.valueLeft = fqObj.valueLeft.substring(fqObj.valueLeft.indexOf('b>') + 3);
                         //alert(fqObj.valueLeft + " TO "+fqObj.valueRight);
                     }
                     fqObj.valueRight = fqObj.valueRight.substring(0, fqObj.valueRight.length - 1);
@@ -69,41 +109,39 @@ client = {
                 document.getElementById('facet_remove_filter').innerHTML = "<button >Remove Facet Filtering</button>";
                 var params = {};
                 params['fq'] = fqObj;
-                var query = _client_this.getQueryString(params);
-                srch2service.jsonpCall(query);
+                _client_this.sendQuery(params);
             });
         }
     },
-    bindConfigEvents : function() {
-        var element = document.getElementById("toggleDebug");
-        _client_this.bindEvent(element, 'click', function(event) {
-            _client_this.config.debug = !_client_this.config.debug;
-        });
-
-        var element = document.getElementById("toggleLogOutput");
-        _client_this.bindEvent(element, 'click', function(event) {
-            if (_client_this.config.logType == "alert") {
-                _client_this.config.logType = "console";
-            } else {
-                _client_this.config.logType = "alert";
-            }
-        });
-
-        var element = document.getElementById("toggleEnableLogs");
-        _client_this.bindEvent(element, 'click', function(event) {
-            _client_this.config.enableLog = !_client_this.config.enableLog;
-        });
-
-    },
+    /*
+     * Bind the button "facet_remove_filter" click event with 
+     * a function which sending the query to the server. 
+     */    
     bindFacetFilterRemove : function() {
         var element = document.getElementById("facet_remove_filter");
         _client_this.bindEvent(element, 'click', function(event) {
             element.innerHTML = "";
             localStorage.setItem('facetFilter', "NULL");
-            var query = _client_this.getQueryString({});
-            srch2service.jsonpCall(query);
+            _client_this.sendQuery({});
         });
     },
+    /*
+     * Bind the input box "query_box" key up event with 
+     * a function which sending the query to the server. 
+     */
+    bindInput : function() {
+        var element = document.getElementById("query_box");
+        _client_this.bindEvent(element, "keyup", function(event) {
+            if (event.keyCode == 13) {
+                return;
+            }
+            _client_this.sendQuery({});
+        });
+    },
+    /*
+     * Bind the event "type" to the HTTP element "element",
+     * if the "type" event is triggered, call the function "handler".
+     */
     bindEvent : function(element, type, handler) {
         if (element.addEventListener) {
             element.addEventListener(type, handler, false);
@@ -111,6 +149,10 @@ client = {
             element.attachEvent('on' + type, handler);
         }
     },
+    /*  
+     * "responseHandler" is called by the server response.
+     * The "responseText" contains all the results in JSON format. 
+     */
     responseHandler : function(responseText) {
         if (responseText) {
             var output = "";
@@ -121,16 +163,21 @@ client = {
             output += "<td style='border-bottom:thick;font-weight:bold;'>" + 'Genre' + "</td>";
             output += "<td style='border-bottom:thick;font-weight:bold;'>" + 'Director' + "</td>";
             output += "<td style='border-bottom:thick;font-weight:bold;'>" + 'Year' + "</td>";
+            output += "<td style='border-bottom:thick;font-weight:bold;'>" + ' ' + "</td>";
             output += "</tr>";
             _client_this.queryKeywords = responseText.query_keywords;
+
+            
             for (var i = 0; i < results.length; i++) {
                 output += "<tr class='result_row'>";
+                var recordPrimaryKey = results[i].record_id;
                 var record = results[i].record;
                 var prefix = results[i].matching_prefix;
-                output += "<td style='border-bottom:thin dotted'>" + _client_this.addHighliting(prefix, record.title) + "</td>";
-                output += "<td style='border-bottom:thin dotted '>" + _client_this.addHighliting(prefix, record.genre) + "</td>";
-                output += "<td style='border-bottom:thin dotted '>" + _client_this.addHighliting(prefix, record.director) + "</td>";
-                output += "<td style='border-bottom:thin dotted '>" + _client_this.addHighliting(prefix, record.year) + "</td>";
+                output += "<td style='border-bottom:thin dotted'>" + _client_this.addHighlighting(prefix, record.title) + "</td>";
+                output += "<td style='border-bottom:thin dotted '>" + _client_this.addHighlighting(prefix, record.genre) + "</td>";
+                output += "<td style='border-bottom:thin dotted '>" + _client_this.addHighlighting(prefix, record.director) + "</td>";
+                output += "<td style='border-bottom:thin dotted '>" + _client_this.addHighlighting(prefix, record.year) + "</td>";
+                output += "<td style='border-bottom:thin dotted '><input type='submit' value='Like' onclick='_client_this.sendFeedback(\""+ recordPrimaryKey + "\")'></td>";
                 output += "</tr>";
             }
             output += "</table>";
@@ -144,6 +191,9 @@ client = {
             }
             // populate facets
             var facets = responseText.facets;
+            if( facets == null ){
+                return;
+            }
             for (var i = 0; i < facets.length; i++) {
                 var row = facets[i];
                 var fieldName = row.facet_field_name;
@@ -178,13 +228,16 @@ client = {
                     fcontainer.innerHTML = htmlVal;
                 }
             }
-            _client_this.bindFacetCat();
+            _client_this.bindFacetCat();    //Bind the facet category buttons with click event.
         } else {
             var element = document.getElementById("resultContainer");
             element.innerHTML = "No results mate!";
             _client_this.log("empty response", "debug");
         }
     },
+    /*
+     * Helper function to highlight the prefix keywords  
+     */
     findPrefix : function(keywords, prefix) {
         prefix = prefix.toLocaleLowerCase();
         for (var index in keywords) {
@@ -194,6 +247,9 @@ client = {
         }
         return false;
     },
+    /*
+     * Helper function to highlight the prefix keywords  
+     */
     regexMatch : function(prefixArray, word) {
         var prefixStr = prefixArray.join("|^");
         var re = new RegExp('^' + prefixStr, 'i');
@@ -233,7 +289,10 @@ client = {
             return returnObj; facet_remove_filter
         }
     },
-    addHighliting : function(prefix, input) {
+    /*
+     * Highlight the prefix in the search results.
+     */
+    addHighlighting : function(prefix, input) {
         if (input) {
             input = input.toString();
             var words = input.split(/[ ]+/);
@@ -260,53 +319,22 @@ client = {
         }
         return input;
     },
-    getQueryString : function(params) {
-
-        // 1. generate the query
-        var query = '';
-        // 1.1 . main query
-        query += 'searchType=getAll&q={defaultPrefixComplete=COMPLETE}';
-        var queryBoxValue = document.getElementById('query_box').value;
-        queryBoxValue = queryBoxValue.trim();
-        //if(queryBoxValue == "") return;
-        if (queryBoxValue == "") {
-            // no keyword, return empty
-            return "";
-        } else {
-            var keywords = queryBoxValue.split(" ");
-            for (var i = 0; i < keywords.length; i++) {
-                if (i == keywords.length - 1) {
-                    query += keywords[i] + "*" + "~";
-                } else {
-                    query += keywords[i] + "~" + " AND ";
-                }
-            }
-        }
-
-        query += '&fuzzy=true';
-        // 1.2 . facets
-        query += '&facet=true';
-        var attributes = ['year', 'genre'];
-        for (var i = 0; i < attributes.length; i++) {
-            if (attributes[i] == 'genre') {
-                query += '&facet.field=genre';
-            } else {
-                query += '&facet.range=' + attributes[i];
-                var start = document.getElementById('facet_' + attributes[i] + '_start').value;
-                var end = document.getElementById('facet_' + attributes[i] + '_end').value;
-                var gap = document.getElementById('facet_' + attributes[i] + '_gap').value;
-                if (start != "") {
-                    query += '&f.' + attributes[i] + '.facet.start=' + start;
-                }
-                if (end != "") {
-                    query += '&f.' + attributes[i] + '.facet.end=' + end;
-                }
-                if (gap != "") {
-                    query += '&f.' + attributes[i] + '.facet.gap=' + gap;
-                }
-            }
-
-        }
+    /*
+     * "sendQuery" is called when the event is triggered.
+     * This function gets the keyword, facet, filter and sort 
+     * info from the page, and send them to the server.
+     * The response results will trigger the function 
+     * "this.responseHandler".
+     */
+    sendQuery : function(params) {
+       
+        // Get the facet range values from the page and pass it to srch2.
+        var start = document.getElementById('facet_year_start').value;
+        var end = document.getElementById('facet_year_end').value;
+        var gap = document.getElementById('facet_year_gap').value;
+        _client_this.srch2.setFacetRange("year", start, end, gap);
+        
+        // Get the order setting from the page and pass it to srch2.
         var orderRadios = document.getElementsByName('sort_filter_order');
         var setSort = false;
         for (var j = 0; j < orderRadios.length; j++) {
@@ -319,13 +347,24 @@ client = {
                 }
             }
         }
+        
         if (setSort) {
-            query += '&sort=year&orderby=' + value;
+            _client_this.srch2.setSortList(['year']);
+            _client_this.srch2.setOrderBy(value);
         }
-
-        // 1.4 . filter query
+        
+        /*
+         * Get the filter info from the page, generate a query, and pass it to the srch2.
+         * For the syntax of filter query, please refer to : 
+         * http://srch2.com/releases/4.4.2/docs/restful-search/#62-fq-filter-query-parameter
+         */
+         
+         // Get and set the filter value
+        var filterQuery = "";
         var filterQueryIsthere = 0;
         var fqAssField = document.getElementById('filter_assignment_field').value;
+        
+
         var fqAssValue = document.getElementById('filter_assignment_value').value;
         var fqAss = "";
         if (!(fqAssField == "" || fqAssValue == "")) {
@@ -333,6 +372,7 @@ client = {
             fqAss = fqAssField + ':' + fqAssValue;
         }
 
+        // Get and set the filter range field
         var fqRngField = document.getElementById('filter_range_field').value;
         var fqRngStart = document.getElementById('filter_range_start').value;
         var fqRngEnd = document.getElementById('filter_range_end').value;
@@ -342,17 +382,13 @@ client = {
             fqRng = fqRngField + ':[ ' + fqRngStart + ' TO ' + fqRngEnd + ' ]';
         }
 
-        var fqComplex = document.getElementById('filter_complex').value;
+         // Get and set the boolean expressions
+
         var fqCmp = "";
-        if (!(fqComplex == "" )) {
-            filterQueryIsthere += 1;
-            fqCmp = "boolexp$" + fqComplex + "$";
-        }
         var op = "";
         if (filterQueryIsthere == 1) {
-            query += '&fq=' + fqAss + fqRng + fqCmp;
+            filterQuery += fqAss + fqRng + fqCmp;
         } else if (filterQueryIsthere > 1) {
-
             var opRadios = document.getElementsByName('filter_op');
             for (var i = 0; opRadios.length; i++) {
                 if (opRadios[i].checked) {
@@ -361,16 +397,18 @@ client = {
                 }
             }
             if (fqAss == "") {
-                query += '&fq=' + fqRng + " " + op + " " + fqCmp;
+                filterQuery += fqRng + " " + op + " " + fqCmp;
             } else if (fqRng == "") {
-                query += '&fq=' + fqAss + " " + op + " " + fqCmp;
+                filterQuery += fqAss + " " + op + " " + fqCmp;
             } else if (fqCmp == "") {
-                query += '&fq=' + fqAss + " " + op + " " + fqRng;
+                filterQuery += fqAss + " " + op + " " + fqRng;
             } else {
-                query += '&fq=' + fqAss + " " + op + " " + fqRng + " " + op + " " + fqCmp;
+                filterQuery += fqAss + " " + op + " " + fqRng + " " + op + " " + fqCmp;
             }
         }
 
+        // Append more filters if a function is called when the user
+        // clicks the facet category.
         if ("fq" in params) {
             var fqObj = params['fq'];
             var fqStr = fqObj['field'] + ":[ " + fqObj['valueLeft'] + " TO " + fqObj['valueRight'] + " ]";
@@ -381,22 +419,35 @@ client = {
                 fqStr += " AND " + localStorage.getItem('facetFilter');
             }
             if (filterQueryIsthere > 0) {
-                query += " " + op + " " + fqStr;
+                filterQuery += " " + op + " " + fqStr;
             } else {
-                query += '&fq=' + fqStr;
+                filterQuery += fqStr;
                 isFqSet = true;
             }
             localStorage.setItem('facetFilter', fqStr);
         } else if (localStorage.getItem('facetFilter') != "NULL") {
             var fqStr = localStorage.getItem('facetFilter');
             if (filterQueryIsthere > 0) {
-                query += " " + op + " " + fqStr;
+                filterQuery += " " + op + " " + fqStr;
             } else {
-                query += '&fq=' + fqStr;
+                filterQuery += fqStr;
                 isFqSet = true;
             }
         }
-        return query;
+        
+        // Pass the filterQuery to srch2
+        _client_this.srch2.setFilterQueryParam(filterQuery);
+        
+        // Get the query from the "query_box" and send it to the server.
+        var query = document.getElementById('query_box').value;
+        _client_this.srch2.sendQuery(query, _client_this.responseHandler);
+       
+    },
+
+    sendFeedback : function(recordPrimaryKey) {        
+        _client_this.log( "sending feedback = { " +  _client_this.srch2.feedbackQueryStr  + "," + recordPrimaryKey + "}", "debug");        
+       _client_this.srch2.sendFeedback(_client_this.srch2.feedbackQueryStr, recordPrimaryKey);
     }
+
 };
 
