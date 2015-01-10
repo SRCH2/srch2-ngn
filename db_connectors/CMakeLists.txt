@@ -163,7 +163,9 @@ IF(NOT ANDROID)
         )
     ENDIF()
 
-    LINK_DIRECTORIES( "/usr/lib/mysql" "/usr/lib64/mysql/")
+    IF(LINUX_OS)
+        LINK_DIRECTORIES( "/usr/lib/mysql" "/usr/lib64/mysql/")
+    ENDIF()
     
     SET( jsoncpp_LIBRARY ${CMAKE_SOURCE_DIR}/../thirdparty/json/jsoncpp-src/build/libjsoncpp.a)
 
