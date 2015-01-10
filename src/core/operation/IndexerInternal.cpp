@@ -253,6 +253,14 @@ INDEXWRITE_RETVAL IndexReaderWriter::deleteRecordGetInternalId(const std::string
     }
 
     INDEXWRITE_RETVAL returnValue = this->index->_deleteRecordGetInternalId(primaryKeyID, internalRecordId);
+    if (returnValue == OP_SUCCESS) {
+    	this->writesCounterForMerge++;
+    	this->needToSaveIndexes = true;
+    	if (this->mergeThreadStarted && writesCounterForMerge >= mergeEveryMWrites){
+    		pthread_cond_signal(&countThresholdConditionVariable);
+    	}
+    }
+
     pthread_mutex_unlock(&lockForWriters);
     return returnValue;
 }

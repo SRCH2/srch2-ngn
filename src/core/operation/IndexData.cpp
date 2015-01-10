@@ -391,7 +391,10 @@ INDEXWRITE_RETVAL IndexData::_deleteRecordGetInternalId(const std::string &exter
 {
 	bool hasRecord = this->forwardIndex->getInternalRecordIdFromExternalRecordId(externalRecordId, internalRecordId);
 	if(hasRecord){
-		const ForwardList* forwardList = this->forwardIndex->getForwardList_ForCommit(internalRecordId);
+		ForwardList* forwardList = this->forwardIndex->getForwardList_ForCommit(internalRecordId);
+
+		this->permissionMap->deleteResourceFromRoles(externalRecordId, forwardList->getAccessList()->getRoles());
+
 		if (this->schemaInternal->getIndexType()
 								== srch2::instantsearch::LocationIndex) {
 			StoredRecordBuffer buffer = forwardList->getInMemoryData();
@@ -456,6 +459,7 @@ INDEXWRITE_RETVAL IndexData::_deleteRecordGetInternalId(const std::string &exter
     }
 
     return success;
+
 }
 
 // recover the deleted record
