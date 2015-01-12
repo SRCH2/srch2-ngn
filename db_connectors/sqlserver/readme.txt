@@ -5,7 +5,12 @@ Author: Chen Liu, Oct. 2014
 This connector allows the SRCH2 engine to index data from Microsoft
 SQL Server.  It supports Linux only.
 
-1. Install SQL Server ODBC driver and driver manager:
+1. Install SQL Server ODBC driver and driver manager: 
+  ====================================
+  Note: Script to set up the SqlServer on Ubuntu and CentOS 
+  ===================================
+     shell> cd srch2_ngn/release_files/documentation/docs/example-demo
+     shell> ./srch2-install-sqlserver-odbc-linux.sh
 
  1.1) For Redhat and SUSE linux distributions: follow instructions on
      http://msdn.microsoft.com/en-us/library/hh568451%28v=sql.110%29.aspx  

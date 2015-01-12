@@ -5,12 +5,12 @@
 echo "Install required libraries..."
 
 #CENTOS
-sudo yum group install "Development Tools"
-sudo yum install openssl-devel wget
+python -mplatform | grep centos && sudo yum group install "Development Tools"
+python -mplatform | grep centos && sudo yum install openssl-devel wget
 
 #UBUNTU
-sudo apt-get install gcc make cpp
-sudo apt-get install libssl-dev 
+python -mplatform | grep Ubuntu && sudo apt-get install gcc make cpp
+python -mplatform | grep Ubuntu && sudo apt-get install libssl-dev 
 
 mkdir srch2-install-sqlserver-odbc-linux
 cd srch2-install-sqlserver-odbc-linux
@@ -36,12 +36,12 @@ MSSQLDIR=$(pwd)
 
 #Create soft link for the MS SQL Server ODBC Driver dependencies 
 #UBUNTU 64bit
-sudo ln -s /usr/lib/x86_64-linux-gnu/libssl.so /usr/lib/x86_64-linux-gnu/libssl.so.6
-sudo ln -s /usr/lib/x86_64-linux-gnu/libcrypto.so /usr/lib/x86_64-linux-gnu/libcrypto.so.6
+python -mplatform | grep Ubuntu && sudo ln -s /usr/lib/x86_64-linux-gnu/libssl.so /usr/lib/x86_64-linux-gnu/libssl.so.6
+python -mplatform | grep Ubuntu && sudo ln -s /usr/lib/x86_64-linux-gnu/libcrypto.so /usr/lib/x86_64-linux-gnu/libcrypto.so.6
 
 #CENTOS 64bit
-sudo ln -s /usr/lib64/libssl.so /usr/lib64/libssl.so.6
-sudo ln -s /usr/lib64/libcrypto.so /usr/lib64/libcrypto.so.6
+python -mplatform | grep centos && sudo ln -s /usr/lib64/libssl.so /usr/lib64/libssl.so.6
+python -mplatform | grep centos && sudo ln -s /usr/lib64/libcrypto.so /usr/lib64/libcrypto.so.6
 
 sudo sh -c "echo /usr/local/lib > /etc/ld.so.conf.d/unixODBC-2.3.2.conf"
 sudo ldconfig

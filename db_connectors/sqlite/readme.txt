@@ -16,6 +16,9 @@ shell> ./configure
 shell> make
 shell> sudo make install
 
+To link libsqlite3.so on CentOS 64bit.
+shell> sudo ln -s /usr/lib64/libsqlite3.so.0 /usr/lib64/libsqlite3.so
+
 2. Install thirdparty packages (only if if they are not compiled yet):
 
 shell> cd srch2-ngn/thirdparty/

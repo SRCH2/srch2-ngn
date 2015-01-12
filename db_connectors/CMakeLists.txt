@@ -163,6 +163,10 @@ IF(NOT ANDROID)
         )
     ENDIF()
 
+    IF(LINUX_OS)
+        LINK_DIRECTORIES( "/usr/lib/mysql" "/usr/lib64/mysql/")
+    ENDIF()
+    
     SET( jsoncpp_LIBRARY ${CMAKE_SOURCE_DIR}/../thirdparty/json/jsoncpp-src/build/libjsoncpp.a)
 
     #MYSQL_CONNECTOR_LIBRARY and MYSQL_LISTENER_LIBRARY have to be both .a (static libs) or .so (or dynamic libs). We choose to use .a
