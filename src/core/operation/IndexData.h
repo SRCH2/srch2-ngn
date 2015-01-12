@@ -257,6 +257,9 @@ struct __DebugShardingInfo{
 	string explanation;
 };
 
+class CacheManager;
+
+
 class IndexData
 {
 private:
@@ -353,7 +356,7 @@ public:
     inline uint32_t _getNumberOfDocumentsInIndex() const { return this->writeCounter->getNumberOfDocuments(); }
     
     // merge the index
-    INDEXWRITE_RETVAL _merge(bool updateHistogram);
+    INDEXWRITE_RETVAL _merge(CacheManager *cache, bool updateHistogram);
 
      // delete a record with a specific id
     INDEXWRITE_RETVAL _deleteRecord(const std::string &externalRecordId);
@@ -364,7 +367,7 @@ public:
     INDEXWRITE_RETVAL _recoverRecord(const std::string &externalRecordId, unsigned internalRecordId);
 
     // check if a record exists
-    INDEXLOOKUP_RETVAL _lookupRecord(const std::string &externalRecordId) const;
+    INDEXLOOKUP_RETVAL _lookupRecord(const std::string &externalRecordId, unsigned& internalRecordId) const;
 
     // build the index. After commit(), no more records can be added
     INDEXWRITE_RETVAL finishBulkLoad();
@@ -373,9 +376,9 @@ public:
 
     void _exportData(const string& exportedDataFileName) const;
 
-    void _save() const { this->_save(this->directoryName); }
+    void _save(CacheManager *cache) const { this->_save(cache, this->directoryName); }
 
-    void _save(const std::string &directoryName) const;
+    void _save(CacheManager *cache, const std::string &directoryName) const;
     
     void _bootStrapFromDisk();
     void _bootStrapComponentFromByteSteam(std::istream& inputStream, const string& componentName);

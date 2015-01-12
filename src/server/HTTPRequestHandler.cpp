@@ -30,6 +30,7 @@
 #include "util/RecordSerializer.h"
 #include "util/RecordSerializerUtil.h"
 #include "DataConnectorThread.h"
+#include "index/FeedbackIndex.h"
 
 #define SEARCH_TYPE_OF_RANGE_QUERY_WITHOUT_KEYWORDS 2
 
@@ -903,7 +904,7 @@ void HTTPRequestHandler::aclModifyRolesForRecord(evhttp_request *req, Srch2Serve
 
 
 // gets the acl command from the role view and modifies the access list.
-// curl "http://localhost:8081/product/AclAddRecordsForRoles" -i -X PUT -d '{"roleId": “1234", “resourceId”: ["33", "45"]}'
+// curl "http://localhost:8081/product/AclAddRecordsForRoles" -i -X PUT -d '{"roleId": ���1234", ���resourceId���: ["33", "45"]}'
 void HTTPRequestHandler::aclModifyRecordsForRole(evhttp_request *req, Srch2Server *server, srch2::instantsearch::RecordAclCommandType commandType){
 
 	Json::Value response(Json::objectValue);
@@ -1559,6 +1560,10 @@ boost::shared_ptr<Json::Value> HTTPRequestHandler::doSearchOneCore(evhttp_reques
             *(AnalyzerFactory::getCurrentThreadAnalyzer(indexDataContainerConf)),
             &paramContainer, server->getIndexer()->getAttributeAcl());
     LogicalPlan logicalPlan;
+    if (server->indexDataConfig->isUserFeedbackEnabled()) {
+    	// set only if user feedback is enabled else leave it empty.
+    	logicalPlan.queryStringWithTermsAndOps = qp.fetchCleanQueryString();
+    }
     if(qr.rewrite(logicalPlan) == false){
         // if the query is not valid, print the error message to the response
         errorStream << paramContainer.getMessageString();

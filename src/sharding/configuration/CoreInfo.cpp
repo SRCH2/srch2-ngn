@@ -68,6 +68,9 @@ CoreInfo_t::CoreInfo_t(const CoreInfo_t &src) {
     allowedRecordTokenizerCharacters = src.allowedRecordTokenizerCharacters;
     ports = src.ports;
     aclCoreFlag = src.aclCoreFlag;
+    userFeedbackEnabledFlag = src.userFeedbackEnabledFlag;
+    maxFeedbackRecordsPerQuery = src.maxFeedbackRecordsPerQuery;
+    maxFeedbackQueriesCount = src.maxFeedbackQueriesCount;
 
 }
 

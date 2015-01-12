@@ -690,6 +690,7 @@ private:
 	static const char* const defaultExactPostTag;
 
 	static const char* const heartBeatTimerTag;
+	static const char* const userFeedbackString;
 public:
 	static const char* const defaultCore;
 };

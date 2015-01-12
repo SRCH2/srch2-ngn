@@ -206,6 +206,10 @@ function test_case(){
 #
 ###############################################################################################################
 
+#rm -rf ./data/feedback/*
+#test_case "User feedback" "python ./feedback/testProgram.py $SRCH2_ENGINE"
+#sleep 3
+
 #TODO: disabled for now
 #Only start 1 node
 #rm -fr SRCH2Cluster
@@ -466,6 +470,10 @@ rm -fr SRCH2Cluster
 sleep 3
 rm -fr SRCH2Cluster
 test_case "test Chinese" "python ./chinese/chinese_analyzer.py $SRCH2_ENGINE"
+
+sleep 3
+
+test_case "test trie shrinking" " python ./shrinking_trie/shrinking_trie.py $SRCH2_ENGINE"
 
 sleep 3
 

@@ -44,6 +44,12 @@ using srch2is::Analyzer;
 namespace srch2 {
 namespace httpwrapper {
 
+// parses input string and decodes url-encoding before writing to output string.
+// e.g input = "trip%20advisor"  output = "trip advisor" ( %20 changed  to " ").
+// All encoding can be found at http://www.w3schools.com/tags/ref_urlencode.asp
+// we use libevent to do the conversion.
+void decodeString(const char *inputStr, string& outputStr);
+
 class QueryParser {
 public:
 
@@ -96,7 +102,9 @@ public:
     // localparamter related variables end
     bool isParsedError; // true -> there was error while parsing, false parsing was successful. no erros. Warnings may still be present.
     bool isSearchTypeSet; // whether the searchType has been set or not.
-
+    string originalQueryString;
+    // returns the query string without local parameters, fuzzy modifier, and boost modifiers.
+    string fetchCleanQueryString();
 private:
 
     ParsedParameterContainer * container;

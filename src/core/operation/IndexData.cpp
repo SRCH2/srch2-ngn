@@ -44,6 +44,8 @@
 #include <boost/thread/shared_mutex.hpp>
 #include <boost/thread/locks.hpp>
 
+#include "operation/CacheManager.h"
+
 using std::string;
 using std::vector;
 using std::map;
@@ -387,6 +389,7 @@ INDEXWRITE_RETVAL IndexData::_deleteRecord(const std::string &externalRecordId)
 
 // delete a record with a specific id //TODO Give the correct return message for delete pass/fail
 // get the deleted internal recordID
+
 INDEXWRITE_RETVAL IndexData::_deleteRecordGetInternalId(const std::string &externalRecordId, unsigned &internalRecordId)
 {
 	bool hasRecord = this->forwardIndex->getInternalRecordIdFromExternalRecordId(externalRecordId, internalRecordId);
@@ -419,7 +422,7 @@ INDEXWRITE_RETVAL IndexData::_deleteRecordGetInternalId(const std::string &exter
 		}
 	}
 
-    INDEXWRITE_RETVAL success = this->forwardIndex->deleteRecordGetInternalId(externalRecordId, internalRecordId)  ? OP_SUCCESS: OP_FAIL;
+    INDEXWRITE_RETVAL success = this->forwardIndex->deleteRecord(externalRecordId)  ? OP_SUCCESS: OP_FAIL;
 
     if (success == OP_SUCCESS) {
         ForwardList * fwdList = this->forwardIndex->getForwardList_ForCommit(internalRecordId);
@@ -431,7 +434,7 @@ INDEXWRITE_RETVAL IndexData::_deleteRecordGetInternalId(const std::string &exter
             // the inverted-list-ids from the trie.
             TrieNodePath trieNodePath;
             trieNodePath.path = new vector<TrieNode *>();
-            vector<unsigned> invertedListIdsToMerge;
+            vector<pair<unsigned, unsigned> > invertedListIdsToMerge;
             for (unsigned i = 0; i < keywordsCount; ++i) {
                 unsigned keywordId = *(listofKeywordIds + i);
                 // get the TrieNode path of the current keyword in write view based on its id.
@@ -443,7 +446,7 @@ INDEXWRITE_RETVAL IndexData::_deleteRecordGetInternalId(const std::string &exter
                 }
                 TrieNode * leafNode = trieNodePath.path->back();
                 if(leafNode && leafNode->isTerminalNode()) {
-                    invertedListIdsToMerge.push_back(leafNode->invertedListOffset);
+                    invertedListIdsToMerge.push_back(make_pair(leafNode->invertedListOffset, leafNode->id));
                 } else {
                     // should not happen.
                     ASSERT(false);
@@ -451,7 +454,7 @@ INDEXWRITE_RETVAL IndexData::_deleteRecordGetInternalId(const std::string &exter
                 trieNodePath.path->clear();
             }
             delete trieNodePath.path;
-            this->invertedIndex->appendInvertedListIdsForMerge(invertedListIdsToMerge);
+            this->invertedIndex->appendInvertedListKeywordIdsForMerge(invertedListIdsToMerge);
         }
         this->mergeRequired = true; // need to tell the merge thread to merge
         this->writeCounter->decDocsCounter();
@@ -506,9 +509,15 @@ INDEXWRITE_RETVAL IndexData::_recoverRecord(const std::string &externalRecordId,
 }
 
 // check if the record exists
-INDEXLOOKUP_RETVAL IndexData::_lookupRecord(const std::string &externalRecordId) const
-{
-    return this->forwardIndex->lookupRecord(externalRecordId);
+//<<<<<<< HEAD
+//INDEXLOOKUP_RETVAL IndexData::_lookupRecord(const std::string &externalRecordId) const
+//{
+//    return this->forwardIndex->lookupRecord(externalRecordId);
+//=======
+INDEXLOOKUP_RETVAL IndexData::_lookupRecord(
+		const std::string &externalRecordId, unsigned& internalRecordId) const {
+	return this->forwardIndex->lookupRecord(externalRecordId, internalRecordId);
+//>>>>>>> pseudo-master
 }
 
 /* build the index. After commit(), no more records can be added.
@@ -584,7 +593,7 @@ INDEXWRITE_RETVAL IndexData::finishBulkLoad()
     }
 }
 
-INDEXWRITE_RETVAL IndexData::_merge(bool updateHistogram){
+INDEXWRITE_RETVAL IndexData::_merge(CacheManager *cache, bool updateHistogram) {
 //    Logger::debug("Merge begins--------------------------------");
 
     if (!this->mergeRequired)
@@ -608,7 +617,7 @@ INDEXWRITE_RETVAL IndexData::_merge(bool updateHistogram){
 
     if (this->invertedIndex->mergeWorkersCount <= 1) {
     	this->invertedIndex->merge( this->rankerExpression,
-    			this->writeCounter->getNumberOfDocuments(), this->schemaInternal);
+    			this->writeCounter->getNumberOfDocuments(), this->schemaInternal, this->trie);
     } else {
     	this->invertedIndex->parallelMerge();
     }
@@ -649,6 +658,22 @@ INDEXWRITE_RETVAL IndexData::_merge(bool updateHistogram){
 
     this->trie->merge(invertedIndex , this->forwardIndex,
     		this->forwardIndex->getTotalNumberOfForwardLists_ReadView() , updateHistogram);
+
+    // If some leaf nodes have an empty inverted list, we need to get rid of them
+    if (this->trie->getEmptyLeafNodeIdSize() > 0) {
+    	// we need to acquire the global lock to block all other readers and writers
+    	// TODO for future optimization: Instead of taking global rw lock.
+    	// We could take the same approach as write operation. i.e., copying the
+    	// affected TrieNode paths. Let the read view read the old paths
+    	// (which will be freed after the last reader)
+    	boost::unique_lock<boost::shared_mutex> lock(globalRwMutexForReadersWriters);
+    	this->trie->removeDeletedNodes();
+
+    	// since we are deleting trie nodes, we need to clear the cache while
+    	// holding the global RW lock.
+    	if (cache != NULL)
+    		cache->clear();
+    }
     
     if (this->schemaInternal->getIndexType() == srch2::instantsearch::LocationIndex) {
           this->quadTree->merge();
@@ -656,7 +681,7 @@ INDEXWRITE_RETVAL IndexData::_merge(bool updateHistogram){
 
     this->mergeRequired = false;
 
-    Logger::debug("Merge ends--------------------------------"); 
+//    Logger::debug("Merge ends--------------------------------");
 
     return OP_SUCCESS;
 }
@@ -664,8 +689,7 @@ INDEXWRITE_RETVAL IndexData::_merge(bool updateHistogram){
 /*
  *
  */
-void IndexData::reassignKeywordIds()
-{
+void IndexData::reassignKeywordIds() {
     map<TrieNode *, unsigned> trieNodeIdMapper; //
     this->trie->reassignKeywordIds(trieNodeIdMapper);
 
@@ -688,11 +712,14 @@ void IndexData::reassignKeywordIds()
     //std::unordered_set<unsigned> processedRecordIds; // keep track of records that have been converted
     map<unsigned, unsigned> processedRecordIds; // keep track of records that have been converted
 
+
     // Now we have the ID mapper.  We want to go through the trie nodes one by one.
     // For each of them, access its inverted list.  For each record,
     // use the id mapper to change the integers on the forward list.
     changeKeywordIdsOnForwardLists(trieNodeIdMapper, keywordIdMapper, processedRecordIds);
 
+	// apply the ID mapper on the keyword ids of empty leaf nodes
+	this->trie->applyKeywordIdMapperOnEmptyLeafNodes(keywordIdMapper);
 }
 
 /*
@@ -816,8 +843,6 @@ void IndexData::_deSerializeInvertedIndex(std::istream& inputStream) {
     this->invertedIndex = new InvertedIndex(this->forwardIndex);
     ia >> *(this->invertedIndex);
     this->invertedIndex->setForwardIndex(this->forwardIndex);
-//	if (this->schemaInternal->getIndexType() == srch2::instantsearch::DefaultIndex){
-//	}
 
 }
 
@@ -835,8 +860,7 @@ void IndexData::_deSerializeLocationIndex(std::istream& inputStream) {
     delete this->quadTree;
     this->quadTree = new QuadTree();
     ia >> *(this->quadTree);
-//	if (this->schemaInternal->getIndexType() == srch2::instantsearch::LocationIndex){
-//	}
+
 }
 
 void IndexData::_deSerializeIndexCounts(std::istream& inputStream) {
@@ -851,8 +875,6 @@ void IndexData::_deSerializeIndexCounts(std::istream& inputStream) {
     this->readCounter = new ReadCounter(readCount_tmp);
     delete this->writeCounter;
     this->writeCounter = new WriteCounter(writeCount_tmp, numDocs_tmp);
-
-	//this->flagBulkLoadDone = true;
 }
 
 void IndexData::_deSerializeRecordAclPermissions(std::istream& inputStream) {
@@ -898,6 +920,7 @@ void IndexData::_serialize(std::ostream& outputStream) const{
 	oa << *this->schemaInternal;
 
 	if(this->forwardIndex->isMergeRequired()) {
+
 		this->forwardIndex->merge();
 		if (this->forwardIndex->hasDeletedRecords()) {
 			// free the space for deleted records.
@@ -913,7 +936,7 @@ void IndexData::_serialize(std::ostream& outputStream) const{
 	if (this->schemaInternal->getIndexType() == srch2::instantsearch::DefaultIndex) {
 		if(this->invertedIndex->mergeRequired())
 			this->invertedIndex->merge(this->rankerExpression,
-					this->writeCounter->getNumberOfDocuments(), this->schemaInternal);
+					this->writeCounter->getNumberOfDocuments(), this->schemaInternal, this->trie);
 		oa << *this->invertedIndex;
 
 	}else {
@@ -928,19 +951,11 @@ void IndexData::_serialize(std::ostream& outputStream) const{
 	oa << numDocs_tmp;
 }
 
-void IndexData::_save(const string &directoryName) const
+void IndexData::_save(CacheManager *cache, const string &directoryName) const
 {
 	Serializer serializer;
-    if (this->trie->isMergeRequired())
-        this->trie->merge(NULL , NULL,  0 , false);
-    // serialize the data structures to disk
-    try {
-        serializer.save(*this->trie, directoryName + "/" + IndexConfig::trieFileName);
-    } catch (exception &ex) {
-        Logger::error("Error writing trie index file: %s/%s", directoryName.c_str(), IndexConfig::trieFileName);
-	// can keep running - don't rethrow exception
-    }
 
+	// ---------- save forwardIndex -----------
     if(this->forwardIndex->isMergeRequired()) {
         this->forwardIndex->merge();
         if (this->forwardIndex->hasDeletedRecords()) {
@@ -957,33 +972,64 @@ void IndexData::_save(const string &directoryName) const
         Logger::error("Error writing forward index file: %s/%s", directoryName.c_str(), IndexConfig::forwardIndexFileName);
     }
 
+    // ---------- save schema -----------
     try {
         serializer.save(*this->schemaInternal, directoryName + "/" + IndexConfig::schemaFileName);
     } catch (exception &ex) {
         Logger::error("Error writing schema index file: %s/%s", directoryName.c_str(), IndexConfig::schemaFileName);
     }
 
+    // ---------- save invertedIndex -----------
     if(this->invertedIndex->mergeRequired())
     	this->invertedIndex->merge(this->rankerExpression,
-				this->writeCounter->getNumberOfDocuments(), this->schemaInternal);
+				this->writeCounter->getNumberOfDocuments(), this->schemaInternal, this->trie);
     try {
     	serializer.save(*this->invertedIndex, directoryName + "/" +  IndexConfig::invertedIndexFileName);
     } catch (exception &ex) {
     	Logger::error("Error writing inverted index file: %s/%s", directoryName.c_str(), IndexConfig::invertedIndexFileName);
     }
 
+    // ---------- save trie -----------
+    // We save the trie after saving the inverted index since
+    // the step of merging inverted index tells us what leaf nodes have an empty
+    // inverted list, thus become removable.
+    if (this->trie->isMergeRequired()) {
+        this->trie->merge(NULL , NULL,  0 , false);
+        // shrink the trie if needed
+        if (this->trie->getEmptyLeafNodeIdSize() > 0) {
+            // we need to acquire the global lock to block all other readers and writers
+            boost::unique_lock<boost::shared_mutex> lock(globalRwMutexForReadersWriters);
+            this->trie->removeDeletedNodes();
+
+	    // since we are deleting trie nodes, we need to clear the cache while
+	    // holding the global RW lock.
+	    if (cache != NULL)
+	      cache->clear();
+        }
+    }
+    // serialize the data structures to disk
+    try {
+        serializer.save(*this->trie, directoryName + "/" + IndexConfig::trieFileName);
+    } catch (exception &ex) {
+        Logger::error("Error writing trie index file: %s/%s", directoryName.c_str(), IndexConfig::trieFileName);
+	// can keep running - don't rethrow exception
+    }
+
+    // ---------- save quadTree -----------
     try{
     	serializer.save(*this->quadTree, directoryName + "/" + IndexConfig::quadTreeFileName);
     } catch (exception &ex){
     	Logger::error("Error writing quadtree file: %s/%s", directoryName.c_str(), IndexConfig::quadTreeFileName);
     }
 
+    // ---------- save index counts file  -----------
     try {
         this->saveCounts(directoryName + "/" + IndexConfig::indexCountsFileName);
     } catch (exception &ex) {
         Logger::error("Error writing index counts file: %s/%s", directoryName.c_str(), IndexConfig::indexCountsFileName);
     }
 
+    // ---------- save permissionMap  -----------
     try {
     	serializer.save(*this->permissionMap,
     			directoryName + "/" + IndexConfig::permissionMapFileName);
@@ -992,6 +1038,7 @@ void IndexData::_save(const string &directoryName) const
     			directoryName.c_str(), IndexConfig::permissionMapFileName);
     }
 
+    // ---------- save attributeAcl  -----------
     try{
     	serializer.save(*(this->attributeAcl), directoryName + "/" + IndexConfig::AccessControlFile);
     } catch (exception &ex) {

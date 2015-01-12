@@ -281,7 +281,8 @@ typedef enum {
 	PhysicalPlanNode_SortByRefiningAttribute,
 	PhysicalPlanNode_FilterQuery,
 	PhysicalPlanNode_PhraseSearch,
-	PhysicalPlanNode_KeywordSearch
+	PhysicalPlanNode_KeywordSearch,
+	PhysicalPlanNode_FeedbackRanker
 } PhysicalPlanNodeType;
 
 typedef enum {

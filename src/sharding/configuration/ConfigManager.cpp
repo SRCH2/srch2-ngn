@@ -32,6 +32,7 @@
 #include "sharding/sharding/ShardManager.h"
 #include "fcntl.h"
 #include <boost/system/error_code.hpp>
+#include "index/Trie.h"
 
 using namespace std;
 namespace srch2is = srch2::instantsearch;
@@ -223,6 +224,7 @@ const char* const ConfigManager::defaultFuzzyPostTag = "</b>";
 const char* const ConfigManager::defaultExactPreTag = "<b>";
 const char* const ConfigManager::defaultExactPostTag = "</b>";
 const char* const ConfigManager::heartBeatTimerTag = "heartbeattimer";
+const char* const ConfigManager::userFeedbackString = "userfeedback";
 
 ConfigManager::PortNameMap_t ConfigManager::portNameMap[] = {
     { SearchPort, ConfigManager::searchPortString , "/search"},
@@ -244,6 +246,7 @@ ConfigManager::PortNameMap_t ConfigManager::portNameMap[] = {
 	{ BulkLoadRecords, "", "/bulkLoadRecords"},
 	{ BulkLoadRecordAcl, "", "/bulkLoadRecordAcl"},
 	{ BulkLoadAttributeAcl, "", "/bulkLoadAttributeAcl"},
+	{ UserFeedback, "", "/feedback"},
     { GlobalPortsStart , NULL , NULL},
     { InfoPort_Nodes_NodeID, ConfigManager::nodesStatsPortString , "/_nodes/nodeId"},
     { InfoPort_Cluster_Stats, ConfigManager::clusterStatsPortString , "/_cluster/stats"},
@@ -1281,6 +1284,36 @@ void ConfigManager::parseCoreInformationTags(const xml_node &parentNode, CoreInf
     	}
     }
 
+    // <userFeedback maxfeedbackqueries= "1000" maxFeedbackRecordsPerQuery="20"  />
+    childNode = parentNode.child(userFeedbackString);
+    if (childNode) {
+    	coreInfo->userFeedbackEnabledFlag = true;
+        int maxFeedbackRecordsPerQuery = childNode.attribute("maxfeedbackrecordsperquery").as_int(0);
+        int maxFeedbackQueriesCount = childNode.attribute("maxfeedbackqueries").as_int(0);
+
+        if (maxFeedbackRecordsPerQuery <= 0) {
+        	coreInfo->userFeedbackEnabledFlag = false;
+        	Logger::console("In core %s: 'maxFeedbackRecordsPerQuery' attribute of"
+        			" 'userFeedback' tag is missing or has an invalid value. User feedback is disabled.",
+        			coreInfo->getName().c_str());
+        }
+        else if (maxFeedbackQueriesCount <= 0) {
+    		coreInfo->userFeedbackEnabledFlag = false;
+    		Logger::console("In core %s: 'maxfeedbackQueries' attribute of"
+    				" 'userFeedback' tag is missing or has an invalid value. User feedback is disabled.",
+    				coreInfo->getName().c_str());
+    	}
+        else {
+        	coreInfo->maxFeedbackRecordsPerQuery = maxFeedbackRecordsPerQuery;
+        	if (maxFeedbackQueriesCount < srch2is::Trie::MAX_ALLOCATED_KEYWORD_ID) {
+        		coreInfo->maxFeedbackQueriesCount = maxFeedbackQueriesCount;
+        	} else {
+        		coreInfo->maxFeedbackQueriesCount = srch2is::Trie::MAX_ALLOCATED_KEYWORD_ID;
+        	}
+        }
+    } else {
+    	coreInfo->userFeedbackEnabledFlag = false;
+    }
 }
 
 void ConfigManager::parseAllCoreTags(const xml_node &configNode,

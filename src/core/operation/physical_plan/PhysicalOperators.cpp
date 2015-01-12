@@ -6,6 +6,7 @@
 #include "MergeTopKOperator.h"
 #include "FilterQueryOperator.h"
 #include "PhraseSearchOperator.h"
+#include "FeedbackRankingOperator.h"
 
 namespace srch2 {
 namespace instantsearch {
@@ -183,6 +184,7 @@ PhraseSearchOptimizationOperator * PhysicalOperatorFactory::createPhraseSearchOp
 	optimizationNodes.push_back(object);
 	return object;
 }
+
 GeoNearestNeighborOperator * PhysicalOperatorFactory::createGeoNearestNeighborOperator(){
 	GeoNearestNeighborOperator * op = new GeoNearestNeighborOperator();
 	executionNodes.push_back(op);
