@@ -8,7 +8,6 @@ import expectedResultsTermOffsetON, expectedResultsTermOffsetOFF, expectedResult
 sys.path.insert(0, 'srch2lib')
 import test_lib
 import time
-port = '8087'
 expectedResults = [expectedResultsTermOffsetON.results, expectedResultsTermOffsetOFF.results, expectedResultsTermOffsetON_1.results]
 #Function of checking the results
 def checkResult(query, responseJson,resultValue, queryId):
@@ -62,14 +61,10 @@ def runTest(queriesAndResultsPath, binary_path, configFile):
     #Start the engine server
     args = [ binary_path, '--config-file=' + configFile] 
 
-    if test_lib.confirmPortAvailable(port) == False:
-        print 'Port ' + str(port) + ' already in use - aborting'
+    serverHandle = test_lib.startServer(args)
+    if serverHandle == None:
         return -1
 
-    print 'starting engine: ' + args[0] + ' ' + args[1]
-    serverHandle = test_lib.startServer(args)
-
-    test_lib.pingServer(port)
     try:
         #construct the query
         #format : phrase,proximity||rid1 rid2 rid3 ...ridn
@@ -82,13 +77,10 @@ def runTest(queriesAndResultsPath, binary_path, configFile):
             phrase=phrase.replace(' ', '%20')
             phrase=phrase.replace('"', '%22')
             expectedRecordIds=(value[1]).split()
-            query='http://localhost:' + port + '/search?q='+ phrase
             #query='http://localhost:' + port + '/search?q='+ urllib.quote(phrase)
             #query = query.replace("%26", "&");
             #query = query.replace("%3D", "=");
-            print "query : " + query
-            response = urllib2.urlopen(query).read()
-            response_json = json.loads(response)
+            response_json = test_lib.searchRequest('q='+ phrase)
             #print response_json['results']
             #check the result
             #print queryId , ":"
@@ -98,7 +90,7 @@ def runTest(queriesAndResultsPath, binary_path, configFile):
             #    print obj['snippet']
             #    print ","
             #print "],"
-            failTotal += checkResult(query, response_json['results'], expectedRecordIds, queryId)
+            failTotal += checkResult('q='+ phrase, response_json['results'], expectedRecordIds, queryId)
             queryId += 1
         print '=============================='
         return failTotal

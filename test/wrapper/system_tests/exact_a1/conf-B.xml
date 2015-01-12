@@ -6,37 +6,15 @@
 -->
  
 <config>
-    <!--
-        SRCH2 Home directory 
-        Required
-         
-        This directory is going to be your srch2 home's directory.
-        All other paths HAVE to be reletive to this path.
-        For Example:
-            To have "/usr/share/srch2/" as srch2 home directory, you should have the following line
-            <srch2Home>/usr/share/srch2/</srch2Home>
-             
-        All other paths in this conif file have to be relative to this path.
-        For Example:
-            If your data file is inside srch2 home directory, having the following absolute path
-            "/usr/share/srch2/data/sample-data.json"
-            In this config file it should be as "data/sample-data.json"
-    -->
-    <srch2Home>./</srch2Home>
+    <licenseFile>../../wrapper/conf/srch2_license_key.txt</licenseFile>
 
-    <transport>
-        <port>4002</port>
-        <ipaddress>127.0.0.1</ipaddress>
-    </transport>
+    <srch2Home>./</srch2Home>
+        <!-- Make sure to specify the home of your SRCH2 installation.  Example: 
+	  <srch2Home>/home/joe/srch2</srch2Home>
+        -->
  
-    <!--
-        Hostname and Port Number
-        Required
-         
-        Hostname and port number of the server. Make sure the port is open.
-    -->
     <listeningHostname>127.0.0.1</listeningHostname>
-    <listeningPort>8089</listeningPort>
+    <listeningPort>8087</listeningPort>
  
     <!--
         Index Directoy Path
@@ -54,10 +32,15 @@
         Path for a data file to be loaded. The file must be in the json format.
         REQUIRED, when "index-load-or-create" is set to 0.
     -->
-    <dataFile>./exact_a1/empty.json</dataFile>
+    <transport>
+        <port>4002</port>
+        <ipaddress>127.0.0.1</ipaddress>
+    </transport>
+    <dataFile>./empty.json</dataFile>
 
     <node-name>node-B</node-name>
-
+    <wellknownhosts>127.0.0.1:54000</wellknownhosts>
+     
     <!--
 	Maximum Number of Threads
 	Optional

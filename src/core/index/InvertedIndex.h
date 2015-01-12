@@ -46,8 +46,10 @@ using std::vector;
 using std::string;
 using std::ifstream;
 using std::ofstream;
+using std::pair;
 using srch2::util::Logger;
 using namespace half_float;
+
 
 namespace srch2
 {
@@ -131,7 +133,7 @@ public:
     //CowInvertedList *invList;
     cowvector<unsigned> *invList;
 
-    InvertedListContainer() // TODO for serialization. Remove dependancy
+    InvertedListContainer() // TODO for serialization. Remove dependency
     {
     	this->invList = new cowvector<unsigned>;
     };
@@ -182,10 +184,50 @@ public:
 
     void sortAndMergeBeforeCommit(const unsigned keywordId, const ForwardIndex *forwardIndex, bool needToSortEachInvertedList);
 
-    void sortAndMerge(const unsigned keywordId, const ForwardIndex *forwardIndex);
+    // return value: # of elements in the final write view
+    int sortAndMerge(const unsigned keywordId, ForwardIndex *forwardIndex,
+    		shared_ptr<vectorview<ForwardListPtr> >& fwdIdxReadView,
+    		vector<InvertedListIdAndScore>& invertedListElements,
+    		unsigned totalNumberOfDocuments,
+    		RankerExpression *rankerExpression, const Schema *schema);
 };
 
 typedef InvertedListContainer* InvertedListContainerPtr;
+
+struct MergeWorkersThreadArgs {
+	void* index;        // IndexData pointer used by workers.
+
+	/*
+	 * Usage and purpose of perThreadMutex
+	 *
+	 * 1. Worker locks this mutex when running (awake) and releases it when waiting
+	 *    for the condition/signal (sleeping).
+	 * 2. The main merge thread MUST acquire this mutex before sending the signal
+	 *    to the worker in order to guarantee that the worker is indeed sleeping.
+	 *    The main merge thread MUST release this mutex immediately after sending the signal.
+	 */
+	pthread_mutex_t perThreadMutex;
+
+	pthread_cond_t waitConditionVar;  // condition variable to wake up worker thread.
+	unsigned workerId;   // worker Id
+	bool isDataReady;    // flag when set true indicates inverted list queue is ready.
+	bool stopExecuting;  // flag when set true stops the worker threads.
+	bool workerReady;    // flag used to indicate whether worker thread is ready to accept task
+	                     // from main merge thread.
+};
+// Queue which holds data for merge workers.
+struct MergeWorkersSharedQueue {
+    // Array of pairs of inverted list Id and keyword Id
+    pair<unsigned, unsigned> *invertedListKeywordIds;
+    unsigned dataLen;   // max size of the array.
+    unsigned cursor;    // max value of the array index processed by threads
+    boost::mutex _lock;
+    MergeWorkersSharedQueue() {
+        invertedListKeywordIds = NULL;
+        cursor = 0;
+        dataLen = 0;
+    }
+};
 
 class InvertedIndex
 {
@@ -245,8 +287,21 @@ public:
 	// When we load the inverted index from disk, we do NOT need to sort each inverted list since it's already sorted,
     // i.e., needToSortEachInvertedList = false.
     void finalCommit(bool needToSortEachInvertedList = true);
-    void merge();
-
+    void merge(RankerExpression *rankerExpression,  unsigned totalNumberOfDocuments, const Schema *schema, Trie *trie);
+    void parallelMerge();
+    unsigned workerMergeTask(RankerExpression *rankerExpression,  unsigned totalNumberOfDocuments,
+    		const Schema *schema, Trie *trie);
+    // Array of per thread arguments. It will be allocated and freed by the main merge thread at runtime.
+    MergeWorkersThreadArgs *mergeWorkersArgs;
+    MergeWorkersSharedQueue  mergeWorkersSharedQueue;
+    // condition variable on which main merge thread waits for workers to finish.
+	pthread_cond_t dispatcherConditionVar;
+	// main merge thread uses this lock to coordinate with worker threads. When the main thread is
+	// waiting on condition then this lock is released. Workers acquire this lock to signal the
+	// condition. This is necessary to avoid loss of condition signal.
+	pthread_mutex_t dispatcherMutex;
+	// the number of threads dedicated for merging inverted lists in parallel.
+	unsigned int mergeWorkersCount;
     void setForwardIndex(ForwardIndex *forwardIndex) {
         this->forwardIndex = forwardIndex;
     }
@@ -296,18 +351,19 @@ public:
 	}
 
     // Merge is required if the list is not empty
-    bool mergeRequired() const  { return !(invertedListSetToMerge.empty()); }
+    bool mergeRequired() const  { return !(invertedListKeywordSetToMerge.empty()); }
     /*
      *   This API appends the inverted lists supplied as an input to a set of inverted list ids
      *   that need to be merged.
      */
-    void appendInvertedListIdsForMerge(const vector<unsigned>& invertedListIds);
+    void appendInvertedListKeywordIdsForMerge(const vector<pair<unsigned, unsigned> >& invertedListKeywordIds);
+
 private:
 
     float getIdf(const unsigned totalNumberOfDocuments, const unsigned keywordId) const;
     float computeRecordStaticScore(RankerExpression *rankerExpression, const float recordBoost,
-                       const float recordLength, const float tf, const float idf,
-                       const float sumOfFieldBoosts) const;
+                       const float recordLength, const float idf,
+                       const float tfBoostProduct) const;
 
     cowvector<InvertedListContainerPtr> *invertedIndexVector;
 
@@ -320,8 +376,9 @@ private:
     // Index Build time
     vector<unsigned> invertedListSizeDirectory;
 
-    // Used by InvertedIndex::merge()
-    set<unsigned> invertedListSetToMerge;
+    // Used by InvertedIndex::merge(). The first unsigned is invertedListId,
+    // the second unsigned is keywordId.
+    set<pair<unsigned, unsigned> > invertedListKeywordSetToMerge;
 
     friend class boost::serialization::access;
     template<class Archive>

@@ -188,3 +188,36 @@ IF(NOT ANDROID)
     ENDIF()
 
 ENDIF()
+
+#
+#  4.  SQLServer connector 
+#
+
+IF(LINUX_OS)
+    FILE(GLOB_RECURSE SQLSERVER_CONNECTOR_SRC RELATIVE ${CMAKE_CURRENT_SOURCE_DIR} "sqlserver/*.cpp" "util/*.cpp" "../src/core/util/Logger.cpp")
+
+    INCLUDE_DIRECTORIES(
+        ${CMAKE_SOURCE_DIR}/sqlserver/
+        ${CMAKE_SOURCE_DIR}/../src/adapter/
+        ${CMAKE_SOURCE_DIR}/../thirdparty/json/jsoncpp-src/include
+        ${CMAKE_SOURCE_DIR}/util/
+    )
+    
+    SET( jsoncpp_LIBRARY ${CMAKE_SOURCE_DIR}/../thirdparty/json/jsoncpp-src/build/libjsoncpp.a)
+    
+    ADD_LIBRARY(sqlserverConnector SHARED ${SQLSERVER_CONNECTOR_SRC} )
+    
+    set(SQLSERVER_VERSION_MAJOR 1)
+    set(SQLSERVER_VERSION_MINOR 0)
+    set(SQLSERVER_VERSION_PATCH 0)
+    set(SQLSERVER_VERSION_STRING ${SQLSERVER_VERSION_MAJOR}.${SQLSERVER_VERSION_MINOR}.${SQLSERVER_VERSION_PATCH})
+    
+    set_target_properties(sqlserverConnector PROPERTIES VERSION ${SQLSERVER_VERSION_STRING}
+                                          SOVERSION ${SQLSERVER_VERSION_MAJOR})
+                                          
+    SET_TARGET_PROPERTIES(sqlserverConnector PROPERTIES COMPILE_FLAGS -fPIC)
+    
+    TARGET_LINK_LIBRARIES(sqlserverConnector ${jsoncpp_LIBRARY} -lodbc)
+ENDIF()
+
+

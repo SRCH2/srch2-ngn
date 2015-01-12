@@ -166,6 +166,7 @@ INDEXWRITE_RETVAL IndexReaderWriter::commit()
     INDEXWRITE_RETVAL commitReturnValue;
     if (!this->index->isBulkLoadDone()) {
     	commitReturnValue = this->index->finishBulkLoad();
+    	this->userFeedbackIndex->finalize();
     } else {
     	/*
     	 *  If bulk load is done, then we are in past bulk load stage. We should call merge function
@@ -253,6 +254,14 @@ INDEXWRITE_RETVAL IndexReaderWriter::deleteRecordGetInternalId(const std::string
     }
 
     INDEXWRITE_RETVAL returnValue = this->index->_deleteRecordGetInternalId(primaryKeyID, internalRecordId);
+    if (returnValue == OP_SUCCESS) {
+    	this->writesCounterForMerge++;
+    	this->needToSaveIndexes = true;
+    	if (this->mergeThreadStarted && writesCounterForMerge >= mergeEveryMWrites){
+    		pthread_cond_signal(&countThresholdConditionVariable);
+    	}
+    }
+
     pthread_mutex_unlock(&lockForWriters);
     return returnValue;
 }
@@ -274,7 +283,11 @@ INDEXWRITE_RETVAL IndexReaderWriter::recoverRecord(const std::string &primaryKey
     return returnValue;
 }
 
-INDEXLOOKUP_RETVAL IndexReaderWriter::lookupRecord(const std::string &primaryKeyID)
+INDEXLOOKUP_RETVAL IndexReaderWriter::lookupRecord(const std::string &primaryKeyID) {
+	unsigned internalRecordId;
+	return lookupRecord(primaryKeyID, internalRecordId);
+}
+INDEXLOOKUP_RETVAL IndexReaderWriter::lookupRecord(const std::string &primaryKeyID, unsigned& internalRecordId)
 {
     // although it's a read-only OP, since we need to check the writeview
     // we need to acquire the writelock
@@ -282,7 +295,7 @@ INDEXLOOKUP_RETVAL IndexReaderWriter::lookupRecord(const std::string &primaryKey
 
     pthread_mutex_lock(&lockForWriters);
     
-    INDEXLOOKUP_RETVAL returnValue = this->index->_lookupRecord(primaryKeyID);
+    INDEXLOOKUP_RETVAL returnValue = this->index->_lookupRecord(primaryKeyID, internalRecordId);
 
     pthread_mutex_unlock(&lockForWriters);
 
@@ -314,7 +327,8 @@ void IndexReaderWriter::save()
     pthread_mutex_lock(&lockForWriters);
 
     // If no insert/delete/update is performed, we don't need to save.
-    if(this->needToSaveIndexes == false){
+    bool needToSaveFeedbackIndex = userFeedbackIndex->getSaveIndexFlag();
+    if(this->needToSaveIndexes == false && needToSaveFeedbackIndex == false){
       pthread_mutex_unlock(&lockForWriters);
     	return;
     }
@@ -326,13 +340,17 @@ void IndexReaderWriter::save()
     writesCounterForMerge = 0;
 
     srch2::util::Logger::console("Saving Indexes ...");
-    this->index->_save();
+    if (this->needToSaveIndexes)
+    	this->index->_save(this->cache);
+    if (needToSaveFeedbackIndex)
+    	this->userFeedbackIndex->save(indexDirectoryName);
 
     // Since one save is done, we need to set needToSaveIndexes back to false
     // we need this line because of bulk-load. Because in normal save, the engine will be killed after save
     // so we don't need this flag (the engine will die anyways); but in the save which happens after bulk-load,
     // we should set this flag back to false for future save calls.
     this->needToSaveIndexes = false;
+    userFeedbackIndex->setSaveIndexFlag(false);
 
     pthread_mutex_unlock(&lockForWriters);
 }
@@ -381,7 +399,8 @@ void IndexReaderWriter::save(const std::string& directoryName)
     Logger::sharding(Logger::Detail, "CORE(%s) | Save. Node name : %s , Explanation : %s .",
     		this->__getDebugShardingInfo()->shardName.c_str(), this->__getDebugShardingInfo()->nodeName.c_str(),
     		this->__getDebugShardingInfo()->explanation.c_str());
-    this->index->_save(directoryName);
+
+    this->index->_save(this->cache, directoryName);
 
     pthread_mutex_unlock(&lockForWriters);
 }
@@ -408,7 +427,9 @@ INDEXWRITE_RETVAL IndexReaderWriter::merge(bool updateHistogram)
     struct timespec tstart;
     clock_gettime(CLOCK_REALTIME, &tstart);
 
-    INDEXWRITE_RETVAL returnValue = this->index->_merge(updateHistogram);
+    this->userFeedbackIndex->merge();
+
+    INDEXWRITE_RETVAL returnValue = this->index->_merge(this->cache, updateHistogram);
 
     struct timespec tend;
     clock_gettime(CLOCK_REALTIME, &tend);
@@ -427,16 +448,21 @@ IndexReaderWriter::IndexReaderWriter(IndexMetaData* indexMetaData, const Schema 
 {
      // CREATE NEW Index
      this->index =  IndexData::create(indexMetaData->directoryName, schema);
+
+     this->userFeedbackIndex = new FeedbackIndex(indexMetaData->maxFeedbackRecordsPerQuery,
+    		 indexMetaData->maxCountOfFeedbackQueries, this);
+
      this->initIndexReaderWriter(indexMetaData);
-     // start merge threads after commit
  }
 
 IndexReaderWriter::IndexReaderWriter(IndexMetaData* indexMetaData)
 {
     // LOAD Index
     this->index = IndexData::create(indexMetaData->directoryName, NULL);
+    this->userFeedbackIndex = new FeedbackIndex(indexMetaData->maxFeedbackRecordsPerQuery,
+    		indexMetaData->maxCountOfFeedbackQueries, this);
+    this->userFeedbackIndex->load(indexMetaData->directoryName);
     this->initIndexReaderWriter(indexMetaData);
-    //this->startMergerThreads();
 }
 
 
@@ -450,6 +476,7 @@ void IndexReaderWriter::initIndexReaderWriter(IndexMetaData* indexMetaData)
      this->writesCounterForMerge = 0;
      this->mergeCounterForUpdatingHistogram = 0;
      this->needToSaveIndexes = false;
+     this->indexDirectoryName = indexMetaData->directoryName;
 
      this->mergeThreadStarted = false; // No threads running
      this->mergeEnabledFlag = true;
@@ -475,7 +502,85 @@ pthread_t IndexReaderWriter::createAndStartMergeThreadLoop() {
     		this->__getDebugShardingInfo()->explanation.c_str());
 	pthread_create(&mergerThread, &mergeThreadAttributes, dispatchMergeThread, this);
 	pthread_attr_destroy(&mergeThreadAttributes);
+	// wait till merge thread is actually ready.
+	while(!mergeThreadStarted) {
+		sleep(1);
+	}
 	return mergerThread;
+}
+
+/*
+ *    Entry point of inverted list merge worker threads. Each worker thread waits for notification
+ *    from the master merge thread when the merge lists are ready for processing.
+ */
+void * dispatchMergeWorkerThread(void *arg) {
+	MergeWorkersThreadArgs *info = (MergeWorkersThreadArgs *) arg;
+	IndexData * index = (IndexData *)info->index;
+	pthread_mutex_lock(&info->perThreadMutex);
+	info->workerReady = true;
+	while(!info->stopExecuting) {
+		pthread_cond_wait(&info->waitConditionVar, &info->perThreadMutex);
+		if (info->stopExecuting)
+			break;
+		if (info->isDataReady == true) {
+			//Logger::console("Worker %d : Starting Merge of Inverted Lists", info->workerId);
+			unsigned processedCount  = index->invertedIndex->workerMergeTask(index->rankerExpression,
+						index->_getNumberOfDocumentsInIndex(), index->schemaInternal, index->trie);
+			info->isDataReady = false;
+			// acquire the lock to make sure that main merge thread is waiting for this condition.
+			// When the main thread is waiting on the condition then this lock is in unlocked state
+			// and can be acquired.
+			// if the lock is ignored then the condition signal sent by this thread could be
+			// lost because main thread may be processing condition signal of the other thread.
+
+			pthread_mutex_lock(&index->invertedIndex->dispatcherMutex);
+			pthread_cond_signal(&index->invertedIndex->dispatcherConditionVar);
+			pthread_mutex_unlock(&index->invertedIndex->dispatcherMutex);
+			//Logger::console("Worker %d : Done with merge, processed %d list ", info->workerId, processedCount);
+		} else {
+			//Logger::console("Worker %d : Spurious Wake ", info->workerId);
+			info->isDataReady = false;
+		}
+	}
+	pthread_mutex_unlock(&info->perThreadMutex);
+	return NULL;
+}
+/*
+ *    The API creates inverted list merge worker threads and initialize them.
+ */
+void IndexReaderWriter::createAndStartMergeWorkerThreads() {
+
+	this->index->invertedIndex->mergeWorkersCount = 5;  // ToDo: make configurable later.
+
+	unsigned mergeWorkersCount = this->index->invertedIndex->mergeWorkersCount;
+	mergerWorkerThreads = new pthread_t[mergeWorkersCount];
+	this->index->invertedIndex->mergeWorkersArgs = new MergeWorkersThreadArgs[mergeWorkersCount];
+	MergeWorkersThreadArgs *mergeWorkersArgs = this->index->invertedIndex->mergeWorkersArgs;
+	for (unsigned i = 0; i < mergeWorkersCount; ++i) {
+		mergeWorkersArgs[i].index = this->index;
+		mergeWorkersArgs[i].isDataReady = false;
+		mergeWorkersArgs[i].stopExecuting = false;
+		mergeWorkersArgs[i].workerId = i;
+		mergeWorkersArgs[i].workerReady = false;
+		pthread_mutex_init(&mergeWorkersArgs[i].perThreadMutex, NULL);
+		pthread_cond_init(&mergeWorkersArgs[i].waitConditionVar, NULL);
+		pthread_create(&mergerWorkerThreads[i], NULL,
+				dispatchMergeWorkerThread, &mergeWorkersArgs[i]);
+		// Logger::console("created merge worker thread %d", i);
+	}
+
+	// make sure all worker threads are ready before returning.
+	bool allReady = false;
+	while (!allReady) {
+		allReady = true;
+		for (unsigned i = 0; i < mergeWorkersCount; ++i) {
+			if (mergeWorkersArgs[i].workerReady == false) {
+				allReady = false;
+				sleep(1);
+				break;
+			}
+		}
+	}
 }
 
 //http://publib.boulder.ibm.com/infocenter/iseries/v5r4/index.jsp?topic=%2Fapis%2Fusers_77.htm
@@ -504,6 +609,9 @@ void IndexReaderWriter::startMergeThreadLoop()
     		this->__getDebugShardingInfo()->shardName.c_str(), this->__getDebugShardingInfo()->nodeName.c_str(),
     		this->__getDebugShardingInfo()->explanation.c_str());
     pthread_mutex_unlock(&lockForWriters);
+
+    createAndStartMergeWorkerThreads();
+
     /*
      *  Initialize condition variable for the first time before loop starts.
      */
@@ -518,7 +626,8 @@ void IndexReaderWriter::startMergeThreadLoop()
         ts.tv_nsec = tp.tv_usec * 1000;
         ts.tv_sec += this->mergeEveryNSeconds;
 
-        pthread_mutex_lock(&lockForWriters);
+        // lockForWriters mutex is unlocked inside pthread_cond_timedwait function and
+        // acquired again before returning. We do not need to explicitly lock/unlock the mutex.
         rc = pthread_cond_timedwait(&countThresholdConditionVariable,
             &lockForWriters, &ts);
 
@@ -530,11 +639,31 @@ void IndexReaderWriter::startMergeThreadLoop()
             break;
         else
         {
-        	this->doMerge();
-            pthread_mutex_unlock(&lockForWriters);
+            this->doMerge();
         }
     }
     pthread_cond_destroy(&countThresholdConditionVariable);
+
+    // signal all worker threads to stop
+    unsigned mergeWorkersCount = this->index->invertedIndex->mergeWorkersCount;
+	MergeWorkersThreadArgs *mergeWorkersArgs = this->index->invertedIndex->mergeWorkersArgs;
+    for (unsigned i = 0; i < mergeWorkersCount; ++i) {
+    	pthread_mutex_lock(&mergeWorkersArgs[i].perThreadMutex);
+    	mergeWorkersArgs[i].stopExecuting = true;
+    	pthread_cond_signal(&mergeWorkersArgs[i].waitConditionVar);
+    	pthread_mutex_unlock(&mergeWorkersArgs[i].perThreadMutex);
+    }
+    // make sure all worker threads are stopped.
+    for (unsigned i = 0; i < mergeWorkersCount; ++i) {
+    	pthread_join(mergerWorkerThreads[i], NULL);
+    	// release resources when worker thread is gone.
+    	pthread_mutex_destroy(&mergeWorkersArgs[i].perThreadMutex);
+    	pthread_cond_destroy(&mergeWorkersArgs[i].waitConditionVar);
+    }
+    // free allocate memory
+    delete[] mergerWorkerThreads;
+    delete[] this->index->invertedIndex->mergeWorkersArgs;
+
     pthread_mutex_unlock(&lockForWriters);
     return;
 }

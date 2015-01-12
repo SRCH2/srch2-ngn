@@ -32,6 +32,7 @@
 #include "sharding/sharding/ShardManager.h"
 #include "fcntl.h"
 #include <boost/system/error_code.hpp>
+#include "index/Trie.h"
 
 using namespace std;
 namespace srch2is = srch2::instantsearch;
@@ -123,7 +124,7 @@ const char* const ConfigManager::indexedString = "indexed";
 const char* const ConfigManager::multiValuedString = "multivalued";
 const char* const ConfigManager::aclString = "acl";
 const char* const ConfigManager::indexTypeString = "indextype";
-//const char* const ConfigManager::licenseFileString = "licensefile";
+const char* const ConfigManager::licenseFileString = "licensefile";
 const char* const ConfigManager::listenerWaitTimeString = "listenerwaittime";
 const char* const ConfigManager::listeningHostStringString = "listeninghostname";
 const char* const ConfigManager::listeningPortString = "listeningport";
@@ -223,6 +224,7 @@ const char* const ConfigManager::defaultFuzzyPostTag = "</b>";
 const char* const ConfigManager::defaultExactPreTag = "<b>";
 const char* const ConfigManager::defaultExactPostTag = "</b>";
 const char* const ConfigManager::heartBeatTimerTag = "heartbeattimer";
+const char* const ConfigManager::userFeedbackString = "userfeedback";
 
 ConfigManager::PortNameMap_t ConfigManager::portNameMap[] = {
     { SearchPort, ConfigManager::searchPortString , "/search"},
@@ -244,6 +246,7 @@ ConfigManager::PortNameMap_t ConfigManager::portNameMap[] = {
 	{ BulkLoadRecords, "", "/bulkLoadRecords"},
 	{ BulkLoadRecordAcl, "", "/bulkLoadRecordAcl"},
 	{ BulkLoadAttributeAcl, "", "/bulkLoadAttributeAcl"},
+	{ UserFeedback, "", "/feedback"},
     { GlobalPortsStart , NULL , NULL},
     { InfoPort_Nodes_NodeID, ConfigManager::nodesStatsPortString , "/_nodes/nodeId"},
     { InfoPort_Cluster_Stats, ConfigManager::clusterStatsPortString , "/_cluster/stats"},
@@ -1281,6 +1284,36 @@ void ConfigManager::parseCoreInformationTags(const xml_node &parentNode, CoreInf
     	}
     }
 
+    // <userFeedback maxfeedbackqueries= "1000" maxFeedbackRecordsPerQuery="20"  />
+    childNode = parentNode.child(userFeedbackString);
+    if (childNode) {
+    	coreInfo->userFeedbackEnabledFlag = true;
+        int maxFeedbackRecordsPerQuery = childNode.attribute("maxfeedbackrecordsperquery").as_int(0);
+        int maxFeedbackQueriesCount = childNode.attribute("maxfeedbackqueries").as_int(0);
+
+        if (maxFeedbackRecordsPerQuery <= 0) {
+        	coreInfo->userFeedbackEnabledFlag = false;
+        	Logger::console("In core %s: 'maxFeedbackRecordsPerQuery' attribute of"
+        			" 'userFeedback' tag is missing or has an invalid value. User feedback is disabled.",
+        			coreInfo->getName().c_str());
+        }
+        else if (maxFeedbackQueriesCount <= 0) {
+    		coreInfo->userFeedbackEnabledFlag = false;
+    		Logger::console("In core %s: 'maxfeedbackQueries' attribute of"
+    				" 'userFeedback' tag is missing or has an invalid value. User feedback is disabled.",
+    				coreInfo->getName().c_str());
+    	}
+        else {
+        	coreInfo->maxFeedbackRecordsPerQuery = maxFeedbackRecordsPerQuery;
+        	if (maxFeedbackQueriesCount < srch2is::Trie::MAX_ALLOCATED_KEYWORD_ID) {
+        		coreInfo->maxFeedbackQueriesCount = maxFeedbackQueriesCount;
+        	} else {
+        		coreInfo->maxFeedbackQueriesCount = srch2is::Trie::MAX_ALLOCATED_KEYWORD_ID;
+        	}
+        }
+    } else {
+    	coreInfo->userFeedbackEnabledFlag = false;
+    }
 }
 
 void ConfigManager::parseAllCoreTags(const xml_node &configNode,
@@ -1730,6 +1763,7 @@ void ConfigManager::parseSchema(const xml_node &schemaNode, CoreConfigParseState
 	    vector<string> RefiningAttributesDefaultVector;
 	    vector<bool> RefiningAttributesIsMultiValued;
 	    vector<bool> refiningAttributesAclEnabledFlags;
+	    set<string> fieldNames;
 
 	    /*
 	     * <field>  in config.xml file
@@ -1741,6 +1775,20 @@ void ConfigManager::parseSchema(const xml_node &schemaNode, CoreConfigParseState
 	    if (fieldsNode) {
 	        for (xml_node field = fieldsNode.first_child(); field; field = field.next_sibling()) {
 	            if (string(field.name()).compare(fieldString) == 0) {
+
+	            	/*
+	                 * Each field in the core should be unique.
+	                 * Return error and stop the engine if the check fails.
+	                 */
+	                string fieldName = string(field.attribute(nameString).value());
+	                if (fieldNames.find(fieldName) == fieldNames.end()) {
+	                    fieldNames.insert(fieldName);
+	                } else {
+	                    parseError << "The field \"" << fieldName.c_str()
+	                            << "\" in the schema of config.xml is not unique.";
+	                    configSuccess = false;
+	                    return;    //The field is already exist. Exit.
+	                }
 
 	            	bool isMultiValued = false;
 	            	bool isSearchable = false;
@@ -2424,18 +2472,16 @@ void ConfigManager::parse(const pugi::xml_document& configDoc,
      * <Config> in config.xml file
      */
     // licenseFile is a required field
-    // Note: Due to freemium project, we are disabling license key check.
-    //
-    //    childNode = configNode.child(licenseFileString);
-    //    if (childNode && childNode.text()) { // checks if config/licenseFile exists and have any text value or not
-    //        tempUse = string(childNode.text().get());
-    //        trimSpacesFromValue(tempUse, licenseFileString, parseWarnings);
-    //        this->licenseKeyFile = this->srch2Home + tempUse;
-    //    } else {
-    //        parseError << "License key is not set.\n";
-    //        configSuccess = false;
-    //        return;
-    //    }
+    childNode = configNode.child(licenseFileString);
+    if (childNode && childNode.text()) { // checks if config/licenseFile exists and have any text value or not
+    	string tempUse = string(childNode.text().get());
+    	trimSpacesFromValue(tempUse, licenseFileString, parseWarnings);
+    	this->licenseKeyFile = this->srch2Home + tempUse;
+    } else {
+    	parseError << "License key is not set.\n";
+    	configSuccess = false;
+    	return;
+    }
 
     // listeningHostname is a required field
     childNode = configNode.child(listeningHostStringString);

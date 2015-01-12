@@ -18,8 +18,6 @@ import sys, urllib2, urllib, json, time, subprocess, os, commands, signal
 sys.path.insert(0, 'srch2lib')
 import test_lib
 
-port = '8087'
-
 #Function of checking the results
 def checkResult(query, responseJson,resultValue, scores):
 #    for key, value in responseJson:
@@ -27,16 +25,15 @@ def checkResult(query, responseJson,resultValue, scores):
     isPass=1
     if  len(responseJson) == len(resultValue):
         for i in range(0, len(resultValue)):
-            score =  round(float(responseJson[i]['score']),2) 
-            if (resultValue[i] != responseJson[i]['record']['id'] or (score != float(scores[i]))):
+            #score =  round(float(responseJson[i]['score']),2) 
+            if (resultValue[i] != responseJson[i]['record']['id']):
                 isPass=0
-                print "score is of the record is " + str(responseJson[i]['score'])
                 print query+' test failed'
                 print 'query results||given results'
                 print 'number of results:'+str(len(responseJson))+'||'+str(len(resultValue))
                 for i in range(0, len(responseJson)):
                     print str(responseJson[i]['record']['id'])+'||'+str(resultValue[i])
-                    print "score: " + str(responseJson[i]['score'])
+                    print "score: " + str(responseJson[i]['score']) + '||' + str(scores[i])
                 break
     else:
         isPass=0
@@ -60,16 +57,11 @@ def checkResult(query, responseJson,resultValue, scores):
 
 def testPhraseSearch(queriesAndResultsPath, binary_path):
     #Start the engine server
-    args = [ binary_path, '--config-file=./positionalRanking_phraseSearch/conf-positionalRanking.xml' ]
+    args = [ binary_path, './positionalRanking_phraseSearch/conf-positionalRanking.xml', './positionalRanking_phraseSearch/conf-A.xml', './positionalRanking_phraseSearch/conf-B.xml' ]
 
-    if test_lib.confirmPortAvailable(port) == False:
-        print 'Port ' + str(port) + ' already in use - aborting'
-        return -1
-
-    print 'starting engine: ' + args[0] + ' ' + args[1]
     serverHandle = test_lib.startServer(args)
-
-    test_lib.pingServer(port)
+    if serverHandle == None:
+        return -1
 
     #construct the query
     #format : phrase,proximity||rid1 rid2 rid3 ...ridn
@@ -80,13 +72,10 @@ def testPhraseSearch(queriesAndResultsPath, binary_path):
         phrase=value[0]
         expectedRecordIds=(value[1]).split()
         scores = (value[2]).split()
-        query='http://localhost:' + port + '/search?q='+ urllib.quote(phrase)
-        print query
-        response = urllib2.urlopen(query).read()
-        response_json = json.loads(response)
+        response_json = test_lib.searchRequest('q='+ urllib.quote(phrase))
         #print response_json['results']
         #check the result
-        failTotal += checkResult(query, response_json['results'], expectedRecordIds, scores)
+        failTotal += checkResult('q='+ urllib.quote(phrase), response_json['results'], expectedRecordIds, scores)
 
     test_lib.killServer(serverHandle)
     print '=============================='

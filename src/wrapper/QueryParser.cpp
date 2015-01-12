@@ -302,6 +302,7 @@ void QueryParser::mainQueryParser() { // TODO: change the prototype to reflect i
             /*
              * At this point we should first extract the AND/OR/NOT parse tree
              */
+        	originalQueryString  = mainQueryStr;
             bool parsed = parseBooleanExpression( mainQueryStr, this->container->parseTreeRoot );
             if(parsed == false){
                 Logger::info(
@@ -1336,7 +1337,13 @@ bool QueryParser::termParser(string &input) {
         }
 
     } else {
-        hasParsedParameter = parseKeyword(input, keywordStr); // keywordStr will contain the parsed keyword, input will be modified
+    	/*
+    	 * Extract the keyword from the input,
+    	 * keywordStr will contain the parsed keyword, input will be modified.
+    	 * For example: input = "py*^3", after parsing the input, input = "*^3"
+    	 * keywordStr = "py"
+    	 */
+        hasParsedParameter = parseKeyword(input, keywordStr);
     }
     this->isPhraseKeywordFlags.push_back(isPhraseKeyword);
     if (hasParsedParameter) {
@@ -1344,7 +1351,7 @@ bool QueryParser::termParser(string &input) {
         // populate the rawKeyword vector in container
         // input is modified to 'AND algorithms AND java* AND py*^3 AND binary^2~.5'
         this->populateRawKeywords(keywordStr);
-        // separate for each . *, ^ and ~
+        // separate for each : *, ^ and ~
     } else {
         // check if they keyword is just *
         string asteric = "";
@@ -2231,6 +2238,48 @@ void QueryParser::tokenizeAndDontBreakParentheses(const string & inputArg , vect
             }
         }
     }
+}
+
+/*
+ * returns the query string without local parameters, fuzzy modifier, and boost modifiers.
+ *
+ * e.g query string = "{defaultPrefixComplete=COMPLETE}trip~0.3" converted to "trip" after removing
+ *     local parameter {...} and fuzzy modifier "~"
+ */
+string QueryParser::fetchCleanQueryString() {
+	stringstream ss;
+	// first skip over the LocalParameter => {...}
+	boost::algorithm::trim(originalQueryString);
+	unsigned cursor = 0;
+	if (originalQueryString[0] == '{') {
+		while(cursor < originalQueryString.size() && originalQueryString[cursor] != '}' ) {
+			++cursor;
+		}
+		++cursor;
+	}
+
+	while (cursor < originalQueryString.size()) {
+
+		// check for boost modifier. i.e. '^'
+		if (originalQueryString[cursor] == '^') {
+			string boostModifier = "";
+			string input = originalQueryString.substr(cursor);
+			parseBoostModifier(input, boostModifier);
+			cursor += boostModifier.size();
+		}
+		// check for fuzzy modifier. i.e. '~'
+		else if (originalQueryString[cursor] == '~') {
+		    string fuzzyModifier = "";
+		    string input = originalQueryString.substr(cursor);
+		    parseFuzzyModifier(input, fuzzyModifier);
+		    cursor += fuzzyModifier.size();
+		}
+		else {
+			ss << originalQueryString[cursor];
+			++cursor;
+		}
+	}
+	return ss.str();
 }
 
 }

@@ -1,4 +1,4 @@
-site_name: Docs (4.4.2)
+site_name: Docs (4.4.3)
 
 pages:
     - [index.mkd, Home]
@@ -11,6 +11,7 @@ pages:
     - [geo.mkd, Geo]
     - [acl.mkd, ACL]
     - [connectors.mkd, Connectors]
+    - [jslib.mkd, Jslib]
 
 theme_dir : './srch2-theme'
 

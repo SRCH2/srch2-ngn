@@ -61,6 +61,8 @@ IndexMetaData *Srch2Server::createIndexMetaData(const string & directoryPath)
         		getCoreInfo()->getUpdateHistogramEveryQWrites(),
         		directoryPath);
 
+    indexMetaData->maxFeedbackRecordsPerQuery = indexDataConfig->getMaxFeedbackRecordsPerQuery();
+    indexMetaData->maxCountOfFeedbackQueries = indexDataConfig->getMaxFeedbackQueriesCount();
     return indexMetaData;
 }
 void Srch2Server::createHighlightAttributesVector(const srch2is::Schema * schema) {

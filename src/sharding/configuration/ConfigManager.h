@@ -585,7 +585,7 @@ private:
 	static const char* const aclString;
 	static const char* const multiValuedString;
 	static const char* const indexTypeString;
-//	static const char* const licenseFileString;
+	static const char* const licenseFileString;
 	static const char* const listenerWaitTimeString;
 	static const char* const listeningHostStringString;
 	static const char* const listeningPortString;
@@ -690,6 +690,7 @@ private:
 	static const char* const defaultExactPostTag;
 
 	static const char* const heartBeatTimerTag;
+	static const char* const userFeedbackString;
 public:
 	static const char* const defaultCore;
 };

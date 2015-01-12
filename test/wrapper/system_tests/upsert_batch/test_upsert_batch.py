@@ -20,21 +20,18 @@ import test_lib
 from test_insert_batch import verify_insert_response
 from test_insert_batch import verify_search_rid
 
-port = 8087
-
 class UpsertTester:
     def __init__(self, binary_path):
         self.binaryPath = binary_path
-        self.startServerCommand = [ self.binaryPath, '--config-file=./upsert_batch/srch2-config.xml' ]
+        self.startServerCommand = [ self.binaryPath, './upsert_batch/srch2-config.xml', './upsert_batch/srch2-config-A.xml', './upsert_batch/srch2-config-B.xml' ]
 
     def startServer(self):
         os.popen('rm -rf ./upsert_batch/logs/')
 	os.popen('rm -rf ./upsert_batch/indexes/')
 	os.popen('rm -rf ./data/upsert_batch')
-        self.serverHandle = test_lib.startServer(self.startServerCommand)
-
-    def pingServer(self):
-        test_lib.pingServer(port)
+        self.serverHandle = test_lib.startServer(self.startServerCommand);
+        if self.serverHandle == None:
+            return -1
 
     def killServer(self):
         test_lib.killServer(self.serverHandle)
@@ -46,63 +43,52 @@ class UpsertTester:
         #urllib2.urlopen(queryCommand)
         #print 'fired query ' + query
         # Method 2 using curl
-        curlCommand = 'curl -s http://127.0.0.1:' + str(port) + '/search?q=' + query
-        os.popen(curlCommand)
-
-
-
-
+        test_lib.searchRequest('q=' + query)
 
 if __name__ == '__main__':
 
     binary_path = sys.argv[1]
 
-    if test_lib.confirmPortAvailable(port) == False:
-        print 'Port ' + str(port) + ' already in use - aborting'
-        os._exit(-1)
-
     tester = UpsertTester(binary_path)
     tester.startServer()
-    tester.pingServer()
 
     # test 1, upsert a record that already exists
-    command1 = 'curl "http://127.0.0.1:' + str(port) + '/update" -i -X PUT -d ' + '\'{"id":"101","post_type_id":"2","parent_id":"6272262","accepted_answer_id":"NULL","creation_date":"06/07/2011","score":"3","view_count":"0","body":"february monday","owner_user_id":"356674","last_editor_user_id":"NULL","last_editor_display_name":"NULL","last_edit_date":"NULL","last_activity_date":"06/07/2011","community_owned_date":"NULL","closed_date":"NULL","title":"NULL","tags":"NULL","answer_count":"NULL","comment_count":"NULL","favorite_count":"NULL"}\'';
-    status1, output1 = commands.getstatusoutput(command1)
+    record = '{"id":"101","post_type_id":"2","parent_id":"6272262","accepted_answer_id":"NULL","creation_date":"06/07/2011","score":"3","view_count":"0","body":"february monday","owner_user_id":"356674","last_editor_user_id":"NULL","last_editor_display_name":"NULL","last_edit_date":"NULL","last_activity_date":"06/07/2011","community_owned_date":"NULL","closed_date":"NULL","title":"NULL","tags":"NULL","answer_count":"NULL","comment_count":"NULL","favorite_count":"NULL"}'
+    output1 = test_lib.updateRequeset(record)
     #print 'output1 --- ' + str(output1) + "\n-----------------";
     expect = '{"action":"update","coreName":"__DEFAULTCORE__","details":[],"rid":"101","status":true}'
     #print flag
     assert verify_insert_response(expect, output1), 'Error, rid 101 is not updated correctly!'
 
     time.sleep(1.5)
-    command2 = 'curl -i http://127.0.0.1:' + str(port) + '/search?q=monday'
-    status2, output2 = commands.getstatusoutput(command2)
+    query = 'q=monday'
+    output2 = test_lib.searchRequest(query)
     #print 'output2 --- ' + str(output2) + '\n------------------'
-    expect = '"id":"101"';
+    expect = '101';
     #print flag
     # can't find the new result untill several tries
     assert verify_search_rid(expect, output2), 'Error, id 101 is not updated correctly!'
 
 
     # test 2, upsert a record that doesn't exist
-    command3 = 'curl "http://127.0.0.1:' + str(port) + '/update" -i -X PUT -d ' + '\'{"id":"111","post_type_id":"2","parent_id":"6272262","accepted_answer_id":"NULL","creation_date":"06/07/2011","score":"3","view_count":"0","body":"december","owner_user_id":"356674","last_editor_user_id":"NULL","last_editor_display_name":"NULL","last_edit_date":"NULL","last_activity_date":"06/07/2011","community_owned_date":"NULL","closed_date":"NULL","title":"NULL","tags":"NULL","answer_count":"NULL","comment_count":"NULL","favorite_count":"NULL"}\'';
+    record = '{"id":"111","post_type_id":"2","parent_id":"6272262","accepted_answer_id":"NULL","creation_date":"06/07/2011","score":"3","view_count":"0","body":"december","owner_user_id":"356674","last_editor_user_id":"NULL","last_editor_display_name":"NULL","last_edit_date":"NULL","last_activity_date":"06/07/2011","community_owned_date":"NULL","closed_date":"NULL","title":"NULL","tags":"NULL","answer_count":"NULL","comment_count":"NULL","favorite_count":"NULL"}'
 
-    status3, output3 = commands.getstatusoutput(command3)
+    output3 = test_lib.updateRequeset(record)
     #print 'output3 -----' + output3 + '\n-----------------'
     expect = '{"action":"update","coreName":"__DEFAULTCORE__","details":[{"info":"Existing record updated successfully.","message_code":7}],"rid":"111","status":true}'
     assert verify_insert_response(expect, output3), 'Error, rid 111 is not updated correctly!'
 
     time.sleep(1.5)
-    command4 = 'curl -i http://127.0.0.1:' + str(port) + '/search?q=december'
-    status4, output4 = commands.getstatusoutput(command4)
+    query = 'q=december'
+    output4 = test_lib.searchRequest(query)
     #print 'output4 -----' + output4 + '\n----------------'
-    expect = '"id":"111"'
+    expect = '111'
     assert verify_search_rid(expect, output4), 'Error, rid 111 is not updated correctly!'
 
 
     # test 3, upsert multiple records, some exsit some don't
-    command5 = 'curl "http://127.0.0.1:' + str(port) + '/update" -i -X PUT -d ' + '\'[{"id":"102","post_type_id":"2","parent_id":"6271537","accepted_answer_id":"NULL","creation_date":"06/07/2011","score":"0","view_count":"0","body":"march wonderful","owner_user_id":"274589","last_editor_user_id":"NULL","last_editor_display_name":"NULL","last_edit_date":"NULL","last_activity_date":"06/07/2011","community_owned_date":"NULL","closed_date":"NULL","title":"NULL","tags":"NULL","answer_count":"NULL","comment_count":"NULL","favorite_count":"NULL"},{"id":"103","post_type_id":"2","parent_id":"6272327","accepted_answer_id":"NULL","creation_date":"06/07/2011","score":"6","view_count":"0","body":"april wonderful","owner_user_id":"597122","last_editor_user_id":"NULL","last_editor_display_name":"NULL","last_edit_date":"NULL","last_activity_date":"06/07/2011","community_owned_date":"NULL","closed_date":"NULL","title":"NULL","tags":"NULL","answer_count":"NULL","comment_count":"2","favorite_count":"NULL"},{"id":"115","post_type_id":"2","parent_id":"6272162","accepted_answer_id":"NULL","creation_date":"06/07/2011","score":"0","view_count":"0","body":"june wonderful","owner_user_id":"430087","last_editor_user_id":"NULL","last_editor_display_name":"NULL","last_edit_date":"NULL","last_activity_date":"06/07/2011","community_owned_date":"NULL","closed_date":"NULL","title":"NULL","tags":"NULL","answer_count":"NULL","comment_count":"NULL","favorite_count":"NULL"},{"id":"116","post_type_id":"2","parent_id":"6272210","accepted_answer_id":"NULL","creation_date":"06/07/2011","score":"1","view_count":"0","body":"july wonderful","owner_user_id":"113716","last_editor_user_id":"NULL","last_editor_display_name":"NULL","last_edit_date":"NULL","last_activity_date":"06/07/2011","community_owned_date":"NULL","closed_date":"NULL","title":"NULL","tags":"NULL","answer_count":"NULL","comment_count":"NULL","favorite_count":"NULL"}]\''
-
-    status5, output5 = commands.getstatusoutput(command5)
+    records = '[{"id":"102","post_type_id":"2","parent_id":"6271537","accepted_answer_id":"NULL","creation_date":"06/07/2011","score":"0","view_count":"0","body":"march wonderful","owner_user_id":"274589","last_editor_user_id":"NULL","last_editor_display_name":"NULL","last_edit_date":"NULL","last_activity_date":"06/07/2011","community_owned_date":"NULL","closed_date":"NULL","title":"NULL","tags":"NULL","answer_count":"NULL","comment_count":"NULL","favorite_count":"NULL"},{"id":"103","post_type_id":"2","parent_id":"6272327","accepted_answer_id":"NULL","creation_date":"06/07/2011","score":"6","view_count":"0","body":"april wonderful","owner_user_id":"597122","last_editor_user_id":"NULL","last_editor_display_name":"NULL","last_edit_date":"NULL","last_activity_date":"06/07/2011","community_owned_date":"NULL","closed_date":"NULL","title":"NULL","tags":"NULL","answer_count":"NULL","comment_count":"2","favorite_count":"NULL"},{"id":"115","post_type_id":"2","parent_id":"6272162","accepted_answer_id":"NULL","creation_date":"06/07/2011","score":"0","view_count":"0","body":"june wonderful","owner_user_id":"430087","last_editor_user_id":"NULL","last_editor_display_name":"NULL","last_edit_date":"NULL","last_activity_date":"06/07/2011","community_owned_date":"NULL","closed_date":"NULL","title":"NULL","tags":"NULL","answer_count":"NULL","comment_count":"NULL","favorite_count":"NULL"},{"id":"116","post_type_id":"2","parent_id":"6272210","accepted_answer_id":"NULL","creation_date":"06/07/2011","score":"1","view_count":"0","body":"july wonderful","owner_user_id":"113716","last_editor_user_id":"NULL","last_editor_display_name":"NULL","last_edit_date":"NULL","last_activity_date":"06/07/2011","community_owned_date":"NULL","closed_date":"NULL","title":"NULL","tags":"NULL","answer_count":"NULL","comment_count":"NULL","favorite_count":"NULL"}]'
+    output5 = test_lib.updateRequeset(records)
     #print 'output5 -----' + output5 + '\n-----------------'
     expect = '{"action":"update","coreName":"__DEFAULTCORE__","details":[],"rid":"102","status":true}'
     assert verify_insert_response(expect, output5), 'Error, rid 102 is not updated correctly!'
@@ -115,16 +101,16 @@ if __name__ == '__main__':
 
 
     time.sleep(1.5)
-    command6 = 'curl -i http://127.0.0.1:' + str(port) + '/search?q=wonderful'
-    status6, output6 = commands.getstatusoutput(command6)
-    #print 'output6 -----' + output6 + '\n----------------'
-    expect = '"id":"102"'
+    query = 'q=wonderful'
+    output6 = test_lib.searchRequest(query)
+    #print 'output4 -----' + output4 + '\n----------------'
+    expect = '102'
     assert verify_search_rid(expect, output6), 'Error, rid 102 is not updated correctly!'
-    expect = '"id":"103"'
+    expect = '103'
     assert verify_search_rid(expect, output6), 'Error, rid 103 is not updated correctly!'
-    expect = '"id":"115"'
+    expect = '115'
     assert verify_search_rid(expect, output6), 'Error, rid 115 is not updated correctly!'
-    expect = '"id":"116"'
+    expect = '116'
     assert verify_search_rid(expect, output6), 'Error, rid 116 is not updated correctly!'
 
 

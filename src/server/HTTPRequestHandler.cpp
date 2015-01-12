@@ -30,6 +30,7 @@
 #include "util/RecordSerializer.h"
 #include "util/RecordSerializerUtil.h"
 #include "DataConnectorThread.h"
+#include "index/FeedbackIndex.h"
 
 #define SEARCH_TYPE_OF_RANGE_QUERY_WITHOUT_KEYWORDS 2
 
@@ -731,18 +732,10 @@ void HTTPRequestHandler::writeCommand(evhttp_request *req,
                     vector<string> roleIds;
                     // check if there is roleId in the query or not
 					std::stringstream log_str;
-                    if( JSONRecordParser::_extractRoleIds(roleIds, doc, server->getCoreInfo(), log_str) ){
-                    	if(server->getCoreInfo()->getHasRecordAcl()){
+                   if(server->getCoreInfo()->getHasRecordAcl()){
+                    	if( JSONRecordParser::_extractRoleIds(roleIds, doc, server->getCoreInfo(), log_str) ){
                     		// add role ids to the record object
                     		record->setRoleIds(roleIds);
-                    	}else{
-                    		Logger::error(
-                    				"error: %s does not have record-based access control.", server->getCoreInfo()->getName().c_str());
-                    		response[JSON_MESSAGE] = "error:" + server->getCoreInfo()->getName() + " does not have record-based access control.";
-                    		response[JSON_LOG] = log_str.str();
-                    		bmhelper_evhttp_send_reply(req, HTTP_BADREQUEST, "INVALID REQUEST",
-                    				global_customized_writer.write(response));
-                    		return;
                     	}
                     }
                     Json::Value each_response =
@@ -750,7 +743,11 @@ void HTTPRequestHandler::writeCommand(evhttp_request *req,
                             server->getCoreInfo(), doc, record );
 
 
-                    each_response["acl_log"] = log_str.str();
+                    //Append acl_log only if acl is enabled in the config file.
+                    if(server->getCoreInfo()->getHasRecordAcl()){
+                        each_response["acl_log"] = log_str.str();
+                    }
+
                     insert_responses[index] = each_response;
 
                     record->clear();
@@ -778,7 +775,12 @@ void HTTPRequestHandler::writeCommand(evhttp_request *req,
 
                 Json::Value each_response = IndexWriteUtil::_insertCommand(server->getIndexer(),
                 		server->getCoreInfo(), doc, record);
-                each_response["acl_log"] = log_str.str();
+
+                //Append acl_log only if acl is enabled in the config file
+                if(server->getCoreInfo()->getHasRecordAcl()){
+                    each_response["acl_log"] = log_str.str();
+                }
+
                 insert_responses.append(each_response);
                 record->clear();
             }
@@ -902,7 +904,7 @@ void HTTPRequestHandler::aclModifyRolesForRecord(evhttp_request *req, Srch2Serve
 
 
 // gets the acl command from the role view and modifies the access list.
-// curl "http://localhost:8081/product/AclAddRecordsForRoles" -i -X PUT -d '{"roleId": “1234", “resourceId”: ["33", "45"]}'
+// curl "http://localhost:8081/product/AclAddRecordsForRoles" -i -X PUT -d '{"roleId": ���1234", ���resourceId���: ["33", "45"]}'
 void HTTPRequestHandler::aclModifyRecordsForRole(evhttp_request *req, Srch2Server *server, srch2::instantsearch::RecordAclCommandType commandType){
 
 	Json::Value response(Json::objectValue);
@@ -1558,6 +1560,10 @@ boost::shared_ptr<Json::Value> HTTPRequestHandler::doSearchOneCore(evhttp_reques
             *(AnalyzerFactory::getCurrentThreadAnalyzer(indexDataContainerConf)),
             &paramContainer, server->getIndexer()->getAttributeAcl());
     LogicalPlan logicalPlan;
+    if (server->indexDataConfig->isUserFeedbackEnabled()) {
+    	// set only if user feedback is enabled else leave it empty.
+    	logicalPlan.queryStringWithTermsAndOps = qp.fetchCleanQueryString();
+    }
     if(qr.rewrite(logicalPlan) == false){
         // if the query is not valid, print the error message to the response
         errorStream << paramContainer.getMessageString();

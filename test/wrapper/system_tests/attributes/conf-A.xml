@@ -1,0 +1,862 @@
+<!--
+    Configuration file for SRCH2 search server. 
+
+    For more information about how to use this configuration file, please
+    visit http://www.srch2.com/downloads.html and select the correct
+    documentation version.
+
+    Please email contact@srch2.com if you have questions.
+-->
+ 
+<config>
+    <srch2Home>./</srch2Home>
+        <!-- Make sure to specify the home of your SRCH2 installation.  Example: 
+	  <srch2Home>/home/joe/srch2</srch2Home>
+        -->
+ 
+    <listeningHostname>127.0.0.1</listeningHostname>
+    <listeningPort>8088</listeningPort>
+
+    <maxSearchThreads>8</maxSearchThreads>
+    
+    <dataDir>./attributes/indexes</dataDir>
+     
+    <dataSourceType>1</dataSourceType>
+    
+    <licenseFile>../../wrapper/conf/srch2_license_key.txt</licenseFile>
+    <transport>
+        <port>4002</port>
+        <ipaddress>127.0.0.1</ipaddress>
+    </transport>
+    <dataFile>./empty.json</dataFile>
+    <node-name>node-A</node-name>
+    <wellknownhosts>127.0.0.1:54000</wellknownhosts>
+    <!-- 
+        Mongo DB settings
+        Required if dataSourceType = 2
+    -->
+    <!--
+    <dataSourceType>2</dataSourceType>
+    <mongodb>
+        <host>localhost</host>
+        <port>27017</port>
+        <db>demo</db>
+        <collection>movies</collection>
+        <listenerWaitTime>3</listenerWaitTime>
+    </mongodb>
+    -->     
+         
+    <indexConfig>
+         
+        <indexType>0</indexType>
+         
+        <supportSwapInEditDistance>true</supportSwapInEditDistance>
+
+       <!--  <fieldBoost>title^12 tags^16</fieldBoost> -->
+        <fieldBoost>attr1^30</fieldBoost>
+
+        <recordBoostField>stars</recordBoostField>
+
+        <defaultQueryTermBoost>1</defaultQueryTermBoost>
+
+	<enablePositionIndex>1</enablePositionIndex> 
+    <enableCharOffsetIndex>1</enableCharOffsetIndex>
+    
+    </indexConfig>
+  
+    <KeywordPopularityThreshold>10000</KeywordPopularityThreshold>
+    <getAllResultsMaxResultsThreshold>2000</getAllResultsMaxResultsThreshold>
+    <getAllResultsKAlternative>500</getAllResultsKAlternative>
+ 
+    <query>
+        <rankingalgorithm>
+            <recordScoreExpression>(idf_score*(log(doc_boost+1)^1.5))/(idf_score+log(doc_boost+1))</recordScoreExpression>
+        </rankingalgorithm>
+ 
+        <fuzzyMatchPenalty>0.75</fuzzyMatchPenalty>
+
+	<queryTermSimilarityThreshold>0.8</queryTermSimilarityThreshold>
+         
+        <prefixMatchPenalty>0.85</prefixMatchPenalty>
+ 
+        <cacheSize>65536000</cacheSize>
+
+        <rows>10</rows>
+
+        <fieldBasedSearch>0</fieldBasedSearch>
+         
+        <searcherType>0</searcherType>
+         
+        <queryTermFuzzyType>1</queryTermFuzzyType>
+         
+        <queryTermPrefixType>0</queryTermPrefixType>
+ 
+        <queryResponseWriter>
+
+            <responseFormat>1</responseFormat>
+
+        </queryResponseWriter>
+
+        <highlighter>
+            <snippetSize>250</snippetSize>
+            <fuzzyTagPre value = '<b>' ></fuzzyTagPre>
+            <fuzzyTagPost value = '</b>'></fuzzyTagPost>
+            <exactTagPre value = '<b>' ></exactTagPre>
+            <exactTagPost value = '</b>'></exactTagPost>
+        </highlighter>
+
+    </query>
+  
+    <updatehandler>
+
+        <maxDocs>15000000</maxDocs>
+ 
+        <maxMemory>10000000</maxMemory>
+        
+        <mergePolicy>
+
+          <mergeEveryNSeconds>10</mergeEveryNSeconds>
+
+          <mergeEveryMWrites>10</mergeEveryMWrites>
+
+        </mergePolicy>
+              
+    </updatehandler>
+
+    <schema name="SRCH2" version="3">
+       <fields>
+       <field name="stars" type="float" refining="true" highlight="true" />
+       <field name="attr1"  type="text" indexed="true" highlight="true"/>
+       <field name="attr2"  type="text" indexed="true" highlight="true"/>
+       <field name="attr3"  type="text" indexed="true" highlight="true"/>
+       <field name="attr4"  type="text" indexed="true" highlight="true"/>
+       <field name="attr5"  type="text" indexed="true" highlight="true"/>
+       <field name="attr6"  type="text" indexed="true" highlight="true"/>
+       <field name="attr7"  type="text" indexed="true" highlight="true"/>
+       <field name="attr8"  type="text" indexed="true" highlight="true"/>
+       <field name="attr9"  type="text" indexed="true" highlight="true"/>
+       <field name="attr10"  type="text" indexed="true" highlight="true"/>
+       <field name="attr11"  type="text" indexed="true" highlight="true"/>
+       <field name="attr12"  type="text" indexed="true" highlight="true"/>
+       <field name="attr13"  type="text" indexed="true" highlight="true"/>
+       <field name="attr14"  type="text" indexed="true" highlight="true"/>
+       <field name="attr15"  type="text" indexed="true" highlight="true"/>
+       <field name="attr16"  type="text" indexed="true" highlight="true"/>
+       <field name="attr17"  type="text" indexed="true" highlight="true"/>
+       <field name="attr18"  type="text" indexed="true" highlight="true"/>
+       <field name="attr19"  type="text" indexed="true" highlight="true"/>
+       <field name="attr20"  type="text" indexed="true" highlight="true"/>
+       <field name="attr21"  type="text" indexed="true" highlight="true"/>
+       <field name="attr22"  type="text" indexed="true" highlight="true"/>
+       <field name="attr23"  type="text" indexed="true" highlight="true"/>
+       <field name="attr24"  type="text" indexed="true" highlight="true"/>
+       <field name="attr25"  type="text" indexed="true" highlight="true"/>
+       <field name="attr26"  type="text" indexed="true" highlight="true"/>
+       <field name="attr27"  type="text" indexed="true" highlight="true"/>
+       <field name="attr28"  type="text" indexed="true" highlight="true"/>
+       <field name="attr29"  type="text" indexed="true" highlight="true"/>
+       <field name="attr30"  type="text" indexed="true" highlight="true"/>
+       <field name="attr31"  type="text" indexed="true" highlight="true"/>
+       <field name="attr32"  type="text" indexed="true" highlight="true"/>
+       <field name="attr33"  type="text" indexed="true" highlight="true"/>
+       <field name="attr34"  type="text" indexed="true" highlight="true"/>
+       <field name="attr35"  type="text" indexed="true" highlight="true"/>
+       <field name="attr36"  type="text" indexed="true" highlight="true"/>
+       <field name="attr37"  type="text" indexed="true" highlight="true"/>
+       <field name="attr38"  type="text" indexed="true" highlight="true"/>
+       <field name="attr39"  type="text" indexed="true" highlight="true"/>
+       <field name="attr40"  type="text" indexed="true" highlight="true"/>
+       <field name="attr41"  type="text" indexed="true" highlight="true"/>
+       <field name="attr42"  type="text" indexed="true" highlight="true"/>
+       <field name="attr43"  type="text" indexed="true" highlight="true"/>
+       <field name="attr44"  type="text" indexed="true" highlight="true"/>
+       <field name="attr45"  type="text" indexed="true" highlight="true"/>
+       <field name="attr46"  type="text" indexed="true" highlight="true"/>
+       <field name="attr47"  type="text" indexed="true" highlight="true"/>
+       <field name="attr48"  type="text" indexed="true" highlight="true"/>
+       <field name="attr49"  type="text" indexed="true" highlight="true"/>
+       <field name="attr50"  type="text" indexed="true" highlight="true"/>
+       <field name="attr51"  type="text" indexed="true" highlight="true"/>
+       <field name="attr52"  type="text" indexed="true" highlight="true"/>
+       <field name="attr53"  type="text" indexed="true" highlight="true"/>
+       <field name="attr54"  type="text" indexed="true" highlight="true"/>
+       <field name="attr55"  type="text" indexed="true" highlight="true"/>
+       <field name="attr56"  type="text" indexed="true" highlight="true"/>
+       <field name="attr57"  type="text" indexed="true" highlight="true"/>
+       <field name="attr58"  type="text" indexed="true" highlight="true"/>
+       <field name="attr59"  type="text" indexed="true" highlight="true"/>
+       <field name="attr60"  type="text" indexed="true" highlight="true"/>
+       <field name="attr61"  type="text" indexed="true" highlight="true"/>
+       <field name="attr62"  type="text" indexed="true" highlight="true"/>
+       <field name="attr63"  type="text" indexed="true" highlight="true"/>
+       <field name="attr64"  type="text" indexed="true" highlight="true"/>
+       <field name="attr65"  type="text" indexed="true" highlight="true"/>
+       <field name="attr66"  type="text" indexed="true" highlight="true"/>
+       <field name="attr67"  type="text" indexed="true" highlight="true"/>
+       <field name="attr68"  type="text" indexed="true" highlight="true"/>
+       <field name="attr69"  type="text" indexed="true" highlight="true"/>
+       <field name="attr70"  type="text" indexed="true" highlight="true"/>
+       <field name="attr71"  type="text" indexed="true" highlight="true"/>
+       <field name="attr72"  type="text" indexed="true" highlight="true"/>
+       <field name="attr73"  type="text" indexed="true" highlight="true"/>
+       <field name="attr74"  type="text" indexed="true" highlight="true"/>
+       <field name="attr75"  type="text" indexed="true" highlight="true"/>
+       <field name="attr76"  type="text" indexed="true" highlight="true"/>
+       <field name="attr77"  type="text" indexed="true" highlight="true"/>
+       <field name="attr78"  type="text" indexed="true" highlight="true"/>
+       <field name="attr79"  type="text" indexed="true" highlight="true"/>
+       <field name="attr80"  type="text" indexed="true" highlight="true"/>
+       <field name="attr81"  type="text" indexed="true" highlight="true"/>
+       <field name="attr82"  type="text" indexed="true" highlight="true"/>
+       <field name="attr83"  type="text" indexed="true" highlight="true"/>
+       <field name="attr84"  type="text" indexed="true" highlight="true"/>
+       <field name="attr85"  type="text" indexed="true" highlight="true"/>
+       <field name="attr86"  type="text" indexed="true" highlight="true"/>
+       <field name="attr87"  type="text" indexed="true" highlight="true"/>
+       <field name="attr88"  type="text" indexed="true" highlight="true"/>
+       <field name="attr89"  type="text" indexed="true" highlight="true"/>
+       <field name="attr90"  type="text" indexed="true" highlight="true"/>
+       <field name="attr91"  type="text" indexed="true" highlight="true"/>
+       <field name="attr92"  type="text" indexed="true" highlight="true"/>
+       <field name="attr93"  type="text" indexed="true" highlight="true"/>
+       <field name="attr94"  type="text" indexed="true" highlight="true"/>
+       <field name="attr95"  type="text" indexed="true" highlight="true"/>
+       <field name="attr96"  type="text" indexed="true" highlight="true"/>
+       <field name="attr97"  type="text" indexed="true" highlight="true"/>
+       <field name="attr98"  type="text" indexed="true" highlight="true"/>
+       <field name="attr99"  type="text" indexed="true" highlight="true"/>
+       <field name="attr100"  type="text" indexed="true" highlight="true"/>
+       <field name="attr101"  type="text" indexed="true" highlight="true"/>
+       <field name="attr102"  type="text" indexed="true" highlight="true"/>
+       <field name="attr103"  type="text" indexed="true" highlight="true"/>
+       <field name="attr104"  type="text" indexed="true" highlight="true"/>
+       <field name="attr105"  type="text" indexed="true" highlight="true"/>
+       <field name="attr106"  type="text" indexed="true" highlight="true"/>
+       <field name="attr107"  type="text" indexed="true" highlight="true"/>
+       <field name="attr108"  type="text" indexed="true" highlight="true"/>
+       <field name="attr109"  type="text" indexed="true" highlight="true"/>
+       <field name="attr110"  type="text" indexed="true" highlight="true"/>
+       <field name="attr111"  type="text" indexed="true" highlight="true"/>
+       <field name="attr112"  type="text" indexed="true" highlight="true"/>
+       <field name="attr113"  type="text" indexed="true" highlight="true"/>
+       <field name="attr114"  type="text" indexed="true" highlight="true"/>
+       <field name="attr115"  type="text" indexed="true" highlight="true"/>
+       <field name="attr116"  type="text" indexed="true" highlight="true"/>
+       <field name="attr117"  type="text" indexed="true" highlight="true"/>
+       <field name="attr118"  type="text" indexed="true" highlight="true"/>
+       <field name="attr119"  type="text" indexed="true" highlight="true"/>
+       <field name="attr120"  type="text" indexed="true" highlight="true"/>
+       <field name="attr121"  type="text" indexed="true" highlight="true"/>
+       <field name="attr122"  type="text" indexed="true" highlight="true"/>
+       <field name="attr123"  type="text" indexed="true" highlight="true"/>
+       <field name="attr124"  type="text" indexed="true" highlight="true"/>
+       <field name="attr125"  type="text" indexed="true" highlight="true"/>
+       <field name="attr126"  type="text" indexed="true" highlight="true"/>
+       <field name="attr127"  type="text" indexed="true" highlight="true"/>
+       <field name="attr128"  type="text" indexed="true" highlight="true"/>
+       <field name="attr129"  type="text" indexed="true" highlight="true"/>
+       <field name="attr130"  type="text" indexed="true" highlight="true"/>
+       <field name="attr131"  type="text" indexed="true" highlight="true"/>
+       <field name="attr132"  type="text" indexed="true" highlight="true"/>
+       <field name="attr133"  type="text" indexed="true" highlight="true"/>
+       <field name="attr134"  type="text" indexed="true" highlight="true"/>
+       <field name="attr135"  type="text" indexed="true" highlight="true"/>
+       <field name="attr136"  type="text" indexed="true" highlight="true"/>
+       <field name="attr137"  type="text" indexed="true" highlight="true"/>
+       <field name="attr138"  type="text" indexed="true" highlight="true"/>
+       <field name="attr139"  type="text" indexed="true" highlight="true"/>
+       <field name="attr140"  type="text" indexed="true" highlight="true"/>
+       <field name="attr141"  type="text" indexed="true" highlight="true"/>
+       <field name="attr142"  type="text" indexed="true" highlight="true"/>
+       <field name="attr143"  type="text" indexed="true" highlight="true"/>
+       <field name="attr144"  type="text" indexed="true" highlight="true"/>
+       <field name="attr145"  type="text" indexed="true" highlight="true"/>
+       <field name="attr146"  type="text" indexed="true" highlight="true"/>
+       <field name="attr147"  type="text" indexed="true" highlight="true"/>
+       <field name="attr148"  type="text" indexed="true" highlight="true"/>
+       <field name="attr149"  type="text" indexed="true" highlight="true"/>
+       <field name="attr150"  type="text" indexed="true" highlight="true"/>
+       <field name="attr151"  type="text" indexed="true" highlight="true"/>
+       <field name="attr152"  type="text" indexed="true" highlight="true"/>
+       <field name="attr153"  type="text" indexed="true" highlight="true"/>
+       <field name="attr154"  type="text" indexed="true" highlight="true"/>
+       <field name="attr155"  type="text" indexed="true" highlight="true"/>
+       <field name="attr156"  type="text" indexed="true" highlight="true"/>
+       <field name="attr157"  type="text" indexed="true" highlight="true"/>
+       <field name="attr158"  type="text" indexed="true" highlight="true"/>
+       <field name="attr159"  type="text" indexed="true" highlight="true"/>
+       <field name="attr160"  type="text" indexed="true" highlight="true"/>
+       <field name="attr161"  type="text" indexed="true" highlight="true"/>
+       <field name="attr162"  type="text" indexed="true" highlight="true"/>
+       <field name="attr163"  type="text" indexed="true" highlight="true"/>
+       <field name="attr164"  type="text" indexed="true" highlight="true"/>
+       <field name="attr165"  type="text" indexed="true" highlight="true"/>
+       <field name="attr166"  type="text" indexed="true" highlight="true"/>
+       <field name="attr167"  type="text" indexed="true" highlight="true"/>
+       <field name="attr168"  type="text" indexed="true" highlight="true"/>
+       <field name="attr169"  type="text" indexed="true" highlight="true"/>
+       <field name="attr170"  type="text" indexed="true" highlight="true"/>
+       <field name="attr171"  type="text" indexed="true" highlight="true"/>
+       <field name="attr172"  type="text" indexed="true" highlight="true"/>
+       <field name="attr173"  type="text" indexed="true" highlight="true"/>
+       <field name="attr174"  type="text" indexed="true" highlight="true"/>
+       <field name="attr175"  type="text" indexed="true" highlight="true"/>
+       <field name="attr176"  type="text" indexed="true" highlight="true"/>
+       <field name="attr177"  type="text" indexed="true" highlight="true"/>
+       <field name="attr178"  type="text" indexed="true" highlight="true"/>
+       <field name="attr179"  type="text" indexed="true" highlight="true"/>
+       <field name="attr180"  type="text" indexed="true" highlight="true"/>
+       <field name="attr181"  type="text" indexed="true" highlight="true"/>
+       <field name="attr182"  type="text" indexed="true" highlight="true"/>
+       <field name="attr183"  type="text" indexed="true" highlight="true"/>
+       <field name="attr184"  type="text" indexed="true" highlight="true"/>
+       <field name="attr185"  type="text" indexed="true" highlight="true"/>
+       <field name="attr186"  type="text" indexed="true" highlight="true"/>
+       <field name="attr187"  type="text" indexed="true" highlight="true"/>
+       <field name="attr188"  type="text" indexed="true" highlight="true"/>
+       <field name="attr189"  type="text" indexed="true" highlight="true"/>
+       <field name="attr190"  type="text" indexed="true" highlight="true"/>
+       <field name="attr191"  type="text" indexed="true" highlight="true"/>
+       <field name="attr192"  type="text" indexed="true" highlight="true"/>
+       <field name="attr193"  type="text" indexed="true" highlight="true"/>
+       <field name="attr194"  type="text" indexed="true" highlight="true"/>
+       <field name="attr195"  type="text" indexed="true" highlight="true"/>
+       <field name="attr196"  type="text" indexed="true" highlight="true"/>
+       <field name="attr197"  type="text" indexed="true" highlight="true"/>
+       <field name="attr198"  type="text" indexed="true" highlight="true"/>
+       <field name="attr199"  type="text" indexed="true" highlight="true"/>
+       <field name="attr200"  type="text" indexed="true" highlight="true"/>
+       <field name="attr201"  type="text" indexed="true" highlight="true"/>
+       <field name="attr202"  type="text" indexed="true" highlight="true"/>
+       <field name="attr203"  type="text" indexed="true" highlight="true"/>
+       <field name="attr204"  type="text" indexed="true" highlight="true"/>
+       <field name="attr205"  type="text" indexed="true" highlight="true"/>
+       <field name="attr206"  type="text" indexed="true" highlight="true"/>
+       <field name="attr207"  type="text" indexed="true" highlight="true"/>
+       <field name="attr208"  type="text" indexed="true" highlight="true"/>
+       <field name="attr209"  type="text" indexed="true" highlight="true"/>
+       <field name="attr210"  type="text" indexed="true" highlight="true"/>
+       <field name="attr211"  type="text" indexed="true" highlight="true"/>
+       <field name="attr212"  type="text" indexed="true" highlight="true"/>
+       <field name="attr213"  type="text" indexed="true" highlight="true"/>
+       <field name="attr214"  type="text" indexed="true" highlight="true"/>
+       <field name="attr215"  type="text" indexed="true" highlight="true"/>
+       <field name="attr216"  type="text" indexed="true" highlight="true"/>
+       <field name="attr217"  type="text" indexed="true" highlight="true"/>
+       <field name="attr218"  type="text" indexed="true" highlight="true"/>
+       <field name="attr219"  type="text" indexed="true" highlight="true"/>
+       <field name="attr220"  type="text" indexed="true" highlight="true"/>
+       <field name="attr221"  type="text" indexed="true" highlight="true"/>
+       <field name="attr222"  type="text" indexed="true" highlight="true"/>
+       <field name="attr223"  type="text" indexed="true" highlight="true"/>
+       <field name="attr224"  type="text" indexed="true" highlight="true"/>
+       <field name="attr225"  type="text" indexed="true" highlight="true"/>
+       <field name="attr226"  type="text" indexed="true" highlight="true"/>
+       <field name="attr227"  type="text" indexed="true" highlight="true"/>
+       <field name="attr228"  type="text" indexed="true" highlight="true"/>
+       <field name="attr229"  type="text" indexed="true" highlight="true"/>
+       <field name="attr230"  type="text" indexed="true" highlight="true"/>
+       <field name="attr231"  type="text" indexed="true" highlight="true"/>
+       <field name="attr232"  type="text" indexed="true" highlight="true"/>
+       <field name="attr233"  type="text" indexed="true" highlight="true"/>
+       <field name="attr234"  type="text" indexed="true" highlight="true"/>
+       <field name="attr235"  type="text" indexed="true" highlight="true"/>
+       <field name="attr236"  type="text" indexed="true" highlight="true"/>
+       <field name="attr237"  type="text" indexed="true" highlight="true"/>
+       <field name="attr238"  type="text" indexed="true" highlight="true"/>
+       <field name="attr239"  type="text" indexed="true" highlight="true"/>
+       <field name="attr240"  type="text" indexed="true" highlight="true"/>
+       <field name="attr241"  type="text" indexed="true" highlight="true"/>
+       <field name="attr242"  type="text" indexed="true" highlight="true"/>
+       <field name="attr243"  type="text" indexed="true" highlight="true"/>
+       <field name="attr244"  type="text" indexed="true" highlight="true"/>
+       <field name="attr245"  type="text" indexed="true" highlight="true"/>
+       <field name="attr246"  type="text" indexed="true" highlight="true"/>
+       <field name="attr247"  type="text" indexed="true" highlight="true"/>
+       <field name="attr248"  type="text" indexed="true" highlight="true"/>
+       <field name="attr249"  type="text" indexed="true" highlight="true"/>
+       <field name="attr250"  type="text" indexed="true" highlight="true"/>
+       <field name="attr251"  type="text" indexed="true" highlight="true"/>
+       <field name="attr252"  type="text" indexed="true" highlight="true"/>
+       <field name="attr253"  type="text" indexed="true" highlight="true"/>
+       <field name="attr254"  type="text" indexed="true" highlight="true"/>
+       <field name="attr255"  type="text" indexed="true" highlight="true"/>
+       <field name="attr256"  type="text" indexed="true" highlight="true"/>
+       <field name="attr257"  type="text" indexed="true" highlight="true"/>
+       <field name="attr258"  type="text" indexed="true" highlight="true"/>
+       <field name="attr259"  type="text" indexed="true" highlight="true"/>
+       <field name="attr260"  type="text" indexed="true" highlight="true"/>
+       <field name="attr261"  type="text" indexed="true" highlight="true"/>
+       <field name="attr262"  type="text" indexed="true" highlight="true"/>
+       <field name="attr263"  type="text" indexed="true" highlight="true"/>
+       <field name="attr264"  type="text" indexed="true" highlight="true"/>
+       <field name="attr265"  type="text" indexed="true" highlight="true"/>
+       <field name="attr266"  type="text" indexed="true" highlight="true"/>
+       <field name="attr267"  type="text" indexed="true" highlight="true"/>
+       <field name="attr268"  type="text" indexed="true" highlight="true"/>
+       <field name="attr269"  type="text" indexed="true" highlight="true"/>
+       <field name="attr270"  type="text" indexed="true" highlight="true"/>
+       <field name="attr271"  type="text" indexed="true" highlight="true"/>
+       <field name="attr272"  type="text" indexed="true" highlight="true"/>
+       <field name="attr273"  type="text" indexed="true" highlight="true"/>
+       <field name="attr274"  type="text" indexed="true" highlight="true"/>
+       <field name="attr275"  type="text" indexed="true" highlight="true"/>
+       <field name="attr276"  type="text" indexed="true" highlight="true"/>
+       <field name="attr277"  type="text" indexed="true" highlight="true"/>
+       <field name="attr278"  type="text" indexed="true" highlight="true"/>
+       <field name="attr279"  type="text" indexed="true" highlight="true"/>
+       <field name="attr280"  type="text" indexed="true" highlight="true"/>
+       <field name="attr281"  type="text" indexed="true" highlight="true"/>
+       <field name="attr282"  type="text" indexed="true" highlight="true"/>
+       <field name="attr283"  type="text" indexed="true" highlight="true"/>
+       <field name="attr284"  type="text" indexed="true" highlight="true"/>
+       <field name="attr285"  type="text" indexed="true" highlight="true"/>
+       <field name="attr286"  type="text" indexed="true" highlight="true"/>
+       <field name="attr287"  type="text" indexed="true" highlight="true"/>
+       <field name="attr288"  type="text" indexed="true" highlight="true"/>
+       <field name="attr289"  type="text" indexed="true" highlight="true"/>
+       <field name="attr290"  type="text" indexed="true" highlight="true"/>
+       <field name="attr291"  type="text" indexed="true" highlight="true"/>
+       <field name="attr292"  type="text" indexed="true" highlight="true"/>
+       <field name="attr293"  type="text" indexed="true" highlight="true"/>
+       <field name="attr294"  type="text" indexed="true" highlight="true"/>
+       <field name="attr295"  type="text" indexed="true" highlight="true"/>
+       <field name="attr296"  type="text" indexed="true" highlight="true"/>
+       <field name="attr297"  type="text" indexed="true" highlight="true"/>
+       <field name="attr298"  type="text" indexed="true" highlight="true"/>
+       <field name="attr299"  type="text" indexed="true" highlight="true"/>
+       <field name="attr300"  type="text" indexed="true" highlight="true"/>
+       <field name="attr301"  type="text" indexed="true" highlight="true"/>
+       <field name="attr302"  type="text" indexed="true" highlight="true"/>
+       <field name="attr303"  type="text" indexed="true" highlight="true"/>
+       <field name="attr304"  type="text" indexed="true" highlight="true"/>
+       <field name="attr305"  type="text" indexed="true" highlight="true"/>
+       <field name="attr306"  type="text" indexed="true" highlight="true"/>
+       <field name="attr307"  type="text" indexed="true" highlight="true"/>
+       <field name="attr308"  type="text" indexed="true" highlight="true"/>
+       <field name="attr309"  type="text" indexed="true" highlight="true"/>
+       <field name="attr310"  type="text" indexed="true" highlight="true"/>
+       <field name="attr311"  type="text" indexed="true" highlight="true"/>
+       <field name="attr312"  type="text" indexed="true" highlight="true"/>
+       <field name="attr313"  type="text" indexed="true" highlight="true"/>
+       <field name="attr314"  type="text" indexed="true" highlight="true"/>
+       <field name="attr315"  type="text" indexed="true" highlight="true"/>
+       <field name="attr316"  type="text" indexed="true" highlight="true"/>
+       <field name="attr317"  type="text" indexed="true" highlight="true"/>
+       <field name="attr318"  type="text" indexed="true" highlight="true"/>
+       <field name="attr319"  type="text" indexed="true" highlight="true"/>
+       <field name="attr320"  type="text" indexed="true" highlight="true"/>
+       <field name="attr321"  type="text" indexed="true" highlight="true"/>
+       <field name="attr322"  type="text" indexed="true" highlight="true"/>
+       <field name="attr323"  type="text" indexed="true" highlight="true"/>
+       <field name="attr324"  type="text" indexed="true" highlight="true"/>
+       <field name="attr325"  type="text" indexed="true" highlight="true"/>
+       <field name="attr326"  type="text" indexed="true" highlight="true"/>
+       <field name="attr327"  type="text" indexed="true" highlight="true"/>
+       <field name="attr328"  type="text" indexed="true" highlight="true"/>
+       <field name="attr329"  type="text" indexed="true" highlight="true"/>
+       <field name="attr330"  type="text" indexed="true" highlight="true"/>
+       <field name="attr331"  type="text" indexed="true" highlight="true"/>
+       <field name="attr332"  type="text" indexed="true" highlight="true"/>
+       <field name="attr333"  type="text" indexed="true" highlight="true"/>
+       <field name="attr334"  type="text" indexed="true" highlight="true"/>
+       <field name="attr335"  type="text" indexed="true" highlight="true"/>
+       <field name="attr336"  type="text" indexed="true" highlight="true"/>
+       <field name="attr337"  type="text" indexed="true" highlight="true"/>
+       <field name="attr338"  type="text" indexed="true" highlight="true"/>
+       <field name="attr339"  type="text" indexed="true" highlight="true"/>
+       <field name="attr340"  type="text" indexed="true" highlight="true"/>
+       <field name="attr341"  type="text" indexed="true" highlight="true"/>
+       <field name="attr342"  type="text" indexed="true" highlight="true"/>
+       <field name="attr343"  type="text" indexed="true" highlight="true"/>
+       <field name="attr344"  type="text" indexed="true" highlight="true"/>
+       <field name="attr345"  type="text" indexed="true" highlight="true"/>
+       <field name="attr346"  type="text" indexed="true" highlight="true"/>
+       <field name="attr347"  type="text" indexed="true" highlight="true"/>
+       <field name="attr348"  type="text" indexed="true" highlight="true"/>
+       <field name="attr349"  type="text" indexed="true" highlight="true"/>
+       <field name="attr350"  type="text" indexed="true" highlight="true"/>
+       <field name="attr351"  type="text" indexed="true" highlight="true"/>
+       <field name="attr352"  type="text" indexed="true" highlight="true"/>
+       <field name="attr353"  type="text" indexed="true" highlight="true"/>
+       <field name="attr354"  type="text" indexed="true" highlight="true"/>
+       <field name="attr355"  type="text" indexed="true" highlight="true"/>
+       <field name="attr356"  type="text" indexed="true" highlight="true"/>
+       <field name="attr357"  type="text" indexed="true" highlight="true"/>
+       <field name="attr358"  type="text" indexed="true" highlight="true"/>
+       <field name="attr359"  type="text" indexed="true" highlight="true"/>
+       <field name="attr360"  type="text" indexed="true" highlight="true"/>
+       <field name="attr361"  type="text" indexed="true" highlight="true"/>
+       <field name="attr362"  type="text" indexed="true" highlight="true"/>
+       <field name="attr363"  type="text" indexed="true" highlight="true"/>
+       <field name="attr364"  type="text" indexed="true" highlight="true"/>
+       <field name="attr365"  type="text" indexed="true" highlight="true"/>
+       <field name="attr366"  type="text" indexed="true" highlight="true"/>
+       <field name="attr367"  type="text" indexed="true" highlight="true"/>
+       <field name="attr368"  type="text" indexed="true" highlight="true"/>
+       <field name="attr369"  type="text" indexed="true" highlight="true"/>
+       <field name="attr370"  type="text" indexed="true" highlight="true"/>
+       <field name="attr371"  type="text" indexed="true" highlight="true"/>
+       <field name="attr372"  type="text" indexed="true" highlight="true"/>
+       <field name="attr373"  type="text" indexed="true" highlight="true"/>
+       <field name="attr374"  type="text" indexed="true" highlight="true"/>
+       <field name="attr375"  type="text" indexed="true" highlight="true"/>
+       <field name="attr376"  type="text" indexed="true" highlight="true"/>
+       <field name="attr377"  type="text" indexed="true" highlight="true"/>
+       <field name="attr378"  type="text" indexed="true" highlight="true"/>
+       <field name="attr379"  type="text" indexed="true" highlight="true"/>
+       <field name="attr380"  type="text" indexed="true" highlight="true"/>
+       <field name="attr381"  type="text" indexed="true" highlight="true"/>
+       <field name="attr382"  type="text" indexed="true" highlight="true"/>
+       <field name="attr383"  type="text" indexed="true" highlight="true"/>
+       <field name="attr384"  type="text" indexed="true" highlight="true"/>
+       <field name="attr385"  type="text" indexed="true" highlight="true"/>
+       <field name="attr386"  type="text" indexed="true" highlight="true"/>
+       <field name="attr387"  type="text" indexed="true" highlight="true"/>
+       <field name="attr388"  type="text" indexed="true" highlight="true"/>
+       <field name="attr389"  type="text" indexed="true" highlight="true"/>
+       <field name="attr390"  type="text" indexed="true" highlight="true"/>
+       <field name="attr391"  type="text" indexed="true" highlight="true"/>
+       <field name="attr392"  type="text" indexed="true" highlight="true"/>
+       <field name="attr393"  type="text" indexed="true" highlight="true"/>
+       <field name="attr394"  type="text" indexed="true" highlight="true"/>
+       <field name="attr395"  type="text" indexed="true" highlight="true"/>
+       <field name="attr396"  type="text" indexed="true" highlight="true"/>
+       <field name="attr397"  type="text" indexed="true" highlight="true"/>
+       <field name="attr398"  type="text" indexed="true" highlight="true"/>
+       <field name="attr399"  type="text" indexed="true" highlight="true"/>
+       <field name="attr400"  type="text" indexed="true" highlight="true"/>
+       <field name="attr401"  type="text" indexed="true" highlight="true"/>
+       <field name="attr402"  type="text" indexed="true" highlight="true"/>
+       <field name="attr403"  type="text" indexed="true" highlight="true"/>
+       <field name="attr404"  type="text" indexed="true" highlight="true"/>
+       <field name="attr405"  type="text" indexed="true" highlight="true"/>
+       <field name="attr406"  type="text" indexed="true" highlight="true"/>
+       <field name="attr407"  type="text" indexed="true" highlight="true"/>
+       <field name="attr408"  type="text" indexed="true" highlight="true"/>
+       <field name="attr409"  type="text" indexed="true" highlight="true"/>
+       <field name="attr410"  type="text" indexed="true" highlight="true"/>
+       <field name="attr411"  type="text" indexed="true" highlight="true"/>
+       <field name="attr412"  type="text" indexed="true" highlight="true"/>
+       <field name="attr413"  type="text" indexed="true" highlight="true"/>
+       <field name="attr414"  type="text" indexed="true" highlight="true"/>
+       <field name="attr415"  type="text" indexed="true" highlight="true"/>
+       <field name="attr416"  type="text" indexed="true" highlight="true"/>
+       <field name="attr417"  type="text" indexed="true" highlight="true"/>
+       <field name="attr418"  type="text" indexed="true" highlight="true"/>
+       <field name="attr419"  type="text" indexed="true" highlight="true"/>
+       <field name="attr420"  type="text" indexed="true" highlight="true"/>
+       <field name="attr421"  type="text" indexed="true" highlight="true"/>
+       <field name="attr422"  type="text" indexed="true" highlight="true"/>
+       <field name="attr423"  type="text" indexed="true" highlight="true"/>
+       <field name="attr424"  type="text" indexed="true" highlight="true"/>
+       <field name="attr425"  type="text" indexed="true" highlight="true"/>
+       <field name="attr426"  type="text" indexed="true" highlight="true"/>
+       <field name="attr427"  type="text" indexed="true" highlight="true"/>
+       <field name="attr428"  type="text" indexed="true" highlight="true"/>
+       <field name="attr429"  type="text" indexed="true" highlight="true"/>
+       <field name="attr430"  type="text" indexed="true" highlight="true"/>
+       <field name="attr431"  type="text" indexed="true" highlight="true"/>
+       <field name="attr432"  type="text" indexed="true" highlight="true"/>
+       <field name="attr433"  type="text" indexed="true" highlight="true"/>
+       <field name="attr434"  type="text" indexed="true" highlight="true"/>
+       <field name="attr435"  type="text" indexed="true" highlight="true"/>
+       <field name="attr436"  type="text" indexed="true" highlight="true"/>
+       <field name="attr437"  type="text" indexed="true" highlight="true"/>
+       <field name="attr438"  type="text" indexed="true" highlight="true"/>
+       <field name="attr439"  type="text" indexed="true" highlight="true"/>
+       <field name="attr440"  type="text" indexed="true" highlight="true"/>
+       <field name="attr441"  type="text" indexed="true" highlight="true"/>
+       <field name="attr442"  type="text" indexed="true" highlight="true"/>
+       <field name="attr443"  type="text" indexed="true" highlight="true"/>
+       <field name="attr444"  type="text" indexed="true" highlight="true"/>
+       <field name="attr445"  type="text" indexed="true" highlight="true"/>
+       <field name="attr446"  type="text" indexed="true" highlight="true"/>
+       <field name="attr447"  type="text" indexed="true" highlight="true"/>
+       <field name="attr448"  type="text" indexed="true" highlight="true"/>
+       <field name="attr449"  type="text" indexed="true" highlight="true"/>
+       <field name="attr450"  type="text" indexed="true" highlight="true"/>
+       <field name="attr451"  type="text" indexed="true" highlight="true"/>
+       <field name="attr452"  type="text" indexed="true" highlight="true"/>
+       <field name="attr453"  type="text" indexed="true" highlight="true"/>
+       <field name="attr454"  type="text" indexed="true" highlight="true"/>
+       <field name="attr455"  type="text" indexed="true" highlight="true"/>
+       <field name="attr456"  type="text" indexed="true" highlight="true"/>
+       <field name="attr457"  type="text" indexed="true" highlight="true"/>
+       <field name="attr458"  type="text" indexed="true" highlight="true"/>
+       <field name="attr459"  type="text" indexed="true" highlight="true"/>
+       <field name="attr460"  type="text" indexed="true" highlight="true"/>
+       <field name="attr461"  type="text" indexed="true" highlight="true"/>
+       <field name="attr462"  type="text" indexed="true" highlight="true"/>
+       <field name="attr463"  type="text" indexed="true" highlight="true"/>
+       <field name="attr464"  type="text" indexed="true" highlight="true"/>
+       <field name="attr465"  type="text" indexed="true" highlight="true"/>
+       <field name="attr466"  type="text" indexed="true" highlight="true"/>
+       <field name="attr467"  type="text" indexed="true" highlight="true"/>
+       <field name="attr468"  type="text" indexed="true" highlight="true"/>
+       <field name="attr469"  type="text" indexed="true" highlight="true"/>
+       <field name="attr470"  type="text" indexed="true" highlight="true"/>
+       <field name="attr471"  type="text" indexed="true" highlight="true"/>
+       <field name="attr472"  type="text" indexed="true" highlight="true"/>
+       <field name="attr473"  type="text" indexed="true" highlight="true"/>
+       <field name="attr474"  type="text" indexed="true" highlight="true"/>
+       <field name="attr475"  type="text" indexed="true" highlight="true"/>
+       <field name="attr476"  type="text" indexed="true" highlight="true"/>
+       <field name="attr477"  type="text" indexed="true" highlight="true"/>
+       <field name="attr478"  type="text" indexed="true" highlight="true"/>
+       <field name="attr479"  type="text" indexed="true" highlight="true"/>
+       <field name="attr480"  type="text" indexed="true" highlight="true"/>
+       <field name="attr481"  type="text" indexed="true" highlight="true"/>
+       <field name="attr482"  type="text" indexed="true" highlight="true"/>
+       <field name="attr483"  type="text" indexed="true" highlight="true"/>
+       <field name="attr484"  type="text" indexed="true" highlight="true"/>
+       <field name="attr485"  type="text" indexed="true" highlight="true"/>
+       <field name="attr486"  type="text" indexed="true" highlight="true"/>
+       <field name="attr487"  type="text" indexed="true" highlight="true"/>
+       <field name="attr488"  type="text" indexed="true" highlight="true"/>
+       <field name="attr489"  type="text" indexed="true" highlight="true"/>
+       <field name="attr490"  type="text" indexed="true" highlight="true"/>
+       <field name="attr491"  type="text" indexed="true" highlight="true"/>
+       <field name="attr492"  type="text" indexed="true" highlight="true"/>
+       <field name="attr493"  type="text" indexed="true" highlight="true"/>
+       <field name="attr494"  type="text" indexed="true" highlight="true"/>
+       <field name="attr495"  type="text" indexed="true" highlight="true"/>
+       <field name="attr496"  type="text" indexed="true" highlight="true"/>
+       <field name="attr497"  type="text" indexed="true" highlight="true"/>
+       <field name="attr498"  type="text" indexed="true" highlight="true"/>
+       <field name="attr499"  type="text" indexed="true" highlight="true"/>
+       <field name="attr500"  type="text" indexed="true" highlight="true"/>
+       <field name="attr501"  type="text" indexed="true" highlight="true"/>
+       <field name="attr502"  type="text" indexed="true" highlight="true"/>
+       <field name="attr503"  type="text" indexed="true" highlight="true"/>
+       <field name="attr504"  type="text" indexed="true" highlight="true"/>
+       <field name="attr505"  type="text" indexed="true" highlight="true"/>
+       <field name="attr506"  type="text" indexed="true" highlight="true"/>
+       <field name="attr507"  type="text" indexed="true" highlight="true"/>
+       <field name="attr508"  type="text" indexed="true" highlight="true"/>
+       <field name="attr509"  type="text" indexed="true" highlight="true"/>
+       <field name="attr510"  type="text" indexed="true" highlight="true"/>
+       <field name="attr511"  type="text" indexed="true" highlight="true"/>
+       <field name="attr512"  type="text" indexed="true" highlight="true"/>
+       <field name="attr513"  type="text" indexed="true" highlight="true"/>
+       <field name="attr514"  type="text" indexed="true" highlight="true"/>
+       <field name="attr515"  type="text" indexed="true" highlight="true"/>
+       <field name="attr516"  type="text" indexed="true" highlight="true"/>
+       <field name="attr517"  type="text" indexed="true" highlight="true"/>
+       <field name="attr518"  type="text" indexed="true" highlight="true"/>
+       <field name="attr519"  type="text" indexed="true" highlight="true"/>
+       <field name="attr520"  type="text" indexed="true" highlight="true"/>
+       <field name="attr521"  type="text" indexed="true" highlight="true"/>
+       <field name="attr522"  type="text" indexed="true" highlight="true"/>
+       <field name="attr523"  type="text" indexed="true" highlight="true"/>
+       <field name="attr524"  type="text" indexed="true" highlight="true"/>
+       <field name="attr525"  type="text" indexed="true" highlight="true"/>
+       <field name="attr526"  type="text" indexed="true" highlight="true"/>
+       <field name="attr527"  type="text" indexed="true" highlight="true"/>
+       <field name="attr528"  type="text" indexed="true" highlight="true"/>
+       <field name="attr529"  type="text" indexed="true" highlight="true"/>
+       <field name="attr530"  type="text" indexed="true" highlight="true"/>
+       <field name="attr531"  type="text" indexed="true" highlight="true"/>
+       <field name="attr532"  type="text" indexed="true" highlight="true"/>
+       <field name="attr533"  type="text" indexed="true" highlight="true"/>
+       <field name="attr534"  type="text" indexed="true" highlight="true"/>
+       <field name="attr535"  type="text" indexed="true" highlight="true"/>
+       <field name="attr536"  type="text" indexed="true" highlight="true"/>
+       <field name="attr537"  type="text" indexed="true" highlight="true"/>
+       <field name="attr538"  type="text" indexed="true" highlight="true"/>
+       <field name="attr539"  type="text" indexed="true" highlight="true"/>
+       <field name="attr540"  type="text" indexed="true" highlight="true"/>
+       <field name="attr541"  type="text" indexed="true" highlight="true"/>
+       <field name="attr542"  type="text" indexed="true" highlight="true"/>
+       <field name="attr543"  type="text" indexed="true" highlight="true"/>
+       <field name="attr544"  type="text" indexed="true" highlight="true"/>
+       <field name="attr545"  type="text" indexed="true" highlight="true"/>
+       <field name="attr546"  type="text" indexed="true" highlight="true"/>
+       <field name="attr547"  type="text" indexed="true" highlight="true"/>
+       <field name="attr548"  type="text" indexed="true" highlight="true"/>
+       <field name="attr549"  type="text" indexed="true" highlight="true"/>
+       <field name="attr550"  type="text" indexed="true" highlight="true"/>
+       <field name="attr551"  type="text" indexed="true" highlight="true"/>
+       <field name="attr552"  type="text" indexed="true" highlight="true"/>
+       <field name="attr553"  type="text" indexed="true" highlight="true"/>
+       <field name="attr554"  type="text" indexed="true" highlight="true"/>
+       <field name="attr555"  type="text" indexed="true" highlight="true"/>
+       <field name="attr556"  type="text" indexed="true" highlight="true"/>
+       <field name="attr557"  type="text" indexed="true" highlight="true"/>
+       <field name="attr558"  type="text" indexed="true" highlight="true"/>
+       <field name="attr559"  type="text" indexed="true" highlight="true"/>
+       <field name="attr560"  type="text" indexed="true" highlight="true"/>
+       <field name="attr561"  type="text" indexed="true" highlight="true"/>
+       <field name="attr562"  type="text" indexed="true" highlight="true"/>
+       <field name="attr563"  type="text" indexed="true" highlight="true"/>
+       <field name="attr564"  type="text" indexed="true" highlight="true"/>
+       <field name="attr565"  type="text" indexed="true" highlight="true"/>
+       <field name="attr566"  type="text" indexed="true" highlight="true"/>
+       <field name="attr567"  type="text" indexed="true" highlight="true"/>
+       <field name="attr568"  type="text" indexed="true" highlight="true"/>
+       <field name="attr569"  type="text" indexed="true" highlight="true"/>
+       <field name="attr570"  type="text" indexed="true" highlight="true"/>
+       <field name="attr571"  type="text" indexed="true" highlight="true"/>
+       <field name="attr572"  type="text" indexed="true" highlight="true"/>
+       <field name="attr573"  type="text" indexed="true" highlight="true"/>
+       <field name="attr574"  type="text" indexed="true" highlight="true"/>
+       <field name="attr575"  type="text" indexed="true" highlight="true"/>
+       <field name="attr576"  type="text" indexed="true" highlight="true"/>
+       <field name="attr577"  type="text" indexed="true" highlight="true"/>
+       <field name="attr578"  type="text" indexed="true" highlight="true"/>
+       <field name="attr579"  type="text" indexed="true" highlight="true"/>
+       <field name="attr580"  type="text" indexed="true" highlight="true"/>
+       <field name="attr581"  type="text" indexed="true" highlight="true"/>
+       <field name="attr582"  type="text" indexed="true" highlight="true"/>
+       <field name="attr583"  type="text" indexed="true" highlight="true"/>
+       <field name="attr584"  type="text" indexed="true" highlight="true"/>
+       <field name="attr585"  type="text" indexed="true" highlight="true"/>
+       <field name="attr586"  type="text" indexed="true" highlight="true"/>
+       <field name="attr587"  type="text" indexed="true" highlight="true"/>
+       <field name="attr588"  type="text" indexed="true" highlight="true"/>
+       <field name="attr589"  type="text" indexed="true" highlight="true"/>
+       <field name="attr590"  type="text" indexed="true" highlight="true"/>
+       <field name="attr591"  type="text" indexed="true" highlight="true"/>
+       <field name="attr592"  type="text" indexed="true" highlight="true"/>
+       <field name="attr593"  type="text" indexed="true" highlight="true"/>
+       <field name="attr594"  type="text" indexed="true" highlight="true"/>
+       <field name="attr595"  type="text" indexed="true" highlight="true"/>
+       <field name="attr596"  type="text" indexed="true" highlight="true"/>
+       <field name="attr597"  type="text" indexed="true" highlight="true"/>
+       <field name="attr598"  type="text" indexed="true" highlight="true"/>
+       <field name="attr599"  type="text" indexed="true" highlight="true"/>
+       <field name="attr600"  type="text" indexed="true" highlight="true"/>
+       <field name="attr601"  type="text" indexed="true" highlight="true"/>
+       <field name="attr602"  type="text" indexed="true" highlight="true"/>
+       <field name="attr603"  type="text" indexed="true" highlight="true"/>
+       <field name="attr604"  type="text" indexed="true" highlight="true"/>
+       <field name="attr605"  type="text" indexed="true" highlight="true"/>
+       <field name="attr606"  type="text" indexed="true" highlight="true"/>
+       <field name="attr607"  type="text" indexed="true" highlight="true"/>
+       <field name="attr608"  type="text" indexed="true" highlight="true"/>
+       <field name="attr609"  type="text" indexed="true" highlight="true"/>
+       <field name="attr610"  type="text" indexed="true" highlight="true"/>
+       <field name="attr611"  type="text" indexed="true" highlight="true"/>
+       <field name="attr612"  type="text" indexed="true" highlight="true"/>
+       <field name="attr613"  type="text" indexed="true" highlight="true"/>
+       <field name="attr614"  type="text" indexed="true" highlight="true"/>
+       <field name="attr615"  type="text" indexed="true" highlight="true"/>
+       <field name="attr616"  type="text" indexed="true" highlight="true"/>
+       <field name="attr617"  type="text" indexed="true" highlight="true"/>
+       <field name="attr618"  type="text" indexed="true" highlight="true"/>
+       <field name="attr619"  type="text" indexed="true" highlight="true"/>
+       <field name="attr620"  type="text" indexed="true" highlight="true"/>
+       <field name="attr621"  type="text" indexed="true" highlight="true"/>
+       <field name="attr622"  type="text" indexed="true" highlight="true"/>
+       <field name="attr623"  type="text" indexed="true" highlight="true"/>
+       <field name="attr624"  type="text" indexed="true" highlight="true"/>
+       <field name="attr625"  type="text" indexed="true" highlight="true"/>
+       <field name="attr626"  type="text" indexed="true" highlight="true"/>
+       <field name="attr627"  type="text" indexed="true" highlight="true"/>
+       <field name="attr628"  type="text" indexed="true" highlight="true"/>
+       <field name="attr629"  type="text" indexed="true" highlight="true"/>
+       <field name="attr630"  type="text" indexed="true" highlight="true"/>
+       <field name="attr631"  type="text" indexed="true" highlight="true"/>
+       <field name="attr632"  type="text" indexed="true" highlight="true"/>
+       <field name="attr633"  type="text" indexed="true" highlight="true"/>
+       <field name="attr634"  type="text" indexed="true" highlight="true"/>
+       <field name="attr635"  type="text" indexed="true" highlight="true"/>
+       <field name="attr636"  type="text" indexed="true" highlight="true"/>
+       <field name="attr637"  type="text" indexed="true" highlight="true"/>
+       <field name="attr638"  type="text" indexed="true" highlight="true"/>
+       <field name="attr639"  type="text" indexed="true" highlight="true"/>
+       <field name="attr640"  type="text" indexed="true" highlight="true"/>
+       <field name="attr641"  type="text" indexed="true" highlight="true"/>
+       <field name="attr642"  type="text" indexed="true" highlight="true"/>
+       <field name="attr643"  type="text" indexed="true" highlight="true"/>
+       <field name="attr644"  type="text" indexed="true" highlight="true"/>
+       <field name="attr645"  type="text" indexed="true" highlight="true"/>
+       <field name="attr646"  type="text" indexed="true" highlight="true"/>
+       <field name="attr647"  type="text" indexed="true" highlight="true"/>
+       <field name="attr648"  type="text" indexed="true" highlight="true"/>
+       <field name="attr649"  type="text" indexed="true" highlight="true"/>
+       <field name="attr650"  type="text" indexed="true" highlight="true"/>
+       <field name="attr651"  type="text" indexed="true" highlight="true"/>
+       <field name="attr652"  type="text" indexed="true" highlight="true"/>
+       <field name="attr653"  type="text" indexed="true" highlight="true"/>
+       <field name="attr654"  type="text" indexed="true" highlight="true"/>
+       <field name="attr655"  type="text" indexed="true" highlight="true"/>
+       <field name="attr656"  type="text" indexed="true" highlight="true"/>
+       <field name="attr657"  type="text" indexed="true" highlight="true"/>
+       <field name="attr658"  type="text" indexed="true" highlight="true"/>
+       <field name="attr659"  type="text" indexed="true" highlight="true"/>
+       <field name="attr660"  type="text" indexed="true" highlight="true"/>
+       <field name="attr661"  type="text" indexed="true" highlight="true"/>
+       <field name="attr662"  type="text" indexed="true" highlight="true"/>
+       <field name="attr663"  type="text" indexed="true" highlight="true"/>
+       <field name="attr664"  type="text" indexed="true" highlight="true"/>
+       <field name="attr665"  type="text" indexed="true" highlight="true"/>
+       <field name="attr666"  type="text" indexed="true" highlight="true"/>
+       <field name="attr667"  type="text" indexed="true" highlight="true"/>
+       <field name="attr668"  type="text" indexed="true" highlight="true"/>
+       <field name="attr669"  type="text" indexed="true" highlight="true"/>
+       <field name="attr670"  type="text" indexed="true" highlight="true"/>
+       <field name="attr671"  type="text" indexed="true" highlight="true"/>
+       <field name="attr672"  type="text" indexed="true" highlight="true"/>
+       <field name="attr673"  type="text" indexed="true" highlight="true"/>
+       <field name="attr674"  type="text" indexed="true" highlight="true"/>
+       <field name="attr675"  type="text" indexed="true" highlight="true"/>
+       <field name="attr676"  type="text" indexed="true" highlight="true"/>
+       <field name="attr677"  type="text" indexed="true" highlight="true"/>
+       <field name="attr678"  type="text" indexed="true" highlight="true"/>
+       <field name="attr679"  type="text" indexed="true" highlight="true"/>
+       <field name="attr680"  type="text" indexed="true" highlight="true"/>
+       <field name="attr681"  type="text" indexed="true" highlight="true"/>
+       <field name="attr682"  type="text" indexed="true" highlight="true"/>
+       <field name="attr683"  type="text" indexed="true" highlight="true"/>
+       <field name="attr684"  type="text" indexed="true" highlight="true"/>
+       <field name="attr685"  type="text" indexed="true" highlight="true"/>
+       <field name="attr686"  type="text" indexed="true" highlight="true"/>
+       <field name="attr687"  type="text" indexed="true" highlight="true"/>
+       <field name="attr688"  type="text" indexed="true" highlight="true"/>
+       <field name="attr689"  type="text" indexed="true" highlight="true"/>
+       <field name="attr690"  type="text" indexed="true" highlight="true"/>
+       <field name="attr691"  type="text" indexed="true" highlight="true"/>
+       <field name="attr692"  type="text" indexed="true" highlight="true"/>
+       <field name="attr693"  type="text" indexed="true" highlight="true"/>
+       <field name="attr694"  type="text" indexed="true" highlight="true"/>
+       <field name="attr695"  type="text" indexed="true" highlight="true"/>
+       <field name="attr696"  type="text" indexed="true" highlight="true"/>
+       <field name="attr697"  type="text" indexed="true" highlight="true"/>
+       <field name="attr698"  type="text" indexed="true" highlight="true"/>
+       <field name="attr699"  type="text" indexed="true" highlight="true"/>
+
+       </fields>
+       
+       <uniqueKey>id</uniqueKey>
+           
+       <facetEnabled>true</facetEnabled>
+        
+        <facetFields>
+          <facetField name="stars" facetType="categorical"/>
+        </facetFields>
+        
+        <types>
+          <fieldType name="text_standard">
+              <analyzer>
+
+                  <filter name="PorterStemFilter" dictionary="" />
+                   
+                  <filter name="StopFilter" words="" />	
+
+		          <filter name="protectedKeyWordsFilter" words="" />
+
+              </analyzer>
+          </fieldType>
+       </types>
+    </schema>
+    
+    <updateLog>
+
+        <logLevel>3</logLevel>
+                         
+        <accessLogFile>./data/attributes/srch2-log.txt</accessLogFile>
+
+    </updateLog>  
+    
+</config>

@@ -36,10 +36,15 @@ namespace srch2 {
     {
     public:
         // tf-idf score computed during index construction phase
-        static float computeRecordTfIdfScore(const float tf, const float idf, const float sumOfFieldBoosts);
+        static float computeTextRelevance(const float tfAndSumOfFieldBoosts, const float idf);
+        static float computeRecordTfBoostProdcut(const float tf, const float sumOfFieldBoosts);
         static float computeTermRecordRuntimeScore(float recordStaticScore, 
                                unsigned editDistance, unsigned termLength, 
                                bool isPrefixMatch, float prefixMatchPenalty, float termSimilarityBoost);
+
+        static float computeIdf(unsigned totalDocumentsCount, unsigned termHitDocumentsCount) {
+        	return 1 + log (totalDocumentsCount / ((float)(termHitDocumentsCount)+1) );
+        }
 
         static double computeScoreforGeo(Point &recordPosition, Shape &queryShape);
 
@@ -86,6 +91,9 @@ namespace srch2 {
         float computePositionalScore(float runtimeScore, float sloppyFrequency) const;
 
         virtual ~Ranker() {};
+
+        static float computeFeedbackBoost(unsigned feedbackRecencyInSecs, unsigned feedbackFrequency);
+        static float computeFeedbackBoostedScore(float score, float boost);
     };
     
     typedef Ranker DefaultTopKRanker;
@@ -125,5 +133,6 @@ namespace srch2 {
     uint8_t computeEditDistanceThreshold(unsigned keywordLength , float similarityThreshold);
     }
 }
+
 
 #endif /* __RANKER_H__ */

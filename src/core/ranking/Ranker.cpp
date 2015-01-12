@@ -32,12 +32,20 @@ namespace srch2
 {
     namespace instantsearch
     {
-    // text relevance score computed during indexing time and stored in the index
-    float DefaultTopKRanker::computeRecordTfIdfScore(const float tf, const float idf, const float sumOfFieldBoosts)
+    // Since the tf * sumOfFieldBoosts never changes during the life cycle of a record, this value
+    // is saved into the forward list so that the engine does not need to compute tf and
+    // sumOfFieldBoosts repeatedly.
+    float DefaultTopKRanker::computeTextRelevance(const float tfBoostProdcut, const float idf)
     {
-        return tf *idf * sumOfFieldBoosts;
+        return tfBoostProdcut * idf;
     }
-    
+
+    //Calculate the product of tf and sumOfFieldBoosts.
+    float DefaultTopKRanker::computeRecordTfBoostProdcut(const float tf, const float sumOfFieldBoosts)
+    {
+        return tf * sumOfFieldBoosts;
+    }
+
     // this function is used in the term virtual list (heap) to compute the score of
     // a record with respect to a keyword 
     float DefaultTopKRanker::computeTermRecordRuntimeScore(float termRecordStaticScore, 
@@ -147,6 +155,55 @@ namespace srch2
     	double resultMinDist2 = queryShape.getMinDist2FromLatLong(recordPosition.x, recordPosition.y);
     	double distanceRatio = ((double)sqrt(minDist2UpperBound) - (double)sqrt(resultMinDist2)) / (double)sqrt(minDist2UpperBound);
     	return max( distanceRatio * distanceRatio, GEO_MIN_DISTANCE_SCORE );
+    }
+
+//    float DefaultTopKRanker::computeFeedbackBoost(unsigned feedbackRecencyInSecs, unsigned feedbackFrequency) {
+//		/*
+//		 *  Feedback boost for a record found in the user feedback list for a query is
+//		 *  calculated as.
+//		 *                           1
+//		 *   FeedbackBoost = 1 + -------------  X  square root (f)
+//		 *                       1 + (t1 - t2)
+//		 *
+//		 *   Where t1 = timestamp of query arrival ( time of creation of this operator).
+//		 *         t2 = most recent timestamp for a record marked as a feedback for this query.
+//		 *         f  = number of times a record was submitted as a feedback for this query.
+//		 */
+//    	float feedbackBoost = 0.0;
+//		float recencyFactor = 1.0 / (1.0 + ((float)(feedbackRecencyInSecs) / 60.0));
+//		float frequencyFactor = sqrtf(feedbackFrequency);
+//		feedbackBoost = 1.0 + recencyFactor * frequencyFactor;
+//		return feedbackBoost;
+//    }
+    float DefaultTopKRanker::computeFeedbackBoost(unsigned feedbackRecencyInSecs, unsigned feedbackFrequency) {
+    	/*
+    	 *  Feedback boost for a record found in the user feedback list for a query is
+    	 *  calculated as.
+    	 *
+    	 *   FeedbackBoost = 1 +     recency factor       *  frequency factor
+    	 *
+    	 *                 = 1 +  (1 - ((t1- t2)/ K)^2 )  *  square root (f)
+    	 *
+    	 *
+    	 *   Where t1 = timestamp of query arrival ( time of creation of this operator).
+    	 *         t2 = most recent timestamp for a record marked as a feedback for this query.
+    	 *         f  = number of times a record was submitted as a feedback for this query.
+    	 *         K =  Constant factor deciding Timespan in second when recency factor will be 0.
+    	 *              We choose 3 months. i.e K = (3 * 30 * 24 * 60 * 60) = 7776000
+    	 *              recency factor is inverted square curve (1-x^2). It decays slowly compared to
+    	 *              inverse function (1/x) or linear function (1-x).
+    	 *              Google "1 - ( x / 7776000)^2" to see the curve.
+    	 *
+    	 */
+    	float feedbackBoost = 0.0;
+    	float recencyFactor = 1.0 - pow(((float)feedbackRecencyInSecs / 7776000.0), 2);
+    	float frequencyFactor = sqrtf(feedbackFrequency);
+    	feedbackBoost = 1.0 + recencyFactor * frequencyFactor;
+    	return feedbackBoost;
+    }
+    // compute the boosted score. original score * feedback boost.
+    float DefaultTopKRanker::computeFeedbackBoostedScore(float score, float boost) {
+    	return score * boost;
     }
 
     /*float DefaultTopKRanker::computeOverallRecordScore(const Query *query, const vector<float> &queryResultTermScores, unsigned recordLength) const

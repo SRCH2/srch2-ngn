@@ -38,7 +38,7 @@
 #include "physical_plan/PhraseSearchOperator.h"
 #include "physical_plan/KeywordSearchOperator.h"
 #include "../highlighter/ServerHighLighter.h"
-
+#include "physical_plan/FeedbackRankingOperator.h"
 #include <vector>
 #include <algorithm>
 #include <iostream>
@@ -176,17 +176,26 @@ void QueryEvaluatorInternal::findKMostPopularSuggestionsSorted(Term *term ,
  */
 int QueryEvaluatorInternal::search(LogicalPlan * logicalPlan , QueryResults *queryResults){
 
-
+	// used for feedback ranking.
+	this->queryStringWithTermsAndOps = logicalPlan->queryStringWithTermsAndOps;
 	ASSERT(logicalPlan != NULL);
 	// need to lock the mutex
 	boost::shared_lock< boost::shared_mutex > lock(this->indexData->globalRwMutexForReadersWriters);
-	//1. first check to see if we have this query in cache
+
 	string key = logicalPlan->getUniqueStringForCaching();
-	boost::shared_ptr<QueryResultsCacheEntry> cachedObject ;
-	if(this->cacheManager->getQueryResultsCache()->getQueryResults(key , cachedObject) == true){
-		// cache hit
-		cachedObject->copyToQueryResultsInternal(queryResults->impl);
-		return queryResults->impl->sortedFinalResults.size();
+
+	// if the query is present in the user feedback index, then skip cache because
+	// its score needs to be re-calculated and its entry in the cache is no longer valid
+	// Possible optimization:(TODO) compare whether user feedback entry for this query is
+	//  more recent than cache entry. If yes, skip cache , otherwise use cache.
+	if (!indexer->getFeedbackIndexer()->hasFeedbackDataForQuery(this->queryStringWithTermsAndOps)) {
+		//1. first check to see if we have this query in cache
+		boost::shared_ptr<QueryResultsCacheEntry> cachedObject ;
+		if(this->cacheManager->getQueryResultsCache()->getQueryResults(key , cachedObject) == true){
+			// cache hit
+			cachedObject->copyToQueryResultsInternal(queryResults->impl);
+			return queryResults->impl->sortedFinalResults.size();
+		}
 	}
 	 /*
 	  * 3. Execute physical plan
@@ -511,6 +520,10 @@ void QueryEvaluatorInternal::setQueryEvaluatorRuntimeParametersContainer(QueryEv
 }
 QueryEvaluatorRuntimeParametersContainer * QueryEvaluatorInternal::getQueryEvaluatorRuntimeParametersContainer(){
 	return &(this->parameters);
+}
+
+FeedbackIndex * QueryEvaluatorInternal::getFeedbackIndex() {
+	return indexer->getFeedbackIndexer();
 }
 
 }}

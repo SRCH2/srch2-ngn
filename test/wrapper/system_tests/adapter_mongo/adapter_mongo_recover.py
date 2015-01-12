@@ -14,7 +14,6 @@ import test_lib
 
 import MongoDBConn
 
-port = '8087'
 dbconn = MongoDBConn.DBConn();
 conn = None
 handler = None
@@ -26,13 +25,9 @@ def startSrch2Engine():
 	#Start the engine server
         args = [binary_path , '--config-file=adapter_mongo/conf.xml']
 
-        if test_lib.confirmPortAvailable(port) == False:
-                print 'Port' + str(port) + ' already in use -aborting '
-                return -1
-
-        print 'starting engine: ' + args[0] + ' ' + args[1]
-        serverHandle = test_lib.startServer(args)
-        test_lib.pingServer(port)
+	serverHandle = test_lib.startServer(args)
+	if serverHandle == None:
+		return -1
 
 #Kill the srch2 engine without saving the index and timestamp
 def killSrch2Engine():
@@ -73,9 +68,8 @@ def mongoDBDropTable():
 
 #prepare the query based on the valid syntax
 def prepareQuery(queryKeywords):
-        query = 'http://localhost:' + port + '/search?'
         # prepare the main query part
-        query = query + 'q='
+        query = 'q='
         # keywords section
         for i in range(0, len(queryKeywords)):
                 if i == (len(queryKeywords)-1):
@@ -99,12 +93,9 @@ def compareResults(testQueriesPath):
 		if(len(value) != 1):
 			resultValue = value[1].rstrip('\n').split('\n')
                 
-                #Construct the query
-                query = prepareQuery(queryValue)
-
-                #Execute the query
-                response = urllib2.urlopen(query).read()
-                response_json = json.loads(response)
+		#construct the query
+		query = prepareQuery(queryValue)
+		response_json = test_lib.searchRequest(query)
 
                 #Check the result
                 failCount += checkResult(query, response_json['results'],resultValue)
@@ -165,8 +156,8 @@ def testCreateIndexes(conn,sqlQueriesPath,testQueriesPath):
 	time.sleep(2)
 	print '=============================='
 
-#Test 2: Start the engine, update the record in mongodb, time
-#then the listener should fetch the results, then engine exits without saving changes.
+#Test 2: Start the engine, update the record in mongodb,
+#and the listener should fetch the results, then engine exits without saving changes.
 def testRunListener(conn,sqlQueriesPath,testQueriesPath):
 	startSrch2Engine()
 	#Modify the table while the srch2 engine is running.

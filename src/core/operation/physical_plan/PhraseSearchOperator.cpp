@@ -38,7 +38,7 @@ bool PhraseSearchOperator::open(QueryEvaluatorInternal * queryEvaluatorInternal,
 			const TrieNode *trieNode = queryEvaluatorInternal->getTrie()->getTrieNodeFromUtf8String(
 					trieRootNode_ReadView->root, keywordString);
 			if (trieNode == NULL){
-				Logger::warn("keyword = '%s' of a phrase query was not found!", keywordString.c_str());
+				//Logger::warn("keyword = '%s' of a phrase query was not found!", keywordString.c_str());
 				phraseErr = true;
 				return false;
 			}

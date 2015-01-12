@@ -100,21 +100,13 @@ def prepareQuery(queryKeywords, fuzzy):
 
 
 def testMultipleCores(queriesAndResultsPath, binary_path):
-    if test_lib.confirmPortAvailable(port) == False:
-        print 'Port ' + str(port) + ' already in use - aborting'
-        return -1
-
     #Start the engine server
-    args = [ binary_path, '--config-file=./multiport/conf-multiport.xml' ]
+    args = [ binary_path, './multiport/conf-multiport.xml','./multiport/conf-multiport-A.xml','./multiport/conf-multiport-B.xml' ]
 
-    if test_lib.confirmPortAvailable(port) == False:
-        print 'Port ' + str(port) + ' already in use - aborting'
+    serverHandle = test_lib.startServer(args)
+    if serverHandle == None:
         return -1
 
-    #print 'starting engine: ' + args[0] + ' ' + args[1]
-    serverHandle = test_lib.startServer(args)
-
-    test_lib.pingServer(port)
     failCount = 0
 
     #######################################
@@ -133,18 +125,15 @@ def testMultipleCores(queriesAndResultsPath, binary_path):
         for coreResult in allResults:
             resultValue=coreResult.split()
             #construct the query
+            query = prepareQuery(queryValue, False)
+            response_json = ''
             if coreNum == 0:
                 # test default core (unnamed core) on 0th iteration
-                query='http://localhost:' + port + '/search?'
+                response_json = test_lib.searchRequest(query)
             else:
-                query='http://localhost:' + port + '/core' + str(coreNum) + '/search?'
-            query = query + prepareQuery(queryValue, False)
-
+                response_json = test_lib.searchRequest(query, 'core' + str(coreNum))
             #do the query
-            response = urllib2.urlopen(query).read()
             #print query + ' Got ==> ' + response
-
-            response_json = json.loads(response)
 
             #check the result
             failCount += checkResult(query, response_json['results'], resultValue)

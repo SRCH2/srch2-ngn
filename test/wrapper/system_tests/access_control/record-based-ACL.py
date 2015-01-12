@@ -5,8 +5,6 @@ import sys,shutil, urllib2, json, time, subprocess, os, commands, signal, re
 sys.path.insert(0, 'srch2lib')
 import test_lib
 
-port = '8087'
-
 # This test case reads data from the json files
 # Then it reads all the access control data from json files too
 # Then it does some search and it uses roleId in the query
@@ -78,14 +76,10 @@ def testMultipleCores(queriesAndResultsPath, binary_path):
     #Start the engine server
     args = [ binary_path, '--config-file=./access_control/conf-acl.xml' ]
 
-    if test_lib.confirmPortAvailable(port) == False:
-        print 'Port ' + str(port) + ' already in use - aborting'
+    serverHandle = test_lib.startServer(args)
+    if serverHandle == None:
         return -1
 
-    print 'starting engine: ' + args[0] + ' ' + args[1]
-    serverHandle = test_lib.startServer(args)
-
-    test_lib.pingServer(port)
     failCount = 0
 
     print "Test core1 - access control"
@@ -99,13 +93,8 @@ def testMultipleCores(queriesAndResultsPath, binary_path):
         	for coreResult in allResults:
             		resultValue=coreResult.split()
             		#construct the query
-            		query='http://localhost:' + port + '/' + queryValue[0] + '/search?'
-            		query = query + prepareQuery(queryValue[1], queryValue[2], False)
-
-            		#do the query
-            		response = urllib2.urlopen(query).read()
-
-            		response_json = json.loads(response)
+            		query = prepareQuery(queryValue[1], queryValue[2], False)
+            		response_json = test_lib.searchRequest(query, queryValue[0])
 
             		#check the result
             		failCount += checkResult(query, response_json['results'], resultValue)
@@ -116,17 +105,8 @@ def testMultipleCores(queriesAndResultsPath, binary_path):
                 command = value[2]
                 payload = value[3]
                 
-                if coreName == "":
-            	    query='http://localhost:' + port + '/' + command
-                else:
-                	query='http://localhost:' + port + '/' + coreName + '/' + command
-                print query
-                request = urllib2.Request(query, data=payload)
-                request.get_method = lambda: 'PUT'
-                opener = urllib2.build_opener(urllib2.HTTPHandler)
-                url = opener.open(request)
+                test_lib.sendPutRequest(command, payload, coreName)
                 time.sleep(1)
-
 
     time.sleep(5)
     test_lib.killServer(serverHandle)

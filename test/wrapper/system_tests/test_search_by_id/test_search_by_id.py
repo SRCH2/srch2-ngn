@@ -5,8 +5,6 @@ import sys, urllib2, json, time, subprocess, os, commands,signal
 sys.path.insert(0, 'srch2lib')
 import test_lib
 
-port = '8087'
-
 #the function of checking the results
 def checkResult(query, responseJsonAll,resultValue):
     responseJson = responseJsonAll['results']
@@ -53,32 +51,24 @@ def checkResult(query, responseJsonAll,resultValue):
 # 8. it searches for id=2 and should find it again
 def testNewFeatures( binary_path):
     # Start the engine server
-    args = [ binary_path, '--config-file=./test_search_by_id/conf.xml' ]
+    args = [ binary_path, './test_search_by_id/conf.xml', './test_search_by_id/conf-A.xml', './test_search_by_id/conf-B.xml' ]
 
-    if test_lib.confirmPortAvailable(port) == False:
-        print 'Port ' + str(port) + ' already in use - aborting'
-        return -1
-
-    print 'starting engine: ' + args[0] + ' ' + args[1]
     serverHandle = test_lib.startServer(args)
-    #make sure that start the engine up
-    test_lib.pingServer(port)
+    if serverHandle == None:
+        return -1
 
     ## first look for id=2
     print "#1: search for id=2 and should find it"
-    query = 'http://localhost:' + port + '/search?docid=2'
+    query = 'docid=2'    
     # do the query
-    response = urllib2.urlopen(query).read()
-    response_json = json.loads(response)
+    response_json = test_lib.searchRequest(query)
     #check the result
     failCount = checkResult(query, response_json,['2'] )
 
     # second search for 200 which is not there    
     print "# 2. Search for id=200 and should not find it"
-    query = 'http://localhost:' + port + '/search?docid=200'
-    # do the query
-    response = urllib2.urlopen(query).read()
-    response_json = json.loads(response)
+    query = 'docid=200'
+    response_json = test_lib.searchRequest(query)
     #check the result
     # NOTE: If you inexplicably don't understand why this test fails and record 200 is found, try deleting
     # the index files.  They're probably leftover from a prior execution.
@@ -86,69 +76,51 @@ def testNewFeatures( binary_path):
 
     # now insert 200
     print "# 3. inserts id=200"
-    insertQuery = 'http://localhost:' + port + '/docs'
-    opener = urllib2.build_opener(urllib2.HTTPHandler)
-    request = urllib2.Request(insertQuery, '{"model": "BMW","price":1.5,"likes":1,"expiration":"01/01/1911", "category": "second verycommonword vitamin Food & Beverages Retail Goods Specialty", "name": "Moondog Visions", "relevance": 8.0312880237855993, "lat": 61.207107999999998, "lng": -149.86541, "id": "200"}')
-    request.get_method = lambda: 'PUT'
-    response = opener.open(request).read()
-    jsonResponse = json.loads(response)
+    record = '{"model": "BMW","price":1.5,"likes":1,"expiration":"01/01/1911", "category": "second verycommonword vitamin Food & Beverages Retail Goods Specialty", "name": "Moondog Visions", "relevance": 8.0312880237855993, "lat": 61.207107999999998, "lng": -149.86541, "id": "200"}'
+    jsonResponse = test_lib.insertRequest(record)
     if jsonResponse['items'][0]['status'] != True:
         print "Insertion of record 200 failed: " + response
         failCount += 1
-    time.sleep(10)
+    time.sleep(3)
 
     # third search for 200 which is there    
     print "# 4. search for id=200 and should find it this time"
-    query = 'http://localhost:' + port + '/search?docid=200'
-    # do the query
-    response = urllib2.urlopen(query).read()
-    response_json = json.loads(response)
+    query = 'docid=200'
+    response_json = test_lib.searchRequest(query)
     #check the result
     failCount += checkResult(query, response_json,['200'] )
 
 
     # now delete record 2
     print "# 5. delete id=2"
-    deleteQuery = 'http://localhost:' + str(port) + '/docs?id=2'
-    opener = urllib2.build_opener(urllib2.HTTPHandler)
-    request = urllib2.Request(deleteQuery, '')
-    request.get_method = lambda: 'DELETE'
-    response = opener.open(request).read()
-    jsonResponse = json.loads(response)
+    deleteQuery = 'id=2'
+    jsonResponse = test_lib.deleteRequest(deleteQuery)
     if jsonResponse['items'][0]['status'] != True:
         print "Deletion of record 2 failed: " + response
         failCount += 1
-    time.sleep(10)
+    time.sleep(3)
 
     # search for record 2 which should not be there
     print "# 6. search for id=2 and should not find it"
-    query = 'http://localhost:' + port + '/search?docid=2'
-    # do the query
-    response = urllib2.urlopen(query).read()
-    response_json = json.loads(response)
+    query = 'docid=2'
+    response_json = test_lib.searchRequest(query)
     #check the result
     failCount += checkResult(query, response_json,[] )
 
 
     # now insert 2
     print "# 7. insert id=2"
-    insertQuery = 'http://localhost:' + port + '/docs'
-    opener = urllib2.build_opener(urllib2.HTTPHandler)
-    request = urllib2.Request(insertQuery, '{"model": "BMW","price":1.5,"likes":1,"expiration":"01/01/1911", "category": "record 2 second verycommonword vitamin Food & Beverages Retail Goods Specialty", "name": "Moondog Visions", "relevance": 8.0312880237855993, "lat": 61.207107999999998, "lng": -149.86541, "id": "2"}')
-    request.get_method = lambda: 'PUT'
-    response = opener.open(request).read()
-    jsonResponse = json.loads(response)
+    record = '{"model": "BMW","price":1.5,"likes":1,"expiration":"01/01/1911", "category": "record 2 second verycommonword vitamin Food & Beverages Retail Goods Specialty", "name": "Moondog Visions", "relevance": 8.0312880237855993, "lat": 61.207107999999998, "lng": -149.86541, "id": "2"}'
+    jsonResponse = test_lib.insertRequest(record)
     if jsonResponse['items'][0]['status'] != True:
         print "Insertion of record 2 failed: " + response
         failCount += 1
-    time.sleep(10)
+    time.sleep(3)
 
     # third search for 200 which is there    
     print "# 8. searches for id=2 and should find it again"
-    query = 'http://localhost:' + port + '/search?docid=2'
-    # do the query
-    response = urllib2.urlopen(query).read()
-    response_json = json.loads(response)
+    query = 'docid=2'
+    response_json = test_lib.searchRequest(query)
 
     #check the result
     failCount += checkResult(query, response_json,['2'] )

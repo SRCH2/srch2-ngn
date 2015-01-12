@@ -66,6 +66,7 @@
     <dataFile>./boolean-expression-test/empty.json</dataFile>
 
     <node-name>node-B</node-name>
+    <wellknownhosts>127.0.0.1:54000</wellknownhosts>
      
     <!--
 	Maximum Number of Threads

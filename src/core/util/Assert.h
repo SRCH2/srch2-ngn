@@ -26,6 +26,9 @@
 #include <cstdio>
 #include <cstdlib>
 #include <cassert>
+#include "Logger.h"
+
+using namespace srch2::util;
 
 namespace srch2
 {
@@ -43,10 +46,10 @@ inline void print_trace (void)
     size = backtrace (array, 10);
     strings = backtrace_symbols (array, size);
 
-    printf ("Obtained %d stack frames.\n", (int) size);
+    Logger::error("Obtained %d stack frames.\n", (int) size);
 
     for (i = 0; i < size; i++)
-        printf ("%s\n", strings[i]);
+    	Logger::error ("%s\n", strings[i]);
 
     free (strings);
 #endif
@@ -60,7 +63,7 @@ inline void print_trace (void)
 #define ASSERT(cond) do {\
         if (cond) {\
         } else {\
-            printf("Assert failed in file=%s and line %d\n", __FILE__, __LINE__); \
+            Logger::error("Assert failed in file=%s and line %d\n", __FILE__, __LINE__); \
             print_trace();\
             abort();\
         }\

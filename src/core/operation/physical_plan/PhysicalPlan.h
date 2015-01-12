@@ -57,7 +57,7 @@ public:
  * The instance of this structure is the container which moves the needed
  * runtime parameters (like isFuzzy of K in topK) through the physical plan.
  */
-
+class FeedbackRanker;
 struct PhysicalPlanExecutionParameters {
 	unsigned k;
 	// if this variable is false the operator only returns exact matches by calling getNext(...)
@@ -68,6 +68,8 @@ struct PhysicalPlanExecutionParameters {
 	bool parentIsCacheEnabled;
 	PhysicalOperatorCacheObject * cacheObject ;
 	unsigned totalNumberOfRecords;
+
+	FeedbackRanker *feedbackRanker;
 
 	PhysicalPlanExecutionParameters(unsigned k,bool isFuzzy,float prefixMatchPenalty,srch2is::QueryType searchType){
 		this->k = k;
@@ -87,6 +89,7 @@ struct PhysicalPlanExecutionParameters {
 
 		cacheObject = NULL;
 		parentIsCacheEnabled = false;
+		feedbackRanker = NULL;
 	}
 
 	~PhysicalPlanExecutionParameters(){
@@ -246,6 +249,11 @@ public:
 	}
 
 	void printSubTree(unsigned indent = 0);
+
+	void setFeedbackBoosted() { isFeedbackBoostedFlag = true; }
+	bool isFeedbackBoosted() { return isFeedbackBoostedFlag; }
+
+	PhysicalPlanOptimizationNode() { isFeedbackBoostedFlag = false; }
 private:
 	PhysicalPlanNode * executableNode;
 	vector<PhysicalPlanOptimizationNode *> children;
@@ -254,6 +262,7 @@ private:
 	PhysicalPlanOptimizationNode * parent;
 
 	LogicalPlanNode * logicalPlanNode;
+	bool isFeedbackBoostedFlag;
 };
 
 

@@ -41,6 +41,14 @@
     -->
     <listeningHostname>127.0.0.1</listeningHostname>
     <listeningPort>8087</listeningPort>
+    <transport>
+        <port>4002</port>
+        <ipaddress>127.0.0.1</ipaddress>
+    </transport>
+    <dataFile>./empty.json</dataFile>
+
+    <node-name>node-B</node-name>
+    <wellknownhosts>127.0.0.1:54000</wellknownhosts>
  
     <!--
         Index Directoy Path

@@ -5,8 +5,6 @@ import sys, urllib2, json, time, subprocess, os, commands, signal
 sys.path.insert(0, 'srch2lib')
 import test_lib
 
-port = '8087'
-
 #the function of checking the results
 def checkResult(query, responseJson, resultValue):
     isPass = 1
@@ -74,17 +72,11 @@ def prepareQuery(queryKeywords, ct_lat, ct_long, ct_radius):
 
 def testFuzzyM1(queriesAndResultsPath, binary_path):
     # Start the engine server
-    args = [ binary_path, '--config-file=./fuzzy_m1/conf.xml' ]
+    args = [ binary_path, './fuzzy_m1/conf.xml', './fuzzy_m1/conf-A.xml', './fuzzy_m1/conf-B.xml']
 
-    if test_lib.confirmPortAvailable(port) == False:
-        print 'Port ' + str(port) + ' already in use - aborting'
-        return -1
-
-    print 'starting server: ' + args[0] + ' ' + args[1]
     serverHandle = test_lib.startServer(args)
-
-    #make sure that start the engine up
-    test_lib.pingServer(port, 'q=goods&clat=61.18&clong=-149.1&radius=0.5')
+    if serverHandle == None:
+        return -1
 
     #construct the query
     print "queriesAndResultsPath:  ",queriesAndResultsPath
@@ -100,13 +92,8 @@ def testFuzzyM1(queriesAndResultsPath, binary_path):
         queryGeo = queryValue[1].split('+')
         resultValue = (value[1]).split()
         #construct the query
-        query = 'http://localhost:' + port + '/search?'
-        query = query + prepareQuery(queryKeyword, queryGeo[1], queryGeo[0], str(radius))
-        #print query
-        
-        # do the query
-        response = urllib2.urlopen(query).read()
-        response_json = json.loads(response)
+        query = prepareQuery(queryKeyword, queryGeo[1], queryGeo[0], str(radius))
+        response_json = test_lib.searchRequest(query)
       
         #check the result
         failCount += checkResult(query, response_json['results'], resultValue)

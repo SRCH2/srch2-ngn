@@ -31,23 +31,35 @@ In the formula, "ed(<i>w_i</i>, <i>t_i</i>)" is the edit distance between <i>w_i
 
 <b>3) TermRecordStaticScore(r, t_i)</b>: It is the static score of this term for this record, which is computed and stored during index construction. It uses an expression customizable in the configuration file. The expression can use the following parameters:
 
-- <b>idf_score</b>: internal IDF score;
-- <b>doc_boost</b>: the boost value of the record as specified in an attribute;
-- <b>doc_length</b>: number of unique keywords in the record.
+- <b>text_relevance(r, t_i)</b>: text-based relevance between the
+  keyword <i>t_i</i> and the record <i>r</i>;
+- <b>doc_boost(r)</b>: the boost value of the record as specified in an attribute;
+- <b>doc_length(r)</b>: number of unique keywords in the record <i>r</i>.
 
 The expression allows operators such as +, -, /, *, (, ), 0-9, etc.
 
-The "idf_score" uses the following formula:
+The "text_relevance" is calculated as:
 
-<center> idf_score(<i>r</i>, <i>t_i</i>) = (1.0 + sumOfFieldBoosts(r, <i>t_i</i>) / sumOfAllFieldBoosts ) * idf(<i>t_i</i>).</center>
+<center> text_relevance(<i>r</i>, <i>t_i</i>) = tf(<i>r</i>, <i>t_i</i>) * idf(<i>t_i</i>) * sumOfFieldBoosts(<i>r</i>, <i>t_i</i>).</center>
 
-The value "sumOfFieldBoosts(<i>r</i>, <i>t_i</i>)" is the summation of the boosts of the attributes in which this keyword <i>t_i</i> appears in <i>r</i>, and "sumOfAllFieldBoosts" is the summation of the boosts of all the searchable attributes. Therefore, we can assign higher boosts to attributes to increase their weights in the ranking.
 
-The value "idf(<i>t_i</i>)" is the inverted document frequency, calculated as follows:
+If [positional ranking](configuration.mkd#74-enable-positional-index-optional) is
+enabled, the value "tf(<i>r</i>, <i>t_i</i>)" is calculated as:
+ <center> tf(<i>r</i>, <i>t_i</i>) = sqrt(# of times <i>t_i</i> appears in <i>r</i>).</center>
+Otherwise, its value is 1.
+
+The value "idf(<i>t_i</i>)" is the inverted document frequency calculated as follows:
 
 <center>idf(<i>t_i</i>) = 1 + <i>log_e</i> (total # of documents/ (# of documents having term <i>t_i</i> + 1)).</center>
 
-In the case where the record <i>r</i> has multiple keywords <i>w_i</i>'s that match term <i>t_i</i>, TermScore(<i>r</i>, <i>t_i</i>) is the largest value among them.
+The value "sumOfFieldBoosts(<i>r</i>, <i>t_i</i>)" is the summation of
+the boosts of the attributes of <i>r</i> that have this keyword <i>t_i</i>.
+Therefore, we can assign higher boosts to attributes to
+increase their weights in the ranking.
+
+In the case where the record <i>r</i> has multiple keywords
+<i>w_i</i>'s that match term <i>t_i</i>, TermScore(<i>r</i>,
+<i>t_i</i>) is the largest value among them.
 
 ##3. Proximity Ranking
 
@@ -110,3 +122,69 @@ a large slop distance (at most 10000).  For instance, we can use
 the condition <center>q="class test"~8000</center> to do proximity ranking for the
 two keywords, by only considering those occurrences where the two keywords
 are at most 8000 words apart.
+
+##4. Feedback-Based Ranking
+
+The SRCH2 engine has a unique, powerful feature to dynamically
+boost the ranking of records based on user feedback.  Here "user feedback"
+means the fact that users selected certain results for a query.
+Intuitively, the more a record is selected by users for a query, the
+more relevant this record should be to the same query in the future.
+For more related information, refer to [feedback
+configuration](../configuration/#15-user-feedback-optional) and
+[feedback API](../restful-control/#7-adding-feedback-for-search-results).
+
+Formally, assume initially a user submits a query <i>Q</i>, which has a set of search
+results {R<sub>1</sub> , R<sub>2</sub>, ..., R<sub>n</sub>}. If the
+user selects the record R<sub>i</sub> as the answer, then the engine
+stores a "feedback tuple":
+<center> <i>F</i> = {<i>Q</i>, R<sub>i</sub>}.</center> 
+If the same query <i>Q</i> is submitted again, possibly by a different
+user, the engine will use the feedback tuple above to boost
+the ranking of the record R<sub>i</sub>.
+
+For example, consider the following query <i>Q</i> with a keyword
+ "trip":
+```
+curl http://server:port/search?q=trip
+```
+It returns the following list of results:
+
+  - R<sub>1</sub> = { "id" : "1", "title" : "TripAdvisor: Reviews of Hotels, Flights and Vacation Rentals" } </br>
+  - R<sub>2</sub> = { "id" : "2", "title" : "Cheap Flights, Hotels & Trips , Trip.com" } </br>
+  - R<sub>3</sub> = { "id" : "3", "title" : "www.tripnet.org The Road Information Program" } </br>
+  - R<sub>4</sub> = { "id" : "4", "title" : "TRIP: Summary for TripAdvisor, Inc.- Yahoo! Finance" } </br>
+  - R<sub>5</sub> = { "id" : "5", "title" : "TRiP Santa Monica * Live Music Santa Monica, Venice" } </br>
+  - R<sub>6</sub> = { "id" : "6", "title" : "KAYAK - My Trips" } </br>
+  - R<sub>7</sub> = { "id" : "7", "title" : "My Trips - a free online trip planner for business, leisure and group travel." }  </br>
+
+Suppose the user selects R<sub>5</sub> as a best match for this
+query. Such a feedback can be submitted to the engine using the
+[feedback API](../restful-control/#7-adding-feedback-for-search-results).  In
+particular, the client (possibly using javascript) sends the following
+request to the engine:
+
+```
+curl "http://server:port/feedback" -X PUT -d  '{query = "trip", recordId = "5"}'
+```
+
+The engine uses the following formula to calculate the boost factor for the record R<sub>i</sub>:
+
+<center><code>Boost<sub>R<sub>i</sub></sub> = 1 +  &Delta;T &times; F<sub>Q</sub><sup>R<sub>i</sub></sup>, </code></center>
+
+where:
+
+ - &Delta;T =  1 - ((T<sub>Q</sub> - T<sub>f</sub><sup>R<sub>i</sub></sup>) / K)<sup>2</sup>;
+ - T<sub>Q</sub> : arrival time of the current query <i>Q</i>;
+ - T<sub>f</sub><sup>R<sub>i</sub></sup> : the most recent time when R<sub>i</sub> was submitted as a feedback for the query <i>Q</i>;
+ - F<sub>Q</sub><sup>R<sub>i</sub></sup> : sqrt(number of times R<sub>i</sub> is selected for query <i>Q</i>).
+
+The final score of the record R<sub>i</sub> will be its original score
+multiplied by this boost factor.  Based on the formula, the more times R<sub>i</sub> is selected for
+query <i>Q</i>, the higher the boost value is.  In addition, as the
+feedback of record R<sub>i</sub> for query <i>Q</i> gets older, its
+effect on its overall score decreases.
+
+
+
+

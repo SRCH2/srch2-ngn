@@ -7,24 +7,18 @@ import sys, urllib2, time, subprocess, os, commands, signal,shutil,json
 sys.path.insert(0,'srch2lib')
 import test_lib
 
-port = '8087'
 serverHandle = None
 totalFailCount = 0
 binary_path = None
 
 #Start the SRCH2 engine with sqlite config file.
-def startSrch2Engine(confPath):
+def startSrch2Engine(args):
     global serverHandle
     #Start the engine server
-    args = [binary_path , '--config-file='+confPath]
 
-    if test_lib.confirmPortAvailable(port) == False:
-        print 'Port' + str(port) + ' already in use -aborting '
-        return -1
-
-    print 'starting engine: ' + args[0] + ' ' + args[1]
     serverHandle = test_lib.startServer(args)
-    test_lib.pingServer(port)
+    if serverHandle == None:
+        return -1
 
 #Shut down the srch2 engine
 def shutdownSrch2Engine():
@@ -100,13 +94,8 @@ def testRefiningAttrType(queriesAndResultsPath):
         fieldValue=value[1].split()
         resultValue=value[2].split()
         #construct the query
-        query='http://localhost:' + port + '/search?'
-        query = query + prepareQuery(queryValue) 
-        #print query
-        #do the query
-        response = urllib2.urlopen(query).read()
-        response_json = json.loads(response)
-
+        query = prepareQuery(queryValue) 
+        response_json = test_lib.searchRequest(query)
         #check the result
         failCount += checkResult(query, response_json['results'], resultValue,fieldValue[0])	
 
@@ -117,7 +106,7 @@ if __name__ == '__main__':
         shutil.rmtree("data")
     #Start the test cases
     binary_path = sys.argv[1]
-    startSrch2Engine('refining_attr_type/conf.xml')
+    startSrch2Engine([binary_path , 'refining_attr_type/conf.xml', 'refining_attr_type/conf-A.xml','refining_attr_type/conf-B.xml'])
     testRefiningAttrType('refining_attr_type/queriesAndResults.txt')
     shutdownSrch2Engine()
     time.sleep(2) # sleep to wait for the engine to shutdown

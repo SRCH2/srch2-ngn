@@ -31,6 +31,7 @@
 #include "boost/algorithm/string/classification.hpp"
 #include <boost/array.hpp>
 #include "util/RecordSerializerUtil.h"
+#include <instantsearch/Ranker.h>
 
 using srch2::util::Logger;
 using std::string;
@@ -132,11 +133,15 @@ void printForwardList(unsigned id, const ForwardList *fl , const Schema * schema
 
     // keyword attribute list
     Logger::debug("keywordAttributeList: ");
-    for (unsigned idx = 0; idx < fl->getNumberOfKeywords(); idx++) {
-    	vector<unsigned> attrs;
-    	fl->getKeywordAttributeIdsList(idx, attrs);
-    	for (unsigned i = 0; i < attrs.size(); ++i)
-    		Logger::debug("[%d]", attrs[i]);
+
+    vector<vector<unsigned> > attrsLists;
+    fl->getKeywordAttributeIdsLists(fl->getNumberOfKeywords(), attrsLists);
+    for (vector<vector<unsigned> >::iterator itLists = attrsLists.begin();
+            itLists != attrsLists.end(); itLists++) {
+        for (vector<unsigned>::iterator it = itLists->begin();
+                it != itLists->end(); it++) {
+            Logger::debug("[%d]", *it);
+        }
     }
 }
 
@@ -521,16 +526,27 @@ void ForwardIndex::addRecord(const Record *record, const unsigned recordId,
         forwardList->setKeywordId(iter, uniqueKeywordIdList[iter].first);
     }
 
+    // Get term frequency list for all keywords
+    vector<float> tfList;
+    forwardList->computeTermFrequencies(uniqueKeywordIdList.size(), tfList);
+    ASSERT(uniqueKeywordIdList.size() == tfList.size());
+
     //Add Score List
     for (unsigned iter = 0; iter < uniqueKeywordIdList.size(); ++iter) {
 
         map<string, TokenAttributeHits>::const_iterator mapIterator =
                 tokenAttributeHitsMap.find(uniqueKeywordIdList[iter].second.first);
         ASSERT(mapIterator != tokenAttributeHitsMap.end());
-        forwardList->setKeywordRecordStaticScore(iter,
-                forwardList->computeFieldBoostSummation(this->schemaInternal,
-                        mapIterator->second));
+        //Get sumOfFieldBoost
+        float boostSum = forwardList->computeFieldBoostSummation(this->schemaInternal,
+                mapIterator->second);
+        //Get term frequency
+        float tf = tfList[iter];
+        float tfBoostProduct = Ranker::computeRecordTfBoostProdcut(tf, boostSum);
+        forwardList->setKeywordTfBoostProduct(iter, tfBoostProduct);    //TF * sumOfFieldBoosts
     }
+
+
 
     ForwardListPtr managedForwardListPtr;
     managedForwardListPtr.first = forwardList;
@@ -721,6 +737,8 @@ void ForwardIndex::reorderForwardList(ForwardList *forwardList,
 
         //Add new keyword Id, score, attribute to the new position
         keywordRichInformationList[keywordOffset].keywordId = newKeywordId;
+        keywordRichInformationList[keywordOffset].keywordTfBoostProduct =
+                forwardList->getKeywordTfBoostProduct(keywordOffset);
         keywordRichInformationList[keywordOffset].keywordScore = forwardList
                 ->getKeywordRecordStaticScore(keywordOffset);
 
@@ -776,6 +794,10 @@ void ForwardIndex::reorderForwardList(ForwardList *forwardList,
             iter != keywordRichInformationList.end(); ++iter) {
         // Copy keywordId
         forwardList->setKeywordId(keywordOffset, iter->keywordId);
+
+        // Copy tf * sumOfFieldBoosts
+        forwardList->setKeywordTfBoostProduct(keywordOffset,
+                iter->keywordTfBoostProduct);
 
         // Copy score
         forwardList->setKeywordRecordStaticScore(keywordOffset,
@@ -968,6 +990,35 @@ unsigned ForwardList::getKeywordOffset(unsigned keywordId) const {
     return vectorIterator - vectorBegin;
 }
 
+unsigned ForwardList::getKeywordOffsetByLinearScan(unsigned keywordId) const {
+	const unsigned* vectorBegin = this->getKeywordIds();
+	const unsigned* vectorEnd = vectorBegin + this->getNumberOfKeywords();
+	const unsigned* vectorIter = vectorBegin;
+	while (vectorIter != vectorEnd) {
+		if (*vectorIter == keywordId) {
+			break;
+		}
+		++vectorIter;
+	}
+	return vectorIter - vectorBegin;
+}
+
+/*
+ *   Populate the term frequency (TF) calculated as square root of all
+ *   term occurrences in all attributes. If keyword is not found then
+ *   set to 0.0. If position index is not enabled then set to 1.0.
+ */
+void ForwardList::computeTermFrequencies(const unsigned numOfKeywords,
+        vector<float> & keywordTfList) const {
+	ASSERT(numOfKeywords <= this->getNumberOfKeywords());
+
+    this->getKeywordTfListInRecordField(keywordTfList);
+
+    //For those attribute ids after keywordTfList.size(), they don't have this keyword, so we set their TF's to be 0.
+    for(int i = keywordTfList.size(); i < numOfKeywords; i++ ){
+        keywordTfList.push_back(0.0);
+    }
+}
 /// Added for stemmer
 bool ForwardList::haveWordInRangeWithStemmer(const SchemaInternal* schema,
         const unsigned minId, const unsigned maxId,
@@ -1197,10 +1248,61 @@ bool ForwardList::isValidRecordTermHitWithStemmer(const SchemaInternal *schema,
      return returnValue;
      */
 }
+
+//Get all the attribute id lists by scanning the attribute map only once.
+void ForwardList::getKeywordAttributeIdsLists(const unsigned numOfKeywords,
+        vector<vector<unsigned> > & attributeIdsLists) const {
+
+    const uint8_t * piPtr = getKeywordAttributeIdsPointer(); // pointer to position index for the record
+
+    attributeIdsLists.clear();
+
+    unsigned piOffset = 0;
+    unsigned value;
+    short byteRead;
+    vector<unsigned> attributeIdsPerKeyword;
+
+    if (attributeIdsIndexSize == 0) {
+        Logger::warn("Attribute Index not found in forward index!!");
+        for (unsigned j = 0; j < numOfKeywords; ++j) {
+            attributeIdsLists.push_back(attributeIdsPerKeyword);
+        }
+        return;
+    }
+
+    if (piPtr == NULL) {
+        for (unsigned j = 0; j < numOfKeywords; ++j) {
+            attributeIdsLists.push_back(attributeIdsPerKeyword);
+        }
+        return;
+    }
+
+    if (*(piPtr + attributeIdsIndexSize - 1) & 0x80) {
+        Logger::error(
+                "Attribute Ids index buffer has bad encoding..last byte is not a terminating one");
+        for (unsigned j = 0; j < numOfKeywords; ++j) {
+            attributeIdsLists.push_back(attributeIdsPerKeyword);
+        }
+        return;
+    }
+
+    // For each attribute, get all its hit attributes.
+    for (unsigned j = 0; j < numOfKeywords; ++j) {
+        attributeIdsPerKeyword.clear();
+
+        ULEB128::varLengthBytesToUInt32(piPtr + piOffset, &value, &byteRead);
+        ULEB128::varLenByteArrayToInt32Vector(
+                (uint8_t *) (piPtr + piOffset + byteRead), value,
+                attributeIdsPerKeyword);
+        attributeIdsLists.push_back(attributeIdsPerKeyword);
+        piOffset += byteRead + value;
+    }
+}
+
 void ForwardList::getKeywordAttributeIdsList(unsigned keywordOffset, vector<unsigned>& attributeIdsList) const{
 
 	if (attributeIdsIndexSize == 0){
-		Logger::warn("Attribute Index not found in forward index!!");
+		// Logger::warn("Attribute Index not found in forward index!!"); // TODO
 		return;
 	}
 	const uint8_t * piPtr = getKeywordAttributeIdsPointer();  // pointer to position index for the record
@@ -1228,11 +1330,37 @@ void ForwardList::getKeywordAttributeIdsList(unsigned keywordOffset, vector<unsi
 	ULEB128::varLenByteArrayToInt32Vector((uint8_t *)(piPtr + piOffset + byteRead), value, attributeIdsList);
 }
 
+void ForwardList::getKeywordTfListInRecordField(
+        vector<float> & keywordTfList) const {
+
+    //If position index is not enabled then set all term frequency to 1.0.
+    if (positionIndexSize == 0) {
+        for (int i = 0; i < this->getNumberOfKeywords(); i++) {
+            keywordTfList.push_back(1.0);
+        }
+        Logger::debug("Position Index not found in forward index!!");
+        return;
+    }
+
+    const uint8_t * piPtr = getPositionIndexPointer();  // pointer to position index for the record
+
+    if (*(piPtr + positionIndexSize - 1) & 0x80) {
+        for (int i = 0; i < this->getNumberOfKeywords(); i++) {
+            keywordTfList.push_back(0);
+        }
+        Logger::error(
+                "position index buffer has bad encoding..last byte is not a terminating one");
+        return;
+    }
+
+    getKeywordTfListFromVLBArray(piPtr, keywordTfList);
+}
+
 void ForwardList::getKeyWordPostionsInRecordField(unsigned keyOffset, unsigned attributeId,
 		 vector<unsigned>& pl) const{
 
 	if (positionIndexSize == 0){
-		Logger::warn("Position Index not found in forward index!!");
+		Logger::debug("Position Index not found in forward index!!");
 		return;
 	}
 
@@ -1316,22 +1444,54 @@ void ForwardList::getSynonymBitMapInRecordField(unsigned keyOffset, unsigned att
 					== currKeywordAttributeIdsList.end())
 		return;
 
-	unsigned totalAttributes = currKeywordAttributeIdsList.size();
-	for (int i = 0; i < totalAttributes; ++i){
-		unsigned value;
-		short byteRead;
-		ULEB128::varLengthBytesToUInt32(piPtr + offset , &value, &byteRead);
-		if (attributeId == currKeywordAttributeIdsList[i]){
-			uint8_t * start = (uint8_t *)(piPtr + offset + byteRead);
-			for (unsigned i = 0; i < value; ++i) {
-				synonymBitMap.push_back(*(start + i));
-			}
-			break;
-		}else {
-			offset += byteRead + value;
-		}
-	}
+    unsigned totalAttributes = currKeywordAttributeIdsList.size();
+    for (int i = 0; i < totalAttributes; ++i) {
+        unsigned value;
+        short byteRead;
+        ULEB128::varLengthBytesToUInt32(piPtr + offset, &value, &byteRead);
+        if (attributeId == currKeywordAttributeIdsList[i]) {
+            uint8_t * start = (uint8_t *) (piPtr + offset + byteRead);
+            for (unsigned i = 0; i < value; ++i) {
+                synonymBitMap.push_back(*(start + i));
+            }
+            break;
+        } else {
+            offset += byteRead + value;
+        }
+    }
 }
+
+void ForwardList::getKeywordTfListFromVLBArray(const uint8_t * piPtr,
+        vector<float> & keywordTfList) const {
+    // get the correct byte array position for current keyword + attribute combination
+    unsigned piOffset = 0;
+    vector<vector<unsigned> > keywordAttributeIdsLists;
+    getKeywordAttributeIdsLists(this->getNumberOfKeywords(),
+            keywordAttributeIdsLists);
+
+    //Iterate over the keywords in the record.
+    for (vector<vector<unsigned> >::iterator it =
+            keywordAttributeIdsLists.begin();
+            it != keywordAttributeIdsLists.end(); ++it) {
+
+        unsigned totalKeywordOccurrences = 0;
+
+        //iterate over the hit attributes for this keyword.
+        for (unsigned k = 0; k < it->size(); ++k) {
+            unsigned value;
+            short byteRead;
+            vector<unsigned> pl;
+            ULEB128::varLengthBytesToUInt32(piPtr + piOffset, &value,
+                    &byteRead);
+            ULEB128::varLenByteArrayToInt32Vector(
+                    (uint8_t *) (piPtr + piOffset + byteRead), value, pl);
+            totalKeywordOccurrences += pl.size();
+            piOffset += byteRead + value;
+        }
+        keywordTfList.push_back(sqrtf(totalKeywordOccurrences));
+    }
+}
+
 void ForwardList::fetchDataFromVLBArray(unsigned keyOffset, unsigned attributeId,
 		 vector<unsigned>& pl, const uint8_t * piPtr) const{
 	// get the correct byte array position for current keyword + attribute combination
@@ -1508,11 +1668,11 @@ bool ForwardIndex::recoverRecord(const std::string &externalRecordId,
 
 // check if a record with a specific internal id exists
 INDEXLOOKUP_RETVAL ForwardIndex::lookupRecord(
-        const std::string &externalRecordId) const {
+        const std::string &externalRecordId, unsigned& internalRecordId) const {
     if (externalRecordId.empty())
         return LU_ABSENT_OR_TO_BE_DELETED;
 
-    unsigned internalRecordId;
+
     bool isInMap = this->externalToInternalRecordIdMap.getValue(externalRecordId , internalRecordId);
 
     if(isInMap == false){
@@ -1625,7 +1785,7 @@ bool isAttributesListsMatching(const vector<unsigned>& list1, const vector<unsig
 void ForwardList::getKeywordAttributeIdsByteArray(unsigned keywordOffset, vector<uint8_t>& attributesVLBarray){
 
 	if (attributeIdsIndexSize == 0){
-		Logger::warn("Attribute Index not found in forward index!!");
+		// Logger::warn("Attribute Index not found in forward index!!"); // TODO
 		return;
 	}
 	const uint8_t * piPtr = getKeywordAttributeIdsPointer();  // pointer to position index for the record
@@ -1659,7 +1819,7 @@ void ForwardList::getKeywordAttributeIdsByteArray(unsigned keywordOffset, vector
 // API to fetch VLB array of word positions in all attributes for a keyword.
 void ForwardList::getKeyWordPostionsByteArray(unsigned keywordOffset, vector<uint8_t>& positionsVLBarray){
 	if (positionIndexSize == 0){
-		Logger::warn("Position Index not found in forward index!!");
+		Logger::debug("Position Index not found in forward index!!");
 		return;
 	}
 

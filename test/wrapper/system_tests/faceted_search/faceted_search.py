@@ -5,7 +5,6 @@ import sys, urllib2, json, time, subprocess, os, commands,signal, argparse
 sys.path.insert(0, 'srch2lib')
 import test_lib
 
-port = '8087'
 numberOfFacetFields= 3;
 
 #the function of checking the results
@@ -110,16 +109,11 @@ def prepareQuery(queryKeywords, facetedFields):
 
 def testFacetedSearch(f_in , f_facet, binary_path):
     # Start the engine server
-    args = [ binary_path, '--config-file=./faceted_search/conf.xml' ]
+    args = [ binary_path, './faceted_search/conf.xml', './faceted_search/conf-A.xml','./faceted_search/conf-B.xml' ]
 
-    if test_lib.confirmPortAvailable(port) == False:
-        print 'Port ' + str(port) + ' already in use - aborting'
-        return -1
-
-    print 'starting engine: ' + args[0] + ' ' + args[1]
     serverHandle = test_lib.startServer(args)
-    #make sure that start the engine up
-    test_lib.pingServer(port)
+    if serverHandle == None:
+        return -1
 
     #parse used to extract facet fields from input
     facet_parser= argparse.ArgumentParser()
@@ -139,9 +133,7 @@ def testFacetedSearch(f_in , f_facet, binary_path):
         facet_args.f=[]
         resultValue=(value[1]).split()
         #construct the query
-        query='http://localhost:' + port + '/search?'
-        query = query + (prepareQuery(queryValue, facetedFields))
-        #print query
+        query = prepareQuery(queryValue, facetedFields)
         
 
         # get facet correct result from file
@@ -150,8 +142,7 @@ def testFacetedSearch(f_in , f_facet, binary_path):
             facetResultValue.append(f_facet.next().strip())
            
         # do the query
-        response = urllib2.urlopen(query).read()
-        response_json = json.loads(response)
+        response_json = test_lib.searchRequest(query)
       
         #check the result
         failCount += checkResult(query, response_json, resultValue , facetResultValue )

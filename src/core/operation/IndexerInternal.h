@@ -31,6 +31,7 @@
 #include <memory>
 #include "util/mypthread.h"
 #include "IndexHealthInfo.h"
+#include "index/FeedbackIndex.h"
 
 using std::vector;
 using std::string;
@@ -44,6 +45,7 @@ class GlobalCache;
 
 class IndexReaderWriter: public Indexer
 {
+	friend void * dispatchMergeWorkerThread(void *arg);
 public:
 
     //TODO put it as private
@@ -69,6 +71,7 @@ public:
 			pthread_mutex_unlock(&lockForWriters);
     	}
     	delete this->index;
+        delete this->userFeedbackIndex;
     };
 
     __DebugShardingInfo * __getDebugShardingInfo(){
@@ -111,6 +114,10 @@ public:
     INDEXWRITE_RETVAL recoverRecord(const std::string &primaryKeyID, unsigned internalRecordId);
 
     INDEXLOOKUP_RETVAL lookupRecord(const std::string &primaryKeyID);
+
+    INDEXLOOKUP_RETVAL lookupRecord(const std::string &primaryKeyID, unsigned& internalRecordId);
+
+    FeedbackIndex * getFeedbackIndexer() { return userFeedbackIndex; }
 
     inline const IndexData *getReadView(IndexReadStateSharedPtr_Token &readToken)
     {
@@ -254,10 +261,14 @@ public:
     inline ForwardIndex * getForwardIndex() const { return this->index->forwardIndex; }
 
     pthread_t createAndStartMergeThreadLoop();
+
+    void createAndStartMergeWorkerThreads();
+
     void startMergeThreadLoop();
 
 private:
     IndexData *index;
+    FeedbackIndex* userFeedbackIndex;
     CacheManager *cache;
 
     IndexHealthInfo indexHealthInfo;
@@ -269,10 +280,13 @@ private:
 	pthread_attr_t mergeThreadAttributes;  // store thread attributes
 	bool mergeEnabledFlag;
 
+	pthread_t *mergerWorkerThreads;  // stores worker thread identifier.
+
     volatile unsigned writesCounterForMerge;
     bool needToSaveIndexes;
     unsigned mergeEveryNSeconds;
     unsigned mergeEveryMWrites;
+    string indexDirectoryName;
 
     unsigned updateHistogramEveryPMerges;
     unsigned updateHistogramEveryQWrites;

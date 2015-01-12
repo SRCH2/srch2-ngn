@@ -51,6 +51,34 @@ public:
 		isPhraseKeywordFlag = false;
 		fieldFilterAttrOperation = ATTRIBUTES_OP_OR;
 	}
+
+	//Copy constructor. Create a new node with same value of Object "input".
+	TermIntermediateStructure(TermIntermediateStructure * input) {
+		this->termQueryString = input->termQueryString;
+		this->rawQueryKeyword = input->rawQueryKeyword;
+
+		this->keywordSimilarityThreshold = input->keywordSimilarityThreshold;
+		this->keywordBoostLevel = input->keywordBoostLevel;
+		this->keywordPrefixComplete = input->keywordPrefixComplete;
+
+		for (vector<string>::iterator it = input->fieldFilter.begin();
+				it != input->fieldFilter.end(); it++) {
+			this->fieldFilter.push_back(*it);
+		}
+
+		this->fieldFilterOp = input->fieldFilterOp;
+
+		this->isPhraseKeywordFlag = input->isPhraseKeywordFlag;
+		this->phraseSlop = input->phraseSlop;
+
+		for (vector<unsigned>::iterator it = input->fieldFilterList.begin();
+				it != input->fieldFilterList.end(); it++) {
+			this->fieldFilterList.push_back(*it);
+		}
+
+		this->fieldFilterAttrOperation = input->fieldFilterAttrOperation;
+	}
+
 	// termQueryString contains the keyword and all the modifiers. It's the original
 	// string coming from the query. For example, if the query is "foo*~0.5 AND author:bar",
 	// termQueryString is foo*~0.5 for the first term and "author:bar" for the second one.

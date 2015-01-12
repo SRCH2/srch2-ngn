@@ -11,7 +11,7 @@
 
 import sys, json, os, urllib
 sys.path.insert(0, 'srch2lib')
-from test_lib import *
+import test_lib
 
 def check_array_contains(results, docs):
     from sets import Set
@@ -24,10 +24,10 @@ def check_array_contains(results, docs):
             return -1
     return 0
 
-def check_expected_hit(expected_hit, search_url):
+def check_expected_hit(expected_hit):
     for hit in expected_hit:
         encoded = urllib.quote(hit[0])
-        response = open_url_get(search_url + encoded)
+        response = test_lib.searchRequest('q=' + encoded)
         ret = check_array_contains(response['results'], hit[1])
         if ret != 0:
             print "hit assert failed:", hit[0]
@@ -35,8 +35,7 @@ def check_expected_hit(expected_hit, search_url):
     return 0
 
 
-def testSearch(host_url):
-    search_url = host_url + '/search?q='
+def testSearch():
     
     def testHit():
         expected_hit = [('曼联',[0,1,4]), 
@@ -47,57 +46,48 @@ def testSearch(host_url):
                         ('冠军',[5]), 
                         ('米兰',[7,8]),
                         ('利物浦',[9])]
-        return check_expected_hit(expected_hit, search_url)
+        return check_expected_hit(expected_hit)
 
     def testQuerySentence():
         expected_hit = [('"孔蒂亲口点出意大利未来核心"',[5]),
                         ('"化身红色利物浦巨龙"', [9])]
-        return check_expected_hit(expected_hit, search_url)
+        return check_expected_hit(expected_hit)
 
     def testPrefix():
         expected_hit = [('红*',[1,3,4,9])]
-        return check_expected_hit(expected_hit, search_url)
+        return check_expected_hit(expected_hit)
 
     return testHit() + testQuerySentence() + testPrefix()
 
-def testInsert(host_url):
-    insert_url = host_url + '/docs'
-    search_url = host_url + '/search?q='
+def testInsert():
     record = '{"id":10, "title":"1600万锋霸后还有强援！曝阿森纳免签世界杯队长铁卫"}'
-    response = open_url_put(insert_url, record)
+    test_lib.insertRequest(record)
     from time import sleep
     sleep(0.5)
     expected_hit = [('阿森纳', [10])]
-    return check_expected_hit(expected_hit, search_url)
+    return check_expected_hit(expected_hit)
 
 if __name__ == '__main__':
     binary_path = sys.argv[1]
-    conf = './chinese/conf.xml'
-    port = detectPort(conf)
-    if confirmPortAvailable(port) == False:
-        print 'Port ' + str(port) + ' already in use - aborting'
-        os._exit(-1)
 
     import shutil
     datadir = './data/chinese'
     if os.path.isdir(datadir): shutil.rmtree(datadir) 
 
-    serverHandle = startServer([binary_path, '--config=' + conf]) 
-    host_url = 'http://127.0.0.1:' + str(port) 
-    pingServer(port)
-    
-    print 'starting engine: ' + host_url + ' ' + conf
+    serverHandle = test_lib.startServer([binary_path, './chinese/conf.xml','./chinese/conf-A.xml','./chinese/conf-B.xml'])
+    if serverHandle == None:
+        os._exit(-1)
     exit_code = 0
 
     try:
-        exit_code  = testSearch(host_url)
-        exit_code += testInsert(host_url)
+        exit_code  = testSearch()
+        exit_code += testInsert()
 
     except Exception, e:
         print e
         exit_code = -1
     finally:
-        serverHandle.kill()
+        test_lib.killServer(serverHandle)  
 
     if exit_code == 0:
         print '\033[92m'+ "Passed", '\033[0m'

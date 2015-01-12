@@ -147,6 +147,10 @@ public:
 		schema = NULL;
 		aclCoreFlag = false;
 		this->attributeAclCoreId = (unsigned) -1;
+
+    	maxFeedbackRecordsPerQuery = 0;
+    	maxFeedbackQueriesCount = 0;
+    	userFeedbackEnabledFlag = false;
 	};
 
 	CoreInfo_t(const CoreInfo_t &src);
@@ -363,6 +367,12 @@ public:
     	return aclCoreFlag;
     }
 
+    bool isUserFeedbackEnabled() const { return userFeedbackEnabledFlag; }
+
+     unsigned getMaxFeedbackRecordsPerQuery() const { return maxFeedbackRecordsPerQuery; }
+
+     unsigned getMaxFeedbackQueriesCount() const { return maxFeedbackQueriesCount; }
+
 protected:
 
 //	vector<string> dataFilePaths;
@@ -506,6 +516,10 @@ protected:
     string recordAclFilePath;
     unsigned attributeAclCoreId;
     bool aclCoreFlag;
+
+    bool userFeedbackEnabledFlag;
+    unsigned maxFeedbackRecordsPerQuery;
+    unsigned maxFeedbackQueriesCount;
 };
 
 }

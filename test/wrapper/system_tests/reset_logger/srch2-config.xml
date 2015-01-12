@@ -14,8 +14,17 @@
 	  <srch2Home>/home/joe/srch2</srch2Home>
         -->
  
-    <listeningHostname>127.0.0.1</listeningHostname>
+    <licenseFile>../../conf/srch2_license_key.txt</licenseFile>
+
+    <listeningHostname>0.0.0.0</listeningHostname>
+
     <listeningPort>8087</listeningPort>
+    <transport>
+        <port>4001</port>
+        <ipaddress>127.0.0.1</ipaddress>
+    </transport>
+    <wellknownhosts>127.0.0.1:54000</wellknownhosts>
+    <node-name>node-with-data</node-name>
  
     <dataDir>./indexes</dataDir>
      

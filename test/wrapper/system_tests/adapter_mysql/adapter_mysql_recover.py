@@ -22,8 +22,6 @@ except ImportError:
     os._exit(-1)
 
 
-
-port = '8087'
 serverHandle = None
 totalFailCount = 0
 binary_path = None
@@ -48,13 +46,9 @@ def startSrch2Engine():
     #Start the engine server
     args = [binary_path , '--config-file=adapter_mysql/conf.xml']
 
-    if test_lib.confirmPortAvailable(port) == False:
-        print 'Port' + str(port) + ' already in use -aborting '
-        return -1
-
-    print 'starting engine: ' + args[0] + ' ' + args[1]
     serverHandle = test_lib.startServer(args)
-    test_lib.pingServer(port)
+    if serverHandle == None:
+        return -1
 
 #Kill the srch2 engine without saving the index and timestamp
 def killSrch2Engine():
@@ -80,12 +74,9 @@ def compareResults(testQueriesPath):
         queryValue = value[0].split()
         resultValue = value[1].split()
 
-        #Construct the query
+        #construct the query
         query = prepareQuery(queryValue)
-
-        #Execute the query
-        response = urllib2.urlopen(query).read()
-        response_json = json.loads(response)
+        response_json = test_lib.searchRequest(query)
 
         #Check the result
         failCount += checkResult(query, response_json['results'],resultValue)
@@ -94,9 +85,8 @@ def compareResults(testQueriesPath):
 
 #prepare the query based on the valid syntax
 def prepareQuery(queryKeywords):
-    query = 'http://localhost:' + port + '/search?'
     # prepare the main query part
-    query = query + 'q='
+    query = 'q='
     # keywords section
     for i in range(0, len(queryKeywords)):
         if i == (len(queryKeywords)-1):
@@ -162,8 +152,8 @@ def testCreateIndexes(conn,sqlQueriesPath,testQueriesPath):
     time.sleep(2)
     print '=============================='
 
-#Test 2: Start the engine, update the record in mysql, time
-#then the listener should fetch the results, then engine exits without saving changes.
+#Test 2: Start the engine, update the record in mysql, 
+#and the listener should fetch the results, then engine exits without saving changes.
 def testRunListener(conn,sqlQueriesPath,testQueriesPath):
     startSrch2Engine()
     #Modify the table while the srch2 engine is running.
@@ -216,7 +206,7 @@ if __name__ == '__main__':
         conn = mysql.connector.connect(host="127.0.0.1",user=myUserName, password=myPassword)
     except :
         print 'Access denied while connecting to the MySQL database. Set the MySQL user name and password in ./adapter_mysql/conf.xml'
-        os._exit(-2)
+        os._exit(-1)
         
     #Remove the srch2Test database and tables
     conn.cursor().execute('DROP DATABASE IF EXISTS srch2Test ')

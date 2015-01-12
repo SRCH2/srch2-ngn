@@ -5,8 +5,6 @@ import sys, urllib2, json, time, subprocess, os, commands,signal
 sys.path.insert(0, 'srch2lib')
 import test_lib
 
-port = '8087'
-
 #the function of checking the results
 def checkResult(query, responseJsonAll,resultValue):
     responseJson = responseJsonAll['results']
@@ -42,16 +40,11 @@ def checkResult(query, responseJsonAll,resultValue):
 
 def testDateAndTime(queriesAndResultsPath , binary_path):
     # Start the engine server
-    args = [ binary_path, '--config-file=./date_time_new_features_test/conf.xml' ]
+    args = [ binary_path, './date_time_new_features_test/conf.xml', './date_time_new_features_test/conf-A.xml', './date_time_new_features_test/conf-B.xml' ]
 
-    if test_lib.confirmPortAvailable(port) == False:
-        print 'Port ' + str(port) + ' already in use - aborting'
-        return -1
-
-    print 'starting engine: ' + args[0] + ' ' + args[1]
     serverHandle = test_lib.startServer(args)
-    #make sure that start the engine up
-    test_lib.pingServer(port)
+    if serverHandle == None:
+        return -1
 
     #construct the query
 
@@ -63,16 +56,10 @@ def testDateAndTime(queriesAndResultsPath , binary_path):
         queryValue=value[0]
         resultValue=(value[1]).split()
         #construct the query
-        query='http://localhost:' + str(port) + '/search?'
-        query = query + queryValue
-        #print query
-
-        # do the query
-        response = urllib2.urlopen(query).read()
-        response_json = json.loads(response)
+        response_json = test_lib.searchRequest(queryValue)
       
         #check the result
-        failCount += checkResult(query, response_json, resultValue )
+        failCount += checkResult(queryValue, response_json, resultValue )
 
     test_lib.killServer(serverHandle)
     print '=============================='

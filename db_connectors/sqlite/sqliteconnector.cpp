@@ -204,6 +204,11 @@ int SQLiteConnector::createNewIndexes() {
         if (rc == SQLITE_OK) {
             Logger::info("SQLITECONNECTOR: Total indexed %d / %d records. ",
                     indexedRecordsCount, totalRecordsCount);
+
+            std::stringstream ss;
+            ss << time(NULL);
+            lastAccessedLogRecordTimeStr = ss.str();
+
             return 0;
         }
 
@@ -714,9 +719,14 @@ void SQLiteConnector::loadLastAccessedLogRecordTime() {
         a_file >> lastAccessedLogRecordTimeStr;
         a_file.close();
     } else {
-        std::stringstream ss;
-        ss << time(NULL);
-        lastAccessedLogRecordTimeStr = ss.str();
+        if(lastAccessedLogRecordTimeStr.compare(DEFAULT_STRING_VALUE)==0){
+            Logger::error("SQLITECONNECTOR: Can not find %s. The data may be"
+                    "inconsistent. Please rebuild the indexes.",
+                    path.c_str());
+            std::stringstream ss;
+            ss << time(NULL);
+            lastAccessedLogRecordTimeStr = ss.str();
+        }
     }
 }
 

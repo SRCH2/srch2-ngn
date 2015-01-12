@@ -37,10 +37,45 @@
 #include "util/Assert.h"
 #include "util/cowvector/compression/cowvector_S16.h"
 #include "analyzer/AnalyzerContainers.h"
+#include "analyzer/Dictionary.h"
+
 using namespace std;
 using namespace srch2::instantsearch;
 
 
+
+void testDictionarySerializer()
+{
+  Dictionary dict;
+  string dictionarySerializedFile = "testDictionarySerializer.bin";
+
+  // construct a dictionary and serialize it to disk
+  vector<string> words;
+  vector<short> freqs;
+  words.push_back("设备");    freqs.push_back(rand() % 100);
+  words.push_back("系统");    freqs.push_back(rand() % 100);
+  words.push_back("需要");    freqs.push_back(rand() % 100);
+  words.push_back("拍摄");    freqs.push_back(rand() % 100);
+  words.push_back("凭证");    freqs.push_back(rand() % 100);
+  words.push_back("中国内地");freqs.push_back(rand() % 100);
+  words.push_back("遥遥无期");freqs.push_back(rand() % 100);
+  words.push_back("使用");    freqs.push_back(rand() % 100);
+  words.push_back("功能");    freqs.push_back(rand() % 100);
+  words.push_back("问题");    freqs.push_back(rand() % 100);
+  words.push_back("修复");    freqs.push_back(rand() % 100);
+
+  for (int i = 0; i < words.size(); i ++) {
+    dict.insert(words[i], freqs[i]);
+  }
+  dict.saveDict(dictionarySerializedFile);
+    
+  // load the serialized dictionary; check its content
+  dict.loadDict(dictionarySerializedFile);
+  for (int i = 0; i < words.size(); i ++) {
+    short retrievedFreq = dict.getFreq(words[i]);
+    ASSERT(retrievedFreq == freqs[i]);
+  }
+}
 
 //SimpleAnalyzer organizes a tokenizer using " " as the delimiter and a "ToLowerCase" filter
 void testSimpleAnalyzer()
@@ -1205,6 +1240,10 @@ int main() {
         return 0;
     }
     Logger::setLogLevel(Logger::SRCH2_LOG_DEBUG);
+
+
+    testDictionarySerializer();
+
 
     string dataDir(getenv("dataDir"));
 

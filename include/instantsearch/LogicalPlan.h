@@ -13,7 +13,7 @@
  * OR PROFITS, WHETHER IN AN ACTION OF CONTRACT, NEGLIGENCE OR OTHER ACTION, ARISING OUT OF OR IN CONNECTION
  * WITH THE USE OR PERFORMANCE OF SOFTWARE.
 
- * Copyright © 2010 SRCH2 Inc. All rights reserved
+ * Copyright �� 2010 SRCH2 Inc. All rights reserved
  */
 
 #ifndef __WRAPPER_LOGICALPLAN_H__
@@ -194,6 +194,7 @@ public:
 	ResultsPostProcessorPlan * postProcessingPlan;
 	ResultsPostProcessingInfo * postProcessingInfo;
 
+	string queryStringWithTermsAndOps;
     // constructs a term logical plan node
     LogicalPlanNode * createTermLogicalPlanNode(const std::string &queryKeyword,
     		TermType type,

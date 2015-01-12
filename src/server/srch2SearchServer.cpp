@@ -144,6 +144,13 @@ int main(int argc, char** argv) {
 	}
 
 	/*
+	 *  Check whether the license file is valid
+	 */
+
+	LicenseVerifier::testFile(runtime->getConfigManager()->getLicenseKeyFileName());
+
+
+	/*
 	 *  Check whether another process is holding the lock on node-name
 	 */
 
@@ -155,7 +162,6 @@ int main(int argc, char** argv) {
 		Logger::error("error: Node name is not usable. Another instance is running with the same node name.");
 		exit(-1);
 	}
-
 
 	/*****************
 	 * Setup the Logger.
@@ -239,7 +245,6 @@ int main(int argc, char** argv) {
 	 * Open external HTTP channels to accept requests.
 	 */
 	runtime->openExternalChannels();
-
 
 
 	/**************

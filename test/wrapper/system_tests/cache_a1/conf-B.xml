@@ -37,6 +37,7 @@
         <port>4002</port>
         <ipaddress>127.0.0.1</ipaddress>
     </transport>
+    <wellknownhosts>127.0.0.1:54000</wellknownhosts>
 
     <!--
         Hostname and Port Number

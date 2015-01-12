@@ -131,6 +131,7 @@ enum PortType_t {
     BulkLoadRecords,
     BulkLoadAttributeAcl,
     BulkLoadRecordAcl,
+    UserFeedback,
     //--------------------------------
 	GlobalPortsStart, // used in portNameMap
 	InfoPort_Nodes_NodeID,
