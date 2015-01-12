@@ -85,7 +85,7 @@ unsigned SearchCommandResults::getNumberOfBytesBody() const{
 
 //given a byte stream recreate the original object
 void * SearchCommandResults::deserializeBody(void * buffer){
-	unsigned sizeValue = 0;
+	uint32_t sizeValue = 0;
 	buffer = srch2::util::deserializeFixedTypes(buffer, sizeValue);
 	for(unsigned qrIdx = 0 ;  qrIdx < sizeValue; ++qrIdx){
 		ShardResults * newShardResults = ShardResults::deserialize(buffer);

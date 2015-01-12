@@ -79,8 +79,8 @@ struct Term::Impl
     	buffer = srch2::util::serializeFixedTypes(similarityBoost, buffer);
     	buffer = srch2::util::serializeFixedTypes(threshold, buffer);
     	buffer = srch2::util::serializeVectorOfFixedTypes(searchableAttributeIdsToFilter, buffer);
-    	buffer = srch2::util::serializeFixedTypes(attrOp, buffer);
-    	buffer = srch2::util::serializeFixedTypes(type, buffer);
+    	buffer = srch2::util::serializeFixedTypes((uint32_t)attrOp, buffer);
+    	buffer = srch2::util::serializeFixedTypes((uint32_t)type, buffer);
     	buffer = srch2::util::serializeString(keyword, buffer);
 
     	return buffer;
@@ -90,21 +90,24 @@ struct Term::Impl
     	buffer = srch2::util::deserializeFixedTypes(buffer,similarityBoost);
     	buffer = srch2::util::deserializeFixedTypes(buffer,threshold);
     	buffer = srch2::util::deserializeVectorOfFixedTypes(buffer, searchableAttributeIdsToFilter);
-    	buffer = srch2::util::deserializeFixedTypes(buffer,attrOp);
-    	buffer = srch2::util::deserializeFixedTypes(buffer,type);
+    	uint32_t intVar = 0;
+    	buffer = srch2::util::deserializeFixedTypes(buffer,intVar);
+    	attrOp = (ATTRIBUTES_OP)intVar;
+    	buffer = srch2::util::deserializeFixedTypes(buffer,intVar);
+    	type = (TermType)intVar;
     	buffer = srch2::util::deserializeString(buffer,keyword);
 
     	return buffer;
     }
     unsigned getNumberOfBytesForNetwork(){
     	unsigned numberOfBytes = 0;
-    	numberOfBytes += sizeof(boost);
-    	numberOfBytes += sizeof(similarityBoost);
-    	numberOfBytes += sizeof(threshold);
+    	numberOfBytes += srch2::util::getNumberOfBytesFixedTypes(boost);
+    	numberOfBytes += srch2::util::getNumberOfBytesFixedTypes(similarityBoost);
+    	numberOfBytes += srch2::util::getNumberOfBytesFixedTypes(threshold);
     	numberOfBytes += srch2::util::getNumberOfBytesVectorOfFixedTypes(searchableAttributeIdsToFilter);
-    	numberOfBytes += sizeof(attrOp);
-    	numberOfBytes += sizeof(type);
-    	numberOfBytes += sizeof(unsigned) + keyword.size();
+    	numberOfBytes += srch2::util::getNumberOfBytesFixedTypes((uint32_t)attrOp);
+    	numberOfBytes += srch2::util::getNumberOfBytesFixedTypes((uint32_t)type);
+    	numberOfBytes += srch2::util::getNumberOfBytesString(keyword);
 
     	return numberOfBytes;
     }

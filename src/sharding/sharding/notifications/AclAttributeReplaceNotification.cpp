@@ -17,6 +17,7 @@ AclAttributeReplaceNotification::AclAttributeReplaceNotification(const vector<st
 }
 AclAttributeReplaceNotification::AclAttributeReplaceNotification(){
 	ShardManager::getReadview(clusterReadview);
+	this->coreId = 0;
 }
 
 bool AclAttributeReplaceNotification::resolveNotification(SP(ShardingNotification) _notif){

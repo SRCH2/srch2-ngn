@@ -90,7 +90,7 @@ public:
 	 * | order | field |
 	 */
 	void * serializeForNetwork(void * buffer) const {
-		buffer = srch2::util::serializeFixedTypes(this->order,buffer);
+		buffer = srch2::util::serializeFixedTypes((uint32_t)this->order,buffer);
 		buffer = srch2::util::serializeVectorOfString(field, buffer);
 		return buffer;
 	}
@@ -99,7 +99,9 @@ public:
 	 * | order | field |
 	 */
 	static void * deserializeForNetwork(SortEvaluator & info, void * buffer) {
-		buffer = srch2::util::deserializeFixedTypes(buffer, info.order);
+		uint32_t intVar = 0;
+		buffer = srch2::util::deserializeFixedTypes(buffer, intVar);
+		info.order = (SortOrder)intVar;
 		buffer = srch2::util::deserializeVectorOfString(buffer, ((SortFilterEvaluator &)info).field);
 		return buffer;
 	}
@@ -109,7 +111,7 @@ public:
 	 */
 	unsigned getNumberOfBytesForSerializationForNetwork() const{
 		unsigned numberOfBytes = 0;
-		numberOfBytes += sizeof(order);
+		numberOfBytes += srch2::util::getNumberOfBytesFixedTypes((uint32_t)order);
 		numberOfBytes += srch2::util::getNumberOfBytesVectorOfString(field);
 		return numberOfBytes;
 	}

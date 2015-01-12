@@ -288,6 +288,7 @@ Write2PCNotification::ACK::ShardResult::~ShardResult(){
 }
 Write2PCNotification::ACK::ShardResult::ShardResult(){
 	shardId = NULL;
+	statusValue = false;
 }
 
 void * Write2PCNotification::ACK::ShardResult::serialize(void * buffer) const{

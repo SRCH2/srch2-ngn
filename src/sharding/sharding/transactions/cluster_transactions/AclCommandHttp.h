@@ -74,6 +74,7 @@ private:
     	ASSERT(this->aclCoreInfo != NULL);
     	ASSERT(this->coreInfo != NULL);
         aclCommand = NULL;
+        action = ACL_REPLACE;
     }
 
     /*

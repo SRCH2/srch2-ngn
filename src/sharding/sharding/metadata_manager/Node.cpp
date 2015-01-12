@@ -91,13 +91,12 @@ Node * Node::deserializeForNetwork(void* buffer){
 
 unsigned Node::getNumberOfBytesForNetwork(){
 	unsigned numberOfBytes = 0;
-	numberOfBytes += sizeof(unsigned);
-	numberOfBytes += sizeof(unsigned) + ipAddress.size();
-	numberOfBytes += sizeof(unsigned);
-	numberOfBytes += sizeof(unsigned) + nodeName.size();
+	numberOfBytes += sizeof(NodeId);
+	numberOfBytes += srch2::util::getNumberOfBytesString(ipAddress);
+	numberOfBytes += sizeof(uint32_t);
+	numberOfBytes += srch2::util::getNumberOfBytesString(nodeName);
 	numberOfBytes += sizeof(bool);
 	numberOfBytes += sizeof(bool);
-	numberOfBytes += sizeof(unsigned);
 	numberOfBytes += sizeof(bool); // this is master
 	return numberOfBytes;
 }
@@ -121,21 +120,21 @@ string Node::serialize() {
 void Node::deserialize(char *serlializedNode) {
 
 	char *buffer = serlializedNode;
-	nodeId = *(unsigned *)buffer;
-	buffer += sizeof(nodeId);
+	nodeId = *(NodeId *)buffer;
+	buffer += sizeof(NodeId);
 
-	unsigned size = *(unsigned *)buffer;
-	buffer += sizeof(size);
+	uint32_t size = *(uint32_t *)buffer;
+	buffer += sizeof(uint32_t);
 	nodeName.assign(buffer, buffer + size);
 	buffer += size;
 
-	size = *(unsigned *)buffer;
-	buffer += sizeof(size);
+	size = *(uint32_t *)buffer;
+	buffer += sizeof(uint32_t);
 	ipAddress.assign(buffer, buffer + size);
 	buffer += size;
 
-	portNumber = *(unsigned *)buffer;
-	buffer += sizeof(portNumber);
+	portNumber = *(uint32_t *)buffer;
+	buffer += sizeof(uint32_t);
 
 	thisIsMe = *(bool *)buffer;
 	buffer += sizeof(thisIsMe);

@@ -87,12 +87,12 @@ struct DiscoveryMessage {
 	//
 	unsigned getNumberOfBytes() const{
 		unsigned numberOfBytes = 0;
-		numberOfBytes += sizeof(flag) ;
-		numberOfBytes += sizeof(interfaceNumericAddress) ;
-		numberOfBytes += sizeof(internalCommunicationPort) ;
-		numberOfBytes += sizeof(nodeId) ;
-		numberOfBytes += sizeof(masterNodeId) ;
-		numberOfBytes += sizeof(ackMessageIdentifier) ;
+		numberOfBytes += srch2::util::getNumberOfBytesFixedTypes(flag) ;
+		numberOfBytes += srch2::util::getNumberOfBytesFixedTypes(interfaceNumericAddress) ;
+		numberOfBytes += srch2::util::getNumberOfBytesFixedTypes(internalCommunicationPort) ;
+		numberOfBytes += srch2::util::getNumberOfBytesFixedTypes(nodeId) ;
+		numberOfBytes += srch2::util::getNumberOfBytesFixedTypes(masterNodeId) ;
+		numberOfBytes += srch2::util::getNumberOfBytesFixedTypes(ackMessageIdentifier) ;
 		numberOfBytes += 100;
 		return numberOfBytes;
 	}

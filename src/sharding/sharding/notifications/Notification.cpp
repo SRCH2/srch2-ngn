@@ -14,6 +14,8 @@ namespace httpwrapper {
 
 NodeOperationId::NodeOperationId(){
 	// temp init used for deserialization
+	this->nodeId = (uint32_t)-1;
+	this->operationId = (uint32_t)-1;
 }
 NodeOperationId::NodeOperationId(const NodeOperationId & id){
 	this->nodeId = id.nodeId;

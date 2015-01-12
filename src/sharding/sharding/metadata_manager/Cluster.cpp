@@ -17,8 +17,9 @@ ClusterResourceMetadata_Readview::ClusterResourceMetadata_Readview(unsigned vers
 		string clusterName, vector<const CoreInfo_t *> cores){
 	this->versionId = versionId;
 	this->clusterName = clusterName;
-	for(unsigned coreIdx = 0; coreIdx < cores.size() ; ++coreIdx){
-		unsigned coreId = cores.at(coreIdx)->getCoreId();
+	this->currentNodeId = 0;
+	for(uint32_t coreIdx = 0; coreIdx < cores.size() ; ++coreIdx){
+		uint32_t coreId = cores.at(coreIdx)->getCoreId();
 		allCores[coreId] = cores.at(coreIdx);
 		corePartitioners[coreId] = new CorePartitionContianer(coreId, cores.at(coreIdx)->getNumberOfPrimaryShards(),
 				cores.at(coreIdx)->getNumberOfReplicas());
@@ -33,11 +34,11 @@ ClusterResourceMetadata_Readview::ClusterResourceMetadata_Readview(const Cluster
 	this->allCores = copy.allCores;
 	this->allNodes = copy.allNodes;
 
-	for(map<unsigned, CorePartitionContianer *>::const_iterator coreItr = copy.corePartitioners.begin();
+	for(map<uint32_t, CorePartitionContianer *>::const_iterator coreItr = copy.corePartitioners.begin();
 			coreItr != copy.corePartitioners.end(); ++coreItr ){
 		this->corePartitioners[coreItr->first] = new CorePartitionContianer(*(coreItr->second));
 	}
-	for(map<unsigned, LocalShardContainer *>::const_iterator coreItr = copy.localShardContainers.begin();
+	for(map<uint32_t, LocalShardContainer *>::const_iterator coreItr = copy.localShardContainers.begin();
 			coreItr != copy.localShardContainers.end(); ++coreItr ){
 		this->localShardContainers[coreItr->first] = new LocalShardContainer(*(coreItr->second));
 	}
@@ -45,8 +46,8 @@ ClusterResourceMetadata_Readview::ClusterResourceMetadata_Readview(const Cluster
 
 ClusterResourceMetadata_Readview::~ClusterResourceMetadata_Readview(){
 
-	for(unsigned coreIdx = 0; coreIdx < allCores.size() ; ++coreIdx){
-		unsigned coreId = allCores.at(coreIdx)->getCoreId();
+	for(uint32_t coreIdx = 0; coreIdx < allCores.size() ; ++coreIdx){
+		uint32_t coreId = allCores.at(coreIdx)->getCoreId();
 		delete corePartitioners[coreId];
 		delete localShardContainers[coreId];
 	}
@@ -57,7 +58,7 @@ ClusterResourceMetadata_Readview::~ClusterResourceMetadata_Readview(){
 		return;
 	}
 	pthread_t & rvReleaseThread = *(shardManager->getNewThread());
-	unsigned * vid = new unsigned;
+	uint32_t * vid = new uint32_t;
 	*vid = this->versionId;
     if (pthread_create(&rvReleaseThread, NULL, ShardManager::resolveReadviewRelease , vid) != 0){
         // Logger::console("Cannot create thread for handling local message");

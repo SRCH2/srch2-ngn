@@ -55,11 +55,11 @@ struct MigrationInitMsgBody{
 		unsigned numberOfBytes = 0;
 		numberOfBytes += migratingShardId.getNumberOfBytes();
 		numberOfBytes += destinationShardId.getNumberOfBytes();
-		numberOfBytes += sizeof(unsigned);
-		numberOfBytes += sizeof(unsigned);
-		numberOfBytes += sizeof(unsigned);
-		numberOfBytes += sizeof(unsigned);
-		numberOfBytes += sizeof(unsigned);
+		numberOfBytes += srch2::util::getNumberOfBytesFixedTypes(srcOperationId);
+		numberOfBytes += srch2::util::getNumberOfBytesFixedTypes(dstOperationId);
+		numberOfBytes += srch2::util::getNumberOfBytesFixedTypes(srcNodeId);
+		numberOfBytes += srch2::util::getNumberOfBytesFixedTypes(dstNodeId);
+		numberOfBytes += srch2::util::getNumberOfBytesFixedTypes(shardComponentCount);
 		return numberOfBytes;
 	}
 	void * deserialize(void * buffer){
@@ -87,8 +87,8 @@ struct MigrationInitAckMsgBody{
 	unsigned getNumberOfBytes() const{
 		unsigned numberOfBytes = 0;
 		numberOfBytes += shardId.getNumberOfBytes();
-		numberOfBytes += sizeof(unsigned);
-		numberOfBytes += sizeof(short);
+		numberOfBytes += srch2::util::getNumberOfBytesFixedTypes(ipAddress);
+		numberOfBytes += srch2::util::getNumberOfBytesFixedTypes(portnumber);
 		return numberOfBytes;
 	}
 	void * deserialize(void * buffer){
@@ -112,8 +112,8 @@ struct ShardComponentInfoMsgBody {
 	unsigned getNumberOfBytes() const{
 		unsigned numberOfBytes = 0;
 		numberOfBytes += shardId.getNumberOfBytes();
-		numberOfBytes += sizeof(unsigned);
-		numberOfBytes += sizeof(unsigned) + componentName.size();
+		numberOfBytes += srch2::util::getNumberOfBytesFixedTypes(componentSize);
+		numberOfBytes += srch2::util::getNumberOfBytesString(componentName);
 		return numberOfBytes;
 	}
 	void * deserialize(void * buffer){
@@ -154,7 +154,7 @@ struct MigrationData {
 	unsigned getNumberOfBytes() const{
 		unsigned numberOfBytes = 0;
 		numberOfBytes += shardId.getNumberOfBytes();
-		numberOfBytes += sizeof(unsigned);
+		numberOfBytes += srch2::util::getNumberOfBytesFixedTypes(sequenceNumber);
 		numberOfBytes += BLOCK_SIZE;
 		return numberOfBytes;
 	}

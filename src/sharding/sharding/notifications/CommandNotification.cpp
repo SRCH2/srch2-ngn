@@ -30,6 +30,7 @@ CommandNotification::CommandNotification(boost::shared_ptr<const ClusterResource
 }
 CommandNotification::CommandNotification(){
 	// for deserialization
+	this->commandCode = ShardCommandCode_Merge;
 	ShardManager::getReadview(clusterReadview);
 }
 
@@ -52,7 +53,7 @@ ShardingMessageType CommandNotification::messageType() const{
 }
 void * CommandNotification::serializeBody(void * buffer) const{
 	buffer = target.serialize(buffer);
-	buffer = srch2::util::serializeFixedTypes(commandCode, buffer);
+	buffer = srch2::util::serializeFixedTypes((uint32_t)commandCode, buffer);
 	if(commandCode == ShardCommandCode_Export){
 		buffer = srch2::util::serializeString(jsonFilePath, buffer);
 	}
@@ -75,7 +76,9 @@ unsigned CommandNotification::getNumberOfBytesBody() const{
 }
 void * CommandNotification::deserializeBody(void * buffer) {
 	buffer = target.deserialize(buffer);
-	buffer = srch2::util::deserializeFixedTypes(buffer, commandCode);
+	uint32_t intVar = 0;
+	buffer = srch2::util::deserializeFixedTypes(buffer, intVar);
+	commandCode = (ShardCommandCode)intVar;
 	if(commandCode == ShardCommandCode_Export){
 		buffer = srch2::util::deserializeString(buffer, jsonFilePath);
 	}

@@ -235,7 +235,7 @@ void ResourceMetadataManager::setWriteview(Cluster_Writeview * newWriteview, con
 	}// assumes we already have both writeview and nodes X locked.
 }
 
-unsigned ResourceMetadataManager::applyAndCommit(MetadataChange * metadataChange, Cluster_Writeview * writeview){
+uint32_t ResourceMetadataManager::applyAndCommit(MetadataChange * metadataChange, Cluster_Writeview * writeview){
 	// apply change on writeview and commit
 	if(metadataChange == NULL){
 		ASSERT(false);
@@ -248,7 +248,7 @@ unsigned ResourceMetadataManager::applyAndCommit(MetadataChange * metadataChange
 	return writeview->versionId - 1;
 }
 
-unsigned ResourceMetadataManager::applyAndCommit(MetadataChange * metadataChange){
+uint32_t ResourceMetadataManager::applyAndCommit(MetadataChange * metadataChange){
 	this->writeviewMutex.lock();
 	unsigned oldVersionId = applyAndCommit(metadataChange, this->writeview);
     pthread_spin_lock(&m_spinlock_writeview);
@@ -258,8 +258,8 @@ unsigned ResourceMetadataManager::applyAndCommit(MetadataChange * metadataChange
 	return oldVersionId;
 }
 
-unsigned ResourceMetadataManager::getClusterWriteviewVersionID(){
-    unsigned id = 0;
+uint32_t ResourceMetadataManager::getClusterWriteviewVersionID(){
+	uint32_t id = 0;
 	pthread_spin_lock(&m_spinlock_writeview);
     id = writeviewVersionId;
     pthread_spin_unlock(&m_spinlock_writeview);

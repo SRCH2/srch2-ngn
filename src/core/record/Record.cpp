@@ -84,18 +84,22 @@ struct Record::Impl
      */
     unsigned getNumberOfBytesSize(){
     	unsigned numberOfBytes = 0;
-    	numberOfBytes += sizeof(unsigned) + primaryKey.size();
-    	numberOfBytes += sizeof(unsigned);
+    	numberOfBytes += srch2::util::getNumberOfBytesString(primaryKey);
+    	numberOfBytes += srch2::util::
+    			getNumberOfBytesFixedTypes((uint32_t)searchableAttributeValues.size());
     	for(std::vector<vector<string> >::iterator searchableAttributeItr = searchableAttributeValues.begin();
     			searchableAttributeItr != searchableAttributeValues.end() ; ++searchableAttributeItr){
        		numberOfBytes += srch2::util::getNumberOfBytesVectorOfString(*searchableAttributeItr);
     	}
    		numberOfBytes += srch2::util::getNumberOfBytesVectorOfString(refiningAttributeValues);
-    	numberOfBytes += sizeof(boost);
+    	numberOfBytes += srch2::util::getNumberOfBytesFixedTypes(boost);
     	// we don't serialize schema because it's accessible in all shards and all nodes
-    	numberOfBytes += sizeof(unsigned) + inMemoryRecordString.size();
-    	numberOfBytes += sizeof(inMemoryStoredRecordLen);
+    	numberOfBytes += srch2::util::getNumberOfBytesString(inMemoryRecordString);
+    	numberOfBytes += srch2::util::getNumberOfBytesFixedTypes(inMemoryStoredRecordLen);
     	numberOfBytes += inMemoryStoredRecordLen; // for inMemoryStoredRecord
+    	numberOfBytes += srch2::util::getNumberOfBytesVectorOfString(roleIds);
+    	numberOfBytes += srch2::util::getNumberOfBytesFixedTypes(point.x);
+    	numberOfBytes += srch2::util::getNumberOfBytesFixedTypes(point.y);
     	return numberOfBytes;
     }
 
@@ -108,7 +112,7 @@ struct Record::Impl
     	// searchable attributes
     	{
 			// 1. serialize size of vector
-			buffer = srch2::util::serializeFixedTypes((unsigned)searchableAttributeValues.size(), buffer);
+			buffer = srch2::util::serializeFixedTypes((uint32_t)searchableAttributeValues.size(), buffer);
 			// 2. serialize elements
 			for(unsigned attrIndex = 0; attrIndex < searchableAttributeValues.size() ; ++attrIndex){
 				buffer = srch2::util::serializeVectorOfString(searchableAttributeValues.at(attrIndex), buffer);
@@ -127,6 +131,9 @@ struct Record::Impl
     		memcpy(buffer, inMemoryStoredRecord, inMemoryStoredRecordLen);
     		buffer = (char *)buffer + inMemoryStoredRecordLen;
     	}
+    	buffer = srch2::util::serializeVectorOfString(roleIds, buffer);
+    	buffer = srch2::util::serializeFixedTypes(point.x, buffer);
+    	buffer = srch2::util::serializeFixedTypes(point.y, buffer);
     	return buffer;
     }
 
@@ -139,7 +146,7 @@ struct Record::Impl
     	// searchable attributes
     	{
 			// 1. deserialize size of vector
-    		unsigned vectorSize = 0;
+    		uint32_t vectorSize = 0;
 			buffer = srch2::util::deserializeFixedTypes(buffer, vectorSize);
 			// 2. deserialize elements
 			for(unsigned attrIndex = 0; attrIndex < vectorSize ; ++attrIndex){
@@ -161,6 +168,9 @@ struct Record::Impl
     		memcpy(inMemoryStoredRecord, buffer, inMemoryStoredRecordLen);
     		buffer = (char *)buffer + inMemoryStoredRecordLen;
     	}
+    	buffer = srch2::util::deserializeVectorOfString(buffer, roleIds);
+    	buffer = srch2::util::deserializeFixedTypes(buffer, point.x);
+    	buffer = srch2::util::deserializeFixedTypes(buffer, point.y);
     	return buffer;
     }
 

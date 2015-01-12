@@ -35,11 +35,11 @@ public:
 	void addPhysicalReplica(NodeId nodeId, unsigned replicaId);
 	string toString() const;
 private:
-	const unsigned coreId;
-	const unsigned partitionId;
+	const uint32_t coreId;
+	const uint32_t partitionId;
 	PartitionLockValue partitionLock;
 	// nodeid -> list of replicas of this partition that reside on that node
-	map<NodeId, vector<unsigned> > replicaLocations;
+	map<NodeId, vector<uint32_t> > replicaLocations;
 	// TODO : next to each replicaId, we can also have a load of shard
 };
 
@@ -54,10 +54,10 @@ public:
 	const NodeId getNodeId() const;
 	string toString() const ;
 private:
-	const unsigned coreId;
+	const uint32_t coreId;
 	const NodeId nodeId;
 	double load;
-	vector<unsigned> nodeInternalPartitionIds;
+	vector<uint32_t> nodeInternalPartitionIds;
 };
 
 
@@ -125,8 +125,8 @@ public:
 	void setPartitionLock(unsigned partitionLock, PartitionLockValue lockValue);
 	bool isCoreLocked() const; // if at least one partition is locked
 
-	const ClusterPartition * getClusterPartition(unsigned partitionId) const;
-	const NodePartition * getNodePartition(unsigned nodeId) const;
+	const ClusterPartition * getClusterPartition(uint32_t partitionId) const;
+	const NodePartition * getNodePartition(NodeId nodeId) const;
 	const unsigned getCoreId() const	;
 	const unsigned getTotalNumberOfPartitions() const;
 	const unsigned getReplicationDegree() const;
@@ -139,12 +139,12 @@ public:
 	void print() const;
 
 private:
-	const unsigned coreId;
-	const unsigned totalNumberOfPartitions;
-	const unsigned replicationDegree;
+	const uint32_t coreId;
+	const uint32_t totalNumberOfPartitions;
+	const uint32_t replicationDegree;
 
 	// partitionId => clusterPartition
-	map<unsigned, ClusterPartition *> clusterPartitions;
+	map<uint32_t, ClusterPartition *> clusterPartitions;
 	// NodeId => nodePartition
 	map<NodeId, NodePartition *> nodePartitions;
 };

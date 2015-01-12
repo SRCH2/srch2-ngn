@@ -93,7 +93,7 @@ ClusterShard_Writeview::ClusterShard_Writeview(){
 
 void * ClusterShard_Writeview::serialize(void * buffer) const{
 	buffer = id.serialize(buffer);
-	buffer = srch2::util::serializeFixedTypes(this->state, buffer);
+	buffer = srch2::util::serializeFixedTypes((uint32_t)this->state, buffer);
 	buffer = srch2::util::serializeFixedTypes(this->isLocal, buffer);
 	buffer = srch2::util::serializeFixedTypes(this->nodeId, buffer);
 	buffer = srch2::util::serializeFixedTypes(this->load, buffer);
@@ -196,8 +196,8 @@ Cluster_Writeview::Cluster_Writeview(unsigned versionId, string clusterName, vec
 	// all shards are unassigned by default
 	// all partitions are unlocked by default
 	// per core
-	for(map<unsigned, CoreInfo_t *>::iterator coreItr = this->cores.begin(); coreItr != this->cores.end(); ++coreItr){
-		unsigned coreId = coreItr->first;
+	for(map<uint32_t, CoreInfo_t *>::iterator coreItr = this->cores.begin(); coreItr != this->cores.end(); ++coreItr){
+		uint32_t coreId = coreItr->first;
 		CoreInfo_t * coreInfo = coreItr->second;
 		// each core has some partitions ....
 		for(unsigned pid = 0; pid < coreInfo->getNumberOfPrimaryShards(); ++pid){
@@ -210,6 +210,7 @@ Cluster_Writeview::Cluster_Writeview(unsigned versionId, string clusterName, vec
 			}
 		}
 	}
+	this->clusterShardsCursor = 0;
 	// this node id will change by discovery module later ...
 	this->currentNodeId = 0 ;
 }
@@ -253,7 +254,12 @@ Cluster_Writeview::Cluster_Writeview(const Cluster_Writeview & copy){
 	// internal partition id
 	this->localNodeDataShards = copy.localNodeDataShards;
 }
-Cluster_Writeview::Cluster_Writeview(){}
+Cluster_Writeview::Cluster_Writeview(){
+	this->versionId = 0;
+	this->clusterName = "";
+	this->clusterShardsCursor = 0;
+	this->currentNodeId = 0 ;
+}
 
 bool Cluster_Writeview::isEqualDiscardingLocalShards(const Cluster_Writeview & right){
 	if(clusterName.compare(right.clusterName) != 0){
@@ -893,7 +899,7 @@ void Cluster_Writeview::saveWriteviewOnDisk(const string & absDirectoryPath) con
 		  return;
 	  }
 	  unsigned numberOfBytes = getNumberOfBytes();
-	  outfile.write((char *)&numberOfBytes, sizeof(unsigned));
+	  outfile.write((char *)&numberOfBytes, sizeof(uint32_t));
 	  MessageAllocator ma;
 	  void * serializedCluster = ma.allocateByteArray(numberOfBytes);
 	  serialize(serializedCluster);
@@ -913,7 +919,7 @@ Cluster_Writeview * Cluster_Writeview::loadWriteviewFromDisk(const string & absD
 		return NULL;
 	}
 	unsigned numberOfBytes = 0;
-	infile.read((char *)&numberOfBytes, sizeof(unsigned));
+	infile.read((char *)&numberOfBytes, sizeof(uint32_t));
 	MessageAllocator ma;
 	void * serializedCluster = ma.allocateByteArray(numberOfBytes);
 	infile.read((char *)serializedCluster, numberOfBytes);

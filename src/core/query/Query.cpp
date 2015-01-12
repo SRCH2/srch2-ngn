@@ -62,8 +62,8 @@ struct Query::Impl
     	buffer = srch2::util::serializeFixedTypes(sortableAttributeId, buffer);
     	buffer = srch2::util::serializeFixedTypes(lengthBoost, buffer);
     	buffer = srch2::util::serializeFixedTypes(prefixMatchPenalty, buffer);
-    	buffer = srch2::util::serializeFixedTypes(type, buffer);
-    	buffer = srch2::util::serializeFixedTypes(order, buffer);
+    	buffer = srch2::util::serializeFixedTypes((uint32_t)type, buffer);
+    	buffer = srch2::util::serializeFixedTypes((uint32_t)order, buffer);
     	buffer = srch2::util::serializeString(refiningAttributeName, buffer);
     	buffer = srch2::util::serializeString(refiningAttributeValue, buffer);
 
@@ -72,7 +72,7 @@ struct Query::Impl
     	// terms vector
 		if(terms != NULL){
 			// size of vector
-			buffer = srch2::util::serializeFixedTypes(unsigned(terms->size()), buffer);
+			buffer = srch2::util::serializeFixedTypes(uint32_t(terms->size()), buffer);
 			for(unsigned termIndex = 0; termIndex < terms->size(); ++termIndex){
 				ASSERT(terms->at(termIndex) != NULL);
 				buffer = terms->at(termIndex)->serializeForNetwork(buffer);
@@ -97,8 +97,11 @@ struct Query::Impl
     	buffer = srch2::util::deserializeFixedTypes(buffer, sortableAttributeId);
     	buffer = srch2::util::deserializeFixedTypes(buffer, lengthBoost);
     	buffer = srch2::util::deserializeFixedTypes(buffer, prefixMatchPenalty);
-    	buffer = srch2::util::deserializeFixedTypes(buffer, type);
-    	buffer = srch2::util::deserializeFixedTypes(buffer, order);
+    	uint32_t intVar = 0;
+    	buffer = srch2::util::deserializeFixedTypes(buffer, intVar);
+    	type = (QueryType)intVar;
+    	buffer = srch2::util::deserializeFixedTypes(buffer, intVar);
+    	order = (srch2::instantsearch::SortOrder)intVar;
     	buffer = srch2::util::deserializeString(buffer, refiningAttributeName);
     	buffer = srch2::util::deserializeString(buffer, refiningAttributeValue);
     	// terms vector
@@ -150,18 +153,18 @@ struct Query::Impl
      */
     unsigned getNumberOfBytesForNetwork(){
     	unsigned numberOfBytes = 0;
-    	numberOfBytes += sizeof(sortableAttributeId);
-    	numberOfBytes += sizeof(lengthBoost);
-    	numberOfBytes += sizeof(prefixMatchPenalty);
-    	numberOfBytes += sizeof(type);
-    	numberOfBytes += sizeof(order);
-    	numberOfBytes += sizeof(unsigned) + refiningAttributeName.size();
-       	numberOfBytes += sizeof(unsigned) + refiningAttributeValue.size();
+    	numberOfBytes += srch2::util::getNumberOfBytesFixedTypes(sortableAttributeId);
+    	numberOfBytes += srch2::util::getNumberOfBytesFixedTypes(lengthBoost);
+    	numberOfBytes += srch2::util::getNumberOfBytesFixedTypes(prefixMatchPenalty);
+    	numberOfBytes += srch2::util::getNumberOfBytesFixedTypes((uint32_t)type);
+    	numberOfBytes += srch2::util::getNumberOfBytesFixedTypes((uint32_t)order);
+    	numberOfBytes += srch2::util::getNumberOfBytesString(refiningAttributeName);
+       	numberOfBytes += srch2::util::getNumberOfBytesString(refiningAttributeValue);
 
-    	numberOfBytes += sizeof(bool) * 2; // whether terms and range are null or not
+    	numberOfBytes += srch2::util::getNumberOfBytesFixedTypes((bool)(terms != NULL)) * 2; // whether terms and range are null or not
 
     	if(terms != NULL){
-    		numberOfBytes += sizeof(unsigned); // vector size
+    		numberOfBytes += sizeof(uint32_t); // vector size
     		for(unsigned termIndex = 0; termIndex < terms->size() ; ++termIndex){
     			numberOfBytes += terms->at(termIndex)->getNumberOfBytesForSerializationForNetwork();
     		}

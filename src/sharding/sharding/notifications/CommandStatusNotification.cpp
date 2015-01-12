@@ -90,7 +90,9 @@ CommandStatusNotification::ShardStatus * CommandStatusNotification::ShardStatus:
 CommandStatusNotification::CommandStatusNotification(ShardCommandCode commandCode){
     this->commandCode = commandCode;
 }
-CommandStatusNotification::CommandStatusNotification(){}
+CommandStatusNotification::CommandStatusNotification(){
+    this->commandCode = ShardCommandCode_Merge;
+}
 //serializes the object to a byte array and places array into the region
 //allocated by given allocator
 void* CommandStatusNotification::serializeBody(void * buffer) const{
@@ -105,8 +107,7 @@ void* CommandStatusNotification::serializeBody(void * buffer) const{
 unsigned CommandStatusNotification::getNumberOfBytesBody() const{
     unsigned numberOfBytes = 0;
     numberOfBytes += srch2::util::getNumberOfBytesFixedTypes((uint32_t)commandCode);
-    uint32_t intVar = 0;
-    numberOfBytes += srch2::util::getNumberOfBytesFixedTypes((uint32_t)intVar);
+    numberOfBytes += srch2::util::getNumberOfBytesFixedTypes((uint32_t)(shardResults.size()));
     for(unsigned shardIdx = 0; shardIdx < shardResults.size() ; ++shardIdx){
     	numberOfBytes += shardResults.at(shardIdx)->getNumberOfBytes();
     }

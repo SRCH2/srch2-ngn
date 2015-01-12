@@ -61,8 +61,8 @@ public:
 	    void setListOfSearchableAttributes(vector<unsigned> & list);
 
 	private:
-		vector<unsigned> listOfRefiningAttributes;
-		vector<unsigned> listOfSearchableAttributes;
+		vector<uint32_t> listOfRefiningAttributes;
+		vector<uint32_t> listOfSearchableAttributes;
 	};
 };
 

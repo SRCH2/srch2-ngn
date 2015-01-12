@@ -57,8 +57,8 @@ public:
 	 * otherwise it acquires both before operation
 	 */
 	void setWriteview(Cluster_Writeview * newWriteview, const bool shouldLock = true);
-	unsigned applyAndCommit(MetadataChange * metadataChange);
-	unsigned getClusterWriteviewVersionID();
+	uint32_t applyAndCommit(MetadataChange * metadataChange);
+	uint32_t getClusterWriteviewVersionID();
 	Cluster_Writeview * getClusterWriteview_write(boost::unique_lock<boost::shared_mutex> & xLock);
 	Cluster_Writeview * getClusterWriteview_nolock();
 	const Cluster_Writeview * getClusterWriteview_read(boost::shared_lock<boost::shared_mutex> & sLock);
@@ -73,7 +73,7 @@ private:
 	// NOTE : changing this pointer (like assigning it to a new object or deleting
 	// its object) requires writeview X lock and nodes S lock.
 	Cluster_Writeview * writeview;
-    unsigned writeviewVersionId;
+    uint32_t writeviewVersionId;
     mutable pthread_spinlock_t m_spinlock_writeview;
 	boost::shared_mutex writeviewMutex;
 	boost::shared_mutex nodesMutex;
@@ -81,7 +81,7 @@ private:
     mutable pthread_spinlock_t m_spinlock;
 
 	void commitClusterMetadata(ClusterResourceMetadata_Readview * newReadview);
-	unsigned applyAndCommit(MetadataChange * shardingChange, Cluster_Writeview * writeview);
+	uint32_t applyAndCommit(MetadataChange * shardingChange, Cluster_Writeview * writeview);
 };
 
 

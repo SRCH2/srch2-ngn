@@ -14,7 +14,7 @@ namespace instantsearch
  * | ShapeType == Circle | centerX | centerY | radius |
  */
 void * Shape::serializeForNetwork(void * buffer){
-    buffer = srch2::util::serializeFixedTypes(getShapeType() , buffer);
+    buffer = srch2::util::serializeFixedTypes((uint32_t)getShapeType() , buffer);
     switch (getShapeType()) {
     case Shape::TypeRectangle: {
         Rectangle * thisRect = (Rectangle *)this;
@@ -44,7 +44,9 @@ void * Shape::serializeForNetwork(void * buffer){
  */
 void * Shape::deserializeForNetwork(Shape * &shape, void * buffer){
     ShapeType type ;
-    buffer = srch2::util::deserializeFixedTypes(buffer, type);
+    uint32_t intVar = 0;
+    buffer = srch2::util::deserializeFixedTypes(buffer, intVar);
+    type = (ShapeType)intVar;
     switch (type) {
     case Shape::TypeRectangle: {
         Rectangle * rect = new Rectangle();
@@ -74,20 +76,20 @@ void * Shape::deserializeForNetwork(Shape * &shape, void * buffer){
  */
 unsigned Shape::getNumberOfBytesForSerializationForNetwork(){
     unsigned numberOfBytes = 0;
-    numberOfBytes += sizeof(ShapeType);
+    numberOfBytes += srch2::util::getNumberOfBytesFixedTypes((uint32_t)getShapeType());
     switch (getShapeType()) {
     case Shape::TypeRectangle: {
         Rectangle * thisRect = (Rectangle *)this;
-        numberOfBytes += sizeof(thisRect->min.x);
-        numberOfBytes += sizeof(thisRect->min.y);
-        numberOfBytes += sizeof(thisRect->max.x);
-        numberOfBytes += sizeof(thisRect->max.y);
+        numberOfBytes += srch2::util::getNumberOfBytesFixedTypes(thisRect->min.x);
+        numberOfBytes += srch2::util::getNumberOfBytesFixedTypes(thisRect->min.y);
+        numberOfBytes += srch2::util::getNumberOfBytesFixedTypes(thisRect->max.x);
+        numberOfBytes += srch2::util::getNumberOfBytesFixedTypes(thisRect->max.y);
         return numberOfBytes;
     }    case Shape::TypeCircle: {
         Circle * thisCircle = (Circle *)this;
-        numberOfBytes += sizeof(thisCircle->getCenter().x);
-        numberOfBytes += sizeof(thisCircle->getCenter().y);
-        numberOfBytes += sizeof(thisCircle->getRadius());
+        numberOfBytes += srch2::util::getNumberOfBytesFixedTypes(thisCircle->getCenter().x);
+        numberOfBytes += srch2::util::getNumberOfBytesFixedTypes(thisCircle->getCenter().y);
+        numberOfBytes += srch2::util::getNumberOfBytesFixedTypes(thisCircle->getRadius());
         return numberOfBytes;
     }
     }

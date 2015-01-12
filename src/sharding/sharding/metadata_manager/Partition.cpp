@@ -8,7 +8,7 @@ namespace srch2 {
 namespace httpwrapper {
 
 
-ClusterPartition::ClusterPartition(const unsigned coreId, const unsigned partitionId, PartitionLockValue partitionLockValue)
+ClusterPartition::ClusterPartition(const uint32_t coreId, const uint32_t partitionId, PartitionLockValue partitionLockValue)
 								:coreId(coreId),partitionId(partitionId){
 	this->partitionLock = partitionLockValue;
 }
@@ -18,15 +18,15 @@ bool ClusterPartition::isPartitionLocked() const{
 void ClusterPartition::setPartitionLock(PartitionLockValue lockValue){
 	this->partitionLock = lockValue;
 }
-void ClusterPartition::addPhysicalReplica(NodeId nodeId, unsigned replicaId){
-	map<NodeId, vector<unsigned> >::iterator replicaLocationItr =
+void ClusterPartition::addPhysicalReplica(NodeId nodeId, uint32_t replicaId){
+	map<NodeId, vector<uint32_t> >::iterator replicaLocationItr =
 			replicaLocations.find(nodeId);
 	if(replicaLocationItr == replicaLocations.end()){
-		replicaLocations[nodeId] = vector<unsigned>();
+		replicaLocations[nodeId] = vector<uint32_t>();
 		replicaLocations[nodeId].push_back(replicaId);
 		return;
 	}
-	for(vector<unsigned>::iterator replicaIdItr = replicaLocationItr->second.begin();
+	for(vector<uint32_t>::iterator replicaIdItr = replicaLocationItr->second.begin();
 			replicaIdItr !=  replicaLocationItr->second.end(); ++replicaIdItr){
 		if(*replicaIdItr == replicaId){
 			ASSERT(false);
@@ -60,14 +60,14 @@ string ClusterPartition::toString() const{
 }
 
 void ClusterPartition::getShardLocations(vector<NodeId> & shardLocations) const{
-	for(map<NodeId, vector<unsigned> >::const_iterator replicaLocationItr = replicaLocations.begin();
+	for(map<NodeId, vector<uint32_t> >::const_iterator replicaLocationItr = replicaLocations.begin();
 			replicaLocationItr != replicaLocations.end(); ++replicaLocationItr){
 		shardLocations.push_back(replicaLocationItr->first);
 	}
 }
 // returns false of there is no replica of this partition in this node
-bool ClusterPartition::getNodeReplicaIds(NodeId nodeId, vector<unsigned> & replicas) const{
-	map<NodeId, vector<unsigned> >::const_iterator replicaLocationItr =
+bool ClusterPartition::getNodeReplicaIds(NodeId nodeId, vector<uint32_t> & replicas) const{
+	map<NodeId, vector<uint32_t> >::const_iterator replicaLocationItr =
 			replicaLocations.find(nodeId);
 	if(replicaLocationItr == replicaLocations.end()){
 		return false;
@@ -85,7 +85,7 @@ const unsigned ClusterPartition::getPartitionId() const{
 }
 
 
-NodePartition::NodePartition(const unsigned coreId, const NodeId nodeId, double load):coreId(coreId),nodeId(nodeId){
+NodePartition::NodePartition(const uint32_t coreId, const NodeId nodeId, double load):coreId(coreId),nodeId(nodeId){
 	this->load = load;
 }
 
@@ -125,14 +125,14 @@ string NodePartition::toString() const {
 }
 
 
-const ClusterPartition * CorePartitionContianer::getClusterPartition(unsigned partitionId) const{
+const ClusterPartition * CorePartitionContianer::getClusterPartition(uint32_t partitionId) const{
 	if(clusterPartitions.find(partitionId) == clusterPartitions.end()){
 		return NULL;
 	}
 	return clusterPartitions.find(partitionId)->second;
 }
 
-const NodePartition * CorePartitionContianer::getNodePartition(unsigned nodeId) const{
+const NodePartition * CorePartitionContianer::getNodePartition(NodeId nodeId) const{
 	if(nodePartitions.find(nodeId) == nodePartitions.end()){
 		return NULL;
 	}

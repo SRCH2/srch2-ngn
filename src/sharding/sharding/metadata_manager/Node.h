@@ -98,9 +98,9 @@ public:
 
 
 private:
-	unsigned nodeId;
+	NodeId nodeId;
 	std::string ipAddress;
-	unsigned portNumber;
+	uint32_t portNumber;
 	std::string nodeName;
 	// flag to tell whether current node is master or not.
 	bool nodeMaster;

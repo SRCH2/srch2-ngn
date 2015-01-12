@@ -16,7 +16,8 @@ public:
 
 	struct ShardResults{
 	public:
-		ShardResults(const string & shardIdentifier):shardIdentifier(shardIdentifier){
+		ShardResults(const string & shardIdentifier):
+			shardIdentifier(shardIdentifier), searcherTime(0){
 		}
 		const string shardIdentifier;
 	    QueryResults queryResults;

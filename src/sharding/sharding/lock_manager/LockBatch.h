@@ -137,15 +137,15 @@ public:
 
 	void * serialize(void * buffer) const{
 		// serialize the size of the main map
-		buffer = srch2::util::serializeFixedTypes((unsigned)(grantedLocks.size()), buffer);
+		buffer = srch2::util::serializeFixedTypes((uint32_t)(grantedLocks.size()), buffer);
 		for(typename map<Resource, vector<pair<NodeOperationId, LockLevel> > >::const_iterator
 				resItr = grantedLocks.begin(); resItr != grantedLocks.end(); ++resItr){
 			buffer = serialize(resItr->first, buffer);
 			// serialize size of vector
-			buffer = srch2::util::serializeFixedTypes((unsigned)(resItr->second.size()), buffer);
+			buffer = srch2::util::serializeFixedTypes((uint32_t)(resItr->second.size()), buffer);
 			for(unsigned i = 0 ; i < resItr->second.size(); i++){
 				buffer = resItr->second.at(i).first.serialize(buffer);
-				buffer = srch2::util::serializeFixedTypes(resItr->second.at(i).second, buffer);
+				buffer = srch2::util::serializeFixedTypes(((uint32_t)resItr->second.at(i).second), buffer);
 			}
 		}
 		return buffer;
@@ -158,14 +158,14 @@ public:
 			buffer = deserialize(buffer, res);
 			vector<pair<NodeOperationId, LockLevel> > keyVector;
 			grantedLocks[res] = keyVector;
-			unsigned sizeOfVector = 0;
+			uint32_t sizeOfVector = 0;
 			buffer = srch2::util::deserializeFixedTypes(buffer, sizeOfVector);
 			for(unsigned i = 0 ; i < sizeOfVector; ++i){
 				NodeOperationId id;
 				buffer = id.deserialize(buffer);
-				LockLevel ll;
-				buffer = srch2::util::deserializeFixedTypes(buffer, ll);
-				grantedLocks[res].push_back(std::make_pair(id,ll));
+				uint32_t intVar = 0;
+				buffer = srch2::util::deserializeFixedTypes(buffer, intVar);
+				grantedLocks[res].push_back(std::make_pair(id,(LockLevel)intVar));
 			}
 		}
 		return buffer;
@@ -173,15 +173,16 @@ public:
 
 	unsigned getNumberOfBytes(){
 		unsigned numberOfBytes = 0 ;
-		numberOfBytes += sizeof(unsigned);
+		numberOfBytes += sizeof(uint32_t);
 		for(typename map<Resource, vector<pair<NodeOperationId, LockLevel> > >::const_iterator
 				resItr = grantedLocks.begin(); resItr != grantedLocks.end(); ++resItr){
-			numberOfBytes += getNumberOfBytes(resItr->first);
+			numberOfBytes += getNumberOfBytes(resItr->first); // Resource size
 			// serialize size of vector
-			numberOfBytes += sizeof(unsigned);
+			numberOfBytes += sizeof(uint32_t);
 			for(unsigned i = 0 ; i < resItr->second.size(); i++){
-				numberOfBytes += resItr->second.at(i).first.getNumberOfBytes();
-				numberOfBytes += resItr->second.at(i).second.size() + sizeof(unsigned);
+				numberOfBytes += resItr->second.at(i).first.getNumberOfBytes(); // NodeOperationId
+//				numberOfBytes += resItr->second.at(i).second.size() + sizeof(uint32_t);
+				numberOfBytes += sizeof(uint32_t);
 			}
 		}
 		return numberOfBytes;
@@ -289,7 +290,7 @@ private:
 		return buffer;
 	}
 	unsigned getNumberOfBytes(const string & str) const{
-		return str.size() + sizeof(unsigned);
+		return srch2::util::getNumberOfBytesString(str);
 	}
 	unsigned getNumberOfBytes(const ClusterShardId & shardId) const{
 		return shardId.getNumberOfBytes();

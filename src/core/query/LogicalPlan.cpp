@@ -159,8 +159,8 @@ string LogicalPlanNode::getSubtreeUniqueString(){
  */
 void * LogicalPlanNode::serializeForNetwork(void * buffer){
 
-	buffer = srch2::util::serializeFixedTypes(this->nodeType, buffer);
-	buffer = srch2::util::serializeFixedTypes(this->forcedPhysicalNode, buffer);
+	buffer = srch2::util::serializeFixedTypes((uint32_t)this->nodeType, buffer);
+	buffer = srch2::util::serializeFixedTypes((uint32_t)this->forcedPhysicalNode, buffer);
 
 	buffer = srch2::util::serializeFixedTypes(bool(this->exactTerm != NULL), buffer);
 	buffer = srch2::util::serializeFixedTypes(bool(this->fuzzyTerm != NULL), buffer);
@@ -186,7 +186,7 @@ void * LogicalPlanNode::serializeForNetwork(void * buffer){
 	 */
 
 	// serialize the number of children
-	buffer = srch2::util::serializeFixedTypes(unsigned(this->children.size()), buffer);
+	buffer = srch2::util::serializeFixedTypes(uint32_t(this->children.size()), buffer);
 	// Serialize children
 	for(unsigned childOffset = 0 ; childOffset < this->children.size() ; ++childOffset){
 		ASSERT(this->children.at(childOffset) != NULL);
@@ -203,7 +203,9 @@ void * LogicalPlanNode::serializeForNetwork(void * buffer){
  */
 void * LogicalPlanNode::deserializeForNetwork(LogicalPlanNode * &node, void * buffer){
 	LogicalPlanNodeType type;
-	buffer = srch2::util::deserializeFixedTypes(buffer, type);
+	uint32_t intVar = 0;
+	buffer = srch2::util::deserializeFixedTypes(buffer, intVar);
+	type = (LogicalPlanNodeType)intVar;
 	switch (type) {
 		case LogicalPlanNodeTypeAnd:
 		case LogicalPlanNodeTypeOr:
@@ -217,7 +219,8 @@ void * LogicalPlanNode::deserializeForNetwork(LogicalPlanNode * &node, void * bu
 			break;
 	}
 	node->nodeType = type;
-	buffer = srch2::util::deserializeFixedTypes(buffer, node->forcedPhysicalNode);
+	buffer = srch2::util::deserializeFixedTypes(buffer, intVar);
+	node->forcedPhysicalNode = (PhysicalPlanNodeType)intVar;
 
 	bool isExactTermNotNull = false;
 	bool isFuzzyTermNotNull = false;
@@ -266,20 +269,23 @@ void * LogicalPlanNode::deserializeForNetwork(LogicalPlanNode * &node, void * bu
 unsigned LogicalPlanNode::getNumberOfBytesForSerializationForNetwork(){
 	//calculate number of bytes
 	unsigned numberOfBytes = 0;
-	numberOfBytes += sizeof(this->nodeType);
-	numberOfBytes += sizeof(this->forcedPhysicalNode);
+	numberOfBytes += srch2::util::getNumberOfBytesFixedTypes((uint32_t)this->nodeType);
+	numberOfBytes += srch2::util::getNumberOfBytesFixedTypes((uint32_t)this->forcedPhysicalNode);
 
-	numberOfBytes += sizeof(bool);
+	numberOfBytes += srch2::util::
+			getNumberOfBytesFixedTypes((bool)this->exactTerm != NULL);
 	if(this->exactTerm != NULL){
 		numberOfBytes += this->exactTerm->getNumberOfBytesForSerializationForNetwork();
 	}
 
-	numberOfBytes += sizeof(bool);
+	numberOfBytes += srch2::util::
+			getNumberOfBytesFixedTypes((bool)this->fuzzyTerm != NULL);
 	if(this->fuzzyTerm != NULL){
 		numberOfBytes += this->fuzzyTerm->getNumberOfBytesForSerializationForNetwork();
 	}
 
-	numberOfBytes += sizeof(bool);
+	numberOfBytes += srch2::util::
+			getNumberOfBytesFixedTypes((bool)this->regionShape != NULL);
 	if(this->regionShape != NULL){
 		numberOfBytes += this->regionShape->getNumberOfBytesForSerializationForNetwork();
 	}
@@ -289,7 +295,8 @@ unsigned LogicalPlanNode::getNumberOfBytesForSerializationForNetwork(){
 	}
 
 	// numberOfChilren
-	numberOfBytes += sizeof(unsigned);
+	numberOfBytes += srch2::util::
+			getNumberOfBytesFixedTypes((uint32_t)this->children.size());
 	// add number of bytes of chilren
 	for(unsigned childOffset = 0 ; childOffset < this->children.size() ; ++childOffset){
 		ASSERT(this->children.at(childOffset) != NULL);
@@ -449,7 +456,7 @@ void * LogicalPlan::serializeForNetwork(void * buffer){
 	buffer = srch2::util::serializeFixedTypes(this->offset, buffer);
 	buffer = srch2::util::serializeFixedTypes(this->numberOfResultsToRetrieve, buffer);
 	buffer = srch2::util::serializeFixedTypes(this->shouldRunFuzzyQuery, buffer);
-	buffer = srch2::util::serializeFixedTypes(this->queryType, buffer);
+	buffer = srch2::util::serializeFixedTypes((uint32_t)this->queryType, buffer);
 	buffer = srch2::util::serializeString(this->docIdForRetrieveByIdSearchType, buffer);
 
 	buffer = srch2::util::serializeFixedTypes(bool(this->exactQuery != NULL), buffer); // isNULL
@@ -493,7 +500,9 @@ void * LogicalPlan::deserializeForNetwork(LogicalPlan & logicalPlan , void * buf
 	buffer = srch2::util::deserializeFixedTypes(buffer, logicalPlan.offset);
 	buffer = srch2::util::deserializeFixedTypes(buffer, logicalPlan.numberOfResultsToRetrieve);
 	buffer = srch2::util::deserializeFixedTypes(buffer, logicalPlan.shouldRunFuzzyQuery);
-	buffer = srch2::util::deserializeFixedTypes(buffer, logicalPlan.queryType);
+	uint32_t intVar = 0;
+	buffer = srch2::util::deserializeFixedTypes(buffer, intVar);
+	logicalPlan.queryType = (srch2::instantsearch::QueryType)intVar;
 	buffer = srch2::util::deserializeString(buffer, logicalPlan.docIdForRetrieveByIdSearchType);
 
 	bool isExactQueryNotNull = false;
@@ -550,17 +559,18 @@ void * LogicalPlan::deserializeForNetwork(LogicalPlan & logicalPlan , void * buf
 unsigned LogicalPlan::getNumberOfBytesForSerializationForNetwork(){
 	//calculate number of bytes
 	unsigned numberOfBytes = 0;
-	numberOfBytes += sizeof(this->offset);
-	numberOfBytes += sizeof(this->numberOfResultsToRetrieve);
-	numberOfBytes += sizeof(this->shouldRunFuzzyQuery);
-	numberOfBytes += sizeof(this->queryType);
-	numberOfBytes += sizeof(unsigned) + this->docIdForRetrieveByIdSearchType.size();
+	numberOfBytes += srch2::util::getNumberOfBytesFixedTypes(this->offset);
+	numberOfBytes += srch2::util::getNumberOfBytesFixedTypes(this->numberOfResultsToRetrieve);
+	numberOfBytes += srch2::util::getNumberOfBytesFixedTypes(this->shouldRunFuzzyQuery);
+	numberOfBytes += srch2::util::getNumberOfBytesFixedTypes((uint32_t)this->queryType);
+	numberOfBytes += srch2::util::getNumberOfBytesString(this->docIdForRetrieveByIdSearchType);
 
-	numberOfBytes += sizeof(bool)*4; // isNULL
+	bool boolVar = false;
+	numberOfBytes += srch2::util::getNumberOfBytesFixedTypes(boolVar)*4; // isNULL
 
-	numberOfBytes += sizeof(this->facetOnlyFlag);
-	numberOfBytes += sizeof(this->highLightingOnFlag);
-	numberOfBytes += sizeof(unsigned) + this->roleId.size();
+	numberOfBytes += srch2::util::getNumberOfBytesFixedTypes(this->facetOnlyFlag);
+	numberOfBytes += srch2::util::getNumberOfBytesFixedTypes(this->highLightingOnFlag);
+	numberOfBytes += srch2::util::getNumberOfBytesString(this->roleId);
 	numberOfBytes += srch2::util::getNumberOfBytesVectorOfFixedTypes(accessibleSearchableAttributes);
 	numberOfBytes += srch2::util::getNumberOfBytesVectorOfFixedTypes(accessibleRefiningAttributes);
 

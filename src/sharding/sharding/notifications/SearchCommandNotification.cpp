@@ -20,6 +20,7 @@ SearchCommand::SearchCommand(unsigned coreId, LogicalPlan * logicalPlan, NodeTar
     this->logicalPlan = logicalPlan;
     this->target = target;
     this->clusterReadview = clusterReadview;
+    this->schema = NULL;
 }
 SearchCommand::SearchCommand(){
 	this->coreId = (unsigned)-1;

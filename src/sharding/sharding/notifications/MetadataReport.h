@@ -21,6 +21,7 @@ public:
 	}
 	MetadataReport(){
 	    this->shouldDeleteWriteview = false;// because it's going to be allocated in deserialize
+	    this->writeview = NULL;
 	};
 	~MetadataReport(){
 		if(this->writeview != NULL && shouldDeleteWriteview){

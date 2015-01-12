@@ -223,7 +223,10 @@ private:
 class NodeTargetShardInfo{
 public:
 	NodeTargetShardInfo(const NodeId nodeId, const unsigned coreId);
-	NodeTargetShardInfo(){};
+	NodeTargetShardInfo(){
+		this->nodeId = 0;
+		this->coreId = 0;
+	};
 	NodeTargetShardInfo(const NodeTargetShardInfo & copy){
 		this->nodeId = copy.nodeId;
 		this->coreId = copy.coreId;

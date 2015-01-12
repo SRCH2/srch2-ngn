@@ -154,7 +154,7 @@ void SyncManager::joinExistingCluster(const Node& node, bool isDiscoveryPhase) {
 	bool status = getDestinatioAddressByNodeId(masterNodeId, destinationAddress);
 	if (status == false) {
 		Logger::console("Master node %d destination address is not found", masterNodeId);
-		exit(-1);
+		exit(-1); // TODO : we need error handling here ...
 	}
 	NodeInfo masterNodeInfo;
 	if (sendConnectionRequest(&transport, masterNodeId, masterNodeInfo, node, destinationAddress)) {

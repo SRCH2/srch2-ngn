@@ -78,7 +78,10 @@ struct NodeShard_Writeview{
 		this->isLocal = copy.isLocal;
 		this->load = copy.load;
 	}
-	NodeShard_Writeview(){};
+	NodeShard_Writeview(){
+		this->isLocal = false;
+		this->load = 0;
+	};
 
 	void * serialize(void * buffer) const{
 		buffer = id.serialize(buffer);

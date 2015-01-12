@@ -50,7 +50,10 @@ string FacetQueryContainer::toString(){
  * | types | numberOfTopGroupsToReturn | fields | rangeStarts | rangeEnds | rangeGaps |
  */
 void * FacetQueryContainer::serializeForNetwork(void * buffer){
-	buffer = srch2::util::serializeVectorOfFixedTypes(types, buffer);
+	buffer = srch2::util::serializeFixedTypes((uint32_t)types.size(), buffer);
+	for(uint32_t i = 0 ; i < types.size(); ++i){
+		buffer = srch2::util::serializeFixedTypes((uint32_t)types.at(i), buffer);
+	}
 	buffer = srch2::util::serializeVectorOfFixedTypes(numberOfTopGroupsToReturn, buffer);
 	buffer = srch2::util::serializeVectorOfString(fields, buffer);
 	buffer = srch2::util::serializeVectorOfString(rangeStarts, buffer);
@@ -64,7 +67,13 @@ void * FacetQueryContainer::serializeForNetwork(void * buffer){
  * | types | numberOfTopGroupsToReturn | fields | rangeStarts | rangeEnds | rangeGaps |
  */
 void * FacetQueryContainer::deserializeForNetwork(FacetQueryContainer & info, void * buffer){
-	buffer = srch2::util::deserializeVectorOfFixedTypes(buffer, info.types);
+	uint32_t sizeVar = 0;
+	buffer = srch2::util::deserializeFixedTypes(buffer, sizeVar);
+	for(uint32_t i = 0 ; i < sizeVar; ++i){
+		uint32_t intVar = 0;
+		buffer = srch2::util::deserializeFixedTypes(buffer, intVar);
+		info.types.push_back((srch2::instantsearch::FacetType)intVar);
+	}
 	buffer = srch2::util::deserializeVectorOfFixedTypes(buffer, info.numberOfTopGroupsToReturn);
 	buffer = srch2::util::deserializeVectorOfString(buffer, info.fields);
 	buffer = srch2::util::deserializeVectorOfString(buffer, info.rangeStarts);
@@ -79,7 +88,9 @@ void * FacetQueryContainer::deserializeForNetwork(FacetQueryContainer & info, vo
  */
 unsigned FacetQueryContainer::getNumberOfBytesForSerializationForNetwork(){
 	unsigned numberOfBytes = 0;
-	numberOfBytes += srch2::util::getNumberOfBytesVectorOfFixedTypes(types);
+	numberOfBytes += srch2::util::getNumberOfBytesFixedTypes((uint32_t)types.size());
+	uint32_t intVar = 0;
+	numberOfBytes += srch2::util::getNumberOfBytesFixedTypes(intVar) * types.size();
 	numberOfBytes += srch2::util::getNumberOfBytesVectorOfFixedTypes(numberOfTopGroupsToReturn);
 	numberOfBytes += srch2::util::getNumberOfBytesVectorOfString(fields);
 	numberOfBytes += srch2::util::getNumberOfBytesVectorOfString(rangeStarts);
@@ -282,7 +293,8 @@ void * ResultsPostProcessingInfo::deserializeForNetwork(ResultsPostProcessingInf
  */
 unsigned ResultsPostProcessingInfo::getNumberOfBytesForSerializationForNetwork(){
 	unsigned numberOfBytes = 0;
-	numberOfBytes += 4 * sizeof(bool);
+	bool boolVar = false;
+	numberOfBytes += 4 * srch2::util::getNumberOfBytesFixedTypes(boolVar);
 
 	if(facetInfo != NULL){
 		numberOfBytes += facetInfo->getNumberOfBytesForSerializationForNetwork();
@@ -297,7 +309,7 @@ unsigned ResultsPostProcessingInfo::getNumberOfBytesForSerializationForNetwork()
 		numberOfBytes += phraseSearchInfoContainer->getNumberOfBytesForSerializationForNetwork();
 	}
 
-	numberOfBytes += sizeof(unsigned) + roleId.size();
+	numberOfBytes += srch2::util::getNumberOfBytesString(roleId);
 	return numberOfBytes;
 }
 
@@ -326,7 +338,7 @@ string PhraseInfo::toString(){
  */
 void * PhraseInfo::serializeForNetwork(void * buffer) const {
 	buffer = srch2::util::serializeFixedTypes(proximitySlop,  buffer);
-	buffer = srch2::util::serializeFixedTypes(attrOps,  buffer);
+	buffer = srch2::util::serializeFixedTypes((uint32_t)attrOps,  buffer);
 	buffer = srch2::util::serializeVectorOfFixedTypes(attributeIdsList,  buffer);
 	buffer = srch2::util::serializeVectorOfFixedTypes(keywordIds,  buffer);
 	buffer = srch2::util::serializeVectorOfFixedTypes(phraseKeywordPositionIndex,  buffer);
@@ -339,7 +351,9 @@ void * PhraseInfo::serializeForNetwork(void * buffer) const {
  */
 void * PhraseInfo::deserializeForNetwork(void * buffer) {
 	buffer = srch2::util::deserializeFixedTypes(buffer, proximitySlop);
-	buffer = srch2::util::deserializeFixedTypes(buffer, attrOps);
+	uint32_t intVar = 0;
+	buffer = srch2::util::deserializeFixedTypes(buffer, intVar);
+	attrOps = (ATTRIBUTES_OP)intVar;
 	buffer = srch2::util::deserializeVectorOfFixedTypes(buffer, attributeIdsList);
 	buffer = srch2::util::deserializeVectorOfFixedTypes(buffer, keywordIds);
 	buffer = srch2::util::deserializeVectorOfFixedTypes(buffer, phraseKeywordPositionIndex);
@@ -352,8 +366,8 @@ void * PhraseInfo::deserializeForNetwork(void * buffer) {
  */
 unsigned PhraseInfo::getNumberOfBytesForSerializationForNetwork() const{
 	unsigned numberOfBytes = 0;
-	numberOfBytes += sizeof(attrOps);
-	numberOfBytes += sizeof(proximitySlop);
+	numberOfBytes += srch2::util::getNumberOfBytesFixedTypes(proximitySlop);
+	numberOfBytes += srch2::util::getNumberOfBytesFixedTypes((uint32_t)attrOps);
 	numberOfBytes += srch2::util::getNumberOfBytesVectorOfFixedTypes(attributeIdsList);
 	numberOfBytes += srch2::util::getNumberOfBytesVectorOfFixedTypes(keywordIds);
 	numberOfBytes += srch2::util::getNumberOfBytesVectorOfFixedTypes(phraseKeywordPositionIndex);
@@ -388,7 +402,7 @@ string PhraseSearchInfoContainer::toString(){
  * | phraseInfoVector |
  */
 void * PhraseSearchInfoContainer::serializeForNetwork(void * buffer) const {
-	buffer = srch2::util::serializeFixedTypes(unsigned(phraseInfoVector.size()),  buffer);
+	buffer = srch2::util::serializeFixedTypes(uint32_t(phraseInfoVector.size()),  buffer);
 	for(unsigned  pIndex = 0; pIndex < phraseInfoVector.size(); ++pIndex){
 		phraseInfoVector.at(pIndex).serializeForNetwork(buffer);
 	}
@@ -416,7 +430,7 @@ void * PhraseSearchInfoContainer::deserializeForNetwork(PhraseSearchInfoContaine
  */
 unsigned PhraseSearchInfoContainer::getNumberOfBytesForSerializationForNetwork() const{
 	unsigned numberOfBytes = 0;
-	numberOfBytes += sizeof(unsigned);
+	numberOfBytes += srch2::util::getNumberOfBytesFixedTypes((uint32_t)phraseInfoVector.size());
 	for(unsigned posInfoIndex = 0; posInfoIndex < phraseInfoVector.size(); ++posInfoIndex){
 		numberOfBytes += phraseInfoVector.at(posInfoIndex).getNumberOfBytesForSerializationForNetwork();
 	}

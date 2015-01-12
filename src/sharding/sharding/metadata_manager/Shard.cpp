@@ -120,9 +120,9 @@ void * ClusterShardId::deserialize(void* buffer){
 
 unsigned ClusterShardId::getNumberOfBytes() const{
 	unsigned numberOfBytes = 0;
-	numberOfBytes += sizeof(coreId);
-	numberOfBytes += sizeof(unsigned);
-	numberOfBytes += sizeof(unsigned);
+	numberOfBytes += srch2::util::getNumberOfBytesFixedTypes(coreId);
+	numberOfBytes += srch2::util::getNumberOfBytesFixedTypes(partitionId);
+	numberOfBytes += srch2::util::getNumberOfBytesFixedTypes(replicaId);
 	return numberOfBytes;
 }
 
@@ -135,7 +135,7 @@ NodeShardId::NodeShardId(const NodeShardId & copy):ShardId(copy){
 	this->nodeId = copy.nodeId;
 	this->partitionId = copy.partitionId;
 }
-NodeShardId::NodeShardId(unsigned coreId, NodeId nodeId, unsigned partitionId):ShardId(coreId){
+NodeShardId::NodeShardId(uint32_t coreId, NodeId nodeId, uint32_t partitionId):ShardId(coreId){
 	this->nodeId = nodeId;
 	this->partitionId = partitionId;
 }
@@ -211,9 +211,9 @@ void * NodeShardId::deserialize(void* buffer){
 
 unsigned NodeShardId::getNumberOfBytes() const{
 	unsigned numberOfBytes = 0;
-	numberOfBytes += sizeof(coreId);
-	numberOfBytes += sizeof(NodeId);
-	numberOfBytes += sizeof(unsigned);
+	numberOfBytes += srch2::util::getNumberOfBytesFixedTypes(coreId);
+	numberOfBytes += srch2::util::getNumberOfBytesFixedTypes(nodeId);
+	numberOfBytes += srch2::util::getNumberOfBytesFixedTypes(partitionId);
 	return numberOfBytes;
 }
 
@@ -379,11 +379,11 @@ void* NodeTargetShardInfo::serialize(void * bufferWritePointer) const{
 
     bufferWritePointer = srch2::util::serializeFixedTypes(nodeId, bufferWritePointer);
     bufferWritePointer = srch2::util::serializeFixedTypes(coreId, bufferWritePointer);
-    bufferWritePointer = srch2::util::serializeFixedTypes((unsigned)(targetClusterShards.size()), bufferWritePointer);
+    bufferWritePointer = srch2::util::serializeFixedTypes((uint32_t)(targetClusterShards.size()), bufferWritePointer);
     for(unsigned i =0; i<targetClusterShards.size(); i++){
     	bufferWritePointer = targetClusterShards.at(i).serialize(bufferWritePointer);
     }
-    bufferWritePointer = srch2::util::serializeFixedTypes((unsigned)(targetNodeShards.size()), bufferWritePointer);
+    bufferWritePointer = srch2::util::serializeFixedTypes((uint32_t)(targetNodeShards.size()), bufferWritePointer);
     for(unsigned i =0; i<targetNodeShards.size(); i++){
     	bufferWritePointer = targetNodeShards.at(i).serialize(bufferWritePointer);
     }
@@ -392,13 +392,14 @@ void* NodeTargetShardInfo::serialize(void * bufferWritePointer) const{
 
 unsigned NodeTargetShardInfo::getNumberOfBytes() const{
     unsigned numberOfBytes = 0;
-    numberOfBytes += sizeof(NodeId);
-    numberOfBytes += sizeof(unsigned); // coreId
-    numberOfBytes += sizeof(unsigned); // targetClusterShards size
+    numberOfBytes += srch2::util::getNumberOfBytesFixedTypes(nodeId);
+    numberOfBytes += srch2::util::getNumberOfBytesFixedTypes(coreId); // coreId
+    numberOfBytes += srch2::util::getNumberOfBytesFixedTypes((uint32_t)targetClusterShards.size()); // targetClusterShards size
     for(unsigned shardIndex = 0 ; shardIndex < targetClusterShards.size(); ++shardIndex){
     	numberOfBytes += targetClusterShards.at(shardIndex).getNumberOfBytes();
     }
-    numberOfBytes += sizeof(unsigned); // targetClusterShards size
+    numberOfBytes += srch2::util::
+    		getNumberOfBytesFixedTypes((uint32_t)targetNodeShards.size()); // targetClusterShards size
     for(unsigned shardIndex = 0 ; shardIndex < targetNodeShards.size(); ++shardIndex){
     	numberOfBytes += targetNodeShards.at(shardIndex).getNumberOfBytes();
     }
@@ -415,15 +416,15 @@ void * NodeTargetShardInfo::deserialize(void* buffer){
 
     buffer = srch2::util::deserializeFixedTypes(buffer, nodeId);
     buffer = srch2::util::deserializeFixedTypes(buffer, coreId);
-    unsigned sizeOfVector = 0;
+    uint32_t sizeOfVector = 0;
     buffer = srch2::util::deserializeFixedTypes(buffer, sizeOfVector);
-    for(unsigned i =0; i<sizeOfVector; i++){
+    for(uint32_t i =0; i<sizeOfVector; i++){
     	ClusterShardId shardId;
     	buffer = shardId.deserialize(buffer);
     	targetClusterShards.push_back(shardId);
     }
     buffer = srch2::util::deserializeFixedTypes(buffer, sizeOfVector);
-    for(unsigned i =0; i<sizeOfVector; i++){
+    for(uint32_t i =0; i<sizeOfVector; i++){
     	NodeShardId shardId;
     	buffer = shardId.deserialize(buffer);
     	targetNodeShards.push_back(shardId);

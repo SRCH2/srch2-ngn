@@ -24,6 +24,15 @@ ReadCommand::ReadCommand(const CoreInfo_t * coreInfo,
 	this->paramContainer = paramContainer;
 	this->clusterReadview = ((ReadviewTransaction *)(this->getTransaction().get()))->getReadview();
 	this->root = SP(Json::Value)(new Json::Value(Json::objectValue));
+	this->isResultsApproximated = false;
+	this->totalSearchTime = 0;
+	this->validationRewriteTime = 0;
+	this->aggregatedEstimatedNumberOfResults = 0;
+	this->sortOperator = NULL;
+	this->logicalPlan = NULL;
+	this->aggregatedSearcherTime = 0;
+	this->payloadAccessTime = 0;
+	this->aclAttributeReadCommnad = 0;
 }
 
 SP(Transaction) ReadCommand::getTransaction(){

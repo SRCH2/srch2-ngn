@@ -82,14 +82,14 @@ inline void * serializeFixedTypes(const double & obj, void * buffer){
 	uint64_t packed;
 	packed = pack754_64(obj);
 	memcpy(buffer, (char *)(&obj), sizeof(packed));
-	return ((char *)buffer) + sizeof(obj);
+	return ((char *)buffer) + sizeof(uint64_t);
 }
 
 inline void * serializeFixedTypes(const float & obj, void * buffer){
 	uint32_t packed;
 	packed = pack754_32(obj);
 	memcpy(buffer, (char *)(&obj), sizeof(packed));
-	return ((char *)buffer) + sizeof(obj);
+	return ((char *)buffer) + sizeof(uint32_t);
 }
 
 template<class FixedType>

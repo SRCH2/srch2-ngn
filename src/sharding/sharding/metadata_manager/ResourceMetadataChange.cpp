@@ -37,7 +37,9 @@ NodeAddChange::NodeAddChange(NodeId newNodeId, const vector<ClusterShardId> & lo
     this->localClusterShardIds = localClusterShardIds;
     this->localNodeShardIds = localNodeShardIds;
 }
-NodeAddChange::NodeAddChange(){}
+NodeAddChange::NodeAddChange(){
+    this->newNodeId = 0;
+}
 NodeAddChange::NodeAddChange(const NodeId & newNodeId){
     this->newNodeId = newNodeId;
 }
@@ -99,7 +101,7 @@ void * NodeAddChange::serialize(void * buffer) const{
 }
 unsigned NodeAddChange::getNumberOfBytes() const{
 	unsigned numberOfBytes=  0;
-	numberOfBytes += sizeof(NodeId);
+	numberOfBytes += srch2::util::getNumberOfBytesFixedTypes(newNodeId);
 	numberOfBytes += srch2::util::getNumberOfBytesVectorOfDynamicTypes(this->localClusterShardIds);
 	numberOfBytes += srch2::util::getNumberOfBytesVectorOfDynamicTypes(this->localNodeShardIds);
 	return numberOfBytes;
@@ -159,6 +161,8 @@ string NodeAddChange::toString() const{
 
 ShardAssignChange::ShardAssignChange(){
 	// temporary initialization
+	this->load = 0;
+	this->location = 0;
 }
 ShardAssignChange::ShardAssignChange(ClusterShardId logicalShard, NodeId location, double load){
 	logicalShardToAssign = logicalShard;
@@ -195,8 +199,8 @@ void * ShardAssignChange::serialize(void * buffer) const{
 unsigned ShardAssignChange::getNumberOfBytes() const{
 	unsigned numberOfBytes = 0 ;
 	numberOfBytes += logicalShardToAssign.getNumberOfBytes();
-	numberOfBytes += sizeof(location);
-	numberOfBytes += sizeof(load);
+	numberOfBytes += srch2::util::getNumberOfBytesFixedTypes(location);
+	numberOfBytes += srch2::util::getNumberOfBytesFixedTypes(load);
 	return numberOfBytes;
 }
 void * ShardAssignChange::deserialize(void * buffer){
@@ -237,6 +241,7 @@ ShardMoveChange::ShardMoveChange(ClusterShardId shardId, NodeId srcNodeId, NodeI
 }
 ShardMoveChange::ShardMoveChange(){
 	// temp initialization used for deserializing the object.
+	srcNodeId = destNodeId = 0;
 }
 ShardMoveChange::ShardMoveChange(const ShardMoveChange & change){
 	this->shardId = change.shardId;
@@ -267,8 +272,8 @@ void * ShardMoveChange::serialize(void * buffer) const{
 unsigned ShardMoveChange::getNumberOfBytes() const{
 	unsigned numberOfBytes = 0 ;
 	numberOfBytes += shardId.getNumberOfBytes();
-	numberOfBytes += sizeof(srcNodeId);
-	numberOfBytes += sizeof(destNodeId);
+	numberOfBytes += srch2::util::getNumberOfBytesFixedTypes(srcNodeId);
+	numberOfBytes += srch2::util::getNumberOfBytesFixedTypes(destNodeId);
 	return numberOfBytes;
 }
 void * ShardMoveChange::deserialize(void * buffer){

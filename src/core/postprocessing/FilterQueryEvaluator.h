@@ -272,10 +272,10 @@ public:
 	 */
 	unsigned getNumberOfBytesForSerializationForNetwork() const{
 		unsigned numberOfBytes = 0;
-		numberOfBytes += sizeof(negative);
-		numberOfBytes += sizeof(unsigned) + attributeName.size();
-		numberOfBytes += sizeof(unsigned) + attributeValueLower.size();
-		numberOfBytes += sizeof(unsigned) + attributeValueUpper.size();
+		numberOfBytes += srch2::util::getNumberOfBytesFixedTypes(negative);
+		numberOfBytes += srch2::util::getNumberOfBytesString(attributeName);
+		numberOfBytes += srch2::util::getNumberOfBytesString(attributeValueLower);
+		numberOfBytes += srch2::util::getNumberOfBytesString(attributeValueUpper);
 		return numberOfBytes;
 	}
 private:
@@ -444,8 +444,8 @@ public:
 	 * | negative | operation | attributeName | attributeValue |
 	 */
 	void * serializeForNetwork(void * buffer) const {
+		buffer = srch2::util::serializeFixedTypes((uint32_t)operation, buffer);
 		buffer = srch2::util::serializeFixedTypes(negative, buffer);
-		buffer = srch2::util::serializeFixedTypes(operation, buffer);
 		buffer = srch2::util::serializeString(attributeName, buffer);
 		buffer = srch2::util::serializeString(attributeValue, buffer);
 		// messages which is member of QueryExpression should not be serialized because it comes from outside
@@ -457,7 +457,9 @@ public:
 	 * | negative | operation | attributeName | attributeValue |
 	 */
 	static void * deserializeForNetwork(QueryExpression & info, void * buffer){
-		buffer = srch2::util::deserializeFixedTypes(buffer, ((EqualityQueryExpression &)info).operation);
+		uint32_t intVar = 0;
+		buffer = srch2::util::deserializeFixedTypes(buffer, intVar);
+		((EqualityQueryExpression &)info).operation = (AttributeCriterionOperation)intVar;
 		buffer = srch2::util::deserializeFixedTypes(buffer, ((EqualityQueryExpression &)info).negative);
 		buffer = srch2::util::deserializeString(buffer, ((EqualityQueryExpression &)info).attributeName);
 		buffer = srch2::util::deserializeString(buffer, ((EqualityQueryExpression &)info).attributeValue);
@@ -470,10 +472,10 @@ public:
 	 */
 	unsigned getNumberOfBytesForSerializationForNetwork() const{
 		unsigned numberOfBytes = 0;
-		numberOfBytes += sizeof(operation) ;
-		numberOfBytes += sizeof(negative);
-		numberOfBytes += sizeof(unsigned) + attributeName.size();
-		numberOfBytes += sizeof(unsigned) + attributeValue.size();
+		numberOfBytes += srch2::util::getNumberOfBytesFixedTypes((uint32_t)operation) ;
+		numberOfBytes += srch2::util::getNumberOfBytesFixedTypes(negative);
+		numberOfBytes += srch2::util::getNumberOfBytesString(attributeName);
+		numberOfBytes += srch2::util::getNumberOfBytesString(attributeValue);
 		return numberOfBytes;
 	}
 private:
@@ -696,7 +698,7 @@ public:
      */
 	unsigned getNumberOfBytesForSerializationForNetwork() const{
 		unsigned numberOfBytes = 0;
-		numberOfBytes += sizeof(unsigned) + parsedExpression.size();
+		numberOfBytes += srch2::util::getNumberOfBytesString(parsedExpression);
 		return numberOfBytes;
 	}
 private:
@@ -903,12 +905,12 @@ public:
 	 */
 	void * serializeForNetwork(void * buffer) const {
 		buffer = srch2::util::serializeFixedTypes(isFqBoolOperatorSet, buffer);
-		buffer = srch2::util::serializeFixedTypes(termFQBooleanOperator, buffer);
+		buffer = srch2::util::serializeFixedTypes((uint32_t)termFQBooleanOperator, buffer);
 
 		buffer = srch2::util::serializeFixedTypes(unsigned(expressions.size()), buffer);
 		for(unsigned exprIndex = 0 ; exprIndex < expressions.size(); ++exprIndex){
 			QueryExpression::ExpressionType type = expressions.at(exprIndex)->getExpressionType();
-			buffer = srch2::util::serializeFixedTypes(type, buffer);
+			buffer = srch2::util::serializeFixedTypes((uint32_t)type, buffer);
 			buffer = expressions.at(exprIndex)->serializeForNetwork(buffer);
 		}
 		// messages should not be serialized
@@ -924,14 +926,17 @@ public:
 	static void * deserializeForNetwork(RefiningAttributeExpressionEvaluator & info, void * buffer, const Schema * schema) {
 		FilterQueryEvaluator & filterInfo = (FilterQueryEvaluator &)info;
 		buffer = srch2::util::deserializeFixedTypes(buffer, filterInfo.isFqBoolOperatorSet);
-		buffer = srch2::util::deserializeFixedTypes(buffer, filterInfo.termFQBooleanOperator);
-
+		uint32_t intVar = 0;
+		buffer = srch2::util::deserializeFixedTypes(buffer, intVar);
+		filterInfo.termFQBooleanOperator = (BooleanOperation) intVar;
 		unsigned numberOfExpressions = 0;
 		buffer = srch2::util::deserializeFixedTypes(buffer, numberOfExpressions);
 
 		for(unsigned exprIndex = 0; exprIndex < numberOfExpressions; ++exprIndex){
 			QueryExpression::ExpressionType type;
-			buffer = srch2::util::deserializeFixedTypes(buffer, type);
+			uint32_t intVar = 0;
+			buffer = srch2::util::deserializeFixedTypes(buffer, intVar);
+			type = (QueryExpression::ExpressionType)intVar;
 			switch (type) {
 				case QueryExpression::Range:
 				{
@@ -969,12 +974,13 @@ public:
 	unsigned getNumberOfBytesForSerializationForNetwork() const{
 		unsigned numberOfBytes = 0;
 
-		numberOfBytes += sizeof(isFqBoolOperatorSet);
-		numberOfBytes += sizeof(termFQBooleanOperator);
+		numberOfBytes += srch2::util::getNumberOfBytesFixedTypes(isFqBoolOperatorSet);
+		numberOfBytes += srch2::util::getNumberOfBytesFixedTypes((uint32_t)termFQBooleanOperator);
 
-		numberOfBytes += sizeof(unsigned); // size of expressions vector
+		numberOfBytes += srch2::util::getNumberOfBytesFixedTypes((uint32_t)expressions.size()); // size of expressions vector
 		for(unsigned exprIndex = 0 ; exprIndex < expressions.size(); ++exprIndex){
-			numberOfBytes += sizeof(QueryExpression::ExpressionType); /// type of expression
+			uint32_t intVar = 0;
+			numberOfBytes += srch2::util::getNumberOfBytesFixedTypes(intVar); /// type of expression
 			numberOfBytes += expressions.at(exprIndex)->getNumberOfBytesForSerializationForNetwork();
 		}
 		// messages should not be serialized

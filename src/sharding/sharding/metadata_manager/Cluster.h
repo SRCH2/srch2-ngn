@@ -56,16 +56,16 @@ public:
 
 private:
 
-	unsigned versionId;
+	uint32_t versionId;
 
 	string clusterName;
 
 	// coreId => core *
-	map<unsigned, const CoreInfo_t *> allCores;
+	map<uint32_t, const CoreInfo_t *> allCores;
 	// coreId => core partitions
-	map<unsigned, CorePartitionContianer *> corePartitioners;
+	map<uint32_t, CorePartitionContianer *> corePartitioners;
 	// coreId => local core shards
-	map<unsigned, LocalShardContainer *> localShardContainers;
+	map<uint32_t, LocalShardContainer *> localShardContainers;
 
 
 	// nodeId => node
