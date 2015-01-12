@@ -502,6 +502,10 @@ pthread_t IndexReaderWriter::createAndStartMergeThreadLoop() {
     		this->__getDebugShardingInfo()->explanation.c_str());
 	pthread_create(&mergerThread, &mergeThreadAttributes, dispatchMergeThread, this);
 	pthread_attr_destroy(&mergeThreadAttributes);
+	// wait till merge thread is actually ready.
+	while(!mergeThreadStarted) {
+		sleep(1);
+	}
 	return mergerThread;
 }
 
@@ -513,7 +517,8 @@ void * dispatchMergeWorkerThread(void *arg) {
 	MergeWorkersThreadArgs *info = (MergeWorkersThreadArgs *) arg;
 	IndexData * index = (IndexData *)info->index;
 	pthread_mutex_lock(&info->perThreadMutex);
-	while(1) {
+	info->workerReady = true;
+	while(!info->stopExecuting) {
 		pthread_cond_wait(&info->waitConditionVar, &info->perThreadMutex);
 		if (info->stopExecuting)
 			break;
@@ -538,7 +543,6 @@ void * dispatchMergeWorkerThread(void *arg) {
 		}
 	}
 	pthread_mutex_unlock(&info->perThreadMutex);
-	pthread_mutex_destroy(&info->perThreadMutex);
 	return NULL;
 }
 /*
@@ -557,11 +561,25 @@ void IndexReaderWriter::createAndStartMergeWorkerThreads() {
 		mergeWorkersArgs[i].isDataReady = false;
 		mergeWorkersArgs[i].stopExecuting = false;
 		mergeWorkersArgs[i].workerId = i;
+		mergeWorkersArgs[i].workerReady = false;
 		pthread_mutex_init(&mergeWorkersArgs[i].perThreadMutex, NULL);
 		pthread_cond_init(&mergeWorkersArgs[i].waitConditionVar, NULL);
 		pthread_create(&mergerWorkerThreads[i], NULL,
 				dispatchMergeWorkerThread, &mergeWorkersArgs[i]);
 		// Logger::console("created merge worker thread %d", i);
+	}
+
+	// make sure all worker threads are ready before returning.
+	bool allReady = false;
+	while (!allReady) {
+		allReady = true;
+		for (unsigned i = 0; i < mergeWorkersCount; ++i) {
+			if (mergeWorkersArgs[i].workerReady == false) {
+				allReady = false;
+				sleep(1);
+				break;
+			}
+		}
 	}
 }
 
@@ -608,7 +626,8 @@ void IndexReaderWriter::startMergeThreadLoop()
         ts.tv_nsec = tp.tv_usec * 1000;
         ts.tv_sec += this->mergeEveryNSeconds;
 
-        pthread_mutex_lock(&lockForWriters);
+        // lockForWriters mutex is unlocked inside pthread_cond_timedwait function and
+        // acquired again before returning. We do not need to explicitly lock/unlock the mutex.
         rc = pthread_cond_timedwait(&countThresholdConditionVariable,
             &lockForWriters, &ts);
 
@@ -620,8 +639,7 @@ void IndexReaderWriter::startMergeThreadLoop()
             break;
         else
         {
-        	this->doMerge();
-            pthread_mutex_unlock(&lockForWriters);
+            this->doMerge();
         }
     }
     pthread_cond_destroy(&countThresholdConditionVariable);
@@ -638,6 +656,9 @@ void IndexReaderWriter::startMergeThreadLoop()
     // make sure all worker threads are stopped.
     for (unsigned i = 0; i < mergeWorkersCount; ++i) {
     	pthread_join(mergerWorkerThreads[i], NULL);
+    	// release resources when worker thread is gone.
+    	pthread_mutex_destroy(&mergeWorkersArgs[i].perThreadMutex);
+    	pthread_cond_destroy(&mergeWorkersArgs[i].waitConditionVar);
     }
     // free allocate memory
     delete[] mergerWorkerThreads;
