@@ -464,6 +464,8 @@ void * LogicalPlan::serializeForNetwork(void * buffer){
 	buffer = srch2::util::serializeVectorOfFixedTypes(accessibleSearchableAttributes, buffer);
 	buffer = srch2::util::serializeVectorOfFixedTypes(accessibleRefiningAttributes, buffer);
 
+	buffer = srch2::util::serializeString(queryStringWithTermsAndOpsOnly, buffer);
+
 	if(exactQuery != NULL){
 		buffer = exactQuery->serializeForNetwork(buffer);
 	}
@@ -510,6 +512,8 @@ void * LogicalPlan::deserializeForNetwork(LogicalPlan & logicalPlan , void * buf
 	buffer = srch2::util::deserializeString(buffer, logicalPlan.roleId);
 	buffer = srch2::util::deserializeVectorOfFixedTypes(buffer, logicalPlan.accessibleSearchableAttributes);
 	buffer = srch2::util::deserializeVectorOfFixedTypes(buffer, logicalPlan.accessibleRefiningAttributes);
+
+	buffer = srch2::util::deserializeString(buffer, logicalPlan.queryStringWithTermsAndOpsOnly);
 
 	if(isExactQueryNotNull){
 		logicalPlan.exactQuery = new Query(SearchTypeTopKQuery);
@@ -563,6 +567,8 @@ unsigned LogicalPlan::getNumberOfBytesForSerializationForNetwork(){
 	numberOfBytes += sizeof(unsigned) + this->roleId.size();
 	numberOfBytes += srch2::util::getNumberOfBytesVectorOfFixedTypes(accessibleSearchableAttributes);
 	numberOfBytes += srch2::util::getNumberOfBytesVectorOfFixedTypes(accessibleRefiningAttributes);
+
+	numberOfBytes += srch2::util::getNumberOfBytesString(queryStringWithTermsAndOpsOnly);
 
 	// exact query
 	if(this->exactQuery != NULL){

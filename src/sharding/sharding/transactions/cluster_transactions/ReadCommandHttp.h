@@ -107,6 +107,11 @@ private:
 	        return;
 	    }
 
+	    if (coreReadCommandInfo->coreInfo->isUserFeedbackEnabled()) {
+	    	// set only if user feedback is enabled else leave it empty.
+	    	coreReadCommandInfo->paramContainer.queryStringWithTermsAndOpsOnly = qp.fetchCleanQueryString();
+	    }
+
 		// give parameters to ReadCommand to perform the search
 	    coreReadCommandInfo->readCommand = new ReadCommand(coreReadCommandInfo->coreInfo, coreReadCommandInfo->paramContainer, this);
 	    coreReadCommandInfo->readCommand->produce();

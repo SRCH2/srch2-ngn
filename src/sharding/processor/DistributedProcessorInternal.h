@@ -210,6 +210,9 @@ private:
     		const string &roleId, const vector<string> &attributes,
     		srch2::instantsearch::AclActionType commandType,
     		vector<JsonMessageCode> & messageCodes, bool & statusValue);
+    void addFeedback(Indexer *indexer,
+    		const string &roleId, const vector<string> &queries,
+    		vector<JsonMessageCode> & messageCodes, bool & statusValue);
 };
 
 

@@ -68,14 +68,10 @@ def test(queriesAndResultsPath, binary_path, configFilePath):
     #Start the engine server
     args = [ binary_path, '--config-file=' + configFilePath]
 
-    if test_lib.confirmPortAvailable(port) == False:
-        print 'Port ' + str(port) + ' already in use - aborting'
-        return -1
-
     print 'starting engine: ' + args[0] + ' ' + args[1]
     serverHandle = test_lib.startServer(args)
 
-    test_lib.pingServer(port, 'q=garbage', 30)
+    #test_lib.pingServer(port, 'q=garbage', 30)
 
     #construct the query
     failCount = 0

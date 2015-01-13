@@ -11,6 +11,7 @@
 #include "sharding/sharding/transactions/cluster_transactions/BulkLoadCommandHttp.h"
 #include "sharding/sharding/transactions/cluster_transactions/ShutdownCommand.h"
 #include "sharding/sharding/transactions/cluster_transactions/DebugInfoCollector.h"
+#include "sharding/sharding/transactions/cluster_transactions/UserFeedbackCommandHttp.h"
 #include <exception>
 
 
@@ -130,6 +131,9 @@ void Srch2ServerGateway::cb_coreSpecificOperations(struct evhttp_request * req, 
     		break;
     	case srch2http::BulkLoadRecordAcl:
     		BulkLoadCommandHttpHandler::runCommand(clusterReadview, req, coreId, AclRecordBulkLoad);
+    		break;
+    	case srch2http::UserFeedback:
+    		UserFeedbackHttpHandler::runCommand(clusterReadview, req, coreId);
     		break;
     	default:
     		cb_notfound(req, NULL);

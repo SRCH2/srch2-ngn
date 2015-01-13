@@ -81,6 +81,7 @@ void ReadCommand::search(){
 		return;
 	}
 
+	logicalPlan->queryStringWithTermsAndOpsOnly = paramContainer.queryStringWithTermsAndOpsOnly;
 	logicalPlan->accessibleRefiningAttributes = aclApprovedRefiningAttributes;
 	logicalPlan->accessibleSearchableAttributes = aclApprovedSearchAttributes;
 
