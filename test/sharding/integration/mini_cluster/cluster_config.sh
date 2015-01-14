@@ -43,13 +43,13 @@ __SRCH2_HOMES=(/home/jamshid/mini_cluster \
               /home/jamshid/mini_cluster \
               /home/jamshid/mini_cluster)
 ### node information of each machine
-__GROUP_PROCESS_COUNTS=(4 4  \
-                   1 \
-                   4 \
-                   4 \
-                   4 \
-                   4 \
-                   4)
+__GROUP_PROCESS_COUNTS=(40 20  \
+                   10 \
+                   40 \
+                   10 \
+                   10 \
+                   20 \
+                   20)
 __DATA_FILE_REL_PATHS=( data \
                      data \
                      data \

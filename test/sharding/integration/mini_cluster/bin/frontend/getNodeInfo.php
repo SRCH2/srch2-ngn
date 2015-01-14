@@ -116,7 +116,7 @@ function refereshInfo() {
 	    }else{
 		document.getElementById("body_id").innerHTML=xmlhttp.responseText;
 	    }
-	    setTimeout(refereshInfo, 3000);
+	    setTimeout(refereshInfo, 1000);
 	  }
 	}
 	xmlhttp.open("GET", ROOT+"/getNodeInfo.php?batch_operation=none&bodyOnly=true&node-index=" + $("#nodePortTagId option:selected").val(),true);
@@ -390,7 +390,7 @@ if(property_exists($jsonData, 'metadata_locks')){
 				<div class="DATA" id="node_port_id"><?php echo $ID." ".($NodeInfoAvailable && $State == "FAILED"? "" : "| ".$Port); ?></div>
 				<?php if($NodeInfoAvailable && $State != "FAILED"){?>
 				<hr>
-				<div class="DATA" id="node_name"><?php echo $NodeName; ?></div>
+				<div class="DATA" id="node_name" style="width:120px"><?php echo $NodeName; ?></div>
 				<hr>
 				<div class="DATA" name="node_load"><?php echo "Load:<b>".$nodesLoads[$ID]."</b>"; ?></div>
 				<?php }?>

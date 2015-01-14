@@ -182,8 +182,9 @@ public:
 
 
 	void setLoadBalancing();
-	void resetLoadBalancing();
+	void resetLoadBalancing(bool timeChange);
 	bool isLoadBalancing();
+	uint32_t getLoadBalancingCheckInterval();
 	pthread_t * getLoadbalancingThread() ;
 
 
@@ -229,6 +230,7 @@ private:
 	bool joinedFlag;
 	bool cancelledFlag;
 	bool loadBalancingFlag;
+	uint32_t loadBalancingCheckInterval;
 	pthread_t * loadBalancingThread;
 	vector<pthread_t *> shardManagerThreads;
 public:

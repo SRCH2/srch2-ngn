@@ -36,7 +36,7 @@ chmod a+x $( _KILL_COMMAND $__GROUP_NAME)
 for i in `seq $NODE_START $NODE_END`
    
 do
-   date > $(_CONSULE_LOG __GROUP_NAME $i)
+   date > $(_CONSULE_LOG $__GROUP_NAME $i)
    $(_ENGINE_BINARY) --config=$(_CONF_FILE $i) > $(_CONSULE_LOG $__GROUP_NAME $i) &
    sleep 1
    PID=$(_GET_Ith_TOKEN "$(ps aux | grep \"--config=$(_CONF_FILE $i)\" | head -1)" 1 ' ')

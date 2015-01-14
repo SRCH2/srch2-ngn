@@ -175,8 +175,11 @@ ShardingTransactionType LoadBalancer::getTransactionType(){
 
 void LoadBalancer::finalizeWork(Transaction::Params * arg){
     Logger::sharding(Logger::Step, "LoadBalancer| Load balancer is finalizing.");
-
-	ShardManager::getShardManager()->resetLoadBalancing();
+    if(currentOp == PreStart){
+		ShardManager::getShardManager()->resetLoadBalancing(false);
+    }else{
+    	ShardManager::getShardManager()->resetLoadBalancing(true);
+    }
 	return;
 }
 

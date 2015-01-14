@@ -206,9 +206,9 @@ bool ShardingNotification::send(SP(ShardingNotification) notification){
 		ASSERT(false);
 		return false;
 	}
-	if(ShardManager::getShardManager()->isCancelled()){
-		return true;
-	}
+//	if(ShardManager::getShardManager()->isCancelled()){
+//		return true;
+//	}
 	if(notification->messageType() == ShardingNewNodeReadMetadataReplyMessageType ||
 	        notification->messageType() == ShardingNewNodeReadMetadataRequestMessageType){
 	    if(notification->getSrc().nodeId == notification->getDest().nodeId){

@@ -43,6 +43,8 @@ void LockManager::resolve(SP(LockingNotification)  notif){
         }
 	}
 
+	boost::unique_lock<boost::shared_mutex> xLockWriteview ;
+	ShardManager::getShardManager()->getWriteview_write(xLockWriteview);
 	lockManagerMutex.lock();
 	bool releaseHappended = false;
 	if(lockBatch->release){
@@ -53,13 +55,14 @@ void LockManager::resolve(SP(LockingNotification)  notif){
 	bool shouldCommit = lockBatch->shouldCommitReadview;
 	bool shouldFinalize = lockBatch->shouldFinalize;
 	if(shouldCommit){
-		ShardManager::getShardManager()->getMetadataManager()->commitClusterMetadata(true, false);
+		ShardManager::getShardManager()->getMetadataManager()->commitClusterMetadata(false, false);
 	}
 	if(shouldFinalize){
 		finalize(lockBatch);
 		delete lockBatch;
 	}
 	lockManagerMutex.unlock();
+	xLockWriteview.unlock();
 	if(releaseHappended){
 		movePendingLockBatchesForward();
 	}
@@ -99,6 +102,9 @@ void LockManager::resolveNodeFailure(const NodeId & failedNode){
 		}
 	}
 	readviewReleaseMutex.unlock();
+
+	boost::unique_lock<boost::shared_mutex> xLockWriteview ;
+	ShardManager::getShardManager()->getWriteview_write(xLockWriteview);
 	lockManagerMutex.lock();
 	for(vector<LockBatch *>::iterator lockBItr = pendingLockBatches.begin();
 			lockBItr != pendingLockBatches.end(); ){
@@ -123,9 +129,10 @@ void LockManager::resolveNodeFailure(const NodeId & failedNode){
 
 	// reflect changes on the readview
 	if(releaseHappenned){
-		ShardManager::getShardManager()->getMetadataManager()->commitClusterMetadata(true, false);
+		ShardManager::getShardManager()->getMetadataManager()->commitClusterMetadata(false, false);
 	}
 	lockManagerMutex.unlock();
+	xLockWriteview.unlock();
 
 	// maybe some other pending lock requests can move forward
 	if(releaseHappenned2){
@@ -272,6 +279,8 @@ void LockManager::getLockedPartitions(vector<ClusterPID> & lockedPartitions, boo
 
 void LockManager::movePendingLockBatchesForward(unsigned pendingLockBatchIdx){
 
+	boost::unique_lock<boost::shared_mutex> xLockWriteview ;
+	ShardManager::getShardManager()->getWriteview_write(xLockWriteview);
 	lockManagerMutex.lock();
 	if(pendingLockBatchIdx >= pendingLockBatches.size()){
 		lockManagerMutex.unlock();
@@ -308,7 +317,7 @@ void LockManager::movePendingLockBatchesForward(unsigned pendingLockBatchIdx){
 	}
 
 	if(shouldCommit){
-		ShardManager::getShardManager()->getMetadataManager()->commitClusterMetadata(true, false);
+		ShardManager::getShardManager()->getMetadataManager()->commitClusterMetadata(false, false);
 	}
 	if(lockBatchMoveResult){
 		finalize(lockBatch);
@@ -316,6 +325,7 @@ void LockManager::movePendingLockBatchesForward(unsigned pendingLockBatchIdx){
 	}
 
 	lockManagerMutex.unlock();
+	xLockWriteview.unlock() ;
 	movePendingLockBatchesForward(nextPendingLockBatchIdx);
 }
 

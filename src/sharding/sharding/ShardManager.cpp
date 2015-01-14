@@ -121,6 +121,8 @@ ShardManager::ShardManager(ConfigManager * configManager,ResourceMetadataManager
 	this->stateMachine = new StateMachine();
 	this->joinedFlag = false;
 	this->cancelledFlag = false;
+	this->loadBalancingFlag = false;
+	this->loadBalancingCheckInterval = 500000;
 	this->loadBalancingThread = new pthread_t;
 
 	for(unsigned i = 0 ; i < MAX_NUM_TRANS_GROUPS; ++i){
@@ -244,13 +246,28 @@ void ShardManager::setLoadBalancing(){
 	boost::unique_lock<boost::shared_mutex> xLock(shardManagerMembersMutex);
 	this->loadBalancingFlag = true;
 }
-void ShardManager::resetLoadBalancing(){
+void ShardManager::resetLoadBalancing(bool loadBalancingHappened){
 	boost::unique_lock<boost::shared_mutex> xLock(shardManagerMembersMutex);
 	this->loadBalancingFlag = false;
+	if(loadBalancingHappened){
+		// reset interval to base value
+		this->loadBalancingCheckInterval = 500000;
+	}else{
+		// increase interval
+		this->loadBalancingCheckInterval *= 2;
+		if(this->loadBalancingCheckInterval > 5000000){
+			this->loadBalancingCheckInterval = 5000000;
+		}
+	}
 }
 bool ShardManager::isLoadBalancing() {
 	boost::shared_lock<boost::shared_mutex> sLock(shardManagerMembersMutex);
 	return this->loadBalancingFlag;
+}
+
+uint32_t ShardManager::getLoadBalancingCheckInterval(){
+	boost::shared_lock<boost::shared_mutex> sLock(shardManagerMembersMutex);
+	return this->loadBalancingCheckInterval ;
 }
 
 pthread_t * ShardManager::getLoadbalancingThread() {
@@ -709,7 +726,8 @@ void * ShardManager::periodicWork(void *args) {
 		 * 2. is we are joined, start load balancing.
 		 */
 		//
-		sleep(2);
+		uint32_t sleepTime = ShardManager::getShardManager()->getLoadBalancingCheckInterval();
+		usleep(sleepTime);
 
 		// 1. Resend bounced notifications.
 		ShardManager::getShardManager()->resendBouncedNotifications();
