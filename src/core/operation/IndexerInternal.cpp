@@ -412,7 +412,7 @@ void IndexReaderWriter::save(const std::string& directoryName)
 
 INDEXWRITE_RETVAL IndexReaderWriter::merge(bool updateHistogram)
 {
-	if(! this->index->isMergeRequired()){
+	if(! this->index->isMergeRequired() && !this->userFeedbackIndex->isMergeRequired()){
 		return OP_NOTHING_TO_DO;
 	}
 
@@ -608,7 +608,6 @@ void IndexReaderWriter::startMergeThreadLoop()
     Logger::sharding(Logger::Detail, "CORE(%s) | Merge thread flag set to true in merge thread. Node name : %s , Explanation : %s .",
     		this->__getDebugShardingInfo()->shardName.c_str(), this->__getDebugShardingInfo()->nodeName.c_str(),
     		this->__getDebugShardingInfo()->explanation.c_str());
-    pthread_mutex_unlock(&lockForWriters);
 
     createAndStartMergeWorkerThreads();
 
@@ -632,7 +631,6 @@ void IndexReaderWriter::startMergeThreadLoop()
             &lockForWriters, &ts);
 
         if(! this->mergeEnabledFlag){
-            pthread_mutex_unlock(&lockForWriters);
             continue;
         }
         if (mergeThreadStarted == false)

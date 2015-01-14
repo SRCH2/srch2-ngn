@@ -332,7 +332,7 @@ LogicalPlan::LogicalPlan(const LogicalPlan & logicalPlan){
 	this->roleId = logicalPlan.roleId;
 	this->accessibleSearchableAttributes = logicalPlan.accessibleSearchableAttributes;
 	this->accessibleRefiningAttributes = logicalPlan.accessibleRefiningAttributes;
-
+	this->queryStringWithTermsAndOpsOnly = logicalPlan.queryStringWithTermsAndOpsOnly;
 	if(logicalPlan.exactQuery != NULL){
 		this->exactQuery = new Query(*(logicalPlan.exactQuery));
 	}else{

@@ -28,7 +28,7 @@ namespace httpwrapper {
 /*
  *  HTTP handler transaction for user feedback.
  */
-class UserFeedbackHttpHandler: public ReadviewTransaction, public NodeIteratorListenerInterface {
+class UserFeedbackHttpHandler: public ReadviewTransaction, public ConsumerInterface {
 public:
 
     static void runCommand(boost::shared_ptr<const ClusterResourceMetadata_Readview> clusterReadview,
@@ -43,7 +43,6 @@ public:
     ~UserFeedbackHttpHandler(){
     	finalize();
         delete userFeedbackCommand;
-        delete req;
     }
 
 
@@ -150,11 +149,6 @@ private:
 //    	server->indexer->getFeedbackIndexer()->addFeedback(queryString, recordIdString, secondSinceEpoch);
     	return true;
     }
-
-	void initSession(){
-		this->setSession(new TransactionSession());
-		this->getSession()->response = new JsonRecordOperationResponse();
-	}
 
     /*
      * The main work of AclCommandHttpHandler starts in this function
@@ -333,7 +327,7 @@ private:
     }
 
     void finalizeWork(Transaction::Params * params){
-		this->getTransaction()->getSession()->response->printHTTP(req);
+		this->getSession()->response->printHTTP(req);
     }
 
     /*

@@ -475,6 +475,7 @@ public:
         messages = right.messages;
         PhraseKeyWordsInfoMap = right.PhraseKeyWordsInfoMap;
         parametersInQuery = right.parametersInQuery;
+        queryStringWithTermsAndOpsOnly = right.queryStringWithTermsAndOpsOnly;
     }
 
 

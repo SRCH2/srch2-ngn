@@ -91,6 +91,8 @@ public:
     	saveIndexFlag = flag;
     }
 
+    bool isMergeRequired() { return mergeRequired; }
+
     // constructor
     FeedbackIndex(unsigned maxFeedbackInfoCountPerQuery, unsigned maxCountOfFeedbackQueries,
     		Indexer *indexer);

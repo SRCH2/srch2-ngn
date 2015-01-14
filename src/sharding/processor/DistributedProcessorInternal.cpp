@@ -667,7 +667,7 @@ SP(Write2PCNotification::ACK) DPInternalRequestHandler::resolveWrite2PC(SP(Write
 		}
 		vector<string> queries;
 		if(notif->shouldPerformWrite() &&
-				(notif->getCommandType() == AclRecordAdd_ClusterRecordOperation_Type)) {
+				(notif->getCommandType() == Feedback_ClusterRecordOperation_Type)) {
 			queries = recordHanldes.at(recIdx)->getRoleIds(); // roleIds is actually queries.
 		}
 
