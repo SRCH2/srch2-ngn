@@ -121,32 +121,6 @@ private:
 
     	queryId = recordIdString;
 
-    	//      THIS WILL GO TO INTENRAL/...
-//    	Json::Value timestamp = doc.get("timestamp", Json::Value());
-//    	unsigned secondSinceEpoch;
-//    	if (timestamp.type() == Json::stringValue) {
-//    		string timestampString = timestamp.asString();
-//    		boost::algorithm::trim(timestampString);
-//    		bool valid = srch2is::DateAndTimeHandler::verifyDateTimeString(timestampString,
-//    				srch2is::DateTimeTypePointOfTime);
-//    		if (!valid) {
-//    			std::stringstream log_str;
-//    			log_str << "API : feedback, Error: 'timestamp' key is invalid in request JSON.";
-//    			feedbackResponse = log_str.str();
-//    			return false;
-//    		}
-//    		secondSinceEpoch = srch2is::DateAndTimeHandler::convertDateTimeStringToSecondsFromEpoch(timestampString);
-//    	} else {
-//    		secondSinceEpoch = time(NULL);
-//    	}
-//    	INDEXLOOKUP_RETVAL retVal = server->indexer->lookupRecord(recordIdString);
-//    	if (retVal != LU_PRESENT_IN_READVIEW_AND_WRITEVIEW) {
-//    		std::stringstream log_str;
-//    		log_str << "API : feedback, Error: 'recordId' key is invalid in request JSON.";
-//    		feedbackResponse = log_str.str();
-//    		return false;
-//    	}
-//    	server->indexer->getFeedbackIndexer()->addFeedback(queryString, recordIdString, secondSinceEpoch);
     	return true;
     }
 
