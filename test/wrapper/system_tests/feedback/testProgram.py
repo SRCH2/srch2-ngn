@@ -68,14 +68,10 @@ def test(queriesAndResultsPath, binary_path, configFilePath):
     #Start the engine server
     args = [ binary_path, '--config-file=' + configFilePath]
 
-    if test_lib.confirmPortAvailable(port) == False:
-        print 'Port ' + str(port) + ' already in use - aborting'
-        return -1
-
     print 'starting engine: ' + args[0] + ' ' + args[1]
     serverHandle = test_lib.startServer(args)
 
-    test_lib.pingServer(port, 'q=garbage', 30)
+    #test_lib.pingServer(port, 'q=garbage', 30)
 
     #construct the query
     failCount = 0
@@ -108,10 +104,15 @@ def test(queriesAndResultsPath, binary_path, configFilePath):
             else:
                 query='http://localhost:' + port + '/' + coreName + '/' + command
             print query + " -X PUT -d '" + payload.strip('\n') + "'"
-            request = urllib2.Request(query, data=payload)
-            request.get_method = lambda: 'PUT'
-            opener = urllib2.build_opener(urllib2.HTTPHandler)
-            url = opener.open(request)
+            try:
+                request = urllib2.Request(query, data=payload)
+                request.get_method = lambda: 'PUT'
+                opener = urllib2.build_opener(urllib2.HTTPHandler)
+                url = opener.open(request)
+            except urllib2.HTTPError as e:
+                print e.read()
+                test_lib.killServer(serverHandle)
+                return 1 
             time.sleep(1)
         else:
             # the line is a search query

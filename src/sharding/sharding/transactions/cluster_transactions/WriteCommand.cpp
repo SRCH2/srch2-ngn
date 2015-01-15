@@ -462,6 +462,27 @@ WriteCommand::WriteCommand(ConsumerInterface * consumer,
 	this->nodeWriter = NULL;
 }
 
+/*
+ *  write command for user feedback
+ */
+WriteCommand::WriteCommand(ConsumerInterface * consumer,
+			map<string, vector<string> > & primaryKeyQueryIdsMap,
+			const CoreInfo_t * coreInfo): ProducerInterface(consumer) {
+	ASSERT(coreInfo != NULL);
+	ASSERT(this->getConsumer() != NULL);
+	ASSERT(this->getConsumer()->getTransaction() != NULL);
+	ASSERT(this->getConsumer()->getTransaction()->getSession() != NULL);
+
+	this->currentOpId = NodeOperationId(ShardManager::getCurrentNodeId(), OperationState::getNextOperationId());
+	this->coreInfo = coreInfo;
+	this->clusterReadview = ((ReadviewTransaction *)(this->getConsumer()->getTransaction().get()))->getReadview();
+	this->response = (JsonRecordOperationResponse*) (this->getConsumer()->getTransaction()->getSession()->response);
+
+	initActionType(Feedback_ClusterRecordOperation_Type);
+	initRecords(primaryKeyQueryIdsMap);
+	this->nodeWriter = NULL;
+}
+
 WriteCommand::~WriteCommand(){
 	if(this->nodeWriter != NULL){
 		delete nodeWriter;
@@ -688,7 +709,9 @@ void WriteCommand::initActionType(ClusterRecordOperation_Type insertUpdateDelete
 		case AclAttrDelete_ClusterRecordOperation_Type:
 			actionNameStr = string(c_action_acl_attribute_delete);
 			break;
-
+		case Feedback_ClusterRecordOperation_Type:
+			actionNameStr = string(c_action_user_feedback);
+			break;
 	}
 }
 

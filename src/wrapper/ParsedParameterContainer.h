@@ -14,7 +14,7 @@
  * OR PROFITS, WHETHER IN AN ACTION OF CONTRACT, NEGLIGENCE OR OTHER ACTION, ARISING OUT OF OR IN CONNECTION
  * WITH THE USE OR PERFORMANCE OF SOFTWARE.
 
- * Copyright © 2010 SRCH2 Inc. All rights reserved
+ * Copyright �� 2010 SRCH2 Inc. All rights reserved
  */
 
 #ifndef __WRAPPER_PARSEDPARAMETERCONTAINER_H_
@@ -475,6 +475,7 @@ public:
         messages = right.messages;
         PhraseKeyWordsInfoMap = right.PhraseKeyWordsInfoMap;
         parametersInQuery = right.parametersInQuery;
+        queryStringWithTermsAndOpsOnly = right.queryStringWithTermsAndOpsOnly;
     }
 
 
@@ -563,6 +564,8 @@ public:
     /// messages for the query processing pipeline
     // msgString to be added to a vector
     std::vector<std::pair<MessageType, string> > messages; // stores the messages related to warnings and errors.
+
+    string queryStringWithTermsAndOpsOnly; // used for querying feedback index.
 
     /*
      * function create and return the message string.

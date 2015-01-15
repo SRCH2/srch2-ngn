@@ -238,7 +238,8 @@ enum ClusterRecordOperation_Type{
 	AclRecordDelete_ClusterRecordOperation_Type,
 	AclAttrReplace_ClusterRecordOperation_Type,
 	AclAttrDelete_ClusterRecordOperation_Type,
-	AclAttrAppend_ClusterRecordOperation_Type
+	AclAttrAppend_ClusterRecordOperation_Type,
+	Feedback_ClusterRecordOperation_Type
 };
 
 
@@ -277,7 +278,8 @@ enum ShardingTransactionType{
 	ShardingTransactionType_InsertUpdateCommand,
 	ShardingTransactionType_ReadCommand,
 	ShardingTransactionType_Shutdown,
-	ShardingTransactionType_DebugCollectInfo
+	ShardingTransactionType_DebugCollectInfo,
+	ShardingTransactionType_FeedbackCommandCode
 };
 
 const char * getTransTypeStr(ShardingTransactionType type);

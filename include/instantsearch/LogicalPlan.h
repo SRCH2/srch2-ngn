@@ -194,7 +194,7 @@ public:
 	ResultsPostProcessorPlan * postProcessingPlan;
 	ResultsPostProcessingInfo * postProcessingInfo;
 
-	string queryStringWithTermsAndOps;
+	string queryStringWithTermsAndOpsOnly;
     // constructs a term logical plan node
     LogicalPlanNode * createTermLogicalPlanNode(const std::string &queryKeyword,
     		TermType type,

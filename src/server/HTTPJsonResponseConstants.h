@@ -46,6 +46,7 @@ static const char* c_action_acl_record_delete = "acl-record-delete";
 static const char* c_action_acl_attribute_replace = "acl-attribute-replace";
 static const char* c_action_acl_attribute_append = "acl-attribute-append";
 static const char* c_action_acl_attribute_delete = "acl-attribute-delete";
+static const char* c_action_user_feedback = "user-feedback";
 static const char* c_action_save   = "save";
 static const char* c_action_save_data   = "save_data";
 static const char* c_action_save_metadata   = "save_metadata";

@@ -15,6 +15,7 @@
 #include <core/util/Version.h>
 #include "wrapper/ParsedParameterContainer.h"
 #include "sharding/sharding/ShardManager.h"
+#include "index/FeedbackIndex.h"
 
 namespace srch2is = srch2::instantsearch;
 using namespace srch2is;
@@ -664,6 +665,12 @@ SP(Write2PCNotification::ACK) DPInternalRequestHandler::resolveWrite2PC(SP(Write
 						|| notif->getCommandType() == AclAttrReplace_ClusterRecordOperation_Type)){
 			roleIds = recordHanldes.at(recIdx)->getRoleIds();
 		}
+		vector<string> queries;
+		if(notif->shouldPerformWrite() &&
+				(notif->getCommandType() == Feedback_ClusterRecordOperation_Type)) {
+			queries = recordHanldes.at(recIdx)->getRoleIds(); // roleIds is actually queries.
+		}
+
 		if(primaryKey == ""){
 			return SP(Write2PCNotification::ACK)();
 		}
@@ -762,6 +769,15 @@ SP(Write2PCNotification::ACK) DPInternalRequestHandler::resolveWrite2PC(SP(Write
 					shardPKResult->statusValue = true;
 				}
 				break;
+			case Feedback_ClusterRecordOperation_Type:
+				if(notif->shouldPerformWrite()){
+					addFeedback(shard->getSrch2Server()->getIndexer(),
+							primaryKey, queries, shardPKResult->messageCodes,
+							shardPKResult->statusValue);
+				}else{
+					shardPKResult->statusValue = true;
+				}
+				break;
 			}
 			result->addPrimaryKeyShardResult(primaryKey, shardPKResult);
 		}
@@ -843,6 +859,22 @@ void DPInternalRequestHandler::attributeAclModify(Indexer *indexer,
 	vector<string> attributeList = attributes;
 	indexer->getAttributeAcl().processAclRequest(attributeList, roleIds, commandType);
 	statusValue = true;
+}
+
+void DPInternalRequestHandler::addFeedback(Indexer *indexer,
+		const string &externalRecordId, const vector<string> &queries,
+		vector<JsonMessageCode> & messageCodes, bool & statusValue) {
+
+	INDEXLOOKUP_RETVAL retVal = indexer->lookupRecord(externalRecordId);
+	if (retVal == LU_PRESENT_IN_READVIEW_AND_WRITEVIEW) {
+		for (unsigned i = 0; i < queries.size(); ++i) {
+			indexer->getFeedbackIndexer()->addFeedback(queries[i], externalRecordId, time(NULL));
+		}
+		statusValue = true;
+	} else {
+		messageCodes.push_back(HTTP_JSON_PK_Does_Not_Exist);
+		statusValue = false;
+	}
 }
 
 SP(AclAttributeReadNotification::ACK) DPInternalRequestHandler::
