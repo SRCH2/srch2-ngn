@@ -104,10 +104,15 @@ def test(queriesAndResultsPath, binary_path, configFilePath):
             else:
                 query='http://localhost:' + port + '/' + coreName + '/' + command
             print query + " -X PUT -d '" + payload.strip('\n') + "'"
-            request = urllib2.Request(query, data=payload)
-            request.get_method = lambda: 'PUT'
-            opener = urllib2.build_opener(urllib2.HTTPHandler)
-            url = opener.open(request)
+            try:
+                request = urllib2.Request(query, data=payload)
+                request.get_method = lambda: 'PUT'
+                opener = urllib2.build_opener(urllib2.HTTPHandler)
+                url = opener.open(request)
+            except urllib2.HTTPError as e:
+                print e.read()
+                test_lib.killServer(serverHandle)
+                return 1 
             time.sleep(1)
         else:
             # the line is a search query
