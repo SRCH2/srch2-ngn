@@ -13,7 +13,7 @@
  * OR PROFITS, WHETHER IN AN ACTION OF CONTRACT, NEGLIGENCE OR OTHER ACTION, ARISING OUT OF OR IN CONNECTION
  * WITH THE USE OR PERFORMANCE OF SOFTWARE.
 
- * Copyright © 2010 SRCH2 Inc. All rights reserved
+ * Copyright �� 2010 SRCH2 Inc. All rights reserved
  */
 
 #ifndef __PHYSICALPLANRECORDITEMFACTORY_H__
@@ -239,6 +239,7 @@ public:
 	PhysicalPlanRecordItem * cloneForCache(PhysicalPlanRecordItem * oldObj){
 		PhysicalPlanRecordItem  * newObj = new PhysicalPlanRecordItem();
 		newObj->setRecordId(oldObj->getRecordId());
+		newObj->setExactResult(oldObj->isExactResult());
 		newObj->setRecordRuntimeScore(oldObj->getRecordRuntimeScore());
 		vector<TrieNodePointer> matchingPrefixes;
 		oldObj->getRecordMatchingPrefixes(matchingPrefixes);
@@ -263,6 +264,7 @@ public:
 	PhysicalPlanRecordItem * clone(PhysicalPlanRecordItem * oldObj){
 		PhysicalPlanRecordItem  * newObj = createRecordItem();
 		newObj->setRecordId(oldObj->getRecordId());
+		newObj->setExactResult(oldObj->isExactResult());
 		newObj->setRecordRuntimeScore(oldObj->getRecordRuntimeScore());
 		vector<TrieNodePointer> matchingPrefixes;
 		oldObj->getRecordMatchingPrefixes(matchingPrefixes);
