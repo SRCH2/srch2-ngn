@@ -8,6 +8,7 @@ __INSTALL_FILES_SCRIPTS=( run_cluster_command \
                   env-constants.sh \
                   env-util.sh \
                   generateConfigFile.py \
+                  insertReqGenerator.py \
                   init-env.sh \
                   branch-op.sh \
                   run-group.sh \

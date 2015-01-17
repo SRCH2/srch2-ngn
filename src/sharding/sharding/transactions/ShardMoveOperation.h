@@ -53,6 +53,8 @@ public:
 	string getName() const {return "shard-move";};
 
 private:
+	// shardId must still be read and on the srcAddress
+	bool checkStillValid();
 
 	enum CurrentOperation{
 		PreStart,

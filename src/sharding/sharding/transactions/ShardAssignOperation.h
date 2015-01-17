@@ -44,7 +44,8 @@ public:
 	}
 
 private:
-
+	// shardId must still be unassigned
+	bool checkStillValid();
 
 	enum CurrentAction{
 		PreStart,

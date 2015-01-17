@@ -47,6 +47,10 @@ public:
 
 private:
 
+	// unassignedShardId must still be unassigned
+	// and replicaShardId must still be on srcNodeId
+	bool checkStillValid();
+
 	NodeOperationId currentOpId; // used to be able to release locks, and also talk with MM
 	const ClusterShardId unassignedShardId;
 	const ClusterShardId replicaShardId;

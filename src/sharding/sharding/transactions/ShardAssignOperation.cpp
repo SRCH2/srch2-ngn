@@ -55,7 +55,12 @@ void ShardAssignOperation::consume(bool granted){
 	switch (currentAction) {
 		case Lock:
 			if(granted){
-				commit();
+				if(checkStillValid()){
+					commit();
+				}else{
+					this->successFlag = false;
+					release();
+				}
 			}else{
 				this->successFlag = false;
 				finalize();
@@ -118,6 +123,25 @@ void ShardAssignOperation::finalize(){ // ** return **
 	Logger::sharding(Logger::Step, "ShardAssign(opid=%s, shardId=%s)| Done, successFlag : %s", this->successFlag ? "successfull": "failed" ,
 			currentOpId.toString().c_str(), shardId.toString().c_str());
 	this->getConsumer()->consume(this->successFlag);
+}
+
+bool ShardAssignOperation::checkStillValid(){
+	const Cluster_Writeview * writeview = ((WriteviewTransaction *)(this->getTransaction().get()))->getWriteview();
+	ClusterShardIterator itr(writeview);
+	bool stateResult = false;
+	bool srcNodeResult = false;
+	ClusterShardId shardId;double load;ShardState state;bool isLocal;NodeId nodeId;
+	itr.beginClusterShardsIteration();
+	while(itr.getNextClusterShard(shardId, load, state, isLocal, nodeId)){
+		if(shardId == this->shardId){
+			if(state != SHARDSTATE_UNASSIGNED){
+				return false;
+			}else{
+				return true;
+			}
+		}
+	}
+	return false;
 }
 
 }

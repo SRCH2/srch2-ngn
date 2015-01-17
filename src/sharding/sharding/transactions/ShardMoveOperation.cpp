@@ -77,7 +77,12 @@ void ShardMoveOperation::consume(bool granted){
 		case Lock:
 		{
 			if(granted){
-				transfer();
+				if(checkStillValid()){
+					transfer();
+				}else{
+					this->successFlag = false;
+					release();
+				}
 			}else{
 				this->successFlag = false;
 				finalize();
@@ -219,6 +224,25 @@ void ShardMoveOperation::finalize(){ // ***** END *****
 	Logger::sharding(Logger::Step, "ShardMove(opid=%s, mv {%s in %s} to self )| Finalizing. Result : %s", currentOpId.toString().c_str(),
 			shardId.toString().c_str(), srcAddress.toString().c_str(), this->successFlag ? "Success" : "Failure");
 	this->getConsumer()->consume(this->successFlag);
+}
+
+bool ShardMoveOperation::checkStillValid(){
+	const Cluster_Writeview * writeview = ((WriteviewTransaction *)(this->getTransaction().get()))->getWriteview();
+	ClusterShardIterator itr(writeview);
+	bool stateResult = false;
+	bool srcNodeResult = false;
+	ClusterShardId shardId;double load;ShardState state;bool isLocal;NodeId nodeId;
+	itr.beginClusterShardsIteration();
+	while(itr.getNextClusterShard(shardId, load, state, isLocal, nodeId)){
+		if(shardId == this->shardId){
+			if(state != SHARDSTATE_READY || nodeId != srcAddress.nodeId){
+				return false;
+			}else{
+				return true;
+			}
+		}
+	}
+	return false;
 }
 
 }

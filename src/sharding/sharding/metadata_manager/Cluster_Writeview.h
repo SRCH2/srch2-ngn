@@ -263,8 +263,6 @@ public:
 	bool isPartitionPending(const ClusterPID & pid) const;
 
 
-
-
 	double getLocalNodeTotalLoad() const;
 
 	// Serialization methods

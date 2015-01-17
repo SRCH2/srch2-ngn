@@ -70,7 +70,12 @@ void ShardCopyOperation::lock(){ // ** start **
 void ShardCopyOperation::consume(bool granted){
 	if(currentAction.compare("lock") == 0){
 		if(granted){
-			transfer();
+			if(checkStillValid()){
+				transfer();
+			}else{
+				this->successFlag = false;
+				release();
+			}
 		}else{
 			this->successFlag = false;
 			finalize();
@@ -185,6 +190,32 @@ void ShardCopyOperation::finalize(){ // ** return **
 	Logger::sharding(Logger::Step, "ShardCopy(opid=%s, cp {%s in %d} to %s )| finalizing. Result : %s", currentOpId.toString().c_str(),
 			replicaShardId.toString().c_str(), srcNodeId, unassignedShardId.toString().c_str() , this->successFlag ? "Successful" : "Failed");
 	this->getConsumer()->consume(this->successFlag);
+}
+
+bool ShardCopyOperation::checkStillValid(){
+	const Cluster_Writeview * writeview = ((WriteviewTransaction *)(this->getTransaction().get()))->getWriteview();
+	ClusterShardIterator itr(writeview);
+	bool stateResult = false;
+	bool srcNodeResult = false;
+	ClusterShardId shardId;double load;ShardState state;bool isLocal;NodeId nodeId;
+	itr.beginClusterShardsIteration();
+	while(itr.getNextClusterShard(shardId, load, state, isLocal, nodeId)){
+		if(shardId == unassignedShardId){
+			if(state != SHARDSTATE_UNASSIGNED){
+				return false;
+			}else{
+				stateResult = true;
+			}
+		}
+		if(shardId == replicaShardId){
+			if(state != SHARDSTATE_READY || nodeId != srcNodeId){
+				return false;
+			}else{
+				srcNodeResult = true;
+			}
+		}
+	}
+	return stateResult && srcNodeResult;
 }
 
 }
