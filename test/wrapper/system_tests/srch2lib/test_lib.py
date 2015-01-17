@@ -59,6 +59,7 @@ def startServer(argList):
             startArgList.append(argList[i])
         printLog('starting engine: {0} {1}'.format(startArgList[0], startArgList[1]))
         serverHandleList.append(subprocess.Popen(startArgList))
+        time.sleep(1)
     
     #print 'server started, process ' + str(serverHandle.pid) + ' returned ' + str(serverHandle.returncode)
     if pingAllServers() != 0:
@@ -237,7 +238,7 @@ def insertRequest(record, coreName = ''):
         opener = urllib2.build_opener(urllib2.HTTPHandler)
         request = urllib2.Request(url, record)
         request.get_method = lambda: 'PUT'
-        printLog('query : ' + str(url) + ' record : ' + str(record))
+        #printLog('query : ' + str(url) + ' record : ' + str(record))
         return json.loads( opener.open(request).read())
     except urllib2.HTTPError as e:
         return json.loads(e.read())

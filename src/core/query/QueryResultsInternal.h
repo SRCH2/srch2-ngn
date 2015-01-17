@@ -15,7 +15,7 @@
  * OR PROFITS, WHETHER IN AN ACTION OF CONTRACT, NEGLIGENCE OR OTHER ACTION, ARISING OUT OF OR IN CONNECTION
  * WITH THE USE OR PERFORMANCE OF SOFTWARE.
 
- * Copyright © 2010 SRCH2 Inc. All rights reserved
+ * Copyright �� 2010 SRCH2 Inc. All rights reserved
  */
 
 #ifndef __QUERYRESULTSINTERNAL_H__
@@ -106,6 +106,7 @@ private:
     QueryResult(const QueryResult& copy_from_me){
     	externalRecordId = copy_from_me.externalRecordId;
     	internalRecordId = copy_from_me.internalRecordId;
+    	exactResultFlag = copy_from_me.exactResultFlag;
     	_score = copy_from_me._score;
     	matchingKeywords = copy_from_me.matchingKeywords;
     	attributeIdsList = copy_from_me.attributeIdsList;
