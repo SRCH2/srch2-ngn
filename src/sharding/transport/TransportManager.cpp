@@ -98,7 +98,8 @@ void * TransportManager::notifyUpstreamHandlers(Message *msg, int fd, NodeId  no
 		messageDestinationName = "SynchManager";
 	}
 	if(messageType != HeartBeatMessageType &&
-			messageType != ClientStatusMessageType){
+			messageType != ClientStatusMessageType && messageType != ShardingLoadBalancingReportMessageType
+			&& messageType != ShardingLoadBalancingReportRequestMessageType){
 		Logger::sharding(Logger::Detail, "TM | recv : (%d -> here), msg = [%s\t%s\t%d\t%d]",
 				nodeId, messageDestinationName.c_str(), getShardingMessageTypeStr(messageType), messageId, messageTotalSize);
 	}
@@ -130,8 +131,8 @@ int TransportManager::readDataFromSocket(int fd, char *buffer, const int byteToR
 	if(readByte == -1) {
 		if(errno == EAGAIN || errno == EWOULDBLOCK) {
 			// socket is not ready for read. return status 1 ( come again later)
-			Logger::sharding(Logger::Detail, "TM | readDataFromSocket socket is NOT READY. Come back later. byteToRead = %d"
-					, byteToRead);
+//			Logger::sharding(Logger::Detail, "TM | readDataFromSocket socket is NOT READY. Come back later. byteToRead = %d"
+//					, byteToRead);
 			return 1;
 		} else {
 			perror("Error while reading data from socket : ");
@@ -145,8 +146,8 @@ int TransportManager::readDataFromSocket(int fd, char *buffer, const int byteToR
 
 	if(readByte < byteToRead) {
 		// incomplete read. return status 1 ( come again later)
-		Logger::sharding(Logger::Detail, "TM | readDataFromSocket Incomplete read. Come back later. readByte = %d , byteToRead = %d"
-				, readByte, byteToRead);
+//		Logger::sharding(Logger::Detail, "TM | readDataFromSocket Incomplete read. Come back later. readByte = %d , byteToRead = %d"
+//				, readByte, byteToRead);
 		return 1;
 	}
 	if(byteToRead != readByte){
@@ -571,7 +572,8 @@ MessageID_t TransportManager::sendMessage(NodeId node, Message * msg, unsigned t
 		messageDestinationName = "SynchManager";
 	}
 	if(messageType != HeartBeatMessageType &&
-			messageType != ClientStatusMessageType){
+			messageType != ClientStatusMessageType && messageType != ShardingLoadBalancingReportMessageType
+			&& messageType != ShardingLoadBalancingReportRequestMessageType){
 		Logger::sharding(Logger::Detail, "TM | send : (here -> %d), msg = [%s\t%s\t%d\t%d]",
 				node, messageDestinationName.c_str(), getShardingMessageTypeStr(messageType), messageId, messageTotalSize);
 	}
