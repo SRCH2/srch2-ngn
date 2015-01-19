@@ -667,7 +667,9 @@ void HighlightAlgorithm::insertHighlightMarkerIntoSnippets(vector<CharType>& sni
 			continue;
 		if (highlightPositions[i].offset > upperOffset)
 			break;
-		snippets.insert(snippets.end(), dataIn.begin() + copyStartOffset, dataIn.begin() + highlightPositions[i].offset - 1);
+                // mmke sure that the start iterator position is not less than stop iterator position to avoid __throw_length_error() exception 
+                if (highlightPositions[i].offset != copyStartOffset)
+			snippets.insert(snippets.end(), dataIn.begin() + copyStartOffset, dataIn.begin() + highlightPositions[i].offset - 1);
 		copyStartOffset = highlightPositions[i].offset - 1;
 		unsigned index = highlightPositions[i].tagIndex;
 		snippets.insert(snippets.end(), this->highlightMarkers[index].first.begin(), this->highlightMarkers[index].first.end());
