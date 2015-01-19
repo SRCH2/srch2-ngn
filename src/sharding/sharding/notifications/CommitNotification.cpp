@@ -19,7 +19,7 @@ CommitNotification::CommitNotification(){
 	metadataChange = NULL;
 }
 CommitNotification::~CommitNotification(){
-	if(ShardManager::getCurrentNodeId() == this->getDest().nodeId){
+	if(ShardManager::getCurrentNodeId() == this->getSrc().nodeId){
 		// if it's a local notification, metadataChange is given from
 		// outside this class and is deallocated by its creator
 		return;
