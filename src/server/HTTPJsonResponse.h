@@ -59,6 +59,9 @@ public:
 	JsonResponseHandler();
 	virtual ~JsonResponseHandler(){
 //		printHTTP(req, headers);
+		if(jsonResponse != NULL){
+			delete jsonResponse;
+		}
 	};
 	void printHTTP(evhttp_request *req = NULL, evkeyvalq * headers = NULL);
 

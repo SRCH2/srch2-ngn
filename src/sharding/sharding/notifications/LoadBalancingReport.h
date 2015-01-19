@@ -14,7 +14,9 @@ namespace httpwrapper {
 
 class LoadBalancingReport : public ShardingNotification{
 public:
-	LoadBalancingReport(){};
+	LoadBalancingReport(){
+		this->load = 0;
+	};
 	LoadBalancingReport(double load){
 		this->load = load;
 	};

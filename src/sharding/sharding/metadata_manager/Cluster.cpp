@@ -57,7 +57,7 @@ ClusterResourceMetadata_Readview::~ClusterResourceMetadata_Readview(){
 	if(shardManager == NULL || shardManager->isCancelled()){
 		return;
 	}
-	pthread_t & rvReleaseThread = *(shardManager->getNewThread());
+	pthread_t rvReleaseThread ;
 	uint32_t * vid = new uint32_t;
 	*vid = this->versionId;
     if (pthread_create(&rvReleaseThread, NULL, ShardManager::resolveReadviewRelease , vid) != 0){

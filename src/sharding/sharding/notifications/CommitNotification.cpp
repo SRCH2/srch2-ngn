@@ -19,6 +19,14 @@ CommitNotification::CommitNotification(){
 	metadataChange = NULL;
 }
 CommitNotification::~CommitNotification(){
+	if(this->getSrc().nodeId == this->getDest().nodeId){
+		// if it's a local notification, metadataChange is given from
+		// outside this class and is deallocated by its creator
+		return;
+	}
+	if(metadataChange != NULL){
+		delete metadataChange;
+	}
 }
 
 

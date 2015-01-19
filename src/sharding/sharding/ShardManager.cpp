@@ -650,7 +650,7 @@ bool ShardManager::resolveLocal(SP(ShardingNotification) request){
 		return false;
 	}
 	// NOTE : we must detach the local notif handling thread here. And this must be the ONLY detachment point.
-	pthread_t & localThread= *(this->getNewThread());
+	pthread_t localThread;
 	ResolveLocalArgs * args = new ResolveLocalArgs(request);
     if (pthread_create(&localThread, NULL, _resolveLocal , args) != 0){
         // Logger::console("Cannot create thread for handling local message");
@@ -674,20 +674,6 @@ void * ShardManager::_resolveLocal(void * _args){
 		Logger::sharding(Logger::Detail, "SHM| Notification resolve returned false : %s", request->getDescription().c_str());
 	}
 	return NULL;
-}
-
-
-pthread_t * ShardManager::getNewThread(bool shouldLock ){
-	pthread_t * newThread = new pthread_t;
-	if(shouldLock){
-		shardManagerMembersMutex.lock();
-	}
-	shardManagerThreads.push_back(newThread);
-
-	if(shouldLock){
-		shardManagerMembersMutex.unlock();
-	}
-	return newThread;
 }
 
 void ShardManager::cancelAllThreads(bool shouldLock ){

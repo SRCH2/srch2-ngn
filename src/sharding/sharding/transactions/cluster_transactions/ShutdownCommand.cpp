@@ -106,7 +106,7 @@ void ShutdownCommand::finalizeWork(Transaction::Params * arg){
 }
 
 void ShutdownCommand::_shutdown(){
-    pthread_t & localThread= *(ShardManager::getShardManager()->getNewThread());
+    pthread_t localThread;
     if (pthread_create(&localThread, NULL, _shutdownAnotherThread , NULL) != 0){
         // Logger::console("Cannot create thread for handling local message");
         perror("Cannot create thread for handling local message");
