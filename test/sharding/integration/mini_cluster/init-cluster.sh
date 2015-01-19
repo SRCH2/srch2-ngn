@@ -58,8 +58,8 @@ do
    if [[ $formatAll -eq 1 ]] ; then
       ssh ${__LOGIN_USERS[$i]}@${__IP_ADDRESSES[$i]} rm -r ${__SRCH2_HOMES[$i]}
    fi
-   ssh ${__LOGIN_USERS[$i]}@${__IP_ADDRESSES[$i]} mkdir ${__SRCH2_HOMES[$i]}
-   ssh ${__LOGIN_USERS[$i]}@${__IP_ADDRESSES[$i]} mkdir ${__SRCH2_HOMES[$i]}/$__BIN_DIR_NAME
+   ssh ${__LOGIN_USERS[$i]}@${__IP_ADDRESSES[$i]} mkdir -p ${__SRCH2_HOMES[$i]}
+   ssh ${__LOGIN_USERS[$i]}@${__IP_ADDRESSES[$i]} mkdir -p ${__SRCH2_HOMES[$i]}/$__BIN_DIR_NAME
    for f in "${__INSTALL_FILES_SCRIPTS[@]}"
    do
       ###### Only upload the modified scripts  ######

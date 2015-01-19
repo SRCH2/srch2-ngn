@@ -25,11 +25,11 @@ echo "Group $__GROUP_NAME | Preparing the directory structure ..."
 #mkdir ./$__DATA_FILE_REL_PATH
 #mkdir ./$__DATA_FILE_REL_PATH/$__CORE_NAME
 #mkdir ./$__LOG_DIR_REL_PATH
-mkdir $(_ENV_LOG_ROOT)
+mkdir -p $(_ENV_LOG_ROOT)
 touch $(_ENV_PULL_LOG)
 touch $(_ENV_MAKE_LOG)
-mkdir $(_ENV_DATA_ROOT)
-mkdir $(_DATA_DIR)
+mkdir -p $(_ENV_DATA_ROOT)
+mkdir -p $(_DATA_DIR)
 
 
 # Preparing the source code
