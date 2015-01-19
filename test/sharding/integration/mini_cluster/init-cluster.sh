@@ -12,9 +12,11 @@ __INSTALL_FILES_SCRIPTS=( run_cluster_command \
                   init-env.sh \
                   branch-op.sh \
                   run-group.sh \
+                  valgrind-group.sh \
                   generateFrontendConfig.py \
                   frontend \
                   monitor.sh \
+                  suppressions_srch2.supp \
                   clean-group.sh)
 __INSTALL_FILES_DATA=( $__LICENSE_FILE \
                   $__STOP_WORDS \

@@ -20,6 +20,7 @@ public:
 
 	OperationState(unsigned operationId):operationId(operationId){
 		transaction.reset();
+		finalizedFlag = false;
 	}
 
 	// NOTE : OperationState must always be in locked state before destruction
@@ -38,7 +39,8 @@ public:
 
 	unsigned getOperationId() const;
 	void setOperationId(unsigned operationId) ;
-
+	void setFinalized(){finalizedFlag = true;};
+	bool isFinalized() const {return finalizedFlag;};
 	void send(SP(ShardingNotification) notification, const NodeOperationId & dest) const;
 
 	SP(Transaction) getTransaction();
@@ -55,6 +57,7 @@ private:
 	static pthread_mutex_t operationIdMutex;
 	SP(Transaction) transaction;
 	boost::mutex operationContentLock;
+	bool finalizedFlag;
 };
 
 }

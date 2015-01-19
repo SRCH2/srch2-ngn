@@ -30,6 +30,15 @@ OrderedNodeIteratorOperation::OrderedNodeIteratorOperation(SP(ShardingNotificati
 
 OperationState * OrderedNodeIteratorOperation::entry(){
 	__FUNC_LINE__
+
+	/*
+	 * NOTE: This operator is already finalized and the reason
+	 * we are here is STRANGE.
+	 */
+	if(isFinalized()){
+		ASSERT(false);
+		return NULL;
+	}
 	if(this->validatorObj != NULL){
 		this->setTransaction(this->validatorObj->getTransaction());
 	}
@@ -60,6 +69,14 @@ OperationState * OrderedNodeIteratorOperation::handle(SP(Notification) n){
 		return NULL;
 	}
 
+	/*
+	 * NOTE: This operator is already finalized and the reason
+	 * we are here is because of race condition.
+	 */
+	if(isFinalized()){
+		return this;
+	}
+
 	if(resType == n->messageType()){
 		return handle(boost::dynamic_pointer_cast<ShardingNotification>(n));
 	}
@@ -78,6 +95,14 @@ OperationState * OrderedNodeIteratorOperation::handle(SP(Notification) n){
 
 
 OperationState * OrderedNodeIteratorOperation::handle(SP(ShardingNotification) notif){
+
+	/*
+	 * NOTE: This operator is already finalized and the reason
+	 * we are here is because of race condition.
+	 */
+	if(isFinalized()){
+		return this;
+	}
 
 	if(find(this->participants.begin(), this->participants.end(), notif->getSrc()) == this->participants.end()){
 		return this;
@@ -115,6 +140,15 @@ OperationState * OrderedNodeIteratorOperation::handle(SP(ShardingNotification) n
 }
 
 OperationState * OrderedNodeIteratorOperation::handle(SP(NodeFailureNotification) notif){
+
+	/*
+	 * NOTE: This operator is already finalized and the reason
+	 * we are here is because of race condition.
+	 */
+	if(isFinalized()){
+		return this;
+	}
+
 	NodeId failedNode = notif->getFailedNodeID();
 
 	map<NodeOperationId , SP(ShardingNotification)>::iterator targetItr = targetResponsesMap.end();
@@ -181,6 +215,13 @@ OperationState * OrderedNodeIteratorOperation::handle(SP(NodeFailureNotification
 
 OperationState * OrderedNodeIteratorOperation::handle(SP(TimeoutNotification) notif){
 
+	/*
+	 * NOTE: This operator is already finalized and the reason
+	 * we are here is because of race condition.
+	 */
+	if(isFinalized()){
+		return this;
+	}
 
 	SP(const ClusterNodes_Writeview) nodesWriteview = ShardManager::getNodesWriteview_read();
 
@@ -272,7 +313,10 @@ OperationState * OrderedNodeIteratorOperation::finalize(){
 			this->getTransaction()->threadEnd();
 		}
 		this->setTransaction(SP(Transaction)());
+		this->validatorObj = NULL;
 	}
+	// Close the entry points of the operation.
+	this->setFinalized();
 	return NULL;
 }
 
