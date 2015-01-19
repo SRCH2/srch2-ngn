@@ -513,7 +513,7 @@ void InvertedIndex::parallelMerge()
     mergeWorkersSharedQueue.dataLen = 0;
     mergeWorkersSharedQueue.cursor = 0;
 
-    delete workerIdsList;
+    delete[] workerIdsList;
     this->invertedListKeywordSetToMerge.clear();
 }
 
