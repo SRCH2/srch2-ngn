@@ -1,10 +1,10 @@
 /*
  * This is the advanced demo for srch2 javascript library.
  * To use the srch2, please visit:
- *  http://srch2.com/releases/4.4.2/docs/library/
+ *  http://srch2.com/releases/4.4.3/docs/library/
  *
  * For more information about Search API, please visit: 
- *  http://srch2.com/releases/4.4.2/docs/restful-search/
+ *  http://srch2.com/releases/4.4.3/docs/restful-search/
  */
 client = {
     init : function() {
@@ -15,19 +15,20 @@ client = {
          */ 
         this.srch2 = srch2;
         var config = {
-            serverUrl : "http://127.0.0.1:8081/",
+	    // serverUrl : "http://127.0.0.1:8081/", // use your own server URL
+	    serverUrl : "http://demo.srch2.com/srch2_movies_engine/",
             debug : true, // true /false
         };        
         this.srch2.init(config);  //Initialize the srch2 with config.
-        _client_this.srch2.setServerUrl("http://localhost:8081/");
-        //_client_this.srch2.setServerUrl("http://simpson.calit2.uci.edu/srch2_movies_engine/");  //Server URL also can be set by setServerUrl
+	// _client_this.srch2.setServerUrl("http://localhost:8081/"); // use your own server URL
+	_client_this.srch2.setServerUrl("http://demo.srch2.com/srch2_movies_engine/");
         _client_this.srch2.setSearchType("getAll"); //Set the search type to "getAll"
         _client_this.srch2.setEnablePrefixSearch(true); //Enable the prefix search 
         _client_this.srch2.setEnableFuzzySearch(true);  //Enable the fuzzy search
         
         /*
          * Set facet parameters, for more information, please visit : 
-         * http://srch2.com/releases/4.4.2/docs/restful-search/#7-facet-parameters
+         * http://srch2.com/releases/4.4.3/docs/restful-search/#7-facet-parameters
          */
         _client_this.srch2.enableFacetParam(true);//Enable Facet
         _client_this.srch2.setFacetFieldList(['genre']);    //Set the facet field list
@@ -356,7 +357,7 @@ client = {
         /*
          * Get the filter info from the page, generate a query, and pass it to the srch2.
          * For the syntax of filter query, please refer to : 
-         * http://srch2.com/releases/4.4.2/docs/restful-search/#62-fq-filter-query-parameter
+         * http://srch2.com/releases/4.4.3/docs/restful-search/#62-fq-filter-query-parameter
          */
          
          // Get and set the filter value
