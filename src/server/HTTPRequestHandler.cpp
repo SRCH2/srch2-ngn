@@ -903,7 +903,7 @@ void HTTPRequestHandler::aclModifyRolesForRecord(evhttp_request *req, Srch2Serve
 
 
 // gets the acl command from the role view and modifies the access list.
-// curl "http://localhost:8081/product/AclAddRecordsForRoles" -i -X PUT -d '{"roleId": “1234", “resourceId”: ["33", "45"]}'
+// curl "http://localhost:8081/product/AclAddRecordsForRoles" -i -X PUT -d '{"roleId": "1234", "resourceId": ["33", "45"]}'
 void HTTPRequestHandler::aclModifyRecordsForRole(evhttp_request *req, Srch2Server *server, srch2::instantsearch::RecordAclCommandType commandType){
 
 	Json::Value response(Json::objectValue);
@@ -1777,7 +1777,7 @@ boost::shared_ptr<Json::Value> HTTPRequestHandler::doSearchOneCore(evhttp_reques
 
     if (server->indexDataConfig->getHighlightAttributeIdsVector().size() > 0 &&
     		!paramContainer.onlyFacets &&
-    		paramContainer.isHighlightOn) {
+    		paramContainer.isHighlightOn && logicalPlan.getQueryType() != SearchTypeRetrieveById) {
 
     	ServerHighLighter highlighter =  ServerHighLighter(finalResults, server, paramContainer,
     			logicalPlan.getOffset(), logicalPlan.getNumberOfResultsToRetrieve());
