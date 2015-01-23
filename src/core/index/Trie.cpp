@@ -388,6 +388,11 @@ TrieNode * TrieNodePath::getLastTrieNode() const
 
 Trie::Trie()
 {
+  this->init();
+}
+
+void Trie::init()
+{
     // We create a root (for the write view) by copying the trie root of the read view.
     // Initially both root views have an empty trie with a "$" sign at the root.
     this->root_readview.reset( new TrieRootNodeAndFreeList() );
@@ -1610,20 +1615,15 @@ void Trie::applyKeywordIdMapperOnEmptyLeafNodes(map<unsigned, unsigned> &keyword
 
 void Trie::removeDeletedNodes()
 {
+    // return; //  TODO;
     // sort the ids of the empty leaf nodes
     std::sort(emptyLeafNodeIds.begin(), emptyLeafNodeIds.end());
 
     TrieNode *writeViewRoot = this->getTrieRootNode_WriteView();
     if (removeDeletedNodes(writeViewRoot)) {
-        // The whole trie becomes empty. We need to repeat the logic
-        // in the constructor of the trie.
-        // We create a root (for the write view) by copying the trie root of the read view.
-        // Initially both root views have an empty trie with a "$" sign at the root.
-        if(writeViewRoot) {
-            delete writeViewRoot;
-        }
-        this->root_readview.reset(new TrieRootNodeAndFreeList());
-        this->root_writeview = new TrieNode(this->root_readview.get()->root);
+      // The whole trie becomes empty. We need to repeat the logic
+      // in the constructor of the trie to re-initialize the trie
+      this->init();
     } else {
         // The trie is not empty.
         // Similar to the operations in trie.merge(), we need to "merge"
@@ -1664,7 +1664,7 @@ bool Trie::removeDeletedNodes(TrieNode *trieNode)
     int high = trieNode->getChildrenCount() - 1;
     while (low <= high) {
         int mid = (low + high) / 2;
-        if (trieNode->getChild(mid)->getMinId() >= minEmptyNodeId)
+        if (trieNode->getChild(mid)->getMaxId() >= minEmptyNodeId)
             high = mid - 1;
         else
             low = mid + 1;
@@ -1681,18 +1681,24 @@ bool Trie::removeDeletedNodes(TrieNode *trieNode)
     	// [minEmptyNodeId,    maxEmptyNodeId]
         unsigned minId = trieNode->getChild(childCursor)->getMinId();
         unsigned maxId = trieNode->getChild(childCursor)->getMaxId();
-        ASSERT(minEmptyNodeId <= minId);
+        // ASSERT(minEmptyNodeId <= minId);
+        ASSERT(minId <= maxId);
 
         // check if there is an empty leaf node id in the range [minId, maxId]
         bool found = this->findEmptyLeafNodeIds(minId, maxId);
         if (found && removeDeletedNodes(trieNode->getChild(childCursor))) {
            // this subtrie is empty. Then delete this child, and
-           // shift the children from right to left.
+           // set the child to NULL
            delete trieNode->getChild(childCursor);
            trieNode->setChild(childCursor, NULL);
            numberOfNulledChildren ++;
         }
        childCursor ++;
+    }
+
+    // TODO: sanity check: no NULL children before "low"
+    for (int i = 0; i < low; i ++) {
+      ASSERT(trieNode->getChild(i) != NULL);
     }
 
     // remove the nulled children
@@ -1703,6 +1709,10 @@ bool Trie::removeDeletedNodes(TrieNode *trieNode)
                 && trieNode->getChild(first) != NULL)
             first ++;
 
+        if (first < trieNode->getChildrenCount()) {
+	  ASSERT(trieNode->getChild(first) == NULL);
+	}
+
         // move the non-null children to the left
         for (int second = first + 1; second < trieNode->getChildrenCount();
                 second ++) {
@@ -1712,9 +1722,10 @@ bool Trie::removeDeletedNodes(TrieNode *trieNode)
             }
         }
 
-        // remove the last children since they have been copied to the left
-        for (int i = 0; i < numberOfNulledChildren; i++)
-            trieNode->childrenPointerList.pop_back();
+        // remove the last "numberOfNulledChildren" children since they have been copied to the left
+        for (int i = 0; i < numberOfNulledChildren; i++) {
+	  trieNode->childrenPointerList.pop_back();
+	}
     }
 
     if (trieNode->isTerminalNode()) {
