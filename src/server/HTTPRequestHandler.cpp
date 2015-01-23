@@ -1955,7 +1955,6 @@ void HTTPRequestHandler::suggestCommand(evhttp_request *req, Srch2Server *server
     vector<string> suggestions ;
     int numberOfSuggestionsFound = queryEvaluator->suggest(keyword , fuzzyMatchPenalty , numberOfSuggestionsToReturn , suggestions);
     delete queryEvaluator;
-
     // compute elapsed time in ms , end the timer
     struct timespec tend;
     clock_gettime(CLOCK_REALTIME, &tend);
