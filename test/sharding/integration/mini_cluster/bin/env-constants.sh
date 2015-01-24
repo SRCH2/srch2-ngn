@@ -40,6 +40,7 @@ export ENV_PULL_LOG="pull-outputs.txt"
 export ENV_MAKE_LOG="make-outputs.txt"
 export ENV_BIN="bin"
 export ENV_CLEAR_EXE="clear.sh"
+export ENV_DEBUG_FLAG=1
 ### frontend paths are relative
 export FRONTEND_CONF_FILE="./frontend/cluster_config.txt"
 
