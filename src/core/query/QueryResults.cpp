@@ -93,7 +93,7 @@ unsigned QueryResults::getInternalRecordId(unsigned position) const {
 }
 
 /*
- *   this function is called from unit test. Do not use it in wrapper layer.
+ *   this function is called only from unit test. Do not use it in wrapper layer.
  */
 std::string QueryResults::getInMemoryRecordString(unsigned position) const {
     unsigned internalRecordId = this->getInternalRecordId(position);

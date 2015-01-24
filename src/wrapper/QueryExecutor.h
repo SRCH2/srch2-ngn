@@ -45,8 +45,6 @@ public:
 	void executeKeywordSearch(QueryResults * finalResults);
 	void executeRetrieveById(QueryResults * finalResults);
 
-	void executePostProcessingPlan(Query * query,QueryResults * input, QueryResults *  output);
-
 
 private:
 	LogicalPlan & queryPlan;

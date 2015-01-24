@@ -173,10 +173,6 @@ public:
     	return resultsFactory;
     }
 
-    // DEBUG function. Used in CacheIntegration_Test
-    bool checkCacheHit(QueryEvaluatorInternal *queryEvaluatorInternal, Query *query);
-    
-    
     std::vector<QueryResult *> sortedFinalResults;
     std::vector<TermVirtualList* > *virtualListVector;
     

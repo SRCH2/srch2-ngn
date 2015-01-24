@@ -121,6 +121,13 @@ struct IndexReadStateSharedPtr_Token
 
     typedef boost::shared_ptr<QuadTreeRootNodeAndFreeLists> QuadTreeRootNodeSharedPtr;
     QuadTreeRootNodeSharedPtr quadTreeRootNodeSharedPtr;
+
+    void reset(){
+    	trieRootNodeSharedPtr.reset();
+    	forwardIndexReadViewSharedPtr.reset();
+    	invertedIndexReadViewSharedPtr.reset();
+    	quadTreeRootNodeSharedPtr.reset();
+    }
 };
 
 // Uses spinlock and volatile to increment count.

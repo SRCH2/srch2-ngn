@@ -83,6 +83,7 @@ void ActiveNodeSet_test()
 	 QueryEvaluatorRuntimeParametersContainer runTimeParameters(10000, 500, 500);
 
 	QueryEvaluator * queryEvaluator = new QueryEvaluator(indexer, &runTimeParameters);
+	queryEvaluator->impl->readerPreEnter();
     unsigned threshold = 2;
     Term *term = FuzzyTerm::create("nce", TERM_TYPE_PREFIX, 1, 1, threshold);
     PrefixActiveNodeSet *prefixActiveNodeSet = queryEvaluator->impl
@@ -103,6 +104,7 @@ void ActiveNodeSet_test()
 
     // We don't need to delete prefixActiveNodeSet since it's cached and will be
     // deleted in the destructor of indexSearchInternal
+    queryEvaluator->impl->readerPreExit();
     delete queryEvaluator;
     delete term;
     delete indexMetaData;
@@ -537,8 +539,8 @@ void Searcher_Tests() {
     Test_Prefix_Fuzzy(queryEvaluator);
     std::cout << "test4" << std::endl;
 
-    delete indexer;
     delete queryEvaluator;
+    delete indexer;
 }
 
 int main(int argc, char *argv[]) {

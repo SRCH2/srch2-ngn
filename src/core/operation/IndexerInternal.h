@@ -151,10 +151,32 @@ public:
 
     FeedbackIndex * getFeedbackIndexer() { return userFeedbackIndex; }
 
-    inline const IndexData *getReadView(IndexReadStateSharedPtr_Token &readToken)
+    /*
+     * Note: Readers still need to call readerPreEnter and readerPreExit methods
+     * before and after their operations.
+     */
+    inline const IndexData *getIndexData()
     {
-        this->index->getReadView(readToken);
         return this->index;
+    }
+
+    inline const void readerPreEnter(IndexReadStateSharedPtr_Token &readToken)
+    {
+    	// acquiring the global lock of readers and writers.
+    	// NOTE: readerPreExit will unlock this call when invoked.
+    	this->index->globalRwMutexForReadersWriters.lock_shared();
+    	// Getting the protector copy of readview shared pointers.
+    	// NOTE: These readview shared pointers are gone when the readToken
+    	// gets destroyed.
+        this->index->getReadView(readToken);
+    }
+
+    inline const void readerPreExit(IndexReadStateSharedPtr_Token &readToken)
+    {
+    	readToken.reset();
+    	// Releasing the global lock of readers and writers.
+    	this->index->globalRwMutexForReadersWriters.unlock_shared();
+    	// Readviews will be erased when readToken is destructed.
     }
 
     inline const srch2::instantsearch::Schema *getSchema() const
@@ -233,6 +255,13 @@ public:
     void createAndStartMergeWorkerThreads();
 
     void startMergeThreadLoop();
+
+    void lockSharedGlobalMutexReadersWriters(){
+    	this->index->globalRwMutexForReadersWriters.lock_shared();
+    }
+    void unlockSharedGlobalMutexReadersWriters(){
+    	this->index->globalRwMutexForReadersWriters.lock_shared();
+    }
 
 private:
     IndexData *index;

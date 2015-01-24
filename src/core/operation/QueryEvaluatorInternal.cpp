@@ -63,13 +63,16 @@ QueryEvaluatorInternal::QueryEvaluatorInternal(IndexReaderWriter *indexer , Quer
 	if(parameters != NULL){
 		this->parameters = *parameters;
 	}
-    // Lock readers/writers mutex
-	this->indexData->globalRwMutexForReadersWriters.lock_shared();
-	this->indexData = dynamic_cast<const IndexData*>(indexer->getReadView(this->indexReadToken));
+	this->indexData = dynamic_cast<const IndexData*>(indexer->getIndexData());
     this->cacheManager = dynamic_cast<CacheManager*>(indexer->getCache());
     this->indexer = indexer;
     setPhysicalOperatorFactory(new PhysicalOperatorFactory());
     this->physicalPlanRecordItemPool = new PhysicalPlanRecordItemPool();
+}
+
+QueryEvaluatorInternal::~QueryEvaluatorInternal() {
+	delete physicalOperatorFactory;
+    delete physicalPlanRecordItemPool;
 }
 
 /*
@@ -81,9 +84,24 @@ int QueryEvaluatorInternal::suggest(const string & keyword, float fuzzyMatchPena
 	// non valid cases for input
 	if(keyword.compare("") == 0 || numberOfSuggestionsToReturn == 0){
 		return 0;
+
 	}
 
+	/*
+	 * This method must be called in the beginning of all reader API methods.
+	 * It locks the global read/write mutex and holds on to all 4 readviews
+	 * that we have.
+	 */
+	readerPreEnter();
+
+
     if (this->indexData->isBulkLoadDone() == false){
+    	/*
+    	 * Every reader must call this method before exiting.
+    	 * This method releases all the readviews and unlocks the global
+    	 * mutex lock.
+    	 */
+    	readerPreExit();
         return -1;
     }
 
@@ -121,6 +139,13 @@ int QueryEvaluatorInternal::suggest(const string & keyword, float fuzzyMatchPena
 				       suggestion->suggestedCompleteTermNode, suggestionString);
       suggestions.push_back(suggestionString);
     }
+
+	/*
+	 * Every reader must call this method before exiting.
+	 * This method releases all the readviews and unlocks the global
+	 * mutex lock.
+	 */
+	readerPreExit();
     return 0;
 }
 
@@ -182,6 +207,12 @@ int QueryEvaluatorInternal::search(LogicalPlan * logicalPlan , QueryResults *que
 
 	string key = logicalPlan->getUniqueStringForCaching();
 
+	/*
+	 * This method must be called in the beginning of all reader API methods.
+	 * It locks the global read/write mutex and holds on to all 4 readviews
+	 * that we have.
+	 */
+	readerPreEnter();
 	// if the query is present in the user feedback index, then skip cache because
 	// its score needs to be re-calculated and its entry in the cache is no longer valid
 	// Possible optimization:(TODO) compare whether user feedback entry for this query is
@@ -192,6 +223,13 @@ int QueryEvaluatorInternal::search(LogicalPlan * logicalPlan , QueryResults *que
 		if(this->cacheManager->getQueryResultsCache()->getQueryResults(key , cachedObject) == true){
 			// cache hit
 			cachedObject->copyToQueryResultsInternal(queryResults->impl);
+
+	    	/*
+	    	 * Every reader must call this method before exiting.
+	    	 * This method releases all the readviews and unlocks the global
+	    	 * mutex lock.
+	    	 */
+	    	readerPreExit();
 			return queryResults->impl->sortedFinalResults.size();
 		}
 	}
@@ -339,14 +377,33 @@ int QueryEvaluatorInternal::search(LogicalPlan * logicalPlan , QueryResults *que
 		delete sortOperator;
 	}
 
+	/*
+	 * Every reader must call this method before exiting.
+	 * This method releases all the readviews and unlocks the global
+	 * mutex lock.
+	 */
+	readerPreExit();
 	return queryResults->impl->sortedFinalResults.size();
 }
 
 // for retrieving only one result by having the primary key
 void QueryEvaluatorInternal::search(const std::string & primaryKey, QueryResults *queryResults){
 	unsigned internalRecordId ; // ForwardListId is the same as InternalRecordId
-    // need to lock the mutex
+
+	/*
+	 * This method must be called in the beginning of all reader API methods.
+	 * It locks the global read/write mutex and holds on to all 4 readviews
+	 * that we have.
+	 */
+	readerPreEnter();
 	if ( this->indexData->forwardIndex->getInternalRecordIdFromExternalRecordId(primaryKey , internalRecordId) == false ){
+
+		/*
+		 * Every reader must call this method before exiting.
+		 * This method releases all the readviews and unlocks the global
+		 * mutex lock.
+		 */
+		readerPreExit();
 		return;
 	}
 	// The query result to be returned.
@@ -361,6 +418,13 @@ void QueryEvaluatorInternal::search(const std::string & primaryKey, QueryResults
 	readView = this->indexReadToken.forwardIndexReadViewSharedPtr;
 	this->indexData->forwardIndex->getForwardList(readView, internalRecordId, validForwardList);
 	if (validForwardList == false) {
+
+		/*
+		 * Every reader must call this method before exiting.
+		 * This method releases all the readviews and unlocks the global
+		 * mutex lock.
+		 */
+		readerPreExit();
 		return;
 	}
 
@@ -369,12 +433,22 @@ void QueryEvaluatorInternal::search(const std::string & primaryKey, QueryResults
 	queryResult->internalRecordId = internalRecordId;
 	queryResult->_score.setTypedValue((float)0.0,ATTRIBUTE_TYPE_FLOAT);
 	queryResults->impl->sortedFinalResults.push_back(queryResult);
+
+	/*
+	 * Every reader must call this method before exiting.
+	 * This method releases all the readviews and unlocks the global
+	 * mutex lock.
+	 */
+	readerPreExit();
 	return;
 }
 
 // Get the in memory data stored with the record in the forwardindex. Access through the internal recordid.
 StoredRecordBuffer QueryEvaluatorInternal::getInMemoryData(unsigned internalRecordId) const {
-	return this->indexData->forwardIndex->getInMemoryData(internalRecordId);
+	// This method is not used in the data flow of read queries, readview is acquired later on inside
+	// forward index method for getting inMemory data..
+	boost::shared_lock<boost::shared_mutex> sLock(this->indexData->globalRwMutexForReadersWriters);
+	return this->indexData->getInMemoryData(internalRecordId);
 }
 
 // TODO : this function might need to be deleted from here ...
@@ -431,12 +505,6 @@ void QueryEvaluatorInternal::cacheClear() {
 }
 
 
-QueryEvaluatorInternal::~QueryEvaluatorInternal() {
-	delete physicalOperatorFactory;
-    delete physicalPlanRecordItemPool;
-    this->indexData->globalRwMutexForReadersWriters.unlock_shared();
-}
-
 PhysicalOperatorFactory * QueryEvaluatorInternal::getPhysicalOperatorFactory(){
     return this->physicalOperatorFactory;
 }
@@ -449,36 +517,22 @@ PhysicalPlanRecordItemPool * QueryEvaluatorInternal::getPhysicalPlanRecordItemPo
     return this->physicalPlanRecordItemPool;
 }
 
-//DEBUG function. Used in CacheIntegration_Test
-bool QueryEvaluatorInternal::cacheHit(const Query *query)
-{
-//    const std::vector<Term* > *queryTerms = query->getQueryTerms();
-//
-//    //Empty Query case
-//    if (queryTerms->size() == 0)
-//        return false;
-//
-//    // Cache lookup, assume a query with the first k terms found in the cache
-//    ConjunctionCacheResultsEntry* conjunctionCacheResultsEntry;
-//    this->cacheManager->getCachedConjunctionResult(queryTerms, conjunctionCacheResultsEntry);
-//
-//    // Cached results for the first k terms
-//    if (conjunctionCacheResultsEntry != NULL)
-//        return true;
-
-	// TODO we must write this function again
-    return false;
-}
-
-void QueryEvaluatorInternal::setQueryEvaluatorRuntimeParametersContainer(QueryEvaluatorRuntimeParametersContainer * parameters){
-	this->parameters = *parameters;
-}
 QueryEvaluatorRuntimeParametersContainer * QueryEvaluatorInternal::getQueryEvaluatorRuntimeParametersContainer(){
 	return &(this->parameters);
 }
 
 FeedbackIndex * QueryEvaluatorInternal::getFeedbackIndex() {
 	return indexer->getFeedbackIndexer();
+}
+
+// Every reader goes through this function before starting the execution of
+// suggest or search
+void QueryEvaluatorInternal::readerPreEnter(){
+	this->indexer->readerPreEnter(this->indexReadToken);
+}
+// Every reader goes through this function before exiting from suggest or search
+void QueryEvaluatorInternal::readerPreExit(){
+	this->indexer->readerPreExit(this->indexReadToken);
 }
 
 }}

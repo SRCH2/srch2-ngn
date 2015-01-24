@@ -485,12 +485,15 @@ void TermVirtualList_Tests()
     QueryEvaluator * queryEvaluator = new QueryEvaluator(indexer, &runtimeParameters);
     QueryEvaluatorInternal * queryEvaluatorInternal = queryEvaluator->impl;
 
+    queryEvaluatorInternal->readerPreEnter();
 
     Test_Complete_Exact(queryEvaluatorInternal);
     Test_Prefix_Exact(queryEvaluatorInternal);
     Test_Complete_Fuzzy(queryEvaluatorInternal);
     Test_Prefix_Fuzzy(queryEvaluatorInternal);
 
+    queryEvaluatorInternal->readerPreExit();
+    delete queryEvaluator;
     delete indexer;
     delete indexMetaData;
 }
