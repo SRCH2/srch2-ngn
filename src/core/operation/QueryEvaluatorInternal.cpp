@@ -63,7 +63,9 @@ QueryEvaluatorInternal::QueryEvaluatorInternal(IndexReaderWriter *indexer , Quer
 	if(parameters != NULL){
 		this->parameters = *parameters;
 	}
-    this->indexData = dynamic_cast<const IndexData*>(indexer->getReadView(this->indexReadToken));
+    // Lock readers/writers mutex
+	this->indexData->globalRwMutexForReadersWriters.lock_shared();
+	this->indexData = dynamic_cast<const IndexData*>(indexer->getReadView(this->indexReadToken));
     this->cacheManager = dynamic_cast<CacheManager*>(indexer->getCache());
     this->indexer = indexer;
     setPhysicalOperatorFactory(new PhysicalOperatorFactory());
@@ -81,7 +83,6 @@ int QueryEvaluatorInternal::suggest(const string & keyword, float fuzzyMatchPena
 		return 0;
 	}
 
-	boost::shared_lock< boost::shared_mutex > lock(this->indexData->globalRwMutexForReadersWriters); // need to lock the mutex
     if (this->indexData->isBulkLoadDone() == false){
         return -1;
     }
@@ -178,8 +179,6 @@ int QueryEvaluatorInternal::search(LogicalPlan * logicalPlan , QueryResults *que
 	// used for feedback ranking.
 	this->queryStringWithTermsAndOps = logicalPlan->queryStringWithTermsAndOps;
 	ASSERT(logicalPlan != NULL);
-	// need to lock the mutex
-	boost::shared_lock< boost::shared_mutex > lock(this->indexData->globalRwMutexForReadersWriters);
 
 	string key = logicalPlan->getUniqueStringForCaching();
 
@@ -347,7 +346,6 @@ int QueryEvaluatorInternal::search(LogicalPlan * logicalPlan , QueryResults *que
 void QueryEvaluatorInternal::search(const std::string & primaryKey, QueryResults *queryResults){
 	unsigned internalRecordId ; // ForwardListId is the same as InternalRecordId
     // need to lock the mutex
-	boost::shared_lock< boost::shared_mutex > lock(this->indexData->globalRwMutexForReadersWriters);
 	if ( this->indexData->forwardIndex->getInternalRecordIdFromExternalRecordId(primaryKey , internalRecordId) == false ){
 		return;
 	}
@@ -436,6 +434,7 @@ void QueryEvaluatorInternal::cacheClear() {
 QueryEvaluatorInternal::~QueryEvaluatorInternal() {
 	delete physicalOperatorFactory;
     delete physicalPlanRecordItemPool;
+    this->indexData->globalRwMutexForReadersWriters.unlock_shared();
 }
 
 PhysicalOperatorFactory * QueryEvaluatorInternal::getPhysicalOperatorFactory(){
