@@ -146,7 +146,7 @@ public:
                 this->setNeedToFreeArray(true);
             }
             else {
-            	// the else block is executed when write view has multiple reallocation before the merge.
+            	// the else block is executed when the write view has multiple reallocations before the merge.
                 delete m_array;
             }
             m_array = acopy;
@@ -223,42 +223,54 @@ private:
 template <class T>
 class ReadViewManager {
 private:
-	// storage to keep all generation of read_views having 1+ readers.
-	std::vector< std::vector<shared_ptr<vectorview<T> > > > readViewKeepAliveStorage;
+	// readViewGenerations vector track all generation of read_views .
+	//
+	//  Example:
+	//  gen 0 : RV1, RV*
+	//  gen 1 : RV2, RV3, RV4, RV*
+	//  gen 1 : RV5, RV6, RV*
+	//
+	//  - Every group in a generation share same allocated array
+	//  - Each RVs in a generation have distinct read view size.
+	//  - RV* is a special read_view which can free the allocated array. Other RV's cannot free the array.
+	//  - All RVs except RV* is stored in this array if they had one or more than one reader thread when the merge was executed.
+
+	std::vector< std::vector<shared_ptr<vectorview<T> > > > readViewGenerations;
+
 	// counter to keep track of current generation. The counter is incremented every time
 	// the write_view's array gets reallocated to increase its capacity.
 	unsigned currentGen;
 public:
 	ReadViewManager() : currentGen(0) {
-		readViewKeepAliveStorage.push_back(std::vector<shared_ptr<vectorview<T> > >());
+		readViewGenerations.push_back(std::vector<shared_ptr<vectorview<T> > >());
 	}
 
 	// increment generation and allocate vector for read_views of new generation.
 	void incrementGeneration() {
 		++currentGen;
-		readViewKeepAliveStorage.push_back(std::vector<shared_ptr<vectorview<T> > >());
+		readViewGenerations.push_back(std::vector<shared_ptr<vectorview<T> > >());
 	}
 
 	// keep alive the read_view passed in by storing it in a vector.
 	void storeReadView(const shared_ptr<vectorview<T> >& newReadView) {
-		readViewKeepAliveStorage[currentGen].push_back(newReadView);
+		readViewGenerations[currentGen].push_back(newReadView);
 	}
 
 	// clean the readviews from the past generations and free the underlying array whenever possible.
 	void cleanReadViews() {
 
-		// loop over all the generations skipping the last one because it is the most recent one.
-		for (unsigned i = 0; i < readViewKeepAliveStorage.size() - 1; ++i) {
-			std::vector<shared_ptr<vectorview<T> > > readViewGroups = readViewKeepAliveStorage[i];
-			bool noReader = true;
-			// Go over all the Readviews of the "i" generation and check whether any readers exist.
+		// loop over all the RV generations skipping the last one because it is the most recent one.
+		for (signed i = 0; i < readViewGenerations.size() - 1; ++i) {
+			std::vector<shared_ptr<vectorview<T> > >& readViewGroups = readViewGenerations[i];
+			bool hasReader = false;
+			// Go over all the read_views of the "i" generation and check whether any readers exist.
 			for (unsigned j = 0; j < readViewGroups.size(); ++j) {
 				if (!readViewGroups[j].unique()) {
-					noReader = false;
+					hasReader = true;
 					break;
 				}
 			}
-			if (noReader) {
+			if (hasReader == false) {
 				// Clear the vector. It will call the destructor of each stored read_view but
 				// only one read_view has the capability to free the underlying array which is
 				// set via setNeedToFreeArray() in merge().
@@ -355,7 +367,7 @@ public:
             m_readView->setNeedToFreeArray(false);
             // check whether the current readview has any readers.
             if (readViewManager && !m_readView.unique()){
-            	// 1+ readers exist.
+            	// One or more than one reader threads exist.
             	readViewManager->storeReadView(m_readView);
             }
         }else{
