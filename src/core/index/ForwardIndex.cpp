@@ -319,7 +319,7 @@ void ForwardIndex::merge()
 {
     if ( this->mergeRequired ) {
         // make sure the read view is pointing to the write view
-        this->forwardListDirectory->merge();
+        this->forwardListDirectory->merge(&fwdListDirReadViewsMgr);
         // writeView->forceCreateCopy();
         this->mergeRequired = false;
     }

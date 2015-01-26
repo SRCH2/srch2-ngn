@@ -377,8 +377,9 @@ void InvertedIndex::finalCommit(bool needToSortEachInvertedList)
 void InvertedIndex::merge(RankerExpression *rankerExpression, unsigned totalNumberOfDocuments,
 		const Schema *schema, Trie *trie)
 {
-    this->invertedIndexVector->merge();
-    this->keywordIds->merge();
+    this->invertedIndexVector->merge(&invertedIndexVectorReadViewsMgr);
+    this->keywordIds->merge(&keywordIdsReadViewsMgr);
+
     vectorview<InvertedListContainerPtr>* &writeView = this->invertedIndexVector->getWriteView();
     // get keywordIds writeView
     vectorview<unsigned>* &keywordIdsWriteView = this->keywordIds->getWriteView();
