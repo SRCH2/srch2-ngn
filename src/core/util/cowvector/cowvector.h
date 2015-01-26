@@ -223,17 +223,17 @@ private:
 template <class T>
 class ReadViewManager {
 private:
-	// readViewGenerations vector track all generation of read_views .
+	// readViewGenerations vector keeps all generations of read_views .
 	//
 	//  Example:
 	//  gen 0 : RV1, RV*
 	//  gen 1 : RV2, RV3, RV4, RV*
-	//  gen 1 : RV5, RV6, RV*
+	//  gen 2 : RV5, RV6, RV*
 	//
-	//  - Every group in a generation share same allocated array
-	//  - Each RVs in a generation have distinct read view size.
+	//  - Every group in a generation shares the same allocated array
+	//  - Those RVs in a generation have distinct read view size.
 	//  - RV* is a special read_view which can free the allocated array. Other RV's cannot free the array.
-	//  - All RVs except RV* is stored in this array if they had one or more than one reader thread when the merge was executed.
+	//  - All RVs except RV* are stored in this array if they had one or more than one reader thread when the merge was executed.
 
 	std::vector< std::vector<shared_ptr<vectorview<T> > > > readViewGenerations;
 
