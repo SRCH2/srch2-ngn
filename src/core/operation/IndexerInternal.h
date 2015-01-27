@@ -173,7 +173,7 @@ public:
 
     inline const void readerPreExit(IndexReadStateSharedPtr_Token &readToken)
     {
-    	readToken.reset();
+    	readToken.resetSharedPointers();
     	// Releasing the global lock of readers and writers.
     	this->index->globalRwMutexForReadersWriters.unlock_shared();
     	// Readviews will be erased when readToken is destructed.
@@ -255,13 +255,6 @@ public:
     void createAndStartMergeWorkerThreads();
 
     void startMergeThreadLoop();
-
-    void lockSharedGlobalMutexReadersWriters(){
-    	this->index->globalRwMutexForReadersWriters.lock_shared();
-    }
-    void unlockSharedGlobalMutexReadersWriters(){
-    	this->index->globalRwMutexForReadersWriters.lock_shared();
-    }
 
 private:
     IndexData *index;
