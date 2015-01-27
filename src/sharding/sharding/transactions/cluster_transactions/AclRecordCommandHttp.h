@@ -16,11 +16,7 @@ namespace srch2 {
 namespace httpwrapper {
 
 /*
- * Saves the indices and the cluster metadata on all nodes in the cluster.
- * NOTE : this operation assumes all shards are locked in S mode
- * 1. request all nodes to save their indices
- * 2. When all nodes saved their indices, request all nodes to save their cluster metadata
- * 3. When all nodes acked metadata save, write the metadata on disk and done.
+ *  HTTP handler for ACL record APIs.
  */
 class AclRecordCommandHttpHandler: public ReadviewTransaction, public ConsumerInterface {
 public:
@@ -37,12 +33,7 @@ public:
 
     ~AclRecordCommandHttpHandler(){
     	finalize();
-    	if(aclCommand != NULL){
-    		delete aclCommand;
-    	}
-    	if(req != NULL){
-    		delete req;
-    	}
+    	delete aclCommand;
     }
 
     static void prepareAclDataForApiLayer(std::map< string, vector<string> > &recordAclDataForApiLayer,
@@ -117,7 +108,6 @@ private:
     					// extract all the role ids from the query
     					bool success = JSONRecordParser::_extractResourceAndRoleIds(roleIds, primaryKeyID,
     							doc, coreInfo, log_str);
-    					Logger::console("HTTP Record ACL: %s", log_str.str().c_str());
     					if (success) {
     						HTTPPrintInfo hpi = { primaryKeyID, true, "" };
     						inputRecordInfoArr.push_back(hpi);
@@ -134,7 +124,6 @@ private:
     				std::stringstream log_str;
     				// extract all the role ids from the query
     				bool success = JSONRecordParser::_extractResourceAndRoleIds(roleIds, primaryKeyID, doc, coreInfo, log_str);
-    				Logger::console("HTTP Record ACL: %s", log_str.str().c_str());
     				if(!success){
     					responseObject->addMessage("error:" + coreInfo->getName() + " : "  + log_str.str());
     					responseObject->finalizeOK();
@@ -223,7 +212,7 @@ private:
     }
 
     void finalizeWork(Transaction::Params * params){
-		this->getTransaction()->getSession()->response->printHTTP(req);
+		this->getSession()->response->printHTTP(req);
     }
 
     /*
