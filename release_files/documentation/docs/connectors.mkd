@@ -1,4 +1,4 @@
-#Database Connectors
+ #Database Connectors
 
 ##1. Overview
 
@@ -816,3 +816,206 @@ Again, wait for about 4 seconds for the SRCH2 server to pull the change, then do
 
 Besides MySQL, SQLite, SQL Server, and MongoDB, we are developing connectors for
 other data sources.
+
+#6. Data Connector SDK
+
+#6.1. Overview
+
+This section describes how to implement a customized data connector shared library to connect between SRCH2 engine and data source. 
+The connector contains 2 components, ```Data Connector``` and ```Server Interface```. The connector should implement a 
+```Data Connector``` to fetch the data and logs from the data source and use ```Server Interface``` to Insert/Delete/Update 
+them to the SRCH2 indexes. In the configuration file of SRCH2, a user specifies a data source with 
+information such as host name, port number, and table name.  The SRCH2 engine will load the connector (as a shared library called "libYourDataConnector"), and 
+call the function ```init()```, ```createNewIndexes()``` and ```runListener()``` sequentially. The following figure illustrates how
+a SRCH2 connector interacts with the SRCH2 server.
+
+<span ><center><img style="float: center" width="60%" src="../images/mongodb-connector.png" /></center></span> 
+
+#6.2. DataConnector Interface
+
+A database connector for the engine should implement the interface provided
+in the DataConnector abstract class by extending it.
+
+```
+class DataConnector {
+public:
+    virtual ~DataConnector() {};
+
+    virtual int init(ServerInterface *serverHandle) = 0;
+
+    virtual int runListener() = 0;
+
+    virtual int createNewIndexes() = 0;
+
+    virtual void saveLastAccessedLogRecordTime() = 0;
+};
+```
+
+In the SRCH2 engine, the ```DataConnector``` class will be called as the following logic.
+
+```
+open shared library
+
+IF init(serverHandle) = 0 THEN
+    IF need to create new indexes from empty THEN 
+        IF createNewIndexes() = 0 THEN
+            runListener()
+
+close shared library
+```
+
+#6.2.1. Init
+
+```
+virtual int init(ServerInterface *serverHandle) = 0;
+```
+
+"init" is called once when the connector is loaded by the engine.
+All the initialization is recommended to be implemented here.
+e.g., check the config file and connect to the database.
+
+Parameters:
+    serverHandle : The serverHandle is provided by the engine which is an instance of 
+        ServerInterface class. The serverHandle must be used to call ServerInterface class APIs. 
+
+Return value:
+    0 : success. The SRCH2 engine will try to load the data from the database.
+    other : fail. The SRCH2 engine will close the connector.
+
+#6.2.2. Create New Indexes
+
+```
+virtual int createNewIndexes() = 0;
+```
+
+"createNewIndexes" is called when the connector starts and there is no index found
+in the folder <dataDir>. It should fetch all the data from the
+collection and insert them into the srch2-engine.
+
+Return value:
+    0 : success. The SRCH2 engine will try to start the listener.
+    other : fail. The SRCH2 engine will close the connector.
+
+#6.2.3. Run Listner
+
+```
+virtual int runListener() = 0;
+```
+
+"runListener" should be implemented as a pull based listener.
+It should periodically fetch the data changes from the database.
+The "runListener" function should keep running until the database 
+connection closed. If this function returns, the SRCH2 engine will
+close the database connector and no longer load data until the 
+engine restarts.
+
+#6.2.4. Save Last Accessed Log Record Timestamp
+
+```
+virtual void saveLastAccessedLogRecordTime() = 0;
+```
+
+"saveLastAccessedLogRecordTime" is called when the engine is saving
+the indexes. The data connector should also save the timestamp so that
+the next time when the engine starts, the connector can ignore the
+previous executed log events.
+
+#6.3. Server Interface 
+
+The abstract class ServerInterface provides the interface of the engine to
+an external database connector. The concrete implementation is within the 
+engine.  
+
+#6.3.1. Insert Record
+
+```
+virtual int insertRecord(const std::string& jsonString) = 0;
+```  
+
+```insertRecord``` inserts a json format string into the SRCH2 indexes.
+
+Parameters: 
+    jsonString : A JSON format string that is to be inserted into the indexes.
+
+Return value: 
+    0 : success
+    other : fail 
+
+Note: The API only accepts single JSON Object as a string.
+      It does not accept JSON Array as a string.
+  
+#6.3.2. Delete Record
+```
+virtual int deleteRecord(const std::string& primaryKey) = 0;
+```
+
+"deleteRecord" deletes a record with a specified primary key from the SRCH2 indexes.
+
+Parameters:
+    primaryKey : A string format primary key of a record that is to be deleted from the indexes. 
+
+Return value:
+    0 : success
+    other : fail
+
+#6.3.3. Update Record
+```
+virtual int updateRecord(const std::string& oldPk,
+            const std::string& jsonString) = 0;
+```    
+
+"updateRecord" takes the old primary key of a record as an input and
+ updates it with the new record passed in as a JSON format string.
+
+Parameters:
+    oldPk : The old primary key of the updating record.
+    jsonString :  The updated JSON format string.
+
+Return value:
+    0 : success
+    other : fail
+
+#6.4.4. Configuration Parameters Lookup
+```
+virtual int configLookUp(const std::string& key, std::string & value) = 0;
+```     
+
+"configLookUp" provides key based lookup for the connector specific configuration. 
+ e.g.  "dbname" => "mysql"  
+
+Parameters:
+    key : The key which is defined in the config file <dbKeyValues> section.
+    value : THe return value of the key. Value will be "" if the key is not found.
+
+Return value:
+    0 : success
+    -1 : value not found.
+
+#6.4. Shared Library Functions
+
+```
+typedef DataConnector* create_t();
+typedef void destroy_t(DataConnector*);
+```
+
+These two C APIs are used by the srch2-engine to create/delete the instance
+in the shared library.
+The engine will call "create()" to get the connector and call
+"destroy" to delete it.
+
+e.g. "create_t()" and "destroy_t(DataConnector*)" are called to create/delete
+the instance of the connector, respectively. In the connector.cpp file. 
+The following 2 functions must be shown up so that the SRCH2 engine can start
+the database connector.
+
+extern "C" DataConnector* create() {
+    return new YourDBConnector;
+}
+
+extern "C" void destroy(DataConnector* p) {
+    delete p;
+}
+
+#6.5. Example
+
+
