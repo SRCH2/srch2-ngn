@@ -477,7 +477,7 @@ bool JSONRecordParser::_JSONValueObjectToRecord(srch2is::Record *record,
 
 // this function finds roleId in the query
 // and return false if there is not roleId in the query
-// sample: {"pid" : "234", ..... , "roleId”: ["33", "45"]}
+// sample: {"pid" : "234", ..... , "roleId���: ["33", "45"]}
 //
 bool JSONRecordParser::_extractRoleIds(vector<string> &roleIds, const Json::Value &root,
     		const CoreInfo_t *indexDataContainerConf, std::stringstream &error){
@@ -497,7 +497,7 @@ bool JSONRecordParser::_extractRoleIds(vector<string> &roleIds, const Json::Valu
 
 // this function finds resourceID and roleId in the query
 // and return false if there is not roleId or resourceId in the query
-// sample: {"resourceId”: "1234", "roleId”: ["33", "45"]}
+// sample: {"resourceId���: "1234", "roleId���: ["33", "45"]}
 //
 bool JSONRecordParser::_extractResourceAndRoleIds(std::vector<string> &roleIds,
 		string& resourcePrimaryKeyID, const Json::Value &root,
@@ -535,7 +535,7 @@ bool JSONRecordParser::_extractResourceAndRoleIds(std::vector<string> &roleIds,
 
 // this function finds resourceIDs and roleId in the query
 // and returns false if there is not roleId or resourceId in the query
-// sample: {"roleId”: "1234", "resourceId”: ["33", "45"]}
+// sample: {"roleId���: "1234", "resourceId���: ["33", "45"]}
 //
 bool JSONRecordParser::_extractRoleAndResourceIds(std::vector<string> &resourceIds,
 		string& rolePrimaryKeyID, const Json::Value &root,
@@ -572,7 +572,7 @@ bool JSONRecordParser::_extractRoleAndResourceIds(std::vector<string> &resourceI
 
 // this function extracts the role ids from a JSON object
 // and returns false if parsing the json object was not successful
-// sample:  {"resourceId”: "1234", "roleId”: ["33", "45"]}
+// sample:  {"resourceId���: "1234", "roleId���: ["33", "45"]}
 bool JSONRecordParser::getAclInfoFromJSON(vector<string> &roleIds, string &primaryKeyID,
     		const string& inputLine, const CoreInfo_t *indexDataContainerConf, std::stringstream &error){
 	string::const_iterator end_it = utf8::find_invalid(inputLine.begin(), inputLine.end());
@@ -739,10 +739,11 @@ srch2is::Schema* JSONRecordParser::createAndPopulateSchema(const CoreInfo_t *ind
 unsigned DaemonDataSource::createNewIndexFromFile(srch2is::Indexer* indexer, Schema * storedAttrSchema,
 		const CoreInfo_t *indexDataContainerConf, const string & filePath)
 {
+	const string& currentCoreName = indexDataContainerConf->getName();
     ifstream in(filePath.c_str());
     if (in.fail())
     {
-        Logger::error("DataSource file not found at: %s", filePath.c_str());
+        Logger::error("core = %s : DataSource file not found at: %s", currentCoreName.c_str(), filePath.c_str());
         return 0;
     }
 
@@ -805,8 +806,8 @@ unsigned DaemonDataSource::createNewIndexFromFile(srch2is::Indexer* indexer, Sch
             }
         }
     }
-    Logger::console("Indexed %d / %d records.", indexedRecordsCount, lineCounter);
-    Logger::console("Finalizing ...");
+    Logger::console("core = %s : Indexed %d / %d records.", currentCoreName.c_str(), indexedRecordsCount, lineCounter);
+    Logger::console("core = %s : Finalizing ...", currentCoreName.c_str());
     in.close();
 
     delete analyzer;
@@ -818,13 +819,20 @@ unsigned DaemonDataSource::createNewIndexFromFile(srch2is::Indexer* indexer, Sch
 //  {"resourceId": "1234", "roleId": ["33", "45"]}
 void DaemonDataSource::addRecordAclFile(srch2is::Indexer *indexer,
                 const CoreInfo_t *indexDataContainerConf){
+
+	const string& currentCoreName = indexDataContainerConf->getName();
 	if(!(indexDataContainerConf->getHasRecordAcl()))
 		return;
 
 	const string* filePath = indexDataContainerConf->getRecordAclFile();
+
+	if (filePath == "") {
+		return;
+	}
+
 	ifstream in(filePath->c_str());
 	if (in.fail()){
-		Logger::error("Record-based ACL file not found at: %s", filePath->c_str());
+		Logger::error("core = %s : Record-based ACL file not found at: %s", currentCoreName.c_str(), filePath->c_str());
 		return;
 	}
 
@@ -882,7 +890,7 @@ void DaemonDataSource::addRecordAclFile(srch2is::Indexer *indexer,
 
 		}
 	}
-	Logger::console("Added access controls %d / %d records.", indexedRecordsCount, lineCounter);
+	Logger::console("core = %s : Added access controls %d / %d records.", currentCoreName.c_str(), indexedRecordsCount, lineCounter);
     in.close();
 
 	return;

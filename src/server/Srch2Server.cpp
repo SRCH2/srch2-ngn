@@ -100,6 +100,7 @@ void Srch2Server::createAndBootStrapIndexer(const string & directoryPath)
     else
         indexCreateOrLoad = srch2http::INDEXCREATE;
     Schema * storedAttrSchema = Schema::create();
+    const string& currentCoreName = getCoreInfo()->getName();
     switch (indexCreateOrLoad)
     {
     case srch2http::INDEXCREATE:
@@ -144,7 +145,7 @@ void Srch2Server::createAndBootStrapIndexer(const string & directoryPath)
 	                }
 
 					// Create from JSON and save to index-dir
-					Logger::console("Creating indexes from JSON file...");
+					Logger::console("core = %s : Creating indexes from JSON file...", currentCoreName.c_str());
 					indexedCounter = DaemonDataSource::createNewIndexFromFile(getIndexer(),
 							storedAttrSchema, this->getCoreInfo(),getDataFilePath());
 	        	}
@@ -167,7 +168,7 @@ void Srch2Server::createAndBootStrapIndexer(const string & directoryPath)
 	             */
 	            if (indexedCounter > 0) {
 	                indexer->save();
-	                Logger::console("Indexes saved.");
+	                Logger::console("core = %s : Indexes saved.", currentCoreName.c_str());
 	            }
 				break;
 		}
@@ -179,7 +180,7 @@ void Srch2Server::createAndBootStrapIndexer(const string & directoryPath)
             if(indexDataConfig->getHasRecordAcl()){
             	DaemonDataSource::addRecordAclFile(indexer, indexDataConfig);
             }
-		    Logger::console("Creating new empty index");
+		    Logger::console("core = %s : Creating new empty index", currentCoreName.c_str());
 		}
 	    };
 	    AnalyzerHelper::saveAnalyzerResource(this->getCoreInfo());
@@ -192,11 +193,11 @@ void Srch2Server::createAndBootStrapIndexer(const string & directoryPath)
         indexer->bootStrapFromDisk();
 
         if (!checkSchemaConsistency(this->getCoreInfo()->getSchema(), indexer->getSchema())) {
-            Logger::warn("The schema in the config file is different from the"
+            Logger::warn("core = %s : The schema in the config file is different from the"
                     " serialized schema on the disk. The engine will ignore "
                     "the schema from the config file. Please make sure they "
                     "are consistent. One possible solution is to remove all "
-                    "the index files and run the engine again.");
+                    "the index files and run the engine again.", currentCoreName.c_str());
         }
 
 	    // Load Analyzer data from disk
@@ -208,8 +209,8 @@ void Srch2Server::createAndBootStrapIndexer(const string & directoryPath)
 	    }
 	    if(isAttributeBasedSearch != getCoreInfo()->getSupportAttributeBasedSearch())
 	    {
-	    	Logger::warn("support-attribute-based-search has changed in the config file"
-	    		        		" remove all index files and run it again!");
+	    	Logger::warn("core = %s : support-attribute-based-search has changed in the config file"
+	    		        		" remove all index files and run it again!", currentCoreName.c_str());
 	    }
 	    RecordSerializerUtil::populateStoredSchema(storedAttrSchema, getIndexer()->getSchema());
 	    break;
