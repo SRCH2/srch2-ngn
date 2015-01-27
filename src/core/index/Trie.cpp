@@ -1615,7 +1615,6 @@ void Trie::applyKeywordIdMapperOnEmptyLeafNodes(map<unsigned, unsigned> &keyword
 
 void Trie::removeDeletedNodes()
 {
-    // return; //  TODO;
     // sort the ids of the empty leaf nodes
     std::sort(emptyLeafNodeIds.begin(), emptyLeafNodeIds.end());
 
@@ -1681,7 +1680,6 @@ bool Trie::removeDeletedNodes(TrieNode *trieNode)
     	// [minEmptyNodeId,    maxEmptyNodeId]
         unsigned minId = trieNode->getChild(childCursor)->getMinId();
         unsigned maxId = trieNode->getChild(childCursor)->getMaxId();
-        // ASSERT(minEmptyNodeId <= minId);
         ASSERT(minId <= maxId);
 
         // check if there is an empty leaf node id in the range [minId, maxId]
@@ -1696,11 +1694,6 @@ bool Trie::removeDeletedNodes(TrieNode *trieNode)
        childCursor ++;
     }
 
-    // TODO: sanity check: no NULL children before "low"
-    for (int i = 0; i < low; i ++) {
-      ASSERT(trieNode->getChild(i) != NULL);
-    }
-
     // remove the nulled children
     if (numberOfNulledChildren > 0) {
         // find the first nulled child
@@ -1708,10 +1701,6 @@ bool Trie::removeDeletedNodes(TrieNode *trieNode)
         while (first < trieNode->getChildrenCount()
                 && trieNode->getChild(first) != NULL)
             first ++;
-
-        if (first < trieNode->getChildrenCount()) {
-	  ASSERT(trieNode->getChild(first) == NULL);
-	}
 
         // move the non-null children to the left
         for (int second = first + 1; second < trieNode->getChildrenCount();
@@ -1723,6 +1712,7 @@ bool Trie::removeDeletedNodes(TrieNode *trieNode)
         }
 
         // remove the last "numberOfNulledChildren" children since they have been copied to the left
+	// Note: "pop_back()" will NOT delete the trie nodes of these pointers
         for (int i = 0; i < numberOfNulledChildren; i++) {
 	  trieNode->childrenPointerList.pop_back();
 	}

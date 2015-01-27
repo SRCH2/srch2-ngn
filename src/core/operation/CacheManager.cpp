@@ -49,8 +49,7 @@ int PhysicalOperatorsCache::clear(){
 }
 
 int ActiveNodesCache::findLongestPrefixActiveNodes(Term *term, boost::shared_ptr<PrefixActiveNodeSet> &in){
-  // TODO: Disable cachinng temporarily
-  return 0;
+   // return 0; // If enabled, disable cachinng temporarily for testing purposes
 
 	// find the longest prefix with active nodes in the cache
 	unsigned termThreshold = term->getThreshold();
@@ -76,8 +75,7 @@ int ActiveNodesCache::findLongestPrefixActiveNodes(Term *term, boost::shared_ptr
 
 
 int ActiveNodesCache::setPrefixActiveNodeSet(boost::shared_ptr<PrefixActiveNodeSet> &prefixActiveNodeSet){
-  // TODO: disable caching temporarily
-  return 1;
+   // return 1; // If uncommented, disable caching temporarily for debugging purposes
 
 	vector<CharType> *prefix = prefixActiveNodeSet->getPrefix();
 	std::stringstream ss ;

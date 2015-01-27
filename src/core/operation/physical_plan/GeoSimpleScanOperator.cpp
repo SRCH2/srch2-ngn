@@ -71,10 +71,10 @@ PhysicalPlanRecordItem* GeoSimpleScanOperator::getNext(const PhysicalPlanExecuti
 	if(this->vectorOffset >= this->geoElements.size())
 		return NULL;
 
-	ASSERT(this->cursorOnVectorOfGeoElements < this->geoElements[this->vectorOffset]->size());
-	// Something is wrong. To be safe, return NULL.
+	if (this->geoElements[this->vectorOffset]->size() > 0)
+           ASSERT(this->cursorOnVectorOfGeoElements < this->geoElements[this->vectorOffset]->size());
 	if (this->cursorOnVectorOfGeoElements >= this->geoElements[this->vectorOffset]->size())
-		return NULL;
+		return NULL; // Something is wrong. To be safe, return NULL.
 
 	// Iterate through the records to find the first valid record
 	GeoElement* element;
