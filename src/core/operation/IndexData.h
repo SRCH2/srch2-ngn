@@ -122,7 +122,11 @@ struct IndexReadStateSharedPtr_Token
     typedef boost::shared_ptr<QuadTreeRootNodeAndFreeLists> QuadTreeRootNodeSharedPtr;
     QuadTreeRootNodeSharedPtr quadTreeRootNodeSharedPtr;
 
-    void reset(){
+    /*
+     * When this method is called all shared pointers are reset meaning
+     * that reader has lost them.
+     */
+    void resetSharedPointers(){
     	trieRootNodeSharedPtr.reset();
     	forwardIndexReadViewSharedPtr.reset();
     	invertedIndexReadViewSharedPtr.reset();
