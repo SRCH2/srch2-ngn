@@ -15,7 +15,7 @@ void* writer3(void* arg);
 void* reader3(void* arg);
 
 
-cowvector<int> cowv;
+cowvector<int> cowv(1);
 
 // Main logic of this test case: it first uses push_back()
 // to add 10 elements (0, 1, ..., 90 to the writeview and commits.

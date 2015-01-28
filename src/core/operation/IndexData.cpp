@@ -689,7 +689,7 @@ INDEXWRITE_RETVAL IndexData::_merge(CacheManager *cache, bool updateHistogram) {
         // affected TrieNode paths. Let the read view read the old paths
         // (which will be freed after the last reader)
         boost::unique_lock<boost::shared_mutex> lock(globalRwMutexForReadersWriters);
-        this->trie->removeDeletedNodes(); // TODO: disable it temporarily
+        this->trie->removeDeletedNodes();
 
 	// since we are deleting trie nodes, we need to clear the cache while
 	// holding the global RW lock.
@@ -856,7 +856,7 @@ void IndexData::_save(CacheManager *cache, const string &directoryName) const {
         if (this->trie->getEmptyLeafNodeIdSize() > 0) {
             // we need to acquire the global lock to block all other readers and writers
             boost::unique_lock<boost::shared_mutex> lock(globalRwMutexForReadersWriters);
-            this->trie->removeDeletedNodes(); // TODO: disable it temporarily
+            this->trie->removeDeletedNodes();
 
 	    // since we are deleting trie nodes, we need to clear the cache while
 	    // holding the global RW lock.

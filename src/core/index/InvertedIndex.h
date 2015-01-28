@@ -366,9 +366,12 @@ private:
                        const float tfBoostProduct) const;
 
     cowvector<InvertedListContainerPtr> *invertedIndexVector;
+    ReadViewManager<InvertedListContainerPtr> invertedIndexVectorReadViewsMgr;
 
     //mapping from keywordOffset to keywordId
     cowvector<unsigned> *keywordIds;
+    ReadViewManager<unsigned> keywordIdsReadViewsMgr;
+
     bool commited_WriteView;
 
     ForwardIndex *forwardIndex; //Not serialised, must be assigned after every load and save.
