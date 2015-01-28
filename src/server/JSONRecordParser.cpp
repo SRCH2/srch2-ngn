@@ -826,7 +826,7 @@ void DaemonDataSource::addRecordAclFile(srch2is::Indexer *indexer,
 
 	const string* filePath = indexDataContainerConf->getRecordAclFile();
 
-	if (filePath == "") {
+	if (filePath && *filePath == "") {
 		return;
 	}
 

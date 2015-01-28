@@ -39,12 +39,7 @@ public:
 
     ~AclCommandHttpHandler(){
     	finalize();
-        if(aclCommand != NULL){
-            delete aclCommand;
-        }
-        if(req != NULL){
-        	delete req;
-        }
+        delete aclCommand;
     }
 
     static void prepareAclDataForApiLayer(std::map< string, vector<string> > &attributeAclDataForApiLayer,
@@ -307,7 +302,7 @@ private:
     }
 
     void finalizeWork(Transaction::Params * params){
-		this->getTransaction()->getSession()->response->printHTTP(req);
+		this->getSession()->response->printHTTP(req);
     }
 
 

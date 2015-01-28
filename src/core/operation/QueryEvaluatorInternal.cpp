@@ -337,23 +337,6 @@ int QueryEvaluatorInternal::search(LogicalPlan * logicalPlan , QueryResults *que
 	// set estimated number of results
 	queryResults->impl->estimatedNumberOfResults = logicalPlan->getTree()->stats->getEstimatedNumberOfResults();
 
-	// save in cache
-	boost::shared_ptr<QueryResultsCacheEntry> cacheObject ;
-	cacheObject.reset(new QueryResultsCacheEntry());
-	cacheObject->copyFromQueryResultsInternal(queryResults->impl);
-	this->cacheManager->getQueryResultsCache()->setQueryResults(key , cacheObject);
-
-
-	if(facetOperatorPtr != NULL){
-		delete facetOperatorPtr->getPhysicalPlanOptimizationNode();
-		delete facetOperatorPtr;
-	}
-
-	if (sortOperator) {
-		delete sortOperator->getPhysicalPlanOptimizationNode();
-		delete sortOperator;
-	}
-
     /*
      * 	QueryResults contains the list of records which are going to be sent to
 	 *  the sharding broker node to be aggregated. Populate RecordSnippet in
@@ -372,6 +355,24 @@ int QueryEvaluatorInternal::search(LogicalPlan * logicalPlan , QueryResults *que
 						logicalPlan->accessibleSearchableAttributes);
 		highlighter.generateSnippets();
 	}
+
+	// save in cache
+	boost::shared_ptr<QueryResultsCacheEntry> cacheObject ;
+	cacheObject.reset(new QueryResultsCacheEntry());
+	cacheObject->copyFromQueryResultsInternal(queryResults->impl);
+	this->cacheManager->getQueryResultsCache()->setQueryResults(key , cacheObject);
+
+
+	if(facetOperatorPtr != NULL){
+		delete facetOperatorPtr->getPhysicalPlanOptimizationNode();
+		delete facetOperatorPtr;
+	}
+
+	if (sortOperator) {
+		delete sortOperator->getPhysicalPlanOptimizationNode();
+		delete sortOperator;
+	}
+
 
 	return queryResults->impl->sortedFinalResults.size();
 }

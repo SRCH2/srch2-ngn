@@ -70,7 +70,7 @@ void AclAttributeReadCommand::produce(){
 		chosenTarget = rand() % allWriteTargets.size();
 	}
 	NodeTargetShardInfo & target = allWriteTargets.at(chosenTarget);
-	ASSERT(target.isClusterShardsMode());
+	// ASSERT(target.isClusterShardsMode());   // commenting out ASSERT ..ACL should be available for both node/cluster shards.
 	readListOfAttributes(target);
 }
 
@@ -94,15 +94,21 @@ void AclAttributeReadCommand::end(map<NodeId, SP(ShardingNotification) > & repli
 
 
 	AclAttributeReadNotification::ACK * listNotif = (AclAttributeReadNotification::ACK *)replies.begin()->second.get();
-	vector<unsigned> listOfSearchableAttributes = listNotif->getListOfSearchableAttributes();
-	vector<unsigned> listOfRefiningAttributes = listNotif->getListOfRefiningAttributes();
+	const vector<unsigned>& listOfSearchableAttributes = listNotif->getListOfSearchableAttributes();
+	const vector<unsigned>& listOfRefiningAttributes = listNotif->getListOfRefiningAttributes();
 	finalize(true, listOfSearchableAttributes, listOfRefiningAttributes);
 }
 
-void AclAttributeReadCommand::finalize(bool status, vector<unsigned> listOfRefiningAttributes,
-		vector<unsigned> listOfSearchableAttributes){
+void AclAttributeReadCommand::finalize(bool status, const vector<unsigned>& listOfSearchableAttributes,
+	const vector<unsigned>& listOfRefiningAttributes){
 	if(this->getConsumer() != NULL){
 		this->getConsumer()->consume(status, listOfSearchableAttributes, listOfRefiningAttributes, messageCodes);
+	}
+}
+
+void AclAttributeReadCommand::finalize(){
+	if(this->getConsumer() != NULL){
+		this->getConsumer()->consume(false, vector<unsigned>(), vector<unsigned>(), messageCodes);
 	}
 }
 

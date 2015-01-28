@@ -37,8 +37,10 @@ public:
 	// response which contains the list of attributes comes to this function
 	void end(map<NodeId, SP(ShardingNotification) > & replies);
 
-	void finalize(bool status = false, vector<unsigned> listOfRefiningAttributes = vector<unsigned>(),
-			vector<unsigned> listOfSearchableAttributes = vector<unsigned>());
+	void finalize(bool status, const vector<unsigned>& listOfSearchableAttributes,
+			const vector<unsigned>& listOfRefiningAttributes);
+
+	void finalize();
 
 	string getName() const {return "acl-attribute-read-command";};
 private:

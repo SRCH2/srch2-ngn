@@ -329,16 +329,14 @@ bool ConfigManager::loadConfigFile(srch2http::ResourceMetadataManager * metadata
     	    		&& coreInfo->getSchema()->getAclSearchableAttrIdsList().size() == 0){
     			continue;
     		}
-    		CoreInfo_t *newAclCore = NULL;
     		if(coreInfo->getNumberOfPrimaryShards() == 0){
     			// it's a node shard, we use the same core object for attribute acl
-    			newAclCore = coreInfo;
-    			coreInfo->aclCoreFlag = true;
     			coreInfo->setAttributeAclCoreId(coreInfo->getCoreId());
     			continue;
-    		};
+    		}
+
     		// it's a cluster shard, we must have a separate acl code
-			newAclCore = new srch2http::CoreInfo_t(*coreInfo);
+    		 CoreInfo_t *newAclCore = new srch2http::CoreInfo_t(*coreInfo);
 			newAclCore->setSchema((Schema*)coreInfo->getSchema());
 
 			newAclCore->name = "acl" + coreInfo->getName();

@@ -896,10 +896,14 @@ SP(AclAttributeReadNotification::ACK) DPInternalRequestHandler::
 		const AttributeAccessControl & acl = shard->getSrch2Server()->getIndexer()->getAttributeAcl();
 		boost::shared_ptr<vector<unsigned> > attrList;
 		acl.fetchRefiningAttrsAcl(roleId, attrList);
-		response->setListOfRefiningAttributes(*attrList.get());
+		if (attrList) {
+			response->setListOfRefiningAttributes(*attrList.get());
+		}
 		attrList.reset();
 		acl.fetchSearchableAttrsAcl(roleId, attrList);
-		response->setListOfSearchableAttributes(*attrList.get());
+		if (attrList) {
+			response->setListOfSearchableAttributes(*attrList.get());
+		}
 
 		break; // only one target is enough, it gives us the list
 	}

@@ -40,7 +40,7 @@ hostUrlList = None
 # Non-blocking (background process)
 # argList is an array - argList[0] is the path to the server
 # Remaining elements are server parameters such as --config-file=
-def startServer(argList):
+def startServer(argList, pingTimeout = 15):
     if len(argList) < 2:
         printLog('Missing args to start the engine!')
         return None
@@ -62,7 +62,7 @@ def startServer(argList):
         time.sleep(1)
     
     #print 'server started, process ' + str(serverHandle.pid) + ' returned ' + str(serverHandle.returncode)
-    if pingAllServers() != 0:
+    if pingAllServers(pingTimeout) != 0:
         return None
 
     print 'Wait for ' + str(len(argList)*2) + ' sec to stabilize the nodes.'
