@@ -173,6 +173,18 @@ public:
 
     inline const void readerPreExit(IndexReadStateSharedPtr_Token &readToken)
     {
+    	/*
+    	 * readToken is released here. This object maintains the
+    	 * guard copy of readview of all four indexes: Trie, II, FI, and QT.
+    	 * As long as these shared pointer copies are not reset, readview copies
+    	 * are not deallocated.
+    	 * As of now, there is one readToken in the system which is
+    	 * a member of QueryEvaluatorInternal. In main search/suggest query
+    	 * execution process QueryEvaluator is constructed and deleted per query.
+    	 * However one query evaluator object is used for multiple interactions with core
+    	 * (query/insertions/deletions). This is why we can't use constructor/destructor
+    	 * (which are nice locations) for storing/releasing the readviews.
+    	 */
     	readToken.resetSharedPointers();
     	// Releasing the global lock of readers and writers.
     	this->index->globalRwMutexForReadersWriters.unlock_shared();

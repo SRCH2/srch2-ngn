@@ -125,6 +125,9 @@ public:
     };
 
     /// A set of active nodes for an empty string and an edit-distance threshold
+    // Important note: this constructor makes a new copy from the Trie root shared pointer.
+    // so it must NOT be used in real query execution because shared pointer must be what's
+    // acquired in QueryEvalautorInternal's readerPreEnter() thorough query evaluation.
     PrefixActiveNodeSet(const Trie *trie, const unsigned editDistanceThreshold, bool supportSwapInEditDistance = true) {
         trie->getTrieRootNode_ReadView(this->trieRootNodeSharedPtr);
         std::vector<CharType> emptyString;

@@ -8,15 +8,6 @@
 namespace srch2 {
 namespace instantsearch {
 
-void freeStatsOfLogicalPlanTree(LogicalPlanNode * node) {
-    if(node == NULL){
-        return;
-    }
-    delete node->stats;
-    for(vector<LogicalPlanNode * >::iterator child = node->children.begin(); child != node->children.end() ; ++child){
-        freeStatsOfLogicalPlanTree(*child);
-    }
-}
 bool KeywordSearchOperator::open(QueryEvaluatorInternal * queryEvaluator, PhysicalPlanExecutionParameters & /*Not used*/){
 
     //    struct timespec tstart;
@@ -68,7 +59,7 @@ bool KeywordSearchOperator::open(QueryEvaluatorInternal * queryEvaluator, Physic
             /*
              *   For the fuzzy run, free the old 'stats' accumulated during the exact run.
              */
-            freeStatsOfLogicalPlanTree(logicalPlan->getTree());
+        	HistogramManager::freeStatsOfLogicalPlanTree(logicalPlan->getTree());
         }
         histogramManager.annotate(logicalPlan);
         /*

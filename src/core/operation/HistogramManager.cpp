@@ -25,7 +25,7 @@ void HistogramManager::annotate(LogicalPlan * logicalPlan){
 	 * 2. Estimated number of results for each internal node of LogicalPlan.
 	 */
 
-	allocateLogicalPlanNodeAnnotations(logicalPlan->getTree());
+    HistogramManager::allocateLogicalPlanNodeAnnotations(logicalPlan->getTree());
 
 	// TODO : Jamshid change the name of it ...
 	annotateWithActiveNodeSets(logicalPlan->getTree(), logicalPlan->isFuzzy());
@@ -83,17 +83,6 @@ void HistogramManager::markTermToForceSuggestionPhysicalOperator(LogicalPlanNode
 			return;
 		}
     }
-}
-
-// traverses the tree (by recursive calling) and allocates the annotation object for each node
-void HistogramManager::allocateLogicalPlanNodeAnnotations(LogicalPlanNode * node){
-	if(node == NULL){
-		return;
-	}
-	node->stats = new LogicalPlanNodeAnnotation();
-	for(vector<LogicalPlanNode * >::iterator child = node->children.begin(); child != node->children.end() ; ++child){
-		allocateLogicalPlanNodeAnnotations(*child);
-	}
 }
 
 // traverses the tree (by recursive calling) and computes active nodes when it sees a TERM node

@@ -114,13 +114,35 @@ public:
 	// calculates required information for building physical plan.
 	// this information is accessible later by passing nodeId of LogicalPlanNodes.
 	void annotate(LogicalPlan * logicalPlan);
-
+	static void freeStatsOfLogicalPlanTree(LogicalPlanNode * node) {
+	    if(node == NULL){
+	        return;
+	    }
+	    delete node->stats;
+	    node->stats = NULL;
+	    for(vector<LogicalPlanNode * >::iterator child = node->children.begin(); child != node->children.end() ; ++child){
+	        freeStatsOfLogicalPlanTree(*child);
+	    }
+	}
+	// traverses the tree (by recursive calling) and allocates the annotation object for each node
+	static void allocateLogicalPlanNodeAnnotations(LogicalPlanNode * node){
+		if(node == NULL){
+			return;
+		}
+		if(node->stats != NULL){
+			ASSERT(false);
+			delete node->stats;
+			node->stats = NULL;
+		}
+		node->stats = new LogicalPlanNodeAnnotation();
+		for(vector<LogicalPlanNode * >::iterator child = node->children.begin(); child != node->children.end() ; ++child){
+			allocateLogicalPlanNodeAnnotations(*child);
+		}
+	}
 private:
 	QueryEvaluatorInternal * queryEvaluator;
 
 	void markTermToForceSuggestionPhysicalOperator(LogicalPlanNode * node , bool isFuzzy);
-
-	void allocateLogicalPlanNodeAnnotations(LogicalPlanNode * node);
 
 	void annotateWithActiveNodeSets(LogicalPlanNode * node , bool isFuzzy);
 	void annotateWithEstimatedProbabilitiesAndNumberOfResults(LogicalPlanNode * node , bool isFuzzy);
@@ -141,7 +163,6 @@ private:
 			unsigned & aggregatedNumberOfLeafNodes) const;
 
 	unsigned computeEstimatedNumberOfResults(double probability);
-
 };
 
 }
