@@ -307,6 +307,23 @@ boost::shared_ptr<PrefixActiveNodeSet> HistogramManager::computeActiveNodeSet(Te
     	initialPrefixActiveNodeSet.reset(new PrefixActiveNodeSet(this->queryEvaluator->indexReadToken.trieRootNodeSharedPtr,
     			term->getThreshold(), this->queryEvaluator->indexData->getSchema()->getSupportSwapInEditDistance()));
     }
+    else{
+    	/*
+    	 * Indexing explanation :
+    	 * This is the case where a prefixActiveNodeSet (pans) is found in
+    	 * cache with a prefix of term. There is a shared pointer
+    	 * in PANS which is the readview of Trie. If the physical memory address
+    	 * of this shared pointer, and the mem address of the current readview, are
+    	 * not equal. It's not safe to accept this cache entry; a new one must be started.
+    	 */
+    	if(! initialPrefixActiveNodeSet->hasTheSameVersionTrie(
+    			this->queryEvaluator->indexReadToken.trieRootNodeSharedPtr)){
+    		// just like cache wasn't found at all
+    		cacheResponse = 0;
+        	initialPrefixActiveNodeSet.reset(new PrefixActiveNodeSet(this->queryEvaluator->indexReadToken.trieRootNodeSharedPtr,
+        			term->getThreshold(), this->queryEvaluator->indexData->getSchema()->getSupportSwapInEditDistance()));
+    	}
+    }
     cachedPrefixLength = initialPrefixActiveNodeSet->getPrefixLength();
 
     /// 2. do the incremental computation. BusyBit of prefixActiveNodeSet is busy.

@@ -155,6 +155,19 @@ public:
         return editDistanceThreshold;
     }
 
+
+    /*
+     * Two prefix active nodes sets have the same Trie version if
+     * the physical memory addresses of trieRootNodeSharedPtr are equal
+     * in them.
+     */
+    bool hasTheSameVersionTrie(boost::shared_ptr<PrefixActiveNodeSet> right) const {
+    	return this->trieRootNodeSharedPtr.get() == right->trieRootNodeSharedPtr.get();
+    }
+    bool hasTheSameVersionTrie(TrieRootNodeSharedPtr rightTrieRootNodeSharedPtr) const {
+    	return this->trieRootNodeSharedPtr.get() == rightTrieRootNodeSharedPtr.get();
+    }
+
     unsigned getNumberOfBytes() const {
 
     	unsigned totalNumberOfBytes = 0;
