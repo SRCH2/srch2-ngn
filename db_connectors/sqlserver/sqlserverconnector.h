@@ -57,8 +57,6 @@ private:
     bool connectToDB();
     //Check the config validity. e.g. if contains dbname, tables etc.
     bool checkConfigValidity();
-    //Check if database contains the table.
-    bool checkTableExistence();
     //Fetch the table schema and store into tableSchema
     bool populateTableSchema(std::string & tableName);
 

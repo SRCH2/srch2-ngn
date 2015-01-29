@@ -817,9 +817,9 @@ Again, wait for about 4 seconds for the SRCH2 server to pull the change, then do
 Besides MySQL, SQLite, SQL Server, and MongoDB, we are developing connectors for
 other data sources.
 
-#6. Data Connector SDK
+##6. Data Connector SDK
 
-#6.1. Overview
+###6.1. Overview
 
 This section describes how to implement a customized data connector shared library to connect between SRCH2 engine and data source. 
 The connector contains 2 components, ```Data Connector``` and ```Server Interface```. The connector should implement a 
@@ -829,9 +829,9 @@ information such as host name, port number, and table name.  The SRCH2 engine wi
 call the function ```init()```, ```createNewIndexes()``` and ```runListener()``` sequentially. The following figure illustrates how
 a SRCH2 connector interacts with the SRCH2 server.
 
-<span ><center><img style="float: center" width="60%" src="../images/mongodb-connector.png" /></center></span> 
+<span ><center><img style="float: center" width="60%" src="../images/connector-SDK.png" /></center></span> 
 
-#6.2. DataConnector Interface
+###6.2. DataConnector Interface
 
 A database connector for the engine should implement the interface provided
 in the DataConnector abstract class by extending it.
@@ -864,7 +864,7 @@ IF init(serverHandle) = 0 THEN
 close shared library
 ```
 
-#6.2.1. Init
+####6.2.1. Init
 
 ```
 virtual int init(ServerInterface *serverHandle) = 0;
@@ -882,7 +882,7 @@ Return value:
     0 : success. The SRCH2 engine will try to load the data from the database.
     other : fail. The SRCH2 engine will close the connector.
 
-#6.2.2. Create New Indexes
+####6.2.2. Create New Indexes
 
 ```
 virtual int createNewIndexes() = 0;
@@ -896,7 +896,7 @@ Return value:
     0 : success. The SRCH2 engine will try to start the listener.
     other : fail. The SRCH2 engine will close the connector.
 
-#6.2.3. Run Listner
+####6.2.3. Run Listner
 
 ```
 virtual int runListener() = 0;
@@ -909,7 +909,7 @@ connection closed. If this function returns, the SRCH2 engine will
 close the database connector and no longer load data until the 
 engine restarts.
 
-#6.2.4. Save Last Accessed Log Record Timestamp
+####6.2.4. Save Last Accessed Log Record Timestamp
 
 ```
 virtual void saveLastAccessedLogRecordTime() = 0;
@@ -920,13 +920,13 @@ the indexes. The data connector should also save the timestamp so that
 the next time when the engine starts, the connector can ignore the
 previous executed log events.
 
-#6.3. Server Interface 
+###6.3. Server Interface 
 
 The abstract class ServerInterface provides the interface of the engine to
 an external database connector. The concrete implementation is within the 
 engine.  
 
-#6.3.1. Insert Record
+####6.3.1. Insert Record
 
 ```
 virtual int insertRecord(const std::string& jsonString) = 0;
@@ -944,7 +944,7 @@ Return value:
 Note: The API only accepts single JSON Object as a string.
       It does not accept JSON Array as a string.
   
-#6.3.2. Delete Record
+####6.3.2. Delete Record
 ```
 virtual int deleteRecord(const std::string& primaryKey) = 0;
 ```
@@ -958,7 +958,7 @@ Return value:
     0 : success
     other : fail
 
-#6.3.3. Update Record
+####6.3.3. Update Record
 ```
 virtual int updateRecord(const std::string& oldPk,
             const std::string& jsonString) = 0;
@@ -975,7 +975,7 @@ Return value:
     0 : success
     other : fail
 
-#6.4.4. Configuration Parameters Lookup
+####6.4.4. Configuration Parameters Lookup
 ```
 virtual int configLookUp(const std::string& key, std::string & value) = 0;
 ```     
@@ -991,7 +991,7 @@ Return value:
     0 : success
     -1 : value not found.
 
-#6.4. Shared Library Functions
+####6.4.5. Shared Library Functions
 
 ```
 typedef DataConnector* create_t();
@@ -1008,6 +1008,7 @@ the instance of the connector, respectively. In the connector.cpp file.
 The following 2 functions must be shown up so that the SRCH2 engine can start
 the database connector.
 
+```
 extern "C" DataConnector* create() {
     return new YourDBConnector;
 }
@@ -1015,7 +1016,30 @@ extern "C" DataConnector* create() {
 extern "C" void destroy(DataConnector* p) {
     delete p;
 }
+```
 
-#6.5. Example
+###6.5. Example
+We will proivde 2 examples to illustrate how the connector SDK works.
+The first one is a simple example which shows the basic structure with 
+psedsocode. The second one is a more complicated demo which connects 
+the engine with Oracle datebase.
+####6.5.1. Simple Example
+Library required:
+JSONCpp
 
+Header file required:
+DataConnector.h (srch2-ngn/include/instantsearch/DataConnector.h)
 
+Header File : <a href="../example-demo/connector/dbconnector.h">dbconnector.h</a>  
+Source File : <a href="../example-demo/connector/dbconnector.cpp">dbconnectorcpp</a>
+
+####6.5.2. Oracle Example
+Library required:
+JSONCpp
+Unixodbc
+
+Header file required:
+DataConnector.h (srch2-ngn/include/instantsearch/DataConnector.h)
+
+Header File : <a href="../example-demo/connector/oracleconnector.h">oracleconnector.h</a>  
+Source File : <a href="../example-demo/connector/oracleconnector.cpp">oracleconnectorcpp</a>
