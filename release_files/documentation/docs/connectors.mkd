@@ -874,13 +874,13 @@ virtual int init(ServerInterface *serverHandle) = 0;
 All the initialization is recommended to be implemented here.
 e.g., check the config file and connect to the database.
 
-Parameters:
-    serverHandle : The serverHandle is provided by the engine which is an instance of 
+Parameters:  
+    ```serverHandle``` : The serverHandle is provided by the engine which is an instance of 
         ServerInterface class. The serverHandle must be used to call ServerInterface class APIs. 
 
-Return value:
-    0 : success. The SRCH2 engine will try to load the data from the database.
-    other : fail. The SRCH2 engine will close the connector.
+Return value:  
+    ```0``` : success. The SRCH2 engine will try to load the data from the database.  
+    ```other``` : fail. The SRCH2 engine will close the connector.
 
 ####6.2.2. Create New Indexes
 
@@ -892,9 +892,9 @@ virtual int createNewIndexes() = 0;
 in the folder <dataDir>. It should fetch all the data from the
 collection and insert them into the srch2-engine.
 
-Return value:
-    0 : success. The SRCH2 engine will try to start the listener.
-    other : fail. The SRCH2 engine will close the connector.
+Return value:  
+    ```0``` : success. The SRCH2 engine will try to start the listener.  
+    ```other``` : fail. The SRCH2 engine will close the connector.
 
 ####6.2.3. Run Listner
 
@@ -932,16 +932,16 @@ engine.
 virtual int insertRecord(const std::string& jsonString) = 0;
 ```  
 
-```insertRecord``` inserts a json format string into the SRCH2 indexes.
+"insertRecord" inserts a json format string into the SRCH2 indexes.  
 
-Parameters: 
-    jsonString : A JSON format string that is to be inserted into the indexes.
+Parameters:   
+    ```jsonString``` : A JSON format string that is to be inserted into the indexes.  
 
-Return value: 
-    0 : success
-    other : fail 
+Return value:   
+    ```0``` : success  
+    ```other``` : fail 
 
-Note: The API only accepts single JSON Object as a string.
+Note: The API only accepts single JSON Object as a string.  
       It does not accept JSON Array as a string.
   
 ####6.3.2. Delete Record
@@ -951,12 +951,12 @@ virtual int deleteRecord(const std::string& primaryKey) = 0;
 
 "deleteRecord" deletes a record with a specified primary key from the SRCH2 indexes.
 
-Parameters:
-    primaryKey : A string format primary key of a record that is to be deleted from the indexes. 
+Parameters:  
+    ```primaryKey``` : A string format primary key of a record that is to be deleted from the indexes. 
 
-Return value:
-    0 : success
-    other : fail
+Return value:   
+    ```0``` : success  
+    ```other``` : fail
 
 ####6.3.3. Update Record
 ```
@@ -967,13 +967,13 @@ virtual int updateRecord(const std::string& oldPk,
 "updateRecord" takes the old primary key of a record as an input and
  updates it with the new record passed in as a JSON format string.
 
-Parameters:
-    oldPk : The old primary key of the updating record.
-    jsonString :  The updated JSON format string.
+Parameters:   
+    ```oldPk``` : The old primary key of the updating record.  
+    ```jsonString``` :  The updated JSON format string.
 
-Return value:
-    0 : success
-    other : fail
+Return value:  
+    ```0``` : success  
+    ```other``` : fail
 
 ####6.4.4. Configuration Parameters Lookup
 ```
@@ -983,13 +983,13 @@ virtual int configLookUp(const std::string& key, std::string & value) = 0;
 "configLookUp" provides key based lookup for the connector specific configuration. 
  e.g.  "dbname" => "mysql"  
 
-Parameters:
-    key : The key which is defined in the config file <dbKeyValues> section.
-    value : THe return value of the key. Value will be "" if the key is not found.
+Parameters:  
+    ```key``` : The key which is defined in the config file <dbKeyValues> section.  
+    ```value``` : THe return value of the key. Value will be "" if the key is not found.
 
-Return value:
-    0 : success
-    -1 : value not found.
+Return value:  
+    ```0``` : success  
+    ```-1``` : value not found.
 
 ####6.4.5. Shared Library Functions
 
