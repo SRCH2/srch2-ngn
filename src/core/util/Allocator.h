@@ -14,7 +14,7 @@ static inline size_t round(size_t input) {
 		return 256;
 
 	// if input is already a power of 2 then return the same value
-	if (input & (input - 1) == 0)
+	if ((input & (input - 1)) == 0)
 		return input;
 
 #ifdef __GNUC__
