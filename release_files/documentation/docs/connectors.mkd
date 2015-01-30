@@ -1,4 +1,4 @@
- #Database Connectors
+#Database Connectors
 
 ##1. Overview
 
@@ -830,6 +830,61 @@ call the function ```init()```, ```createNewIndexes()``` and ```runListener()```
 a SRCH2 connector interacts with the SRCH2 server.
 
 <span ><center><img style="float: center" width="60%" src="../images/connector-SDK.png" /></center></span> 
+
+####6.1.1. Retrieve data  
+The engine retrieves the connector info from the config file.  
+Here we use Oracle database connector config file example to explain it:
+```
+<dataSourceType>2</dataSourceType>
+<dbParameters>
+    <dbSharedLibraryPath>./build/</dbSharedLibraryPath>
+    <dbSharedLibraryName>liboracleConnector</dbSharedLibraryName>
+    <dbKeyValues>
+        <dbKeyValue key="dataSource" value="ORACLE" />
+        <dbKeyValue key="server" value="127.0.0.1" />
+        <dbKeyValue key="user" value="cdcsub" />
+        <dbKeyValue key="password" value="cdcsub" />
+        <dbKeyValue key="ownerName" value="cdcpub" />
+        <dbKeyValue key="tableName" value="products" />
+        <dbKeyValue key="changeTableName" value="products_ct" />
+        <dbKeyValue key="listenerWaitTime" value="3" />
+        <dbKeyValue key="oracleMaxColumnLength" value="50" />
+    <dbKeyValues>
+</dbParameters>
+```
+
+```<dataSourceType>```:  
+1 : Engine will load JSON data file  
+2 : Engine will load shared library
+
+```<dbSharedLibraryPath>```:  
+The relative path based on <srch2Home> to the shared library location.
+
+```<dbSharedLibraryName>```:  
+The shared library name without suffix.
+
+```<dbKeyValues>```:  
+Data source parameters that will pass to the connector. Use function
+```int configLookUp(const std::string& key, std::string & value)``` to 
+retrieve the value.
+
+####6.1.2. Call create()  
+The engine will call the create function to get the data connector pointer.
+
+####6.1.3. Call DataConnector->init(ServerInterface*)  
+After the engine get the connector pointer, it will call the "init" function 
+to do the connector initialization e.g. connect to database.
+
+####6.1.4. Call DataConnector->createNewIndexes()   
+After the "init" returns "0", the engine will call "createNewIndexes" which 
+suppose to load all existing records into the indexes.
+ 
+####6.1.5. call DataConnector->runListener()  
+After the "createNewIndexes" returns "0", the engine will call "runListener" 
+which periodically access data source log to retrieve entries about record inserts/deletes/updates. 
+
+This funtion will call ServerInterface corresponding functions (insert(), delete(), update()) to modify the indexes.  
+Notice that the serverHandler object provides certain parameters, such as how often we need to access the database log.
 
 ###6.2. DataConnector Interface
 
