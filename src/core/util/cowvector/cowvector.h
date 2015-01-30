@@ -68,7 +68,7 @@ public:
         m_array =new array<T>(capacity);
         this->setSize(0);
         this->setWriteView();
-        this->setNeedToFreeArray(false);
+        this->setNeedToFreeArray(true);
     }
 
     ~vectorview()
