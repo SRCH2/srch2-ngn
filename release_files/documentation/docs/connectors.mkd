@@ -1051,6 +1051,13 @@ shell> sudo sh setup.sh
 ```
 
 c). Add Oracle Driver to unixODBC  
+Add the oracle library to the system library path
+make sure the library path is correct 
+```
+sudo sh -c "echo /u01/app/oracle/product/11.2.0/dbhome_1/lib/ > /etc/ld.so.conf.d/oracle.conf"
+sudo ldconfig
+```
+
 Add the following lines at the end of ```/etc/odbcinst.ini```, 
 make sure the Driver path is correct 
 ```
@@ -1065,9 +1072,12 @@ d). Compile the oracle connector
 ```
 shell> cd oracleExample
 shell> mkdir build
+shell> cd build
 shell> cmake ..
 shell> make
 ```
+
+You should see ```liboracleConnector.so``` under "build" folder.
 
 e). Set up the demo user and table
 ```
