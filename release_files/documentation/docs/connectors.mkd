@@ -1034,12 +1034,177 @@ Header File : <a href="../example-demo/connector/dbconnector.h">dbconnector.h</a
 Source File : <a href="../example-demo/connector/dbconnector.cpp">dbconnectorcpp</a>
 
 ####6.5.2. Oracle Example
-Library required:
-JSONCpp
-Unixodbc
+Download the [oracle example package](../example-demo/connector/oracleExample.tar.gz)
+and follow the steps to setup the environment and compile the shared library.
 
-Header file required:
-DataConnector.h (srch2-ngn/include/instantsearch/DataConnector.h)
+Please make sure [oracle database](https://www.oracle.com/database/index.html) is installed on the computer.
+ 
+a). Unzip the package
+```
+shell> tar -xvf oracleExample.tar.gz
+``` 
 
-Header File : <a href="../example-demo/connector/oracleconnector.h">oracleconnector.h</a>  
-Source File : <a href="../example-demo/connector/oracleconnector.cpp">oracleconnectorcpp</a>
+b). Run the script to install JSONCpp and unixODBC.  
+Make sure you have python installed before running the script.
+```
+shell> sudo sh setup.sh
+```
+
+c). Add Oracle Driver to unixODBC  
+Add the following lines at the end of ```/etc/odbcinst.ini```, 
+make sure the Driver path is correct 
+```
+[ORACLE]
+Description = Oracle ODBC Connection
+Driver      = /u01/app/oracle/product/11.2.0/dbhome_1/lib/libsqora.so.11.1
+Threading               = 1
+UsageCount              = 1
+```
+
+d). Compile the oracle connector
+```
+shell> cd oracleExample
+shell> mkdir build
+shell> cmake ..
+shell> make
+```
+
+e). Set up the demo user and table
+```
+conn / as sysdba
+startup
+create tablespace ts_cdcpub datafile '/tmp/cdcpubdata.dbf' size 100m;
+CREATE USER cdcpub IDENTIFIED BY cdcpub DEFAULT TABLESPACE ts_cdcpub
+QUOTA UNLIMITED ON SYSTEM
+QUOTA UNLIMITED ON SYSAUX;
+GRANT DBA TO cdcpub;
+
+conn cdcpub/cdcpub
+CREATE USER cdcsub IDENTIFIED BY cdcsub DEFAULT TABLESPACE ts_cdcpub;
+GRANT CREATE TABLE TO cdcsub;
+GRANT CREATE SESSION TO cdcsub;
+GRANT CREATE VIEW TO cdcsub;
+GRANT UNLIMITED TABLESPACE TO cdcsub;
+
+CREATE TABLE cdcpub.products(
+PROD_ID NUMBER(6),
+PROD_NAME VARCHAR2(50),
+PROD_LIST_PRICE NUMBER(8,2)) ;
+
+BEGIN
+DBMS_CDC_PUBLISH.CREATE_CHANGE_SET(
+change_set_name => 'cdcset',
+description => 'Change set for srch2 test',
+change_source_name => 'SYNC_SOURCE');
+END;
+/
+
+BEGIN
+DBMS_CDC_PUBLISH.CREATE_CHANGE_TABLE(
+owner => 'cdcpub',
+change_table_name => 'products_ct',
+change_set_name => 'cdcset',
+source_schema => 'cdcpub',
+source_table => 'PRODUCTS',
+column_type_list => 'PROD_ID NUMBER (6),
+PROD_NAME VARCHAR2 (50),
+PROD_LIST_PRICE NUMBER (8,2) ',
+capture_values => 'both',
+rs_id => 'y',
+row_id => 'n',
+user_id => 'n',
+timestamp => 'n',
+object_id => 'n',
+source_colmap => 'y',
+target_colmap => 'y',
+DDL_MARKERS=>'n',
+options_string => 'TABLESPACE ts_cdcpub');
+END;
+/
+GRANT ALL ON cdcpub.products TO cdcsub;
+GRANT ALL ON cdcpub.products_ct TO cdcsub;
+```
+
+Insert test data
+```
+INSERT INTO PRODUCTS VALUES(1,'test',1);
+INSERT INTO PRODUCTS VALUES(2,'test2',2);
+INSERT INTO PRODUCTS VALUES(3,'test3',3);
+INSERT INTO PRODUCTS VALUES(4,'test4',4);
+INSERT INTO PRODUCTS VALUES(5,'test5',5);
+commit;
+```
+
+f). Start srch2 engine with oracle connector. 
+Make sure the <srch2Home> and <dbSharedLibraryPath> in the config is correct.
+```
+shell> path/srch2-engine --config-file=./srch2-config-oracle.xml
+```
+
+To check the result, open another terminal and run the command below.
+```
+shell> curl "http://localhost:8081/search?q=test"
+```
+
+You should see the 5 records with the keyword "test".
+
+g). Make changes to the table
+```
+INSERT INTO PRODUCTS VALUES(6,'test6',6);
+INSERT INTO PRODUCTS VALUES(7,'test7',7);
+INSERT INTO PRODUCTS VALUES(8,'test8',8);
+delete from PRODUCTS where PROD_NAME='test4';
+UPDATE PRODUCTS SET PROD_ID = 7 WHERE PROD_ID = 2;
+UPDATE PRODUCTS SET PROD_NAME = 'test1' WHERE PROD_ID = 1;
+UPDATE PRODUCTS SET PROD_NAME = 'test66' WHERE PROD_ID = 6;
+UPDATE PRODUCTS SET PROD_NAME = 'test77' WHERE PROD_ID = 7;
+UPDATE PRODUCTS SET PROD_NAME = 'test88' WHERE PROD_ID = 8;
+commit;
+```
+
+To check the update, run the curl command again.
+```
+shell> curl "http://localhost:8081/search?q=test"
+```
+
+Now you should see all the updated records.
+
+h). To remove the demo user and table
+```
+conn cdcpub/cdcpub
+BEGIN
+EXECUTE IMMEDIATE 'drop user cdcsub';
+EXCEPTION
+WHEN OTHERS THEN NULL;
+END;
+/
+
+BEGIN
+BEGIN
+DBMS_CDC_PUBLISH.DROP_CHANGE_TABLE('cdcpub','products_ct','Y');
+END;
+EXCEPTION
+WHEN OTHERS THEN NULL;
+END;
+/
+
+BEGIN
+BEGIN
+DBMS_CDC_PUBLISH.DROP_CHANGE_SET('cdcset');
+END;
+EXCEPTION
+WHEN OTHERS THEN NULL;
+END;
+/
+
+BEGIN
+EXECUTE IMMEDIATE 'DROP TABLE CDCPUB.PRODUCTS';
+EXCEPTION
+WHEN OTHERS THEN NULL;
+END;
+/
+
+conn / as sysdba
+DROP USER CDCPUB CASCADE;
+DROP TABLESPACE ts_cdcpub INCLUDING CONTENTS AND DATAFILES;
+```
