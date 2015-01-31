@@ -22,7 +22,7 @@
  * OR PROFITS, WHETHER IN AN ACTION OF CONTRACT, NEGLIGENCE OR OTHER ACTION, ARISING OUT OF OR IN CONNECTION
  * WITH THE USE OR PERFORMANCE OF SOFTWARE.
 
- * Copyright © 2010 SRCH2 Inc. All rights reserved
+ * Copyright  2010 SRCH2 Inc. All rights reserved
  */
 
 #include "StemmerFilter.h"
@@ -622,33 +622,33 @@ void StemmerFilterInternal::stepFive(struct TokenDetails * tokenDetailStruct) {
 std::string StemmerFilterInternal::stemUsingPorterRules(std::string token) {
 
 	//	creating an instance of the TokenDetailsStruct and  allocating the struct size
-	struct TokenDetails * tokenDetailStruct = new TokenDetails;
+	struct TokenDetails tokenDetailStruct;
 	int endStringOffset = token.length() - 1;
-
-	char *buff = new char[token.size() + 1];
-	buff[token.size()] = 0;
-	memcpy(buff, token.c_str(), token.size());
 
 	if (endStringOffset <= 1) {
 		return token;
 	}
 
-	tokenDetailStruct->stemmedWordBuffer = buff;
-	tokenDetailStruct->endStringOffset = endStringOffset; /* copy the parameters into z */
+	char *buff = new char[token.size() + 1];
+	buff[token.size()] = 0;
+	memcpy(buff, token.c_str(), token.size());
+
+	tokenDetailStruct.stemmedWordBuffer = buff;
+	tokenDetailStruct.endStringOffset = endStringOffset; /* copy the parameters into z */
 
 	/* With this line, strings of length 1 or 2 don't go through the
 	 stemming process, although no mention is made of this in the
 	 published algorithm.
 	 */
-	stepOneAB(tokenDetailStruct);
-	stepOneC(tokenDetailStruct);
-	stepTwo(tokenDetailStruct);
-	stepThree(tokenDetailStruct);
-	stepFour(tokenDetailStruct);
-	stepFive(tokenDetailStruct);
+	stepOneAB(&tokenDetailStruct);
+	stepOneC(&tokenDetailStruct);
+	stepTwo(&tokenDetailStruct);
+	stepThree(&tokenDetailStruct);
+	stepFour(&tokenDetailStruct);
+	stepFive(&tokenDetailStruct);
 
-	std::string stemmedToken = token.substr(0, tokenDetailStruct->endStringOffset + 1);
-	delete tokenDetailStruct;
+	std::string stemmedToken = token.substr(0, tokenDetailStruct.endStringOffset + 1);
+	delete buff;
 	return stemmedToken;
 }
 
