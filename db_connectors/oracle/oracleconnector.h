@@ -113,6 +113,8 @@ private:
     //Allocate/Deallocate a SQL Statement handle
     bool allocateSQLHandle(SQLHSTMT & hstmt);
     void deallocateSQLHandle(SQLHSTMT & hstmt);
+
+    void printLog(const std::string & log, const int logLevel);
 };
 
 #endif /* ORACLECONNECTOR_H_ */

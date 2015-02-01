@@ -76,7 +76,7 @@ int OracleConnector::init(ServerInterface *serverHandle) {
      * If one of these checks failed, the init() fails and does not continue.
      */
     if (!checkConfigValidity() || !connectToDB()) {
-        Logger::error("ORACLECONNECTOR: exiting...");
+        printLog("exiting...", 1);
         return -1;
     }
 
@@ -84,7 +84,7 @@ int OracleConnector::init(ServerInterface *serverHandle) {
     string tableName;
     this->serverHandle->configLookUp("tableName", tableName);
     if (!populateTableSchema(tableName)) {
-        Logger::error("ORACLECONNECTOR: exiting...");
+        printLog("exiting...", 1);
         return -1;
     }
 
@@ -113,8 +113,7 @@ bool OracleConnector::connectToDB() {
 
         if ((retcode != SQL_SUCCESS) && (retcode != SQL_SUCCESS_WITH_INFO)) {
             printSQLError(hstmt);
-            Logger::error(
-                    "ORACLECONNECTOR: Allocate environment handle failed.");
+            printLog("Allocate environment handle failed.", 1);
             sleep(listenerWaitTime);
             continue;
         }
@@ -124,8 +123,8 @@ bool OracleConnector::connectToDB() {
 
         if ((retcode != SQL_SUCCESS) && (retcode != SQL_SUCCESS_WITH_INFO)) {
             printSQLError(hstmt);
-            Logger::error("ORACLECONNECTOR: Set the ODBC version "
-                    "environment attribute failed.");
+            printLog("Set the ODBC version "
+                    "environment attribute failed.", 1);
             sleep(listenerWaitTime);
             continue;
         }
@@ -134,8 +133,7 @@ bool OracleConnector::connectToDB() {
 
         if ((retcode != SQL_SUCCESS) && (retcode != SQL_SUCCESS_WITH_INFO)) {
             printSQLError(hstmt);
-            Logger::error(
-                    "ORACLECONNECTOR: Allocate connection handle failed.");
+            printLog("Allocate connection handle failed.", 1);
             sleep(listenerWaitTime);
             continue;
         }
@@ -152,8 +150,8 @@ bool OracleConnector::connectToDB() {
 
         if ((retcode != SQL_SUCCESS) && (retcode != SQL_SUCCESS_WITH_INFO)) {
             printSQLError(hstmt);
-            Logger::error(
-                    "ORACLECONNECTOR: Connect to the Oracle database failed.");
+            printLog("Connect to the Oracle database failed.",
+                    1);
             sleep(listenerWaitTime);
             continue;
         }
@@ -178,9 +176,10 @@ void OracleConnector::printSQLError(SQLHSTMT & hstmt) {
 
     while (SQLError(henv, hdbc, hstmt, szSQLSTATE, &nErr, msg, sizeof(msg),
             &cbmsg) == SQL_SUCCESS) {
-        Logger::error(
-                "ORACLECONNECTOR: SQLSTATE=%s, Native error=%ld, msg='%s'\n",
-                szSQLSTATE, nErr, msg);
+        std::stringstream logstream;
+        logstream << "SQLSTATE=" << szSQLSTATE << ", Native error=" << nErr
+                << ", msg='" << msg << "'";
+        printLog(logstream.str().c_str(), 1);
     }
 }
 
@@ -191,8 +190,9 @@ bool OracleConnector::executeQuery(SQLHSTMT & hstmt,
             static_cast<short int>(query.size()));
 
     if ((retcode != SQL_SUCCESS) && (retcode != SQL_SUCCESS_WITH_INFO)) {
-        Logger::error("ORACLECONNECTOR: Execute query '%s' failed",
-                query.c_str());
+        std::stringstream logstream;
+        logstream << "Execute query '" << query.c_str() << "' failed";
+        printLog(logstream.str().c_str(), 1);
         printSQLError(hstmt);
         return false;
     }
@@ -206,7 +206,8 @@ bool OracleConnector::executeQuery(SQLHSTMT & hstmt,
  * user, table name, change table name and the primary key. Otherwise, the check fails.
  */
 bool OracleConnector::checkConfigValidity() {
-    string dataSource, user, uniqueKey, tableName, server, changeTableName, ownerName;
+    string dataSource, user, uniqueKey, tableName, server, changeTableName,
+            ownerName;
     this->serverHandle->configLookUp("server", server);
     this->serverHandle->configLookUp("dataSource", dataSource);
     this->serverHandle->configLookUp("user", user);
@@ -219,10 +220,11 @@ bool OracleConnector::checkConfigValidity() {
             && (user.size() != 0) && (uniqueKey.size() != 0)
             && (tableName.size() != 0) && (changeTableName.size() != 0);
     if (!ret) {
-        Logger::error(
-                "ORACLECONNECTOR: Host Address(server), Data Source Config Name(dataSource),"
+        printLog(
+                "Host Address(server), Data Source Config Name(dataSource),"
                         " user name(user), table name(tableName), change table name(changeTableName),"
-                        " owner name(ownerName) and the primary key(uniqueKey) must be set.");
+                        " owner name(ownerName) and the primary key(uniqueKey) must be set.",
+                1);
         return false;
     }
 
@@ -240,8 +242,7 @@ bool OracleConnector::populateTableSchema(std::string & tableName) {
     SQLHSTMT hstmt;
 
     std::string ownerName;
-    this->serverHandle->configLookUp("ownerName",
-            ownerName);
+    this->serverHandle->configLookUp("ownerName", ownerName);
 
     std::stringstream sql;
     sql << "SELECT COLUMN_NAME FROM ALL_TAB_COLUMNS WHERE TABLE_NAME = UPPER('"
@@ -301,8 +302,7 @@ bool OracleConnector::populateTableSchema(std::string & tableName) {
 int OracleConnector::createNewIndexes() {
     std::string tableName, ownerName;
     this->serverHandle->configLookUp("tableName", tableName);
-    this->serverHandle->configLookUp("ownerName",
-            ownerName);
+    this->serverHandle->configLookUp("ownerName", ownerName);
 
     int indexedRecordsCount = 0;
     int totalRecordsCount = 0;
@@ -328,7 +328,8 @@ int OracleConnector::createNewIndexes() {
             sleep(listenerWaitTime);
             continue;
         }
-        if (!executeQuery(hstmt, string("SELECT * FROM " + ownerName + "." + tableName))) {
+        if (!executeQuery(hstmt,
+                string("SELECT * FROM " + ownerName + "." + tableName))) {
             sleep(listenerWaitTime);
             continue;
         }
@@ -370,12 +371,13 @@ int OracleConnector::createNewIndexes() {
                 if (serverHandle->insertRecord(jsonString) == 0) {
                     indexedRecordsCount++;
                 }
-                Logger::debug("ORACLECONNECTOR: Line %d %s", __LINE__,
-                        jsonString.c_str());
-                if (indexedRecordsCount && (indexedRecordsCount % 1000) == 0)
-                    Logger::info(
-                            "ORACLECONNECTOR: Indexed %d records so far ...",
-                            indexedRecordsCount);
+                printLog(jsonString, 4);
+                if (indexedRecordsCount && (indexedRecordsCount % 1000) == 0) {
+                    std::stringstream logstream;
+                    logstream << "Indexed " << indexedRecordsCount
+                            << " records so far ...";
+                    printLog(logstream.str().c_str(), 3);
+                }
             } else
                 break;
         }
@@ -393,8 +395,10 @@ int OracleConnector::createNewIndexes() {
 
     } while (connectToDB());
 
-    Logger::info("ORACLECONNECTOR: Total indexed %d / %d records. ",
-            indexedRecordsCount, totalRecordsCount);
+    std::stringstream logstream;
+    logstream << "Total indexed  " << indexedRecordsCount << " / "
+            << totalRecordsCount << " records. ";
+    printLog(logstream.str().c_str(), 3);
 
     //Deallocate the record buffer.
     for (int i = 0; i < fieldNames.size(); i++) {
@@ -496,7 +500,7 @@ int OracleConnector::runListener() {
          * Loop for the run listener, the loop will be executed every
          * "listenerWaitTime" seconds.
          */
-        Logger::info("ORACLECONNECTOR: waiting for updates ...");
+        printLog("waiting for updates ...", 3);
         while (1) {
             //Bind the "lastAccessedLogRecordRSID"
             std::string lastAccessedLogRecordRSIDStr;
@@ -514,8 +518,8 @@ int OracleConnector::runListener() {
             retcode = SQLExecute(hstmt);
             if ((retcode != SQL_SUCCESS)
                     && (retcode != SQL_SUCCESS_WITH_INFO)) {
-                Logger::error("ORACLECONNECTOR: Executing prepared "
-                        "statement failed in runListener().");
+                printLog("Executing prepared "
+                        "statement failed in runListener().", 1);
                 printSQLError(hstmt);
                 //Re-connect to the SQL Server, and start again.
                 sleep(listenerWaitTime);
@@ -530,8 +534,8 @@ int OracleConnector::runListener() {
                 retcode = SQLFetch(hstmt);
                 if (retcode == SQL_ERROR || retcode == SQL_SUCCESS_WITH_INFO) {
                     sqlErrorFlag = true;
-                    Logger::error("ORACLECONNECTOR: Fetching records failed"
-                            " in runListener().");
+                    printLog("Fetching records failed"
+                            " in runListener().", 1);
                     printSQLError(hstmt);
                     sleep(listenerWaitTime);
                     break;
@@ -567,10 +571,10 @@ int OracleConnector::runListener() {
                         itValue++;
                     }
                     string jsonString = writer.write(record);
-                    Logger::debug(
-                            "ORACLECONNECTOR: Line %d change version : %d ,operation : %s, Record: %s",
-                            __LINE__, RSID, operation.c_str(),
-                            jsonString.c_str());
+                    std::stringstream logstream;
+                    logstream << "Change version : " << RSID << " ,operation : "
+                            << operation.c_str() << ", Record: " << jsonString;
+                    printLog(logstream.str().c_str(), 4);
 
                     //Make the changes to the SRCH2 indexes.
                     if (operation.compare("I ") == 0) {
@@ -586,15 +590,17 @@ int OracleConnector::runListener() {
                             serverHandle->updateRecord(oldPk, jsonString);
                             oldPk.clear();
                         } else {
-                            Logger::error(
+                            printLog(
                                     "ORACLECONNECTOR: OPERATION$ in change "
-                                            "table only contains UN but no UO/UU,Update failed.");
+                                            "table only contains UN but no UO/UU,Update failed.",
+                                    1);
                         }
                     } else {
-                        Logger::error(
-                                "ORACLECONNECTOR: Error while parsing the "
-                                        "SQL record %s with operation %s",
-                                jsonString.c_str(), operation.c_str());
+                        logstream.str("");
+                        logstream << "Error while parsing the SQL record "
+                                << jsonString << " with operation "
+                                << operation;
+                        printLog(logstream.str().c_str(), 1);
                     }
                 } else {
                     break;
@@ -609,7 +615,7 @@ int OracleConnector::runListener() {
                 break;
             } else {
                 if (maxRSID != -1) {
-                    Logger::info("ORACLECONNECTOR: waiting for updates ...");
+                    printLog("ORACLECONNECTOR: waiting for updates ...", 3);
                     lastAccessedLogRecordRSID = maxRSID;
                 }
             }
@@ -646,8 +652,10 @@ void OracleConnector::loadLastAccessedLogRecordTime() {
     } else {
         //The file does not exist but the indexes already exists.
         if (lastAccessedLogRecordRSID == -1) {
-            Logger::error("ORACLECONNECTOR: Can not find %s. The data may be"
-                    "inconsistent. Please rebuild the indexes.", path.c_str());
+            std::stringstream logstream;
+            logstream << "Can not find " << path
+                    << ". The data may be inconsistent. Please rebuild the indexes.";
+            printLog(logstream.str().c_str(), 1);
             populateLastAccessedLogRecordTime();
         }
     }
@@ -661,7 +669,8 @@ void OracleConnector::populateLastAccessedLogRecordTime() {
     this->serverHandle->configLookUp("ownerName", ownerName);
 
     std::stringstream sql;
-    sql << "SELECT MAX(RSID$) FROM " << ownerName << "." << changeTableName << ";";
+    sql << "SELECT MAX(RSID$) FROM " << ownerName << "." << changeTableName
+            << ";";
     SQLHSTMT hstmt;
     SQLCHAR * changeVersion = new SQLCHAR[oracleMaxColumnLength];
     do {
@@ -724,7 +733,7 @@ bool OracleConnector::allocateSQLHandle(SQLHSTMT & hstmt) {
 
     if ((retcode != SQL_SUCCESS) && (retcode != SQL_SUCCESS_WITH_INFO)) {
         printSQLError(hstmt);
-        Logger::error("ORACLECONNECTOR: Allocate connection handle failed.");
+        printLog("ORACLECONNECTOR: Allocate connection handle failed.", 1);
         return false;
     }
     return true;
@@ -734,6 +743,28 @@ bool OracleConnector::allocateSQLHandle(SQLHSTMT & hstmt) {
 void OracleConnector::deallocateSQLHandle(SQLHSTMT & hstmt) {
     SQLCancel(hstmt);
     SQLFreeHandle(SQL_HANDLE_STMT, hstmt);
+}
+
+//Print Log information.
+void OracleConnector::printLog(const std::string & log, const int logLevel) {
+    std::stringstream logstream;
+    logstream << "ORACLECONNECTOR: " << log;
+    switch (logLevel) {
+    case 1:
+        Logger::error(logstream.str().c_str());
+        break;
+    case 2:
+        Logger::warn(logstream.str().c_str());
+        break;
+    case 3:
+        Logger::info(logstream.str().c_str());
+        break;
+    case 4:
+        Logger::debug(logstream.str().c_str());
+        break;
+    default:
+        Logger::debug(logstream.str().c_str());
+    }
 }
 
 //Disconnect from the Oracle
