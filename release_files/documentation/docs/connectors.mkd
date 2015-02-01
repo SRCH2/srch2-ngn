@@ -845,8 +845,8 @@ Here we use Oracle database connector config file example to explain it:
         <dbKeyValue key="user" value="cdcsub" />
         <dbKeyValue key="password" value="cdcsub" />
         <dbKeyValue key="ownerName" value="cdcpub" />
-        <dbKeyValue key="tableName" value="products" />
-        <dbKeyValue key="changeTableName" value="products_ct" />
+        <dbKeyValue key="tableName" value="COMPANY" />
+        <dbKeyValue key="changeTableName" value="COMPANY_CT" />
         <dbKeyValue key="listenerWaitTime" value="3" />
         <dbKeyValue key="oracleMaxColumnLength" value="50" />
     <dbKeyValues>
@@ -1136,7 +1136,7 @@ You should see ```liboracleConnector.so``` under "build" folder.
 
 e). Set up the demo user and table
 ```
-conn / as sysdba
+sqlplus / as sysdba
 startup
 create tablespace ts_cdcpub datafile '/tmp/cdcpubdata.dbf' size 100m;
 CREATE USER cdcpub IDENTIFIED BY cdcpub DEFAULT TABLESPACE ts_cdcpub
@@ -1151,10 +1151,12 @@ GRANT CREATE SESSION TO cdcsub;
 GRANT CREATE VIEW TO cdcsub;
 GRANT UNLIMITED TABLESPACE TO cdcsub;
 
-CREATE TABLE cdcpub.products(
-PROD_ID NUMBER(6),
-PROD_NAME VARCHAR2(50),
-PROD_LIST_PRICE NUMBER(8,2)) ;
+CREATE TABLE cdcpub.COMPANY(
+ID INT PRIMARY KEY NOT NULL, 
+NAME VARCHAR2 (50) NOT NULL, 
+AGE INT NOT NULL, 
+ADDRESS VARCHAR2 (50), 
+SALARY REAL) ;
 
 BEGIN
 DBMS_CDC_PUBLISH.CREATE_CHANGE_SET(
@@ -1167,13 +1169,15 @@ END;
 BEGIN
 DBMS_CDC_PUBLISH.CREATE_CHANGE_TABLE(
 owner => 'cdcpub',
-change_table_name => 'products_ct',
+change_table_name => 'COMPANY_CT',
 change_set_name => 'cdcset',
 source_schema => 'cdcpub',
-source_table => 'PRODUCTS',
-column_type_list => 'PROD_ID NUMBER (6),
-PROD_NAME VARCHAR2 (50),
-PROD_LIST_PRICE NUMBER (8,2) ',
+source_table => 'COMPANY',
+column_type_list => 'ID INT PRIMARY KEY NOT NULL, 
+NAME VARCHAR2 (50) NOT NULL, 
+AGE INT NOT NULL, 
+ADDRESS VARCHAR2 (50), 
+SALARY REAL ',
 capture_values => 'both',
 rs_id => 'y',
 row_id => 'n',
@@ -1186,17 +1190,18 @@ DDL_MARKERS=>'n',
 options_string => 'TABLESPACE ts_cdcpub');
 END;
 /
-GRANT ALL ON cdcpub.products TO cdcsub;
-GRANT ALL ON cdcpub.products_ct TO cdcsub;
+GRANT ALL ON cdcpub.COMPANY TO cdcsub;
+GRANT ALL ON cdcpub.COMPANY_CT TO cdcsub;
 ```
 
 Insert test data
 ```
-INSERT INTO PRODUCTS VALUES(1,'test',1);
-INSERT INTO PRODUCTS VALUES(2,'test2',2);
-INSERT INTO PRODUCTS VALUES(3,'test3',3);
-INSERT INTO PRODUCTS VALUES(4,'test4',4);
-INSERT INTO PRODUCTS VALUES(5,'test5',5);
+INSERT INTO COMPANY (ID,NAME,AGE,ADDRESS,SALARY)VALUES (1, 'Paul', 32, 'California', 20000.00 );
+INSERT INTO COMPANY (ID,NAME,AGE,ADDRESS,SALARY)VALUES (2, 'Allen', 25, 'Texas', 15000.00 );
+INSERT INTO COMPANY (ID,NAME,AGE,ADDRESS,SALARY)VALUES (3, 'Teddy', 23, 'Norway', 20000.00 );
+INSERT INTO COMPANY (ID,NAME,AGE,ADDRESS,SALARY) VALUES (4, 'Mark', 25, 'Rich-Mond ', 65000.00 );
+INSERT INTO COMPANY (ID,NAME,AGE,ADDRESS,SALARY) VALUES (5, 'David', 27, 'Texas', 85000.00 );
+INSERT INTO COMPANY (ID,NAME,AGE,ADDRESS,SALARY) VALUES (6, 'Kim', 22, 'South-Hall', 45000.00 );
 commit;
 ```
 
@@ -1208,31 +1213,49 @@ shell> path/srch2-engine --config-file=./srch2-config-oracle.xml
 
 To check the result, open another terminal and run the command below.
 ```
-shell> curl "http://localhost:8081/search?q=test"
+shell> curl "http://localhost:8081/search?q=paul"
 ```
 
-You should see the 5 records with the keyword "test".
+You should see the record with the keyword "paul".
 
 g). Make changes to the table
+
+Run the following command to insert a new record.
 ```
-INSERT INTO PRODUCTS VALUES(6,'test6',6);
-INSERT INTO PRODUCTS VALUES(7,'test7',7);
-INSERT INTO PRODUCTS VALUES(8,'test8',8);
-delete from PRODUCTS where PROD_NAME='test4';
-UPDATE PRODUCTS SET PROD_ID = 9 WHERE PROD_ID = 2;
-UPDATE PRODUCTS SET PROD_NAME = 'test1' WHERE PROD_ID = 1;
-UPDATE PRODUCTS SET PROD_NAME = 'test66' WHERE PROD_ID = 6;
-UPDATE PRODUCTS SET PROD_NAME = 'test77' WHERE PROD_ID = 7;
-UPDATE PRODUCTS SET PROD_NAME = 'test88' WHERE PROD_ID = 8;
-commit;
+sqlplus> INSERT INTO COMPANY (ID,NAME,AGE,ADDRESS,SALARY) VALUES (7, 'Joe', 20, 'Nevada', 15000.00 );
+sqlplus> commit;
+```
+Wait for about 4 seconds for the SRCH2 server to save the change. Do the search query:
+```
+shell> curl "http://localhost:8081/search?q=joe"
+```
+The search engine should return this newly inserted record.   
+
+We want to update Kim's address from "South-Hall" to "Texas" by running the following command:
+```
+sqlplus> UPDATE COMPANY SET ADDRESS = 'Texas' WHERE ID = 6;
+sqlplus> commit;
 ```
 
-To check the update, run the curl command again.
-```
-shell> curl "http://localhost:8081/search?q=test"
+To check the update, run the curl commands.
 ```
 
-Now you should see all the updated records.
+shell> curl "http://localhost:8081/search?q=kim"
+
+```
+The SRCH2 engine should be able to return this updated record, with "Texas" as the ADDRESS value.  
+
+Run the following command in the Oracle shell to delete the updated record:
+```
+sqlplus> DELETE FROM COMPANY WHERE ID = 6;
+sqlplus> commit;
+```
+
+Again, wait for about 4 seconds for the SRCH2 server to save the change, then do the above search query:
+```
+shell> curl "http://localhost:8081/search?q=Kim"
+```
+The SRCH2 engine should not return the deleted record.
 
 h). To remove the demo user and table
 ```
@@ -1246,7 +1269,7 @@ END;
 
 BEGIN
 BEGIN
-DBMS_CDC_PUBLISH.DROP_CHANGE_TABLE('cdcpub','products_ct','Y');
+DBMS_CDC_PUBLISH.DROP_CHANGE_TABLE('cdcpub','COMPANY_CT','Y');
 END;
 EXCEPTION
 WHEN OTHERS THEN NULL;
@@ -1263,7 +1286,7 @@ END;
 /
 
 BEGIN
-EXECUTE IMMEDIATE 'DROP TABLE CDCPUB.PRODUCTS';
+EXECUTE IMMEDIATE 'DROP TABLE CDCPUB.COMPANY';
 EXCEPTION
 WHEN OTHERS THEN NULL;
 END;

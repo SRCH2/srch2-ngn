@@ -19,12 +19,15 @@
 			<dataDir>./data/</dataDir>
 			<schema>
 				<fields>
-					<field name="PROD_ID" type="text" indexed="true" />
-					<field name="PROD_NAME" type="text" indexed="true" />
-					<field name="PROD_LIST_PRICE" type="text" indexed="true" />
+					<field name="SALARY" type="text" indexed="true" />
+					<field name="ADDRESS" type="text" indexed="true" />
+					<field name="AGE" type="text" indexed="true" />
+					<field name="NAME" type="text" indexed="true" refining="true"
+						default="2000" required="false" />
+					<field name="ID" type="text" refining="true" indexed="false" />
 				</fields>
 
-				<uniqueKey>PROD_ID</uniqueKey>
+				<uniqueKey>ID</uniqueKey>
 
 				<types>
 					<fieldType name="text_standard">
@@ -41,7 +44,7 @@
 
 				<supportSwapInEditDistance>true</supportSwapInEditDistance>
 
-				<fieldBoost>PROD_NAME^2 PROD_LIST_PRICE^1</fieldBoost>
+				<fieldBoost>NAME^2 AGE^1</fieldBoost>
 
 				<defaultQueryTermBoost>1</defaultQueryTermBoost>
 
@@ -103,8 +106,8 @@
 					<dbKeyValue key="user" value="cdcsub" />
 					<dbKeyValue key="password" value="cdcsub" />
 					<dbKeyValue key="ownerName" value="cdcpub" />
-					<dbKeyValue key="tableName" value="products" />
-					<dbKeyValue key="changeTableName" value="products_ct" />
+					<dbKeyValue key="tableName" value="COMPANY" />
+					<dbKeyValue key="changeTableName" value="COMPANY_CT" />
 					<dbKeyValue key="listenerWaitTime" value="3" />
 					<dbKeyValue key="oracleMaxColumnLength" value="50" />
 				</dbKeyValues>
