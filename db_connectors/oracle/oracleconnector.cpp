@@ -527,8 +527,12 @@ int OracleConnector::runListener() {
             }
 
             bool sqlErrorFlag = false;
+            bool UOFlag = false;
+            bool UNFlag = false;
+            string oldPk;   // Primary key of UO (For update)
+            string newJSON; // New content of UN (For update)
+
             long int maxRSID = -1;
-            string oldPk;
             //Each loop will fetch one record.
             while (1) {
                 retcode = SQLFetch(hstmt);
@@ -583,24 +587,24 @@ int OracleConnector::runListener() {
                         serverHandle->deleteRecord(pkValue);
                     } else if (operation.compare("UU") == 0
                             || operation.compare("UO") == 0) {
+                        UOFlag = true;
                         oldPk = pkValue;    //UU/UO is old value,
                                             //we only care about the primary key of old record.
                     } else if (operation.compare("UN") == 0) {
-                        if (oldPk.size() != 0) {
-                            serverHandle->updateRecord(oldPk, jsonString);
-                            oldPk.clear();
-                        } else {
-                            printLog(
-                                    "ORACLECONNECTOR: OPERATION$ in change "
-                                            "table only contains UN but no UO/UU,Update failed.",
-                                    1);
-                        }
+                        UNFlag = true;
+                        newJSON = jsonString;
                     } else {
                         logstream.str("");
                         logstream << "Error while parsing the SQL record "
                                 << jsonString << " with operation "
                                 << operation;
                         printLog(logstream.str().c_str(), 1);
+                    }
+
+                    //Update the indexes if both UN and UO are found.
+                    if(UOFlag == true && UNFlag == true){
+                        UOFlag = false; UNFlag = false;
+                        serverHandle->updateRecord(oldPk, newJSON);
                     }
                 } else {
                     break;
@@ -615,7 +619,7 @@ int OracleConnector::runListener() {
                 break;
             } else {
                 if (maxRSID != -1) {
-                    printLog("ORACLECONNECTOR: waiting for updates ...", 3);
+                    printLog("waiting for updates ...", 3);
                     lastAccessedLogRecordRSID = maxRSID;
                 }
             }
@@ -733,7 +737,7 @@ bool OracleConnector::allocateSQLHandle(SQLHSTMT & hstmt) {
 
     if ((retcode != SQL_SUCCESS) && (retcode != SQL_SUCCESS_WITH_INFO)) {
         printSQLError(hstmt);
-        printLog("ORACLECONNECTOR: Allocate connection handle failed.", 1);
+        printLog("Allocate connection handle failed.", 1);
         return false;
     }
     return true;
