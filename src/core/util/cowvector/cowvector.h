@@ -68,6 +68,10 @@ public:
         m_array =new array<T>(capacity);
         this->setSize(0);
         this->setWriteView();
+        // Because both readview and writeview are same, we need to set the delete
+        // flag to True. If the delete flag was false then in a situation where
+        // there is a reallocation before the first merge or commit, the underlying
+        // array will be leaked
         this->setNeedToFreeArray(true);
     }
 
