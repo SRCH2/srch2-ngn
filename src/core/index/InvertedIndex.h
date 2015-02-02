@@ -136,13 +136,11 @@ public:
     InvertedListContainer() // TODO for serialization. Remove dependency
     {
     	this->invList = new cowvector<unsigned>;
-    	this->invList->commit();
     };
 
     InvertedListContainer(unsigned capacity)
     {
         this->invList = new cowvector<unsigned>(capacity);
-        this->invList->commit();
     };
 
     virtual ~InvertedListContainer()

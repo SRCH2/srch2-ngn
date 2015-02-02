@@ -268,7 +268,9 @@ void InvertedIndex::incrementHitCount(unsigned invertedIndexDirectoryIndex)
     } else {
         vectorview<InvertedListContainerPtr>* &writeView = this->invertedIndexVector->getWriteView();
         if (invertedIndexDirectoryIndex == writeView->size()) {
-            writeView->push_back(new InvertedListContainer(1));
+        	InvertedListContainerPtr newInvertedListAfterBulkLoad = new InvertedListContainer(1);
+        	newInvertedListAfterBulkLoad->invList->commit();
+            writeView->push_back(newInvertedListAfterBulkLoad);
         }
     }
 }
