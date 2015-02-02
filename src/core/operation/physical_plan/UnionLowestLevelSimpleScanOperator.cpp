@@ -16,6 +16,8 @@ namespace instantsearch {
 UnionLowestLevelSimpleScanOperator::UnionLowestLevelSimpleScanOperator() {
     queryEvaluator = NULL;
     parentIsCacheEnabled = false;
+    cursorOnInvertedList = 0;
+    invertedListOffset = 0;
 }
 
 UnionLowestLevelSimpleScanOperator::~UnionLowestLevelSimpleScanOperator(){
@@ -84,7 +86,7 @@ bool UnionLowestLevelSimpleScanOperator::open(QueryEvaluatorInternal * queryEval
     }
 
     // check cache
-    if(params.parentIsCacheEnabled == true || params.cacheObject == NULL){
+    if(params.parentIsCacheEnabled == false || params.cacheObject == NULL){
         // either parent is not passing cache hit info or
         // there was no cache hit
         this->invertedListOffset = 0;
@@ -94,6 +96,7 @@ bool UnionLowestLevelSimpleScanOperator::open(QueryEvaluatorInternal * queryEval
                 (UnionLowestLevelSimpleScanCacheEntry *)params.cacheObject;
         this->invertedListOffset = cacheEntry->invertedListOffset;
         this->cursorOnInvertedList = cacheEntry->cursorOnInvertedList;
+        this->parentIsCacheEnabled = true;
     }
 
     /*
@@ -215,9 +218,11 @@ PhysicalPlanRecordItem * UnionLowestLevelSimpleScanOperator::getNext(const Physi
 bool UnionLowestLevelSimpleScanOperator::close(PhysicalPlanExecutionParameters & params){
 
     // set cache object
-    UnionLowestLevelSimpleScanCacheEntry * cacheEntry =
-            new UnionLowestLevelSimpleScanCacheEntry(this->invertedListOffset , this->cursorOnInvertedList);
-    params.cacheObject = cacheEntry;
+	if(this->parentIsCacheEnabled){
+		UnionLowestLevelSimpleScanCacheEntry * cacheEntry =
+				new UnionLowestLevelSimpleScanCacheEntry(this->invertedListOffset , this->cursorOnInvertedList);
+		params.cacheObject = cacheEntry;
+	}
 
     this->invertedListsSharedPointers.clear();
     this->invertedLists.clear();
@@ -227,7 +232,7 @@ bool UnionLowestLevelSimpleScanOperator::close(PhysicalPlanExecutionParameters &
     this->invertedListIDs.clear();
     this->cursorOnInvertedList = 0;
     this->invertedListOffset = 0;
-    queryEvaluator = NULL;
+    this->queryEvaluator = NULL;
 
     return true;
 }

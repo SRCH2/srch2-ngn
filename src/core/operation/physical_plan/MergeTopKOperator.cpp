@@ -46,7 +46,8 @@ bool MergeTopKOperator::open(QueryEvaluatorInternal * queryEvaluator, PhysicalPl
 	this->getUniqueStringForCache(true , key);
 	key += params.isFuzzy?"fuzzy":"exact";
 
-
+	// Because no other operator is expected to send cache entry object to this one.
+	ASSERT(params.cacheObject == NULL);
 	// CHECK CACHE :
 	// 1(if a cache hit). USE CACHE HIT TO START FROM MIDDLE OF LAST EXECUTION
 	// 2(else). OR JUST START A FRESH NEW EXECUTION
@@ -171,6 +172,8 @@ bool MergeTopKOperator::open(QueryEvaluatorInternal * queryEvaluator, PhysicalPl
 		 * 5. Round robin should be initialized
 		 */
 		params.parentIsCacheEnabled = true;
+		// no cached object will be sent to the child operator.
+		params.cacheObject = NULL;
 		for(unsigned childOffset = 0 ; childOffset != this->getPhysicalPlanOptimizationNode()->getChildrenCount() ; ++childOffset){
 			this->getPhysicalPlanOptimizationNode()->getChildAt(childOffset)->getExecutableNode()->open(queryEvaluator , params);
 		}
@@ -184,6 +187,7 @@ bool MergeTopKOperator::open(QueryEvaluatorInternal * queryEvaluator, PhysicalPl
 		childRoundRobinOffset = 0;
 		visitedRecords.clear();
 	}
+	params.cacheObject = NULL;
 	return true;
 }
 PhysicalPlanRecordItem * MergeTopKOperator::getNext(const PhysicalPlanExecutionParameters & params) {
