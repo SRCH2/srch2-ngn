@@ -269,6 +269,7 @@ void InvertedIndex::incrementHitCount(unsigned invertedIndexDirectoryIndex)
         vectorview<InvertedListContainerPtr>* &writeView = this->invertedIndexVector->getWriteView();
         if (invertedIndexDirectoryIndex == writeView->size()) {
         	InvertedListContainerPtr newInvertedListAfterBulkLoad = new InvertedListContainer(1);
+        	// This block is executed after bulkload. commit the new list to separate the readview and the writeview.
         	newInvertedListAfterBulkLoad->invList->commit();
             writeView->push_back(newInvertedListAfterBulkLoad);
         }

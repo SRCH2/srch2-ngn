@@ -710,7 +710,8 @@ void HTTPRequestHandler::writeCommand(evhttp_request *req,
         // Parse example data
         Json::Value root;
         Json::Reader reader;
-        bool parseSuccess = reader.parse(post_data, root, false);
+        // post_data is not a null terminated C string. Pass start and end pointer of the post_data to JSON parser.
+        bool parseSuccess = reader.parse(post_data, post_data + length, root, false);
 
         if (parseSuccess == false) {
             isSuccess = false;
@@ -843,7 +844,8 @@ void HTTPRequestHandler::aclModifyRolesForRecord(evhttp_request *req, Srch2Serve
 		// Parse example data
 		Json::Value root;
 		Json::Reader reader;
-		bool parseSuccess = reader.parse(post_data, root, false);
+		// post_data is not a null terminated C string. Pass start and end pointer of the post_data to JSON parser.
+		bool parseSuccess = reader.parse(post_data, post_data + length, root, false);
 
 		if (parseSuccess == false) {
 			isSuccess = false;
@@ -925,7 +927,8 @@ void HTTPRequestHandler::aclModifyRecordsForRole(evhttp_request *req, Srch2Serve
 		// Parse example data
 		Json::Value root;
 		Json::Reader reader;
-		bool parseSuccess = reader.parse(post_data, root, false);
+		// post_data is not a null terminated C string. Pass start and end pointer of the post_data to JSON parser.
+		bool parseSuccess = reader.parse(post_data, post_data + length, root, false);
 
 		if (parseSuccess == false) {
 			isSuccess = false;
@@ -1092,7 +1095,8 @@ void HTTPRequestHandler::updateCommand(evhttp_request *req,
         // Parse example data
         Json::Value root;
         Json::Reader reader;
-        bool parseSuccess = reader.parse(post_data, root, false);
+        // post_data is not a null terminated C string. Pass start and end pointer of the post_data to JSON parser.
+        bool parseSuccess = reader.parse(post_data, post_data + length, root, false);
 
         if (parseSuccess == false) {
             isSuccess = false;
@@ -1440,17 +1444,10 @@ void HTTPRequestHandler::processFeedback(evhttp_request *req, Srch2Server *serve
 	}
 	Json::Value response(Json::objectValue);
 	const char *feedbackData = NULL;
+	size_t length = 0;
 	switch (req->type) {
 		case EVHTTP_REQ_PUT: {
-	        size_t length = EVBUFFER_LENGTH(req->input_buffer);
-
-	        if (length == 0) {
-	            bmhelper_evhttp_send_reply(req, HTTP_BADREQUEST, "BAD REQUEST",
-	                    "{\"message\":\"http body is empty\"}");
-	            Logger::warn("http body is empty");
-	            break;
-	        }
-
+	        length = EVBUFFER_LENGTH(req->input_buffer);
 	        feedbackData = (char *) EVBUFFER_DATA(req->input_buffer);
 			break;
 		}
@@ -1459,10 +1456,8 @@ void HTTPRequestHandler::processFeedback(evhttp_request *req, Srch2Server *serve
 			evkeyvalq headers;
 			evhttp_parse_query(req->uri, &headers);
 			feedbackData = evhttp_find_header(&headers, "data");
-			if (feedbackData == NULL) {
-				bmhelper_evhttp_send_reply(req, HTTP_BADREQUEST, "BAD REQUEST",
-						"{\"message\":\"http body is empty\"}");
-				Logger::warn("http body is empty");
+			if (feedbackData != NULL) {
+				length = strlen(feedbackData);
 			}
 			break;
 		}
@@ -1470,13 +1465,20 @@ void HTTPRequestHandler::processFeedback(evhttp_request *req, Srch2Server *serve
 			response_to_invalid_request(req, response);
 	}
 
-	if (feedbackData == NULL)
+
+	if (length == 0 || feedbackData == NULL) {
+		bmhelper_evhttp_send_reply(req, HTTP_BADREQUEST, "BAD REQUEST",
+				"{\"message\":\"http body is empty\"}");
+		Logger::warn("http body is empty");
 		return;
+	}
+
 
     std::stringstream log_str;
     Json::Value root;
     Json::Reader reader;
-    bool parseSuccess = reader.parse(feedbackData, root, false);
+    // feedbackData may not be a null terminated C string. Pass start and end pointer of the feedbackData to JSON parser.
+    bool parseSuccess = reader.parse(feedbackData, feedbackData + length, root, false);
     bool error = false;
 	Json::Value feedbackResponse(Json::arrayValue);
     if (parseSuccess == false) {
@@ -1590,7 +1592,8 @@ void HTTPRequestHandler::attributeAclModify(evhttp_request *req, Srch2Server *se
 	        std::stringstream log_str;
 	        Json::Value root;
 	        Json::Reader reader;
-	        bool parseSuccess = reader.parse(post_data, root, false);
+	        // post_data is not a null terminated C string. Pass start and end pointer of the post_data to JSON parser.
+	        bool parseSuccess = reader.parse(post_data, post_data + length, root, false);
 	        bool error = false;
         	Json::Value aclAttributeResponses(Json::arrayValue);
 	        if (parseSuccess == false) {
