@@ -648,7 +648,7 @@ std::string StemmerFilterInternal::stemUsingPorterRules(std::string token) {
 	stepFive(&tokenDetailStruct);
 
 	std::string stemmedToken = token.substr(0, tokenDetailStruct.endStringOffset + 1);
-	delete buff;
+	delete[] buff;
 	return stemmedToken;
 }
 
