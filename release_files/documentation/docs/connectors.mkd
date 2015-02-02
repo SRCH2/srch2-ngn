@@ -1074,22 +1074,11 @@ extern "C" void destroy(DataConnector* p) {
 ```
 
 ###6.5. Example
-We will proivde 2 examples to illustrate how the connector SDK works.
-The first one is a simple example which shows the basic structure with 
-psedsocode. The second one is a more complicated demo which connects 
-the engine with Oracle datebase.
-####6.5.1. Simple Example
-Library required:
-JSONCpp
+We will proivde a example to illustrate how the connector SDK works.
+The example connector is a full demo which connects the engine with Oracle datebase.
 
-Header file required:
-DataConnector.h (srch2-ngn/include/instantsearch/DataConnector.h)
-
-Header File : <a href="../example-demo/connector/dbconnector.h">dbconnector.h</a>  
-Source File : <a href="../example-demo/connector/dbconnector.cpp">dbconnectorcpp</a>
-
-####6.5.2. Oracle Example
-Download the [oracle example package](../example-demo/connector/oracleExample.tar.gz)
+####6.5.1. Oracle Example
+Download the [oracle connector package](../example-demo/connector/oracleConnector.tar.gz)
 and follow the steps to setup the environment and compile the shared library.
 
 Please make sure [oracle database](https://www.oracle.com/database/index.html) is installed on the computer.
