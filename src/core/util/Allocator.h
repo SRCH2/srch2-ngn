@@ -10,6 +10,13 @@
 // ceilings input to the closest power of two greater, unless it is smaller 
 //than 64 in which case it returns 256
 static inline size_t round(size_t input) {
+	if (input <= 256)
+		return 256;
+
+	// if input is already a power of 2 then return the same value
+	if ((input & (input - 1)) == 0)
+		return input;
+
 #ifdef __GNUC__
     if(input == 0) return 1;
     int allocSize = 
@@ -81,7 +88,7 @@ SingleBufferAllocator::address(const_reference x) {
 
 inline void SingleBufferAllocator::deallocate(pointer p, size_type) {
   //Can not deallocate part of current buffer or an empty pointer
-  if(!p || (p >= buffer && p < buffer + (1 << powerOfTwoSizeOfBuffer)))  {
+  if(!p || (p >= buffer && p < buffer + (1 << (powerOfTwoSizeOfBuffer -1))))  {
       return;
   }
 
