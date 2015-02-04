@@ -1098,11 +1098,15 @@ c). Add Oracle Driver to unixODBC
 Add the oracle library to the system library path
 make sure the library path is correct 
 ```
-sudo sh -c "echo /u01/app/oracle/product/11.2.0/dbhome_1/lib/ > /etc/ld.so.conf.d/oracle.conf"
-sudo ldconfig
+shell> sudo sh -c "echo /u01/app/oracle/product/11.2.0/dbhome_1/lib/ > /etc/ld.so.conf.d/oracle.conf"
+shell> sudo ldconfig
 ```
 
-Add the following lines at the end of ```/etc/odbcinst.ini```, 
+Add the following lines at the end of the unixODBC config file```odbcinst.ini```, 
+To locate the ```odbcinst.ini```,  run the command:
+```
+shell> odbcinst -j
+```
 make sure the Driver path is correct 
 ```
 [ORACLE]
@@ -1110,6 +1114,18 @@ Description = Oracle ODBC Connection
 Driver      = /u01/app/oracle/product/11.2.0/dbhome_1/lib/libsqora.so.11.1
 Threading               = 1
 UsageCount              = 1
+```
+
+Check file /u01/app/oracle/product/11.2.0/dbhome_1/lib/libsqora.so.11.1 dependency
+```
+shell> ldd /u01/app/oracle/product/11.2.0/dbhome_1/lib/libsqora.so.11.1
+```
+
+If "libodbcinst.so.1" is not found, create a soft link for it
+```
+shell> find / -name "libodbcinst.so"
+Go to library path
+shell> ln -s libodbcinst.so libodbcinst.so.1 
 ```
 
 d). Compile the oracle connector
@@ -1125,38 +1141,38 @@ You should see ```liboracleConnector.so``` under "build" folder.
 
 e). Set up the demo user and table
 ```
-sqlplus / as sysdba
-startup
-create tablespace ts_cdcpub datafile '/tmp/cdcpubdata.dbf' size 100m;
-CREATE USER cdcpub IDENTIFIED BY cdcpub DEFAULT TABLESPACE ts_cdcpub
+shell> sqlplus / as sysdba
+SQL> startup
+SQL> create tablespace ts_cdcpub datafile '/tmp/cdcpubdata.dbf' size 100m;
+SQL> CREATE USER cdcpub IDENTIFIED BY cdcpub DEFAULT TABLESPACE ts_cdcpub
 QUOTA UNLIMITED ON SYSTEM
 QUOTA UNLIMITED ON SYSAUX;
-GRANT DBA TO cdcpub;
+SQL> GRANT DBA TO cdcpub;
 
-conn cdcpub/cdcpub
-CREATE USER cdcsub IDENTIFIED BY cdcsub DEFAULT TABLESPACE ts_cdcpub;
-GRANT CREATE TABLE TO cdcsub;
-GRANT CREATE SESSION TO cdcsub;
-GRANT CREATE VIEW TO cdcsub;
-GRANT UNLIMITED TABLESPACE TO cdcsub;
+SQL> conn cdcpub/cdcpub
+SQL> CREATE USER cdcsub IDENTIFIED BY cdcsub DEFAULT TABLESPACE ts_cdcpub;
+SQL> GRANT CREATE TABLE TO cdcsub;
+SQL> GRANT CREATE SESSION TO cdcsub;
+SQL> GRANT CREATE VIEW TO cdcsub;
+SQL> GRANT UNLIMITED TABLESPACE TO cdcsub;
 
-CREATE TABLE cdcpub.COMPANY(
+SQL> CREATE TABLE cdcpub.COMPANY(
 ID INT PRIMARY KEY NOT NULL, 
 NAME VARCHAR2 (50) NOT NULL, 
 AGE INT NOT NULL, 
 ADDRESS VARCHAR2 (50), 
 SALARY REAL) ;
 
-BEGIN
-DBMS_CDC_PUBLISH.CREATE_CHANGE_SET(
+SQL> BEGIN
+SQL> DBMS_CDC_PUBLISH.CREATE_CHANGE_SET(
 change_set_name => 'cdcset',
 description => 'Change set for srch2 test',
 change_source_name => 'SYNC_SOURCE');
-END;
-/
+SQL> END;
+SQL> /
 
-BEGIN
-DBMS_CDC_PUBLISH.CREATE_CHANGE_TABLE(
+SQL> BEGIN
+SQL> DBMS_CDC_PUBLISH.CREATE_CHANGE_TABLE(
 owner => 'cdcpub',
 change_table_name => 'COMPANY_CT',
 change_set_name => 'cdcset',
@@ -1177,21 +1193,23 @@ source_colmap => 'y',
 target_colmap => 'y',
 DDL_MARKERS=>'n',
 options_string => 'TABLESPACE ts_cdcpub');
-END;
-/
-GRANT ALL ON cdcpub.COMPANY TO cdcsub;
-GRANT ALL ON cdcpub.COMPANY_CT TO cdcsub;
+SQL> END;
+SQL> /
+
+SQL> GRANT ALL ON cdcpub.COMPANY TO cdcsub;
+SQL> GRANT ALL ON cdcpub.COMPANY_CT TO cdcsub;
 ```
 
 Insert test data
 ```
-INSERT INTO COMPANY (ID,NAME,AGE,ADDRESS,SALARY)VALUES (1, 'Paul', 32, 'California', 20000.00 );
-INSERT INTO COMPANY (ID,NAME,AGE,ADDRESS,SALARY)VALUES (2, 'Allen', 25, 'Texas', 15000.00 );
-INSERT INTO COMPANY (ID,NAME,AGE,ADDRESS,SALARY)VALUES (3, 'Teddy', 23, 'Norway', 20000.00 );
-INSERT INTO COMPANY (ID,NAME,AGE,ADDRESS,SALARY) VALUES (4, 'Mark', 25, 'Rich-Mond ', 65000.00 );
-INSERT INTO COMPANY (ID,NAME,AGE,ADDRESS,SALARY) VALUES (5, 'David', 27, 'Texas', 85000.00 );
-INSERT INTO COMPANY (ID,NAME,AGE,ADDRESS,SALARY) VALUES (6, 'Kim', 22, 'South-Hall', 45000.00 );
-commit;
+SQL> INSERT INTO COMPANY (ID,NAME,AGE,ADDRESS,SALARY)VALUES (1, 'Paul', 32, 'California', 20000.00 );
+SQL> INSERT INTO COMPANY (ID,NAME,AGE,ADDRESS,SALARY)VALUES (2, 'Allen', 25, 'Texas', 15000.00 );
+SQL> INSERT INTO COMPANY (ID,NAME,AGE,ADDRESS,SALARY)VALUES (3, 'Teddy', 23, 'Norway', 20000.00 );
+SQL> INSERT INTO COMPANY (ID,NAME,AGE,ADDRESS,SALARY) VALUES (4, 'Mark', 25, 'Rich-Mond ', 65000.00 );
+SQL> INSERT INTO COMPANY (ID,NAME,AGE,ADDRESS,SALARY) VALUES (5, 'David', 27, 'Texas', 85000.00 );
+SQL> INSERT INTO COMPANY (ID,NAME,AGE,ADDRESS,SALARY) VALUES (6, 'Kim', 22, 'South-Hall', 45000.00 );
+SQL> commit;
+SQL> SELECT * FROM COMPANY;
 ```
 
 f). Start srch2 engine with oracle connector. 
@@ -1211,8 +1229,8 @@ g). Make changes to the table
 
 Run the following command to insert a new record.
 ```
-sqlplus> INSERT INTO COMPANY (ID,NAME,AGE,ADDRESS,SALARY) VALUES (7, 'Joe', 20, 'Nevada', 15000.00 );
-sqlplus> commit;
+SQL> INSERT INTO COMPANY (ID,NAME,AGE,ADDRESS,SALARY) VALUES (7, 'Joe', 20, 'Nevada', 15000.00 );
+SQL> commit;
 ```
 Wait for about 4 seconds for the SRCH2 server to save the change. Do the search query:
 ```
@@ -1222,8 +1240,8 @@ The search engine should return this newly inserted record.
 
 We want to update Kim's address from "South-Hall" to "Texas" by running the following command:
 ```
-sqlplus> UPDATE COMPANY SET ADDRESS = 'Texas' WHERE ID = 6;
-sqlplus> commit;
+SQL> UPDATE COMPANY SET ADDRESS = 'Texas' WHERE ID = 6;
+SQL> commit;
 ```
 
 To check the update, run the curl commands.
@@ -1236,8 +1254,8 @@ The SRCH2 engine should be able to return this updated record, with "Texas" as t
 
 Run the following command in the Oracle shell to delete the updated record:
 ```
-sqlplus> DELETE FROM COMPANY WHERE ID = 6;
-sqlplus> commit;
+SQL> DELETE FROM COMPANY WHERE ID = 6;
+SQL> commit;
 ```
 
 Again, wait for about 4 seconds for the SRCH2 server to save the change, then do the above search query:
@@ -1248,40 +1266,40 @@ The SRCH2 engine should not return the deleted record.
 
 h). To remove the demo user and table
 ```
-conn cdcpub/cdcpub
-BEGIN
-EXECUTE IMMEDIATE 'drop user cdcsub';
+SQL> conn cdcpub/cdcpub
+SQL> BEGIN
+SQL> EXECUTE IMMEDIATE 'drop user cdcsub';
 EXCEPTION
 WHEN OTHERS THEN NULL;
-END;
-/
+SQL> END;
+SQL> /
 
-BEGIN
-BEGIN
-DBMS_CDC_PUBLISH.DROP_CHANGE_TABLE('cdcpub','COMPANY_CT','Y');
-END;
-EXCEPTION
-WHEN OTHERS THEN NULL;
-END;
-/
+SQL> BEGIN
+SQL> BEGIN
+SQL> DBMS_CDC_PUBLISH.DROP_CHANGE_TABLE('cdcpub','COMPANY_CT','Y');
+SQL> END;
+SQL> EXCEPTION
+SQL> WHEN OTHERS THEN NULL;
+SQL> END;
+SQL> /
 
-BEGIN
-BEGIN
-DBMS_CDC_PUBLISH.DROP_CHANGE_SET('cdcset');
-END;
-EXCEPTION
-WHEN OTHERS THEN NULL;
-END;
-/
+SQL> BEGIN
+SQL> BEGIN
+SQL> DBMS_CDC_PUBLISH.DROP_CHANGE_SET('cdcset');
+SQL> END;
+SQL> EXCEPTION
+SQL> WHEN OTHERS THEN NULL;
+SQL> END;
+SQL> /
 
-BEGIN
-EXECUTE IMMEDIATE 'DROP TABLE CDCPUB.COMPANY';
-EXCEPTION
-WHEN OTHERS THEN NULL;
-END;
-/
+SQL> BEGIN
+SQL> EXECUTE IMMEDIATE 'DROP TABLE CDCPUB.COMPANY';
+SQL> EXCEPTION
+SQL> WHEN OTHERS THEN NULL;
+SQL> END;
+SQL> /
 
-conn / as sysdba
-DROP USER CDCPUB CASCADE;
-DROP TABLESPACE ts_cdcpub INCLUDING CONTENTS AND DATAFILES;
+SQL> conn / as sysdba
+SQL> DROP USER CDCPUB CASCADE;
+SQL> DROP TABLESPACE ts_cdcpub INCLUDING CONTENTS AND DATAFILES;
 ```

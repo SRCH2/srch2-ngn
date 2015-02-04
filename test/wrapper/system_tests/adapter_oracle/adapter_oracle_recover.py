@@ -258,7 +258,7 @@ if __name__ == '__main__':
 
     conn.cursor().execute("""BEGIN
                              BEGIN
-                             DBMS_CDC_PUBLISH.DROP_CHANGE_SET('cdcset');
+                             DBMS_CDC_PUBLISH.DROP_CHANGE_SET('cdcset_product');
                              END;
                              EXCEPTION
                              WHEN OTHERS THEN NULL;
@@ -280,11 +280,11 @@ if __name__ == '__main__':
     conn.cursor().execute("GRANT UNLIMITED TABLESPACE TO cdcsub;")
     conn.cursor().execute("CREATE TABLE cdcpub.products(PROD_ID NUMBER(6),PROD_NAME VARCHAR2(50),PROD_LIST_PRICE NUMBER(8,2));")
     conn.cursor().execute("""BEGIN
-                             DBMS_CDC_PUBLISH.CREATE_CHANGE_SET(change_set_name => 'cdcset',description => 'Change set for srch2 test',change_source_name => 'SYNC_SOURCE');
+                             DBMS_CDC_PUBLISH.CREATE_CHANGE_SET(change_set_name => 'cdcset_product',description => 'Change set for srch2 test',change_source_name => 'SYNC_SOURCE');
                              END;
                           """)
     conn.cursor().execute("""BEGIN
-                             DBMS_CDC_PUBLISH.CREATE_CHANGE_TABLE(owner => 'cdcpub',change_table_name => 'products_ct',change_set_name => 'cdcset',source_schema => 'cdcpub',source_table => 'PRODUCTS',column_type_list => 'PROD_ID NUMBER (6),PROD_NAME VARCHAR2 (50),PROD_LIST_PRICE NUMBER (8,2) ',capture_values => 'both',rs_id => 'y',row_id => 'n',user_id => 'n',timestamp => 'n',object_id => 'n',source_colmap => 'y',target_colmap => 'y',DDL_MARKERS=>'n', options_string => 'TABLESPACE ts_cdcpub');
+                             DBMS_CDC_PUBLISH.CREATE_CHANGE_TABLE(owner => 'cdcpub',change_table_name => 'products_ct',change_set_name => 'cdcset_product',source_schema => 'cdcpub',source_table => 'PRODUCTS',column_type_list => 'PROD_ID NUMBER (6),PROD_NAME VARCHAR2 (50),PROD_LIST_PRICE NUMBER (8,2) ',capture_values => 'both',rs_id => 'y',row_id => 'n',user_id => 'n',timestamp => 'n',object_id => 'n',source_colmap => 'y',target_colmap => 'y',DDL_MARKERS=>'n', options_string => 'TABLESPACE ts_cdcpub');
                              END;
                           """)
     conn.cursor().execute("GRANT ALL ON cdcpub.products TO cdcsub;")
@@ -321,7 +321,7 @@ if __name__ == '__main__':
 
     conn.cursor().execute("""BEGIN
                              BEGIN
-                             DBMS_CDC_PUBLISH.DROP_CHANGE_SET('cdcset');
+                             DBMS_CDC_PUBLISH.DROP_CHANGE_SET('cdcset_product');
                              END;
                              EXCEPTION
                              WHEN OTHERS THEN NULL;
