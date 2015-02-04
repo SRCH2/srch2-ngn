@@ -18,7 +18,11 @@ public:
 	struct ShardStatus{
 	public:
 		ShardStatus(const ShardId * shardId = NULL);
-
+		~ShardStatus(){
+			if(shardId != NULL){
+				delete shardId;
+			}
+		}
 	    /*
 	     * Contains the identifier of the shard ...
 	     */
@@ -52,6 +56,12 @@ public:
 
     CommandStatusNotification(ShardCommandCode commandCode);
     CommandStatusNotification();
+    ~CommandStatusNotification(){
+		for(vector<CommandStatusNotification::ShardStatus *>::iterator shardStatusItr = shardResults.begin();
+				shardStatusItr != shardResults.end(); ++shardStatusItr){
+			delete *shardStatusItr;
+		}
+    }
     //serializes the object to a byte array and places array into the region
     //allocated by given allocator
     void* serializeBody(void * buffer) const;

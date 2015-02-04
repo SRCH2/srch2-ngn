@@ -159,7 +159,6 @@ private:
 				CommandStatusNotification::ShardStatus * recordShardResult = nodeItr->second.at(i);
 				this->brokerSideInformationJson->addShardResponse(action_name.c_str(),
 						recordShardResult->getStatusValue(), recordShardResult->messages);
-				delete nodeItr->second.at(i);
 			}
 		}
 	}

@@ -26,7 +26,11 @@ public:
 		successFlag = false;
 	}
 	virtual void prepare(bool shouldLockWriteview = true) = 0 ;
-	virtual ~InitialShardHandler(){};
+	virtual ~InitialShardHandler(){
+		if(shardId != NULL){
+			delete shardId;
+		}
+	};
 	bool isSuccessful() const{
 		return this->successFlag;
 	}

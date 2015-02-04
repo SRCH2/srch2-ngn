@@ -43,14 +43,16 @@ while [[ $1 ]] ; do
     shift
 done
 
-echo "Command is going to be : ---$command---"
-echo "Target groups are : ${nodes[@]}"
+echo "CBASH | Command ---$command--- is going to be executed on groups : ${nodes[@]}"
+
+if [[ $isScript == true ]]; then
+    echo "CBASH | Script mode."
+fi
+
 for i in "${nodes[@]}"
 do
-    echo "Group ID $i"
 #    echo $i
     if [[ $isScript == true ]]; then
-        echo "Script mode."
         __IP_ADDRESS=${__IP_ADDRESSES[$i]}
         __GROUP_NAME=${__GROUP_NAMES[$i]}
         __GROUP=$i

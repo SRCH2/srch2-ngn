@@ -101,6 +101,11 @@ _CONSULE_LOG()
    echo $(_ENV_LOG_ROOT)/consule-$1-$2.log
 }
 
+_VALGRIND_LOG()
+{
+   echo $(_ENV_LOG_ROOT)/valgrind-$1-$2.log
+}
+
 _RUN_INFO_LOG()
 {
    echo $(_ENV_LOG_ROOT)/run-info-$1-$2.log

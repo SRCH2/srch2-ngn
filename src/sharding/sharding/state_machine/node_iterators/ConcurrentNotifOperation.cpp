@@ -118,6 +118,15 @@ ConcurrentNotifOperation::~ConcurrentNotifOperation(){
 
 OperationState * ConcurrentNotifOperation::entry(){
 	__FUNC_LINE__
+
+	/*
+	 * NOTE: This operator is already finalized and the reason
+	 * we are here is STRANGE.
+	 */
+	if(isFinalized()){
+		ASSERT(false);
+		return this;
+	}
 	if(this->consumer != NULL){
 		this->setTransaction(this->consumer->getTransaction());
 	}
@@ -152,6 +161,14 @@ OperationState * ConcurrentNotifOperation::handle(SP(Notification) n){
 		return NULL;
 	}
 
+
+	/*
+	 * NOTE: This operator is already finalized and the reason
+	 * we are here is because of race condition.
+	 */
+	if(isFinalized()){
+		return this;
+	}
 	if(resType == n->messageType()){
 		return handle(boost::dynamic_pointer_cast<ShardingNotification>(n));
 	}
@@ -169,6 +186,14 @@ OperationState * ConcurrentNotifOperation::handle(SP(Notification) n){
 }
 
 OperationState * ConcurrentNotifOperation::handle(SP(NodeFailureNotification)  notif){
+
+	/*
+	 * NOTE: This operator is already finalized and the reason
+	 * we are here is because of race condition.
+	 */
+	if(isFinalized()){
+		return this;
+	}
 	NodeId failedNode = notif->getFailedNodeID();
 	map<NodeOperationId , SP(ShardingNotification)>::iterator responseItr = targetResponsesMap.end();
 	for(responseItr = targetResponsesMap.begin(); responseItr != targetResponsesMap.end(); ++responseItr){
@@ -197,6 +222,13 @@ OperationState * ConcurrentNotifOperation::handle(SP(NodeFailureNotification)  n
 
 OperationState * ConcurrentNotifOperation::handle(SP(TimeoutNotification)  notif){
 
+	/*
+	 * NOTE: This operator is already finalized and the reason
+	 * we are here is because of race condition.
+	 */
+	if(isFinalized()){
+		return this;
+	}
 	SP(const ClusterNodes_Writeview) nodesWriteview = ShardManager::getNodesWriteview_read();
 
 	vector<NodeOperationId> participantsCopy = this->participants;
@@ -220,6 +252,14 @@ OperationState * ConcurrentNotifOperation::handle(SP(TimeoutNotification)  notif
 }
 
 OperationState * ConcurrentNotifOperation::handle(SP(ShardingNotification) response){
+
+	/*
+	 * NOTE: This operator is already finalized and the reason
+	 * we are here is because of race condition.
+	 */
+	if(isFinalized()){
+		return this;
+	}
 	// 1. save the response in the map
 	if(targetResponsesMap.find(response->getSrc()) != targetResponsesMap.end()){
 		ASSERT(false);
@@ -257,6 +297,8 @@ OperationState * ConcurrentNotifOperation::finalize(){
 	Logger::sharding(Logger::Detail, "NodeAggregator(opid=%s)| Done." ,
 			NodeOperationId(ShardManager::getCurrentNodeId(), this->getOperationId()).toString().c_str());
     if(consumer == NULL){
+    	// Close the entry points of the operation.
+    	this->setFinalized();
 		return NULL;
 	}
 	if(this->getTransaction()){
@@ -267,6 +309,20 @@ OperationState * ConcurrentNotifOperation::finalize(){
 		this->getTransaction()->threadEnd();
 	}
 	this->setTransaction(SP(Transaction)());
+	/*
+	 * Note:
+	 * operations are protected in StateMachine through shared pointers that are
+	 * stored in activeOperations map (from ID to their shared pointer). Transaction shared
+	 * pointer is stored in an operation and when finalize executes that shared pointer is
+	 * reset so that if the operation is the last connection point of that transaction it gets deallocated.
+	 * consumer must also set to NULL because shared pointer of a operation can in hands of two different threads
+	 * who both lead to deallocation of the transaction, so only one of them should access the consumer (and therefore the
+	 * transaction.)
+	 */
+	this->consumer = NULL;
+
+	// Close the entry points of the operation.
+	this->setFinalized();
 	/***************** Thread Exit Point *************/
 	return NULL;
 }

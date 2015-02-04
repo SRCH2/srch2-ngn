@@ -232,9 +232,7 @@ private:
 	bool loadBalancingFlag;
 	uint32_t loadBalancingCheckInterval;
 	pthread_t * loadBalancingThread;
-	vector<pthread_t *> shardManagerThreads;
 public:
-	pthread_t * getNewThread(bool shouldLock = true);
 
 	void cancelAllThreads(bool shouldLock = true);
 private:

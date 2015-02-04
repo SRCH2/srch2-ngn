@@ -51,7 +51,7 @@ SP(SearchCommandResults) DPInternalRequestHandler::internalSearchCommand(SP(Sear
 	}
 	// 1. create multiple threads to take care of each shard in target.
 	vector<ShardSearchArgs *> allShardsSearchArguments;
-    pthread_t * shardSearchThreads = new pthread_t[shards.size()];
+    pthread_t shardSearchThreads[shards.size()];
 	struct timespec * tstarts = new timespec[shards.size()];
 	for(unsigned shardIdx = 0; shardIdx < shards.size(); ++shardIdx){
 		const Shard * shard = shards.at(shardIdx);
@@ -79,7 +79,6 @@ SP(SearchCommandResults) DPInternalRequestHandler::internalSearchCommand(SP(Sear
 	    allShardsSearchArguments.at(shardIdx)->shardResults->searcherTime = ts1;
 	}
 	delete [] tstarts;
-	delete [] shardSearchThreads;
 	// at this point all shard searches are done.
 	// aggregate query results and etc ...
     // search results to be serialized and sent over the network
@@ -282,7 +281,7 @@ GetInfoCommandResults * DPInternalRequestHandler::internalGetInfoCommand(const N
 	clusterReadview->getLocalShardContainer(target.getCoreId())->getShards(target,shards);
 
 	vector<ShardGetInfoArgs *> allShardsGetInfoArguments;
-    pthread_t * shardGetInfoThreads = new pthread_t[shards.size()];
+    pthread_t shardGetInfoThreads[shards.size()];
 	for(unsigned shardIdx = 0; shardIdx < shards.size(); ++shardIdx){
 		const Shard * shard = shards.at(shardIdx);
 		ShardGetInfoArgs * shardGetInfoArgs = new ShardGetInfoArgs(shard->getSrch2Server().get(), shard->cloneShardId());
@@ -302,7 +301,6 @@ GetInfoCommandResults * DPInternalRequestHandler::internalGetInfoCommand(const N
 		getInfoResult->addShardResults(getInfoResults->shardResult);
 		delete getInfoResults;
 	}
-	delete shardGetInfoThreads;
 
     return getInfoResult;
 }
@@ -331,7 +329,7 @@ SP(CommandStatusNotification) DPInternalRequestHandler::internalSerializeCommand
 	clusterReadview->getLocalShardContainer(target.getCoreId())->getShards(target,shards);
 
 	vector<ShardSerializeArgs *> allShardsSerializeArguments;
-    pthread_t * shardSerializeThreads = new pthread_t[shards.size()];
+    pthread_t shardSerializeThreads[shards.size()];
 	for(unsigned shardIdx = 0; shardIdx < shards.size(); ++shardIdx){
 		const Shard * shard = shards.at(shardIdx);
 		ShardSerializeArgs * shardSerializeArgs =
@@ -367,7 +365,6 @@ SP(CommandStatusNotification) DPInternalRequestHandler::internalSerializeCommand
 		status->addShardResult(serializeResults->shardResults);
 		delete serializeResults;
 	}
-	delete shardSerializeThreads;
     return status;
 }
 
@@ -405,7 +402,7 @@ SP(CommandStatusNotification) DPInternalRequestHandler::internalResetLogCommand(
 	clusterReadview->getLocalShardContainer(target.getCoreId())->getShards(target,shards);
 
 	vector<ShardStatusOnlyArgs *> allShardsResetLogsArguments;
-    pthread_t * shardResetLogsThreads = new pthread_t[shards.size()];
+    pthread_t shardResetLogsThreads[shards.size()];
 	for(unsigned shardIdx = 0; shardIdx < shards.size(); ++shardIdx){
 		const Shard * shard = shards.at(shardIdx);
 		ShardStatusOnlyArgs * shardResetLogsArgs =
@@ -427,7 +424,6 @@ SP(CommandStatusNotification) DPInternalRequestHandler::internalResetLogCommand(
 		status->addShardResult(resetResults->shardResults);
 		delete resetResults;
 	}
-	delete shardResetLogsThreads;
 
     return status;
 
@@ -443,7 +439,7 @@ SP(CommandStatusNotification) DPInternalRequestHandler::internalCommitCommand(co
 	clusterReadview->getLocalShardContainer(target.getCoreId())->getShards(target,shards);
 
 	vector<ShardStatusOnlyArgs *> allShardsCommitArguments;
-    pthread_t * shardCommitThreads = new pthread_t[shards.size()];
+    pthread_t shardCommitThreads[shards.size()];
 	for(unsigned shardIdx = 0; shardIdx < shards.size(); ++shardIdx){
 		const Shard * shard = shards.at(shardIdx);
 		ShardStatusOnlyArgs * shardCommitArgs =
@@ -464,7 +460,6 @@ SP(CommandStatusNotification) DPInternalRequestHandler::internalCommitCommand(co
 		status->addShardResult(commitResults->shardResults);
 		delete commitResults;
 	}
-	delete shardCommitThreads;
 
     return status;
 
@@ -480,7 +475,7 @@ SP(CommandStatusNotification) DPInternalRequestHandler::internalMergeCommand(con
 	clusterReadview->getLocalShardContainer(target.getCoreId())->getShards(target,shards);
 
 	vector<ShardStatusOnlyArgs *> allShardsMergeArguments;
-    pthread_t * shardMergeThreads = new pthread_t[shards.size()];
+    pthread_t shardMergeThreads[shards.size()];
 	for(unsigned shardIdx = 0; shardIdx < shards.size(); ++shardIdx){
 		const Shard * shard = shards.at(shardIdx);
 		MergeActionType mergeAction = DoMerge;
@@ -509,7 +504,6 @@ SP(CommandStatusNotification) DPInternalRequestHandler::internalMergeCommand(con
 		status->addShardResult(mergeResults->shardResults);
 		delete mergeResults;
 	}
-	delete shardMergeThreads;
 
     return status;
 
