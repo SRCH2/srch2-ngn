@@ -1,9 +1,3 @@
-/*
- * oracleconnector.cpp
- *
- *  Created on: Jan 21, 2015
- *      Author: Chen Liu liu@srch2.com
- */
 #include <cstring>
 #include "oracleconnector.h"
 #include <stdlib.h>
