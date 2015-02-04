@@ -1085,12 +1085,13 @@ Please make sure [oracle database](https://www.oracle.com/database/index.html) i
  
 a). Unzip the package
 ```
-shell> tar -xvf oracleExample.tar.gz
+shell> tar -xvf oracleConnector.tar.gz
 ``` 
 
 b). Run the script to install JSONCpp and unixODBC.  
 Make sure you have python installed before running the script.
 ```
+shell> cd oracleConnector
 shell> sudo sh setup.sh
 ```
 
@@ -1130,7 +1131,7 @@ shell> ln -s libodbcinst.so libodbcinst.so.1
 
 d). Compile the oracle connector
 ```
-shell> cd oracleExample
+shell> cd oracleConnector
 shell> mkdir build
 shell> cd build
 shell> cmake ..
@@ -1164,15 +1165,15 @@ ADDRESS VARCHAR2 (50),
 SALARY REAL) ;
 
 SQL> BEGIN
-SQL> DBMS_CDC_PUBLISH.CREATE_CHANGE_SET(
+DBMS_CDC_PUBLISH.CREATE_CHANGE_SET(
 change_set_name => 'cdcset',
 description => 'Change set for srch2 test',
 change_source_name => 'SYNC_SOURCE');
-SQL> END;
-SQL> /
+END;
+/
 
 SQL> BEGIN
-SQL> DBMS_CDC_PUBLISH.CREATE_CHANGE_TABLE(
+DBMS_CDC_PUBLISH.CREATE_CHANGE_TABLE(
 owner => 'cdcpub',
 change_table_name => 'COMPANY_CT',
 change_set_name => 'cdcset',
@@ -1193,8 +1194,8 @@ source_colmap => 'y',
 target_colmap => 'y',
 DDL_MARKERS=>'n',
 options_string => 'TABLESPACE ts_cdcpub');
-SQL> END;
-SQL> /
+END;
+/
 
 SQL> GRANT ALL ON cdcpub.COMPANY TO cdcsub;
 SQL> GRANT ALL ON cdcpub.COMPANY_CT TO cdcsub;
@@ -1203,11 +1204,11 @@ SQL> GRANT ALL ON cdcpub.COMPANY_CT TO cdcsub;
 Insert test data
 ```
 SQL> INSERT INTO COMPANY (ID,NAME,AGE,ADDRESS,SALARY)VALUES (1, 'Paul', 32, 'California', 20000.00 );
-SQL> INSERT INTO COMPANY (ID,NAME,AGE,ADDRESS,SALARY)VALUES (2, 'Allen', 25, 'Texas', 15000.00 );
-SQL> INSERT INTO COMPANY (ID,NAME,AGE,ADDRESS,SALARY)VALUES (3, 'Teddy', 23, 'Norway', 20000.00 );
-SQL> INSERT INTO COMPANY (ID,NAME,AGE,ADDRESS,SALARY) VALUES (4, 'Mark', 25, 'Rich-Mond ', 65000.00 );
-SQL> INSERT INTO COMPANY (ID,NAME,AGE,ADDRESS,SALARY) VALUES (5, 'David', 27, 'Texas', 85000.00 );
-SQL> INSERT INTO COMPANY (ID,NAME,AGE,ADDRESS,SALARY) VALUES (6, 'Kim', 22, 'South-Hall', 45000.00 );
+INSERT INTO COMPANY (ID,NAME,AGE,ADDRESS,SALARY)VALUES (2, 'Allen', 25, 'Texas', 15000.00 );
+INSERT INTO COMPANY (ID,NAME,AGE,ADDRESS,SALARY)VALUES (3, 'Teddy', 23, 'Norway', 20000.00 );
+INSERT INTO COMPANY (ID,NAME,AGE,ADDRESS,SALARY) VALUES (4, 'Mark', 25, 'Rich-Mond ', 65000.00 );
+INSERT INTO COMPANY (ID,NAME,AGE,ADDRESS,SALARY) VALUES (5, 'David', 27, 'Texas', 85000.00 );
+INSERT INTO COMPANY (ID,NAME,AGE,ADDRESS,SALARY) VALUES (6, 'Kim', 22, 'South-Hall', 45000.00 );
 SQL> commit;
 SQL> SELECT * FROM COMPANY;
 ```
@@ -1268,36 +1269,36 @@ h). To remove the demo user and table
 ```
 SQL> conn cdcpub/cdcpub
 SQL> BEGIN
-SQL> EXECUTE IMMEDIATE 'drop user cdcsub';
+EXECUTE IMMEDIATE 'drop user cdcsub';
 EXCEPTION
 WHEN OTHERS THEN NULL;
-SQL> END;
-SQL> /
+END;
+/
 
 SQL> BEGIN
-SQL> BEGIN
-SQL> DBMS_CDC_PUBLISH.DROP_CHANGE_TABLE('cdcpub','COMPANY_CT','Y');
-SQL> END;
-SQL> EXCEPTION
-SQL> WHEN OTHERS THEN NULL;
-SQL> END;
-SQL> /
+BEGIN
+DBMS_CDC_PUBLISH.DROP_CHANGE_TABLE('cdcpub','COMPANY_CT','Y');
+END;
+EXCEPTION
+WHEN OTHERS THEN NULL;
+END;
+/
 
 SQL> BEGIN
-SQL> BEGIN
-SQL> DBMS_CDC_PUBLISH.DROP_CHANGE_SET('cdcset');
-SQL> END;
-SQL> EXCEPTION
-SQL> WHEN OTHERS THEN NULL;
-SQL> END;
-SQL> /
+BEGIN
+DBMS_CDC_PUBLISH.DROP_CHANGE_SET('cdcset');
+END;
+EXCEPTION
+WHEN OTHERS THEN NULL;
+END;
+/
 
 SQL> BEGIN
-SQL> EXECUTE IMMEDIATE 'DROP TABLE CDCPUB.COMPANY';
-SQL> EXCEPTION
-SQL> WHEN OTHERS THEN NULL;
-SQL> END;
-SQL> /
+EXECUTE IMMEDIATE 'DROP TABLE CDCPUB.COMPANY';
+EXCEPTION
+WHEN OTHERS THEN NULL;
+END;
+/
 
 SQL> conn / as sysdba
 SQL> DROP USER CDCPUB CASCADE;
