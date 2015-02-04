@@ -33,7 +33,7 @@ public:
      *
      * 4. Get the schema information from the database.
      */
-    virtual int init(ServerInterface *serverHandle);
+    virtual int init(ServerInterface *serverInterface);
 
     /*
      * Retrieve records from the table records and insert them into the SRCH2 engine.
@@ -65,7 +65,7 @@ private:
 
     int listenerWaitTime;
     int oracleMaxColumnLength;
-    ServerInterface *serverHandle;
+    ServerInterface *serverInterface;
 
     //Storing the table schema information
     std::vector<std::string> fieldNames;

@@ -67,11 +67,11 @@ public:
      * All the initialization is recommended to be implemented here.
      * e.g., check the config file and connect to the database.
      *
-     * The serverHandle is provided by the engine which is an instance of 
-     * ServerInterface class. The serverHandle must be used to call 
+     * The serverInterface is provided by the engine which is an instance of
+     * ServerInterface class. The serverInterface must be used to call
      * ServerInterface class APIs. 
      */
-    virtual int init(ServerInterface *serverHandle) = 0;
+    virtual int init(ServerInterface *serverInterface) = 0;
 
     /*
      * "runListener" should be implemented as a pull based listener.

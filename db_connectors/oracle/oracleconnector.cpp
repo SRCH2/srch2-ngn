@@ -7,7 +7,6 @@
 #include <cstring>
 #include "oracleconnector.h"
 #include <stdlib.h>
-#include "Logger.h"
 #include <sstream>
 #include <algorithm>    // std::max
 #include "io.h"
@@ -18,10 +17,9 @@
 #define ORACLE_DEFAULT_MAX_COLUMN_LEN (1024)
 
 using namespace std;
-using srch2::util::Logger;
 
 OracleConnector::OracleConnector() {
-    serverHandle = NULL;
+    serverInterface = NULL;
     listenerWaitTime = 1;
     henv = 0;
     hdbc = 0;
@@ -43,13 +41,13 @@ OracleConnector::OracleConnector() {
  *
  * 4. Get the schema information from the database.
  */
-int OracleConnector::init(ServerInterface *serverHandle) {
+int OracleConnector::init(ServerInterface *serverInterface) {
     //1. Pass the ServerInterface handle from the engine to the connector.
-    this->serverHandle = serverHandle;
+    this->serverInterface = serverInterface;
 
     //Get listenerWaitTime value from the config file .
     std::string listenerWaitTimeStr;
-    this->serverHandle->configLookUp("listenerWaitTime", listenerWaitTimeStr);
+    this->serverInterface->configLookUp("listenerWaitTime", listenerWaitTimeStr);
     listenerWaitTime = static_cast<int>(strtol(listenerWaitTimeStr.c_str(),
     NULL, 10));
     if (listenerWaitTimeStr.size() == 0 || listenerWaitTime == 0) {
@@ -58,7 +56,7 @@ int OracleConnector::init(ServerInterface *serverHandle) {
 
     //Get ORACLE_MAX_RECORD_LEN from the config file.
     std::string oracleMaxColumnLengthStr;
-    this->serverHandle->configLookUp("oracleMaxColumnLength",
+    this->serverInterface->configLookUp("oracleMaxColumnLength",
             oracleMaxColumnLengthStr);
     oracleMaxColumnLength = static_cast<int>(strtol(
             oracleMaxColumnLengthStr.c_str(),
@@ -82,7 +80,7 @@ int OracleConnector::init(ServerInterface *serverHandle) {
 
     //4. Get the schema information from the Oracle.
     string tableName;
-    this->serverHandle->configLookUp("tableName", tableName);
+    this->serverInterface->configLookUp("tableName", tableName);
     if (!populateTableSchema(tableName)) {
         printLog("exiting...", 1);
         return -1;
@@ -97,10 +95,10 @@ int OracleConnector::init(ServerInterface *serverHandle) {
  */
 bool OracleConnector::connectToDB() {
     string dataSource, user, password, server;
-    this->serverHandle->configLookUp("server", server);
-    this->serverHandle->configLookUp("dataSource", dataSource);
-    this->serverHandle->configLookUp("user", user);
-    this->serverHandle->configLookUp("password", password);
+    this->serverInterface->configLookUp("server", server);
+    this->serverInterface->configLookUp("dataSource", dataSource);
+    this->serverInterface->configLookUp("user", user);
+    this->serverInterface->configLookUp("password", password);
 
     std::stringstream sql;
     std::stringstream connectionString;
@@ -208,13 +206,13 @@ bool OracleConnector::executeQuery(SQLHSTMT & hstmt,
 bool OracleConnector::checkConfigValidity() {
     string dataSource, user, uniqueKey, tableName, server, changeTableName,
             ownerName;
-    this->serverHandle->configLookUp("server", server);
-    this->serverHandle->configLookUp("dataSource", dataSource);
-    this->serverHandle->configLookUp("user", user);
-    this->serverHandle->configLookUp("uniqueKey", uniqueKey);
-    this->serverHandle->configLookUp("tableName", tableName);
-    this->serverHandle->configLookUp("ownerName", ownerName);
-    this->serverHandle->configLookUp("changeTableName", changeTableName);
+    this->serverInterface->configLookUp("server", server);
+    this->serverInterface->configLookUp("dataSource", dataSource);
+    this->serverInterface->configLookUp("user", user);
+    this->serverInterface->configLookUp("uniqueKey", uniqueKey);
+    this->serverInterface->configLookUp("tableName", tableName);
+    this->serverInterface->configLookUp("ownerName", ownerName);
+    this->serverInterface->configLookUp("changeTableName", changeTableName);
 
     bool ret = (server.size() != 0) && (dataSource.size() != 0)
             && (user.size() != 0) && (uniqueKey.size() != 0)
@@ -242,7 +240,7 @@ bool OracleConnector::populateTableSchema(std::string & tableName) {
     SQLHSTMT hstmt;
 
     std::string ownerName;
-    this->serverHandle->configLookUp("ownerName", ownerName);
+    this->serverInterface->configLookUp("ownerName", ownerName);
 
     std::stringstream sql;
     sql << "SELECT COLUMN_NAME FROM ALL_TAB_COLUMNS WHERE TABLE_NAME = UPPER('"
@@ -301,8 +299,8 @@ bool OracleConnector::populateTableSchema(std::string & tableName) {
  */
 int OracleConnector::createNewIndexes() {
     std::string tableName, ownerName;
-    this->serverHandle->configLookUp("tableName", tableName);
-    this->serverHandle->configLookUp("ownerName", ownerName);
+    this->serverInterface->configLookUp("tableName", tableName);
+    this->serverInterface->configLookUp("ownerName", ownerName);
 
     int indexedRecordsCount = 0;
     int totalRecordsCount = 0;
@@ -368,7 +366,7 @@ int OracleConnector::createNewIndexes() {
 
                 string jsonString = writer.write(record);
                 totalRecordsCount++;
-                if (serverHandle->insertRecord(jsonString) == 0) {
+                if (serverInterface->insertRecord(jsonString) == 0) {
                     indexedRecordsCount++;
                 }
                 printLog(jsonString, 4);
@@ -422,9 +420,9 @@ int OracleConnector::createNewIndexes() {
  */
 int OracleConnector::runListener() {
     std::string changeTableName, uniqueKey, ownerName;
-    this->serverHandle->configLookUp("changeTableName", changeTableName);
-    this->serverHandle->configLookUp("uniqueKey", uniqueKey);
-    this->serverHandle->configLookUp("ownerName", ownerName);
+    this->serverInterface->configLookUp("changeTableName", changeTableName);
+    this->serverInterface->configLookUp("uniqueKey", uniqueKey);
+    this->serverInterface->configLookUp("ownerName", ownerName);
 
     /*
      * Load the last accessed record RSID$ from the file.
@@ -582,9 +580,9 @@ int OracleConnector::runListener() {
 
                     //Make the changes to the SRCH2 indexes.
                     if (operation.compare("I ") == 0) {
-                        serverHandle->insertRecord(jsonString);
+                        serverInterface->insertRecord(jsonString);
                     } else if (operation.compare("D ") == 0) {
-                        serverHandle->deleteRecord(pkValue);
+                        serverInterface->deleteRecord(pkValue);
                     } else if (operation.compare("UU") == 0
                             || operation.compare("UO") == 0) {
                         UOFlag = true;
@@ -604,7 +602,7 @@ int OracleConnector::runListener() {
                     //Update the indexes if both UN and UO are found.
                     if(UOFlag == true && UNFlag == true){
                         UOFlag = false; UNFlag = false;
-                        serverHandle->updateRecord(oldPk, newJSON);
+                        serverInterface->updateRecord(oldPk, newJSON);
                     }
                 } else {
                     break;
@@ -645,8 +643,8 @@ int OracleConnector::runListener() {
  */
 void OracleConnector::loadLastAccessedLogRecordTime() {
     std::string path, srch2Home;
-    this->serverHandle->configLookUp("srch2Home", srch2Home);
-    this->serverHandle->configLookUp("dataDir", path);
+    this->serverInterface->configLookUp("srch2Home", srch2Home);
+    this->serverInterface->configLookUp("dataDir", path);
 
     path = srch2Home + "/" + path + "/" + "oracle_data/data.bin";
     if (checkFileExisted(path.c_str())) {
@@ -669,8 +667,8 @@ void OracleConnector::loadLastAccessedLogRecordTime() {
 //Query : "SELECT MAX(RSID$) FROM changeTable";
 void OracleConnector::populateLastAccessedLogRecordTime() {
     string changeTableName, ownerName;
-    this->serverHandle->configLookUp("changeTableName", changeTableName);
-    this->serverHandle->configLookUp("ownerName", ownerName);
+    this->serverInterface->configLookUp("changeTableName", changeTableName);
+    this->serverInterface->configLookUp("ownerName", ownerName);
 
     std::stringstream sql;
     sql << "SELECT MAX(RSID$) FROM " << ownerName << "." << changeTableName
@@ -713,8 +711,8 @@ void OracleConnector::populateLastAccessedLogRecordTime() {
 //For Oracle, we save the RSID instead of time stamp.
 void OracleConnector::saveLastAccessedLogRecordTime() {
     std::string path, srch2Home;
-    this->serverHandle->configLookUp("srch2Home", srch2Home);
-    this->serverHandle->configLookUp("dataDir", path);
+    this->serverInterface->configLookUp("srch2Home", srch2Home);
+    this->serverInterface->configLookUp("dataDir", path);
     path = srch2Home + "/" + path + "/" + "oracle_data/";
     if (!checkDirExisted(path.c_str())) {
         // S_IRWXU : Read, write, and execute by owner.
@@ -749,26 +747,29 @@ void OracleConnector::deallocateSQLHandle(SQLHSTMT & hstmt) {
     SQLFreeHandle(SQL_HANDLE_STMT, hstmt);
 }
 
+
 //Print Log information.
 void OracleConnector::printLog(const std::string & log, const int logLevel) {
     std::stringstream logstream;
-    logstream << "ORACLECONNECTOR: " << log;
+
     switch (logLevel) {
     case 1:
-        Logger::error(logstream.str().c_str());
+        logstream << "ERROR ORACLECONNECTOR: " << log;
         break;
     case 2:
-        Logger::warn(logstream.str().c_str());
+        logstream << "WARN  ORACLECONNECTOR: " << log;
         break;
     case 3:
-        Logger::info(logstream.str().c_str());
+        logstream << "INFO  ORACLECONNECTOR: " << log;
         break;
     case 4:
-        Logger::debug(logstream.str().c_str());
+        logstream << "DEBUG ORACLECONNECTOR: " << log;
         break;
     default:
-        Logger::debug(logstream.str().c_str());
+        logstream << "DEBUG ORACLECONNECTOR: " << log;
     }
+    logstream << "\n";
+    printf(logstream.str().c_str());
 }
 
 //Disconnect from the Oracle
