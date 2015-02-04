@@ -2,23 +2,31 @@
 Compiling and running Oracle connector
 Author: Chen Liu, Jan. 2015
 
-This connector allows the SRCH2 engine to index data from Oracle db.  It supports Linux only.
+This connector allows the SRCH2 engine to index data from Oracle db.
+Currently it supports Linux (CentOS) only.
 
 1. Install Oracle database:
-   a). Install unixODBC: http://www.asteriskdocs.org/en/3rd_Edition/asterisk-book-html-chunk/installing_configuring_odbc.html
-   centos > sudo yum install unixODBC unixODBC-devel libtool-ltdl libtool-ltdl-devel
-   ubuntu > sudo apt-get install unixODBC unixODBC-dev 
 
-   b). Follow the instruction to install Oracle: http://www.tecmint.com/oracle-database-11g-release-2-installation-in-linux/
+ a) Install unixODBC by running the following commands:
 
-   c). Add library path :
-   sudo sh -c "echo /u01/app/oracle/product/11.2.0/dbhome_1/lib/ > /etc/ld.so.conf.d/oracle.conf"
-   sudo ldconfig
+   shell> sudo yum install unixODBC unixODBC-devel libtool-ltdl libtool-ltdl-devel
+   
+    More information about these instructions is available at
+    http://www.asteriskdocs.org/en/3rd_Edition/asterisk-book-html-chunk/installing_configuring_odbc.html
 
-   d). Check the odbcinst.ini path
-   odbcinst -j
+ b) Install Oracle by following the instructions at
+    http://www.tecmint.com/oracle-database-11g-release-2-installation-in-linux/
 
-   e). Add the following lines into file odbcinst.ini
+ c) Add the Oracle library path to the path to look for dynamic libraries:
+
+   shell> sudo sh -c "echo /u01/app/oracle/product/11.2.0/dbhome_1/lib/ > /etc/ld.so.conf.d/oracle.conf"
+   shell> sudo ldconfig
+
+ d) Run the following command to get the odbcinst.ini path:
+
+   shell> odbcinst -j
+
+ e) Add the following lines into the file odbcinst.ini found above:
 
    [ORACLE]
    Description = Oracle ODBC Connection
@@ -26,20 +34,21 @@ This connector allows the SRCH2 engine to index data from Oracle db.  It support
    Threading               = 1
    UsageCount              = 1
 
-   f). check file /u01/app/oracle/product/11.2.0/dbhome_1/lib/libsqora.so.11.1 dependency
-   ldd /u01/app/oracle/product/11.2.0/dbhome_1/lib/libsqora.so.11.1
+ f) Run the following command to check the dependency of the file
+   /u01/app/oracle/product/11.2.0/dbhome_1/lib/libsqora.so.11.1
 
-   if "libodbcinst.so.1" is not found, create a soft link for it
+   shell> ldd /u01/app/oracle/product/11.2.0/dbhome_1/lib/libsqora.so.11.1
+
+   If "libodbcinst.so.1" is not found, then create a soft link for it
+   by using these commands:
+
    shell> find / -name "libodbcinst.so"
-   Go to library path
+   Go to the library path
    shell> ln -s libodbcinst.so libodbcinst.so.1 
 
 2. Install third-party libraries:
 
-   Install python-devel
-   ubuntu> sudo apt-get install python-dev
-   centos> sudo yum install python-devel
-
+   shell> sudo yum install python-devel
    shell> cd srch2-ngn/thirdparty/
    shell> ./thirdparty-build.sh
 
@@ -59,18 +68,6 @@ This connector allows the SRCH2 engine to index data from Oracle db.  It support
     shell> cmake ..
     shell> make
 
-5. Start the oracle and create test user 'cdcpub'
-   Follow the srch2-ngn/test/wrapper/system_tests/adapter_oracle/readme.txt
-   
-6. Run the system test case.
+5. Run a system test case by following the instructions in the file
 
-   shell> cd srch2-ngn/test/wrapper/system_tests
-   shell> vim adapter_oracle/conf.xml
- 
-   Under the "dbParameters" section, make necessary changes to
-   parameters related to the Oracle, such as data source, server, 
-   user name, password and table name.
-
-   shell> python ./adapter_oracle/adapter_oracle.py ../../../build/src/server/srch2-search-server ./adapter_oracle/testCreateIndexes_sql.txt ./adapter_oracle/testCreateIndexes.txt ./adapter_oracle/testRunListener_sql.txt ./adapter_oracle/testRunListener.txt ./adapter_oracle/testOfflineLog_sql.txt ./adapter_oracle/testOfflineLog.txt
-
-   If everything passes, we will see a "Successful" message.  Congratulations!
+    srch2-ngn/test/wrapper/system_tests/adapter_oracle/readme.txt
