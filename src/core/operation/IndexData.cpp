@@ -764,10 +764,8 @@ void IndexData::changeKeywordIdsOnForwardLists(
 
 		// the following code is based on TermVirtualList.cpp
 		unsigned invertedListId = node->getInvertedListOffset();
-		// change the keywordId for given invertedListId
-		map<unsigned, unsigned>::const_iterator keywordIdMapperIter =
-				keywordIdMapper.find(invertedListId);
-		keywordIDsWriteView->at(invertedListId) = keywordIdMapperIter->second;
+		// change the keywordId for a given invertedListId. "node" (leafnode) has a new keywordId
+		keywordIDsWriteView->at(invertedListId) = node->getId();
 		// Jamshid : since it happens after the commit of other index structures it uses read view
 		shared_ptr<vectorview<unsigned> > readview;
 		shared_ptr<vectorview<InvertedListContainerPtr> > invertedListDirectoryReadView;
