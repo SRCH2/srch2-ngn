@@ -113,6 +113,10 @@ public:
 	};
 
 	bool put(string & key, boost::shared_ptr<T> & objectPointer){
+
+		// TODO : temporary for disabling cache completely.
+		return true;
+
 		boost::unique_lock< boost::shared_mutex > lock(_access);
 
 //		ASSERT(checkCacheConsistency());
@@ -172,6 +176,9 @@ public:
 		return true;
 	}
 	bool get(string & key, boost::shared_ptr<T> & objectPointer) {
+
+		// TODO : temporary for disabling cache completely.
+		return false;
 
 		boost::unique_lock< boost::shared_mutex > lock(_access);
 //		ASSERT(checkCacheConsistency());
