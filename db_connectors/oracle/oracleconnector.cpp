@@ -1,3 +1,7 @@
+/*
+ * Copyright 2010 SRCH2 Inc. All rights reserved
+ */
+
 #include <cstring>
 #include "oracleconnector.h"
 #include <stdlib.h>
@@ -21,34 +25,19 @@ OracleConnector::OracleConnector() {
     oracleMaxColumnLength = ORACLE_DEFAULT_MAX_COLUMN_LEN;
 }
 
-/*
- * Initialize the connector. Establish a connection to the Oracle Database.
- * The init() function should implement the following things :
- *
- * 1. Pass the ServerInterface handle from the engine to the connector so
- * that the connector can use function "insertRecord", "deleteRecord",
- * "updateRecord" and "configLookUp".
- *
- * 2. Check if the config file contains all the required parameters.
- *
- * 3. Connect to the database.
- *
- * 4. Get the schema information from the database.
- */
 int OracleConnector::init(ServerInterface *serverInterface) {
-    //1. Pass the ServerInterface handle from the engine to the connector.
+    // 1. Pass the ServerInterface handle from the engine to the connector.
     this->serverInterface = serverInterface;
 
-    //Get listenerWaitTime value from the config file .
+    // Get the listenerWaitTime value from the config file.
     std::string listenerWaitTimeStr;
     this->serverInterface->configLookUp("listenerWaitTime", listenerWaitTimeStr);
-    listenerWaitTime = static_cast<int>(strtol(listenerWaitTimeStr.c_str(),
-    NULL, 10));
+    listenerWaitTime = static_cast<int>(strtol(listenerWaitTimeStr.c_str(), NULL, 10));
     if (listenerWaitTimeStr.size() == 0 || listenerWaitTime == 0) {
         listenerWaitTime = 1;
     }
 
-    //Get ORACLE_MAX_RECORD_LEN from the config file.
+    // Get ORACLE_MAX_RECORD_LEN from the config file.
     std::string oracleMaxColumnLengthStr;
     this->serverInterface->configLookUp("oracleMaxColumnLength",
             oracleMaxColumnLengthStr);
@@ -58,7 +47,8 @@ int OracleConnector::init(ServerInterface *serverInterface) {
     if (oracleMaxColumnLengthStr.size() == 0 || oracleMaxColumnLength == 0) {
         oracleMaxColumnLength = ORACLE_DEFAULT_MAX_COLUMN_LEN;
     }
-    //Add one for '\0'
+
+    // Add one for '\0'
     oracleMaxColumnLength++;
 
     /*
@@ -72,7 +62,7 @@ int OracleConnector::init(ServerInterface *serverInterface) {
         return -1;
     }
 
-    //4. Get the schema information from the Oracle.
+    // 4. Get the schema information from the Oracle database.
     string tableName;
     this->serverInterface->configLookUp("tableName", tableName);
     if (!populateTableSchema(tableName)) {
@@ -85,7 +75,7 @@ int OracleConnector::init(ServerInterface *serverInterface) {
 
 /*
  * Connect to the Oracle database by using unixODBC.
- * Data Source is the name in /etc/odbcinst.ini
+ * The data source is the name in /etc/odbcinst.ini
  */
 bool OracleConnector::connectToDB() {
     string dataSource, user, password, server;
@@ -109,6 +99,7 @@ bool OracleConnector::connectToDB() {
             sleep(listenerWaitTime);
             continue;
         }
+
         // Set the ODBC version environment attribute
         retcode = SQLSetEnvAttr(henv, SQL_ATTR_ODBC_VERSION,
                 (SQLPOINTER*) SQL_OV_ODBC3, 0);
@@ -120,6 +111,7 @@ bool OracleConnector::connectToDB() {
             sleep(listenerWaitTime);
             continue;
         }
+
         // Allocate connection handle
         retcode = SQLAllocHandle(SQL_HANDLE_DBC, henv, &hdbc);
 
@@ -129,9 +121,11 @@ bool OracleConnector::connectToDB() {
             sleep(listenerWaitTime);
             continue;
         }
+
         // Set login timeout to 5 seconds
         SQLSetConnectAttr(hdbc, SQL_LOGIN_TIMEOUT, (SQLPOINTER) 5, 0);
-        // Connect to data source
+
+        // Connect to the database
         connectionString << "DRIVER={" << dataSource << "};SERVER=" << server
                 << ";UID=" << user << ";PWD=" << password << ";";
 
@@ -142,8 +136,7 @@ bool OracleConnector::connectToDB() {
 
         if ((retcode != SQL_SUCCESS) && (retcode != SQL_SUCCESS_WITH_INFO)) {
             printSQLError(hstmt);
-            printLog("Connect to the Oracle database failed.",
-                    1);
+            printLog("Connect to the Oracle database failed.", 1);
             sleep(listenerWaitTime);
             continue;
         }
@@ -159,7 +152,7 @@ bool OracleConnector::connectToDB() {
     return true;
 }
 
-//Log the SQL Server error msg if exists.
+// Log the SQL Server error msg if exists.
 void OracleConnector::printSQLError(SQLHSTMT & hstmt) {
     unsigned char szSQLSTATE[10];
     SDWORD nErr;
@@ -175,9 +168,8 @@ void OracleConnector::printSQLError(SQLHSTMT & hstmt) {
     }
 }
 
-//Execute the query.
-bool OracleConnector::executeQuery(SQLHSTMT & hstmt,
-        const std::string & query) {
+// Execute a query.
+bool OracleConnector::executeQuery(SQLHSTMT & hstmt, const std::string & query) {
     SQLRETURN retcode = SQLExecDirect(hstmt, (SQLCHAR *) query.c_str(),
             static_cast<short int>(query.size()));
 
@@ -193,9 +185,6 @@ bool OracleConnector::executeQuery(SQLHSTMT & hstmt,
 
 /*
  * Check if the config file has all the required parameters.
- * e.g. if it contains dataSource, table etc.
- * The config file must indicate the Data Source configuration name, host address,
- * user, table name, change table name and the primary key. Otherwise, the check fails.
  */
 bool OracleConnector::checkConfigValidity() {
     string dataSource, user, uniqueKey, tableName, server, changeTableName,
@@ -223,11 +212,12 @@ bool OracleConnector::checkConfigValidity() {
     return true;
 }
 
-//Get the table's schema and save them into a vector<schema_name>
-//Query: SELECT COLUMN_NAME FROM ALL_TAB_COLUMNS
-//WHERE TABLE_NAME = [TABLE] AND OWNER = [OWNERNAME];
-//For example: table emp(id, name, age, salary).
-//The schema vector will contain {id, name, age, salary}
+// Get the table's schema and save them into a vector<schema_name>
+// Query: SELECT COLUMN_NAME FROM ALL_TAB_COLUMNS
+// WHERE TABLE_NAME = [TABLE] AND OWNER = [OWNERNAME];
+//
+// For example: table emp(id, name, age, salary).
+// The schema vector will contain {id, name, age, salary}
 bool OracleConnector::populateTableSchema(std::string & tableName) {
     SQLCHAR * sSchema = new SQLCHAR[oracleMaxColumnLength];
     SQLRETURN retcode;
@@ -238,28 +228,29 @@ bool OracleConnector::populateTableSchema(std::string & tableName) {
 
     std::stringstream sql;
     sql << "SELECT COLUMN_NAME FROM ALL_TAB_COLUMNS WHERE TABLE_NAME = UPPER('"
-            << tableName << "') AND OWNER = UPPER('" + ownerName + "');";
+        << tableName << "') AND OWNER = UPPER('" + ownerName + "');";
 
     do {
-        //Clear the vector, redo the query and bind the columns
-        //For swap: http://www.cplusplus.com/reference/vector/vector/clear/
+        // Clear the vector, redo the query and bind the columns
         vector<string>().swap(fieldNames);
         // Allocate statement handle
         if (!allocateSQLHandle(hstmt)) {
             sleep(listenerWaitTime);
             continue;
         }
+
         if (!executeQuery(hstmt, sql.str())) {
             sleep(listenerWaitTime);
             continue;
         }
 
-        //Bind columns
+        // Bind columns
         retcode = SQLBindCol(hstmt, 1, SQL_C_CHAR, sSchema,
                 oracleMaxColumnLength,
                 NULL);
 
-        //Fetch and save each row of schema. On an error, display a message and exit.
+        // Fetch and save each row in the schema. In case of an error,
+        // display a message and exit. 
         bool sqlErrorFlag = false;
         int i = 0;
         while (1) {
@@ -288,8 +279,7 @@ bool OracleConnector::populateTableSchema(std::string & tableName) {
 }
 
 /*
- * Retrieve records from the table records and insert them into the SRCH2 engine.
- * Query : SELECT * FROM [TABLE];
+ * Retrieve records from the table and insert them into the SRCH2 engine.
  */
 int OracleConnector::createNewIndexes() {
     std::string tableName, ownerName;
@@ -299,7 +289,7 @@ int OracleConnector::createNewIndexes() {
     int indexedRecordsCount = 0;
     int totalRecordsCount = 0;
 
-    //Initialize the record buffer.
+    // Initialize the record buffer.
     vector<SQLCHAR *> sqlRecord;
     for (int i = 0; i < fieldNames.size(); i++) {
         SQLCHAR * sqlCol = new SQLCHAR[oracleMaxColumnLength];
@@ -315,8 +305,10 @@ int OracleConnector::createNewIndexes() {
         totalRecordsCount = 0;
         int colPosition = 1;
 
-        // Allocate statement handle
+        // Allocate a statement handle
         if (!allocateSQLHandle(hstmt)) {
+            // Use a parameter from the SRCH2 configuration file
+            // to decide how long it should sleep
             sleep(listenerWaitTime);
             continue;
         }
@@ -326,7 +318,7 @@ int OracleConnector::createNewIndexes() {
             continue;
         }
 
-        //Bind columns
+        // Bind columns
         for (vector<SQLCHAR *>::iterator it = sqlRecord.begin();
                 it != sqlRecord.end(); ++it) {
             retcode = SQLBindCol(hstmt, colPosition++, SQL_C_CHAR, *it,
@@ -334,10 +326,10 @@ int OracleConnector::createNewIndexes() {
                     NULL);
         }
 
-        //Each loop will fetch one record.
+        // Each loop will fetch one record.
         bool sqlErrorFlag = false;
         while (1) {
-            retcode = SQLFetch(hstmt);  //Fetch one record
+            retcode = SQLFetch(hstmt);  // Fetch one record
             if (retcode == SQL_ERROR || retcode == SQL_SUCCESS_WITH_INFO) {
                 printSQLError(hstmt);
                 sleep(listenerWaitTime);
@@ -345,17 +337,18 @@ int OracleConnector::createNewIndexes() {
                 break;
             } else if (retcode == SQL_SUCCESS
                     || retcode == SQL_SUCCESS_WITH_INFO) {
-                //Generate a JSON string from the record.
+                // Generate a JSON string from the record.
                 vector<string>::iterator itName = fieldNames.begin();
                 vector<SQLCHAR *>::iterator itValue = sqlRecord.begin();
+
                 while (itName != fieldNames.end()) {
-                    //Right trim the string
+                    // trim the string
                     string val(reinterpret_cast<const char*>(*itValue));
                     val.erase(val.find_last_not_of(" \n\r\t") + 1);
                     record[*itName] = val;
 
-                    itName++;
-                    itValue++;
+                    itName ++;
+                    itValue ++;
                 }
 
                 string jsonString = writer.write(record);
@@ -364,6 +357,7 @@ int OracleConnector::createNewIndexes() {
                     indexedRecordsCount++;
                 }
                 printLog(jsonString, 4);
+
                 if (indexedRecordsCount && (indexedRecordsCount % 1000) == 0) {
                     std::stringstream logstream;
                     logstream << "Indexed " << indexedRecordsCount
@@ -375,10 +369,9 @@ int OracleConnector::createNewIndexes() {
         }
 
         /*
-         * If error exists while creating the new indexes, the connector will
-         * re-try connecting to the SQL Server database.
+         * If there is an error while creating the new indexes, the connector will
+         * re-try connecting to the database.
          */
-
         if (!sqlErrorFlag) {
             populateLastAccessedLogRecordTime();
             deallocateSQLHandle(hstmt);
@@ -392,7 +385,7 @@ int OracleConnector::createNewIndexes() {
             << totalRecordsCount << " records. ";
     printLog(logstream.str().c_str(), 3);
 
-    //Deallocate the record buffer.
+    // Deallocate the record buffer.
     for (int i = 0; i < fieldNames.size(); i++) {
         delete sqlRecord[i];
     }
@@ -401,16 +394,8 @@ int OracleConnector::createNewIndexes() {
 }
 
 /*
- * Periodically Pull the updates from the Oracle change table, and send
+ * Periodically pull the updates from the Oracle change table, and send
  * corresponding requests to the SRCH2 engine.
- * For example: table emp(id, name, age, salary).
- * Change table name : emp_ct
- * Query : SELECT RSID$, OPERATION$, id, name, age, salary
- *         FROM emp_ct
- *         WHERE RSID$ > ?;
- * Query is using prepared statement where "?" is the last accessed record RSID$.
- * The connector always keeps the latest RSID$ so that the connector can skip the
- * processed record.
  */
 int OracleConnector::runListener() {
     std::string changeTableName, uniqueKey, ownerName;
@@ -430,7 +415,7 @@ int OracleConnector::runListener() {
     SQLRETURN retcode;
     SQLHSTMT hstmt;
 
-    //Initialize the record buffer.
+    // Initialize the record buffer.
     vector<SQLCHAR *> sqlRecord;
     vector<SQLLEN> sqlCallBack;
     for (int i = 0; i < fieldNames.size() + 3; i++) {
@@ -439,30 +424,30 @@ int OracleConnector::runListener() {
         sqlCallBack.push_back(0);
     }
 
-    //Loop for never return from the runListener
     do {
         // Allocate statement handle
         if (!allocateSQLHandle(hstmt)) {
+            // "listenerWaitTime" is from the SRCH2 config file
             sleep(listenerWaitTime);
             continue;
         }
 
         /*
          * Create the prepared select statement. Because the SRCH2 engine only
-         * supports atomic primary keys but not compound primary keys, here we
+         * supports atomic primary keys but not compound primary keys, we
          * assume the primary key of the table only has one attribute.
          *
          * For example: table emp(id, name, age, salary).
-         * Change table name : emp_ct
+         * "Change table" name : emp_ct
          * Query : SELECT RSID$, OPERATION$, id, name, age, salary
          *         FROM emp_ct
          *         WHERE RSID$ > ?;
          *
-         * RSID$ is the "timestamp" which increases automatically
-         * for each transaction that happens in table emp.
+         * RSID$ is the "timestamp", which increases automatically
+         * for each transaction that happens in the table emp.
          *
-         * OPERATION$ has 4 options, "I ", "D ", "UO"(or "UU"), and "UN" which represent
-         * INSERT, DELETE, UPDATE Old Value, UPDATE New Value respectively.
+         * OPERATION$ has 4 options, "I ", "D ", "UO"(or "UU"), and "UN", which represent
+         * INSERT, DELETE, UPDATE Old Value, and UPDATE New Value, respectively.
          *
          */
         sql.str("");
@@ -479,7 +464,7 @@ int OracleConnector::runListener() {
         retcode = SQLPrepare(hstmt, (SQLCHAR*) sql.str().c_str(),
         SQL_NTS);
 
-        //Bind the result set columns
+        // Bind the result set columns
         int colPosition = 1;
         vector<SQLLEN>::iterator itCallBack = sqlCallBack.begin();
         for (vector<SQLCHAR *>::iterator it = sqlRecord.begin();
@@ -489,12 +474,12 @@ int OracleConnector::runListener() {
         }
 
         /*
-         * Loop for the run listener, the loop will be executed every
+         * Loop for the run listener, and the loop will be executed every
          * "listenerWaitTime" seconds.
          */
         printLog("waiting for updates ...", 3);
         while (1) {
-            //Bind the "lastAccessedLogRecordRSID"
+            // Bind the "lastAccessedLogRecordRSID"
             std::string lastAccessedLogRecordRSIDStr;
             std::stringstream strstream;
             strstream << lastAccessedLogRecordRSID;
@@ -506,14 +491,14 @@ int OracleConnector::runListener() {
                     (SQLPOINTER) lastAccessedLogRecordRSIDStr.c_str(),
                     lastAccessedLogRecordRSIDStr.size(), NULL);
 
-            //Execute the prepared statement.
+            // Execute the prepared statement.
             retcode = SQLExecute(hstmt);
             if ((retcode != SQL_SUCCESS)
                     && (retcode != SQL_SUCCESS_WITH_INFO)) {
                 printLog("Executing prepared "
                         "statement failed in runListener().", 1);
                 printSQLError(hstmt);
-                //Re-connect to the SQL Server, and start again.
+                // Re-connect to the SQL Server, and start again.
                 sleep(listenerWaitTime);
                 break;
             }
@@ -525,7 +510,7 @@ int OracleConnector::runListener() {
             string newJSON; // New content of UN (For update)
 
             long int maxRSID = -1;
-            //Each loop will fetch one record.
+            // Each loop will fetch one record.
             while (1) {
                 retcode = SQLFetch(hstmt);
                 if (retcode == SQL_ERROR || retcode == SQL_SUCCESS_WITH_INFO) {
@@ -537,25 +522,25 @@ int OracleConnector::runListener() {
                     break;
                 } else if (retcode == SQL_SUCCESS
                         || retcode == SQL_SUCCESS_WITH_INFO) {
-                    //Generate a JSON string from the record.
+                    // Generate a JSON string from the record.
                     vector<string>::iterator itName = fieldNames.begin();
                     vector<SQLCHAR *>::iterator itValue = sqlRecord.begin();
 
-                    //Get current RSID
+                    // Get the current RSID
                     long int RSID = strtol(
                             reinterpret_cast<const char*>(*itValue++), NULL,
                             10);
 
-                    //Keep the max RSID
+                    // Keep the max RSID
                     maxRSID = max(maxRSID, RSID);
 
-                    //Get Operation
+                    // Get the type of operation
                     string operation(reinterpret_cast<const char*>(*itValue));
                     itValue++;
 
                     string pkValue; //Primary key
                     while (itName != fieldNames.end()) {
-                        //Right trim the string
+                        // trim the string
                         string val(reinterpret_cast<const char*>(*itValue));
                         val.erase(val.find_last_not_of(" \n\r\t") + 1);
 
@@ -572,8 +557,10 @@ int OracleConnector::runListener() {
                             << operation.c_str() << ", Record: " << jsonString;
                     printLog(logstream.str().c_str(), 4);
 
-                    //Make the changes to the SRCH2 indexes.
+                    // Make the changes to the SRCH2 indexes.
                     if (operation.compare("I ") == 0) {
+                        // These functions are provided by the interface
+                        // of the SRCH2 engine
                         serverInterface->insertRecord(jsonString);
                     } else if (operation.compare("D ") == 0) {
                         serverInterface->deleteRecord(pkValue);
@@ -593,7 +580,7 @@ int OracleConnector::runListener() {
                         printLog(logstream.str().c_str(), 1);
                     }
 
-                    //Update the indexes if both UN and UO are found.
+                    // Update the indexes if both UN and UO are found.
                     if(UOFlag == true && UNFlag == true){
                         UOFlag = false; UNFlag = false;
                         serverInterface->updateRecord(oldPk, newJSON);
@@ -604,8 +591,8 @@ int OracleConnector::runListener() {
             }
 
             /*
-             * Error happened while fetching the columns from Oracle,
-             * try re-connecting to the database.
+             * An error happened while fetching the columns from
+             * Oracle, so try to re-connect to the database.
              */
             if (sqlErrorFlag) {
                 break;
@@ -622,7 +609,7 @@ int OracleConnector::runListener() {
         deallocateSQLHandle(hstmt);
     } while (connectToDB());
 
-    //Deallocate the record buffer.
+    // Deallocate the record buffer.
     for (int i = 0; i < sqlRecord.size(); i++) {
         delete sqlRecord[i];
     }
@@ -632,8 +619,6 @@ int OracleConnector::runListener() {
 
 /*
  * Load the last accessed record RSID$ from the file.
- * If the file does not exist(The first time create the indexes),
- * it will query the database and fetch the latest record RSID$.
  */
 void OracleConnector::loadLastAccessedLogRecordTime() {
     std::string path, srch2Home;
@@ -646,7 +631,7 @@ void OracleConnector::loadLastAccessedLogRecordTime() {
         a_file >> lastAccessedLogRecordRSID;
         a_file.close();
     } else {
-        //The file does not exist but the indexes already exists.
+        // The file does not exist but the indexes already exist.
         if (lastAccessedLogRecordRSID == -1) {
             std::stringstream logstream;
             logstream << "Can not find " << path
@@ -657,8 +642,8 @@ void OracleConnector::loadLastAccessedLogRecordTime() {
     }
 }
 
-//Get the MAX RSID$ from Oracle database.
-//Query : "SELECT MAX(RSID$) FROM changeTable";
+// Get the MAX RSID$ from Oracle database.
+// Query : "SELECT MAX(RSID$) FROM changeTable";
 void OracleConnector::populateLastAccessedLogRecordTime() {
     string changeTableName, ownerName;
     this->serverInterface->configLookUp("changeTableName", changeTableName);
@@ -670,7 +655,7 @@ void OracleConnector::populateLastAccessedLogRecordTime() {
     SQLHSTMT hstmt;
     SQLCHAR * changeVersion = new SQLCHAR[oracleMaxColumnLength];
     do {
-        // Allocate statement handle
+        // Allocate a statement handle
         if (!allocateSQLHandle(hstmt)) {
             sleep(listenerWaitTime);
             continue;
@@ -701,8 +686,8 @@ void OracleConnector::populateLastAccessedLogRecordTime() {
     delete changeVersion;
 }
 
-//Save the lastAccessedLogRecordRSID to the file
-//For Oracle, we save the RSID instead of time stamp.
+// Save the lastAccessedLogRecordRSID to the file.
+// For Oracle, we save the RSID instead of a timestamp.
 void OracleConnector::saveLastAccessedLogRecordTime() {
     std::string path, srch2Home;
     this->serverInterface->configLookUp("srch2Home", srch2Home);
@@ -720,11 +705,11 @@ void OracleConnector::saveLastAccessedLogRecordTime() {
     a_file.close();
 }
 
-//Allocate a SQL Server statement handle to execute the query
+// Allocate a SQL Server statement handle to execute the query
 bool OracleConnector::allocateSQLHandle(SQLHSTMT & hstmt) {
     SQLRETURN retcode;
 
-    // Allocate statement handle
+    // Allocate a statement handle
     retcode = SQLAllocHandle(SQL_HANDLE_STMT, hdbc, &hstmt);
 
     if ((retcode != SQL_SUCCESS) && (retcode != SQL_SUCCESS_WITH_INFO)) {
@@ -735,14 +720,14 @@ bool OracleConnector::allocateSQLHandle(SQLHSTMT & hstmt) {
     return true;
 }
 
-//Deallocate a Oracle statement handle to free the memory
+// Deallocate an Oracle statement handle to free the memory
 void OracleConnector::deallocateSQLHandle(SQLHSTMT & hstmt) {
     SQLCancel(hstmt);
     SQLFreeHandle(SQL_HANDLE_STMT, hstmt);
 }
 
 
-//Print Log information.
+// Print Log information.
 void OracleConnector::printLog(const std::string & log, const int logLevel) {
     std::stringstream logstream;
 
@@ -766,7 +751,7 @@ void OracleConnector::printLog(const std::string & log, const int logLevel) {
     printf(logstream.str().c_str());
 }
 
-//Disconnect from the Oracle
+// Disconnect from the Oracle
 OracleConnector::~OracleConnector() {
     SQLDisconnect(hdbc);
 
@@ -775,9 +760,9 @@ OracleConnector::~OracleConnector() {
 }
 
 /*
- * "create_t()" and "destroy_t(DataConnector*)" is called to create/delete
- * the instance of the connector. A simple example of implementing these
- * two function is here.
+ * "create_t()" and "destroy_t(DataConnector*)" are called to create/delete
+ * the instance of the connector, respectively. A simple example of
+ * implementing these two functions is here.
  *
  * extern "C" DataConnector* create() {
  *     return new YourDBConnector;
@@ -787,10 +772,9 @@ OracleConnector::~OracleConnector() {
  *     delete p;
  * }
  *
- * These two C APIs are used by the srch2-engine to create/delete the instance
- * in the shared library.
- * The engine will call "create()" to get the connector and call
- * "destroy" to delete it.
+ * These two C APIs are used by the SRCH2 engine to create/delete the
+ * instance in the shared library.  The engine will call "create()" to
+ * get the connector and call "destroy" to delete it.
  */
 extern "C" DataConnector* create() {
     return new OracleConnector;
