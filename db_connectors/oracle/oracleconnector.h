@@ -1,10 +1,3 @@
-/*
- * oracleconnector.h
- *
- *  Created on: Jan 21, 2015
- *      Author: Chen Liu liu@srch2.com
- */
-
 #ifndef __ORACLECONNECTOR_H__
 #define __ORACLECONNECTOR_H__
 
