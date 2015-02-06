@@ -14,7 +14,7 @@
  * OR PROFITS, WHETHER IN AN ACTION OF CONTRACT, NEGLIGENCE OR OTHER ACTION, ARISING OUT OF OR IN CONNECTION
  * WITH THE USE OR PERFORMANCE OF SOFTWARE.
 
- * Copyright �� 2010 SRCH2 Inc. All rights reserved
+ * Copyright 2010 SRCH2 Inc. All rights reserved
  */
 
 #include "QueryResultsInternal.h"
@@ -400,7 +400,12 @@ void * QueryResult::serializeForNetwork(void * buffer) const{
 	buffer = _score.serializeForNetwork(buffer);
 	buffer = srch2::util::serializeString(externalRecordId, buffer);
 	buffer = srch2::util::serializeFixedTypes(exactResultFlag, buffer);
-	buffer = srch2::util::serializeVectorOfFixedTypes(attributeIdsList, buffer);
+
+	buffer = srch2::util::serializeFixedTypes((unsigned) attributeIdsList.size(), buffer);
+	for (unsigned i = 0; i < attributeIdsList.size(); ++i) {
+		buffer = srch2::util::serializeVectorOfFixedTypes(attributeIdsList[i], buffer);
+	}
+
 	buffer = srch2::util::serializeVectorOfFixedTypes(editDistances, buffer);
 	buffer = srch2::util::serializeVectorOfFixedTypes(termTypes, buffer);
 	buffer = srch2::util::serializeVectorOfString(matchingKeywords, buffer);
@@ -426,7 +431,14 @@ void * QueryResult::deserializeForNetwork(QueryResult * &queryResult, void * buf
 	buffer = TypedValue::deserializeForNetwork(queryResult->_score, buffer);
 	buffer = srch2::util::deserializeString(buffer, queryResult->externalRecordId);
 	buffer = srch2::util::deserializeFixedTypes(buffer, queryResult->exactResultFlag);
-	buffer = srch2::util::deserializeVectorOfFixedTypes(buffer, queryResult->attributeIdsList);
+
+	unsigned attrbuteIdsListSize = 0;
+	buffer = srch2::util::deserializeFixedTypes(buffer, attrbuteIdsListSize);
+	for (unsigned i = 0; i < attrbuteIdsListSize; ++i) {
+		queryResult->attributeIdsList.push_back(vector<unsigned>());
+		buffer = srch2::util::deserializeVectorOfFixedTypes(buffer, queryResult->attributeIdsList.back());
+	}
+
 	buffer = srch2::util::deserializeVectorOfFixedTypes(buffer, queryResult->editDistances);
 	buffer = srch2::util::deserializeVectorOfFixedTypes(buffer, queryResult->termTypes);
 	buffer = srch2::util::deserializeVectorOfString(buffer, queryResult->matchingKeywords);
@@ -457,7 +469,12 @@ unsigned QueryResult::getNumberOfBytesForSerializationForNetwork() const{
 	numberOfBytes += _score.getNumberOfBytesForSerializationForNetwork();
 	numberOfBytes += sizeof(unsigned) + externalRecordId.size();
 	numberOfBytes += sizeof(exactResultFlag);
-	numberOfBytes += srch2::util::getNumberOfBytesVectorOfFixedTypes(attributeIdsList);
+
+	numberOfBytes += sizeof(unsigned); // size of attributeIdsList vector
+	for (unsigned i = 0; i < attributeIdsList.size(); ++i) {
+		numberOfBytes += srch2::util::getNumberOfBytesVectorOfFixedTypes(attributeIdsList[i]);
+	}
+
 	numberOfBytes += srch2::util::getNumberOfBytesVectorOfFixedTypes(editDistances);
 	numberOfBytes += srch2::util::getNumberOfBytesVectorOfFixedTypes(termTypes);
 	numberOfBytes += srch2::util::getNumberOfBytesVectorOfString(matchingKeywords);
