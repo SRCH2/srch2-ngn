@@ -4,11 +4,13 @@
 
 The SRCH2 engine provides connectors for
 [MySQL](http://www.mysql.com/), [SQLite](http://www.sqlite.org/),
-[SQL Server](http://www.microsoft.com/en-us/server-cloud/products/sql-server/) and
+[SQL Server](http://www.microsoft.com/en-us/server-cloud/products/sql-server/), and
+[Oracle](http://www.oracle.com/technetwork/indexes/downloads/index.html), and
 [MongoDB](http://www.mongodb.org/).  Notice that a SRCH2 instance can
 have multiple data sources ("cores" as described in
 [here](configuration.mkd#12-cores-optional)). Each core can be a JSON
-file, a MySQL table, a SQLite table, a SQL Server table, or a MongoDB table.  Each SRCH2 connector for a
+file, a MySQL table, a SQLite table, a SQL Server table, an Oracle
+table, or a MongoDB table.  Each SRCH2 connector for a
 database builds indexes for the records in the table,  and
 periodically checks data updates to incrementally maintain the
 indexes.
@@ -822,7 +824,7 @@ other data sources.
 ###6.1. Overview
 
 The SRCH2 data connector SDK allows a programmer to write a customized
-adapter/connector for a new data source.  The connector is written is
+adapter/connector for a new data source.  The connector is written in
 C++, and compiled to a shared library (a ```.so``` file), which can
 be loaded by the SRCH2 engine dynamically.  The SRCH2 engine reads a section of
 parameters for the data source, including the name of its shared
@@ -966,7 +968,7 @@ virtual int init(ServerInterface *serverInterface) = 0;
 
 The function is called once when the connector is loaded by the engine.
 All the initialization tasks should be done here, e.g., retrieving from the
-configuration file those parameters related to this source and use them to connect
+configuration file those parameters related to this source and using them to connect
 to the source.
 
  - Parameters:  
