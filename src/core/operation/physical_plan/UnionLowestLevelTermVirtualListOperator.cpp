@@ -31,10 +31,9 @@ bool UnionLowestLevelTermVirtualListOperator::open(QueryEvaluatorInternal * quer
 	// 2. Get the Term object
 	Term * term = logicalPlanNode->getTerm(params.isFuzzy);
 
-	this->invertedIndex = queryEvaluator->getInvertedIndex();
-    this->invertedIndex->getInvertedIndexDirectory_ReadView(invertedListDirectoryReadView);
-    this->invertedIndex->getInvertedIndexKeywordIds_ReadView(invertedIndexKeywordIdsReadView);
-    this->queryEvaluator->getForwardIndex()->getForwardListDirectory_ReadView(forwardIndexDirectoryReadView);
+	this->invertedListDirectoryReadView = this->queryEvaluator->indexReadToken.invertedIndexReadViewSharedPtr;
+	invertedIndexKeywordIdsReadView = this->queryEvaluator->indexReadToken.invertedIndexKeywordIdsReadViewSharedPtr;
+	forwardIndexDirectoryReadView = this->queryEvaluator->indexReadToken.forwardIndexReadViewSharedPtr;
     this->prefixActiveNodeSet = logicalPlanNode->stats->getActiveNodeSetForEstimation(params.isFuzzy);
     this->term = term;
     this->prefixMatchPenalty = params.prefixMatchPenalty;
@@ -149,10 +148,7 @@ PhysicalPlanRecordItem * UnionLowestLevelTermVirtualListOperator::getNext(const 
 
             unsigned recordId = currentHeapMaxInvertedList->getElement(currentHeapMaxCursor);
             // calculate record offset online
-            unsigned keywordOffset = this->invertedIndex->getKeywordOffset(
-            		this->forwardIndexDirectoryReadView,
-            		this->invertedIndexKeywordIdsReadView,
-            		recordId, currentHeapMaxInvertetedListId);
+            unsigned keywordOffset = this->queryEvaluator->indexReadToken.getKeywordOffset(recordId, currentHeapMaxInvertetedListId);
             vector<unsigned> matchedAttributeIdsList;
             currentHeapMaxCursor++;
 
@@ -161,9 +157,7 @@ PhysicalPlanRecordItem * UnionLowestLevelTermVirtualListOperator::getNext(const 
 
             // We check the record only if it's valid
             if (keywordOffset != FORWARDLIST_NOTVALID &&
-                this->invertedIndex->isValidTermPositionHit(forwardIndexDirectoryReadView,
-                    recordId,
-                    keywordOffset,
+            		this->queryEvaluator->indexReadToken.isValidTermPositionHit(recordId, keywordOffset,
                     term->getAttributesToFilter(), term->getFilterAttrOperation(), matchedAttributeIdsList,
                     termRecordStaticScore)) {
                 foundValidHit = 1;
@@ -222,7 +216,6 @@ bool UnionLowestLevelTermVirtualListOperator::close(PhysicalPlanExecutionParamet
     this->cursorVector.clear();
     this->invertedListReadViewVector.clear();
     this->term = NULL;
-    this->invertedIndex = NULL;
     // We don't delete activenodesets here. Be careful to delete them by PhysicalPlanNode
     return true;
 }
@@ -311,16 +304,14 @@ void UnionLowestLevelTermVirtualListOperator::initialiseTermVirtualListElement(T
     unsigned invertedListCounter = 0;
 
     shared_ptr<vectorview<unsigned> > invertedListReadView;
-    this->invertedIndex->getInvertedListReadView(invertedListDirectoryReadView,
-    		invertedListId, invertedListReadView);
+    this->queryEvaluator->indexReadToken.getInvertedListReadView(invertedListId, invertedListReadView);
     //Empty inverted lists should not be included in the lists of lowest level operators.
     if(invertedListReadView->size() == 0){
     	return;
     }
     unsigned recordId = invertedListReadView->getElement(invertedListCounter);
     // calculate record offset online
-    unsigned keywordOffset = this->invertedIndex->getKeywordOffset(this->forwardIndexDirectoryReadView,
-    		this->invertedIndexKeywordIdsReadView, recordId, invertedListId);
+    unsigned keywordOffset = this->queryEvaluator->indexReadToken.getKeywordOffset(recordId, invertedListId);
     ++ invertedListCounter;
 
     bool foundValidHit = 0;
@@ -329,9 +320,7 @@ void UnionLowestLevelTermVirtualListOperator::initialiseTermVirtualListElement(T
     while (1) {
         // We check the record only if it's valid
         if (keywordOffset != FORWARDLIST_NOTVALID &&
-            this->invertedIndex->isValidTermPositionHit(forwardIndexDirectoryReadView,
-                recordId,
-                keywordOffset,
+        		this->queryEvaluator->indexReadToken.isValidTermPositionHit(recordId, keywordOffset,
                 term->getAttributesToFilter(), term->getFilterAttrOperation(), termAttributeBitmap,
                 termRecordStaticScore) ) {
             foundValidHit = 1;
@@ -341,8 +330,7 @@ void UnionLowestLevelTermVirtualListOperator::initialiseTermVirtualListElement(T
         if (invertedListCounter < invertedListReadView->size()) {
             recordId = invertedListReadView->getElement(invertedListCounter);
             // calculate record offset online
-            keywordOffset = this->invertedIndex->getKeywordOffset(this->forwardIndexDirectoryReadView,
-            		this->invertedIndexKeywordIdsReadView, recordId, invertedListId);
+            keywordOffset = this->queryEvaluator->indexReadToken.getKeywordOffset(recordId, invertedListId);
             ++invertedListCounter;
         } else {
             break;

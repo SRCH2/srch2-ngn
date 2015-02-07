@@ -90,7 +90,7 @@ void ActiveNodeSet_test()
             ->computeActiveNodeSet(term).get();
     vector<string> similarPrefixes;
     prefixActiveNodeSet->getComputedSimilarPrefixes(
-            queryEvaluator->impl->getTrie(), similarPrefixes);
+            queryEvaluator->impl->testOnly_getTrie(), similarPrefixes);
 
     unsigned sim_size = similarPrefixes.size();
 
@@ -267,7 +267,7 @@ void printResults(QueryResults *queryResults) {
                 << queryResults->getRecordId(resultCounter) << endl;
         cout << "[" << queryResults->getInternalRecordId(resultCounter) << "]"
                 << endl;
-        cout << "[" << queryResults->getInMemoryRecordString(resultCounter)
+        cout << "[" << queryResults->getInMemoryRecordString_Safe(resultCounter)
                 << "]" << endl;
     }
 }

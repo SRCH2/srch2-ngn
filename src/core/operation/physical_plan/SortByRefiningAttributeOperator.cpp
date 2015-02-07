@@ -38,11 +38,8 @@ bool SortByRefiningAttributeOperator::open(QueryEvaluatorInternal * queryEvaluat
     ASSERT(sortEvaluator != NULL);
     ASSERT(this->getPhysicalPlanOptimizationNode()->getChildrenCount() == 1);
     if(sortEvaluator == NULL) return false;
-    Schema * schema = queryEvaluatorInternal->getSchema();
-    ForwardIndex * forwardIndex = queryEvaluatorInternal->getForwardIndex();
+    const Schema * schema = queryEvaluatorInternal->getSchema();
 
-    shared_ptr<vectorview<ForwardListPtr> > readView;
-    queryEvaluatorInternal->getForwardIndex_ReadView(readView);
     this->getPhysicalPlanOptimizationNode()->getChildAt(0)->getExecutableNode()->open(queryEvaluatorInternal,params);
     // extract all the information from forward index
     // 1. find the participating attributes
@@ -60,7 +57,7 @@ bool SortByRefiningAttributeOperator::open(QueryEvaluatorInternal * queryEvaluat
           break;
     	}
     	bool isValid = false;
-	const ForwardList * list = forwardIndex->getForwardList(readView, nextRecord->getRecordId(), isValid);
+	const ForwardList * list = queryEvaluatorInternal->indexReadToken.getForwardList(nextRecord->getRecordId(), isValid);
 	if (!isValid) // ignore the record if it's already deleted
           continue;
     	results.push_back(nextRecord);

@@ -23,7 +23,7 @@ bool MergeTopKOperator::open(QueryEvaluatorInternal * queryEvaluator, PhysicalPl
 	this->queryEvaluator = queryEvaluator;
 
 	if(this->queryEvaluator != NULL){ // only for mergeTopK ctest queryEvaluator can be NULL
-		queryEvaluator->getForwardIndex()->getForwardListDirectory_ReadView(forwardListDirectoryReadView);
+		forwardListDirectoryReadView = queryEvaluator->indexReadToken.forwardIndexReadViewSharedPtr;
 	}
 
 	if (params.feedbackRanker) {

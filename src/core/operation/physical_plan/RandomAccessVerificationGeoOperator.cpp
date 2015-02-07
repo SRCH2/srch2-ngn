@@ -21,7 +21,7 @@ namespace instantsearch {
 bool RandomAccessVerificationGeoOperator::open(QueryEvaluatorInternal * queryEvaluator, PhysicalPlanExecutionParameters & params){
 	this->queryEvaluator = queryEvaluator;
 	// get the forward list read view
-	this->queryEvaluator->getForwardIndex()->getForwardListDirectory_ReadView(this->forwardListDirectoryReadView);
+	this->forwardListDirectoryReadView = this->queryEvaluator->indexReadToken.forwardIndexReadViewSharedPtr;
 	this->queryShape = this->getPhysicalPlanOptimizationNode()->getLogicalPlanNode()->regionShape;
 
 	// finding the offset of the latitude and longitude attribute in the refining attributes' memory

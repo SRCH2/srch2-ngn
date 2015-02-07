@@ -29,9 +29,8 @@ PhysicalPlanRecordItem * FilterQueryOperator::getNext(const PhysicalPlanExecutio
 		if(nextRecord == NULL){
 			return NULL;
 		}
-		Schema * schema = queryEvaluatorInternal->getSchema();
-		ForwardIndex * forwardIndex = queryEvaluatorInternal->getForwardIndex();
-		if(hasAccessToRecord(forwardIndex, nextRecord->getRecordId()) && doPass(schema, forwardIndex, nextRecord)){
+		const Schema * schema = queryEvaluatorInternal->getSchema();
+		if(hasAccessToRecord(nextRecord->getRecordId()) && doPass(schema, nextRecord)){
 			return nextRecord;
 		}
 	}
@@ -67,7 +66,7 @@ FilterQueryOperator::FilterQueryOperator(RefiningAttributeExpressionEvaluator * 
 	this->roleId = roleId;
 }
 
-bool FilterQueryOperator::doPass(Schema * schema, ForwardIndex * forwardIndex ,PhysicalPlanRecordItem * record){
+bool FilterQueryOperator::doPass(const Schema * schema, PhysicalPlanRecordItem * record){
 	// Because we use this operator for filters and for access control. When we just have access control the filter query evaluator is NULL
 	if(this->filterQueryEvaluator == NULL) // filterQueryEvaluator is null. So we don't have any filter
 		return true;
@@ -78,12 +77,10 @@ bool FilterQueryOperator::doPass(Schema * schema, ForwardIndex * forwardIndex ,P
         attributes.push_back(attr->first);
     }
 
-    shared_ptr<vectorview<ForwardListPtr> > readView;
-    this->queryEvaluatorInternal->getForwardIndex_ReadView(readView);
     // now fetch the values of different attributes from forward index
     vector<TypedValue> typedValues;
     bool isValid = false;
-    const ForwardList * list = forwardIndex->getForwardList(readView, record->getRecordId() , isValid);
+    const ForwardList * list = this->queryEvaluatorInternal->indexReadToken.getForwardList(record->getRecordId() , isValid);
     // return false if this record is not valid (i.e., already deleted)
     if (!isValid)
       return false;
@@ -102,14 +99,11 @@ bool FilterQueryOperator::doPass(Schema * schema, ForwardIndex * forwardIndex ,P
     return this->filterQueryEvaluator->evaluate(valuesForEvaluation);
 }
 
-bool FilterQueryOperator::hasAccessToRecord(ForwardIndex * forwardIndex, unsigned recordId){
+bool FilterQueryOperator::hasAccessToRecord(unsigned recordId){
 	if(roleId == "") // it means that we don't have any access control check
 		return true;
 
-	shared_ptr<vectorview<ForwardListPtr> > forwardListDirectoryReadView;
-	forwardIndex->getForwardListDirectory_ReadView(forwardListDirectoryReadView);
-
-	return this->queryEvaluatorInternal->getForwardIndex()->hasAccessToForwardList(forwardListDirectoryReadView, recordId, this->roleId);
+	return this->queryEvaluatorInternal->indexReadToken.hasAccessToForwardList(recordId, this->roleId);
 }
 
 // The cost of open of a child is considered only once in the cost computation

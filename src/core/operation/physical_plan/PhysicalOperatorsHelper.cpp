@@ -38,8 +38,7 @@ bool verifyByRandomAccessHelper(QueryEvaluatorInternal * queryEvaluator, PrefixA
 			unsigned matchingKeywordId;
 			float termRecordStaticScore;
 			vector<unsigned> matchedAttributeIdsList;
-			if (queryEvaluator->getForwardIndex()->haveWordInRange(parameters.forwardListDirectoryReadView,
-					parameters.recordToVerify->getRecordId(),
+			if (queryEvaluator->indexReadToken.haveWordInRange(parameters.recordToVerify->getRecordId(),
 					minId, maxId,
 					termSearchableAttributeIdToFilterTermHits, term->getFilterAttrOperation(),
 					matchingKeywordId, matchedAttributeIdsList, termRecordStaticScore)) {
@@ -78,8 +77,7 @@ bool verifyByRandomAccessHelper(QueryEvaluatorInternal * queryEvaluator, PrefixA
 			unsigned matchingKeywordId;
 			float termRecordStaticScore;
 			vector<unsigned> matchedAttributeIdsList;
-			if (queryEvaluator->getForwardIndex()->haveWordInRange(parameters.forwardListDirectoryReadView,
-					parameters.recordToVerify->getRecordId(),
+			if (queryEvaluator->indexReadToken.haveWordInRange(parameters.recordToVerify->getRecordId(),
 					minId, maxId,
 					termSearchableAttributeIdToFilterTermHits, term->getFilterAttrOperation(),
 					matchingKeywordId, matchedAttributeIdsList, termRecordStaticScore)) {
@@ -144,10 +142,7 @@ bool verifyByRandomAccessOrHelper(PhysicalPlanOptimizationNode * node, PhysicalP
 bool verifyByRandomAccessGeoHelper(PhysicalPlanRandomAccessVerificationParameters & parameters, QueryEvaluatorInternal * queryEvaluator, Shape* queryShape, unsigned &latOffset, unsigned &longOffset){
 	// 1- get the forwardlist to get the location of the record from it
 	bool valid = false;
-	const ForwardList* forwardList = queryEvaluator->getForwardIndex()->getForwardList(
-			parameters.forwardListDirectoryReadView,
-			parameters.recordToVerify->getRecordId(),
-			valid);
+	const ForwardList* forwardList = queryEvaluator->indexReadToken.getForwardList(parameters.recordToVerify->getRecordId(),valid);
 
 	if(!valid){ // this record is invalid
 		return false;
@@ -169,7 +164,7 @@ bool verifyByRandomAccessGeoHelper(PhysicalPlanRandomAccessVerificationParameter
 }
 
 // this function finds the offset of the latitude and longitude attributes in the refining attributes memory
-void getLat_Long_Offset(unsigned & latOffset, unsigned & longOffset, Schema * schema){
+void getLat_Long_Offset(unsigned & latOffset, unsigned & longOffset, const Schema * schema){
 	Schema * storedSchema = Schema::create();
 	srch2::util::RecordSerializerUtil::populateStoredSchema(storedSchema, schema);
 	srch2::util::RecordSerializer compactRecDeserializer = srch2::util::RecordSerializer(*storedSchema);

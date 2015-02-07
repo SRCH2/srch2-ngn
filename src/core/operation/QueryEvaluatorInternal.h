@@ -98,43 +98,28 @@ public:
     //virtual int searchWithStemmer(const Query *query, QueryResults *queryResults, const int nextK = 0, bool &isStemmed) = 0;
 
     /// Get the in memory data stored with the record in the forwardindex. Access through the internal recordid.
-    StoredRecordBuffer getInMemoryData(unsigned internalRecordId) const ;
+    StoredRecordBuffer getInMemoryData_Safe(unsigned internalRecordId) const ;
 
 
-    void getForwardIndex_ReadView(shared_ptr<vectorview<ForwardListPtr> > & readView){
-	// We need to get the read view from this->indexReadToken
-	// instead of calling this->getTrie()->getTrieRootNode_ReadView()
-	// since the latter may give a read view that is different from
-	// the one we got when the search started.
-    	readView = this->indexReadToken.forwardIndexReadViewSharedPtr;
-    }
+    unsigned getTotalNumberOfRecords();
+
+    const bool isBulkLoadDone() const;
+    /*
+     * This function is only used in TEST.
+     * Do not use this API in any place higher than this layer.Nobody should access any of the indices
+     * directly unless it's from within the query optimzer.
+     */
+    const InvertedIndex *testOnly_getInvertedIndex();
 
     /*
      * This function is only used in TEST.
      * Do not use this API in any place higher than this layer.Nobody should access any of the indices
      * directly unless it's from within the query optimzer.
      */
-    const InvertedIndex *getInvertedIndex() {
-        return this->indexData->invertedIndex;
-    }
+    ForwardIndex * testOnly_getForwardIndex() ;
 
-    /*
-     * This function is only used in TEST.
-     * Do not use this API in any place higher than this layer.Nobody should access any of the indices
-     * directly unless it's from within the query optimzer.
-     */
-    ForwardIndex * getForwardIndex() {
-        return this->indexData->forwardIndex;
-    }
-
-
-    Schema * getSchema() {
-        return this->indexData->schemaInternal;
-    }
-
-    const Trie* getTrie() const {
-        return this->indexData->trie;
-    }
+    const Schema * getSchema() const ;
+    const Trie* testOnly_getTrie() const;
 
     boost::shared_ptr<PrefixActiveNodeSet> computeActiveNodeSet(Term *term) const;
 

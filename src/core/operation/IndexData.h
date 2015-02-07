@@ -110,6 +110,15 @@ typedef Trie Trie_Internal;
 
 struct IndexReadStateSharedPtr_Token
 {
+	void init(InvertedIndex * invertedIndex, ForwardIndex * forwardIndex,
+			Trie * trie, QuadTree * quadTree, const Schema * schema){
+		this->invertedIndex = invertedIndex;
+		this->forwardIndex = forwardIndex;
+		this->trie = trie;
+		this->quadTree = quadTree;
+		this->schema = schema;
+	}
+
     typedef boost::shared_ptr<TrieRootNodeAndFreeList > TrieRootNodeSharedPtr;
     TrieRootNodeSharedPtr trieRootNodeSharedPtr;
 
@@ -118,6 +127,9 @@ struct IndexReadStateSharedPtr_Token
 
     typedef boost::shared_ptr<vectorview<InvertedListContainerPtr> > InvertedIndexReadView;
     InvertedIndexReadView invertedIndexReadViewSharedPtr;
+
+    typedef boost::shared_ptr<vectorview<unsigned> > InvertedIndexKeywordIdsReadView;
+    InvertedIndexKeywordIdsReadView invertedIndexKeywordIdsReadViewSharedPtr;
 
     typedef boost::shared_ptr<QuadTreeRootNodeAndFreeLists> QuadTreeRootNodeSharedPtr;
     QuadTreeRootNodeSharedPtr quadTreeRootNodeSharedPtr;
@@ -130,8 +142,50 @@ struct IndexReadStateSharedPtr_Token
     	trieRootNodeSharedPtr.reset();
     	forwardIndexReadViewSharedPtr.reset();
     	invertedIndexReadViewSharedPtr.reset();
+    	invertedIndexKeywordIdsReadViewSharedPtr.reset();
     	quadTreeRootNodeSharedPtr.reset();
     }
+
+
+    /////////////////// Inverted Index Access Methods
+    void getInvertedListReadView(const unsigned invertedListId, shared_ptr<vectorview<unsigned> >& invertedListReadView) ;
+
+    // given a forworListId and invertedList offset, return the keyword offset
+    unsigned getKeywordOffset(unsigned forwardListId, unsigned invertedListOffset) ;
+
+    bool isValidTermPositionHit(unsigned forwardListId, unsigned keywordOffset,
+            const vector<unsigned>& filterAttributesList, ATTRIBUTES_OP attrOp,
+            vector<unsigned>& matchingKeywordAttributesList, float &termRecordStaticScore) ;
+
+    ////////////////// Forward Index Access Methods
+    const ForwardList *getForwardList(unsigned recordId, bool &valid);
+
+    bool hasAccessToForwardList(unsigned recordId, string &roleId);
+
+    // do binary search to probe in forward list
+    bool haveWordInRange(const unsigned recordId, const unsigned minId, const unsigned maxId,
+            const vector<unsigned>& filteringAttributesList,
+            ATTRIBUTES_OP attrOp,
+            unsigned &matchingKeywordId, vector<unsigned>& matchingKeywordAttributesList,
+            float &matchingKeywordRecordStaticScore)  ;
+
+    bool getExternalRecordIdFromInternalRecordId(const unsigned internalRecordId, std::string &externalRecordId);
+
+    bool getInternalRecordIdFromExternalRecordId(const std::string &externalRecordId, unsigned &internalRecordId) ;
+    /////////////////////// Trie Access Methods
+    const TrieNode *getTrieNodeFromUtf8String(const std::string &keywordStr) ;
+    void getPrefixString(const TrieNode* trieNode, std::string &in) ;
+
+    void getPrefixString(const TrieNode* trieNode, std::vector<CharType> &in) ;
+
+
+private:
+    InvertedIndex * invertedIndex;
+    ForwardIndex * forwardIndex;
+    Trie * trie;
+    QuadTree * quadTree;
+    const Schema * schema;
+
 };
 
 // Uses spinlock and volatile to increment count.
@@ -324,6 +378,7 @@ public:
     // recollection for deleted records
     mutable boost::shared_mutex globalRwMutexForReadersWriters;
     
+
     inline bool isMergeRequired() const{
     	return mergeRequired;
     }
@@ -331,6 +386,7 @@ public:
     virtual ~IndexData();
 
     void getReadView(IndexReadStateSharedPtr_Token &readToken);
+    void initializeIndexReadTokenHolder(IndexReadStateSharedPtr_Token & token) const;
 
     // add a record
     INDEXWRITE_RETVAL _addRecord(const Record *record, Analyzer *analyzer);

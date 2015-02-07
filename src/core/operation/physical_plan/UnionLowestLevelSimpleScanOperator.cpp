@@ -23,9 +23,9 @@ UnionLowestLevelSimpleScanOperator::~UnionLowestLevelSimpleScanOperator(){
 bool UnionLowestLevelSimpleScanOperator::open(QueryEvaluatorInternal * queryEvaluator, PhysicalPlanExecutionParameters & params){
     // first save the pointer to QueryEvaluator
     this->queryEvaluator = queryEvaluator;
-    this->queryEvaluator->getInvertedIndex()->getInvertedIndexDirectory_ReadView(invertedListDirectoryReadView);
-    this->queryEvaluator->getInvertedIndex()->getInvertedIndexKeywordIds_ReadView(invertedIndexKeywordIdsReadView);
-    this->queryEvaluator->getForwardIndex()->getForwardListDirectory_ReadView(forwardIndexDirectoryReadView);
+    invertedListDirectoryReadView = this->queryEvaluator->indexReadToken.invertedIndexReadViewSharedPtr;
+    invertedIndexKeywordIdsReadView = this->queryEvaluator->indexReadToken.invertedIndexKeywordIdsReadViewSharedPtr;
+    forwardIndexDirectoryReadView = this->queryEvaluator->indexReadToken.forwardIndexReadViewSharedPtr;
 
     // 1. get the pointer to logical plan node
     LogicalPlanNode * logicalPlanNode = this->getPhysicalPlanOptimizationNode()->getLogicalPlanNode();
@@ -44,9 +44,7 @@ bool UnionLowestLevelSimpleScanOperator::open(QueryEvaluatorInternal * queryEval
             iter.getItem(prefixNode, leafNode, distance);
             // get inverted list pointer and save it
             shared_ptr<vectorview<unsigned> > invertedListReadView;
-            this->queryEvaluator->getInvertedIndex()->
-                    getInvertedListReadView(invertedListDirectoryReadView,
-                            leafNode->getInvertedListOffset() , invertedListReadView);
+            this->queryEvaluator->indexReadToken.getInvertedListReadView(leafNode->getInvertedListOffset() , invertedListReadView);
             //Empty inverted lists should not be included in the lists of lowest level operators.
             if(invertedListReadView->size() == 0){
             	continue;
@@ -67,9 +65,7 @@ bool UnionLowestLevelSimpleScanOperator::open(QueryEvaluatorInternal * queryEval
 			iter.getItem(trieNode, editDistance);
 	        // get inverted list pointer and save it
 	        shared_ptr<vectorview<unsigned> > invertedListReadView;
-	        this->queryEvaluator->getInvertedIndex()->
-	                getInvertedListReadView(invertedListDirectoryReadView,
-	                        trieNode->getInvertedListOffset() , invertedListReadView);
+	        this->queryEvaluator->indexReadToken.getInvertedListReadView(trieNode->getInvertedListOffset() , invertedListReadView);
 	        //Empty inverted lists should not be included in the lists of lowest level operators.
             if(invertedListReadView->size() == 0){
             	continue;
@@ -126,9 +122,7 @@ PhysicalPlanRecordItem * UnionLowestLevelSimpleScanOperator::getNext(const Physi
     unsigned recordID = this->invertedLists.at(this->invertedListOffset)->at(this->cursorOnInvertedList);
 
     unsigned keywordOffset =
-            this->queryEvaluator->getInvertedIndex()->getKeywordOffset(this->forwardIndexDirectoryReadView,
-                    this->invertedIndexKeywordIdsReadView,
-                    recordID, this->invertedListIDs.at(this->invertedListOffset));
+            this->queryEvaluator->indexReadToken.getKeywordOffset(recordID, this->invertedListIDs.at(this->invertedListOffset));
 
     bool foundValidHit = 0;
     float termRecordStaticScore = 0;
@@ -136,9 +130,7 @@ PhysicalPlanRecordItem * UnionLowestLevelSimpleScanOperator::getNext(const Physi
     while (1) {
         // We check the record only if it's valid
         if (keywordOffset != FORWARDLIST_NOTVALID &&
-            this->queryEvaluator->getInvertedIndex()->isValidTermPositionHit(forwardIndexDirectoryReadView,
-                recordID,
-                keywordOffset,
+            this->queryEvaluator->indexReadToken.isValidTermPositionHit(recordID, keywordOffset,
                 term->getAttributesToFilter(),term->getFilterAttrOperation(), matchedAttributeIdsList,
                 termRecordStaticScore) ) {
         	foundValidHit = 1;
@@ -149,9 +141,7 @@ PhysicalPlanRecordItem * UnionLowestLevelSimpleScanOperator::getNext(const Physi
             recordID = this->invertedLists.at(this->invertedListOffset)->at(this->cursorOnInvertedList);
             // calculate record offset online
             keywordOffset =
-                        this->queryEvaluator->getInvertedIndex()->getKeywordOffset(this->forwardIndexDirectoryReadView,
-                                this->invertedIndexKeywordIdsReadView,
-                                recordID, this->invertedListIDs.at(this->invertedListOffset));
+                        this->queryEvaluator->indexReadToken.getKeywordOffset(recordID, this->invertedListIDs.at(this->invertedListOffset));
         } else {
             this->invertedListOffset ++;
             this->cursorOnInvertedList = 0;
@@ -159,9 +149,7 @@ PhysicalPlanRecordItem * UnionLowestLevelSimpleScanOperator::getNext(const Physi
                 recordID = this->invertedLists.at(this->invertedListOffset)->at(this->cursorOnInvertedList);
                 // calculate record offset online
                 keywordOffset =
-                            this->queryEvaluator->getInvertedIndex()->getKeywordOffset(this->forwardIndexDirectoryReadView,
-                                    this->invertedIndexKeywordIdsReadView,
-                                    recordID, this->invertedListIDs.at(this->invertedListOffset));
+                            this->queryEvaluator->indexReadToken.getKeywordOffset(recordID, this->invertedListIDs.at(this->invertedListOffset));
             }else{
                 return NULL;
             }

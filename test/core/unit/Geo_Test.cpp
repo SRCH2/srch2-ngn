@@ -186,9 +186,9 @@ void printResults(vector<vector<GeoElement*>*> & results){
 // get the externalId of a record from its internalid
 unsigned getExternalId(QueryEvaluator * queryEvaluator, const unsigned internalRecordId){
 	shared_ptr<vectorview<ForwardListPtr> > readView;
-	queryEvaluator->impl->getForwardIndex_ReadView(readView);
+	queryEvaluator->impl->testOnly_getForwardIndex()->getForwardListDirectory_ReadView(readView);
 	std::string externalRecordId;
-	queryEvaluator->impl->getForwardIndex()->getExternalRecordIdFromInternalRecordId(readView,internalRecordId,externalRecordId);
+	queryEvaluator->impl->testOnly_getForwardIndex()->getExternalRecordIdFromInternalRecordId(readView,internalRecordId,externalRecordId);
 	return atoi(externalRecordId.c_str());
 }
 

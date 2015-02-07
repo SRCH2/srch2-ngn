@@ -247,7 +247,6 @@ bool FacetOperator::open(QueryEvaluatorInternal * queryEvaluatorInternal, Physic
 
 	ASSERT(this->getPhysicalPlanOptimizationNode()->getChildrenCount() == 1);
 
-    Schema * schema = this->queryEvaluatorInternal->getSchema();
 	// first prepare internal structures based on the input
     preFilter(this->queryEvaluatorInternal);
 
@@ -262,11 +261,8 @@ bool FacetOperator::open(QueryEvaluatorInternal * queryEvaluatorInternal, Physic
  */
 PhysicalPlanRecordItem * FacetOperator::getNext(const PhysicalPlanExecutionParameters & params) {
 
-    Schema * schema = this->queryEvaluatorInternal->getSchema();
-    ForwardIndex * forwardIndex = this->queryEvaluatorInternal->getForwardIndex();
+    const Schema * schema = this->queryEvaluatorInternal->getSchema();
 	// move on the results once and do all facet calculations.
-    shared_ptr<vectorview<ForwardListPtr> > readView;
-    this->queryEvaluatorInternal->getForwardIndex_ReadView(readView);
 
     const ForwardList *forwardList;
     PhysicalPlanRecordItem *resultIter;
@@ -279,7 +275,7 @@ PhysicalPlanRecordItem * FacetOperator::getNext(const PhysicalPlanExecutionParam
       // extract all facet related refining attribute values from this record
       // by accessing the forward index only once.
       bool isValid = false;
-      forwardList = forwardIndex->getForwardList(readView, resultIter->getRecordId() , isValid);
+      forwardList = this->queryEvaluatorInternal->indexReadToken.getForwardList(resultIter->getRecordId() , isValid);
       if (isValid) // found a valid one; otherwise, continue
 	break;
     }
@@ -383,7 +379,7 @@ FacetOperator::FacetOperator(QueryEvaluatorInternal *queryEvaluatorInternal, std
 
 void FacetOperator::preFilter(QueryEvaluatorInternal *queryEvaluatorInternal){
 
-    Schema * schema = queryEvaluatorInternal->getSchema();
+    const Schema * schema = queryEvaluatorInternal->getSchema();
 
 	for(std::vector<std::string>::iterator facetField = fields.begin();
             facetField != fields.end() ; ++facetField){

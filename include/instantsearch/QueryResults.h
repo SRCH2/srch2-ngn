@@ -103,7 +103,7 @@ public:
      */
     unsigned getInternalRecordId(unsigned position) const ;
 
-    std::string getInMemoryRecordString(unsigned position) const ;
+    std::string getInMemoryRecordString_Safe(unsigned position) const ;
 
     /**
      * Gets the score of the 'position'-th item in the QueryResults object.

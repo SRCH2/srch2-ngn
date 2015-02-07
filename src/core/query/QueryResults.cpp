@@ -95,9 +95,9 @@ unsigned QueryResults::getInternalRecordId(unsigned position) const {
 /*
  *   this function is called only from unit test. Do not use it in wrapper layer.
  */
-std::string QueryResults::getInMemoryRecordString(unsigned position) const {
+std::string QueryResults::getInMemoryRecordString_Safe(unsigned position) const {
     unsigned internalRecordId = this->getInternalRecordId(position);
-    StoredRecordBuffer buffer = impl->queryEvaluatorInternal->getInMemoryData(internalRecordId);
+    StoredRecordBuffer buffer = impl->queryEvaluatorInternal->getInMemoryData_Safe(internalRecordId);
     string inMemoryString = "";
     if (!buffer.start)
     	inMemoryString = string(buffer.start.get(), buffer.length);

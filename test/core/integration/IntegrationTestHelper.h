@@ -448,7 +448,7 @@ void printResults(srch2is::QueryResults *queryResults, unsigned offset = 0)
                  << *iter << " "
                  << editDistances.at(editDistancesIter);
         }
-        cout<< "["<<  queryResults->getInMemoryRecordString(resultIter) <<"]" << endl;
+        cout<< "["<<  queryResults->getInMemoryRecordString_Safe(resultIter) <<"]" << endl;
     }
 }
 
@@ -480,7 +480,7 @@ void printResults(srch2is::QueryResults *queryResults, bool &isStemmed, unsigned
                  << *iter << " "
                  << editDistances.at(editDistancesIter);
         }
-        cout<< "["<<  queryResults->getInMemoryRecordString(resultIter) <<"]" << endl;
+        cout<< "["<<  queryResults->getInMemoryRecordString_Safe(resultIter) <<"]" << endl;
     //    cout<<endl;
     //    cout<<boolalpha;
     //    cout << "Is the record stemmed?  "<< isStemmed << endl;

@@ -17,9 +17,9 @@ UnionLowestLevelSuggestionOperator::~UnionLowestLevelSuggestionOperator(){
 bool UnionLowestLevelSuggestionOperator::open(QueryEvaluatorInternal * queryEvaluatorIntrnal, PhysicalPlanExecutionParameters & params){
 
     this->queryEvaluatorIntrnal = queryEvaluatorIntrnal;
-    this->queryEvaluatorIntrnal->getInvertedIndex()->getInvertedIndexDirectory_ReadView(invertedListDirectoryReadView);
-    this->queryEvaluatorIntrnal->getInvertedIndex()->getInvertedIndexKeywordIds_ReadView(invertedIndexKeywordIdsReadView);
-    this->queryEvaluatorIntrnal->getForwardIndex()->getForwardListDirectory_ReadView(forwardIndexDirectoryReadView);
+    invertedListDirectoryReadView = this->queryEvaluatorIntrnal->indexReadToken.invertedIndexReadViewSharedPtr;
+    invertedIndexKeywordIdsReadView = this->queryEvaluatorIntrnal->indexReadToken.invertedIndexKeywordIdsReadViewSharedPtr;
+    forwardIndexDirectoryReadView = this->queryEvaluatorIntrnal->indexReadToken.forwardIndexReadViewSharedPtr;
     // 1. first iterate on active nodes and find best estimated leaf nodes.
     Term * term = this->getPhysicalPlanOptimizationNode()->getLogicalPlanNode()->getTerm(params.isFuzzy);
     unsigned numberOfSuggestionsToFind = 350;
@@ -37,9 +37,8 @@ bool UnionLowestLevelSuggestionOperator::open(QueryEvaluatorInternal * queryEval
     for(std::vector<SuggestionInfo >::iterator suggestionInfoItr = suggestionPairs.begin();
 			suggestionInfoItr != suggestionPairs.end(); ++suggestionInfoItr){
         shared_ptr<vectorview<unsigned> > invertedListReadView;
-        queryEvaluatorIntrnal->getInvertedIndex()->
-                    getInvertedListReadView(invertedListDirectoryReadView,
-                            suggestionInfoItr->suggestedCompleteTermNode->getInvertedListOffset(), invertedListReadView);
+        queryEvaluatorIntrnal->indexReadToken.getInvertedListReadView(
+        		suggestionInfoItr->suggestedCompleteTermNode->getInvertedListOffset(), invertedListReadView);
         //Empty inverted lists should not be included in the lists of lowest level operators.
         if(invertedListReadView->size() == 0){
         	continue;
@@ -109,16 +108,12 @@ void UnionLowestLevelSuggestionOperator::initializeHeap(Term * term, Ranker * ra
 				break;
 			}
 			unsigned recordId = suggestionPairsInvertedListReadViews.at(suggestionIndex)->getElement(firstInvertedListCursotToAdd);
-			unsigned keywordOffset = queryEvaluatorIntrnal->getInvertedIndex()->getKeywordOffset(
-					this->forwardIndexDirectoryReadView,
-					this->invertedIndexKeywordIdsReadView,
+			unsigned keywordOffset = queryEvaluatorIntrnal->indexReadToken.getKeywordOffset(
 					recordId, suggestionPairs[suggestionIndex].suggestedCompleteTermNode->getInvertedListOffset());
 			// We check the record only if it's valid
 			vector<unsigned> filterAttributes;
 			if (keywordOffset != FORWARDLIST_NOTVALID &&
-				queryEvaluatorIntrnal->getInvertedIndex()->isValidTermPositionHit(forwardIndexDirectoryReadView,
-					recordId,
-					keywordOffset,
+				queryEvaluatorIntrnal->indexReadToken.isValidTermPositionHit(recordId, keywordOffset,
 					filterAttributes, ATTRIBUTES_OP_OR, matchedAttributeIdsList, termRecordStaticScore)) { // 0x7fffffff means OR on all attributes
 
 				// calculate the runtime score of this record
@@ -163,16 +158,12 @@ bool UnionLowestLevelSuggestionOperator::getNextHeapItem(Term * term, Ranker * r
 			break;
 		}
 		unsigned recordId = suggestionPairsInvertedListReadViews.at(item.suggestionIndex)->getElement(firstInvertedListCursotToAdd);
-		unsigned keywordOffset = queryEvaluatorIntrnal->getInvertedIndex()->getKeywordOffset(
-				this->forwardIndexDirectoryReadView,
-				this->invertedIndexKeywordIdsReadView,
+		unsigned keywordOffset = queryEvaluatorIntrnal->indexReadToken.getKeywordOffset(
 				recordId, suggestionPairs[item.suggestionIndex].suggestedCompleteTermNode->getInvertedListOffset());
 		// We check the record only if it's valid
 		vector<unsigned> attributeFilter;
 		if (keywordOffset != FORWARDLIST_NOTVALID &&
-			queryEvaluatorIntrnal->getInvertedIndex()->isValidTermPositionHit(forwardIndexDirectoryReadView,
-				recordId,
-				keywordOffset,
+			queryEvaluatorIntrnal->indexReadToken.isValidTermPositionHit(recordId, keywordOffset,
 				attributeFilter, ATTRIBUTES_OP_OR, matchedAttributeIdsList, termRecordStaticScore)) { // 0x7fffffff means OR on all attributes
 
 			float score = ranker->computeTermRecordRuntimeScore(termRecordStaticScore,

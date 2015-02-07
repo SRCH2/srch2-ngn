@@ -58,8 +58,8 @@ public:
 	~FilterQueryOperator();
 	FilterQueryOperator(RefiningAttributeExpressionEvaluator * filterQueryEvaluator, string &roleId) ;
 private:
-	bool doPass(Schema * schema, ForwardIndex * forwardIndex , PhysicalPlanRecordItem * record);
-	bool hasAccessToRecord(ForwardIndex * forwardIndex, unsigned recordId); // check the access of the role to this record
+	bool doPass(const Schema * schema, PhysicalPlanRecordItem * record);
+	bool hasAccessToRecord(unsigned recordId); // check the access of the role to this record
 	RefiningAttributeExpressionEvaluator * filterQueryEvaluator;
 	QueryEvaluatorInternal * queryEvaluatorInternal;
 	string roleId;   // role id for access control

@@ -19,7 +19,7 @@ bool MergeByShortestListOperator::open(QueryEvaluatorInternal * queryEvaluator, 
 	this->queryEvaluator = queryEvaluator;
 
 	if(queryEvaluator != NULL){ // Only for mergeByShortestList test case queryEvaluator can be NULL
-		queryEvaluator->getForwardIndex()->getForwardListDirectory_ReadView(forwardListDirectoryReadView);
+		forwardListDirectoryReadView = queryEvaluator->indexReadToken.forwardIndexReadViewSharedPtr;
 	}
 
 	// prepare the cache key

@@ -30,7 +30,7 @@ bool GeoSimpleScanOperator::open(QueryEvaluatorInternal * queryEvaluator, Physic
 	// first save the pointer to QueryEvaluator
 	this->queryEvaluator = queryEvaluator;
 	// get the forward list read view
-	this->queryEvaluator->getForwardIndex()->getForwardListDirectory_ReadView(this->forwardListDirectoryReadView);
+	this->forwardListDirectoryReadView = this->queryEvaluator->indexReadToken.forwardIndexReadViewSharedPtr;
 	// get the query shape
 	this->queryShape = this->getPhysicalPlanOptimizationNode()->getLogicalPlanNode()->regionShape;
 	// get quadTreeNodeSet which contains all the subtrees in quadtree which have the answers
@@ -85,10 +85,7 @@ PhysicalPlanRecordItem* GeoSimpleScanOperator::getNext(const PhysicalPlanExecuti
 		element = (*leafElements)[this->cursorOnVectorOfGeoElements];
 		// check the record and return it if it's valid.
 		bool valid = false;
-		const ForwardList* forwardList = this->queryEvaluator->getForwardIndex()->getForwardList(
-				 this->forwardListDirectoryReadView,
-				 element->forwardListID,
-				 valid);
+		const ForwardList* forwardList = this->queryEvaluator->indexReadToken.getForwardList(element->forwardListID, valid);
 		if(valid && this->queryShape->contain(element->point)){
 			foundValidHit = true;
 			break;

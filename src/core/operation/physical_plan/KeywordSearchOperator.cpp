@@ -19,7 +19,7 @@ bool KeywordSearchOperator::open(QueryEvaluatorInternal * queryEvaluator, Physic
     // we set fuzzy to false to the first session which is exact
     logicalPlan->setFuzzy(false);
     PhysicalPlanExecutionParameters params(0, logicalPlan->isFuzzy() , logicalPlan->getExactQuery()->getPrefixMatchPenalty(), logicalPlan->getQueryType());
-    params.totalNumberOfRecords = queryEvaluator->getForwardIndex()->getTotalNumberOfForwardLists_ReadView();
+    params.totalNumberOfRecords = queryEvaluator->getTotalNumberOfRecords();
 
     // setup feedback ranker if query is present in Feedback Index.
     params.feedbackRanker = NULL;

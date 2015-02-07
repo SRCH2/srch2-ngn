@@ -68,6 +68,7 @@ QueryEvaluatorInternal::QueryEvaluatorInternal(IndexReaderWriter *indexer , Quer
     this->indexer = indexer;
     setPhysicalOperatorFactory(new PhysicalOperatorFactory());
     this->physicalPlanRecordItemPool = new PhysicalPlanRecordItemPool();
+    this->indexData->initializeIndexReadTokenHolder(this->indexReadToken);
 }
 
 QueryEvaluatorInternal::~QueryEvaluatorInternal() {
@@ -95,7 +96,7 @@ int QueryEvaluatorInternal::suggest(const string & keyword, float fuzzyMatchPena
     readerPreEnter();
 
 
-    if (this->indexData->isBulkLoadDone() == false){
+    if (this->isBulkLoadDone() == false){
         /*
          * Every reader must call this method before exiting.
          * This method releases all the readviews and unlocks the global
@@ -128,15 +129,7 @@ int QueryEvaluatorInternal::suggest(const string & keyword, float fuzzyMatchPena
     for(std::vector<SuggestionInfo >::iterator suggestion = suggestionPairs.begin() ;
             suggestion != suggestionPairs.end() && suggestionCount < numberOfSuggestionsToReturn ; ++suggestion , ++suggestionCount){
       string suggestionString ;
-      boost::shared_ptr<TrieRootNodeAndFreeList > trieRootNode_ReadView;
-
-      // We need to get the read view from this->indexReadToken
-      // instead of calling this->getTrie()->getTrieRootNode_ReadView()
-      // since the latter may give a read view that is different from
-      // the one we got when the search started.
-      trieRootNode_ReadView = this->indexReadToken.trieRootNodeSharedPtr;
-      this->getTrie()->getPrefixString(trieRootNode_ReadView->root,
-                       suggestion->suggestedCompleteTermNode, suggestionString);
+      this->indexReadToken.getPrefixString(suggestion->suggestedCompleteTermNode, suggestionString);
       suggestions.push_back(suggestionString);
     }
 
@@ -306,13 +299,6 @@ int QueryEvaluatorInternal::search(LogicalPlan * logicalPlan , QueryResults *que
     topOperator->open(this, dummy );
 
 
-    boost::shared_ptr<TrieRootNodeAndFreeList > trieRootNode_ReadView;
-
-    // We need to get the read view from this->indexReadToken
-    // instead of calling this->getTrie()->getTrieRootNode_ReadView()
-    // since the latter may give a read view that is different from
-    // the one we got when the search started.
-    trieRootNode_ReadView = this->indexReadToken.trieRootNodeSharedPtr;
     while(true){
 
         PhysicalPlanRecordItem * newRecord = topOperator->getNext(dummy);
@@ -335,8 +321,7 @@ int QueryEvaluatorInternal::search(LogicalPlan * logicalPlan , QueryResults *que
 
         for(unsigned i=0; i < queryResult->matchingKeywordTrieNodes.size() ; i++){
             std::vector<CharType> temp;
-            this->getTrie()->getPrefixString(trieRootNode_ReadView->root,
-                    queryResult->matchingKeywordTrieNodes.at(i), temp);
+            this->indexReadToken.getPrefixString(queryResult->matchingKeywordTrieNodes.at(i), temp);
             string str;
             charTypeVectorToUtf8String(temp, str);
             queryResult->matchingKeywords.push_back(str);
@@ -347,8 +332,7 @@ int QueryEvaluatorInternal::search(LogicalPlan * logicalPlan , QueryResults *que
         // instead of calling this->getTrie()->getTrieRootNode_ReadView()
         // since the latter may give a read view that is different from
         // the one we got when the search started.
-        this->getForwardIndex()->getExternalRecordIdFromInternalRecordId(this->indexReadToken.forwardIndexReadViewSharedPtr,
-                                         queryResult->internalRecordId,queryResult->externalRecordId );
+        this->indexReadToken.getExternalRecordIdFromInternalRecordId(queryResult->internalRecordId,queryResult->externalRecordId );
     }
 
     if(facetOperatorPtr != NULL){
@@ -396,7 +380,7 @@ void QueryEvaluatorInternal::search(const std::string & primaryKey, QueryResults
      * that we have.
      */
     readerPreEnter();
-    if ( this->indexData->forwardIndex->getInternalRecordIdFromExternalRecordId(primaryKey , internalRecordId) == false ){
+    if ( this->indexReadToken.getInternalRecordIdFromExternalRecordId(primaryKey , internalRecordId) == false ){
 
         /*
          * Every reader must call this method before exiting.
@@ -409,14 +393,7 @@ void QueryEvaluatorInternal::search(const std::string & primaryKey, QueryResults
     // The query result to be returned.
     // First check to see if the record is valid.
     bool validForwardList;
-    shared_ptr<vectorview<ForwardListPtr> > readView;
-
-    // We need to get the read view from this->indexReadToken
-    // instead of calling this->getTrie()->getTrieRootNode_ReadView()
-    // since the latter may give a read view that is different from
-    // the one we got when the search started.
-    readView = this->indexReadToken.forwardIndexReadViewSharedPtr;
-    this->indexData->forwardIndex->getForwardList(readView, internalRecordId, validForwardList);
+    this->indexReadToken.getForwardList(internalRecordId, validForwardList);
     if (validForwardList == false) {
 
         /*
@@ -444,11 +421,43 @@ void QueryEvaluatorInternal::search(const std::string & primaryKey, QueryResults
 }
 
 // Get the in memory data stored with the record in the forwardindex. Access through the internal recordid.
-StoredRecordBuffer QueryEvaluatorInternal::getInMemoryData(unsigned internalRecordId) const {
+StoredRecordBuffer QueryEvaluatorInternal::getInMemoryData_Safe(unsigned internalRecordId) const {
     // This method is not used in the data flow of read queries, readview is acquired later on inside
     // forward index method for getting inMemory data..
     boost::shared_lock<boost::shared_mutex> sLock(this->indexData->globalRwMutexForReadersWriters);
-    return this->indexData->getInMemoryData(internalRecordId);
+    return this->indexer->getInMemoryData(internalRecordId);
+}
+
+unsigned QueryEvaluatorInternal::getTotalNumberOfRecords(){
+	return this->indexReadToken.forwardIndexReadViewSharedPtr->size();
+}
+
+const bool QueryEvaluatorInternal::isBulkLoadDone() const { return this->indexData->isBulkLoadDone(); }
+/*
+ * This function is only used in TEST.
+ * Do not use this API in any place higher than this layer.Nobody should access any of the indices
+ * directly unless it's from within the query optimzer.
+ */
+const InvertedIndex *QueryEvaluatorInternal::testOnly_getInvertedIndex() {
+    return this->indexData->invertedIndex;
+}
+
+/*
+ * This function is only used in TEST.
+ * Do not use this API in any place higher than this layer.Nobody should access any of the indices
+ * directly unless it's from within the query optimzer.
+ */
+ForwardIndex * QueryEvaluatorInternal::testOnly_getForwardIndex() {
+    return this->indexData->forwardIndex;
+}
+
+
+const Schema * QueryEvaluatorInternal::getSchema() const {
+    return this->indexer->getSchema();
+}
+
+const Trie* QueryEvaluatorInternal::testOnly_getTrie() const {
+    return this->indexData->trie;
 }
 
 // TODO : this function might need to be deleted from here ...
@@ -474,7 +483,8 @@ boost::shared_ptr<PrefixActiveNodeSet> QueryEvaluatorInternal::computeActiveNode
     if ( cacheResponse == 0) { // NO CacheHit,  response = 0
         //std::cout << "|NO Cache|" << std::endl;;
         // No prefix has a cached TermActiveNode Set. Create one for the empty std::string "".
-        initialPrefixActiveNodeSet.reset(new PrefixActiveNodeSet(this->indexReadToken.trieRootNodeSharedPtr, term->getThreshold(), this->indexData->getSchema()->getSupportSwapInEditDistance()));
+        initialPrefixActiveNodeSet.reset(new PrefixActiveNodeSet(this->indexReadToken.trieRootNodeSharedPtr,
+        		term->getThreshold(), this->getSchema()->getSupportSwapInEditDistance()));
     }
     cachedPrefixLength = initialPrefixActiveNodeSet->getPrefixLength();
 

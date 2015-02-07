@@ -56,6 +56,66 @@ using namespace srch2::util;
 namespace srch2 {
 namespace instantsearch {
 
+/////////////////// Inverted Index Access Methods
+void IndexReadStateSharedPtr_Token::getInvertedListReadView(const unsigned invertedListId, shared_ptr<vectorview<unsigned> >& invertedListReadView) {
+	this->invertedIndex->getInvertedListReadView(this->invertedIndexReadViewSharedPtr, invertedListId, invertedListReadView);
+}
+
+// given a forworListId and invertedList offset, return the keyword offset
+unsigned IndexReadStateSharedPtr_Token::getKeywordOffset(unsigned forwardListId, unsigned invertedListOffset) {
+	return this->invertedIndex->getKeywordOffset(forwardIndexReadViewSharedPtr, invertedIndexKeywordIdsReadViewSharedPtr,
+			forwardListId, invertedListOffset);
+}
+
+bool IndexReadStateSharedPtr_Token::isValidTermPositionHit(unsigned forwardListId, unsigned keywordOffset,
+        const vector<unsigned>& filterAttributesList, ATTRIBUTES_OP attrOp,
+        vector<unsigned>& matchingKeywordAttributesList, float &termRecordStaticScore) {
+	return this->invertedIndex->isValidTermPositionHit(forwardIndexReadViewSharedPtr,
+			forwardListId, keywordOffset, filterAttributesList,
+			attrOp, matchingKeywordAttributesList, termRecordStaticScore);
+}
+
+////////////////// Forward Index Access Methods
+const ForwardList *IndexReadStateSharedPtr_Token::getForwardList(unsigned recordId, bool &valid){
+	return this->forwardIndex->getForwardList(forwardIndexReadViewSharedPtr, recordId, valid);
+}
+
+bool IndexReadStateSharedPtr_Token::hasAccessToForwardList(unsigned recordId, string &roleId){
+	return this->forwardIndex->hasAccessToForwardList(forwardIndexReadViewSharedPtr, recordId, roleId);
+}
+
+// do binary search to probe in forward list
+bool IndexReadStateSharedPtr_Token::haveWordInRange(const unsigned recordId, const unsigned minId, const unsigned maxId,
+        const vector<unsigned>& filteringAttributesList,
+        ATTRIBUTES_OP attrOp,
+        unsigned &matchingKeywordId, vector<unsigned>& matchingKeywordAttributesList,
+        float &matchingKeywordRecordStaticScore)  {
+	return this->forwardIndex->haveWordInRange(forwardIndexReadViewSharedPtr,
+			recordId, minId, maxId,
+			filteringAttributesList, attrOp,
+			matchingKeywordId, matchingKeywordAttributesList, matchingKeywordRecordStaticScore);
+}
+
+bool IndexReadStateSharedPtr_Token::getExternalRecordIdFromInternalRecordId(const unsigned internalRecordId, std::string &externalRecordId){
+	return this->forwardIndex->getExternalRecordIdFromInternalRecordId(forwardIndexReadViewSharedPtr, internalRecordId, externalRecordId);
+}
+
+bool IndexReadStateSharedPtr_Token::getInternalRecordIdFromExternalRecordId(const std::string &externalRecordId, unsigned &internalRecordId) {
+	return this->getInternalRecordIdFromExternalRecordId(externalRecordId, internalRecordId);
+}
+/////////////////////// Trie Access Methods
+const TrieNode *IndexReadStateSharedPtr_Token::getTrieNodeFromUtf8String(const std::string &keywordStr) {
+	return this->trie->getTrieNodeFromUtf8String(trieRootNodeSharedPtr->root , keywordStr);
+}
+void IndexReadStateSharedPtr_Token::getPrefixString(const TrieNode* trieNode, std::string &in) {
+	this->trie->getPrefixString(trieRootNodeSharedPtr->root, trieNode, in);
+}
+
+void IndexReadStateSharedPtr_Token::getPrefixString(const TrieNode* trieNode, std::vector<CharType> &in) {
+	this->trie->getPrefixString(trieRootNodeSharedPtr->root, trieNode, in);
+}
+
+
 IndexData::IndexData(const string &directoryName, Analyzer *analyzer,
 		Schema *schema, const StemmerNormalizerFlagType &stemmerFlag) {
 
@@ -183,7 +243,12 @@ void IndexData::getReadView(IndexReadStateSharedPtr_Token &readToken)
     this->quadTree->getQuadTreeRootNode_ReadView(readToken.quadTreeRootNodeSharedPtr);
     this->forwardIndex->getForwardListDirectory_ReadView(readToken.forwardIndexReadViewSharedPtr);
     this->invertedIndex->getInvertedIndexDirectory_ReadView(readToken.invertedIndexReadViewSharedPtr);
+    this->invertedIndex->getInvertedIndexKeywordIds_ReadView(readToken.invertedIndexKeywordIdsReadViewSharedPtr);
     this->readCounter->increment();
+}
+
+void IndexData::initializeIndexReadTokenHolder(IndexReadStateSharedPtr_Token & token) const{
+	token.init(invertedIndex, forwardIndex, trie, quadTree, schemaInternal);
 }
 
 INDEXWRITE_RETVAL IndexData::_aclModifyRecordAccessList(const std::string& resourcePrimaryKeyID,
