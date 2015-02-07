@@ -39,10 +39,13 @@ namespace instantsearch
 
 
 bool PhysicalOperatorsCache::getPhysicalOperatorsInfo(string & key,  boost::shared_ptr<PhysicalOperatorCacheObject> & in){
-	return this->cacheContainer->get(key , in);
+	// TODO : Physical operators cache is not safe w.r.t. readview/writeview
+	return false;
+//	return this->cacheContainer->get(key , in);
 }
 void PhysicalOperatorsCache::setPhysicalOperatosInfo(string & key , boost::shared_ptr<PhysicalOperatorCacheObject> object){
-	this->cacheContainer->put(key , object);
+	// TODO : Physical operators cache is not safe w.r.t. readview/writeview
+//	this->cacheContainer->put(key , object);
 }
 int PhysicalOperatorsCache::clear(){
 	return this->cacheContainer->clear();
