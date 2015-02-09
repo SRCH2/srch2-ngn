@@ -1,0 +1,35 @@
+#!/bin/bash
+__DATA_FILE="file.json"
+__CORE_NAME="stackoverflow"
+__LICENSE_FILE="srch2_license_key.txt"
+__STOP_WORDS="stop-words.txt"
+__PROTECTED_WORDS="srch2_protected_words.txt"
+__DISCOVERY_PORT=54000
+__BIN_DIR_NAME="bin"
+__CONF_TEMP_BASE_NAME="conf-template-base.xml"
+__CONF_TEMP_NAME="conf-template.xml"
+
+__IP_ADDRESSES=(192.168.1.203 )
+__GROUP_NAMES=(group-203)
+__GROUPS=(0)
+__LOGIN_USERS=(jamshid)
+__SRCH2_HOMES=(/home/jamshid/mini_cluster)
+### node information of each machine
+__GROUP_PROCESS_COUNTS=(100)
+__DATA_FILE_REL_PATHS=( data )
+__LOG_DIR_REL_PATHS=( ./logs/ )
+__SRC_DIRS=( /home/jamshid/workspace-srch2-v4/srch2-ngn )
+__BINARY_FILES=( /home/jamshid/workspace-srch2-v4/srch2-ngn/build/src/server/srch2-search-server )
+__DBUILD64BITiS=(1)
+
+
+
+
+
+
+############################# Work Environment #############################
+############# NOTE : This section must not be shipped with the product #####
+
+
+__WORK_ENVIRONMENT_MASTER=0
+__SYNERGY_CONF_PATH=/etc/synergy/synergy.conf

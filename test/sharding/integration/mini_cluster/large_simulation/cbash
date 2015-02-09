@@ -1,0 +1,84 @@
+#!/bin/bash
+. ./cluster_config.sh
+
+############# read the arguments #################
+
+__abort()
+{
+    echo "Usage: $0 --data[-d] inputDataFile --prefix[-p] outputNamePrefix --suffix[-d] outputNameSuffix "
+}
+isScript=false
+IFS=' ' read -a nodes <<< "${__GROUPS[@]}"
+command="ls"
+while [[ $1 ]] ; do
+    case $1 in
+    '--script')
+    ;;
+    '-s')
+        isScript=true
+        shift
+        continue
+    ;;
+    '--nodes')
+    ;;
+    '-n')
+        IFS=' ' read -a nodes <<< "$(echo $2 | tr ',' ' ')"
+        shift
+        shift
+        continue
+    ;;
+    '--command');;
+    '-c')
+        command="$2"
+        shift
+        shift
+ 	while [[ $1 ]] ; do
+		command="$command $1"
+                shift
+	done
+        shift
+        continue
+    ;;
+    esac
+    shift
+done
+
+echo "Command is going to be : ---$command---"
+echo "Target groups are : ${nodes[@]}"
+for i in "${nodes[@]}"
+do
+    echo "Group ID $i"
+#    echo $i
+    if [[ $isScript == true ]]; then
+        echo "Script mode."
+        __IP_ADDRESS=${__IP_ADDRESSES[$i]}
+        __GROUP_NAME=${__GROUP_NAMES[$i]}
+        __GROUP=$i
+        __LOGIN_USER=${__LOGIN_USERS[$i]}
+        __SRCH2_HOME=${__SRCH2_HOMES[$i]}
+        __GROUP_PROCESS_COUNT=${__GROUP_PROCESS_COUNTS[$i]}
+        __DATA_FILE_REL_PATH=${__DATA_FILE_REL_PATHS[$i]}
+        __LOG_DIR_REL_PATH=${__LOG_DIR_REL_PATHS[$i]}
+        __SRC_DIR=${__SRC_DIRS[$i]}
+        __BINARY_FILE=${__BINARY_FILES[$i]}
+        __DBUILD64BIT=${__DBUILD64BITS[$i]}
+#        echo "ssh ${__LOGIN_USERS[$i]}@${__IP_ADDRESSES[$i]} -C bash $__SRCH2_HOME/run_cluster_command $__IP_ADDRESS $__GROUP_NAME $__GROUP $__LOGIN_USER $__SRCH2_HOME $__GROUP_PROCESS_COUNT $__DATA_FILE_REL_PATH $__LOG_DIR_REL_PATH $__SRC_DIR $__CORE_NAME '$command'"
+        ssh ${__LOGIN_USERS[$i]}@${__IP_ADDRESSES[$i]} -C bash $__SRCH2_HOME/bin/run_cluster_command \
+				$__IP_ADDRESS \
+				$__GROUP_NAME \
+				$__GROUP \
+				$__LOGIN_USER \
+				$__SRCH2_HOME \
+				$__GROUP_PROCESS_COUNT \
+				$__DATA_FILE_REL_PATH \
+				$__LOG_DIR_REL_PATH \
+                                $__SRC_DIR \
+                                $__BINARY_FILE \
+				$__CORE_NAME \
+				$__DBUILD64BIT \
+				\"$command\"
+    else
+        ssh ${__LOGIN_USERS[$i]}@${__IP_ADDRESSES[$i]} -C "$command"
+        echo ssh ${__LOGIN_USERS[$i]}@${__IP_ADDRESSES[$i]} -C "$command"
+    fi
+done

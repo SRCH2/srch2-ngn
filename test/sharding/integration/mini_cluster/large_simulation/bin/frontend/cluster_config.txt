@@ -1,0 +1,4 @@
+ports|7049 7050 7051 7052
+#ports|7001 7002 7003 7004
+hostnames|192.168.1.203 192.168.1.203 192.168.1.203 192.168.1.203
+#hostnames|localhost localhost localhost localhost

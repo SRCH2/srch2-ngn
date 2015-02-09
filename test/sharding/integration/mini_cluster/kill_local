@@ -1,0 +1,2 @@
+#!/bin/bash
+bash ./cbash -n 3 -c "killall -9 srch2-search-server"

@@ -1,0 +1,2 @@
+#!/bin/bash
+bash ./cbash -s -c "bash ./bin/run-group.sh"
