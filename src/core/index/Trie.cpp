@@ -2050,25 +2050,20 @@ void Trie::getPrefixString(const TrieNode* rootReadView, const TrieNode* trieNod
     while (nodeIter->getDepth() < prefix_node_depth) {
         nodeIter = nodeIter->findLowerBoundChildByMinId(minId);
 
-	// If the node is not found, then something is wrong with the trie.
-	// Our earier investigation showed that "trieNode" was not found in the 
-	// read view of the trie. Instead it's found in the write view.
+	// If the node is not found, or the depth is not right,
+        // then something is wrong with the trie.
+	// Our earier investigation showed that in this case "trieNode" was 
+        // not found in the read view of the trie. Instead it's found in the write view.
 	// The bug is still not fixed yet.  For now, we want to do defensive
 	// programming by returning an empty string.
 	// TODO: Fix the hidden bug later!!!
-	if (nodeIter == NULL) {
+	if (nodeIter == NULL || ( nodeIter != NULL && nodeIter->getDepth() > prefix_node_depth )) {
 	  in.clear();
 	  return;
 	}
 
         ASSERT(nodeIter != NULL);
         ASSERT(nodeIter->getDepth() <= prefix_node_depth);
-
-	// defensive programming to take care of
-	// the case where the trie is not in a consistent state
-	if (nodeIter->getDepth() > prefix_node_depth) {
-	  in.resize(nodeIter->getDepth());
-	}
 
         in.at(nodeIter->getDepth() - 1) = nodeIter->getCharacter();
     }
