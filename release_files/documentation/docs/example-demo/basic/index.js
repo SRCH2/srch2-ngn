@@ -1,7 +1,7 @@
 /*
  * This js is used for the basic movie demo for SRCH2 javascript library.
  * It uses the SRCH2 search API as described at
- *     http://srch2.com/releases/4.4.2/docs/restful-search/
+ *     http://srch2.com/releases/4.4.3/docs/restful-search/
  */
 
 client = {
@@ -10,7 +10,8 @@ client = {
          * Initialize the server setting
          */ 
         var srch2ServerSetting = {
-            serverUrl : "http://127.0.0.1:8081/",
+	    // serverUrl : "http://127.0.0.1:8081/", // use your own server URL
+	    serverUrl : "http://demo.srch2.com/srch2_movies_engine/",
             debug : true, // enable the debug mode which will display debug messages to the console. 
                           // IE may not have "console.log" function. If you are using IE, please set it to false.
         };

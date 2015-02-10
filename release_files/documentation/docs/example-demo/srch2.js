@@ -1,5 +1,5 @@
 
-// Check http://srch2.com/releases/4.4.2/docs/ for more information
+// Check http://srch2.com/releases/4.4.3/docs/ for more information
 // about the API of the SRCH server.
 
 srch2 = {
