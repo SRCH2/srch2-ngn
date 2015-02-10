@@ -18,19 +18,19 @@ using namespace std;
 using srch2::util::Logger;
 
 MongoDBConnector::MongoDBConnector() {
-    serverHandle = NULL;
+    serverInterface = NULL;
     oplogConnection = NULL;
     mongoConnector = NULL;
     lastAccessedLogRecordTime = 0;
 }
 
 //Init the connector, call connect
-int MongoDBConnector::init(ServerInterface *serverHandle) {
-    this->serverHandle = serverHandle;
+int MongoDBConnector::init(ServerInterface *serverInterface) {
+    this->serverInterface = serverInterface;
 
     // For MongoDB, the primary key should always be "_id".
     std::string uniqueKey;
-    this->serverHandle->configLookUp("uniqueKey", uniqueKey);
+    this->serverInterface->configLookUp("uniqueKey", uniqueKey);
     if (uniqueKey.compare("_id") != 0) {
         Logger::error(
                 "MOGNOLISTENER: The PrimaryKey in the config file for the "
@@ -48,11 +48,11 @@ int MongoDBConnector::init(ServerInterface *serverHandle) {
 //Check config validity. e.g. if contains port, dbname, etc.
 bool MongoDBConnector::checkConfigValidity() {
     std::string host, port, db, uniqueKey, collection;
-    this->serverHandle->configLookUp("host", host);
-    this->serverHandle->configLookUp("port", port);
-    this->serverHandle->configLookUp("db", db);
-    this->serverHandle->configLookUp("uniqueKey", uniqueKey);
-    this->serverHandle->configLookUp("collection", collection);
+    this->serverInterface->configLookUp("host", host);
+    this->serverInterface->configLookUp("port", port);
+    this->serverInterface->configLookUp("db", db);
+    this->serverInterface->configLookUp("uniqueKey", uniqueKey);
+    this->serverInterface->configLookUp("collection", collection);
 
     bool ret = (host.size() != 0) && (port.size() != 0) && (db.size() != 0)
             && (uniqueKey.size() != 0) && (collection.size() != 0);
@@ -77,9 +77,9 @@ bool MongoDBConnector::connectToDB() {
     string mongoNamespace = "local.oplog.rs";
 
     string host, port, listenerWaitTimeStr;
-    this->serverHandle->configLookUp("host", host);
-    this->serverHandle->configLookUp("port", port);
-    this->serverHandle->configLookUp("listenerWaitTime", listenerWaitTimeStr);
+    this->serverInterface->configLookUp("host", host);
+    this->serverInterface->configLookUp("port", port);
+    this->serverInterface->configLookUp("listenerWaitTime", listenerWaitTimeStr);
 
     int listenerWaitTime = 1;
     if (listenerWaitTimeStr.size() != 0) {
@@ -143,8 +143,8 @@ bool MongoDBConnector::connectToDB() {
 int MongoDBConnector::createNewIndexes() {
     string mongoNamespace = "local.oplog.rs";
     string dbname, collection;
-    this->serverHandle->configLookUp("db", dbname);
-    this->serverHandle->configLookUp("collection", collection);
+    this->serverInterface->configLookUp("db", dbname);
+    this->serverInterface->configLookUp("collection", collection);
     string filterNamespace = dbname + "." + collection;
 
     do {
@@ -166,7 +166,7 @@ int MongoDBConnector::createNewIndexes() {
                     string recNS = obj.getStringField("ns");
 
                     string jsonRecord = obj.jsonString();
-                    if (this->serverHandle->insertRecord(jsonRecord) == 0) {
+                    if (this->serverInterface->insertRecord(jsonRecord) == 0) {
                         ++indexedRecordsCount;
                     }
 
@@ -202,8 +202,8 @@ int MongoDBConnector::createNewIndexes() {
 bool MongoDBConnector::loadLastAccessedLogRecordTime() {
     std::string dataDir, srch2Home;
 
-    this->serverHandle->configLookUp("srch2Home", srch2Home);
-    this->serverHandle->configLookUp("dataDir", dataDir);
+    this->serverInterface->configLookUp("srch2Home", srch2Home);
+    this->serverInterface->configLookUp("dataDir", dataDir);
     std::string path = srch2Home + "/" + dataDir + "/mongodb_data/"
             + "data.bin";
 
@@ -228,8 +228,8 @@ bool MongoDBConnector::loadLastAccessedLogRecordTime() {
 void MongoDBConnector::saveLastAccessedLogRecordTime() {
     std::string srch2Home;
     std::string dataDir;
-    this->serverHandle->configLookUp("srch2Home", srch2Home);
-    this->serverHandle->configLookUp("dataDir", dataDir);
+    this->serverInterface->configLookUp("srch2Home", srch2Home);
+    this->serverInterface->configLookUp("dataDir", dataDir);
     std::string path = srch2Home + "/" + dataDir + "/mongodb_data/";
 
     if (!checkDirExisted(path.c_str())) {
@@ -249,9 +249,9 @@ void MongoDBConnector::saveLastAccessedLogRecordTime() {
 int MongoDBConnector::runListener() {
     string mongoNamespace = "local.oplog.rs";
     string dbname, collection, listenerWaitTimeStr;
-    this->serverHandle->configLookUp("db", dbname);
-    this->serverHandle->configLookUp("collection", collection);
-    this->serverHandle->configLookUp("listenerWaitTime", listenerWaitTimeStr);
+    this->serverInterface->configLookUp("db", dbname);
+    this->serverInterface->configLookUp("collection", collection);
+    this->serverInterface->configLookUp("listenerWaitTime", listenerWaitTimeStr);
     string filterNamespace = dbname + "." + collection;
 
     int listenerWaitTime = 1;
@@ -354,7 +354,7 @@ void MongoDBConnector::parseOpLogObject(mongo::BSONObj& bobj,
     }
 
     string uniqueKey;
-    this->serverHandle->configLookUp("uniqueKey", uniqueKey);
+    this->serverInterface->configLookUp("uniqueKey", uniqueKey);
 
     switch (operation[0]) {
     case 'i':
@@ -362,7 +362,7 @@ void MongoDBConnector::parseOpLogObject(mongo::BSONObj& bobj,
         // Parse example data and insert
         mongo::BSONObj bsonData = bobj.getObjectField("o");
         string jsonRecord = bsonData.jsonString();
-        this->serverHandle->insertRecord(jsonRecord);
+        this->serverInterface->insertRecord(jsonRecord);
         break;
     }
     case 'd':
@@ -386,7 +386,7 @@ void MongoDBConnector::parseOpLogObject(mongo::BSONObj& bobj,
 
         Logger::debug("MOGNOLISTENER: Delete pk = %s  val =  %s .",
                 uniqueKey.c_str(), primaryKeyStringValue.c_str());
-        this->serverHandle->deleteRecord(primaryKeyStringValue);
+        this->serverInterface->deleteRecord(primaryKeyStringValue);
 
         break;
     }
@@ -456,7 +456,7 @@ void MongoDBConnector::parseOpLogObject(mongo::BSONObj& bobj,
         }
 
         string jsonRecord = updateRecord.jsonString();
-        this->serverHandle->updateRecord(primaryKeyStringValue, jsonRecord);
+        this->serverInterface->updateRecord(primaryKeyStringValue, jsonRecord);
 
         break;
     }

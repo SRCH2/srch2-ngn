@@ -4,11 +4,13 @@
 
 The SRCH2 engine provides connectors for
 [MySQL](http://www.mysql.com/), [SQLite](http://www.sqlite.org/),
-[SQL Server](http://www.microsoft.com/en-us/server-cloud/products/sql-server/) and
+[SQL Server](http://www.microsoft.com/en-us/server-cloud/products/sql-server/), and
+[Oracle](http://www.oracle.com/technetwork/indexes/downloads/index.html), and
 [MongoDB](http://www.mongodb.org/).  Notice that a SRCH2 instance can
 have multiple data sources ("cores" as described in
 [here](configuration.mkd#12-cores-optional)). Each core can be a JSON
-file, a MySQL table, a SQLite table, a SQL Server table, or a MongoDB table.  Each SRCH2 connector for a
+file, a MySQL table, a SQLite table, a SQL Server table, an Oracle
+table, or a MongoDB table.  Each SRCH2 connector for a
 database builds indexes for the records in the table,  and
 periodically checks data updates to incrementally maintain the
 indexes.
@@ -393,7 +395,7 @@ setup the SQL Server Driver for Linux:
 shell> ./srch2-install-sqlserver-odbc-linux.sh
 ```
 
-You can skip the rest of Section 4.1, which describes the detals of
+You can skip the rest of Section 4.1, which describes the details of
 this shell script.
 
 ####4.1.1. To install unixODBC (ODBC Driver Manager for Linux) :
@@ -816,3 +818,570 @@ Again, wait for about 4 seconds for the SRCH2 server to pull the change, then do
 
 Besides MySQL, SQLite, SQL Server, and MongoDB, we are developing connectors for
 other data sources.
+
+##6. Data Connector SDK
+
+###6.1. Overview
+
+The SRCH2 data connector SDK allows a programmer to write a customized
+adapter/connector for a new data source.  The connector is written in
+C++, and compiled to a shared library (a ```.so``` file), which can
+be loaded by the SRCH2 engine dynamically.  The SRCH2 engine reads a section of
+parameters for the data source, including the name of its shared
+library.  Then the engine loads this library dynamically and passes the
+information about the data source to the library, which returns
+an object called ```DataConnector```.  This object fetches data
+records and updates from the source, and sends them (using a
+```ServerInterface``` object) to the SRCH2 engine for indexing.
+We will explain the details next.
+
+<span><center><img style="float: center" width="60%" src="../images/connector-SDK.png" /></center></span> 
+
+####6.1.1. Step 1: Retrieve information about data source from config file
+
+For each data source, the configuration file for the SRCH2 engine
+needs to have a section with parameters about this source, such as
+its host name, user name, password, and how often the connector needs
+to fetch new changes from the source.  In the first step, the SRCH2
+engine reads the information in this section, which becomes available for
+the connector.
+
+Here is an example section for an Oracle connector:
+
+```
+<dataSourceType>2</dataSourceType>
+<dbParameters>
+    <dbSharedLibraryPath>./build/</dbSharedLibraryPath>
+    <dbSharedLibraryName>liboracleConnector</dbSharedLibraryName>
+    <dbKeyValues>
+        <dbKeyValue key="dataSource" value="ORACLE" />
+        <dbKeyValue key="server" value="127.0.0.1" />
+        <dbKeyValue key="user" value="cdcsub" />
+        <dbKeyValue key="password" value="cdcsub" />
+        <dbKeyValue key="ownerName" value="cdcpub" />
+        <dbKeyValue key="tableName" value="COMPANY" />
+        <dbKeyValue key="changeTableName" value="COMPANY_CT" />
+        <dbKeyValue key="listenerWaitTime" value="3" />
+        <dbKeyValue key="oracleMaxColumnLength" value="50" />
+    <dbKeyValues>
+</dbParameters>
+```
+
+The following is the meaning of the parameters:
+
+ - ```<dataSourceType>```:  It specifies the type of the data source:
+"1" means a JSON data file, and "2" means a data source 
+accessible through a connector.
+
+ - ```<dbSharedLibraryPath>```: It specifies the relative path 
+ of the shared library location with respect to the ```srch2Home``` folder.
+
+ - ```<dbSharedLibraryName>```: It specifies the file name of the shared library
+   (without the ```.so``` extension).
+
+ - ```<dbKeyValues>```:  It includes data source parameters
+ as key-value pairs.  These values are available to the connector,
+ which can retrieve each value by calling a function ```int
+ configLookUp(const std::string& key, std::string & value)```.
+
+
+After the engine reads the information from the section, it 
+creates a ```ServerInterface``` for this source. It then creates a separate
+thread for the connector of this data source, and loads the corresponding
+shared library.
+
+####6.1.2. Step 2: Engine calls DataConnector->create()  
+
+The engine calls the ```create()``` function inside the shared
+library, which will return a ```DataConnector``` object for the
+engine to use to interact with the data source.
+
+####6.1.3. Step 3: Engine calls DataConnector->init(ServerInterface)  
+
+The SRCH2 engine calls the ```init()``` function of the
+```DataConnector``` object, which does initilization tasks for the
+source.  For instance, if the data source is a database, this function
+should establish a connection to the database.
+
+####6.1.4. Step 4: Engine calls DataConnector->createNewIndexes()   
+
+The engine calls the ```createNewIndexes()``` of the
+```DataConnector``` object.  This function is supposed to fetch
+records from the data source, and insert these records to the SRCH2
+indexes using the ```ServerInterface``` object.
+ 
+####6.1.5. Step 5: Engine calls DataConnector->runListener()  
+
+After building the indexes, the engine calls the ```runListener()```
+function, which is supposed to periodically access the source to
+retrieve record inserts/deletes/updates, possibly from logs if the
+source is a database.  This function calls the
+corresponding functions (```insert()```, ```delete()```,
+```update()```) of the ```ServerInterface``` object to modify the 
+indexes in the engine.  Notice that the connector can retrieve from
+the engine parameters about this source, such as how often it needs to
+access the data source for changes.
+
+####6.1.6. Step 6: Engine calls destroy()  
+
+When the engine is shutting down, it will call the
+```destroy()``` function to remove the ```DataConnnector``` object for this
+source.
+
+###6.2. DataConnector Interface
+
+A database connector for the engine should implement the interface provided
+in the ```DataConnector``` abstract class.
+
+```
+class DataConnector {
+public:
+    virtual ~DataConnector() {};
+    virtual int init(ServerInterface *serverInterface) = 0;
+    virtual int runListener() = 0;
+    virtual int createNewIndexes() = 0;
+    virtual void saveLastAccessedLogRecordTime() = 0;
+};
+```
+
+In the SRCH2 engine, the ```DataConnector``` object is used as follows.
+
+```
+open shared library
+
+IF (init(serverInterface) = 0) THEN
+    IF (need to create new indexes from scratch) THEN 
+        IF (createNewIndexes() = 0) THEN
+            runListener()
+
+close shared library
+```
+
+Next we explain the expected behavior of each function.
+
+
+####6.2.1. Initialize the Source
+
+```
+virtual int init(ServerInterface *serverInterface) = 0;
+```
+
+The function is called once when the connector is loaded by the engine.
+All the initialization tasks should be done here, e.g., retrieving from the
+configuration file those parameters related to this source and using them to connect
+to the source.
+
+ - Parameters:  
+    -  ```serverInterface```: It is provided by the engine, and can
+      be used by the connector to interact with the engine.
+
+ - Return value:  
+    - ```0```: The initialization process succeeded.
+    - Otherwise: It failed.
+
+####6.2.2. Create New Indexes
+
+```
+virtual int createNewIndexes() = 0;
+```
+
+This function is called by the engine if there is no index 
+found in the folder ```dataDir``` when the connector starts.
+The function should fetch the data from the source and
+insert them to the engine.
+
+ - Return value:  
+    - ```0```: success. The engine will try to start the listener.  
+    - Otherwise: failed. The engine will close the connector.
+
+####6.2.3. Run Listener
+
+```
+virtual int runListener() = 0;
+```
+
+This function should periodically pull data changes from the source, and
+it should keep running until the data connector is destroyed.
+When this function returns, the SRCH2 engine will close the data connector.
+
+####6.2.4. Save Last Accessed Log Record Timestamp
+
+```
+virtual void saveLastAccessedLogRecordTime() = 0;
+```
+
+This function is called when the engine is saving
+the indexes to disk. The data connector should also save the timestamp so that
+the next time the engine starts, the connector can ignore the
+previous executed log events.
+
+###6.3. Server Interface 
+
+The abstract class ```ServerInterface``` provides an interface 
+for an external data connector to interact with the engine.  We
+explain this interface next.
+
+####6.3.1. Insert Record
+
+```
+virtual int insertRecord(const std::string& jsonString) = 0;
+```  
+
+This function inserts a record (in JSON format)
+of this source to the SRCH2 indexes.
+
+ - Parameters:   
+     - ```jsonString``` : A JSON format string.
+
+ - Return value:   
+    - ```0```: success;
+    - Otherwise: failed.
+
+Notice that this function accepts a single JSON string, and does not
+accept a string of a JSON array.
+  
+####6.3.2. Delete Record
+```
+virtual int deleteRecord(const std::string& primaryKey) = 0;
+```
+
+This function deletes a record with a specified primary key from the
+SRCH2 indexes for this source.
+
+ - Parameters:  
+    - ```primaryKey```: A string as the primary key of a record to
+      be deleted.
+
+ - Return value:   
+    - ```0```: success;
+    - Otherwise : failed.
+
+####6.3.3. Update Record
+```
+virtual int updateRecord(const std::string& oldPk,
+            const std::string& jsonString) = 0;
+```    
+
+This function takes the old primary key of a record as an input and
+ updates it in the engine with a new record passed as a JSON format string.
+
+ - Parameters:   
+    - ```oldPk```: The old primary key of the updated record.  
+    - ```jsonString```:  The new record as a JSON string.
+
+ - Return value:  
+    - ```0```: success;
+    - Otherwise: failed.
+
+####6.3.4. Configuration Parameter Lookup
+```
+virtual int configLookUp(const std::string& key, std::string & value) = 0;
+```     
+
+This function supports a key-based lookup for a parameter for the
+connector, as specified in the ```dbKeyValues``` section
+in the configuration file.
+
+ - Parameters:  
+    - ```key```: A key defined in the config file;
+    - ```value```: The corresponding value.
+
+ - Return value:  
+    - ```0``` : success  
+    - ```-1``` : value not found, and the ```value``` will be empty.
+
+####6.3.5. Shared Library Functions
+
+```
+  typedef DataConnector* create_t();
+  typedef void destroy_t(DataConnector*);
+```
+
+These two C APIs are used by the SRCH2 engine to create/delete the instance
+in the shared library. The engine calls ```create()``` to get the connector and calls
+```destroy()``` to delete it.  The following two functions must be provided in the connector
+implementation so that the SRCH2 engine
+can start and destroy the data connector accordingly.
+
+```
+extern "C" DataConnector* create() {
+    return new YourDBConnector;
+}
+
+extern "C" void destroy(DataConnector* p) {
+    delete p;
+}
+```
+
+###6.4. An Example Connector for Oracle
+
+We provide an example connector for an Oracle database to illustrate
+how the connector SDK works.  Follow these steps to run this connector.
+
+###6.4.1 Install Oracle
+
+Download and install [Oracle database](https://www.oracle.com/database/index.html).
+
+###6.4.2 Install Connector Package
+
+Download the [Oracle connector package](../example-demo/connector/oracleConnector.tar.gz).
+
+```
+shell> tar -xvf oracleConnector.tar.gz
+``` 
+
+b) Run the script to install JSONCpp and unixODBC.  Make sure you have
+python installed before running the script.
+```
+shell> cd oracleConnector
+shell> sudo sh setup.sh
+```
+
+c) Add the Oracle driver to unixODBC. Add the Oracle library to the system library path.
+Make sure the library path is correct.
+
+```
+shell> sudo sh -c "echo /u01/app/oracle/product/11.2.0/dbhome_1/lib/ > /etc/ld.so.conf.d/oracle.conf"
+shell> sudo ldconfig
+```
+
+
+Run the following command to locate the unixODBC config file ```odbcinst.ini```:
+
+```
+shell> odbcinst -j
+```
+
+Add the following lines at the end of the unixODBC config file```odbcinst.ini```.
+Make sure the ```Driver``` path is correct.
+
+```
+[ORACLE]
+Description = Oracle ODBC Connection
+Driver      = /u01/app/oracle/product/11.2.0/dbhome_1/lib/libsqora.so.11.1
+Threading               = 1
+UsageCount              = 1
+```
+
+Check the dependency of the file
+/u01/app/oracle/product/11.2.0/dbhome_1/lib/libsqora.so.11.1 :
+```
+shell> ldd /u01/app/oracle/product/11.2.0/dbhome_1/lib/libsqora.so.11.1
+```
+
+If "libodbcinst.so.1" is not found, create a soft link for it:
+
+```
+shell> find / -name "libodbcinst.so"
+Go to library path
+shell> ln -s libodbcinst.so libodbcinst.so.1 
+```
+
+d) Compile the Oracle connector:
+```
+shell> cd oracleConnector
+shell> mkdir build
+shell> cd build
+shell> cmake ..
+shell> make
+```
+
+You should see the file ```liboracleConnector.so``` under the ```build``` folder.
+
+###6.4.3 Setup the user and table in Oracle
+
+a) Set up the demo user and table in the Oracle database:
+
+```
+shell> sqlplus / as sysdba
+SQL> startup
+SQL> create tablespace ts_cdcpub datafile '/tmp/cdcpubdata.dbf' size 100m;
+SQL> CREATE USER cdcpub IDENTIFIED BY cdcpub DEFAULT TABLESPACE ts_cdcpub
+QUOTA UNLIMITED ON SYSTEM
+QUOTA UNLIMITED ON SYSAUX;
+SQL> GRANT DBA TO cdcpub;
+
+SQL> conn cdcpub/cdcpub
+SQL> CREATE USER cdcsub IDENTIFIED BY cdcsub DEFAULT TABLESPACE ts_cdcpub;
+SQL> GRANT CREATE TABLE TO cdcsub;
+SQL> GRANT CREATE SESSION TO cdcsub;
+SQL> GRANT CREATE VIEW TO cdcsub;
+SQL> GRANT UNLIMITED TABLESPACE TO cdcsub;
+
+SQL> CREATE TABLE cdcpub.COMPANY(
+ID INT PRIMARY KEY NOT NULL, 
+NAME VARCHAR2 (50) NOT NULL, 
+AGE INT NOT NULL, 
+ADDRESS VARCHAR2 (50), 
+SALARY REAL) ;
+```
+
+Run the following command to create a change set 'cdcset' for the
+change table 'COMPANY_CT':
+
+```
+SQL> BEGIN
+DBMS_CDC_PUBLISH.CREATE_CHANGE_SET(
+change_set_name => 'cdcset',
+description => 'Change set for srch2 test',
+change_source_name => 'SYNC_SOURCE');
+END;
+/
+```
+
+Run the following command to create a change table 'COMPANY_CT' to
+keep track of the updates from the 'COMPANY' table:
+
+```
+SQL> BEGIN
+DBMS_CDC_PUBLISH.CREATE_CHANGE_TABLE(
+owner => 'cdcpub',
+change_table_name => 'COMPANY_CT',
+change_set_name => 'cdcset',
+source_schema => 'cdcpub',
+source_table => 'COMPANY',
+column_type_list => 'ID INT, 
+NAME VARCHAR2 (50), 
+AGE INT, 
+ADDRESS VARCHAR2 (50), 
+SALARY REAL ',
+capture_values => 'both',
+rs_id => 'y',
+row_id => 'n',
+user_id => 'n',
+timestamp => 'n',
+object_id => 'n',
+source_colmap => 'y',
+target_colmap => 'y',
+DDL_MARKERS=>'n',
+options_string => 'TABLESPACE ts_cdcpub');
+END;
+/
+```
+
+Grant privileges:
+```
+SQL> GRANT ALL ON cdcpub.COMPANY TO cdcsub;
+SQL> GRANT ALL ON cdcpub.COMPANY_CT TO cdcsub;
+```
+
+Insert records:
+
+```
+SQL> INSERT INTO COMPANY (ID,NAME,AGE,ADDRESS,SALARY)VALUES (1, 'Paul', 32, 'California', 20000.00 );
+SQL> INSERT INTO COMPANY (ID,NAME,AGE,ADDRESS,SALARY)VALUES (2, 'Allen', 25, 'Texas', 15000.00 );
+SQL> INSERT INTO COMPANY (ID,NAME,AGE,ADDRESS,SALARY)VALUES (3, 'Teddy', 23, 'Norway', 20000.00 );
+SQL> INSERT INTO COMPANY (ID,NAME,AGE,ADDRESS,SALARY) VALUES (4, 'Mark', 25, 'Rich-Mond ', 65000.00 );
+SQL> INSERT INTO COMPANY (ID,NAME,AGE,ADDRESS,SALARY) VALUES (5, 'David', 27, 'Texas', 85000.00 );
+SQL> INSERT INTO COMPANY (ID,NAME,AGE,ADDRESS,SALARY) VALUES (6, 'Kim', 22, 'South-Hall', 45000.00 );
+SQL> commit;
+SQL> SELECT * FROM COMPANY;
+```
+
+###6.4.4 Run the engine with the connector
+
+a) Start the srch2 engine with the Oracle connector. Make sure the
+<srch2Home> and <dbSharedLibraryPath> in the config is correct.
+
+```
+shell> path/srch2-engine --config-file=./srch2-config-oracle.xml
+```
+
+To check the result, open another terminal and run the command below.
+```
+shell> curl "http://localhost:8081/search?q=paul"
+```
+
+You should see the record with the keyword "paul".
+
+b) Make changes to the table.  Run the following command to insert a
+new record.
+
+```
+SQL> INSERT INTO COMPANY (ID,NAME,AGE,ADDRESS,SALARY) VALUES (7, 'Joe', 20, 'Nevada', 15000.00 );
+SQL> commit;
+```
+Wait for about 4 seconds for the SRCH2 server to save the change. Do the search query:
+```
+shell> curl "http://localhost:8081/search?q=joe"
+```
+The search engine should return this newly inserted record.   
+
+We want to update Kim's address from "South-Hall" to "Texas" by
+running the following command:
+
+```
+SQL> UPDATE COMPANY SET ADDRESS = 'Texas' WHERE ID = 6;
+SQL> commit;
+```
+
+To check the update, run the curl command:
+```
+
+shell> curl "http://localhost:8081/search?q=kim"
+
+```
+The SRCH2 engine should be able to return this updated record, with "Texas" as the ADDRESS value.  
+
+Run the following command in the Oracle shell to delete the updated record:
+```
+SQL> DELETE FROM COMPANY WHERE ID = 6;
+SQL> commit;
+```
+
+Again, wait for about 4 seconds for the SRCH2 server to save the change, then do the search query:
+
+```
+shell> curl "http://localhost:8081/search?q=Kim"
+```
+
+The SRCH2 engine should not return the deleted record.
+
+###6.4.5 (Optional) Remove the demo user and table
+
+If you need to remove the demo user and table, run the following:
+
+```
+SQL> conn cdcpub/cdcpub
+SQL> BEGIN
+EXECUTE IMMEDIATE 'drop user cdcsub';
+EXCEPTION
+WHEN OTHERS THEN NULL;
+END;
+/
+
+SQL> BEGIN
+BEGIN
+DBMS_CDC_PUBLISH.DROP_CHANGE_TABLE('cdcpub','COMPANY_CT','Y');
+END;
+EXCEPTION
+WHEN OTHERS THEN NULL;
+END;
+/
+
+SQL> BEGIN
+BEGIN
+DBMS_CDC_PUBLISH.DROP_CHANGE_SET('cdcset');
+END;
+EXCEPTION
+WHEN OTHERS THEN NULL;
+END;
+/
+
+SQL> BEGIN
+EXECUTE IMMEDIATE 'DROP TABLE CDCPUB.COMPANY';
+EXCEPTION
+WHEN OTHERS THEN NULL;
+END;
+/
+
+SQL> conn / as sysdba
+SQL> DROP USER CDCPUB CASCADE;
+SQL> DROP TABLESPACE ts_cdcpub INCLUDING CONTENTS AND DATAFILES;
+```
+
+Congratulations!  You have successfully compiled and run the Oracle connector to
+interact with the SRCH2 engine!
+
+For more information about how the connector is written, please refer
+to its source code.

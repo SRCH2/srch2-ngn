@@ -44,14 +44,14 @@ public:
 //This class handles insert, delete, update events.
 class MySQLApplier: public mysql::Content_handler {
 public:
-    MySQLApplier(MySQLTableIndex * index, ServerInterface * serverHandle,
+    MySQLApplier(MySQLTableIndex * index, ServerInterface * serverInterface,
             std::vector<std::string> * schemaName, time_t & startTimestamp,
             std::string & pk);
     mysql::Binary_log_event * process_event(mysql::Row_event * rev);
 private:
     MySQLTableIndex * tableIndex;
     std::vector<std::string> * schemaName;
-    ServerInterface * serverHandle;
+    ServerInterface * serverInterface;
     time_t startTimestamp;
     std::string pk;
 

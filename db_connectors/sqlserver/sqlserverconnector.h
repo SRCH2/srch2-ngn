@@ -20,7 +20,7 @@ public:
     virtual ~SQLServerConnector();
 
     //Initialize the connector. Establish a connection to the SQL Server.
-    virtual int init(ServerInterface *serverHandle);
+    virtual int init(ServerInterface *serverInterface);
     //Retrieve records from the table records and insert them into the SRCH2 engine.
     virtual int createNewIndexes();
     //Periodically check updates in the SQL Server log table,
@@ -37,7 +37,7 @@ private:
 
     int listenerWaitTime;
     int sqlServerMaxColumnLength;
-    ServerInterface *serverHandle;
+    ServerInterface *serverInterface;
 
     //Storing the table schema information
     std::vector<std::string> fieldNames;
@@ -57,8 +57,6 @@ private:
     bool connectToDB();
     //Check the config validity. e.g. if contains dbname, tables etc.
     bool checkConfigValidity();
-    //Check if database contains the table.
-    bool checkTableExistence();
     //Fetch the table schema and store into tableSchema
     bool populateTableSchema(std::string & tableName);
 
