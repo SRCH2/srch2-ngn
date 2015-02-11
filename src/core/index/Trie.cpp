@@ -1563,6 +1563,7 @@ void Trie::merge(const InvertedIndex * invertedIndex ,
     }
 
     this->root_writeview = new TrieNode(this->root_readview.get()->root);
+    mergeRequired = false;
 }
 
 void Trie::commit()
@@ -1619,10 +1620,17 @@ void Trie::removeDeletedNodes()
     std::sort(emptyLeafNodeIds.begin(), emptyLeafNodeIds.end());
 
     TrieNode *writeViewRoot = this->getTrieRootNode_WriteView();
+    ASSERT(writeViewRoot);
     if (removeDeletedNodes(writeViewRoot)) {
-      // The whole trie becomes empty. We need to repeat the logic
-      // in the constructor of the trie to re-initialize the trie
-      this->init();
+    	// The whole trie becomes empty. Reinit RV and WV of trie.
+    	// Note: we should not call Trie::init() because we do not want to reset the
+    	// all whole trie object. Just few member variables as listed below.
+    	delete writeViewRoot;
+        this->root_readview.reset( new TrieRootNodeAndFreeList() );
+        this->root_writeview = new TrieNode(this->root_readview.get()->root);
+        this->numberOfTerminalNodes = 0;
+        this->mergeRequired = false;
+        this->counterForReassignedKeywordIds = MAX_ALLOCATED_KEYWORD_ID + 1;
     } else {
         // The trie is not empty.
         // Similar to the operations in trie.merge(), we need to "merge"
@@ -1714,8 +1722,8 @@ bool Trie::removeDeletedNodes(TrieNode *trieNode)
         // remove the last "numberOfNulledChildren" children since they have been copied to the left
 	// Note: "pop_back()" will NOT delete the trie nodes of these pointers
         for (int i = 0; i < numberOfNulledChildren; i++) {
-	  trieNode->childrenPointerList.pop_back();
-	}
+        	trieNode->childrenPointerList.pop_back();
+        }
     }
 
     if (trieNode->isTerminalNode()) {
