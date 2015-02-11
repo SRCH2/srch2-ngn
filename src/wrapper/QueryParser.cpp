@@ -484,8 +484,7 @@ void QueryParser::attributeAclFlagParser(){
 			this->container->attrAclOn = true;
 		}
 	} else {
-//		this->container->attrAclOn = true;
-	    this->container->attrAclOn = false; // TODO : must change back to true when ACL is fixed.
+		this->container->attrAclOn = true;
 	}
 }
 

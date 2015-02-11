@@ -476,6 +476,7 @@ public:
         PhraseKeyWordsInfoMap = right.PhraseKeyWordsInfoMap;
         parametersInQuery = right.parametersInQuery;
         queryStringWithTermsAndOpsOnly = right.queryStringWithTermsAndOpsOnly;
+        roleId = right.roleId;
     }
 
 

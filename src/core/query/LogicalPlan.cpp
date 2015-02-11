@@ -442,6 +442,7 @@ string LogicalPlan::getUniqueStringForCaching(){
 	for(unsigned i = 0 ; i < this->attributesToReturn.size(); ++i){
 		ss << this->attributesToReturn.at(i).c_str();
 	}
+	ss << this->roleId;
 	return ss.str();
 }
 

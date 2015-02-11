@@ -14,7 +14,7 @@
  * OR PROFITS, WHETHER IN AN ACTION OF CONTRACT, NEGLIGENCE OR OTHER ACTION, ARISING OUT OF OR IN CONNECTION
  * WITH THE USE OR PERFORMANCE OF SOFTWARE.
 
- * Copyright © 2010 SRCH2 Inc. All rights reserved
+ * Copyright �� 2010 SRCH2 Inc. All rights reserved
  */
 
 
@@ -250,6 +250,7 @@ public:
 		}else{
 			this->phraseSearchInfoContainer = new PhraseSearchInfoContainer(*(info.phraseSearchInfoContainer));
 		}
+		this->roleId = info.roleId;
 	}
 	~ResultsPostProcessingInfo();
 	FacetQueryContainer * getfacetInfo();

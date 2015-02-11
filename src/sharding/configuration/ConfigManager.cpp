@@ -288,6 +288,12 @@ bool ConfigManager::loadConfigFile(srch2http::ResourceMetadataManager * metadata
     // parse the config file and set the variables.
     this->parse(configDoc, configSuccess, parseError, parseWarnings);
 
+    if (!configSuccess) {
+    	Logger::error("ERRORS while reading the configuration file");
+    	Logger::error("%s\n", parseError.str().c_str());
+    	Logger::debug(parseError.str().c_str());
+    	return false;
+    }
     Logger::debug("WARNINGS while reading the configuration file:");
     Logger::debug("%s\n", parseWarnings.str().c_str());
 
@@ -302,11 +308,15 @@ bool ConfigManager::loadConfigFile(srch2http::ResourceMetadataManager * metadata
     					" for bulk load should be specified.");
     			return false;
     		}
-    		if (coreInfo->getNumberOfPrimaryShards() > 0 && coreInfo->dataFilePath != "") {
-    			// It is harsh to error out ..I think best action is to ignore data file.
-    			Logger::warn("Primary shard count is greater than 0. Ignoring bulk load file "
-    					"mentioned in the config file. For bulk load use HTTP layer API");
-    			coreInfo->dataFilePath = "";
+    		if (coreInfo->getNumberOfPrimaryShards() > 0) {
+    			if (coreInfo->dataFilePath != "" || coreInfo->attrAclFilePath != "" || coreInfo->recordAclFilePath != "") {
+    				// It is harsh to error out ..I think best action is to ignore data file.
+    				Logger::warn("Primary shard count is greater than 0. Ignoring bulk load files "
+    						"mentioned in the config file. For bulk load use HTTP layer API");
+    				coreInfo->dataFilePath = "";
+    				coreInfo->recordAclFilePath = "";
+    				coreInfo->attrAclFilePath = "";
+    			}
     		}
     	}
     }
@@ -319,16 +329,14 @@ bool ConfigManager::loadConfigFile(srch2http::ResourceMetadataManager * metadata
     	    		&& coreInfo->getSchema()->getAclSearchableAttrIdsList().size() == 0){
     			continue;
     		}
-    		CoreInfo_t *newAclCore = NULL;
     		if(coreInfo->getNumberOfPrimaryShards() == 0){
     			// it's a node shard, we use the same core object for attribute acl
-    			newAclCore = coreInfo;
-    			coreInfo->aclCoreFlag = true;
     			coreInfo->setAttributeAclCoreId(coreInfo->getCoreId());
     			continue;
-    		};
+    		}
+
     		// it's a cluster shard, we must have a separate acl code
-			newAclCore = new srch2http::CoreInfo_t(*coreInfo);
+    		 CoreInfo_t *newAclCore = new srch2http::CoreInfo_t(*coreInfo);
 			newAclCore->setSchema((Schema*)coreInfo->getSchema());
 
 			newAclCore->name = "acl" + coreInfo->getName();
@@ -353,13 +361,6 @@ bool ConfigManager::loadConfigFile(srch2http::ResourceMetadataManager * metadata
 		metadataManager->setWriteview(new Cluster_Writeview(0, clusterNameStr, allCores));
 		// writeview is set, update the currentNodeId of shard manager
 		ShardManager::getShardManager()->updateCurrentNodeId();
-    }
-
-    if (!configSuccess) {
-        Logger::error("ERRORS while reading the configuration file");
-        Logger::error("%s\n", parseError.str().c_str());
-        Logger::debug(parseError.str().c_str());
-        return false;
     }
 
     return true;

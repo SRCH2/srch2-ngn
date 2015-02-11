@@ -1,8 +1,12 @@
 # Automated test script to start engine, fire queryes and verify results
-import sys, urllib2, json, time, subprocess, os, commands, signal
+import sys, shutil, urllib2, json, time, subprocess, os, commands, signal
 
 sys.path.insert(0, 'srch2lib')
 import test_lib
+
+greenColor = "\x1B[32;40m"
+redColor = "\x1B[31;40m"
+endColor = "\x1B[0m"
 
 #Function of checking the results
 def checkResult(query, responseJson,resultValue):
@@ -14,7 +18,7 @@ def checkResult(query, responseJson,resultValue):
             #print response_json['results'][i]['record']['id']
             if responseJson[i]['record_id'] !=  resultValue[i]:
                 isPass=0
-                print query+' test failed'
+                print query + redColor + ' test failed' + endColor
                 print 'query results||given results'
                 print 'number of results:'+str(len(responseJson))+'||'+str(len(resultValue))
                 for i in range(0, len(responseJson)):
@@ -22,7 +26,7 @@ def checkResult(query, responseJson,resultValue):
                 break
     else:
         isPass=0
-        print query+' test failed'
+        print query + redColor + ' test failed' + endColor
         print 'query results||given results'
         print 'number of results:'+str(len(responseJson))+'||'+str(len(resultValue))
         maxLen = max(len(responseJson),len(resultValue))
@@ -35,7 +39,7 @@ def checkResult(query, responseJson,resultValue):
              print responseJson[i]['record_id']+'||'+resultValue[i]
 
     if isPass == 1:
-        print  query+' test pass'
+        print  query + greenColor + ' test PASS' + endColor
         return 0
     return 1
 
@@ -44,21 +48,21 @@ def checkResult(query, responseJson,resultValue):
 def checkFacetResults(query, response_json, facetFields):
 
     if len(facetFields) == 0  and 'facets' not in response_json:
-        print query + ' PASS!'
+        print query + greenColor + ' PASS!' + endColor
         return 0
 
     if len(facetFields) == 0 and 'facets' in response_json:
-        print query + ' FAIL! ...facet found when not expected'
+        print query + redColor + ' FAIL! ...facet found when not expected' + endColor
         return 1
 
     if len(facetFields) > 0 and 'facets' not in response_json:
-        print query + ' FAIL! ...no facet found'
+        print query + redColor + ' FAIL! ...no facet found' + endColor
         return 1
 
     facetResults = response_json['facets']
 
     if len(facetFields) != len(facetResults):
-        print query + ' FAIL! ..facet mismtach'
+        print query + redColor + ' FAIL! ..facet mismtach' + endColor
         return 1
 
     for facetField in facetFields:
@@ -68,26 +72,26 @@ def checkFacetResults(query, response_json, facetFields):
                 facetMatch = True
                 break
         if not facetMatch:
-            print query + ' FAIL! ..facet field not found '
+            print query + redColor + ' FAIL! ..facet field not found ' + endColor
             return 1
 
-    print query + ' PASS!'
+    print query + greenColor + ' PASS!' + endColor
     return 0
 
 def checkFieldsInResults(query, response_results, fields, key):
     for results in  response_results:
         keyValues = results[key]
         if len(keyValues) != len(fields):
-            print query + ' Fail! ...fields mimatch in ' + key + ' field of the response'
+            print query + redColor + ' Fail! ...fields mimatch in ' + key + ' field of the response' + endColor
             print str(len(keyValues)) + '||' + str(len(fields))
             return 1
 
         for field in fields:
             if field not in keyValues:
-                print query + ' Fail! ...field not found in ' + key + ' field of the response'
+                print query + redColor + ' Fail! ...field not found in ' + key + ' field of the response' + endColor
                 return 1
 
-    print query + ' PASS!'
+    print query + greenColor + ' PASS!' + endColor
     return 0
 
 #prepare the query based on the valid syntax
@@ -109,7 +113,7 @@ def test(queriesAndResultsPath, binary_path, configFilePath):
     #Start the engine server
     args = [ binary_path, '--config-file=' + configFilePath]
 
-    serverHandle = test_lib.startServer(args)
+    serverHandle = test_lib.startServer(args, 30)
     if serverHandle == None:
         return -1
 
@@ -158,21 +162,39 @@ def test(queriesAndResultsPath, binary_path, configFilePath):
             else:
                 failCount += checkResult(prepareQuery(queryValue), response_json['results'], resultValue )
 
-    test_lib.killServer(serverHandle)
+    test_lib.kill9Server(serverHandle)
     print '=============================='
     return failCount
 
 if __name__ == '__main__':      
+    
+    if(os.path.exists("./attributesAcl/SRCH2Cluster")):
+        shutil.rmtree("./attributesAcl/SRCH2Cluster")
+    if(os.path.exists("./SRCH2Cluster")):
+        shutil.rmtree("./SRCH2Cluster")
+    exitCode = 0
     binary_path = sys.argv[1]
     queriesAndResultsPath = './attributesAcl/testCases.txt'
-    exitCode = test(queriesAndResultsPath, binary_path , './attributesAcl/conf.xml')
-    time.sleep(2)
+    #exitCode = test(queriesAndResultsPath, binary_path , './attributesAcl/conf.xml')
+    #time.sleep(5)
+    if(os.path.exists("./attributesAcl/SRCH2Cluster")):
+        shutil.rmtree("./attributesAcl/SRCH2Cluster")
+    if(os.path.exists("./SRCH2Cluster")):
+        shutil.rmtree("./SRCH2Cluster")
     queriesAndResultsPath = './attributesAcl/testCasesMultiCore.txt'
-    exitCode |= test(queriesAndResultsPath, binary_path, './attributesAcl/conf-multicore.xml')
-    time.sleep(2)
+    #exitCode |= test(queriesAndResultsPath, binary_path, './attributesAcl/conf-multicore.xml')
+    #time.sleep(5)
+    if(os.path.exists("./attributesAcl/SRCH2Cluster")):
+        shutil.rmtree("./attributesAcl/SRCH2Cluster")
+    if(os.path.exists("./SRCH2Cluster")):
+        shutil.rmtree("./SRCH2Cluster")
     queriesAndResultsPath = './attributesAcl/testCasesFilterSortFacetQuery.txt'
     exitCode |= test(queriesAndResultsPath, binary_path , './attributesAcl/conf2.xml')
-    time.sleep(2)
+    time.sleep(5)
+    if(os.path.exists("./attributesAcl/SRCH2Cluster")):
+        shutil.rmtree("./attributesAcl/SRCH2Cluster")
+    if(os.path.exists("./SRCH2Cluster")):
+        shutil.rmtree("./SRCH2Cluster")
     queriesAndResultsPath = './attributesAcl/testCasesFilterSortFacetQueryWithSwitch.txt'
     exitCode |= test(queriesAndResultsPath, binary_path , './attributesAcl/conf3.xml')
     os._exit(exitCode)

@@ -196,7 +196,7 @@ LogicalPlan * ReadCommand::prepareLogicalPlan(){
 
     QueryValidator qv(*(coreInfo->getSchema()),
             *(coreInfo), &paramContainer,
-            aclApprovedRefiningAttributes, aclApprovedSearchAttributes);
+            aclApprovedSearchAttributes, aclApprovedRefiningAttributes);
 
     bool valid = qv.validate();
     if (!valid) {
@@ -213,7 +213,7 @@ LogicalPlan * ReadCommand::prepareLogicalPlan(){
             *(coreInfo->getSchema()),
             *(AnalyzerFactory::getCurrentThreadAnalyzer(coreInfo)),
             &paramContainer,
-            aclApprovedRefiningAttributes, aclApprovedSearchAttributes);
+            aclApprovedSearchAttributes, aclApprovedRefiningAttributes);
 
     if(qr.rewrite(*logicalPlan) == false){
         // if the query is not valid, print the error message to the response
