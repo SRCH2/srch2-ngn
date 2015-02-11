@@ -129,8 +129,8 @@ enum PortType_t {
     RecordAclAppend,
     RecordAclDelete,
     BulkLoadRecords,
-    BulkLoadAttributeAcl,
     BulkLoadRecordAcl,
+    BulkLoadAttributeAcl,
     UserFeedback,
     //--------------------------------
 	GlobalPortsStart, // used in portNameMap

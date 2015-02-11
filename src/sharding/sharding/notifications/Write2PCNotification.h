@@ -60,7 +60,7 @@ struct RecordComparator
     		ASSERT(false);
     		return false;
     	}
-        return (rhs->getPrimaryKey().compare(rhs->getPrimaryKey()) < 0);
+        return (lhs->getPrimaryKey().compare(rhs->getPrimaryKey()) < 0);
     }
 };
 

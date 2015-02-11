@@ -68,8 +68,10 @@ public:
 		this->compactRecSerializer = NULL;
 	}
 	~BulkLoadCommand() {
-		bulkdLoadFileStream.close();
+		bulkLoadFileStream.close();
     	delete compactRecSerializer;
+    	//for (unsigned i = 0 ; i < writeCommands.size(); ++i)
+    	//	delete writeCommands[i];
 	}
 
 	SP(Transaction) getTransaction(){
@@ -80,12 +82,12 @@ public:
 		return this->getConsumer()->getTransaction();
 	}
 
-	void init() {
+	bool init() {
     	struct stat filestat;
     	if (::stat(filePath.c_str(), &filestat) == -1) {
     		messageCodes.push_back(HTTP_Json_Data_File_Does_Not_Exist);
     		finalize();
-    		return;
+    		return false;
     	}
         //check file size in KB
         unsigned fileSize = getFileSize(filePath.c_str());
@@ -95,7 +97,7 @@ public:
         if (!(buff = (struct statvfs *) malloc(sizeof(struct statvfs)))) {
             Logger::error("Failed to allocate memory to buffer.");
             finalize();
-            return;
+            return false;
         } else {
             //We check the space available for the disk where srch2Home is set
             if (statvfs(coreInfo->getSrch2Home().c_str(), buff) < 0) {
@@ -113,29 +115,30 @@ public:
         }
 
 		// Create from JSON and save to index-dir
-		Logger::console("Creating indexes from JSON file...");
-
-		bulkdLoadFileStream.open(filePath.c_str());
-		if (bulkdLoadFileStream.fail())
+		bulkLoadFileStream.open(filePath.c_str());
+		if (bulkLoadFileStream.fail())
 		{
-			Logger::error("DataSource file not found at: %s", filePath.c_str());
+			Logger::error("DataSource file not found at: '%s'", filePath.c_str());
             finalize();
-			return;
+			return false;
 		}
 
 		Schema * storedAttrSchema = Schema::create();
 		RecordSerializerUtil::populateStoredSchema(storedAttrSchema,
 				coreInfo->getSchema());
 		compactRecSerializer = new RecordSerializer(*storedAttrSchema);
+		return true;
 
 	}
 
 	void produce(){
 
+		performCleanup();
 
 		bulkLoadWriteCommand = parseRecordsFromFile();
 
 		if (bulkLoadWriteCommand){
+			writeCommands.push_back(bulkLoadWriteCommand);
 			bulkLoadWriteCommand->produce();
 		}else{
 			finalize();
@@ -150,12 +153,14 @@ public:
 	}
 
 	void finalize(){
-		//TODO : call consume
+		map<string, bool> dummyMap;
+		map<string, map<ShardId * ,vector<JsonMessageCode>, ShardPtrComparator > > dummyMsg;
+		this->getConsumer()->consume(dummyMap, dummyMsg);
 	}
 
 	string getName() const {return "bulk-loader";};
 
-	bool isBulkLoadDone() const { return bulkdLoadFileStream.eof(); }
+	bool isBulkLoadDone() const { return bulkLoadFileStream.eof(); }
 
     const vector<AclRecordBatchInfo>& getRecordAclBatchInfo() {
     	return recordAclBatchInfo;
@@ -175,7 +180,6 @@ private:
     }
 
     void performCleanup() {
-    	delete bulkLoadWriteCommand;
     	for (unsigned i = 0; i < recordsToIndex.size(); ++i) {
     		delete recordsToIndex[i];
     	}
@@ -190,19 +194,23 @@ private:
 
 		unsigned successCounter = 0;
 		string line;
-    	while(getline(bulkdLoadFileStream, line))
+    	while(getline(bulkLoadFileStream, line))
     	{
-        	if (lineProcessed == 0 &&  line == "[") {
+    		++lineProcessed;
+    		boost::algorithm::trim(line);
+    		if (line.size() == 0 || line[0] == '#')
+    			continue;
+
+        	if (successCounter == 0 && line == "[") {
         		// Solr style data source - array of JSON records
         		isArrayOfJsonRecords = true;
-        		++lineProcessed;
         		continue;
         	}
         	if (isArrayOfJsonRecords == true && line == "]") {
         		// end of JSON array in Solr style data source
         		break; // assume nothing follows array (will ignore more records or another array)
         	}
-    		++lineProcessed;
+
         	std::stringstream error;
         	switch(bulkLoadType) {
         	case RecordBulkLoad: {
@@ -219,10 +227,18 @@ private:
         	case AclAttributeBulkLoad:{
         		vector<string> attributeList;
         		vector<string> roleIdList;
-        		Json::Value doc(line);
+        		Json::Value root;
+        		Json::Reader reader;
+        		bool parseSuccess = reader.parse(line.c_str(), root, false);
+        		if (parseSuccess == false) {
+    	        	AclRecordBatchInfo bi = { lineProcessed, roleIdList, false,  "Parse error"};
+    	        	recordAclBatchInfo.push_back(bi);
+    	        	break;
+        		}
+
         		Json::Value aclAttributeResponse;
         		bool success = AttributeAccessControl::processSingleJSONAttributeAcl(
-        				doc, "http bulkload", aclAttributeResponse, roleIdList,
+        				root, "http bulkload", aclAttributeResponse, roleIdList,
         				attributeList, *coreInfo->getSchema());
         		if (success) {
         			++successCounter;
@@ -239,10 +255,19 @@ private:
         	case AclRecordBulkLoad:{
         		vector<string> roleIdList;
         		string primaryKeyID;
-        		Json::Value doc(line);
+
+        		Json::Value root;
+        		Json::Reader reader;
+        		bool parseSuccess = reader.parse(line.c_str(), root, false);
+        		if (parseSuccess == false) {
+    	        	AclRecordBatchInfo bi = { lineProcessed, primaryKeyID, false,  "Parse error"};
+    	        	recordAclBatchInfo.push_back(bi);
+    	        	break;
+        		}
+
         		stringstream log_str;
         		bool success = JSONRecordParser::_extractResourceAndRoleIds(roleIdList,
-        				primaryKeyID, doc, coreInfo, log_str);
+        				primaryKeyID, root, coreInfo, log_str);
         		if (success) {
         			++successCounter;
         			AclRecordBatchInfo bi = { lineProcessed, primaryKeyID, true, "" };
@@ -265,6 +290,9 @@ private:
     		}
     	}
 
+    	if (successCounter == 0)
+    		return NULL;
+
     	switch(bulkLoadType) {
     	case RecordBulkLoad:
     	{
@@ -278,7 +306,7 @@ private:
     	{
     		unsigned aclCoreId =  coreInfo->getAttributeAclCoreId();
     		const CoreInfo_t * aclCoreInfo = clusterReadview->getCore(aclCoreId);
-    		ASSERT(aclCoreInfo == NULL);
+    		ASSERT(aclCoreInfo != NULL);
     		if (aclCoreInfo)
     			return new WriteCommand(this->getConsumer(), aclDataForWriteCommand, ACL_APPEND, aclCoreInfo);
     		else
@@ -331,11 +359,12 @@ private:  // data
 	vector<JsonMessageCode> messageCodes;
 
     BulkLoadType bulkLoadType;
-    ifstream bulkdLoadFileStream;
+    ifstream bulkLoadFileStream;
     RecordSerializer *compactRecSerializer;
     unsigned lineProcessed;
     bool isArrayOfJsonRecords;
     WriteCommand * bulkLoadWriteCommand;
+    vector<WriteCommand *> writeCommands;
 
     vector<Record *> recordsToIndex;  // for record bulk load
     std::map< string, vector<string> > aclDataForWriteCommand;  // for acl bulk load
