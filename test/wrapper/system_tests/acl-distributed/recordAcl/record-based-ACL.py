@@ -82,6 +82,9 @@ def startCluster(binary_path):
     return serverHandle
 
 def loadInitialData(corename, dataFile):
+	test_lib.bulkLoadRequest(dataFile, 'D',  corename)
+
+def loadInitialData_Api(corename, dataFile):
     f = open(dataFile)
     records  = f.readlines()
     f.close()
@@ -91,8 +94,10 @@ def loadInitialData(corename, dataFile):
         print response
     return 0
     
-
 def loadAcl(corename, aclFile):
+	test_lib.bulkLoadRequest(aclFile, 'R',  corename)
+
+def loadAcl_Api(corename, aclFile):
     f = open(aclFile)
     records  = f.readlines()
     f.close()
@@ -144,7 +149,10 @@ def testMultipleCores(queriesAndResultsPath):
     print '=============================='
     return failCount
 
-if __name__ == '__main__':      
+if __name__ == '__main__':   
+
+    currDir = os.path.abspath(".")
+       
     if(os.path.exists("./acl-distributed/recordAcl/core1Data")):
         shutil.rmtree("./acl-distributed/recordAcl/core1Data")
     if(os.path.exists("./acl-distributed/recordAcl/core2Data")):
@@ -165,14 +173,14 @@ if __name__ == '__main__':
     # wait for load balancing before sending the queries. 
     time.sleep(40)
     # load data
-    loadInitialData("core1", "./acl-distributed/recordAcl/core1/movie-data.json")
-    loadInitialData("core2", "./acl-distributed/recordAcl/core2/stackoverflow-data-100.json")
-    loadInitialData("core3", "./acl-distributed/recordAcl/core3/business-directory-data.json")
-    loadInitialData("core4", "./acl-distributed/recordAcl/core4/movie-data.json")
+    loadInitialData("core1", currDir + "/acl-distributed/recordAcl/core1/movie-data.json")
+    loadInitialData("core2", currDir + "/acl-distributed/recordAcl/core2/stackoverflow-data-100.json")
+    loadInitialData("core3", currDir + "/acl-distributed/recordAcl/core3/business-directory-data.json")
+    loadInitialData("core4", currDir + "/acl-distributed/recordAcl/core4/movie-data.json")
     time.sleep(10)
 
-    loadAcl("core1", "./acl-distributed/recordAcl/core1/acl-data1.json")
-    loadAcl("core3", "./acl-distributed/recordAcl/core3/acl-data3.json")
+    loadAcl("core1", currDir + "/acl-distributed/recordAcl/core1/acl-data1.json")
+    loadAcl("core3", currDir + "/acl-distributed/recordAcl/core3/acl-data3.json")
     time.sleep(10)
 
     exitCode = testMultipleCores(queriesAndResultsPath)

@@ -40,7 +40,6 @@ public:
     ~BulkLoadCommandHttpHandler(){
     	finalize();
     	delete bulkLoader;
-        delete req;
     }
 
 private:
@@ -61,7 +60,7 @@ private:
      *
      */
     void run(){
-    	JsonResponseHandler * responseObject = this->getTransaction()->getSession()->response;
+    	JsonResponseHandler * responseObject = this->getSession()->response;
     	if(coreInfo == NULL){
     		responseObject->addError(JsonResponseHandler::getJsonSingleMessage(HTTP_JSON_Core_Does_Not_Exist));
     		responseObject->finalizeOK();
@@ -77,11 +76,11 @@ private:
         // When query parameters are parsed successfully, we must create and run AclCommand class and get back
         // its response in a 'consume' callback function.
     	bulkLoader = new BulkLoadCommand(this, filename, bulkLoadType, coreInfo);
-    	bulkLoader->init();
-    	bulkLoader->produce();
+    	if (bulkLoader->init()) {
+    		bulkLoader->produce();
+    	}
         return;
     }
-
 
     /*
      * One example of consume callback that will be called by the producer class
@@ -173,9 +172,6 @@ private:
     							attributeAclBatchInfo[i].lineNumber);
     				} else {
     					++totalSuccessCount;
-    					Logger::warn("Attribute ACL bulkload error at line %d : "
-    							"Following roleId(s) is/were not inserted successfully due to shard error = %s",
-    							attributeAclBatchInfo[i].lineNumber, failedRoleIdsStr.str().c_str());
     				}
     			} else {
     				++totalFailedCount;
@@ -192,40 +188,40 @@ private:
     		return;
     	}
 
-		Json::Value recordShardResponse;
+		Json::Value bulkLoadResponse;
 
     	switch (bulkLoadType) {
     	case RecordBulkLoad:
     	{
-    		recordShardResponse["type"] = "Record";
+    		bulkLoadResponse["type"] = "Record";
     		Logger::info("Record bulkload status: success = %u, failed = %u", totalSuccessCount,
     				totalFailedCount);
     		break;
     	}
     	case AclRecordBulkLoad:
     	{
-    		recordShardResponse["type"] = "Record Acl";
+    		bulkLoadResponse["type"] = "Record Acl";
     		Logger::info("Record ACL bulkload status: success = %u, failed = %u", totalSuccessCount,
     				totalFailedCount);
     		break;
     	}
     	case AclAttributeBulkLoad:
     	{
-    		recordShardResponse["type"] = "Attribute Acl";
+    		bulkLoadResponse["type"] = "Attribute Acl";
     		Logger::info("Attribute ACL bulkload status: success = %u, failed = %u", totalSuccessCount,
     				totalFailedCount);
     		break;
     	}
     	}
-		recordShardResponse["success count"] = totalSuccessCount;
-		recordShardResponse["failed count"] = totalFailedCount;
-		JsonRecordOperationResponse * responseChannel = (JsonRecordOperationResponse *) this->getSession()->response;
-		responseChannel->addRecordShardResponse(recordShardResponse);
+		bulkLoadResponse["success count"] = totalSuccessCount;
+		bulkLoadResponse["failed count"] = totalFailedCount;
+
+		this->getSession()->response->setResponseAttribute("message", bulkLoadResponse);
 
     }
 
     void finalizeWork(Transaction::Params * params){
-		this->getTransaction()->getSession()->response->printHTTP(req);
+		this->getSession()->response->printHTTP(req);
     }
 
     /*

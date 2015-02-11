@@ -334,5 +334,19 @@ def sendPutRequest(command, record = '', coreName = ''):
     except urllib2.HTTPError as e:
         return json.loads(e.read())
 
+#Send bulkload request to the engine 
+# loadType D = Records, R = Record ACL , A = attribute ACL
+
+def bulkLoadRequest(dataFile, loadType = 'D', coreName = ''):
+    mapping = {'D' : '/bulkLoadRecords' , 'R' : '/bulkLoadRecordAcl', 'A': '/bulkLoadAttributeAcl'  }
+    hostUrl = getHostUrl(coreName)
+
+    url = hostUrl + mapping[loadType] + '?file=' + dataFile 
+    printLog('query : ' + url)
+    try:
+        return json.loads(urllib2.urlopen(url).read())
+    except urllib2.HTTPError as e:
+        return json.loads(e.read())
+
 def printLog(log):
     print 'Python SRCH2 lib => ' + log

@@ -168,6 +168,9 @@ def startCluster(binary_path, configs, nullFd = None):
     return serverHandle
 
 def loadInitialData(dataFile, corename = '') :
+    test_lib.bulkLoadRequest(dataFile, 'D',  corename)
+
+def loadInitialData_API(dataFile, corename = ''):
     f = open(dataFile)
     records  = f.readlines()
     f.close()
@@ -196,6 +199,9 @@ def loadInitialData(dataFile, corename = '') :
 
 
 def loadAcl(aclFile, corename = ''):
+    test_lib.bulkLoadRequest(aclFile, 'A',  corename)
+
+def loadAcl_Api(aclFile, corename = ''):
     f = open(aclFile)
     records  = f.readlines()
     f.close()
@@ -239,6 +245,8 @@ def checkIfNodeReady(nodeCount):
 
 if __name__ == '__main__':      
     
+    currDir = os.path.abspath(".")
+    
     if(os.path.exists("./SRCH2Cluster")):
         shutil.rmtree("./SRCH2Cluster")
 
@@ -248,14 +256,15 @@ if __name__ == '__main__':
     #NullDeviceFd = open(os.devnull, 'wb')
     NullDeviceFd = None 
 
-    serverHandle = startCluster(binary_path, ['./acl-distributed/attributeAcl/config/conf-test1-nodeA.xml', './acl-distributed/attributeAcl/config/conf-test1-nodeB.xml', './acl-distributed/attributeAcl/config/conf-test1-nodeC.xml' ], NullDeviceFd);
+    confFiles = [ './acl-distributed/attributeAcl/config/conf-test1-nodeA.xml', './acl-distributed/attributeAcl/config/conf-test1-nodeB.xml', './acl-distributed/attributeAcl/config/conf-test1-nodeC.xml' ]
+    serverHandle = startCluster(binary_path, confFiles,  NullDeviceFd);
     while checkIfNodeReady(3) == False:
         print ' cluster is not ready ...waiting'
         time.sleep(10)
     print 'wait for load balancing'
-    time.sleep(80)  # time for loadbalancing
-    loadInitialData('./acl-distributed/attributeAcl/test1-data.json')
-    loadAcl('./acl-distributed/attributeAcl/test1-acl.json')
+    time.sleep(60)  # time for loadbalancing
+    loadInitialData(currDir + '/acl-distributed/attributeAcl/test1-data.json')
+    loadAcl(currDir + '/acl-distributed/attributeAcl/test1-acl.json')
     
     time.sleep(30)  # let the merge happen
     queriesAndResultsPath = './acl-distributed/attributeAcl/testCases.txt'
@@ -273,16 +282,17 @@ if __name__ == '__main__':
     if(os.path.exists("./SRCH2Cluster")):
         shutil.rmtree("./SRCH2Cluster")
     
-    serverHandle = startCluster(binary_path, ['./acl-distributed/attributeAcl/config/conf-test2-nodeA.xml', './acl-distributed/attributeAcl/config/conf-test2-nodeB.xml', './acl-distributed/attributeAcl/config/conf-test2-nodeC.xml'], NullDeviceFd);
+    confFiles = ['./acl-distributed/attributeAcl/config/conf-test2-nodeA.xml', './acl-distributed/attributeAcl/config/conf-test2-nodeB.xml', './acl-distributed/attributeAcl/config/conf-test2-nodeC.xml']
+    serverHandle = startCluster(binary_path, confFiles, NullDeviceFd);
     while checkIfNodeReady(3) == False:
         print ' cluster is not ready ...waiting'
         time.sleep(10)
     print 'load balancing  ...waiting'
     time.sleep(80)
-    loadInitialData('./acl-distributed/attributeAcl/stackoverflow/stackoverflow-data-100.json', 'stackoverflow')
-    loadInitialData('./acl-distributed/attributeAcl/worldbank/world_bank.json', 'worldbank')
-    loadAcl('./acl-distributed/attributeAcl/stackoverflow/acl-stackoverflow.json', 'stackoverflow')
-    loadAcl('./acl-distributed/attributeAcl/worldbank/acl-worldbank.json', 'worldbank')
+    loadInitialData(currDir + '/acl-distributed/attributeAcl/stackoverflow/stackoverflow-data-100.json', 'stackoverflow')
+    loadInitialData(currDir + '/acl-distributed/attributeAcl/worldbank/world_bank.json', 'worldbank')
+    loadAcl(currDir + '/acl-distributed/attributeAcl/stackoverflow/acl-stackoverflow.json', 'stackoverflow')
+    loadAcl(currDir + '/acl-distributed/attributeAcl/worldbank/acl-worldbank.json', 'worldbank')
     time.sleep(60)  # let the merge happen    
     print '-------------------------------------------------'
     queriesAndResultsPath = './attributesAcl/testCasesMultiCore.txt'
@@ -298,15 +308,16 @@ if __name__ == '__main__':
     
     if(os.path.exists("./SRCH2Cluster")):
         shutil.rmtree("./SRCH2Cluster")
-    
-    serverHandle = startCluster(binary_path, ['./acl-distributed/attributeAcl/config/conf-test3-nodeA.xml', './acl-distributed/attributeAcl/config/conf-test3-nodeB.xml', './acl-distributed/attributeAcl/config/conf-test3-nodeC.xml' ], NullDeviceFd);
+
+	confFiles = [ './acl-distributed/attributeAcl/config/conf-test3-nodeA.xml', './acl-distributed/attributeAcl/config/conf-test3-nodeB.xml', './acl-distributed/attributeAcl/config/conf-test3-nodeC.xml' ]    
+    serverHandle = startCluster(binary_path, confFiles , NullDeviceFd);
     while checkIfNodeReady(3) == False:
         print ' cluster is not ready ...waiting'
         time.sleep(10)
     print 'load balancing  ...waiting'
     time.sleep(70)
-    loadInitialData('./acl-distributed/attributeAcl/worldbank/world_bank.json')
-    loadAcl('./acl-distributed/attributeAcl/test3-acl.json')
+    loadInitialData(currDir + '/acl-distributed/attributeAcl/worldbank/world_bank.json')
+    loadAcl(currDir + '/acl-distributed/attributeAcl/test3-acl.json')
     #os._exit(exitCode)
     print '-------------------------------------------------'
     time.sleep(20)  # let the merge happen    
@@ -324,14 +335,15 @@ if __name__ == '__main__':
     if(os.path.exists("./SRCH2Cluster")):
         shutil.rmtree("./SRCH2Cluster")
     
-    serverHandle = startCluster(binary_path, ['./acl-distributed/attributeAcl/config/conf-test4-nodeA.xml', './acl-distributed/attributeAcl/config/conf-test4-nodeB.xml', './acl-distributed/attributeAcl/config/conf-test4-nodeC.xml' ], NullDeviceFd);
+    confFiles = ['./acl-distributed/attributeAcl/config/conf-test4-nodeA.xml', './acl-distributed/attributeAcl/config/conf-test4-nodeB.xml', './acl-distributed/attributeAcl/config/conf-test4-nodeC.xml' ]
+    serverHandle = startCluster(binary_path, confFiles, NullDeviceFd);
     while checkIfNodeReady(3) == False:
         print ' cluster is not ready ...waiting'
         time.sleep(10)
     print 'load balancing  ...waiting'
     time.sleep(70)
-    loadInitialData('./acl-distributed/attributeAcl//test4-data.json')
-    loadAcl('./acl-distributed/attributeAcl/test4-acl.json')
+    loadInitialData(currDir + '/acl-distributed/attributeAcl//test4-data.json')
+    loadAcl(currDir + '/acl-distributed/attributeAcl/test4-acl.json')
     print '-------------------------------------------------'
     time.sleep(20)  # let the merge happen    
     queriesAndResultsPath = './attributesAcl/testCasesFilterSortFacetQueryWithSwitch.txt'
