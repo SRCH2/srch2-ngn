@@ -101,7 +101,7 @@ bool IndexReadStateSharedPtr_Token::getExternalRecordIdFromInternalRecordId(cons
 }
 
 bool IndexReadStateSharedPtr_Token::getInternalRecordIdFromExternalRecordId(const std::string &externalRecordId, unsigned &internalRecordId) {
-	return this->getInternalRecordIdFromExternalRecordId(externalRecordId, internalRecordId);
+	return this->forwardIndex->getInternalRecordIdFromExternalRecordId(externalRecordId, internalRecordId);
 }
 /////////////////////// Trie Access Methods
 const TrieNode *IndexReadStateSharedPtr_Token::getTrieNodeFromUtf8String(const std::string &keywordStr) {

@@ -26,7 +26,7 @@ def testShouldShutDownWhenTimerDown(binary_path, conf_file, port, timer):
 
     serverHandle = test_lib.startServer([binary_path, '--config=' + conf_file])
     import time
-    time.sleep(timer+1) 
+    time.sleep(timer+3) 
     try:
         urllib2.urlopen('http://127.0.0.1:'+ str(port) + '/info')
         test_lib.killServer(serverHandle)
