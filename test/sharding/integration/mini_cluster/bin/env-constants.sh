@@ -3,6 +3,7 @@ if [ -z "$CONSTANTS_DEFINED"  ]; then
 ##############################################################################
 echo "Exporting constants ..."
 export NODE_START=1
+## You can always use env variable $__GROUP_PROCESS_COUNT to know the number of nodes that run in this machine.
 export NODE_END=$__GROUP_PROCESS_COUNT
 echo "There are $__GROUP_PROCESS_COUNT nodes in this group."
 
@@ -10,15 +11,19 @@ export LICENSE_FILE="srch2_license_key.txt"
 export STOP_WORDS="stop-words.txt"
 export PROTECTED_WORDS="srch2_protected_words.txt"
 export LOG_FILE_PREFIX="srch2-log"
+## Please figure out the meaning of the next two variables yourself.
 export DATA_SOURCE="/home/jamshid/srch2/sharding-demo/data/"
 export DATA_FILE_PREFIX="statemedia-1000"
 
 # config file constants
+## this variable gives the path + namePrefix of the log file used by Logger::debug
 export LOG_FILE_PREFIX=$__LOG_DIR_REL_PATH/"srch2-log"
+## Note that variable $__GROUP_NAME gives the group name e.g. group-203
 export CONF_FILE_PREFIX="conf-$__GROUP_NAME-"
 export CLUSTER_NAME="SRCH2_Cluster"
 export NODE_NAME_PREFIX="Node-$__GROUP_NAME-"
 export TM_PORT_BASE=4001
+## note variable $__IP_ADDRESS gives the IP address of this machine.
 export TM_IP_ADDRESS="$__IP_ADDRESS"
 export WELL_KNOWN_HOSTS="$__IP_ADDRESS:54000"
 export EXT_HOSTNAME="$__IP_ADDRESS"
@@ -30,7 +35,8 @@ export BINARY_FILE=$__BINARY_FILE
 export DATA_CORE_NAME=$__CORE_NAME
 
 # environment installation variables
-
+# SRCH2_HOME is the most important variable, it's the toppest directory in 
+# the installation
 export SRCH2_HOME=$__SRCH2_HOME
 export ROOT=$SRCH2_HOME
 #export ROOT="hello"

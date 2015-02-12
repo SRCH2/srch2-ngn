@@ -14,10 +14,17 @@
 # __CORE_NAME=stackoverflow
 # __SRC_DIR=up to srch2-ngn folder
 # __DBUILD64BIT=0 or 1 depending on 32 or 64 bit
+__BIN_DIR="bin"
+cd $__SRCH2_HOME
+currentPath=$(pwd)
+ROOT=$(pwd)
+
+
+EXCEPT_LIST=();
 
 ############## Declare constants #####################
-. ./env-constants.sh
-. ./env-util.sh
+. ./$__BIN_DIR/env-constants.sh
+. ./$__BIN_DIR/env-util.sh
 ##### This script performs batches of insert/delete/update 
 ##### operations on the process given in input
 
@@ -97,6 +104,18 @@ then
    if [[ $operation == "insert" ]];
    then
       echo "	Batch size : $batch_size"
+      echo "    NODES      : $NODE_START - $NODE_END"
+      for i in `seq $NODE_START $NODE_END`
+
+      do 
+         echo "    FILE PATH  : $__DATA_FILE_REL_PATH/$__CORE_NAME/data-$__GROUP_NAME-$i.json"
+         echo "    IP ADDRESS : $__IP_ADDRESS"
+         echo "    CORE       : $__CORE_NAME"
+         let "EXT_PORT_BASE += 1"
+         echo "    PORT       : $EXT_PORT_BASE" 
+         echo "    COMMAND    : python ./$__BIN_DIR/insertReqGenerator.py $__DATA_FILE_REL_PATH/$__CORE_NAME/data-$__GROUP_NAME-$i.json $__IP_ADDRESS $EXT_PORT_BASE $__CORE_NAME insert &"
+         python ./$__BIN_DIR/insertReqGenerator.py $__DATA_FILE_REL_PATH/$__CORE_NAME/data-$__GROUP_NAME-$i.json $__IP_ADDRESS $EXT_PORT_BASE $__CORE_NAME insert &
+      done
    fi
    echo "Core name : $core_name"
    echo "Hostname : $hostname"

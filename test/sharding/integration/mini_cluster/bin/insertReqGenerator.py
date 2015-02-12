@@ -4,7 +4,7 @@
 
 import sys
 import json
-
+import subprocess
 
 port = "8002"
 hostname = "128.195.185.107"
@@ -42,7 +42,9 @@ if len(sys.argv) == 9:
 
 def printRequest(hostname, port, corename, operation, data, pkName = "pk_attribute_name"):
    if operation == "insert":
-      print "curl \"http://"+hostname+":"+port+"/"+corename+"/docs\" -i -X PUT -d '" + data + "'"
+#      print "curl \"http://"+hostname+":"+port+"/"+corename+"/docs\" -i -X PUT -d '" + data + "'"
+#      print subprocess.Popen("curl \"http://"+hostname+":"+port+"/"+corename+"/docs\" -i -X PUT -d '" + data + "'", shell=True, stdout=subprocess.PIPE).stdout.read()
+      subprocess.Popen("curl \"http://"+hostname+":"+port+"/"+corename+"/docs\" -i -X PUT -d '" + data + "'", shell=True, stdout=subprocess.PIPE)
    elif operation == "delete":
       print "curl \"http://"+hostname+":"+port+"/"+corename+"/docs?"+pkName+"="+data+"\" -i -X DELETE"
    elif operation == "update":
@@ -99,4 +101,6 @@ elif operation == "delete":
       ##################################################################
       # now extract the primary key value
       lineJson = json.loads(line)
+      if lineNum % 100 == 0:
+         print lineNum
       printRequest(hostname, port, corename, operation, lineJson[pkName], pkName)

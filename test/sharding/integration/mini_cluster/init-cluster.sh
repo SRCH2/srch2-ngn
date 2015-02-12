@@ -2,7 +2,8 @@
 . ./cluster_config.sh
 
 ##############################################################
-# Files that must be copied to each machine in install process
+# Files that must be copied to each machine in install procesis
+# all names are inside bin directory
 __INSTALL_FILES_SCRIPTS=( run_cluster_command \
                   init-group.sh \
                   env-constants.sh \
@@ -17,7 +18,9 @@ __INSTALL_FILES_SCRIPTS=( run_cluster_command \
                   frontend \
                   monitor.sh \
                   suppressions_srch2.supp \
-                  clean-group.sh)
+                  clean-group.sh \
+                  record-op.sh)
+## these files are inside SRCH22_HOME directory
 __INSTALL_FILES_DATA=( $__LICENSE_FILE \
                   $__STOP_WORDS \
                   $__PROTECTED_WORDS \
