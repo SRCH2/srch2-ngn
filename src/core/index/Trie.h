@@ -607,8 +607,6 @@ public:
 
     virtual ~Trie();
 
-    void init();
-
     void resetcounterForReassignedKeywordIds() {
     	this->counterForReassignedKeywordIds = MAX_ALLOCATED_KEYWORD_ID + 1;
     }

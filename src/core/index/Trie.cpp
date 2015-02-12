@@ -388,11 +388,6 @@ TrieNode * TrieNodePath::getLastTrieNode() const
 
 Trie::Trie()
 {
-  this->init();
-}
-
-void Trie::init()
-{
     // We create a root (for the write view) by copying the trie root of the read view.
     // Initially both root views have an empty trie with a "$" sign at the root.
     this->root_readview.reset( new TrieRootNodeAndFreeList() );
@@ -1623,7 +1618,8 @@ void Trie::removeDeletedNodes()
     ASSERT(writeViewRoot);
     if (removeDeletedNodes(writeViewRoot)) {
     	// The whole trie becomes empty. Reinit RV and WV of trie.
-    	// Note: we should not call Trie::init() because we do not want to reset the
+    	// Note: we should not do the same steps as the constructor, 
+	// because we do not want to reset the
     	// all whole trie object. Just few member variables as listed below.
     	delete writeViewRoot;
         this->root_readview.reset( new TrieRootNodeAndFreeList() );
