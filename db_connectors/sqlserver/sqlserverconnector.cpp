@@ -21,7 +21,7 @@ using namespace std;
 using srch2::util::Logger;
 
 SQLServerConnector::SQLServerConnector() {
-    serverHandle = NULL;
+    serverInterface = NULL;
     listenerWaitTime = 1;
     henv = 0;
     hdbc = 0;
@@ -30,11 +30,11 @@ SQLServerConnector::SQLServerConnector() {
 }
 
 //Initialize the connector. Establish a connection to the SQL Server.
-int SQLServerConnector::init(ServerInterface *serverHandle) {
-    this->serverHandle = serverHandle;
+int SQLServerConnector::init(ServerInterface *serverInterface) {
+    this->serverInterface = serverInterface;
     //Get listenerWaitTime value from the config file.
     std::string listenerWaitTimeStr;
-    this->serverHandle->configLookUp("listenerWaitTime", listenerWaitTimeStr);
+    this->serverInterface->configLookUp("listenerWaitTime", listenerWaitTimeStr);
     listenerWaitTime = static_cast<int>(strtol(listenerWaitTimeStr.c_str(),
     NULL, 10));
     if (listenerWaitTimeStr.size() == 0 || listenerWaitTime == 0) {
@@ -43,7 +43,7 @@ int SQLServerConnector::init(ServerInterface *serverHandle) {
 
     //Get SQLSERVER_MAX_RECORD_LEN from the config file.
     std::string sqlServerMaxColumnLengthStr;
-    this->serverHandle->configLookUp("sqlServerMaxColumnLength",
+    this->serverInterface->configLookUp("sqlServerMaxColumnLength",
             sqlServerMaxColumnLengthStr);
     sqlServerMaxColumnLength = static_cast<int>(strtol(
             sqlServerMaxColumnLengthStr.c_str(),
@@ -68,7 +68,7 @@ int SQLServerConnector::init(ServerInterface *serverHandle) {
 
     //Get the schema information from the SQL Server.
     string tableName;
-    this->serverHandle->configLookUp("tableName", tableName);
+    this->serverInterface->configLookUp("tableName", tableName);
     if (!populateTableSchema(tableName)) {
         Logger::error("SQLSERVERCONNECTOR: exiting...");
         return -1;
@@ -83,11 +83,11 @@ int SQLServerConnector::init(ServerInterface *serverHandle) {
  */
 bool SQLServerConnector::connectToDB() {
     string dataSource, user, password, dbName, server;
-    this->serverHandle->configLookUp("server", server);
-    this->serverHandle->configLookUp("dataSource", dataSource);
-    this->serverHandle->configLookUp("user", user);
-    this->serverHandle->configLookUp("password", password);
-    this->serverHandle->configLookUp("dbName", dbName);
+    this->serverInterface->configLookUp("server", server);
+    this->serverInterface->configLookUp("dataSource", dataSource);
+    this->serverInterface->configLookUp("user", user);
+    this->serverInterface->configLookUp("password", password);
+    this->serverInterface->configLookUp("dbName", dbName);
 
     std::stringstream sql;
     std::stringstream connectionString;
@@ -202,12 +202,12 @@ bool SQLServerConnector::executeQuery(SQLHSTMT & hstmt,
  */
 bool SQLServerConnector::checkConfigValidity() {
     string dataSource, user, dbName, uniqueKey, tableName, server;
-    this->serverHandle->configLookUp("server", server);
-    this->serverHandle->configLookUp("dataSource", dataSource);
-    this->serverHandle->configLookUp("user", user);
-    this->serverHandle->configLookUp("dbName", dbName);
-    this->serverHandle->configLookUp("uniqueKey", uniqueKey);
-    this->serverHandle->configLookUp("tableName", tableName);
+    this->serverInterface->configLookUp("server", server);
+    this->serverInterface->configLookUp("dataSource", dataSource);
+    this->serverInterface->configLookUp("user", user);
+    this->serverInterface->configLookUp("dbName", dbName);
+    this->serverInterface->configLookUp("uniqueKey", uniqueKey);
+    this->serverInterface->configLookUp("tableName", tableName);
 
     bool ret = (server.size() != 0) && (dataSource.size() != 0)
             && (user.size() != 0) && (dbName.size() != 0)
@@ -291,7 +291,7 @@ bool SQLServerConnector::populateTableSchema(std::string & tableName) {
  */
 int SQLServerConnector::createNewIndexes() {
     std::string tableName;
-    this->serverHandle->configLookUp("tableName", tableName);
+    this->serverInterface->configLookUp("tableName", tableName);
 
     int indexedRecordsCount = 0;
     int totalRecordsCount = 0;
@@ -355,7 +355,7 @@ int SQLServerConnector::createNewIndexes() {
                 string jsonString = writer.write(record);
 
                 totalRecordsCount++;
-                if (serverHandle->insertRecord(jsonString) == 0) {
+                if (serverInterface->insertRecord(jsonString) == 0) {
                     indexedRecordsCount++;
                 }
                 Logger::debug("SQLSERVERCONNECTOR: Line %d %s", __LINE__,
@@ -398,8 +398,8 @@ int SQLServerConnector::createNewIndexes() {
  */
 int SQLServerConnector::runListener() {
     std::string tableName, uniqueKey;
-    this->serverHandle->configLookUp("tableName", tableName);
-    this->serverHandle->configLookUp("uniqueKey", uniqueKey);
+    this->serverInterface->configLookUp("tableName", tableName);
+    this->serverInterface->configLookUp("uniqueKey", uniqueKey);
 
     loadLastAccessedLogRecordTime();
 
@@ -548,15 +548,15 @@ int SQLServerConnector::runListener() {
                             jsonString.c_str());
                     switch (operation) {
                     case 'I': {
-                        serverHandle->insertRecord(jsonString);
+                        serverInterface->insertRecord(jsonString);
                     }
                         break;
                     case 'D': {
-                        serverHandle->deleteRecord(oldPk);
+                        serverInterface->deleteRecord(oldPk);
                     }
                         break;
                     case 'U': {
-                        serverHandle->updateRecord(oldPk, jsonString);
+                        serverInterface->updateRecord(oldPk, jsonString);
                     }
                         break;
                     default:
@@ -600,8 +600,8 @@ int SQLServerConnector::runListener() {
 
 void SQLServerConnector::loadLastAccessedLogRecordTime() {
     std::string path, srch2Home;
-    this->serverHandle->configLookUp("srch2Home", srch2Home);
-    this->serverHandle->configLookUp("dataDir", path);
+    this->serverInterface->configLookUp("srch2Home", srch2Home);
+    this->serverInterface->configLookUp("dataDir", path);
 
     path = srch2Home + "/" + path + "/" + "sqlserver_data/data.bin";
     if (checkFileExisted(path.c_str())) {
@@ -621,7 +621,7 @@ void SQLServerConnector::loadLastAccessedLogRecordTime() {
 //Query : "SELECT MAX(SYS_CHANGE_VERSION) FROM CHANGETABLE(CHANGES table", 0)CT";
 void SQLServerConnector::populateLastAccessedLogRecordTime() {
     string tableName;
-    this->serverHandle->configLookUp("tableName", tableName);
+    this->serverInterface->configLookUp("tableName", tableName);
 
     std::stringstream sql;
     sql << "SELECT MAX(SYS_CHANGE_VERSION) FROM CHANGETABLE(CHANGES "
@@ -666,8 +666,8 @@ void SQLServerConnector::populateLastAccessedLogRecordTime() {
 //For SQL Server, we save the SYS_CHANGE_VERSION instead.
 void SQLServerConnector::saveLastAccessedLogRecordTime() {
     std::string path, srch2Home;
-    this->serverHandle->configLookUp("srch2Home", srch2Home);
-    this->serverHandle->configLookUp("dataDir", path);
+    this->serverInterface->configLookUp("srch2Home", srch2Home);
+    this->serverInterface->configLookUp("dataDir", path);
     path = srch2Home + "/" + path + "/" + "sqlserver_data/";
     if (!checkDirExisted(path.c_str())) {
         // S_IRWXU : Read, write, and execute by owner.

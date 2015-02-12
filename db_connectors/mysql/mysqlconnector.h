@@ -25,7 +25,7 @@ public:
     ~MySQLConnector();
 
     //Initialize the connector. Establish a connection to the MySQL database.
-    virtual int init(ServerInterface *serverHandle);
+    virtual int init(ServerInterface *serverInterface);
     //Retrieve records from the table and insert them into the SRCH2 engine.
     virtual int createNewIndexes();
     /*
@@ -38,7 +38,7 @@ public:
     virtual void saveLastAccessedLogRecordTime();
 
 private:
-    ServerInterface * serverHandle;
+    ServerInterface * serverInterface;
     int listenerWaitTime;
     time_t lastAccessedLogRecordTime;
     unsigned nextPosition;

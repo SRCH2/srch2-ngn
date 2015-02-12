@@ -18,7 +18,7 @@ using namespace std;
 using srch2::util::Logger;
 
 MySQLConnector::MySQLConnector() {
-    serverHandle = NULL;
+    serverInterface = NULL;
     listenerWaitTime = 1;
     stmt = NULL;
     lastAccessedLogRecordTime = 0;
@@ -27,11 +27,11 @@ MySQLConnector::MySQLConnector() {
 }
 
 //Initialize the connector. Establish a connection to the MySQL database.
-int MySQLConnector::init(ServerInterface *serverHandle) {
-    this->serverHandle = serverHandle;
+int MySQLConnector::init(ServerInterface *serverInterface) {
+    this->serverInterface = serverInterface;
     //Get listenerWaitTime value from the config file.
     std::string listenerWaitTimeStr;
-    this->serverHandle->configLookUp("listenerWaitTime", listenerWaitTimeStr);
+    this->serverInterface->configLookUp("listenerWaitTime", listenerWaitTimeStr);
     listenerWaitTime = static_cast<int>(strtol(listenerWaitTimeStr.c_str(),
     NULL, 10));
     if (listenerWaitTimeStr.size() == 0 || listenerWaitTime == 0) {
@@ -51,7 +51,7 @@ int MySQLConnector::init(ServerInterface *serverHandle) {
 
     //Get the schema information from the MySQL.
     string tableName;
-    this->serverHandle->configLookUp("tableName", tableName);
+    this->serverInterface->configLookUp("tableName", tableName);
     if (!populateFieldName(tableName)) {
         Logger::error("MYSQLCONNECTOR: exiting...");
         return -1;
@@ -63,11 +63,11 @@ int MySQLConnector::init(ServerInterface *serverHandle) {
 //Connect to the MySQL database
 bool MySQLConnector::connectToDB() {
     string host, port, user, password, dbName;
-    this->serverHandle->configLookUp("host", host);
-    this->serverHandle->configLookUp("port", port);
-    this->serverHandle->configLookUp("user", user);
-    this->serverHandle->configLookUp("password", password);
-    this->serverHandle->configLookUp("dbName", dbName);
+    this->serverInterface->configLookUp("host", host);
+    this->serverInterface->configLookUp("port", port);
+    this->serverInterface->configLookUp("user", user);
+    this->serverInterface->configLookUp("password", password);
+    this->serverInterface->configLookUp("dbName", dbName);
 
     string hostAndport = host;
     if (port.size()) {
@@ -116,13 +116,13 @@ bool MySQLConnector::connectToDB() {
  */
 bool MySQLConnector::checkConfigValidity() {
     string host, port, user, dbName, uniqueKey, tableName, logName;
-    this->serverHandle->configLookUp("host", host);
-    this->serverHandle->configLookUp("port", port);
-    this->serverHandle->configLookUp("user", user);
-    this->serverHandle->configLookUp("dbName", dbName);
-    this->serverHandle->configLookUp("uniqueKey", uniqueKey);
-    this->serverHandle->configLookUp("tableName", tableName);
-    this->serverHandle->configLookUp("logName", logName);
+    this->serverInterface->configLookUp("host", host);
+    this->serverInterface->configLookUp("port", port);
+    this->serverInterface->configLookUp("user", user);
+    this->serverInterface->configLookUp("dbName", dbName);
+    this->serverInterface->configLookUp("uniqueKey", uniqueKey);
+    this->serverInterface->configLookUp("tableName", tableName);
+    this->serverInterface->configLookUp("logName", logName);
 
     bool ret = (host.size() != 0) && (port.size() != 0) && (user.size() != 0)
             && (dbName.size() != 0) && (uniqueKey.size() != 0)
@@ -143,7 +143,7 @@ bool MySQLConnector::checkConfigValidity() {
  */
 int MySQLConnector::createNewIndexes() {
     std::string tableName;
-    this->serverHandle->configLookUp("tableName", tableName);
+    this->serverInterface->configLookUp("tableName", tableName);
 
     int indexedRecordsCount = 0;
     int totalRecordsCount = 0;
@@ -167,7 +167,7 @@ int MySQLConnector::createNewIndexes() {
                 std::string jsonString = writer.write(record);
 
                 totalRecordsCount++;
-                if (serverHandle->insertRecord(jsonString) == 0) {
+                if (serverInterface->insertRecord(jsonString) == 0) {
                     indexedRecordsCount++;
                 }
 
@@ -244,9 +244,9 @@ bool MySQLConnector::getFirstLogFileName(std::string & logFileName) {
 bool MySQLConnector::loadLastAccessedLogRecordTime() {
     std::string dataDir, srch2Home, logName, logFileStr, logPosStr,
             firstLogFile;
-    this->serverHandle->configLookUp("logName", logName);
-    this->serverHandle->configLookUp("srch2Home", srch2Home);
-    this->serverHandle->configLookUp("dataDir", dataDir);
+    this->serverInterface->configLookUp("logName", logName);
+    this->serverInterface->configLookUp("srch2Home", srch2Home);
+    this->serverInterface->configLookUp("dataDir", dataDir);
     std::string path = srch2Home + "/" + dataDir + "/mysql_data/" + "data.bin";
 
     if (!getFirstLogFileName(firstLogFile)) {
@@ -312,8 +312,8 @@ bool MySQLConnector::loadLastAccessedLogRecordTime() {
 //Save lastSavingIndexTime to the disk
 void MySQLConnector::saveLastAccessedLogRecordTime() {
     std::string path, srch2Home;
-    this->serverHandle->configLookUp("srch2Home", srch2Home);
-    this->serverHandle->configLookUp("dataDir", path);
+    this->serverInterface->configLookUp("srch2Home", srch2Home);
+    this->serverInterface->configLookUp("dataDir", path);
     path = srch2Home + "/" + path + "/" + "mysql_data/";
     if (!checkDirExisted(path.c_str())) {
         // S_IRWXU : Read, write, and execute by owner.
@@ -335,12 +335,12 @@ void MySQLConnector::saveLastAccessedLogRecordTime() {
  */
 int MySQLConnector::runListener() {
     string host, port, user, password, dbName, pk;
-    this->serverHandle->configLookUp("host", host);
-    this->serverHandle->configLookUp("port", port);
-    this->serverHandle->configLookUp("user", user);
-    this->serverHandle->configLookUp("password", password);
-    this->serverHandle->configLookUp("dbName", dbName);
-    this->serverHandle->configLookUp("uniqueKey", pk);
+    this->serverInterface->configLookUp("host", host);
+    this->serverInterface->configLookUp("port", port);
+    this->serverInterface->configLookUp("user", user);
+    this->serverInterface->configLookUp("password", password);
+    this->serverInterface->configLookUp("dbName", dbName);
+    this->serverInterface->configLookUp("uniqueKey", pk);
 
     loadLastAccessedLogRecordTime();
 
@@ -353,7 +353,7 @@ int MySQLConnector::runListener() {
 //Register the handlers to listen the binlog event
     MySQLIncidentHandler incidentHandler;
     MySQLTableIndex tableEventHandler;
-    MySQLApplier applier(&tableEventHandler, serverHandle, &fieldNames,
+    MySQLApplier applier(&tableEventHandler, serverInterface, &fieldNames,
             lastAccessedLogRecordTime, pk);
 
     binlog.content_handler_pipeline()->push_back(&tableEventHandler);

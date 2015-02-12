@@ -20,7 +20,7 @@ public:
     ~MongoDBConnector();
 
     //Init the connector, call connect
-    virtual int init(ServerInterface *serverHandle);
+    virtual int init(ServerInterface *serverInterface);
 
     //Listen to the oplog and do modification to the engine
     virtual int runListener();
@@ -31,7 +31,7 @@ public:
     //Save the lastAccessedLogRecordTime to the disk
     virtual void saveLastAccessedLogRecordTime();
 private:
-    ServerInterface *serverHandle;
+    ServerInterface *serverInterface;
     mongo::DBClientBase* oplogConnection;
     mongo::ScopedDbConnection * mongoConnector;
     time_t lastAccessedLogRecordTime;

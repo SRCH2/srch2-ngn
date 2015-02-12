@@ -26,7 +26,7 @@ public:
     virtual ~SQLiteConnector();
 
     //Initialize the connector. Establish a connection to the Sqlite.
-    virtual int init(ServerInterface *serverHandle);
+    virtual int init(ServerInterface *serverInterface);
     //Retrieve records from the table records and insert them into the SRCH2 engine.
     virtual int createNewIndexes();
     //Periodically check updates in the Sqlite log table,
@@ -48,7 +48,7 @@ public:
 
     //Store the table schema. Key is schema name and value is schema type
     std::map<std::string, std::string> tableSchema;
-    ServerInterface *serverHandle;
+    ServerInterface *serverInterface;
 private:
     //Config parameters
     std::string LOG_TABLE_NAME;

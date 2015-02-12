@@ -49,10 +49,10 @@ mysql::Binary_log_event * MySQLIncidentHandler::process_event(
 /*****************************MySQLApplier**********************************/
 //This class handles insert, delete, update events.
 MySQLApplier::MySQLApplier(MySQLTableIndex * index,
-        ServerInterface * serverHandle, std::vector<std::string> * schemaName,
+        ServerInterface * serverInterface, std::vector<std::string> * schemaName,
         time_t & startTimestamp, std::string & pk) {
     tableIndex = index;
-    this->serverHandle = serverHandle;
+    this->serverInterface = serverInterface;
     this->schemaName = schemaName;
     this->startTimestamp = startTimestamp;
     this->pk = pk;
@@ -60,7 +60,7 @@ MySQLApplier::MySQLApplier(MySQLTableIndex * index,
 
 mysql::Binary_log_event * MySQLApplier::process_event(mysql::Row_event * rev) {
     std::string expectedTableName, lowerTableName;
-    this->serverHandle->configLookUp("tableName", expectedTableName);
+    this->serverInterface->configLookUp("tableName", expectedTableName);
 
     time_t ts = rev->header()->timestamp;
 
@@ -159,7 +159,7 @@ void MySQLApplier::tableInsert(std::string & table_name,
     std::string jsonString = writer.write(record);
     Logger::debug("MYSQLCONNECTOR: Inserting %s ", jsonString.c_str());
 
-    serverHandle->insertRecord(jsonString);
+    serverInterface->insertRecord(jsonString);
 }
 
 void MySQLApplier::tableDelete(std::string & table_name,
@@ -179,7 +179,7 @@ void MySQLApplier::tableDelete(std::string & table_name,
         if ((*schema_it).compare(this->pk.c_str()) == 0) {
             Logger::debug("MYSQLCONNECTOR: Deleting primary key %s = %s ",
                     this->pk.c_str(), str.c_str());
-            serverHandle->deleteRecord(str);
+            serverInterface->deleteRecord(str);
             break;
         }
         field_it++;

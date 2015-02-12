@@ -34,7 +34,9 @@ void DataConnectorThread::bootStrapConnector(
 
     //Get the pointer of the shared library
     std::string libName = connThreadArg->sharedLibraryFullPath;
-    getDataConnector(libName, pdlHandle, connector);
+    if (!getDataConnector(libName, pdlHandle, connector)) {
+        return;
+    }
     //Save all the connector pointers into a static vector
     connectors[connThreadArg->coreName] = connector;
 
@@ -68,13 +70,13 @@ void DataConnectorThread::saveConnectorTimestamps() {
 }
 
 //Get the handle of shared library
-void DataConnectorThread::getDataConnector(std::string & path, void * pdlHandle,
+bool DataConnectorThread::getDataConnector(std::string & path, void * pdlHandle,
         DataConnector *& connector) {
     pdlHandle = dlopen(path.c_str(), RTLD_LAZY); //Open the shared library.
     if (!pdlHandle) {
         Logger::error("Fail to load shared library %s due to %s", path.c_str(),
                 dlerror());
-        return; //Exit from the current thread if can not open the shared library
+        return false; //Exit from the current thread if can not open the shared library
     }
 
     /*
@@ -95,11 +97,12 @@ void DataConnectorThread::getDataConnector(std::string & path, void * pdlHandle,
                 "Cannot load symbol \"create\" in shared library due to: %s",
                 dlsym_error);
         dlclose(pdlHandle);
-        return; //Exit from the current thread if can not open the shared library
+        return false; //Exit from the current thread if can not open the shared library
     }
 
     //Call the "create" function in the shared library.
     connector = createDataConnector();
+    return true;
 }
 
 //Close the handle of shared library
@@ -131,7 +134,8 @@ void DataConnectorThread::getDataConnectorThread(void * server) {
         delete dbArg;
         delete internal;
     } else {
-        dbArg->coreName = ((srch2::httpwrapper::Srch2Server*) server)->getCoreName();
+        dbArg->coreName =
+                ((srch2::httpwrapper::Srch2Server*) server)->getCoreName();
         dbArg->serverInterface = internal;
         dbArg->createNewIndexFlag = checkIndexExistence(server);
 
