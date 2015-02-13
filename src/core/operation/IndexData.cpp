@@ -101,7 +101,7 @@ bool IndexReadStateSharedPtr_Token::getExternalRecordIdFromInternalRecordId(cons
 }
 
 bool IndexReadStateSharedPtr_Token::getInternalRecordIdFromExternalRecordId(const std::string &externalRecordId, unsigned &internalRecordId) {
-	return this->getInternalRecordIdFromExternalRecordId(externalRecordId, internalRecordId);
+	return this->forwardIndex->getInternalRecordIdFromExternalRecordId(externalRecordId, internalRecordId);
 }
 /////////////////////// Trie Access Methods
 const TrieNode *IndexReadStateSharedPtr_Token::getTrieNodeFromUtf8String(const std::string &keywordStr) {
@@ -863,20 +863,10 @@ void IndexData::_exportData(const string &exportedDataFileName) const {
 	ForwardIndex::exportData(*this->forwardIndex, exportedDataFileName);
 }
 
+// Caller should call merge and acquire write lock before calling this function.
 void IndexData::_save(CacheManager *cache, const string &directoryName) const {
+	ASSERT(mergeRequired == false);
 	Serializer serializer;
-
-    // ---------- save forwardIndex -----------
-	if (this->forwardIndex->isMergeRequired()) {
-		this->forwardIndex->merge();
-		if (this->forwardIndex->hasDeletedRecords()) {
-			// free the space for deleted records.
-			// need the global lock to block other readers
-			boost::unique_lock<boost::shared_mutex> lock(
-					globalRwMutexForReadersWriters);
-			this->forwardIndex->freeSpaceOfDeletedRecords();
-		}
-	}
 
 	try {
 		serializer.save(*this->forwardIndex,
@@ -895,10 +885,7 @@ void IndexData::_save(CacheManager *cache, const string &directoryName) const {
 				directoryName.c_str(), IndexConfig::schemaFileName);
 	}
 
-    // ---------- save invertedIndex -----------
-	if (this->invertedIndex->mergeRequired())
-		this->invertedIndex->merge(this->rankerExpression,
-				this->writeCounter->getNumberOfDocuments(), this->schemaInternal, this->trie);
+	// ---------- save invertedIndex -----------
 	try {
 		serializer.save(*this->invertedIndex,
 				directoryName + "/" + IndexConfig::invertedIndexFileName);
@@ -907,27 +894,7 @@ void IndexData::_save(CacheManager *cache, const string &directoryName) const {
 				directoryName.c_str(), IndexConfig::invertedIndexFileName);
 	}
 
-
     // ---------- save trie -----------
-    // We save the trie after saving the inverted index since
-    // the step of merging inverted index tells us what leaf nodes have an empty
-    // inverted list, thus become removable.
-    if (this->trie->isMergeRequired()) {
-        this->trie->merge(NULL, NULL, 0, false);
-
-        // shrink the trie if needed
-        if (this->trie->getEmptyLeafNodeIdSize() > 0) {
-            // we need to acquire the global lock to block all other readers and writers
-            boost::unique_lock<boost::shared_mutex> lock(globalRwMutexForReadersWriters);
-            this->trie->removeDeletedNodes();
-
-	    // since we are deleting trie nodes, we need to clear the cache while
-	    // holding the global RW lock.
-	    if (cache != NULL)
-	      cache->clear();
-        }
-    }
-
     try {
         serializer.save(*this->trie,
                 directoryName + "/" + IndexConfig::trieFileName);

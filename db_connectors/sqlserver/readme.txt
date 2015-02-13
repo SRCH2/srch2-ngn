@@ -101,7 +101,9 @@ SQL Server.  It supports Linux only.
       sql@admin 2> go
 
 2. Install third-party libraries:
-
+   Install Python-devel:
+       shell> yum install python-devel (CentOs)
+       shell> apt-get install python-dev (Ubuntu)
    shell> cd srch2-ngn/thirdparty/
    shell> ./thirdparty-build.sh
 

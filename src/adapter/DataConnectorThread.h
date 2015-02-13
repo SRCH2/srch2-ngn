@@ -33,7 +33,7 @@ public:
     static void saveConnectorTimestamps();
 private:
     static bool checkIndexExistence(void * server);
-    static void getDataConnector(std::string & path, void * pdlHandle,
+    static bool getDataConnector(std::string & path, void * pdlHandle,
             DataConnector *& connector);
     static void closeDataConnector(void * pdlHandle,
             DataConnector *& connector);

@@ -388,11 +388,6 @@ TrieNode * TrieNodePath::getLastTrieNode() const
 
 Trie::Trie()
 {
-  this->init();
-}
-
-void Trie::init()
-{
     // We create a root (for the write view) by copying the trie root of the read view.
     // Initially both root views have an empty trie with a "$" sign at the root.
     this->root_readview.reset( new TrieRootNodeAndFreeList() );
@@ -1563,6 +1558,7 @@ void Trie::merge(const InvertedIndex * invertedIndex ,
     }
 
     this->root_writeview = new TrieNode(this->root_readview.get()->root);
+    mergeRequired = false;
 }
 
 void Trie::commit()
@@ -1619,10 +1615,18 @@ void Trie::removeDeletedNodes()
     std::sort(emptyLeafNodeIds.begin(), emptyLeafNodeIds.end());
 
     TrieNode *writeViewRoot = this->getTrieRootNode_WriteView();
+    ASSERT(writeViewRoot);
     if (removeDeletedNodes(writeViewRoot)) {
-      // The whole trie becomes empty. We need to repeat the logic
-      // in the constructor of the trie to re-initialize the trie
-      this->init();
+    	// The whole trie becomes empty. Reinit RV and WV of trie.
+    	// Note: we should not do the same steps as the constructor, 
+	// because we do not want to reset the
+    	// all whole trie object. Just few member variables as listed below.
+    	delete writeViewRoot;
+        this->root_readview.reset( new TrieRootNodeAndFreeList() );
+        this->root_writeview = new TrieNode(this->root_readview.get()->root);
+        this->numberOfTerminalNodes = 0;
+        this->mergeRequired = false;
+        this->counterForReassignedKeywordIds = MAX_ALLOCATED_KEYWORD_ID + 1;
     } else {
         // The trie is not empty.
         // Similar to the operations in trie.merge(), we need to "merge"
@@ -1714,8 +1718,8 @@ bool Trie::removeDeletedNodes(TrieNode *trieNode)
         // remove the last "numberOfNulledChildren" children since they have been copied to the left
 	// Note: "pop_back()" will NOT delete the trie nodes of these pointers
         for (int i = 0; i < numberOfNulledChildren; i++) {
-	  trieNode->childrenPointerList.pop_back();
-	}
+        	trieNode->childrenPointerList.pop_back();
+        }
     }
 
     if (trieNode->isTerminalNode()) {
@@ -2049,6 +2053,19 @@ void Trie::getPrefixString(const TrieNode* rootReadView, const TrieNode* trieNod
     const TrieNode* nodeIter = rootReadView;
     while (nodeIter->getDepth() < prefix_node_depth) {
         nodeIter = nodeIter->findLowerBoundChildByMinId(minId);
+
+	// If the node is not found, or the depth is not right,
+        // then something is wrong with the trie.
+	// Our earier investigation showed that in this case "trieNode" was 
+        // not found in the read view of the trie. Instead it's found in the write view.
+	// The bug is still not fixed yet.  For now, we want to do defensive
+	// programming by returning an empty string.
+	// TODO: Fix the hidden bug later!!!
+	if (nodeIter == NULL || ( nodeIter != NULL && nodeIter->getDepth() > prefix_node_depth )) {
+	  in.clear();
+	  return;
+	}
+
         ASSERT(nodeIter != NULL);
         ASSERT(nodeIter->getDepth() <= prefix_node_depth);
 
