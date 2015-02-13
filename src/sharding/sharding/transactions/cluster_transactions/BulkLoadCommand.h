@@ -231,8 +231,8 @@ private:
         		Json::Reader reader;
         		bool parseSuccess = reader.parse(line.c_str(), root, false);
         		if (parseSuccess == false) {
-    	        	AclRecordBatchInfo bi = { lineProcessed, roleIdList, false,  "Parse error"};
-    	        	recordAclBatchInfo.push_back(bi);
+    	        	AclAttributeBatchInfo bi = { lineProcessed, roleIdList, false,  "Parse error"};
+    	        	attributeAclBatchInfo.push_back(bi);
     	        	break;
         		}
 
