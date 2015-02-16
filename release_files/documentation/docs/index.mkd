@@ -48,10 +48,11 @@ the [JSON](http://json.org/) format.
 
 ##What's new in SRCH2 4.4.4
 ####Features:
-- Added an [Oracle connectors](./connectors).
-- Added a [connector SDK](./connectors) to allow programmers to write customized connectors.
+- Added a [connector SDK](./connectors/#6-data-connector-sdk) to allow programmers to write customized connectors.
+- Added an [Oracle connectors](./connectors/#64-an-example-connector-for-oracle).
 
 ####Improvements:
+- Bug fixes
 
 ##Platforms
 
