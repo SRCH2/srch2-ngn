@@ -72,34 +72,6 @@ QueryResultsInternal::QueryResultsInternal(QueryResultFactory * resultsFactory,
     this->estimatedNumberOfResults = -1;
 }
 
-// DEBUG function. Used in CacheIntegration_Test
-bool QueryResultsInternal::checkCacheHit(
-        QueryEvaluatorInternal *queryEvaluatorInternal, Query *query) {
-    this->query = query;
-    this->virtualListVector = new vector<TermVirtualList*>;
-
-    bool returnValue = false;
-    const vector<Term*> *queryTerms = query->getQueryTerms();
-
-    for (vector<Term*>::const_iterator vectorIterator = queryTerms->begin();
-            vectorIterator != queryTerms->end(); vectorIterator++) {
-        // compute the active nodes for this term
-        Term *term = *vectorIterator;
-        boost::shared_ptr<PrefixActiveNodeSet> termActiveNodeSet = queryEvaluatorInternal
-                ->computeActiveNodeSet(term);
-
-        // compute the virtual list for this term
-        TermVirtualList *termVirtualList = new TermVirtualList(
-                queryEvaluatorInternal->getInvertedIndex(),
-                queryEvaluatorInternal->getForwardIndex(),
-                termActiveNodeSet.get(),
-                term, query->getPrefixMatchPenalty());
-
-        this->virtualListVector->push_back(termVirtualList);
-    }
-    return returnValue;
-}
-
 QueryResultsInternal::~QueryResultsInternal() {
     // TODO: if we use caching, we can leave them in the cache
     if(virtualListVector != NULL){

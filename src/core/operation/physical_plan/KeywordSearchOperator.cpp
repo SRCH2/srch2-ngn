@@ -8,15 +8,6 @@
 namespace srch2 {
 namespace instantsearch {
 
-void freeStatsOfLogicalPlanTree(LogicalPlanNode * node) {
-    if(node == NULL){
-        return;
-    }
-    delete node->stats;
-    for(vector<LogicalPlanNode * >::iterator child = node->children.begin(); child != node->children.end() ; ++child){
-        freeStatsOfLogicalPlanTree(*child);
-    }
-}
 bool KeywordSearchOperator::open(QueryEvaluatorInternal * queryEvaluator, PhysicalPlanExecutionParameters & /*Not used*/){
 
     //    struct timespec tstart;
@@ -28,7 +19,7 @@ bool KeywordSearchOperator::open(QueryEvaluatorInternal * queryEvaluator, Physic
     // we set fuzzy to false to the first session which is exact
     logicalPlan->setFuzzy(false);
     PhysicalPlanExecutionParameters params(0, logicalPlan->isFuzzy() , logicalPlan->getExactQuery()->getPrefixMatchPenalty(), logicalPlan->getQueryType());
-    params.totalNumberOfRecords = queryEvaluator->getForwardIndex()->getTotalNumberOfForwardLists_ReadView();
+    params.totalNumberOfRecords = queryEvaluator->getTotalNumberOfRecords();
 
     // setup feedback ranker if query is present in Feedback Index.
     params.feedbackRanker = NULL;
@@ -68,7 +59,7 @@ bool KeywordSearchOperator::open(QueryEvaluatorInternal * queryEvaluator, Physic
             /*
              *   For the fuzzy run, free the old 'stats' accumulated during the exact run.
              */
-            freeStatsOfLogicalPlanTree(logicalPlan->getTree());
+        	HistogramManager::freeStatsOfLogicalPlanTree(logicalPlan->getTree());
         }
         histogramManager.annotate(logicalPlan);
         /*

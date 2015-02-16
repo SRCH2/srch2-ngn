@@ -30,7 +30,7 @@ GeoNearestNeighborOperator::~GeoNearestNeighborOperator(){
 bool GeoNearestNeighborOperator::open(QueryEvaluatorInternal * queryEvaluator, PhysicalPlanExecutionParameters & params){
 	this->queryEvaluator = queryEvaluator;
 	// get the forward list read view
-	this->queryEvaluator->getForwardIndex()->getForwardListDirectory_ReadView(this->forwardListDirectoryReadView);
+	this->forwardListDirectoryReadView = this->queryEvaluator->indexReadToken.forwardIndexReadViewSharedPtr;
 	// finding the query region
 	this->queryShape = this->getPhysicalPlanOptimizationNode()->getLogicalPlanNode()->regionShape;
 	// get quadTreeNodeSet which contains all the subtrees in quadtree which have the answers
@@ -89,10 +89,7 @@ PhysicalPlanRecordItem* GeoNearestNeighborOperator::getNext(const PhysicalPlanEx
 		}else{ // the top of the heap is a geoElement. So we can return it if it is in the query region
 			// check the record and return it if it's valid.
 			bool valid = false;
-			const ForwardList* forwardList = this->queryEvaluator->getForwardIndex()->getForwardList(
-					 this->forwardListDirectoryReadView,
-					 heapItem->geoElement->forwardListID,
-					 valid);
+			const ForwardList* forwardList = this->queryEvaluator->indexReadToken.getForwardList(heapItem->geoElement->forwardListID, valid);
 			if(valid && this->queryShape->contain(heapItem->geoElement->point)){
 				PhysicalPlanRecordItem* newItem = this->queryEvaluator->getPhysicalPlanRecordItemPool()->createRecordItem();
 				newItem->setIsGeo(true); // this Item is for a geo element

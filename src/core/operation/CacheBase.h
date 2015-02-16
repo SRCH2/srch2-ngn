@@ -113,6 +113,7 @@ public:
 	};
 
 	bool put(string & key, boost::shared_ptr<T> & objectPointer){
+
 		boost::unique_lock< boost::shared_mutex > lock(_access);
 
 //		ASSERT(checkCacheConsistency());

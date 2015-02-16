@@ -692,7 +692,7 @@ private:
 
     ///vector of forwardLists, where RecordId is the element index.
     cowvector<ForwardListPtr> *forwardListDirectory;
-
+    ReadViewManager<ForwardListPtr> fwdListDirReadViewsMgr;
     //Used only in WriteView
     ThreadSafeMap<std::string, unsigned> externalToInternalRecordIdMap;
 

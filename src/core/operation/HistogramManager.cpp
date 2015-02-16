@@ -25,7 +25,7 @@ void HistogramManager::annotate(LogicalPlan * logicalPlan){
 	 * 2. Estimated number of results for each internal node of LogicalPlan.
 	 */
 
-	allocateLogicalPlanNodeAnnotations(logicalPlan->getTree());
+    HistogramManager::allocateLogicalPlanNodeAnnotations(logicalPlan->getTree());
 
 	// TODO : Jamshid change the name of it ...
 	annotateWithActiveNodeSets(logicalPlan->getTree(), logicalPlan->isFuzzy());
@@ -83,17 +83,6 @@ void HistogramManager::markTermToForceSuggestionPhysicalOperator(LogicalPlanNode
 			return;
 		}
     }
-}
-
-// traverses the tree (by recursive calling) and allocates the annotation object for each node
-void HistogramManager::allocateLogicalPlanNodeAnnotations(LogicalPlanNode * node){
-	if(node == NULL){
-		return;
-	}
-	node->stats = new LogicalPlanNodeAnnotation();
-	for(vector<LogicalPlanNode * >::iterator child = node->children.begin(); child != node->children.end() ; ++child){
-		allocateLogicalPlanNodeAnnotations(*child);
-	}
 }
 
 // traverses the tree (by recursive calling) and computes active nodes when it sees a TERM node
@@ -243,7 +232,7 @@ void HistogramManager::annotateWithEstimatedProbabilitiesAndNumberOfResults(Logi
 			for( unsigned i = 0 ; i < quadTreeNodeSet->size() ; i++){
 				geoNode = quadTreeNodeSet->at(i);
 				quadTreeNodeProbability = ( double(geoNode->getNumOfElementsInSubtree()) /
-														this->queryEvaluator->indexData->forwardIndex->getTotalNumberOfForwardLists_ReadView());
+														this->queryEvaluator->getTotalNumberOfRecords());
 				geoElementsProbability = geoNode->aggregateValueByJointProbabilityDouble(geoElementsProbability, quadTreeNodeProbability);
 				geoNumOfLeafNodes += geoNode->getNumOfLeafNodesInSubtree();
 			}
@@ -316,7 +305,24 @@ boost::shared_ptr<PrefixActiveNodeSet> HistogramManager::computeActiveNodeSet(Te
         //std::cout << "|NO Cache|" << std::endl;;
         // No prefix has a cached TermActiveNode Set. Create one for the empty std::string "".
     	initialPrefixActiveNodeSet.reset(new PrefixActiveNodeSet(this->queryEvaluator->indexReadToken.trieRootNodeSharedPtr,
-    			term->getThreshold(), this->queryEvaluator->indexData->getSchema()->getSupportSwapInEditDistance()));
+    			term->getThreshold(), this->queryEvaluator->getSchema()->getSupportSwapInEditDistance()));
+    }
+    else{
+    	/*
+    	 * Indexing explanation :
+    	 * This is the case where a prefixActiveNodeSet (pans) is found in
+    	 * cache with a prefix of term. There is a shared pointer
+    	 * in PANS which is the readview of Trie. If the physical memory address
+    	 * of this shared pointer, and the mem address of the current readview, are
+    	 * not equal. It's not safe to accept this cache entry; a new one must be started.
+    	 */
+    	if(! initialPrefixActiveNodeSet->hasTheSameVersionTrie(
+    			this->queryEvaluator->indexReadToken.trieRootNodeSharedPtr)){
+    		// just like cache wasn't found at all
+    		cacheResponse = 0;
+        	initialPrefixActiveNodeSet.reset(new PrefixActiveNodeSet(this->queryEvaluator->indexReadToken.trieRootNodeSharedPtr,
+        			term->getThreshold(), this->queryEvaluator->getSchema()->getSupportSwapInEditDistance()));
+    	}
     }
     cachedPrefixLength = initialPrefixActiveNodeSet->getPrefixLength();
 
@@ -375,14 +381,11 @@ void HistogramManager::computeEstimatedProbabilityOfPrefixAndNumberOfLeafNodes(T
 			aggregatedNumberOfLeafNodes ++; // each terminal node is one leaf node when term is complete
 
 			// fetch the inverted list to get its size
-			shared_ptr<vectorview<InvertedListContainerPtr> > invertedListDirectoryReadView;
-			queryEvaluator->getInvertedIndex()->getInvertedIndexDirectory_ReadView(invertedListDirectoryReadView);
 			shared_ptr<vectorview<unsigned> > invertedListReadView;
-			queryEvaluator->getInvertedIndex()->getInvertedListReadView(invertedListDirectoryReadView,
-					trieNode->getInvertedListOffset(), invertedListReadView);
+			queryEvaluator->indexReadToken.getInvertedListReadView(trieNode->getInvertedListOffset(), invertedListReadView);
 			// calculate the probability of this node by using invertedlist size
 			double individualProbabilityOfCompleteTermTrieNode = (invertedListReadView->size() * 1.0) /
-					this->queryEvaluator->indexData->forwardIndex->getTotalNumberOfForwardLists_ReadView();
+					this->queryEvaluator->getTotalNumberOfRecords();
 			// use new probability in joint probability
 			aggregatedProbability =
 					trieNode->aggregateValueByJointProbabilityDouble(aggregatedProbability , individualProbabilityOfCompleteTermTrieNode);
@@ -492,7 +495,7 @@ void HistogramManager::depthAggregateProbabilityAndNumberOfLeafNodes(const TrieN
 
 
 unsigned HistogramManager::computeEstimatedNumberOfResults(double probability){
-	return (unsigned)(probability * this->queryEvaluator->indexData->forwardIndex->getTotalNumberOfForwardLists_ReadView());
+	return (unsigned)(probability * this->queryEvaluator->getTotalNumberOfRecords());
 }
 
 

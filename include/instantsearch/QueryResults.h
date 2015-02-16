@@ -103,7 +103,15 @@ public:
      */
     unsigned getInternalRecordId(unsigned position) const ;
 
-    std::string getInMemoryRecordString(unsigned position) const ;
+    /*
+     *   this function is called only from unit test. Do not use it in wrapper layer.
+     *   The meaning of _Safe is that inside this function we acquire a S lock on
+     *   global_readers_writers_mutex and deeper in forward index we get a new copy
+     *   of readview. This function is independent in terms of mutex locking and
+     *   readview reading; and this is why this method is only used in test and must not be
+     *   used anywhere else.
+     */
+    std::string getInMemoryRecordString_Safe(unsigned position) const ;
 
     /**
      * Gets the score of the 'position'-th item in the QueryResults object.

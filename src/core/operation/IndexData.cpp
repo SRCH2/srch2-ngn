@@ -56,6 +56,66 @@ using namespace srch2::util;
 namespace srch2 {
 namespace instantsearch {
 
+/////////////////// Inverted Index Access Methods
+void IndexReadStateSharedPtr_Token::getInvertedListReadView(const unsigned invertedListId, shared_ptr<vectorview<unsigned> >& invertedListReadView) {
+	this->invertedIndex->getInvertedListReadView(this->invertedIndexReadViewSharedPtr, invertedListId, invertedListReadView);
+}
+
+// given a forworListId and invertedList offset, return the keyword offset
+unsigned IndexReadStateSharedPtr_Token::getKeywordOffset(unsigned forwardListId, unsigned invertedListOffset) {
+	return this->invertedIndex->getKeywordOffset(forwardIndexReadViewSharedPtr, invertedIndexKeywordIdsReadViewSharedPtr,
+			forwardListId, invertedListOffset);
+}
+
+bool IndexReadStateSharedPtr_Token::isValidTermPositionHit(unsigned forwardListId, unsigned keywordOffset,
+        const vector<unsigned>& filterAttributesList, ATTRIBUTES_OP attrOp,
+        vector<unsigned>& matchingKeywordAttributesList, float &termRecordStaticScore) {
+	return this->invertedIndex->isValidTermPositionHit(forwardIndexReadViewSharedPtr,
+			forwardListId, keywordOffset, filterAttributesList,
+			attrOp, matchingKeywordAttributesList, termRecordStaticScore);
+}
+
+////////////////// Forward Index Access Methods
+const ForwardList *IndexReadStateSharedPtr_Token::getForwardList(unsigned recordId, bool &valid){
+	return this->forwardIndex->getForwardList(forwardIndexReadViewSharedPtr, recordId, valid);
+}
+
+bool IndexReadStateSharedPtr_Token::hasAccessToForwardList(unsigned recordId, string &roleId){
+	return this->forwardIndex->hasAccessToForwardList(forwardIndexReadViewSharedPtr, recordId, roleId);
+}
+
+// do binary search to probe in forward list
+bool IndexReadStateSharedPtr_Token::haveWordInRange(const unsigned recordId, const unsigned minId, const unsigned maxId,
+        const vector<unsigned>& filteringAttributesList,
+        ATTRIBUTES_OP attrOp,
+        unsigned &matchingKeywordId, vector<unsigned>& matchingKeywordAttributesList,
+        float &matchingKeywordRecordStaticScore)  {
+	return this->forwardIndex->haveWordInRange(forwardIndexReadViewSharedPtr,
+			recordId, minId, maxId,
+			filteringAttributesList, attrOp,
+			matchingKeywordId, matchingKeywordAttributesList, matchingKeywordRecordStaticScore);
+}
+
+bool IndexReadStateSharedPtr_Token::getExternalRecordIdFromInternalRecordId(const unsigned internalRecordId, std::string &externalRecordId){
+	return this->forwardIndex->getExternalRecordIdFromInternalRecordId(forwardIndexReadViewSharedPtr, internalRecordId, externalRecordId);
+}
+
+bool IndexReadStateSharedPtr_Token::getInternalRecordIdFromExternalRecordId(const std::string &externalRecordId, unsigned &internalRecordId) {
+	return this->forwardIndex->getInternalRecordIdFromExternalRecordId(externalRecordId, internalRecordId);
+}
+/////////////////////// Trie Access Methods
+const TrieNode *IndexReadStateSharedPtr_Token::getTrieNodeFromUtf8String(const std::string &keywordStr) {
+	return this->trie->getTrieNodeFromUtf8String(trieRootNodeSharedPtr->root , keywordStr);
+}
+void IndexReadStateSharedPtr_Token::getPrefixString(const TrieNode* trieNode, std::string &in) {
+	this->trie->getPrefixString(trieRootNodeSharedPtr->root, trieNode, in);
+}
+
+void IndexReadStateSharedPtr_Token::getPrefixString(const TrieNode* trieNode, std::vector<CharType> &in) {
+	this->trie->getPrefixString(trieRootNodeSharedPtr->root, trieNode, in);
+}
+
+
 IndexData::IndexData(const string &directoryName, Analyzer *analyzer,
 		Schema *schema, const StemmerNormalizerFlagType &stemmerFlag) {
 
@@ -183,7 +243,12 @@ void IndexData::getReadView(IndexReadStateSharedPtr_Token &readToken)
     this->quadTree->getQuadTreeRootNode_ReadView(readToken.quadTreeRootNodeSharedPtr);
     this->forwardIndex->getForwardListDirectory_ReadView(readToken.forwardIndexReadViewSharedPtr);
     this->invertedIndex->getInvertedIndexDirectory_ReadView(readToken.invertedIndexReadViewSharedPtr);
+    this->invertedIndex->getInvertedIndexKeywordIds_ReadView(readToken.invertedIndexKeywordIdsReadViewSharedPtr);
     this->readCounter->increment();
+}
+
+void IndexData::initializeIndexReadTokenHolder(IndexReadStateSharedPtr_Token & token) const{
+	token.init(invertedIndex, forwardIndex, trie, quadTree, schemaInternal);
 }
 
 INDEXWRITE_RETVAL IndexData::_aclModifyRecordAccessList(const std::string& resourcePrimaryKeyID,
@@ -764,10 +829,8 @@ void IndexData::changeKeywordIdsOnForwardLists(
 
 		// the following code is based on TermVirtualList.cpp
 		unsigned invertedListId = node->getInvertedListOffset();
-		// change the keywordId for given invertedListId
-		map<unsigned, unsigned>::const_iterator keywordIdMapperIter =
-				keywordIdMapper.find(invertedListId);
-		keywordIDsWriteView->at(invertedListId) = keywordIdMapperIter->second;
+		// change the keywordId for a given invertedListId. "node" (leafnode) has a new keywordId
+		keywordIDsWriteView->at(invertedListId) = node->getId();
 		// Jamshid : since it happens after the commit of other index structures it uses read view
 		shared_ptr<vectorview<unsigned> > readview;
 		shared_ptr<vectorview<InvertedListContainerPtr> > invertedListDirectoryReadView;
@@ -800,20 +863,10 @@ void IndexData::_exportData(const string &exportedDataFileName) const {
 	ForwardIndex::exportData(*this->forwardIndex, exportedDataFileName);
 }
 
+// Caller should call merge and acquire write lock before calling this function.
 void IndexData::_save(CacheManager *cache, const string &directoryName) const {
+	ASSERT(mergeRequired == false);
 	Serializer serializer;
-
-    // ---------- save forwardIndex -----------
-	if (this->forwardIndex->isMergeRequired()) {
-		this->forwardIndex->merge();
-		if (this->forwardIndex->hasDeletedRecords()) {
-			// free the space for deleted records.
-			// need the global lock to block other readers
-			boost::unique_lock<boost::shared_mutex> lock(
-					globalRwMutexForReadersWriters);
-			this->forwardIndex->freeSpaceOfDeletedRecords();
-		}
-	}
 
 	try {
 		serializer.save(*this->forwardIndex,
@@ -832,10 +885,7 @@ void IndexData::_save(CacheManager *cache, const string &directoryName) const {
 				directoryName.c_str(), IndexConfig::schemaFileName);
 	}
 
-    // ---------- save invertedIndex -----------
-	if (this->invertedIndex->mergeRequired())
-		this->invertedIndex->merge(this->rankerExpression,
-				this->writeCounter->getNumberOfDocuments(), this->schemaInternal, this->trie);
+	// ---------- save invertedIndex -----------
 	try {
 		serializer.save(*this->invertedIndex,
 				directoryName + "/" + IndexConfig::invertedIndexFileName);
@@ -844,27 +894,7 @@ void IndexData::_save(CacheManager *cache, const string &directoryName) const {
 				directoryName.c_str(), IndexConfig::invertedIndexFileName);
 	}
 
-
     // ---------- save trie -----------
-    // We save the trie after saving the inverted index since
-    // the step of merging inverted index tells us what leaf nodes have an empty
-    // inverted list, thus become removable.
-    if (this->trie->isMergeRequired()) {
-        this->trie->merge(NULL, NULL, 0, false);
-
-        // shrink the trie if needed
-        if (this->trie->getEmptyLeafNodeIdSize() > 0) {
-            // we need to acquire the global lock to block all other readers and writers
-            boost::unique_lock<boost::shared_mutex> lock(globalRwMutexForReadersWriters);
-            this->trie->removeDeletedNodes();
-
-	    // since we are deleting trie nodes, we need to clear the cache while
-	    // holding the global RW lock.
-	    if (cache != NULL)
-	      cache->clear();
-        }
-    }
-
     try {
         serializer.save(*this->trie,
                 directoryName + "/" + IndexConfig::trieFileName);

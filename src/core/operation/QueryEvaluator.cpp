@@ -68,11 +68,6 @@ void QueryEvaluator::search(const std::string & primaryKey, QueryResults *queryR
 	this->impl->search(primaryKey , queryResults);
 }
 
-/// Get the in memory data stored with the record in the forwardindex. Access through the internal recordid.
-StoredRecordBuffer QueryEvaluator::getInMemoryData(unsigned internalRecordId) const {
-	return this->impl->getInMemoryData(internalRecordId);
-}
-
 void QueryEvaluator::cacheClear() {
 	this->impl->cacheClear();
 }

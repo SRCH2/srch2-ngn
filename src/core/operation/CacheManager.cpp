@@ -39,16 +39,20 @@ namespace instantsearch
 
 
 bool PhysicalOperatorsCache::getPhysicalOperatorsInfo(string & key,  boost::shared_ptr<PhysicalOperatorCacheObject> & in){
-	return this->cacheContainer->get(key , in);
+	// TODO : Physical operators cache is not safe w.r.t. readview/writeview
+	return false;
+//	return this->cacheContainer->get(key , in);
 }
 void PhysicalOperatorsCache::setPhysicalOperatosInfo(string & key , boost::shared_ptr<PhysicalOperatorCacheObject> object){
-	this->cacheContainer->put(key , object);
+	// TODO : Physical operators cache is not safe w.r.t. readview/writeview
+//	this->cacheContainer->put(key , object);
 }
 int PhysicalOperatorsCache::clear(){
 	return this->cacheContainer->clear();
 }
 
 int ActiveNodesCache::findLongestPrefixActiveNodes(Term *term, boost::shared_ptr<PrefixActiveNodeSet> &in){
+    // return 0; // If uncommented, disable caching temporarily for debugging purposes
 
 	// find the longest prefix with active nodes in the cache
 	unsigned termThreshold = term->getThreshold();
@@ -74,6 +78,8 @@ int ActiveNodesCache::findLongestPrefixActiveNodes(Term *term, boost::shared_ptr
 
 
 int ActiveNodesCache::setPrefixActiveNodeSet(boost::shared_ptr<PrefixActiveNodeSet> &prefixActiveNodeSet){
+    // return 1; // If uncommented, disable caching temporarily for debugging purposes
+
 	vector<CharType> *prefix = prefixActiveNodeSet->getPrefix();
 	std::stringstream ss ;
 	ss << prefixActiveNodeSet->getEditDistanceThreshold();

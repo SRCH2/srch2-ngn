@@ -201,7 +201,6 @@ private:
     //int totalInveretListLength ;
 
     boost::shared_ptr<PrefixActiveNodeSet> prefixActiveNodeSet;
-    const InvertedIndex *invertedIndex;
     shared_ptr<vectorview<InvertedListContainerPtr> > invertedListDirectoryReadView;
     shared_ptr<vectorview<unsigned> > invertedIndexKeywordIdsReadView;
     shared_ptr<vectorview<ForwardListPtr> > forwardIndexDirectoryReadView;

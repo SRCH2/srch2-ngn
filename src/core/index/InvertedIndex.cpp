@@ -268,7 +268,10 @@ void InvertedIndex::incrementHitCount(unsigned invertedIndexDirectoryIndex)
     } else {
         vectorview<InvertedListContainerPtr>* &writeView = this->invertedIndexVector->getWriteView();
         if (invertedIndexDirectoryIndex == writeView->size()) {
-            writeView->push_back(new InvertedListContainer(1));
+        	InvertedListContainerPtr newInvertedListAfterBulkLoad = new InvertedListContainer(1);
+        	// This block is executed after bulkload. commit the new list to separate the readview and the writeview.
+        	newInvertedListAfterBulkLoad->invList->commit();
+            writeView->push_back(newInvertedListAfterBulkLoad);
         }
     }
 }
@@ -377,8 +380,9 @@ void InvertedIndex::finalCommit(bool needToSortEachInvertedList)
 void InvertedIndex::merge(RankerExpression *rankerExpression, unsigned totalNumberOfDocuments,
 		const Schema *schema, Trie *trie)
 {
-    this->invertedIndexVector->merge();
-    this->keywordIds->merge();
+    this->invertedIndexVector->merge(&invertedIndexVectorReadViewsMgr);
+    this->keywordIds->merge(&keywordIdsReadViewsMgr);
+
     vectorview<InvertedListContainerPtr>* &writeView = this->invertedIndexVector->getWriteView();
     // get keywordIds writeView
     vectorview<unsigned>* &keywordIdsWriteView = this->keywordIds->getWriteView();
@@ -513,7 +517,7 @@ void InvertedIndex::parallelMerge()
     mergeWorkersSharedQueue.dataLen = 0;
     mergeWorkersSharedQueue.cursor = 0;
 
-    delete workerIdsList;
+    delete[] workerIdsList;
     this->invertedListKeywordSetToMerge.clear();
 }
 

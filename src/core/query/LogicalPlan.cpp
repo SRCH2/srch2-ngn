@@ -18,7 +18,16 @@ LogicalPlanNode::LogicalPlanNode(Term * exactTerm, Term * fuzzyTerm){
 	this->exactTerm= exactTerm;
 	this->fuzzyTerm = fuzzyTerm;
 	this->regionShape = NULL;
-	stats = NULL;
+	/*
+	 * This member is allocated in HistogramManager::allocateLogicalPlanNodeAnnotations
+	 * which is called in HistogramManager::annotate
+	 * and is deallocated in two places:
+	 * 1. HistogramManager::freeStatsOfLogicalPlanTree which is called in the
+	 *    fuzzy round of KeywordSearchOperator open method (allocated for exact round)
+	 * 2. Destructor of this class (allocated for the last round, exact for only exact queries and
+	 *    fuzzy for fuzzy queries).
+	 */
+	this->stats = NULL;
 	forcedPhysicalNode = PhysicalPlanNode_NOT_SPECIFIED;
 }
 
@@ -29,7 +38,16 @@ LogicalPlanNode::LogicalPlanNode(LogicalPlanNodeType nodeType){
 	this->exactTerm= NULL;
 	this->fuzzyTerm = NULL;
 	this->regionShape = NULL;
-	stats = NULL;
+	/*
+	 * This member is allocated in HistogramManager::allocateLogicalPlanNodeAnnotations
+	 * which is called in HistogramManager::annotate
+	 * and is deallocated in two places:
+	 * 1. HistogramManager::freeStatsOfLogicalPlanTree which is called in the
+	 *    fuzzy round of KeywordSearchOperator open method (allocated for exact round)
+	 * 2. Destructor of this class (allocated for the last round, exact for only exact queries and
+	 *    fuzzy for fuzzy queries).
+	 */
+	this->stats = NULL;
 	forcedPhysicalNode = PhysicalPlanNode_NOT_SPECIFIED;
 }
 
@@ -38,7 +56,16 @@ LogicalPlanNode::LogicalPlanNode(Shape* regionShape){
 	this->exactTerm = NULL;
 	this->fuzzyTerm = NULL;
 	this->regionShape = regionShape;
-	stats = NULL;
+	/*
+	 * This member is allocated in HistogramManager::allocateLogicalPlanNodeAnnotations
+	 * which is called in HistogramManager::annotate
+	 * and is deallocated in two places:
+	 * 1. HistogramManager::freeStatsOfLogicalPlanTree which is called in the
+	 *    fuzzy round of KeywordSearchOperator open method (allocated for exact round)
+	 * 2. Destructor of this class (allocated for the last round, exact for only exact queries and
+	 *    fuzzy for fuzzy queries).
+	 */
+	this->stats = NULL;
 	forcedPhysicalNode = PhysicalPlanNode_NOT_SPECIFIED;
 }
 

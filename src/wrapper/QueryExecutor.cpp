@@ -114,53 +114,5 @@ void QueryExecutor::executeRetrieveById(QueryResults * finalResults){
 
 }
 
-void QueryExecutor::executePostProcessingPlan(Query * query,
-        QueryResults * inputQueryResults, QueryResults * outputQueryResults) {
-    QueryEvaluatorInternal * queryEvaluatorInternal = this->queryEvaluator->impl;
-    ForwardIndex * forwardIndex = queryEvaluatorInternal->getForwardIndex();
-    Schema * schema = queryEvaluatorInternal->getSchema();
-
-    // run a plan by iterating on filters and running
-    ResultsPostProcessorPlan * postProcessingPlan =
-            this->queryPlan.getPostProcessingPlan();
-
-    // short circuit in case the plan doesn't have any filters in it.
-    // if no plan is set in Query or there is no filter in it,
-    // then there is no post processing so just mirror the results
-    // TODO : in the future try to avoid this copy of pointers
-    if (postProcessingPlan == NULL) {
-        outputQueryResults->copyForPostProcessing(inputQueryResults);
-        return;
-    }
-
-    postProcessingPlan->beginIteration();
-    if (!postProcessingPlan->hasMoreFilters()) {
-        outputQueryResults->copyForPostProcessing(inputQueryResults);
-        postProcessingPlan->closeIteration();
-        return;
-    }
-
-    // iterating on filters and applying them on list of results
-    ResultsPostProcessorFilter * filter = postProcessingPlan->nextFilter();
-    while(true){
-        // clear the output to be ready to accept the results of the filter
-        outputQueryResults->clear();
-        // apply the filter on the input and put the results in output
-        filter->doFilter(queryEvaluator, query, inputQueryResults,
-                outputQueryResults);
-        // if there is going to be other filters, chain the output to the input
-        if (postProcessingPlan->hasMoreFilters()) {
-            inputQueryResults->copyForPostProcessing(outputQueryResults);
-        }
-        //
-        if(postProcessingPlan->hasMoreFilters()){
-            filter = postProcessingPlan->nextFilter();
-        }else{
-            break;
-        }
-    }
-    postProcessingPlan->closeIteration();
-}
-
 }
 }

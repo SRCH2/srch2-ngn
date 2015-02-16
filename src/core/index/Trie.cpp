@@ -1558,6 +1558,7 @@ void Trie::merge(const InvertedIndex * invertedIndex ,
     }
 
     this->root_writeview = new TrieNode(this->root_readview.get()->root);
+    mergeRequired = false;
 }
 
 void Trie::commit()
@@ -1614,16 +1615,18 @@ void Trie::removeDeletedNodes()
     std::sort(emptyLeafNodeIds.begin(), emptyLeafNodeIds.end());
 
     TrieNode *writeViewRoot = this->getTrieRootNode_WriteView();
+    ASSERT(writeViewRoot);
     if (removeDeletedNodes(writeViewRoot)) {
-        // The whole trie becomes empty. We need to repeat the logic
-        // in the constructor of the trie.
-        // We create a root (for the write view) by copying the trie root of the read view.
-        // Initially both root views have an empty trie with a "$" sign at the root.
-        if(writeViewRoot) {
-            delete writeViewRoot;
-        }
-        this->root_readview.reset(new TrieRootNodeAndFreeList());
+    	// The whole trie becomes empty. Reinit RV and WV of trie.
+    	// Note: we should not do the same steps as the constructor, 
+	// because we do not want to reset the
+    	// all whole trie object. Just few member variables as listed below.
+    	delete writeViewRoot;
+        this->root_readview.reset( new TrieRootNodeAndFreeList() );
         this->root_writeview = new TrieNode(this->root_readview.get()->root);
+        this->numberOfTerminalNodes = 0;
+        this->mergeRequired = false;
+        this->counterForReassignedKeywordIds = MAX_ALLOCATED_KEYWORD_ID + 1;
     } else {
         // The trie is not empty.
         // Similar to the operations in trie.merge(), we need to "merge"
@@ -1664,7 +1667,7 @@ bool Trie::removeDeletedNodes(TrieNode *trieNode)
     int high = trieNode->getChildrenCount() - 1;
     while (low <= high) {
         int mid = (low + high) / 2;
-        if (trieNode->getChild(mid)->getMinId() >= minEmptyNodeId)
+        if (trieNode->getChild(mid)->getMaxId() >= minEmptyNodeId)
             high = mid - 1;
         else
             low = mid + 1;
@@ -1681,13 +1684,13 @@ bool Trie::removeDeletedNodes(TrieNode *trieNode)
     	// [minEmptyNodeId,    maxEmptyNodeId]
         unsigned minId = trieNode->getChild(childCursor)->getMinId();
         unsigned maxId = trieNode->getChild(childCursor)->getMaxId();
-        ASSERT(minEmptyNodeId <= minId);
+        ASSERT(minId <= maxId);
 
         // check if there is an empty leaf node id in the range [minId, maxId]
         bool found = this->findEmptyLeafNodeIds(minId, maxId);
         if (found && removeDeletedNodes(trieNode->getChild(childCursor))) {
            // this subtrie is empty. Then delete this child, and
-           // shift the children from right to left.
+           // set the child to NULL
            delete trieNode->getChild(childCursor);
            trieNode->setChild(childCursor, NULL);
            numberOfNulledChildren ++;
@@ -1712,9 +1715,11 @@ bool Trie::removeDeletedNodes(TrieNode *trieNode)
             }
         }
 
-        // remove the last children since they have been copied to the left
-        for (int i = 0; i < numberOfNulledChildren; i++)
-            trieNode->childrenPointerList.pop_back();
+        // remove the last "numberOfNulledChildren" children since they have been copied to the left
+	// Note: "pop_back()" will NOT delete the trie nodes of these pointers
+        for (int i = 0; i < numberOfNulledChildren; i++) {
+        	trieNode->childrenPointerList.pop_back();
+        }
     }
 
     if (trieNode->isTerminalNode()) {
@@ -2048,6 +2053,19 @@ void Trie::getPrefixString(const TrieNode* rootReadView, const TrieNode* trieNod
     const TrieNode* nodeIter = rootReadView;
     while (nodeIter->getDepth() < prefix_node_depth) {
         nodeIter = nodeIter->findLowerBoundChildByMinId(minId);
+
+	// If the node is not found, or the depth is not right,
+        // then something is wrong with the trie.
+	// Our earier investigation showed that in this case "trieNode" was 
+        // not found in the read view of the trie. Instead it's found in the write view.
+	// The bug is still not fixed yet.  For now, we want to do defensive
+	// programming by returning an empty string.
+	// TODO: Fix the hidden bug later!!!
+	if (nodeIter == NULL || ( nodeIter != NULL && nodeIter->getDepth() > prefix_node_depth )) {
+	  in.clear();
+	  return;
+	}
+
         ASSERT(nodeIter != NULL);
         ASSERT(nodeIter->getDepth() <= prefix_node_depth);
 

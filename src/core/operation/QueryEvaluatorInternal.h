@@ -64,6 +64,10 @@ public:
      * @param indexer - An object holding the index structures and cache.
      */
 	QueryEvaluatorInternal(IndexReaderWriter *indexer , QueryEvaluatorRuntimeParametersContainer * parameters = NULL);
+    /**
+     * Destructor to free persistent resources used by the QueryEvaluator.
+     */
+    ~QueryEvaluatorInternal();
 
     /*
      * Finds the suggestions for a keyword based on fuzzyMatchPenalty.
@@ -94,48 +98,37 @@ public:
     //virtual int searchWithStemmer(const Query *query, QueryResults *queryResults, const int nextK = 0, bool &isStemmed) = 0;
 
     /// Get the in memory data stored with the record in the forwardindex. Access through the internal recordid.
-    StoredRecordBuffer getInMemoryData(unsigned internalRecordId) const ;
+    StoredRecordBuffer getInMemoryData_Safe(unsigned internalRecordId) const ;
 
-    const InvertedIndex *getInvertedIndex() {
-        return this->indexData->invertedIndex;
-    }
 
-    ForwardIndex * getForwardIndex() {
-        return this->indexData->forwardIndex;
-    }
+    unsigned getTotalNumberOfRecords();
 
-    void getForwardIndex_ReadView(shared_ptr<vectorview<ForwardListPtr> > & readView){
-	// We need to get the read view from this->indexReadToken
-	// instead of calling this->getTrie()->getTrieRootNode_ReadView()
-	// since the latter may give a read view that is different from
-	// the one we got when the search started.
-    	readView = this->indexReadToken.forwardIndexReadViewSharedPtr;
-    }
+    const bool isBulkLoadDone() const;
+    /*
+     * This function is only used in TEST.
+     * Do not use this API in any place higher than this layer.Nobody should access any of the indices
+     * directly unless it's from within the query optimzer.
+     */
+    const InvertedIndex *testOnly_getInvertedIndex();
 
-    Schema * getSchema() {
-        return this->indexData->schemaInternal;
-    }
+    /*
+     * This function is only used in TEST.
+     * Do not use this API in any place higher than this layer.Nobody should access any of the indices
+     * directly unless it's from within the query optimzer.
+     */
+    ForwardIndex * testOnly_getForwardIndex() ;
 
-    const Trie* getTrie() const {
-        return this->indexData->trie;
-    }
+    const Schema * getSchema() const ;
+    const Trie* testOnly_getTrie() const;
 
     boost::shared_ptr<PrefixActiveNodeSet> computeActiveNodeSet(Term *term) const;
 
     void cacheClear() ;
-    /**
-     * Destructor to free persistent resources used by the QueryEvaluator.
-     */
-    ~QueryEvaluatorInternal();
 
     PhysicalOperatorFactory * getPhysicalOperatorFactory();
     void setPhysicalOperatorFactory(PhysicalOperatorFactory * physicalOperatorFactory);
     PhysicalPlanRecordItemPool * getPhysicalPlanRecordItemPool();
 
-    //DEBUG function. Used in CacheIntegration_Test
-    bool cacheHit(const Query *query);
-
-    void setQueryEvaluatorRuntimeParametersContainer(QueryEvaluatorRuntimeParametersContainer * parameters);
     QueryEvaluatorRuntimeParametersContainer * getQueryEvaluatorRuntimeParametersContainer();
 
 
@@ -158,6 +151,19 @@ private:
     CacheManager *cacheManager;
     PhysicalOperatorFactory * physicalOperatorFactory;
     PhysicalPlanRecordItemPool * physicalPlanRecordItemPool;
+
+
+public:
+    /*
+     * The following two methods are exposed as public API
+     * ONLY FOR TESTING PURPOSES. Do not use then anywhere outside
+     * QueryEvaluatorInternal.
+     */
+    // Every reader goes through this function before starting the execution of
+    // suggest or search
+    void readerPreEnter();
+    // Every reader goes through this function before exiting from suggest or search
+    void readerPreExit();
 
 };
 

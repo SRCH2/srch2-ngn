@@ -83,13 +83,14 @@ void ActiveNodeSet_test()
 	 QueryEvaluatorRuntimeParametersContainer runTimeParameters(10000, 500, 500);
 
 	QueryEvaluator * queryEvaluator = new QueryEvaluator(indexer, &runTimeParameters);
+	queryEvaluator->impl->readerPreEnter();
     unsigned threshold = 2;
     Term *term = FuzzyTerm::create("nce", TERM_TYPE_PREFIX, 1, 1, threshold);
     PrefixActiveNodeSet *prefixActiveNodeSet = queryEvaluator->impl
             ->computeActiveNodeSet(term).get();
     vector<string> similarPrefixes;
     prefixActiveNodeSet->getComputedSimilarPrefixes(
-            queryEvaluator->impl->getTrie(), similarPrefixes);
+            queryEvaluator->impl->testOnly_getTrie(), similarPrefixes);
 
     unsigned sim_size = similarPrefixes.size();
 
@@ -103,6 +104,7 @@ void ActiveNodeSet_test()
 
     // We don't need to delete prefixActiveNodeSet since it's cached and will be
     // deleted in the destructor of indexSearchInternal
+    queryEvaluator->impl->readerPreExit();
     delete queryEvaluator;
     delete term;
     delete indexMetaData;
@@ -265,7 +267,7 @@ void printResults(QueryResults *queryResults) {
                 << queryResults->getRecordId(resultCounter) << endl;
         cout << "[" << queryResults->getInternalRecordId(resultCounter) << "]"
                 << endl;
-        cout << "[" << queryResults->getInMemoryRecordString(resultCounter)
+        cout << "[" << queryResults->getInMemoryRecordString_Safe(resultCounter)
                 << "]" << endl;
     }
 }
@@ -537,8 +539,8 @@ void Searcher_Tests() {
     Test_Prefix_Fuzzy(queryEvaluator);
     std::cout << "test4" << std::endl;
 
-    delete indexer;
     delete queryEvaluator;
+    delete indexer;
 }
 
 int main(int argc, char *argv[]) {

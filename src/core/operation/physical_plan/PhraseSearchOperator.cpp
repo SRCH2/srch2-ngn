@@ -26,17 +26,9 @@ bool PhraseSearchOperator::open(QueryEvaluatorInternal * queryEvaluatorInternal,
      */
 
 	{
-		boost::shared_ptr<TrieRootNodeAndFreeList > trieRootNode_ReadView;
-		// We need to get the read view from this->indexReadToken
-		// instead of calling this->getTrie()->getTrieRootNode_ReadView()
-		// since the latter may give a read view that is different from
-		// the one we got when the search started.
-		trieRootNode_ReadView = queryEvaluatorInternal->indexReadToken.trieRootNodeSharedPtr;
-
 		for (int j = 0; j < phraseSearchInfo.phraseKeyWords.size(); ++j) {
 			const string& keywordString = phraseSearchInfo.phraseKeyWords[j];
-			const TrieNode *trieNode = queryEvaluatorInternal->getTrie()->getTrieNodeFromUtf8String(
-					trieRootNode_ReadView->root, keywordString);
+			const TrieNode *trieNode = queryEvaluatorInternal->indexReadToken.getTrieNodeFromUtf8String(keywordString);
 			if (trieNode == NULL){
 				//Logger::warn("keyword = '%s' of a phrase query was not found!", keywordString.c_str());
 				phraseErr = true;
@@ -61,9 +53,6 @@ PhysicalPlanRecordItem * PhraseSearchOperator::getNext(const PhysicalPlanExecuti
 		return NULL;  // open should be called first
 	}
 
-	ForwardIndex * forwardIndex = this->queryEvaluatorInternal->getForwardIndex();
-    shared_ptr<vectorview<ForwardListPtr> > readView;
-    this->queryEvaluatorInternal->getForwardIndex_ReadView(readView);
     /*
      *  Loop over the input records  and apply the phrase filter
      */
@@ -74,7 +63,7 @@ PhysicalPlanRecordItem * PhraseSearchOperator::getNext(const PhysicalPlanExecuti
 			return NULL;
 		}
         bool isValid = false;
-        const ForwardList* forwardListPtr = forwardIndex->getForwardList(readView, nextRecord->getRecordId(), isValid);
+        const ForwardList* forwardListPtr = this->queryEvaluatorInternal->indexReadToken.getForwardList(nextRecord->getRecordId(), isValid);
         if (false == isValid){ // ignore this record if it's already deleted
         	continue;
         }
@@ -128,12 +117,8 @@ bool PhraseSearchOperator::verifyByRandomAccess(PhysicalPlanRandomAccessVerifica
 		return false;
 	}
 
-	ForwardIndex * forwardIndex = this->queryEvaluatorInternal->getForwardIndex();
-    shared_ptr<vectorview<ForwardListPtr> > readView;
-    this->queryEvaluatorInternal->getForwardIndex_ReadView(readView);
-
     bool isValid = false;
-    const ForwardList* forwardListPtr = forwardIndex->getForwardList(readView, parameters.recordToVerify->getRecordId(), isValid);
+    const ForwardList* forwardListPtr = this->queryEvaluatorInternal->indexReadToken.getForwardList(parameters.recordToVerify->getRecordId(), isValid);
     if (false == isValid){ // ignore this record if it's already deleted
     	false;
     }

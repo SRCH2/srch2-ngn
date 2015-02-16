@@ -151,10 +151,44 @@ public:
 
     FeedbackIndex * getFeedbackIndexer() { return userFeedbackIndex; }
 
-    inline const IndexData *getReadView(IndexReadStateSharedPtr_Token &readToken)
+    /*
+     * Note: Readers still need to call readerPreEnter and readerPreExit methods
+     * before and after their operations.
+     */
+    inline const IndexData *getIndexData()
     {
-        this->index->getReadView(readToken);
         return this->index;
+    }
+
+    inline const void readerPreEnter(IndexReadStateSharedPtr_Token &readToken)
+    {
+    	// acquiring the global lock of readers and writers.
+    	// NOTE: readerPreExit will unlock this call when invoked.
+    	this->index->globalRwMutexForReadersWriters.lock_shared();
+    	// Getting the protector copy of readview shared pointers.
+    	// NOTE: These readview shared pointers are gone when the readToken
+    	// gets destroyed.
+        this->index->getReadView(readToken);
+    }
+
+    inline const void readerPreExit(IndexReadStateSharedPtr_Token &readToken)
+    {
+    	/*
+    	 * readToken is released here. This object maintains the
+    	 * guard copy of readview of all four indexes: Trie, II, FI, and QT.
+    	 * As long as these shared pointer copies are not reset, readview copies
+    	 * are not deallocated.
+    	 * As of now, there is one readToken in the system which is
+    	 * a member of QueryEvaluatorInternal. In main search/suggest query
+    	 * execution process QueryEvaluator is constructed and deleted per query.
+    	 * However one query evaluator object is used for multiple interactions with core
+    	 * (query/insertions/deletions). This is why we can't use constructor/destructor
+    	 * (which are nice locations) for storing/releasing the readviews.
+    	 */
+    	readToken.resetSharedPointers();
+    	// Releasing the global lock of readers and writers.
+    	this->index->globalRwMutexForReadersWriters.unlock_shared();
+    	// Readviews will be erased when readToken is destructed.
     }
 
     inline const srch2::instantsearch::Schema *getSchema() const

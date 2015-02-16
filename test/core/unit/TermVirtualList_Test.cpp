@@ -209,11 +209,11 @@ void Test_Complete_Exact(QueryEvaluatorInternal *queryEvaluatorInternal)
     prefixActiveNodeSet = queryEvaluatorInternal->computeActiveNodeSet( term0);
     //indexSearcherInternal->getInvertedIndex()->print_test();
 
-    TermVirtualList *termVirtualList = new TermVirtualList(queryEvaluatorInternal->getInvertedIndex(),
-    		queryEvaluatorInternal->getForwardIndex(),
+    TermVirtualList *termVirtualList = new TermVirtualList(queryEvaluatorInternal->testOnly_getInvertedIndex(),
+    		queryEvaluatorInternal->testOnly_getForwardIndex(),
     		prefixActiveNodeSet.get(), term0);
 
-    prefixActiveNodeSet->printActiveNodes(queryEvaluatorInternal->getTrie());
+    prefixActiveNodeSet->printActiveNodes(queryEvaluatorInternal->testOnly_getTrie());
     //termVirtualList->print_test();
 
     ASSERT(checkResults( termVirtualList, &resultSet0));
@@ -225,8 +225,8 @@ void Test_Complete_Exact(QueryEvaluatorInternal *queryEvaluatorInternal)
     Logger::debug(keywords[1].c_str());
     term0 = ExactTerm::create(keywords[1], termType, 1, 1);
     prefixActiveNodeSet = queryEvaluatorInternal->computeActiveNodeSet( term0);
-    termVirtualList = new TermVirtualList(queryEvaluatorInternal->getInvertedIndex(),
-    		queryEvaluatorInternal->getForwardIndex(),
+    termVirtualList = new TermVirtualList(queryEvaluatorInternal->testOnly_getInvertedIndex(),
+    		queryEvaluatorInternal->testOnly_getForwardIndex(),
             prefixActiveNodeSet.get(),   term0);
 
     ASSERT(checkResults(termVirtualList, &resultSet1));
@@ -237,8 +237,8 @@ void Test_Complete_Exact(QueryEvaluatorInternal *queryEvaluatorInternal)
     Logger::debug(keywords[2].c_str());
     term0 = ExactTerm::create(keywords[2], termType, 1, 1);
     prefixActiveNodeSet = queryEvaluatorInternal->computeActiveNodeSet( term0);
-    termVirtualList = new TermVirtualList(queryEvaluatorInternal->getInvertedIndex(),
-    		queryEvaluatorInternal->getForwardIndex(),
+    termVirtualList = new TermVirtualList(queryEvaluatorInternal->testOnly_getInvertedIndex(),
+    		queryEvaluatorInternal->testOnly_getForwardIndex(),
             prefixActiveNodeSet.get(), term0);
 
     ASSERT(checkResults(termVirtualList, &resultSet2));
@@ -287,8 +287,8 @@ void Test_Prefix_Exact(QueryEvaluatorInternal *queryEvaluatorInternal)
     Term *term0 = ExactTerm::create(keywords[0], termType, 1, 1);
     boost::shared_ptr<PrefixActiveNodeSet> prefixActiveNodeSet;
     prefixActiveNodeSet = queryEvaluatorInternal->computeActiveNodeSet( term0);
-    TermVirtualList *termVirtualList = new TermVirtualList(queryEvaluatorInternal->getInvertedIndex(),
-    		queryEvaluatorInternal->getForwardIndex(),
+    TermVirtualList *termVirtualList = new TermVirtualList(queryEvaluatorInternal->testOnly_getInvertedIndex(),
+    		queryEvaluatorInternal->testOnly_getForwardIndex(),
     		prefixActiveNodeSet.get(), term0);
 
     ASSERT(checkResults(termVirtualList, &resultSet0) == true);
@@ -299,8 +299,8 @@ void Test_Prefix_Exact(QueryEvaluatorInternal *queryEvaluatorInternal)
     Logger::debug(keywords[1].c_str());
     term0 = ExactTerm::create(keywords[1], termType, 1, 1);
     prefixActiveNodeSet = queryEvaluatorInternal->computeActiveNodeSet( term0);
-    termVirtualList = new TermVirtualList(queryEvaluatorInternal->getInvertedIndex(),
-    		queryEvaluatorInternal->getForwardIndex(),
+    termVirtualList = new TermVirtualList(queryEvaluatorInternal->testOnly_getInvertedIndex(),
+    		queryEvaluatorInternal->testOnly_getForwardIndex(),
             prefixActiveNodeSet.get(), term0);
 
     ASSERT(checkResults(termVirtualList, &resultSet1) == true);
@@ -311,8 +311,8 @@ void Test_Prefix_Exact(QueryEvaluatorInternal *queryEvaluatorInternal)
     Logger::debug(keywords[2].c_str());
     term0 = ExactTerm::create(keywords[2], termType, 1, 1);
     prefixActiveNodeSet = queryEvaluatorInternal->computeActiveNodeSet( term0);
-    termVirtualList = new TermVirtualList(queryEvaluatorInternal->getInvertedIndex(),
-    		queryEvaluatorInternal->getForwardIndex(),
+    termVirtualList = new TermVirtualList(queryEvaluatorInternal->testOnly_getInvertedIndex(),
+    		queryEvaluatorInternal->testOnly_getForwardIndex(),
             prefixActiveNodeSet.get(), term0);
 
     ASSERT(checkResults(termVirtualList, &resultSet2) == true);
@@ -359,8 +359,8 @@ void Test_Complete_Fuzzy(QueryEvaluatorInternal *queryEvaluatorInternal)
     Term *term0 = FuzzyTerm::create(keywords[0], termType, 1, 1, 2);
     boost::shared_ptr<PrefixActiveNodeSet> prefixActiveNodeSet;
     prefixActiveNodeSet = queryEvaluatorInternal->computeActiveNodeSet( term0);
-    TermVirtualList *termVirtualList = new TermVirtualList(queryEvaluatorInternal->getInvertedIndex(),
-    		queryEvaluatorInternal->getForwardIndex(),
+    TermVirtualList *termVirtualList = new TermVirtualList(queryEvaluatorInternal->testOnly_getInvertedIndex(),
+    		queryEvaluatorInternal->testOnly_getForwardIndex(),
             prefixActiveNodeSet.get(), term0);
 
     ASSERT(checkResults(termVirtualList, &resultSet0) == true);
@@ -371,8 +371,8 @@ void Test_Complete_Fuzzy(QueryEvaluatorInternal *queryEvaluatorInternal)
     Logger::debug(keywords[1].c_str());
     term0 = FuzzyTerm::create(keywords[1], termType, 1, 1, 2);
     prefixActiveNodeSet = queryEvaluatorInternal->computeActiveNodeSet( term0);
-    termVirtualList = new TermVirtualList(queryEvaluatorInternal->getInvertedIndex(),
-    		queryEvaluatorInternal->getForwardIndex(),
+    termVirtualList = new TermVirtualList(queryEvaluatorInternal->testOnly_getInvertedIndex(),
+    		queryEvaluatorInternal->testOnly_getForwardIndex(),
             prefixActiveNodeSet.get(),   term0);
 
     ASSERT(checkResults(termVirtualList, &resultSet1) == true);
@@ -383,8 +383,8 @@ void Test_Complete_Fuzzy(QueryEvaluatorInternal *queryEvaluatorInternal)
     Logger::debug(keywords[2].c_str());
     term0 = FuzzyTerm::create(keywords[2], termType, 1, 1, 2);
     prefixActiveNodeSet = queryEvaluatorInternal->computeActiveNodeSet( term0);
-    termVirtualList = new TermVirtualList(queryEvaluatorInternal->getInvertedIndex(),
-    		queryEvaluatorInternal->getForwardIndex(),
+    termVirtualList = new TermVirtualList(queryEvaluatorInternal->testOnly_getInvertedIndex(),
+    		queryEvaluatorInternal->testOnly_getForwardIndex(),
             prefixActiveNodeSet.get(),   term0);
 
     ASSERT(checkResults(termVirtualList, &resultSet2) == true);
@@ -431,8 +431,8 @@ void Test_Prefix_Fuzzy(QueryEvaluatorInternal *queryEvaluatorInternal)
     Term *term0 = FuzzyTerm::create(keywords[0], termType, 1, 1, 2);
     boost::shared_ptr<PrefixActiveNodeSet> prefixActiveNodeSet;
     prefixActiveNodeSet = queryEvaluatorInternal->computeActiveNodeSet( term0);
-    TermVirtualList *termVirtualList = new TermVirtualList(queryEvaluatorInternal->getInvertedIndex(),
-    		queryEvaluatorInternal->getForwardIndex(),
+    TermVirtualList *termVirtualList = new TermVirtualList(queryEvaluatorInternal->testOnly_getInvertedIndex(),
+    		queryEvaluatorInternal->testOnly_getForwardIndex(),
     		prefixActiveNodeSet.get(),   term0);
 
     ASSERT(checkResults(termVirtualList, &resultSet0) == true);
@@ -443,8 +443,8 @@ void Test_Prefix_Fuzzy(QueryEvaluatorInternal *queryEvaluatorInternal)
     Logger::debug(keywords[1].c_str());
     term0 = FuzzyTerm::create(keywords[1], termType, 1, 1, 2);
     prefixActiveNodeSet = queryEvaluatorInternal->computeActiveNodeSet( term0);
-    termVirtualList = new TermVirtualList(queryEvaluatorInternal->getInvertedIndex(),
-    		queryEvaluatorInternal->getForwardIndex(),
+    termVirtualList = new TermVirtualList(queryEvaluatorInternal->testOnly_getInvertedIndex(),
+    		queryEvaluatorInternal->testOnly_getForwardIndex(),
     		prefixActiveNodeSet.get(),   term0);
 
     ASSERT(checkResults(termVirtualList, &resultSet1) == true);
@@ -456,8 +456,8 @@ void Test_Prefix_Fuzzy(QueryEvaluatorInternal *queryEvaluatorInternal)
     Logger::debug(keywords[2].c_str());
     term0 = FuzzyTerm::create(keywords[2], termType, 1, 1, 2);
     prefixActiveNodeSet = queryEvaluatorInternal->computeActiveNodeSet( term0);
-    termVirtualList = new TermVirtualList(queryEvaluatorInternal->getInvertedIndex(),
-    		queryEvaluatorInternal->getForwardIndex(),
+    termVirtualList = new TermVirtualList(queryEvaluatorInternal->testOnly_getInvertedIndex(),
+    		queryEvaluatorInternal->testOnly_getForwardIndex(),
     		prefixActiveNodeSet.get(), term0);
 
     ASSERT(checkResults(termVirtualList, &resultSet2) == true);
@@ -485,12 +485,15 @@ void TermVirtualList_Tests()
     QueryEvaluator * queryEvaluator = new QueryEvaluator(indexer, &runtimeParameters);
     QueryEvaluatorInternal * queryEvaluatorInternal = queryEvaluator->impl;
 
+    queryEvaluatorInternal->readerPreEnter();
 
     Test_Complete_Exact(queryEvaluatorInternal);
     Test_Prefix_Exact(queryEvaluatorInternal);
     Test_Complete_Fuzzy(queryEvaluatorInternal);
     Test_Prefix_Fuzzy(queryEvaluatorInternal);
 
+    queryEvaluatorInternal->readerPreExit();
+    delete queryEvaluator;
     delete indexer;
     delete indexMetaData;
 }

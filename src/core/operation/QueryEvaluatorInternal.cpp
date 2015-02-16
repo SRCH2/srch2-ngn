@@ -59,15 +59,21 @@ namespace instantsearch
  * @param indexer - An object holding the index structures and cache.
  */
 QueryEvaluatorInternal::QueryEvaluatorInternal(IndexReaderWriter *indexer , QueryEvaluatorRuntimeParametersContainer * parameters){
-	// if parameters is NULL, the default constructor of the object is used which has the default values for everything.
-	if(parameters != NULL){
-		this->parameters = *parameters;
-	}
-    this->indexData = dynamic_cast<const IndexData*>(indexer->getReadView(this->indexReadToken));
+    // if parameters is NULL, the default constructor of the object is used which has the default values for everything.
+    if(parameters != NULL){
+        this->parameters = *parameters;
+    }
+    this->indexData = dynamic_cast<const IndexData*>(indexer->getIndexData());
     this->cacheManager = dynamic_cast<CacheManager*>(indexer->getCache());
     this->indexer = indexer;
     setPhysicalOperatorFactory(new PhysicalOperatorFactory());
     this->physicalPlanRecordItemPool = new PhysicalPlanRecordItemPool();
+    this->indexData->initializeIndexReadTokenHolder(this->indexReadToken);
+}
+
+QueryEvaluatorInternal::~QueryEvaluatorInternal() {
+    delete physicalOperatorFactory;
+    delete physicalPlanRecordItemPool;
 }
 
 /*
@@ -76,67 +82,80 @@ QueryEvaluatorInternal::QueryEvaluatorInternal(IndexReaderWriter *indexer , Quer
  */
 // TODO : FIXME: This function is not compatible with the new api
 int QueryEvaluatorInternal::suggest(const string & keyword, float fuzzyMatchPenalty , const unsigned numberOfSuggestionsToReturn , vector<string> & suggestions ){
-	// non valid cases for input
-	if(keyword.compare("") == 0 || numberOfSuggestionsToReturn == 0){
-		return 0;
-	}
+    // non valid cases for input
+    if(keyword.compare("") == 0 || numberOfSuggestionsToReturn == 0){
+        return 0;
 
-	boost::shared_lock< boost::shared_mutex > lock(this->indexData->globalRwMutexForReadersWriters); // need to lock the mutex
-    if (this->indexData->isBulkLoadDone() == false){
+    }
+
+    /*
+     * This method must be called in the beginning of all reader API methods.
+     * It locks the global read/write mutex and holds on to all 4 readviews
+     * that we have.
+     */
+    readerPreEnter();
+
+
+    if (this->isBulkLoadDone() == false){
+        /*
+         * Every reader must call this method before exiting.
+         * This method releases all the readviews and unlocks the global
+         * mutex lock.
+         */
+        readerPreExit();
         return -1;
     }
 
-	// make sure fuzzyMatchPenalty is in [0,1]
-	if(fuzzyMatchPenalty < 0 || fuzzyMatchPenalty > 1){
-		fuzzyMatchPenalty = 0.5;
-	}
-	// calculate editDistanceThreshold
-	unsigned editDistanceThreshold = srch2::instantsearch::computeEditDistanceThreshold(keyword.length(), fuzzyMatchPenalty);
+    // make sure fuzzyMatchPenalty is in [0,1]
+    if(fuzzyMatchPenalty < 0 || fuzzyMatchPenalty > 1){
+        fuzzyMatchPenalty = 0.5;
+    }
+    // calculate editDistanceThreshold
+    unsigned editDistanceThreshold = srch2::instantsearch::computeEditDistanceThreshold(keyword.length(), fuzzyMatchPenalty);
 
-	// compute active nodes
-	// 1. first we must create term object which is used to compute activenodes.
-	//  TERM_TYPE_COMPLETE and 0 in the arguments will not be used.
-	Term * term = new Term(keyword , TERM_TYPE_COMPLETE , 0, fuzzyMatchPenalty , editDistanceThreshold);
-	// 2. compute active nodes.
-	boost::shared_ptr<PrefixActiveNodeSet> termActiveNodeSet = this->computeActiveNodeSet(term);
-	// 3. now iterate on active nodes and find suggestions for each on of them
+    // compute active nodes
+    // 1. first we must create term object which is used to compute activenodes.
+    //  TERM_TYPE_COMPLETE and 0 in the arguments will not be used.
+    Term * term = new Term(keyword , TERM_TYPE_COMPLETE , 0, fuzzyMatchPenalty , editDistanceThreshold);
+    // 2. compute active nodes.
+    boost::shared_ptr<PrefixActiveNodeSet> termActiveNodeSet = this->computeActiveNodeSet(term);
+    // 3. now iterate on active nodes and find suggestions for each on of them
     std::vector<SuggestionInfo > suggestionPairs;
     findKMostPopularSuggestionsSorted(term , termActiveNodeSet.get() , numberOfSuggestionsToReturn, suggestionPairs);
-	// 4. we don't need the term anymore
-	delete term;
+    // 4. we don't need the term anymore
+    delete term;
 
     int suggestionCount = 0;
     for(std::vector<SuggestionInfo >::iterator suggestion = suggestionPairs.begin() ;
-    		suggestion != suggestionPairs.end() && suggestionCount < numberOfSuggestionsToReturn ; ++suggestion , ++suggestionCount){
+            suggestion != suggestionPairs.end() && suggestionCount < numberOfSuggestionsToReturn ; ++suggestion , ++suggestionCount){
       string suggestionString ;
-      boost::shared_ptr<TrieRootNodeAndFreeList > trieRootNode_ReadView;
-
-      // We need to get the read view from this->indexReadToken
-      // instead of calling this->getTrie()->getTrieRootNode_ReadView()
-      // since the latter may give a read view that is different from
-      // the one we got when the search started.
-      trieRootNode_ReadView = this->indexReadToken.trieRootNodeSharedPtr;
-      this->getTrie()->getPrefixString(trieRootNode_ReadView->root,
-				       suggestion->suggestedCompleteTermNode, suggestionString);
+      this->indexReadToken.getPrefixString(suggestion->suggestedCompleteTermNode, suggestionString);
       suggestions.push_back(suggestionString);
     }
+
+    /*
+     * Every reader must call this method before exiting.
+     * This method releases all the readviews and unlocks the global
+     * mutex lock.
+     */
+    readerPreExit();
     return 0;
 }
 
 bool suggestionComparator(const SuggestionInfo & left ,
-		const SuggestionInfo & right ){
-	return left.probabilityValue > right.probabilityValue;
+        const SuggestionInfo & right ){
+    return left.probabilityValue > right.probabilityValue;
 }
 
 
 void QueryEvaluatorInternal::findKMostPopularSuggestionsSorted(Term *term ,
-		PrefixActiveNodeSet * activeNodes,
-		unsigned numberOfSuggestionsToReturn ,
-		std::vector<SuggestionInfo > & suggestionPairs) const{
-	// first make sure input is OK
-	if(term == NULL || activeNodes == NULL) return;
+        PrefixActiveNodeSet * activeNodes,
+        unsigned numberOfSuggestionsToReturn ,
+        std::vector<SuggestionInfo > & suggestionPairs) const{
+    // first make sure input is OK
+    if(term == NULL || activeNodes == NULL) return;
 
-	// now iterate on active nodes and find suggestions for each on of them
+    // now iterate on active nodes and find suggestions for each on of them
     ActiveNodeSetIterator iter(activeNodes, term->getThreshold());
     for (; !iter.isDone(); iter.next()) {
         TrieNodePointer trieNode;
@@ -146,14 +165,14 @@ void QueryEvaluatorInternal::findKMostPopularSuggestionsSorted(Term *term ,
         // If this keyword is prefix, we should traverse down the trie and find possible completions;
         // otherwise, we should just check to see if active node is terminal or not.
         if(term->getTermType() == TERM_TYPE_PREFIX){
-        	trieNode->findMostPopularSuggestionsInThisSubTrie(trieNode , distance, suggestionPairs , numberOfSuggestionsToReturn);
+            trieNode->findMostPopularSuggestionsInThisSubTrie(trieNode , distance, suggestionPairs , numberOfSuggestionsToReturn);
         }else{
-        	if(trieNode->isTerminalNode() == true){
-        		suggestionPairs.push_back(SuggestionInfo(distance , trieNode->getNodeProbabilityValue(), trieNode , trieNode));
-        	}
+            if(trieNode->isTerminalNode() == true){
+                suggestionPairs.push_back(SuggestionInfo(distance , trieNode->getNodeProbabilityValue(), trieNode , trieNode));
+            }
         }
         if(suggestionPairs.size() >= numberOfSuggestionsToReturn){
-        	break;
+            break;
         }
     }
 
@@ -175,208 +194,270 @@ void QueryEvaluatorInternal::findKMostPopularSuggestionsSorted(Term *term ,
  */
 int QueryEvaluatorInternal::search(LogicalPlan * logicalPlan , QueryResults *queryResults){
 
-	// used for feedback ranking.
-	this->queryStringWithTermsAndOps = logicalPlan->queryStringWithTermsAndOps;
-	ASSERT(logicalPlan != NULL);
-	// need to lock the mutex
-	boost::shared_lock< boost::shared_mutex > lock(this->indexData->globalRwMutexForReadersWriters);
+    // used for feedback ranking.
+    this->queryStringWithTermsAndOps = logicalPlan->queryStringWithTermsAndOps;
+    ASSERT(logicalPlan != NULL);
 
-	string key = logicalPlan->getUniqueStringForCaching();
+    string key = logicalPlan->getUniqueStringForCaching();
 
-	// if the query is present in the user feedback index, then skip cache because
-	// its score needs to be re-calculated and its entry in the cache is no longer valid
-	// Possible optimization:(TODO) compare whether user feedback entry for this query is
-	//  more recent than cache entry. If yes, skip cache , otherwise use cache.
-	if (!indexer->getFeedbackIndexer()->hasFeedbackDataForQuery(this->queryStringWithTermsAndOps)) {
-		//1. first check to see if we have this query in cache
-		boost::shared_ptr<QueryResultsCacheEntry> cachedObject ;
-		if(this->cacheManager->getQueryResultsCache()->getQueryResults(key , cachedObject) == true){
-			// cache hit
-			cachedObject->copyToQueryResultsInternal(queryResults->impl);
-			return queryResults->impl->sortedFinalResults.size();
-		}
-	}
-	 /*
-	  * 3. Execute physical plan
-	 */
-	/*
-	 * PhysicalPlanExecutor is responsible of executing the PhysicalPlan.
-	 * Also it takes care of the following tasks :
-	 * 1. Pagination: In the case of topK, it handles pagination by setting K to the right value
-	 * ---- which is a function of K and offset.
-	 * 2. Post processing: Post processing physical operators are added to the tree by QueryOptimizer.
-	 * ---- So there is nothing much to be done here, maybe just passing up the recorded data by some filters
-	 * ---- like facet.
-	 * 3. Passing the results to QueryResults : This module is also responsible of populating QuebuildPhysicalPlanFirstVersionryResults from
-	 * ---- the outputs of the root operator and make everything inside core transparent to outside layers.
-	 * 4. Exact and fuzzy policy : If exactOnly is passed as true to getNext(...) of any operator, that operator
-	 * ---- only returns exact results (if not, all the results are returned.) Therefore, the physical plan is executed first
-	 * ---- by exactOnly=true, and then if we don't have enough results we re-execute the plan by passing exactOnly=false.
-	 * ---- please note that since topK, or GetAll (the search type) is embedded in the structure of PhysicalPlan,
-	 * ---- this policy is applied on all search types.
-	 */
+    /*
+     * This method must be called in the beginning of all reader API methods.
+     * It locks the global read/write mutex and holds on to all 4 readviews
+     * that we have.
+     */
+    readerPreEnter();
+    // if the query is present in the user feedback index, then skip cache because
+    // its score needs to be re-calculated and its entry in the cache is no longer valid
+    // Possible optimization:(TODO) compare whether user feedback entry for this query is
+    //  more recent than cache entry. If yes, skip cache , otherwise use cache.
+    if (!indexer->getFeedbackIndexer()->hasFeedbackDataForQuery(this->queryStringWithTermsAndOps)) {
+        //1. first check to see if we have this query in cache
+        boost::shared_ptr<QueryResultsCacheEntry> cachedObject ;
+        if(this->cacheManager->getQueryResultsCache()->getQueryResults(key , cachedObject) == true){
+            // cache hit
+            cachedObject->copyToQueryResultsInternal(queryResults->impl);
 
-	PhysicalPlanNode * topOperator = NULL;
-	PhysicalPlanNode * bottomOfChain = NULL;
-	FacetOperator * facetOperatorPtr = NULL;
-	SortByRefiningAttributeOperator * sortOperator = NULL;
-	if(logicalPlan->getPostProcessingInfo() != NULL){
-		if(logicalPlan->getPostProcessingInfo()->getfacetInfo() != NULL){
-			facetOperatorPtr = new FacetOperator(this, logicalPlan->getPostProcessingInfo()->getfacetInfo()->types,
-					logicalPlan->getPostProcessingInfo()->getfacetInfo()->fields,
-					logicalPlan->getPostProcessingInfo()->getfacetInfo()->rangeStarts,
-					logicalPlan->getPostProcessingInfo()->getfacetInfo()->rangeEnds,
-					logicalPlan->getPostProcessingInfo()->getfacetInfo()->rangeGaps,
-					logicalPlan->getPostProcessingInfo()->getfacetInfo()->numberOfTopGroupsToReturn);
+            /*
+             * Every reader must call this method before exiting.
+             * This method releases all the readviews and unlocks the global
+             * mutex lock.
+             */
+            readerPreExit();
+            return queryResults->impl->sortedFinalResults.size();
+        }
+    }
+     /*
+      * 3. Execute physical plan
+     */
+    /*
+     * PhysicalPlanExecutor is responsible of executing the PhysicalPlan.
+     * Also it takes care of the following tasks :
+     * 1. Pagination: In the case of topK, it handles pagination by setting K to the right value
+     * ---- which is a function of K and offset.
+     * 2. Post processing: Post processing physical operators are added to the tree by QueryOptimizer.
+     * ---- So there is nothing much to be done here, maybe just passing up the recorded data by some filters
+     * ---- like facet.
+     * 3. Passing the results to QueryResults : This module is also responsible of populating QuebuildPhysicalPlanFirstVersionryResults from
+     * ---- the outputs of the root operator and make everything inside core transparent to outside layers.
+     * 4. Exact and fuzzy policy : If exactOnly is passed as true to getNext(...) of any operator, that operator
+     * ---- only returns exact results (if not, all the results are returned.) Therefore, the physical plan is executed first
+     * ---- by exactOnly=true, and then if we don't have enough results we re-execute the plan by passing exactOnly=false.
+     * ---- please note that since topK, or GetAll (the search type) is embedded in the structure of PhysicalPlan,
+     * ---- this policy is applied on all search types.
+     */
 
-			FacetOptimizationOperator * facetOptimizationOperatorPtr = new FacetOptimizationOperator();
-			facetOperatorPtr->setPhysicalPlanOptimizationNode(facetOptimizationOperatorPtr);
-			facetOptimizationOperatorPtr->setExecutableNode(facetOperatorPtr);
+    PhysicalPlanNode * topOperator = NULL;
+    PhysicalPlanNode * bottomOfChain = NULL;
+    FacetOperator * facetOperatorPtr = NULL;
+    SortByRefiningAttributeOperator * sortOperator = NULL;
+    if(logicalPlan->getPostProcessingInfo() != NULL){
+        if(logicalPlan->getPostProcessingInfo()->getfacetInfo() != NULL){
+            facetOperatorPtr = new FacetOperator(this, logicalPlan->getPostProcessingInfo()->getfacetInfo()->types,
+                    logicalPlan->getPostProcessingInfo()->getfacetInfo()->fields,
+                    logicalPlan->getPostProcessingInfo()->getfacetInfo()->rangeStarts,
+                    logicalPlan->getPostProcessingInfo()->getfacetInfo()->rangeEnds,
+                    logicalPlan->getPostProcessingInfo()->getfacetInfo()->rangeGaps,
+                    logicalPlan->getPostProcessingInfo()->getfacetInfo()->numberOfTopGroupsToReturn);
 
-			topOperator = bottomOfChain =  facetOperatorPtr;
-		}
-		if(logicalPlan->getPostProcessingInfo()->getSortEvaluator() != NULL){
-			sortOperator = new SortByRefiningAttributeOperator(logicalPlan->getPostProcessingInfo()->getSortEvaluator());
-			SortByRefiningAttributeOptimizationOperator * sortOpOperator =
-					new SortByRefiningAttributeOptimizationOperator();
-			sortOperator->setPhysicalPlanOptimizationNode(sortOpOperator);
-			sortOpOperator->setExecutableNode(sortOperator);
+            FacetOptimizationOperator * facetOptimizationOperatorPtr = new FacetOptimizationOperator();
+            facetOperatorPtr->setPhysicalPlanOptimizationNode(facetOptimizationOperatorPtr);
+            facetOptimizationOperatorPtr->setExecutableNode(facetOperatorPtr);
 
-			if(bottomOfChain != NULL){
-				bottomOfChain->getPhysicalPlanOptimizationNode()->addChild(sortOpOperator);
-				bottomOfChain = bottomOfChain->getPhysicalPlanOptimizationNode()->getChildAt(0)->getExecutableNode();
-			}else{
-				topOperator = bottomOfChain = sortOperator;
-			}
-		}
-	}
+            topOperator = bottomOfChain =  facetOperatorPtr;
+        }
+        if(logicalPlan->getPostProcessingInfo()->getSortEvaluator() != NULL){
+            sortOperator = new SortByRefiningAttributeOperator(logicalPlan->getPostProcessingInfo()->getSortEvaluator());
+            SortByRefiningAttributeOptimizationOperator * sortOpOperator =
+                    new SortByRefiningAttributeOptimizationOperator();
+            sortOperator->setPhysicalPlanOptimizationNode(sortOpOperator);
+            sortOpOperator->setExecutableNode(sortOperator);
 
-
-	KeywordSearchOperator keywordSearchOperator(logicalPlan);
-	KeywordSearchOptimizationOperator keywordSearchOptimizationOperator;
-	keywordSearchOperator.setPhysicalPlanOptimizationNode(&keywordSearchOptimizationOperator);
-	keywordSearchOptimizationOperator.setExecutableNode(&keywordSearchOperator);
-
-	if(bottomOfChain != NULL){
-		bottomOfChain->getPhysicalPlanOptimizationNode()->addChild(&keywordSearchOptimizationOperator);
-		bottomOfChain = bottomOfChain->getPhysicalPlanOptimizationNode()->getChildAt(0)->getExecutableNode();
-	}else{
-		topOperator = bottomOfChain = &keywordSearchOperator;
-	}
+            if(bottomOfChain != NULL){
+                bottomOfChain->getPhysicalPlanOptimizationNode()->addChild(sortOpOperator);
+                bottomOfChain = bottomOfChain->getPhysicalPlanOptimizationNode()->getChildAt(0)->getExecutableNode();
+            }else{
+                topOperator = bottomOfChain = sortOperator;
+            }
+        }
+    }
 
 
-	PhysicalPlanExecutionParameters dummy(0,true,1,SearchTypeTopKQuery); // this parameter will be created inside KeywordSearchOperator
-	topOperator->open(this, dummy );
+    KeywordSearchOperator keywordSearchOperator(logicalPlan);
+    KeywordSearchOptimizationOperator keywordSearchOptimizationOperator;
+    keywordSearchOperator.setPhysicalPlanOptimizationNode(&keywordSearchOptimizationOperator);
+    keywordSearchOptimizationOperator.setExecutableNode(&keywordSearchOperator);
+
+    if(bottomOfChain != NULL){
+        bottomOfChain->getPhysicalPlanOptimizationNode()->addChild(&keywordSearchOptimizationOperator);
+        bottomOfChain = bottomOfChain->getPhysicalPlanOptimizationNode()->getChildAt(0)->getExecutableNode();
+    }else{
+        topOperator = bottomOfChain = &keywordSearchOperator;
+    }
 
 
-	boost::shared_ptr<TrieRootNodeAndFreeList > trieRootNode_ReadView;
-
-	// We need to get the read view from this->indexReadToken
-	// instead of calling this->getTrie()->getTrieRootNode_ReadView()
-	// since the latter may give a read view that is different from
-	// the one we got when the search started.
-	trieRootNode_ReadView = this->indexReadToken.trieRootNodeSharedPtr;
-	while(true){
-
-		PhysicalPlanRecordItem * newRecord = topOperator->getNext(dummy);
-
-		if(newRecord == NULL){
-			break;
-		}
-
-		QueryResult * queryResult = queryResults->impl->getReultsFactory()->impl->createQueryResult();
-		queryResults->impl->sortedFinalResults.push_back(queryResult);
-
-		queryResult->internalRecordId = newRecord->getRecordId();
-		newRecord->getRecordMatchEditDistances(queryResult->editDistances);
-		//
-		queryResult->_score.setTypedValue(newRecord->getRecordRuntimeScore(),ATTRIBUTE_TYPE_FLOAT);
-
-		newRecord->getRecordMatchingPrefixes(queryResult->matchingKeywordTrieNodes);
-
-		newRecord->getTermTypes(queryResult->termTypes);
-
-		for(unsigned i=0; i < queryResult->matchingKeywordTrieNodes.size() ; i++){
-			std::vector<CharType> temp;
-			this->getTrie()->getPrefixString(trieRootNode_ReadView->root,
-					queryResult->matchingKeywordTrieNodes.at(i), temp);
-			string str;
-			charTypeVectorToUtf8String(temp, str);
-			queryResult->matchingKeywords.push_back(str);
-		}
-		newRecord->getRecordMatchAttributeBitmaps(queryResult->attributeIdsList);
-
-		// We need to get the read view from this->indexReadToken
-		// instead of calling this->getTrie()->getTrieRootNode_ReadView()
-		// since the latter may give a read view that is different from
-		// the one we got when the search started.
-		this->getForwardIndex()->getExternalRecordIdFromInternalRecordId(this->indexReadToken.forwardIndexReadViewSharedPtr,
-										 queryResult->internalRecordId,queryResult->externalRecordId );
-	}
-
-	if(facetOperatorPtr != NULL){
-		facetOperatorPtr->getFacetResults(queryResults);
-	}
-
-	topOperator->close(dummy);
-
-	// set estimated number of results
-	queryResults->impl->estimatedNumberOfResults = logicalPlan->getTree()->stats->getEstimatedNumberOfResults();
-
-	// save in cache
-	boost::shared_ptr<QueryResultsCacheEntry> cacheObject ;
-	cacheObject.reset(new QueryResultsCacheEntry());
-	cacheObject->copyFromQueryResultsInternal(queryResults->impl);
-	this->cacheManager->getQueryResultsCache()->setQueryResults(key , cacheObject);
+    PhysicalPlanExecutionParameters dummy(0,true,1,SearchTypeTopKQuery); // this parameter will be created inside KeywordSearchOperator
+    topOperator->open(this, dummy );
 
 
-	if(facetOperatorPtr != NULL){
-		delete facetOperatorPtr->getPhysicalPlanOptimizationNode();
-		delete facetOperatorPtr;
-	}
+    while(true){
 
-	if (sortOperator) {
-		delete sortOperator->getPhysicalPlanOptimizationNode();
-		delete sortOperator;
-	}
+        PhysicalPlanRecordItem * newRecord = topOperator->getNext(dummy);
 
-	return queryResults->impl->sortedFinalResults.size();
+        if(newRecord == NULL){
+            break;
+        }
+
+        QueryResult * queryResult = queryResults->impl->getReultsFactory()->impl->createQueryResult();
+        queryResults->impl->sortedFinalResults.push_back(queryResult);
+
+        queryResult->internalRecordId = newRecord->getRecordId();
+        newRecord->getRecordMatchEditDistances(queryResult->editDistances);
+        //
+        queryResult->_score.setTypedValue(newRecord->getRecordRuntimeScore(),ATTRIBUTE_TYPE_FLOAT);
+
+        newRecord->getRecordMatchingPrefixes(queryResult->matchingKeywordTrieNodes);
+
+        newRecord->getTermTypes(queryResult->termTypes);
+
+        for(unsigned i=0; i < queryResult->matchingKeywordTrieNodes.size() ; i++){
+            std::vector<CharType> temp;
+            this->indexReadToken.getPrefixString(queryResult->matchingKeywordTrieNodes.at(i), temp);
+            string str;
+            charTypeVectorToUtf8String(temp, str);
+            queryResult->matchingKeywords.push_back(str);
+        }
+        newRecord->getRecordMatchAttributeBitmaps(queryResult->attributeIdsList);
+
+        // We need to get the read view from this->indexReadToken
+        // instead of calling this->getTrie()->getTrieRootNode_ReadView()
+        // since the latter may give a read view that is different from
+        // the one we got when the search started.
+        this->indexReadToken.getExternalRecordIdFromInternalRecordId(queryResult->internalRecordId,queryResult->externalRecordId );
+    }
+
+    if(facetOperatorPtr != NULL){
+        facetOperatorPtr->getFacetResults(queryResults);
+    }
+
+    topOperator->close(dummy);
+
+    // set estimated number of results
+    queryResults->impl->estimatedNumberOfResults = logicalPlan->getTree()->stats->getEstimatedNumberOfResults();
+
+    // save in cache
+    boost::shared_ptr<QueryResultsCacheEntry> cacheObject ;
+    cacheObject.reset(new QueryResultsCacheEntry());
+    cacheObject->copyFromQueryResultsInternal(queryResults->impl);
+    this->cacheManager->getQueryResultsCache()->setQueryResults(key , cacheObject);
+
+
+    if(facetOperatorPtr != NULL){
+        delete facetOperatorPtr->getPhysicalPlanOptimizationNode();
+        delete facetOperatorPtr;
+    }
+
+    if (sortOperator) {
+        delete sortOperator->getPhysicalPlanOptimizationNode();
+        delete sortOperator;
+    }
+
+    /*
+     * Every reader must call this method before exiting.
+     * This method releases all the readviews and unlocks the global
+     * mutex lock.
+     */
+    readerPreExit();
+    return queryResults->impl->sortedFinalResults.size();
 }
 
 // for retrieving only one result by having the primary key
 void QueryEvaluatorInternal::search(const std::string & primaryKey, QueryResults *queryResults){
-	unsigned internalRecordId ; // ForwardListId is the same as InternalRecordId
-    // need to lock the mutex
-	boost::shared_lock< boost::shared_mutex > lock(this->indexData->globalRwMutexForReadersWriters);
-	if ( this->indexData->forwardIndex->getInternalRecordIdFromExternalRecordId(primaryKey , internalRecordId) == false ){
-		return;
-	}
-	// The query result to be returned.
-	// First check to see if the record is valid.
-	bool validForwardList;
-	shared_ptr<vectorview<ForwardListPtr> > readView;
+    unsigned internalRecordId ; // ForwardListId is the same as InternalRecordId
 
-	// We need to get the read view from this->indexReadToken
-	// instead of calling this->getTrie()->getTrieRootNode_ReadView()
-	// since the latter may give a read view that is different from
-	// the one we got when the search started.
-	readView = this->indexReadToken.forwardIndexReadViewSharedPtr;
-	this->indexData->forwardIndex->getForwardList(readView, internalRecordId, validForwardList);
-	if (validForwardList == false) {
-		return;
-	}
+    /*
+     * This method must be called in the beginning of all reader API methods.
+     * It locks the global read/write mutex and holds on to all 4 readviews
+     * that we have.
+     */
+    readerPreEnter();
+    if ( this->indexReadToken.getInternalRecordIdFromExternalRecordId(primaryKey , internalRecordId) == false ){
 
-	QueryResult * queryResult = queryResults->impl->getReultsFactory()->impl->createQueryResult();
-	queryResult->externalRecordId = primaryKey;
-	queryResult->internalRecordId = internalRecordId;
-	queryResult->_score.setTypedValue((float)0.0,ATTRIBUTE_TYPE_FLOAT);
-	queryResults->impl->sortedFinalResults.push_back(queryResult);
-	return;
+        /*
+         * Every reader must call this method before exiting.
+         * This method releases all the readviews and unlocks the global
+         * mutex lock.
+         */
+        readerPreExit();
+        return;
+    }
+    // The query result to be returned.
+    // First check to see if the record is valid.
+    bool validForwardList;
+    this->indexReadToken.getForwardList(internalRecordId, validForwardList);
+    if (validForwardList == false) {
+
+        /*
+         * Every reader must call this method before exiting.
+         * This method releases all the readviews and unlocks the global
+         * mutex lock.
+         */
+        readerPreExit();
+        return;
+    }
+
+    QueryResult * queryResult = queryResults->impl->getReultsFactory()->impl->createQueryResult();
+    queryResult->externalRecordId = primaryKey;
+    queryResult->internalRecordId = internalRecordId;
+    queryResult->_score.setTypedValue((float)0.0,ATTRIBUTE_TYPE_FLOAT);
+    queryResults->impl->sortedFinalResults.push_back(queryResult);
+
+    /*
+     * Every reader must call this method before exiting.
+     * This method releases all the readviews and unlocks the global
+     * mutex lock.
+     */
+    readerPreExit();
+    return;
 }
 
 // Get the in memory data stored with the record in the forwardindex. Access through the internal recordid.
-StoredRecordBuffer QueryEvaluatorInternal::getInMemoryData(unsigned internalRecordId) const {
-	return this->indexData->forwardIndex->getInMemoryData(internalRecordId);
+StoredRecordBuffer QueryEvaluatorInternal::getInMemoryData_Safe(unsigned internalRecordId) const {
+    // This method is not used in the data flow of read queries, readview is acquired later on inside
+    // forward index method for getting inMemory data..
+    boost::shared_lock<boost::shared_mutex> sLock(this->indexData->globalRwMutexForReadersWriters);
+    return this->indexer->getInMemoryData(internalRecordId);
+}
+
+unsigned QueryEvaluatorInternal::getTotalNumberOfRecords(){
+	return this->indexReadToken.forwardIndexReadViewSharedPtr->size();
+}
+
+const bool QueryEvaluatorInternal::isBulkLoadDone() const { return this->indexData->isBulkLoadDone(); }
+/*
+ * This function is only used in TEST.
+ * Do not use this API in any place higher than this layer.Nobody should access any of the indices
+ * directly unless it's from within the query optimzer.
+ */
+const InvertedIndex *QueryEvaluatorInternal::testOnly_getInvertedIndex() {
+    return this->indexData->invertedIndex;
+}
+
+/*
+ * This function is only used in TEST.
+ * Do not use this API in any place higher than this layer.Nobody should access any of the indices
+ * directly unless it's from within the query optimzer.
+ */
+ForwardIndex * QueryEvaluatorInternal::testOnly_getForwardIndex() {
+    return this->indexData->forwardIndex;
+}
+
+
+const Schema * QueryEvaluatorInternal::getSchema() const {
+    return this->indexer->getSchema();
+}
+
+const Trie* QueryEvaluatorInternal::testOnly_getTrie() const {
+    return this->indexData->trie;
 }
 
 // TODO : this function might need to be deleted from here ...
@@ -402,7 +483,8 @@ boost::shared_ptr<PrefixActiveNodeSet> QueryEvaluatorInternal::computeActiveNode
     if ( cacheResponse == 0) { // NO CacheHit,  response = 0
         //std::cout << "|NO Cache|" << std::endl;;
         // No prefix has a cached TermActiveNode Set. Create one for the empty std::string "".
-    	initialPrefixActiveNodeSet.reset(new PrefixActiveNodeSet(this->indexReadToken.trieRootNodeSharedPtr, term->getThreshold(), this->indexData->getSchema()->getSupportSwapInEditDistance()));
+        initialPrefixActiveNodeSet.reset(new PrefixActiveNodeSet(this->indexReadToken.trieRootNodeSharedPtr,
+        		term->getThreshold(), this->getSchema()->getSupportSwapInEditDistance()));
     }
     cachedPrefixLength = initialPrefixActiveNodeSet->getPrefixLength();
 
@@ -419,7 +501,7 @@ boost::shared_ptr<PrefixActiveNodeSet> QueryEvaluatorInternal::computeActiveNode
         //std::cout << "Cache Set:" << *(prefixActiveNodeSet->getPrefix()) << std::endl;
 
         if (iter >= 2 && (cacheResponse != -1)) { // Cache not busy and keywordLength is at least 2.
-        	prefixActiveNodeSet->prepareForIteration(); // this is the last write operation on prefixActiveNodeSet
+            prefixActiveNodeSet->prepareForIteration(); // this is the last write operation on prefixActiveNodeSet
             cacheResponse = this->cacheManager->getActiveNodesCache()->setPrefixActiveNodeSet(prefixActiveNodeSet);
         }
     }
@@ -433,11 +515,6 @@ void QueryEvaluatorInternal::cacheClear() {
 }
 
 
-QueryEvaluatorInternal::~QueryEvaluatorInternal() {
-	delete physicalOperatorFactory;
-    delete physicalPlanRecordItemPool;
-}
-
 PhysicalOperatorFactory * QueryEvaluatorInternal::getPhysicalOperatorFactory(){
     return this->physicalOperatorFactory;
 }
@@ -450,36 +527,22 @@ PhysicalPlanRecordItemPool * QueryEvaluatorInternal::getPhysicalPlanRecordItemPo
     return this->physicalPlanRecordItemPool;
 }
 
-//DEBUG function. Used in CacheIntegration_Test
-bool QueryEvaluatorInternal::cacheHit(const Query *query)
-{
-//    const std::vector<Term* > *queryTerms = query->getQueryTerms();
-//
-//    //Empty Query case
-//    if (queryTerms->size() == 0)
-//        return false;
-//
-//    // Cache lookup, assume a query with the first k terms found in the cache
-//    ConjunctionCacheResultsEntry* conjunctionCacheResultsEntry;
-//    this->cacheManager->getCachedConjunctionResult(queryTerms, conjunctionCacheResultsEntry);
-//
-//    // Cached results for the first k terms
-//    if (conjunctionCacheResultsEntry != NULL)
-//        return true;
-
-	// TODO we must write this function again
-    return false;
-}
-
-void QueryEvaluatorInternal::setQueryEvaluatorRuntimeParametersContainer(QueryEvaluatorRuntimeParametersContainer * parameters){
-	this->parameters = *parameters;
-}
 QueryEvaluatorRuntimeParametersContainer * QueryEvaluatorInternal::getQueryEvaluatorRuntimeParametersContainer(){
-	return &(this->parameters);
+    return &(this->parameters);
 }
 
 FeedbackIndex * QueryEvaluatorInternal::getFeedbackIndex() {
-	return indexer->getFeedbackIndexer();
+    return indexer->getFeedbackIndexer();
+}
+
+// Every reader goes through this function before starting the execution of
+// suggest or search
+void QueryEvaluatorInternal::readerPreEnter(){
+    this->indexer->readerPreEnter(this->indexReadToken);
+}
+// Every reader goes through this function before exiting from suggest or search
+void QueryEvaluatorInternal::readerPreExit(){
+    this->indexer->readerPreExit(this->indexReadToken);
 }
 
 }}
