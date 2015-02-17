@@ -210,9 +210,11 @@ struct MergeWorkersThreadArgs {
 
 	pthread_cond_t waitConditionVar;  // condition variable to wake up worker thread.
 	unsigned workerId;   // worker Id
-	bool isDataReady;    // flag when set true indicates inverted list queue is ready.
-	bool stopExecuting;  // flag when set true stops the worker threads.
-	bool workerReady;    // flag used to indicate whether worker thread is ready to accept task
+	// variables below are marked volatile to inform compiler that it should not optimize
+	// read/write of these variables because these can be read/write by multiple thread.
+	volatile bool isDataReady;    // flag when set true indicates inverted list queue is ready.
+	volatile bool stopExecuting;  // flag when set true stops the worker threads.
+	volatile bool workerReady;    // flag used to indicate whether worker thread is ready to accept task
 	                     // from main merge thread.
 };
 // Queue which holds data for merge workers.
