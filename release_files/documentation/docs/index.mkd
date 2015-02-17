@@ -45,6 +45,7 @@ the [JSON](http://json.org/) format.
 - Token-based authorization
 - Access control (record based and attribute based)
 - Connectors to MySQL, SQLite, SQL Server, Oracle, MongoDB, with connectors for other data sources coming soon
+- SDK for programmers to write connectors for new data sources.
 
 ##What's new in SRCH2 4.4.4
 ####Features:
