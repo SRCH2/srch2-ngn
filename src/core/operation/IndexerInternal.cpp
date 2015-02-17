@@ -331,7 +331,20 @@ void * dispatchMergeWorkerThread(void *arg) {
 	MergeWorkersThreadArgs *info = (MergeWorkersThreadArgs *) arg;
 	IndexData * index = (IndexData *)info->index;
 	pthread_mutex_lock(&info->perThreadMutex);
-	__sync_or_and_fetch(&info->workerReady, true); // set flag to true atomically
+	// Atomically set the flag to True
+	// __sync_or_and_fetch(&info->workerReady, true) is equivalent to
+	// info->workerReady |= true
+	// Details: https://gcc.gnu.org/onlinedocs/gcc-4.1.2/gcc/Atomic-Builtins.html
+	__sync_or_and_fetch(&info->workerReady, true); 
+
+	// __sync_bool_compare_and_swap(&info->stopExecuting, true, true) 
+	//  is equivalent to 
+	//  if (info->stopExecuting == true) 
+	//  	{  info->stopExecuting = true; return true } 
+	//  else 
+	//      { return false }
+	//  Note: swap part is redundant ( There is no atomic compare only API from gcc)
+	//  Details: https://gcc.gnu.org/onlinedocs/gcc-4.1.2/gcc/Atomic-Builtins.html
 	while(!__sync_bool_compare_and_swap(&info->stopExecuting, true, true)) {
 		pthread_cond_wait(&info->waitConditionVar, &info->perThreadMutex);
 		if (__sync_bool_compare_and_swap(&info->stopExecuting, true, true))
