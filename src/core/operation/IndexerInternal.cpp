@@ -432,7 +432,7 @@ void IndexReaderWriter::startMergeThreadLoop()
       return;
     }
 
-    createAndStartMergeWorkerThreads();
+    //createAndStartMergeWorkerThreads();
 
     /*
      *  Initialize condition variable for the first time before loop starts.
@@ -462,24 +462,24 @@ void IndexReaderWriter::startMergeThreadLoop()
     pthread_cond_destroy(&countThresholdConditionVariable);
 
     // signal all worker threads to stop
-    unsigned mergeWorkersCount = this->index->invertedIndex->mergeWorkersCount;
-	MergeWorkersThreadArgs *mergeWorkersArgs = this->index->invertedIndex->mergeWorkersArgs;
-    for (unsigned i = 0; i < mergeWorkersCount; ++i) {
-    	pthread_mutex_lock(&mergeWorkersArgs[i].perThreadMutex);
-    	__sync_or_and_fetch(&mergeWorkersArgs[i].stopExecuting, true); // set flag to true atomically
-    	pthread_cond_signal(&mergeWorkersArgs[i].waitConditionVar);
-    	pthread_mutex_unlock(&mergeWorkersArgs[i].perThreadMutex);
-    }
-    // make sure all worker threads are stopped.
-    for (unsigned i = 0; i < mergeWorkersCount; ++i) {
-    	pthread_join(mergerWorkerThreads[i], NULL);
-    	// release resources when worker thread is gone.
-    	pthread_mutex_destroy(&mergeWorkersArgs[i].perThreadMutex);
-    	pthread_cond_destroy(&mergeWorkersArgs[i].waitConditionVar);
-    }
+//    unsigned mergeWorkersCount = this->index->invertedIndex->mergeWorkersCount;
+//	MergeWorkersThreadArgs *mergeWorkersArgs = this->index->invertedIndex->mergeWorkersArgs;
+//    for (unsigned i = 0; i < mergeWorkersCount; ++i) {
+//    	pthread_mutex_lock(&mergeWorkersArgs[i].perThreadMutex);
+//    	__sync_or_and_fetch(&mergeWorkersArgs[i].stopExecuting, true); // set flag to true atomically
+//    	pthread_cond_signal(&mergeWorkersArgs[i].waitConditionVar);
+//    	pthread_mutex_unlock(&mergeWorkersArgs[i].perThreadMutex);
+//    }
+//    // make sure all worker threads are stopped.
+//    for (unsigned i = 0; i < mergeWorkersCount; ++i) {
+//    	pthread_join(mergerWorkerThreads[i], NULL);
+//    	// release resources when worker thread is gone.
+//    	pthread_mutex_destroy(&mergeWorkersArgs[i].perThreadMutex);
+//    	pthread_cond_destroy(&mergeWorkersArgs[i].waitConditionVar);
+//    }
     // free allocate memory
-    delete[] mergerWorkerThreads;
-    delete[] this->index->invertedIndex->mergeWorkersArgs;
+//    delete[] mergerWorkerThreads;
+//    delete[] this->index->invertedIndex->mergeWorkersArgs;
 
     pthread_mutex_unlock(&lockForWriters);
     return;
