@@ -331,16 +331,31 @@ void * dispatchMergeWorkerThread(void *arg) {
 	MergeWorkersThreadArgs *info = (MergeWorkersThreadArgs *) arg;
 	IndexData * index = (IndexData *)info->index;
 	pthread_mutex_lock(&info->perThreadMutex);
-	info->workerReady = true;
-	while(!info->stopExecuting) {
+	// Atomically set the flag to True
+	// __sync_or_and_fetch(&info->workerReady, true) is equivalent to
+	// info->workerReady |= true
+	// Details: https://gcc.gnu.org/onlinedocs/gcc-4.1.2/gcc/Atomic-Builtins.html
+	__sync_or_and_fetch(&info->workerReady, true); 
+
+	// __sync_bool_compare_and_swap(&info->stopExecuting, true, true) 
+	//  is equivalent to 
+	//  if (info->stopExecuting == true) 
+	//  	{  info->stopExecuting = true; return true } 
+	//  else 
+	//      { return false }
+	//  Note: swap part is redundant ( There is no atomic compare only API from gcc)
+	//  Details: https://gcc.gnu.org/onlinedocs/gcc-4.1.2/gcc/Atomic-Builtins.html
+	while(!__sync_bool_compare_and_swap(&info->stopExecuting, true, true)) {
 		pthread_cond_wait(&info->waitConditionVar, &info->perThreadMutex);
-		if (info->stopExecuting)
+		if (__sync_bool_compare_and_swap(&info->stopExecuting, true, true))
 			break;
-		if (info->isDataReady == true) {
+		if (__sync_bool_compare_and_swap(&info->isDataReady, true, true)) {
 			//Logger::console("Worker %d : Starting Merge of Inverted Lists", info->workerId);
 			unsigned processedCount  = index->invertedIndex->workerMergeTask(index->rankerExpression,
 						index->_getNumberOfDocumentsInIndex(), index->schemaInternal, index->trie);
-			info->isDataReady = false;
+
+			__sync_and_and_fetch(&info->isDataReady, false); // set the flag to false atomically.
+
 			// acquire the lock to make sure that main merge thread is waiting for this condition.
 			// When the main thread is waiting on the condition then this lock is in unlocked state
 			// and can be acquired.
@@ -351,11 +366,9 @@ void * dispatchMergeWorkerThread(void *arg) {
 			pthread_cond_signal(&index->invertedIndex->dispatcherConditionVar);
 			pthread_mutex_unlock(&index->invertedIndex->dispatcherMutex);
 			//Logger::console("Worker %d : Done with merge, processed %d list ", info->workerId, processedCount);
-		} else {
-			//Logger::console("Worker %d : Spurious Wake ", info->workerId);
-			info->isDataReady = false;
-		}
+		} 	
 	}
+
 	pthread_mutex_unlock(&info->perThreadMutex);
 	return NULL;
 }
@@ -388,7 +401,7 @@ void IndexReaderWriter::createAndStartMergeWorkerThreads() {
 	while (!allReady) {
 		allReady = true;
 		for (unsigned i = 0; i < mergeWorkersCount; ++i) {
-			if (mergeWorkersArgs[i].workerReady == false) {
+			if (__sync_bool_compare_and_swap(&mergeWorkersArgs[i].workerReady, false, false)) {
 				allReady = false;
 				sleep(1);
 				break;
@@ -453,7 +466,7 @@ void IndexReaderWriter::startMergeThreadLoop()
 	MergeWorkersThreadArgs *mergeWorkersArgs = this->index->invertedIndex->mergeWorkersArgs;
     for (unsigned i = 0; i < mergeWorkersCount; ++i) {
     	pthread_mutex_lock(&mergeWorkersArgs[i].perThreadMutex);
-    	mergeWorkersArgs[i].stopExecuting = true;
+    	__sync_or_and_fetch(&mergeWorkersArgs[i].stopExecuting, true); // set flag to true atomically
     	pthread_cond_signal(&mergeWorkersArgs[i].waitConditionVar);
     	pthread_mutex_unlock(&mergeWorkersArgs[i].perThreadMutex);
     }

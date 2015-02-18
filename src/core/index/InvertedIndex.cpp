@@ -492,7 +492,7 @@ void InvertedIndex::parallelMerge()
     // Notify each worker that queue is ready.
     for (unsigned i = 0; i < mergeWorkersCount; ++i) {
     	pthread_mutex_lock(&mergeWorkersArgs[i].perThreadMutex);
-    	mergeWorkersArgs[i].isDataReady = true;
+    	__sync_or_and_fetch(&mergeWorkersArgs[i].isDataReady, true);
     	pthread_cond_signal(&mergeWorkersArgs[i].waitConditionVar);
     	pthread_mutex_unlock(&mergeWorkersArgs[i].perThreadMutex);
     }
@@ -504,7 +504,7 @@ void InvertedIndex::parallelMerge()
     	pthread_cond_wait(&dispatcherConditionVar, &dispatcherMutex);
     	allDone = true;
     	for (unsigned i = 0; i < mergeWorkersCount; ++i) {
-    		if (mergeWorkersArgs[i].isDataReady == true) {
+    		if (__sync_bool_compare_and_swap(&mergeWorkersArgs[i].isDataReady, true, true)) {
     			allDone = false;
     			break;
     		}
