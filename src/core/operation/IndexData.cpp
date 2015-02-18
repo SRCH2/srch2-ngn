@@ -702,12 +702,12 @@ INDEXWRITE_RETVAL IndexData::_merge(CacheManager *cache, bool updateHistogram) {
 		this->forwardIndex->freeSpaceOfDeletedRecords();
 	}
 
-	if (this->invertedIndex->mergeWorkersCount <= 1) {
+	//if (this->invertedIndex->mergeWorkersCount <= 1) {
 		this->invertedIndex->merge( this->rankerExpression,
 				this->writeCounter->getNumberOfDocuments(), this->schemaInternal, this->trie);
-	} else {
-		this->invertedIndex->parallelMerge();
-	}
+	//} else {
+	//	this->invertedIndex->parallelMerge();
+	//}
 
 	// Since trie is the entry point of every search, trie merge should be done after all other merges.
 	// If forwardIndex or invertedIndex is merged before trie, then users can see an inconsistent state of
