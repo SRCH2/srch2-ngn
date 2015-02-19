@@ -14,6 +14,7 @@
         <!-- Make sure to specify the home of your SRCH2 demo.  Example: 
 	  <srch2Home>/home/joe/srch2/example-demo</srch2Home>
         -->
+    <licenseFile>srch2_license_key.txt</licenseFile>
  
     <listeningHostname>0.0.0.0</listeningHostname>
     <listeningPort>8081</listeningPort>
