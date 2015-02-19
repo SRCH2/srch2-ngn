@@ -67,7 +67,7 @@ bash uninstall-env.sh
    apache2-mod-php5
    php5
    curl
-   php_curl
+   php-curl
    synergy
    git
    vim
@@ -105,7 +105,14 @@ bash uninstall-env.sh
       shell> vim srch2-ngn/test/sharding/integration/mini_cluster/cluster_config.sh
 
       Add each machine's information to the config file.
-      You can also check the file "cluster_config.sh.local" which only working on a single local machine.
+
+      To run the cluster on a single local machine:
+
+      shell> mv srch2-ngn/test/sharding/integration/mini_cluster/cluster_config.sh srch2-ngn/test/sharding/integration/mini_cluster/cluster_config.sh.cluster
+      shell> srch2-ngn/test/sharding/integration/mini_cluster/cluster_config.sh.local srch2-ngn/test/sharding/integration/mini_cluster/cluster_config.sh
+      shell> vim srch2-ngn/test/sharding/integration/mini_cluster/cluster_config.sh
+      
+      Change the __IP_ADDRESSES, __LOGIN_USERS, __SRCH2_HOMES, __SRC_DIRS, __BINARY_FILES to your machine setting.
 
    Modify/Check the configuration file "bin/env-constants.sh" for the node machine
       This config file will be used by all scripts under "bin" folder
@@ -118,20 +125,21 @@ bash uninstall-env.sh
       shell> vim srch2-ngn/test/sharding/integration/mini_cluster/bin/frontend/cluster_config.txt
  
    Add your public key to the local network machines:
-      shell> bash work-environment/add_self_to_authorized_keys.sh 
+      shell> cd work-evnironment
+      shell> bash add_self_to_authorized_keys.sh 
 
    Connect input device using synergy
       shell> bash connect_input.sh (You may need to run this command twice)
 
 ## Install the mini_cluster on all nodes
 
-   shell> bash install
+   shell> bash install -f 
    You can also use this command to update the scripts on all nodes.
 
 ## Set up the frontend GUI
 
    shell> cd /var/www/html
-   shell> sudo ln -s ~/mini_cluster/front_end . (The folder will be created after installing the cluster)
+   shell> sudo ln -s ~/mini_cluster/bin/frontend . (The folder will be created after installing the cluster)
 
    Now you can see the GUI on chrome browser with address "http://localhost/frontend/getNodeInfo.php"
 
@@ -184,7 +192,7 @@ bash uninstall-env.sh
 	 shell> bash cbash [-n] -s -c "bash bin/clean-group.sh -b"
 
 # 3. Start the cluster:
-
+   a. Make sure the setting in the file "cluster_config.sh" is correct. 
    a. Ping all nodes in the cluster
    b. Connect the input device
          shell> cd work-environment
