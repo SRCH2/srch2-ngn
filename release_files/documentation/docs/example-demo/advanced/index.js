@@ -19,7 +19,7 @@ client = {
             debug : true, // true /false
         };        
         this.srch2.init(config);  //Initialize the srch2 with config.
-	_client_this.srch2.setServerUrl("http://localhost:8081/"); // use your own server URL
+	_client_this.srch2.setServerUrl("http://127.0.0.1:8081/"); // use your own server URL
         _client_this.srch2.setSearchType("getAll"); //Set the search type to "getAll"
         _client_this.srch2.setEnablePrefixSearch(true); //Enable the prefix search 
         _client_this.srch2.setEnableFuzzySearch(true);  //Enable the fuzzy search
