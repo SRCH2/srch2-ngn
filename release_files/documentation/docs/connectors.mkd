@@ -182,7 +182,7 @@ Replication Listener and add these changes to its indexes.
 In a terminal, run the following command:
 
 ```
-shell> curl "http://localhost:8081/search?q=paul"
+shell> curl "http://127.0.0.1:8081/search?q=paul"
 ```
 You should see a record with the keyword "Paul".
 
@@ -197,7 +197,7 @@ mysql> INSERT INTO COMPANY (ID,NAME,AGE,ADDRESS,SALARY) VALUES (7, 'Joe', 20, 'N
 
 Wait for about 4 seconds for the SRCH2 server to save the change. Do the search query:
 ```
-shell> curl "http://localhost:8081/search?q=joe"
+shell> curl "http://127.0.0.1:8081/search?q=joe"
 ```
 The search engine should return this newly inserted record. 
 
@@ -210,7 +210,7 @@ mysql> UPDATE COMPANY SET ADDRESS = 'Texas' WHERE ID = 6;
 
 Wait for about 4 seconds for the SRCH2 server to save the change, then do the search query:
 ```
-shell> curl "http://localhost:8081/search?q=kim"
+shell> curl "http://127.0.0.1:8081/search?q=kim"
 ```
 The SRCH2 engine should be able to return this updated record, with "Texas" as the <i>ADDRESS</i> value.
 
@@ -224,7 +224,7 @@ mysql> DELETE FROM COMPANY WHERE ID = 6;
 Again, wait for about 4 seconds for the SRCH2 server to save the change, then do the above search query:
 
 ```
-shell> curl "http://localhost:8081/search?q=Kim"
+shell> curl "http://127.0.0.1:8081/search?q=Kim"
 ```
 The SRCH2 engine should not return the deleted record.
 
@@ -321,7 +321,7 @@ The engine should read the data from the SQLite instance, build indexes, and wai
 In a terminal, run the following command:
 
 ```
-shell> curl "http://localhost:8081/search?q=paul"
+shell> curl "http://127.0.0.1:8081/search?q=paul"
 ```
 You should see a record with the keyword "Paul".
 
@@ -335,7 +335,7 @@ sqlite> INSERT INTO COMPANY (ID,NAME,AGE,ADDRESS,SALARY) VALUES (7, 'Joe', 20, '
 
 Wait for about 4 seconds for the SRCH2 server to pull the change. Do the search query:
 ```
-shell> curl "http://localhost:8081/search?q=joe"
+shell> curl "http://127.0.0.1:8081/search?q=joe"
 ```
 The search engine should return this newly inserted record. 
 
@@ -348,7 +348,7 @@ sqlite> UPDATE COMPANY SET ADDRESS = 'Texas' WHERE ID = 6;
 
 Wait for about 4 seconds for the SRCH2 server to pull the change, then do the search query:
 ```
-shell> curl "http://localhost:8081/search?q=kim"
+shell> curl "http://127.0.0.1:8081/search?q=kim"
 ```
 The SRCH2 engine should be able to return this updated record, with "Texas" as the <i>ADDRESS</i> value.
 
@@ -362,7 +362,7 @@ sqlite> DELETE FROM COMPANY WHERE ID = 6;
 Again, wait for about 4 seconds for the SRCH2 server to pull the change, then do the above search query:
 
 ```
-shell> curl "http://localhost:8081/search?q=Kim"
+shell> curl "http://127.0.0.1:8081/search?q=Kim"
 ```
 The SRCH2 engine should not return the record that we just deleted.
 
@@ -624,7 +624,7 @@ that listens to the latest changes from the database and adds these changes to i
 In a terminal, run the following command:
 
 ```
-shell> curl "http://localhost:8081/search?q=paul"
+shell> curl "http://127.0.0.1:8081/search?q=paul"
 ```
 You should see a record with the keyword "Paul".
 
@@ -641,7 +641,7 @@ shell> sqlcmd -S [MSSERVER-HOST] -U srch2 -P srch2
 
 Wait for about 4 seconds for the SRCH2 server to save the change. Do the search query:
 ```
-shell> curl "http://localhost:8081/search?q=joe"
+shell> curl "http://127.0.0.1:8081/search?q=joe"
 ```
 The search engine should return this newly inserted record. 
 
@@ -655,7 +655,7 @@ We want to update Kim's address from "South-Hall" to "Texas" by running the foll
 
 Wait for about 4 seconds for the SRCH2 server to save the change, then do the search query:
 ```
-shell> curl "http://localhost:8081/search?q=kim"
+shell> curl "http://127.0.0.1:8081/search?q=kim"
 ```
 The SRCH2 engine should be able to return this updated record, with "Texas" as the <i>ADDRESS</i> value.
 
@@ -670,7 +670,7 @@ Run the following command in the SQL Server shell to delete the updated record:
 Again, wait for about 4 seconds for the SRCH2 server to save the change, then do the above search query:
 
 ```
-shell> curl "http://localhost:8081/search?q=Kim"
+shell> curl "http://127.0.0.1:8081/search?q=Kim"
 ```
 The SRCH2 engine should not return the deleted record.
 
@@ -770,7 +770,7 @@ The engine will use a MongoDB connector to read the data from the MongoDB table,
 In a shell terminal, run the following command:
 
 ```
-shell> curl "http://localhost:8081/search?q=terminator"
+shell> curl "http://127.0.0.1:8081/search?q=terminator"
 ```
 You should see the records with the keyword "terminator".
 
@@ -1289,7 +1289,7 @@ shell> path/srch2-engine --config-file=./srch2-config-oracle.xml
 
 To check the result, open another terminal and run the command below.
 ```
-shell> curl "http://localhost:8081/search?q=paul"
+shell> curl "http://127.0.0.1:8081/search?q=paul"
 ```
 
 You should see the record with the keyword "paul".
@@ -1303,7 +1303,7 @@ SQL> commit;
 ```
 Wait for about 4 seconds for the SRCH2 server to save the change. Do the search query:
 ```
-shell> curl "http://localhost:8081/search?q=joe"
+shell> curl "http://127.0.0.1:8081/search?q=joe"
 ```
 The search engine should return this newly inserted record.   
 
@@ -1318,7 +1318,7 @@ SQL> commit;
 To check the update, run the curl command:
 ```
 
-shell> curl "http://localhost:8081/search?q=kim"
+shell> curl "http://127.0.0.1:8081/search?q=kim"
 
 ```
 The SRCH2 engine should be able to return this updated record, with "Texas" as the ADDRESS value.  
@@ -1332,7 +1332,7 @@ SQL> commit;
 Again, wait for about 4 seconds for the SRCH2 server to save the change, then do the search query:
 
 ```
-shell> curl "http://localhost:8081/search?q=Kim"
+shell> curl "http://127.0.0.1:8081/search?q=Kim"
 ```
 
 The SRCH2 engine should not return the deleted record.

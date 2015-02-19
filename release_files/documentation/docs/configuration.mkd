@@ -718,7 +718,7 @@ In addition, make sure to use quotes ("%22") for each search query.
 In a shell terminal, run the following command:
 
 ```
-shell> curl "http://localhost:8081/search?q=%22%E5%96%9C%E6%AC%A2%22"
+shell> curl "http://127.0.0.1:8081/search?q=%22%E5%96%9C%E6%AC%A2%22"
 ```
 
 If running in the browser, 
@@ -728,13 +728,13 @@ You should see a record with the keyword "喜欢".
 
 The following request adds a record to the indexes.
 ```
-shell> curl "http://localhost:8081/docs" -i -X PUT -d '{"id" : "300", "content" : "饺子，又名（水饺）起源于东汉中原宛城，是古老的汉族传统面食，深受中国广大人民喜爱的食品。"}'
+shell> curl "http://127.0.0.1:8081/docs" -i -X PUT -d '{"id" : "300", "content" : "饺子，又名（水饺）起源于东汉中原宛城，是古老的汉族传统面食，深受中国广大人民喜爱的食品。"}'
 ```
 
 Now search with the keyword "面食"
 
 ```
-shell> curl "http://localhost:8081/search?q=%22%E9%9D%A2%E9%A3%9F%22"
+shell> curl "http://127.0.0.1:8081/search?q=%22%E9%9D%A2%E9%A3%9F%22"
 ``` 
 The engine should return the newly inserted record.
 
@@ -743,7 +743,7 @@ The engine should return the newly inserted record.
 The following request will update the content of the newly inserted record.
 
 ```
-shell>  curl "http://localhost:8081/update" -i -X PUT -d '{"id" : "300", "content" : "饺子是一种有馅的半圆形或半月形、角形的面食。"}'
+shell>  curl "http://127.0.0.1:8081/update" -i -X PUT -d '{"id" : "300", "content" : "饺子是一种有馅的半圆形或半月形、角形的面食。"}'
 ```
 
 Wait for about 4 seconds for the server to make the change, then do the above search query again. The engine should return this updated record.
@@ -752,7 +752,7 @@ Wait for about 4 seconds for the server to make the change, then do the above se
 
 Run the following command to delete the updated record:
 ```
-shell> curl "http://localhost:8081/docs?id=300" -i -X DELETE
+shell> curl "http://127.0.0.1:8081/docs?id=300" -i -X DELETE
 ```
 
 Do the above search query again. The SRCH2 engine should not return the record that we just deleted.
@@ -804,7 +804,7 @@ specify a single core.
 
 When instantiated with multiple cores, queries specify a core by name to process the query.  For instance, the following query:
 ```
- http://localhost:8081/example-core/search/q=termina
+ http://127.0.0.1:8081/example-core/search/q=termina
 ```
 requests that the core called "example-core" process a search request for "termina".  In the case when no core is
 specified in a query to a multi-core server, the server will use the core specified by the "defaultCoreName" tag.
@@ -835,7 +835,7 @@ provide the following key-value pair in order to get the authorization.
 Here's an example search query:
 
 ```
- curl -i "http://localhost:8081/search?q=terminator&OAuth=foobar"
+ curl -i "http://127.0.0.1:8081/search?q=terminator&OAuth=foobar"
 ```
 
 Notice that we use "foobar" as an example to indicate that the key in the HTTP request should 

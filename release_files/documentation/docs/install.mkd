@@ -44,7 +44,7 @@ Note:
 
 <b>Step 5</b>: To test the engine, open a new terminal and type the following command:
 ```bsh
- /home/joe/srch2/example-demo> curl -i  http://localhost:8081/search?q=terminator
+ /home/joe/srch2/example-demo> curl -i  http://127.0.0.1:8081/search?q=terminator
 ```
 
 You should see the following results:
