@@ -42,7 +42,7 @@ If geo indexing is used, a geo query can use one of the following two ways to de
 
 The following is an example geo query:
 ```
- curl -i "http://localhost:8081/search?q=girardelli&start=0&rows=20&lblat=61.20&lblong=-149.90&rtlat=61.22&rtlong=-149.70"
+ curl -i "http://127.0.0.1:8081/search?q=girardelli&start=0&rows=20&lblat=61.20&lblong=-149.90&rtlat=61.22&rtlong=-149.70"
 ```
 
 ###3. Geo Query Ranking

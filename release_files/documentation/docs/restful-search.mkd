@@ -17,15 +17,15 @@ SRCH2 server locally on port 8081.
 The following query f1 searches for all records containing the word "terminator". The result set will contain all records with the word "terminator" in a [searchable field](configuration.mkd#112-fields-required), as specified in the configuration file.
 
 ```
- f1) curl -i "http://localhost:8081/search?q=terminator"
+ f1) curl -i "http://127.0.0.1:8081/search?q=terminator"
 ```
 
 Query f2 gets records with the word "terminator" in its <i>title</i>
 field and the word "cameron" in its <i>director</i> field.
 
 ```
- f2) http://localhost:8081/search?q=title:terminator AND director:cameron
- curl command with URL encoding: curl -i "http://localhost:8081/search?q=title:terminator%20AND%20director:cameron"
+ f2) http://127.0.0.1:8081/search?q=title:terminator AND director:cameron
+ curl command with URL encoding: curl -i "http://127.0.0.1:8081/search?q=title:terminator%20AND%20director:cameron"
 ```
 The following is the result:
 ```json
@@ -101,32 +101,32 @@ The following is the result:
 Query f3 filters the results based on the <i>year</i> field, i.e., the
 <i>year</i> value needs to be between 1983 and 1992 (both inclusive). 
 ```
- f3) http://localhost:8081/search?q=title:terminator AND director:cameron&fq=year:[1983 TO 1992]
- (curl -i "http://localhost:8081/search?q=title:terminator%20AND%20director:cameron&fq=year:%5B1983%20TO%201992%5D")
+ f3) http://127.0.0.1:8081/search?q=title:terminator AND director:cameron&fq=year:[1983 TO 1992]
+ (curl -i "http://127.0.0.1:8081/search?q=title:terminator%20AND%20director:cameron&fq=year:%5B1983%20TO%201992%5D")
 ```
 
 Query f4 filters the results based on the <i>genre</i> field.
 
 ```
- f4) "http://localhost:8081/search?q=title:terminator AND director:cameron&fq=genre:action
- (curl -i "http://localhost:8081/search?q=title:terminator%20AND%20director:cameron&fq=genre:action")
+ f4) "http://127.0.0.1:8081/search?q=title:terminator AND director:cameron&fq=genre:action
+ (curl -i "http://127.0.0.1:8081/search?q=title:terminator%20AND%20director:cameron&fq=genre:action")
 ```
 
 Query f5 includes a filtering expression, as specified by the syntax
 "boolexp$ ... $", which selects movies made after 1982.
 ```
- f5) http://localhost:8081/search?q=title:terminator AND director:cameron&fq=boolexp$ year>1982 $
- (curl -i "http://localhost:8081/search?q=title:terminator%20AND%20director:cameron&fq=boolexp$%20year%3E1982%20$")
+ f5) http://127.0.0.1:8081/search?q=title:terminator AND director:cameron&fq=boolexp$ year>1982 $
+ (curl -i "http://127.0.0.1:8081/search?q=title:terminator%20AND%20director:cameron&fq=boolexp$%20year%3E1982%20$")
 ```
 
 Query f6 sorts the results based on the <i>year</i> attribute in the ascending order.
 ```
- f6) curl -i "http://localhost:8081/search?q=cameron&sort=year&orderby=asc"
+ f6) curl -i "http://127.0.0.1:8081/search?q=cameron&sort=year&orderby=asc"
 ```
 
 Query f7 requests the engine to return faceted information for the record's <i>genre</i> field.
 ```
- f7) curl -i "http://localhost:8081/search?q=cameron&facet=true&facet.field=genre"
+ f7) curl -i "http://127.0.0.1:8081/search?q=cameron&facet=true&facet.field=genre"
 ```
 
 Note: The response of a RESTful request is in the
@@ -135,7 +135,7 @@ Note: The response of a RESTful request is in the
 the response data in JSONP, append a parameter field "callback" to the
 query URL. For example:
 ```
- curl -i "http://localhost:8081/search?q=terminator&callback=myfunc"
+ curl -i "http://127.0.0.1:8081/search?q=terminator&callback=myfunc"
 ```
 
 ##3. Basic Concepts
@@ -358,7 +358,7 @@ In the movie demo, some of the attributes are not refining.
 
 This parameter in a query is used to specify fields or attributes that the user wants the engine to return for this query. For example the following url:
 ```
-http://localhost:8087/search?q=services&fl=name,category
+http://127.0.0.1:8087/search?q=services&fl=name,category
 ```
 will return records containing the term "services" in it, but the record returned will only contain the two fields "name" and "category" in it.
 
@@ -487,7 +487,7 @@ This parameter and <i>start</i> can be used to implement pagination.
 The SRCH2 engine provides an API that allows the user to fetch a record by giving its primary key value.  An example of such a request is:
 
 ```
- curl -i "http://localhost:8081/search?docid=929"
+ curl -i "http://127.0.0.1:8081/search?docid=929"
 ```
 
 which returns the record with "929" (text) as its primary key value. Note that the primary key is defined by the tag "uniqueKey" under the "schema" tag.
@@ -497,14 +497,14 @@ which returns the record with "929" (text) as its primary key value. Note that t
 The "Cores" tag set in the [configuration file](configuration.mkd#13-cores-optional) allows the user to search on multiple "cores" within the same server. 
 A query can specify a particular core.  For instance, the following query:
 ```
- http://localhost:8081/example-core/search?q=term
+ http://127.0.0.1:8081/example-core/search?q=term
 ```
 retrieves answers for the keyword "term" from the core called "example-core".  In the case when no core is specified in a query, 
 the server will use the default core specified by the "defaultCoreName" tag.
 
 If a user wants to get results from all the cores, the query should add a prefix "/_all/search" to the request. For instance, the following query:
 ```
- http://localhost:8081/_all/search?q=martn~
+ http://127.0.0.1:8081/_all/search?q=martn~
 ```
 requests that all cores process the "term" query. The "search-all" response encapsulates the results from each source with a tag of the core name.
 For example, the following is a sample response from two cores:
@@ -576,6 +576,6 @@ When [record-based access control](acl.mkd#2-record-based-acl) or
 [attribute-based access control](acl.mkd#3-attribute-based-acl) 
 is enabled in the config file, the role-id can be specified using <code>roleId</code> parameter. For example.
 ```
-curl "http://localhost:8087/search?q=project_name:food&roleId=spiderman
+curl "http://127.0.0.1:8087/search?q=project_name:food&roleId=spiderman
 ```
 If <code>roleId=spiderman</code> has access to the field <code>project_name</code>, then the engine will search in the field <code>project_name</code>; otherwise no result will be returned.
