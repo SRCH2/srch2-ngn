@@ -7,13 +7,8 @@
 #include "DiscoveryManager.h"
 #include <util/Logger.h>
 #include <sstream>
-#include <errno.h>
 #include <util/Assert.h>
-#include <sys/fcntl.h>
 #include "transport/Message.h"
-#include <ifaddrs.h>
-#include <netdb.h>
-#include <net/if.h>
 
 using namespace srch2::util;
 
@@ -21,37 +16,26 @@ namespace srch2 {
 namespace httpwrapper {
 
 MulticastDiscoveryService::MulticastDiscoveryService(MulticastDiscoveryConfig config,
-        SyncManager *syncManager): DiscoveryService(syncManager, config.clusterName), discoveryConfig(config) {
+        SyncManager *syncManager): DiscoveryService(syncManager, config.clusterName), discoveryConfig(config),
+        		timer(networkService), intialDiscoveryPhase(true) {
     // throws exception if validation failed.
     validateConfigSettings(discoveryConfig);
-    listenSocket = -1;
-    sendSocket = -1;
-    _discoveryDone = false;
-    skipInitialDiscovery = false;
 
-    if (this->multiCastInterfaceNumericAddr == 0) {
-        Logger::console("setting up MC interface as Published Interface.");
-        this->multiCastInterfaceNumericAddr = getTransport()->getPublishedInterfaceNumericAddr();
+    if (this->hostIPAddrNumeric == 0) {
+        this->hostIPAddrNumeric = getTransport()->getPublishedInterfaceNumericAddr();
     }
-
-    memset(&multicastGroupAddress, 0, sizeof(multicastGroupAddress));
-    inet_aton(discoveryConfig.multiCastAddress.c_str(), &multicastGroupAddress.sin_addr);
-    //multicastGroupAddress.sin_addr.s_addr = multiCastNumericAddr;
-    multicastGroupAddress.sin_family = AF_INET;
-    multicastGroupAddress.sin_port = htons(discoveryConfig.multicastPort);
 }
 
 void MulticastDiscoveryService::validateConfigSettings(MulticastDiscoveryConfig& discoveryConfig) {
 
-    struct in_addr ipAddress;
-    memset(&ipAddress, 0, sizeof(ipAddress));
-    if (inet_aton(discoveryConfig.multiCastAddress.c_str(), &ipAddress) == 0) {
-        std::stringstream ss;
-        ss << " Invalid Muticast Address = " << discoveryConfig.multiCastAddress;
-        throw std::runtime_error(ss.str());
+    boost::system::error_code errCode;
+    IpAddress multiCastAddress = IpAddress::from_string(discoveryConfig.multiCastAddress, errCode);
+    if (errCode) {
+    	Logger::console("Muticast Address '%s' validation failed", discoveryConfig.multiCastAddress.c_str());
+    	throw std::runtime_error(errCode.message());
     }
 
-    this->multiCastNumericAddr = ipAddress.s_addr;
+    this->multiCastIPAddrNumeric = multiCastAddress.to_ulong();
 
     /*
      *  Verify whether it is not a reserved address
@@ -63,9 +47,13 @@ void MulticastDiscoveryService::validateConfigSettings(MulticastDiscoveryConfig&
      *  http://www.iana.org/assignments/multicast-addresses/multicast-addresses.xhtml
      *  http://www.tldp.org/HOWTO/Multicast-HOWTO-2.html
      */
-    unsigned *ptr = (unsigned *)(&this->multiCastNumericAddr);
 
-    if ((*ptr == 224 && *(ptr + 1) == 0 && *(ptr + 2) == 0) || (*ptr == 239)){
+    if ((multiCastAddress >= IpAddress::from_string("224.0.0.0") &&
+    		multiCastAddress <= IpAddress::from_string("224.0.0.255"))
+        ||
+        (multiCastAddress >= IpAddress::from_string("239.0.0.0") &&
+        multiCastAddress <= IpAddress::from_string("239.255.255.255"))
+        ) {
         std::stringstream ss;
         ss << " Reserved Muticast Address = " << discoveryConfig.multiCastAddress << " cannot be used";
         throw std::runtime_error(ss.str());
@@ -74,107 +62,76 @@ void MulticastDiscoveryService::validateConfigSettings(MulticastDiscoveryConfig&
     /*
      *   Verify that interfaces are mutlicast enabled.
      */
-    // ToDO: defensive check ..not critical at this stage of project.
-    // verifyMulticastEnabled(this->discoveryConfig.multicastInterface);
 
-    memset(&ipAddress, 0, sizeof(ipAddress));
-    if (inet_aton(discoveryConfig.multicastInterface.c_str(), &ipAddress) == 0) {
-        std::stringstream ss;
-        ss << " Invalid Muticast Interface Address = " << discoveryConfig.multicastInterface;
-        throw std::runtime_error(ss.str());
+    IpAddress ipAddressOfHost = IpAddress::from_string(discoveryConfig.hostIpAddressForMulticast, errCode);
+    if (errCode) {
+    	Logger::console(" Host IP Address '%s' validation failed", discoveryConfig.hostIpAddressForMulticast.c_str());
+    	throw std::runtime_error(errCode.message());
     }
 
-    this->multiCastInterfaceNumericAddr = ipAddress.s_addr;
+    this->hostIPAddrNumeric = ipAddressOfHost.to_ulong();
 }
 
-/*
- *   The function is non-blocking and performs the following tasks
- *   1. Creates UDP socket.
- *   2. Setup Multicast parameters for socket at IP layer
- *   3. Bind the socket
- *
- */
-
-int MulticastDiscoveryService::openListeningChannel(){
+void MulticastDiscoveryService::openListeningChannel(){
 
     /*
      *  Prepare socket data structures.
      */
-    int udpSocket;
-    if((udpSocket = socket(AF_INET, SOCK_DGRAM, 0)) < 0) {
-        perror("listening socket failed to init");
-        exit(255);
-    }
+	listenSocket = new BoostUDP::socket(networkService);
+	listenSocket->open(asio::ip::udp::v4());
 
     /*
      *   Make socket non blocking
      */
 
-    fcntl(udpSocket, F_SETFL, O_NONBLOCK);
+	asio::socket_base::non_blocking_io command(true);
+	listenSocket->io_control(command);
 
     /*
      *  set SO_REUSEADDR: This option enables multiple processes on a same host to listen
      *  to multicast packets.
      */
-    int optionVal = 1;  // 1 is used to enable the setting.
-    int status = setsockopt(udpSocket, SOL_SOCKET, SO_REUSEADDR, (void*) &optionVal, sizeof(optionVal));
-    if (status < 0) {
-        perror("address reuse failed : ");
-        exit(-1);
-    }
-#ifdef SO_REUSEPORT
-    status = setsockopt(udpSocket, SOL_SOCKET, SO_REUSEPORT, (void*) &optionVal, sizeof(optionVal));
-    if (status < 0) {
-        perror("port reuse failed : ");
-        exit(-1);
-    }
-#endif
+	listenSocket->set_option(BoostUDP::socket::reuse_address(true));
 
-    /*
-     *  Join multcast group. Both interface address and multicast address are required
-     *  to register the application to a multicast group.
-     */
-    struct ip_mreq routeAddress;
-    memset(&routeAddress, 0, sizeof(routeAddress));
-    routeAddress.imr_multiaddr.s_addr = this->multiCastNumericAddr;
-    routeAddress.imr_interface.s_addr = this->multiCastInterfaceNumericAddr;
+	unsigned short portToBind = discoveryConfig.multicastPort;
 
-    status = setsockopt (udpSocket, IPPROTO_IP, IP_ADD_MEMBERSHIP, &routeAddress, sizeof(routeAddress));
-    if (status < 0) {
-        perror("join group failed : ");
-        exit(-1);
-    }
-
-    struct sockaddr_in addr;
-    addr.sin_family = AF_INET;
-    addr.sin_addr.s_addr = htonl(INADDR_ANY);  // this->multiCastNumericAddr;
-    unsigned portToBind = discoveryConfig.multicastPort;
-    addr.sin_port = htons(portToBind);
+	BoostUDP::endpoint listen_endpoint(
+			IpAddress::from_string(discoveryConfig.hostIpAddressForMulticast), portToBind);
 
     /*
      *  Bind the socket to ip:port
      */
 tryNextPort:
-    if( bind(udpSocket, (struct sockaddr *) &addr, sizeof(sockaddr_in)) < 0){
+	boost::system::error_code errCode;
+	listenSocket->bind(listen_endpoint, errCode);
+    if(errCode){
         ++portToBind;
         if (portToBind < discoveryConfig.multicastPort + 100) {
-            addr.sin_port = htons(portToBind);
+        	listen_endpoint.port(portToBind);
             goto tryNextPort;
         } else {
-            perror("");
+
             Logger::console("unable to bind to any port in range [%d : %d]", discoveryConfig.multicastPort,
                     discoveryConfig.multicastPort + 100);
-            exit(-1);
+            throw std::runtime_error(errCode.message());
         }
     }
-    discoveryConfig.multicastPort = portToBind;
+   discoveryConfig.multicastPort = portToBind;
 
-    Logger::console("Discovery UDP listen socket binding done on %d", portToBind);
+    /*
+     *  Join multcast group. Both interface address and multicast address are required
+     *  to register the application to a multicast group.
+     */
+	listenSocket->set_option(asio::ip::multicast::join_group(
+			IpAddress::from_string(discoveryConfig.multiCastAddress)));
 
-    return udpSocket;
+
+    Logger::console("Multicast Discovery: UDP listen socket binding done on %s : %d", discoveryConfig.hostIpAddressForMulticast.c_str(), portToBind);
+    Logger::console("Multicast Discovery: Joining multicast group :  %s", discoveryConfig.multiCastAddress.c_str());
+
 }
 
-int MulticastDiscoveryService::openSendingChannel(){
+void MulticastDiscoveryService::openSendingChannel(){
 
     /*
      *  Prepare send socket's data structures.
@@ -182,17 +139,15 @@ int MulticastDiscoveryService::openSendingChannel(){
      *  (RFC 1122 [Braden 1989]) forbids the use of same socket for sending/receiving
      *  IP datagram packets - Richard Steven's UNP book.
      */
-    int udpSocket;
-    if((udpSocket = socket(AF_INET, SOCK_DGRAM, 0)) < 0) {
-        perror("socket creation failed !");
-        exit(255);
-    }
+	sendSocket = new BoostUDP::socket(networkService);
+	sendSocket->open(asio::ip::udp::v4());
 
     /*
      *   Make socket non blocking
      */
 
-    fcntl(udpSocket, F_SETFL, O_NONBLOCK);
+	asio::socket_base::non_blocking_io command(true);
+	sendSocket->io_control(command);
 
     /*
      *   Set TTL ( Time To Live ). Purpose of TTL in multicast packet is to
@@ -202,7 +157,7 @@ int MulticastDiscoveryService::openSendingChannel(){
      *  ----------------------------------------------------------------------
      *  0     Restricted to the same host. Won't be output by any interface.
      *  1     Restricted to the same subnet. Won't be forwarded by a router.
-     *  <32   Restricted to the same site, organization or department. (Our Default)
+     *  <32   Restricted to the same site, organization or department. (SRCH2 Default = 31)
      *  <64   Restricted to the same region.
      *  <128  Restricted to the same continent.
      *  <255  Unrestricted in scope. Global.
@@ -210,296 +165,293 @@ int MulticastDiscoveryService::openSendingChannel(){
      */
 
     unsigned optionVal = discoveryConfig.ttl;
-    setsockopt(udpSocket, IPPROTO_IP, IP_MULTICAST_TTL, (void*) &optionVal, sizeof(optionVal));
-
-    /*
-     *  Enable loopback. This enables multiple instances on the same host to receive multicast
-     *  packets. Enabled by default. If disabled, kernel does not send multicast packet to current
-     *  host.
-     */
-    u_char loop = discoveryConfig.enableLoop;
-    setsockopt(udpSocket, IPPROTO_IP, IP_MULTICAST_LOOP, &loop, sizeof(loop));
-
-    /*
-     *  Select Interface. By default we use system provided default interface. In such case
-     *  interfaceNumericAddress will be 0. If interfaceNumericAddress is a non zero value
-     *  specified by a user then it is used as a multicast interface.
-     *
-     *  Note: this is useful for the hosts which have multiple ip addresses.
-     */
-//    if (this->multiCastInterfaceNumericAddr == 0) {  // 0.0.0.0
-//        this->multiCastInterfaceNumericAddr = getTransport()->getPublishedInterfaceNumericAddr();
-//    }
-
-    struct in_addr interfaceAddr;
-    interfaceAddr.s_addr = this->multiCastInterfaceNumericAddr;
-
-    int status = setsockopt (udpSocket, IPPROTO_IP, IP_MULTICAST_IF, &interfaceAddr,
-            sizeof(interfaceAddr));
-    if (status == -1) {
-        Logger::console("Invalid interface specified. Using system default.");
-    }
-    //Logger::console("Discovery UDP sending socket init done.");
-
-    return udpSocket;
+    sendSocket->set_option(asio::ip::multicast::hops(discoveryConfig.ttl));
 
 }
 
-void * multicastListener(void * arg) {
+void MulticastDiscoveryService::discoveryReadHandler(const boost::system::error_code& errCode,
+		std::size_t bytes_transferred) {
+	if (intialDiscoveryPhase) {
+		initialDiscoveryHandler(errCode, bytes_transferred);
+	} else {
+		postDiscoveryReadHandler(errCode, bytes_transferred);
+	}
 
-    MulticastDiscoveryService * discovery = (MulticastDiscoveryService *) arg;
-    int listenSocket = discovery->listenSocket;
+}
+void MulticastDiscoveryService::initialDiscoveryHandler(const boost::system::error_code& errCode,
+		std::size_t bytes_transferred) {
+
+	DiscoveryMessage message;
+	if (errCode) {
+		if (errCode == asio::error::try_again) {
+			// register again for async read
+			listenSocket->async_receive_from(asio::buffer(messageTempBuffer, message.getNumberOfBytes()),
+				    			senderEndPoint, boost::bind(&MulticastDiscoveryService::discoveryReadHandler, this, _1, _2));
+			return;
+		}
+		else {
+			Logger::console("[Mulitcast Discovery] error = %d", errCode.value());
+			throw runtime_error(errCode.message());
+		}
+	}
+
+	if (bytes_transferred < message.getNumberOfBytes()) {
+		// register again for async read
+		listenSocket->async_receive_from(asio::buffer(messageTempBuffer, message.getNumberOfBytes()),
+						    			senderEndPoint, boost::bind(&MulticastDiscoveryService::discoveryReadHandler, this, _1, _2));
+		return;
+	}
+
+	message.deserialize(messageTempBuffer);
+	// ignore looped back messages.
+	if (isLoopbackMessage(message)) {
+		Logger::debug("loopback message ...continuing");
+	} else if (!isCurrentClusterMessage(message)) {
+		Logger::debug("message from different network using same multicast setting...continuing");
+	} else {
+		switch(message.type)
+		{
+		case DISCOVERY_JOIN_CLUSTER_ACK:
+		{
+			/*
+			 *   Master node is detected. Stop listening to discovery.
+			 *   Start SM messaging with master to get nodeIds and other cluster related info.
+			 */
+			if (message.ackMessageIdentifier == getTransport()->getCommunicationPort()) {
+				masterDetected = true;
+				Logger::console("Master node = %d found !", message.masterNodeId);
+	            syncManager->addNodeToAddressMappping(message.masterNodeId, message.interfaceNumericAddress, message.internalCommunicationPort);
+	            syncManager->setCurrentNodeId(message.nodeId);
+	            syncManager->setMasterNodeId(message.masterNodeId);
+			}
+			break;
+		}
+		case DISCOVERY_JOIN_CLUSTER_REQ:
+		{
+			/*
+			 * if we receive this message then there is another node which is also
+			 * in process of joining the cluster. If there is already a master for this
+			 * cluster then it should be fine. Otherwise, there is a race condition for
+			 * becoming the master. How to deal with it? solution. use ip address + port as
+			 * a tie breaker. The one with higher ip address + port combination will get
+			 * preference in this race.
+			 */
+			if (!masterDetected) {
+				Logger::debug("Race to become master detected !!");
+				if ( shouldYield(message.interfaceNumericAddress, message.internalCommunicationPort)){
+						Logger::debug("Yielding to other node");
+						yieldingToOtherNode = true;
+						yieldNodeSet.insert(NodeEndPoint(message.interfaceNumericAddress, message.internalCommunicationPort));
+				}
+			}
+			break;
+		}
+		default:
+			Logger::console("[Multicast Discovery] :  Invalid message flag");
+			ASSERT(false);
+			break;
+		}
+
+	}
+
+	if (!masterDetected && !yieldingToOtherNode) {
+		// register again for async read
+		listenSocket->async_receive_from(asio::buffer(messageTempBuffer, message.getNumberOfBytes()),
+	    			senderEndPoint, boost::bind(&MulticastDiscoveryService::discoveryReadHandler, this, _1, _2));
+	} else {
+		networkService.stop();
+	}
+}
+
+void MulticastDiscoveryService::timeoutHandler(const boost::system::error_code& errCode) {
+	if (retryCount) {
+		// if retry count is not 0 then decrement the current retry count and reset the timer
+		// to expire in DISCOVERY_RETRY_TIMEOUT time from now.
+		--retryCount;
+		sendJoinRequest();
+	    timer.expires_from_now(boost::posix_time::seconds(DISCOVERY_RETRY_TIMEOUT));
+    	timer.async_wait(boost::bind(&MulticastDiscoveryService::timeoutHandler, this, _1));
+	} else {
+		// After max retries stop the discovery service.
+		networkService.stop();
+	}
+}
+
+void MulticastDiscoveryService::discoverCluster() {
 
     DiscoveryMessage message;
     // number of bytes needed for message (sizeof(message) is wrong because of padding.)
     unsigned sizeOfMessage = message.getNumberOfBytes();
     // temp buffer of this message, we first read bytes into
     // this buffer and then deserialize it into message
-    char * tempMessageBuffer = new char[sizeOfMessage];
-    memset(tempMessageBuffer, 0, sizeOfMessage);
+    messageTempBuffer = new char[sizeOfMessage];
+    memset(messageTempBuffer, 0, sizeOfMessage);
 
-    int retryCount = DISCOVERY_RETRY_COUNT;
-    struct sockaddr_in senderAddress;
+    startDiscovery:
+    yieldingToOtherNode = false;
+    masterDetected = false;
 
-    // two variables for buffer and buffer index that are copies and it's ok to move them
+    /*
+     *  First send a broadcast.
+     */
+    sendJoinRequest();
 
-    if (!discovery->skipInitialDiscovery) {
+    retryCount = DISCOVERY_RETRY_COUNT;
+    timer.expires_from_now(boost::posix_time::seconds(DISCOVERY_RETRY_TIMEOUT));
 
-        bool shouldElectItselfAsMaster = true;
-        bool masterDetected = false;
+    while(true) {
+    	listenSocket->async_receive_from(asio::buffer(messageTempBuffer, sizeOfMessage),
+    			senderEndPoint, boost::bind(&MulticastDiscoveryService::discoveryReadHandler, this, _1, _2));
+    	timer.async_wait(boost::bind(&MulticastDiscoveryService::timeoutHandler, this, _1));
+    	networkService.run();
+    	networkService.reset();
 
-        // initial discovery loop
-        bool stop = false;
-        unsigned waitTime = 1;
-        while(retryCount) {
-        	int selectResult = checkSocketIsReady(listenSocket, true, waitTime);
-        	if( selectResult == -1){
-            	delete [] tempMessageBuffer;
-                exit(0); // TODO : we exit ?
-        	}else if (selectResult == 0){
-				waitTime += 2;
-				retryCount--;
-        		continue;
-        	}
-        	int status = readUDPPacketWithSenderInfo(listenSocket, tempMessageBuffer, sizeOfMessage, MSG_DONTWAIT, senderAddress);
-            if (status == -1) {
-            	delete [] tempMessageBuffer;
-                exit(0); // TODO : we exit ?
-            }
-            if (status == 0) {
-            	message.deserialize(tempMessageBuffer);
-            	// ignore looped back messages.
-                if (discovery->isLoopbackMessage(message)) {
-                    Logger::console("loopback message ...continuing");
-                    continue;
-                } if (!discovery->isCurrentClusterMessage(message)) {
-                	Logger::console("message from different network using same multicast setting...continuing");
-                	continue;
-                } else {
-					waitTime = 1;
-                	switch(message.flag)
-                	{
-                	case DISCOVERY_JOIN_CLUSTER_ACK:
-                	{
-                		Logger::console("Cluster Join Ack Received !");
-                		/*
-                		 *   Master node is detected. Stop listening to discovery.
-                		 *   Start SM messaging with master to get nodeIds and other cluster related info.
-                		 */
-                		// internalCommunicationPort TODO ???
-                		if (message.ackMessageIdentifier == discovery->getTransport()->getCommunicationPort()) {
-                			shouldElectItselfAsMaster = false;
-                			masterDetected = true;
-                		}
-                		break;
-                	}
-                	case DISCOVERY_JOIN_CLUSTER_REQ:
-                	{
-                		/*
-                		 * if we receive this message then there is another node which is also
-                		 * in process of joining the cluster. If there is already a master for this
-                		 * cluster then it should be fine. Otherwise, there is a race condition for
-                		 * becoming the master. How to deal with it? solution. use ip address + port as
-                		 * a tie breaker. The one with higher ip address + port combination will get
-                		 * preference in this race.
-                		 */
-                		if (!masterDetected) {
-                			Logger::console("Race to become master detected !!");
-                			if ( discovery->shouldYield(message.interfaceNumericAddress,
-                					message.internalCommunicationPort)){
-                				Logger::console("Yielding to other node");
-                				shouldElectItselfAsMaster = false;
-                				sleep((DISCOVERY_RETRY_COUNT + 2) * 2);
-                				retryCount = DISCOVERY_RETRY_COUNT;
-                				waitTime = 2;
-                				discovery->sendJoinRequest();
-                				continue;
-                			}
+    	if (masterDetected || yieldingToOtherNode) {
+    		break;  // exit while loop
+    	}
 
-                		}
-                		break;
-                	}
-                	default:
-                		Logger::console("Invalid flag");
-                		ASSERT(false);
-                		break;
-                	}
-
-                	if (masterDetected) {
-                        break;  // exit while loop
-                    }
-                }
-            } // status == 0
-            --retryCount;
-        }
-        discovery->isCurrentNodeMaster(!masterDetected);
-        if (masterDetected) {
-
-            Logger::console("Master node = %d ", message.masterNodeId);
-            Logger::console("Curernt node = %d ", message.nodeId);
-            senderAddress.sin_port = htons(message.internalCommunicationPort);
-            discovery->syncManager->addNodeToAddressMappping(message.masterNodeId, senderAddress);
-            discovery->syncManager->setCurrentNodeId(message.nodeId);
-            discovery->syncManager->setMasterNodeId(message.masterNodeId);
-            discovery->_discoveryDone = true;
-            close(discovery->listenSocket);
-            close(discovery->sendSocket);
-            delete [] tempMessageBuffer;
-            return NULL;
-        }
-
-        uint32_t masterNodeID = discovery->syncManager->getNextNodeId();
-        discovery->syncManager->addNodeToAddressMappping(masterNodeID, senderAddress);
-        discovery->syncManager->setCurrentNodeId(masterNodeID);
-        discovery->syncManager->setMasterNodeId(masterNodeID);
-        discovery->_discoveryDone = true;
-
-        //Else master was not detected and we had timeout in the discovery loop
-        ASSERT(retryCount == 0);
-        Logger::console("Current Node is master node");
-        if (!shouldElectItselfAsMaster){
-            Logger::console("Cluster may have other masters!.");
-        }
+    	if (timer.expires_at() <= asio::deadline_timer::traits_type::now()) {
+    		break;
+    	}
     }
-    // Make the listening socket blocking now.
-    int val = fcntl(listenSocket, F_GETFL);
-    val &= ~O_NONBLOCK;;
-    fcntl(listenSocket, F_SETFL, val);
 
-    while(!discovery->shutdown) {
-        memset(&senderAddress, 0, sizeof(senderAddress));
-        memset(tempMessageBuffer, 0, sizeOfMessage);
-
-        int status = readUDPPacketWithSenderInfo(listenSocket, tempMessageBuffer, sizeOfMessage, senderAddress);
-
-        if (status == -1) {
-        	delete [] tempMessageBuffer;
-        	exit(0); // TODO just exit ?
-        }
-
-        if (status == 0) {
-            message.deserialize(tempMessageBuffer);
-        	// ignore looped back messages.
-        	if (discovery->isLoopbackMessage(message)) {
-        		Logger::console("loopback message ...continuing");
-        		continue;
-        	} if (!discovery->isCurrentClusterMessage(message)) {
-        		Logger::console("message from different network using same multicast setting...continuing");
-        		continue;
-        	} else {
-        		switch(message.flag)
-        		{
-        		case DISCOVERY_JOIN_CLUSTER_ACK:
-        		{
-        			Logger::console("ERROR:: Multiple masters present in the cluster");
-        			//fatal condition. We have two choice.
-        			// 1. Bring down cluster
-        			// 2. Ask all masters to step down.
-        			// TODO
-        			break;
-        		}
-        		case DISCOVERY_JOIN_CLUSTER_REQ:
-        		{
-
-        			// TODO: check whether same node sends JOIN request again.
-        			Logger::console("Got cluster joining request!!");
-        			DiscoveryMessage ackMessage;
-        			ackMessage.flag = DISCOVERY_JOIN_CLUSTER_ACK;
-        			ackMessage.interfaceNumericAddress = discovery->getTransport()->getPublishedInterfaceNumericAddr();
-        			ackMessage.internalCommunicationPort = discovery->getTransport()->getCommunicationPort();
-        			ackMessage.masterNodeId = discovery->syncManager->getCurrentNodeId();
-        			ackMessage.nodeId = discovery->syncManager->getNextNodeId();
-        			ackMessage.ackMessageIdentifier = message.internalCommunicationPort;
-
-        			unsigned byteToCopy = discovery->clusterIdentifier.size() > 99 ? 99 : discovery->clusterIdentifier.size();
-        			strncpy(ackMessage._clusterIdent, discovery->clusterIdentifier.c_str(), byteToCopy);
-        			ackMessage._clusterIdent[byteToCopy] = '\0';
-        			// size of this message in bytes
-        			unsigned sizeOfAckMessage = ackMessage.getNumberOfBytes();
-        			// temp buffer that we write this message on and then write it to socket
-        			char * ackMessageTempBuffer = new char[sizeOfAckMessage];
-        			// write message on buffer
-        			ackMessage.serialize(ackMessageTempBuffer);
-        			tryAckAgain:
-        			// send multicast acknowledgment
-        			int sendStatus = sendUDPPacketToDestination(discovery->sendSocket, ackMessageTempBuffer,
-        					sizeOfAckMessage, discovery->multicastGroupAddress);
-        			if (sendStatus == -1) {
-        	        	delete [] tempMessageBuffer;
-            			delete [] ackMessageTempBuffer;
-        				exit(-1); // TODO : just exit ?
-        			}
-        			if (sendStatus == 1) {
-        				sleep(1);
-        				goto tryAckAgain;
-        			}
-        			senderAddress.sin_port = htons(message.internalCommunicationPort);
-        			discovery->syncManager->addNodeToAddressMappping(ackMessage.nodeId, senderAddress);
-        			delete [] ackMessageTempBuffer;
-        			break;
-        		}
-        		default:
-        			ASSERT(false);
-        			Logger::console("Invalid flag !!");
-        			break;
-        		}
-
-        	}
-        }
-
-        if (status == 1) {
-        	// socket is non-blocking mode. should not get return value 1
-        	ASSERT(false);
-        }
+    if (yieldingToOtherNode) {
+    	sleep(DISCOVERY_TIMEOUT);
+    	goto startDiscovery;
     }
-    close(discovery->listenSocket);
-    close(discovery->sendSocket);
-	delete [] tempMessageBuffer;
+
+    if (masterDetected) {
+    	//message.deserialize(messageTempBuffer);
+    	setCurrentNodeMasterFlag(false);
+    	// remember master's address for further communication.
+    	listenSocket->close();
+    	sendSocket->close();
+    } else {
+    	intialDiscoveryPhase = false;
+    	setCurrentNodeMasterFlag(true);
+    	unsigned masterNodeID = getSyncManager()->getNextNodeId();
+    	Logger::console("Current Node is master with id = %d", masterNodeID);
+    	getSyncManager()->setCurrentNodeId(masterNodeID);
+    	getSyncManager()->setMasterNodeId(masterNodeID);
+    }
+
+    return;
+
+}
+
+// Entry point for post discovery thread.
+void * multicastListener(void * arg) {
+
+    MulticastDiscoveryService * discovery = (MulticastDiscoveryService *) arg;
+    discovery->postDiscoveryListner();
     return NULL;
 }
 
-void MulticastDiscoveryService::init() {
+void MulticastDiscoveryService::postDiscoveryReadHandler(const boost::system::error_code& errCode,
+		std::size_t byteRead) {
 
-    _discoveryDone = false;
+	DiscoveryMessage message;
+	std::size_t sizeOfMessage = message.getNumberOfBytes();
 
-    listenSocket = openListeningChannel();
-    sendSocket = openSendingChannel();
+	if (errCode) {
+		Logger::error("%s", errCode.message().c_str());
+		listenSocket->async_receive_from(asio::buffer(messageTempBuffer, message.getNumberOfBytes()),
+	    			senderEndPoint, boost::bind(&MulticastDiscoveryService::discoveryReadHandler, this, _1, _2));
+		return;
+	}
 
-    // start a thread to listen for incoming data packet.
-    startDiscoveryThread();
+	if (byteRead == sizeOfMessage) {
+		message.deserialize(messageTempBuffer);
+		// ignore looped back messages.
+		if (isLoopbackMessage(message)) {
+			Logger::debug("loopback message ...continuing");;
+		}else if (!isCurrentClusterMessage(message)) {
+			Logger::debug("message from different network using same multicast setting...continuing");
+		} else {
+			switch(message.type)
+			{
+			case DISCOVERY_JOIN_CLUSTER_ACK:
+			{
+				Logger::console("ERROR:: Multiple masters present in the cluster");
+				break;
+			}
+			case DISCOVERY_JOIN_CLUSTER_REQ:
+			{
+				Logger::console("Got cluster joining request from %s : %d", senderEndPoint.address().to_string().c_str(), senderEndPoint.port());
+				DiscoveryMessage ackMessage;
+				ackMessage.type = DISCOVERY_JOIN_CLUSTER_ACK;
+				ackMessage.interfaceNumericAddress = getTransport()->getPublishedInterfaceNumericAddr();
+				ackMessage.internalCommunicationPort = getTransport()->getCommunicationPort();
+				ackMessage.masterNodeId = syncManager->getCurrentNodeId();
 
-    // send request to
-    sendJoinRequest();
+				short remoteNodePort = message.internalCommunicationPort;
+				ackMessage.ackMessageIdentifier = remoteNodePort;
 
-    while(!_discoveryDone) {
-        sleep(1);
-    }
+				unsigned byteToCopy = clusterIdentifier.size() > 99 ? 99 : clusterIdentifier.size();
+				strncpy(ackMessage._clusterIdent, clusterIdentifier.c_str(), byteToCopy);
+				ackMessage._clusterIdent[byteToCopy] = '\0';
+
+				NodeEndPoint hostEndPoint = NodeEndPoint(message.interfaceNumericAddress, remoteNodePort);
+				if (nodeToNodeIdMap.find(hostEndPoint) != nodeToNodeIdMap.end()) {
+					ackMessage.nodeId = nodeToNodeIdMap[hostEndPoint];
+				} else {
+					ackMessage.nodeId = syncManager->getNextNodeId();
+					nodeToNodeIdMap.insert(make_pair(hostEndPoint, ackMessage.nodeId));
+					// also write this node to local nodes copy.
+					//        				Node node("", , remoteNodePort, true);
+					//        				syncManager->addNewNodeToLocalCopy(node);
+				}
+
+				char * ackMessageTempBuffer = new char[sizeOfMessage];
+				memset(ackMessageTempBuffer, 0, sizeOfMessage);
+
+				ackMessage.serialize(ackMessageTempBuffer);
+				tryAckAgain:
+
+				// send multicast acknowledgment
+				BoostUDP::endpoint multicastEndPoint(IpAddress::from_string(discoveryConfig.multiCastAddress),
+						discoveryConfig.multicastPort);
+				int sendStatus = sendUDPPacketToDestination(*sendSocket, ackMessageTempBuffer,
+						sizeOfMessage, multicastEndPoint);
+
+				if (sendStatus == 1) {
+					goto tryAckAgain;
+				}
+				syncManager->addNodeToAddressMappping(ackMessage.nodeId, message.interfaceNumericAddress, message.internalCommunicationPort);
+
+				delete [] ackMessageTempBuffer;
+				Logger::debug("Ack Sent !!");
+				break;
+			}
+			default:
+				ASSERT(false);
+				Logger::console("[Multicast Discovery] Invalid message received !!");
+				break;
+			}
+		}
+	}
+
+	listenSocket->async_receive_from(asio::buffer(messageTempBuffer, message.getNumberOfBytes()),
+    			senderEndPoint, boost::bind(&MulticastDiscoveryService::discoveryReadHandler, this, _1, _2));
+
 }
 
-void MulticastDiscoveryService::reInit() {
-    listenSocket = openListeningChannel();
-    sendSocket = openSendingChannel();
-    startDiscoveryThread(true);
+void MulticastDiscoveryService::postDiscoveryListner() {
+
+    DiscoveryMessage message;
+    std::size_t sizeOfMessage = message.getNumberOfBytes();
+
+    while(!shutdown) {
+    	networkService.run();
+    	networkService.reset();
+    	listenSocket->async_receive_from(asio::buffer(messageTempBuffer, sizeOfMessage),
+    			senderEndPoint, boost::bind(&MulticastDiscoveryService::discoveryReadHandler, this, _1, _2));
+    }
+
+    listenSocket->close();
+    sendSocket->close();
+	delete [] messageTempBuffer;
+
 }
 
 void MulticastDiscoveryService::sendJoinRequest() {
@@ -507,7 +459,7 @@ void MulticastDiscoveryService::sendJoinRequest() {
     unsigned sizeOfMessage = message.getNumberOfBytes();
     char * messageTempBuffer = new char[sizeOfMessage];
     memset(messageTempBuffer, 0, sizeOfMessage);
-    message.flag = DISCOVERY_JOIN_CLUSTER_REQ;
+    message.type = DISCOVERY_JOIN_CLUSTER_REQ;
     message.interfaceNumericAddress =  getTransport()->getPublishedInterfaceNumericAddr();
     message.internalCommunicationPort = getTransport()->getCommunicationPort();
 
@@ -517,12 +469,14 @@ void MulticastDiscoveryService::sendJoinRequest() {
 
     message.serialize(messageTempBuffer);
 
+    BoostUDP::endpoint multicastEndPoint(IpAddress::from_string(discoveryConfig.multiCastAddress),
+            					discoveryConfig.multicastPort);
+
     int retry = DISCOVERY_RETRY_COUNT;
     //Logger::console("sending MC UDP to %s , %d",discoveryConfig.multiCastAddress.c_str(),  getMulticastPort());
     while(retry) {
 		sleep(DISCOVERY_RETRY_COUNT - retry);
-        int status = sendUDPPacketToDestination(sendSocket, messageTempBuffer,
-        		sizeOfMessage, multicastGroupAddress);
+        int status = sendUDPPacketToDestination(*sendSocket, messageTempBuffer, sizeOfMessage, multicastEndPoint);
         if (status == 1) {
             --retry;
             continue;
@@ -537,6 +491,7 @@ void MulticastDiscoveryService::sendJoinRequest() {
 }
 
 bool MulticastDiscoveryService::shouldYield(unsigned senderIp, unsigned senderPort) {
+	Logger::debug("S %u:%u, C %u:%u", senderIp, senderPort, getTransport()->getPublishedInterfaceNumericAddr(), getTransport()->getCommunicationPort());
     if (senderIp > getTransport()->getPublishedInterfaceNumericAddr()) {
         return true;
     }else if ( (senderIp == getTransport()->getPublishedInterfaceNumericAddr() )

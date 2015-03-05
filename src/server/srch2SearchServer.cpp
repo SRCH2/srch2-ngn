@@ -40,7 +40,7 @@ void parseProgramArguments(int argc, char** argv,
 		po::store(po::parse_command_line(argc, argv, description),
 				vm_command_line_args);
 		po::notify(vm_command_line_args);
-	} catch (exception &ex) {
+	} catch (std::exception &ex) {
 		cout << "error while parsing the arguments : " << endl << ex.what()
                 		<< endl;
 		cout << "Usage: <SRCH2_HOME>/bin/srch2-engine" << endl;

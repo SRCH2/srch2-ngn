@@ -47,30 +47,26 @@ SyncManager::SyncManager(ConfigManager& cm, TransportManager& tm) :
 	this->uniqueNodeId = 0;
 	this->stopSynchManager = false;
 
-	MulticastDiscoveryConfig multicastdiscoverConf;
 	UnicastDiscoveryConfig unicastdiscoverConf;
-
 	const vector<std::pair<string, unsigned > >& wellknownHosts = config.getWellKnownHosts();
 	for (unsigned i = 0; i < wellknownHosts.size(); ++i) {
 		unicastdiscoverConf.knownHosts.push_back(HostAndPort(wellknownHosts[i].first,wellknownHosts[i].second));
 	}
-	unicastdiscoverConf.clusterName = config.getClusterName();
-
-	multicastdiscoverConf.clusterName = config.getClusterName();
-	multicastdiscoverConf.multicastPort = config.getMulticastDiscovery().getPort();
-	multicastdiscoverConf.multiCastAddress = config.getMulticastDiscovery().getGroupAddress();
-	multicastdiscoverConf.multicastInterface = config.getMulticastDiscovery().getIpAddress();
-	multicastdiscoverConf.ttl = config.getMulticastDiscovery().getTtl();
-	multicastdiscoverConf.enableLoop = 1;
-
-	// For phase 2 : Unicast is preferred over Multicast.
-	// TODO: Later phase: both services should be used
 	if (unicastdiscoverConf.knownHosts.size() > 0) {
-		Logger::console("Unicast Discovery");
+		unicastdiscoverConf.clusterName = config.getClusterName();
 		unicastdiscoverConf.print();
+
 		discoveryMgr = new  UnicastDiscoveryService(unicastdiscoverConf, this);
 	} else {
-		Logger::console("Multicast Discovery");
+
+		MulticastDiscoveryConfig multicastdiscoverConf;
+		multicastdiscoverConf.clusterName = config.getClusterName();
+		multicastdiscoverConf.multicastPort = config.getMulticastDiscovery().getPort();
+		multicastdiscoverConf.multiCastAddress = config.getMulticastDiscovery().getGroupAddress();
+		multicastdiscoverConf.hostIpAddressForMulticast = config.getMulticastDiscovery().getIpAddress();
+		multicastdiscoverConf.ttl = config.getMulticastDiscovery().getTtl();
+		multicastdiscoverConf.enableLoop = 1;
+
 		multicastdiscoverConf.print();
 		discoveryMgr = new  MulticastDiscoveryService(multicastdiscoverConf, this);
 	}
@@ -113,6 +109,11 @@ void SyncManager::startDiscovery() {
 	node.thisIsMe = true;
 	node.setId(this->currentNodeId);
 	node.setMaster(this->currentNodeId == this->masterNodeId);
+
+	localNodesCopyMutex.lock();
+	localNodesCopy.push_back(node);
+	localNodesCopyMutex.unlock();
+
 	// Add new node in CM
 	nodesWriteview->addNode(node);
 	nodesWriteview->setNodeState(node.getId(), ShardingNodeStateArrived);
@@ -130,9 +131,6 @@ void SyncManager::startDiscovery() {
 	transport.setListeningThread(listenThread);
 
 	xLock.unlock();
-	localNodesCopyMutex.lock();
-	localNodesCopy.push_back(node);
-	localNodesCopyMutex.unlock();
 
 	if (!isCurrentNodeMaster) {
 		joinExistingCluster(node, true /*true = discovery phase*/);
@@ -222,6 +220,13 @@ void SyncManager::joinExistingCluster(const Node& node, bool isDiscoveryPhase) {
 			//TODO:
 		}
 	}
+}
+
+void SyncManager::addNewNodeToLocalCopy(const Node& newNode) {
+	localNodesCopyMutex.lock();
+	localNodesCopy.push_back(newNode);
+	Logger::console("[%d, %d, %d]", localNodesCopy.size(), masterNodeId, currentNodeId);
+	localNodesCopyMutex.unlock();
 }
 
 void SyncManager::run(){
@@ -320,8 +325,14 @@ unsigned SyncManager::getNextNodeId() {
 	}
 }
 
-void SyncManager::addNodeToAddressMappping(unsigned id, struct sockaddr_in address) {
-	nodeToAddressMap[id] = address;
+void SyncManager::addNodeToAddressMappping(unsigned id, unsigned interfaceNumericAddress,
+		short internalCommunicationPort ) {
+	struct sockaddr_in destinationAddress;
+	memset(&destinationAddress, 0, sizeof(destinationAddress));
+	destinationAddress.sin_addr.s_addr = interfaceNumericAddress;
+	destinationAddress.sin_family = AF_INET;
+	destinationAddress.sin_port = htons(internalCommunicationPort);
+	nodeToAddressMap[id] = destinationAddress;
 }
 
 bool SyncManager::getDestinatioAddressByNodeId(unsigned id, struct sockaddr_in& address) {

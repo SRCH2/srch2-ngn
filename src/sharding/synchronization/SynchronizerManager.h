@@ -93,7 +93,8 @@ public:
 
 	void setMasterNodeId(unsigned id) { masterNodeId = id;	}
 
-	void addNodeToAddressMappping(unsigned id, struct sockaddr_in addr);
+	void addNodeToAddressMappping(unsigned id, unsigned interfaceNumericAddress,
+			short internalCommunicationPort);
 
 	bool getDestinatioAddressByNodeId(unsigned id, struct sockaddr_in& destinationAddress);
 
@@ -110,6 +111,8 @@ public:
 	void stop() {
 		stopSynchManager = true;
 	}
+
+	void addNewNodeToLocalCopy(const Node& node);
 
 private:
 	///
