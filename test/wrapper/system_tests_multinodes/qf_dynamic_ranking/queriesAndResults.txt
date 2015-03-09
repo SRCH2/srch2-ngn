@@ -1,0 +1,5 @@
+Health&name%5E10||97s10 1s1 55s1 68s1 77s1
+Health&name%5E1||1s1 55s1 68s1 77s1 97s1 
+Health Clinic&name%5E1||97s2.63 68s1
+Health Services&name%5E10||97s10 1s1 55s1 68s1 77s1
+Health&name%5E10%2Bcategory%5E5||97s15 1s5 55s5 68s5 77s5

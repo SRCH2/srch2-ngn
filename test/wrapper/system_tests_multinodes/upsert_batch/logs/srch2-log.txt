@@ -1,0 +1,492 @@
+2015-02-27 11:35:15 WARN	Ranking expression defined in config file is not valid, so the engine will use the default expression
+2015-02-27 11:35:15 INFO	query index not found during load.
+2015-02-27 11:35:15 SHARDING-DETAIL	P11285/T208 || 	CORE() | Indexer construction. Node name :  , Explanation :  .
+2015-02-27 11:35:15 SHARDING-DETAIL	P11285/T208 || 	CORE() | Dispatching merge thread. Node name :  , Explanation :  .
+2015-02-27 11:35:15 SHARDING-DETAIL	P11285/T8640 || 	CORE() | Merge thread flag set to true in merge thread. Node name :  , Explanation :  .
+2015-02-27 11:35:16 INFO	transport: [127.0.0.1 : 4001]
+2015-02-27 11:35:16 INFO	Unicast Discovery
+2015-02-27 11:35:16 INFO	running discovery
+2015-02-27 11:35:16 INFO	Discovery ip:port = 127.0.0.1:54000
+2015-02-27 11:35:16 INFO	Discovery UDP listen socket binding done on 54000
+2015-02-27 11:35:16 INFO	getNumberOfBytes : 122 , sizeof : 124
+2015-02-27 11:35:17 SHARDING-DETAIL	P11285/T8640 || 	CORE(N0_0) | Merge, updateHistogram : 0. Node name :  , Explanation : result of initial shard builder, indexDirectory : ./upsert_batch//SRCH2Cluster/node-with-data/__DEFAULTCORE__/N0_0 with 10 records. .
+2015-02-27 11:35:46 INFO	Current Node (message : 0) is master node and chooses 0 as it id.
+2015-02-27 11:35:46 INFO	discovering new nodes at [ >> 27 , 27 >> ]
+2015-02-27 11:35:47 SHARDING-WARNING	P11285/T208 || 	DiscoveryCallBack | ClusterInfoReplyMessage adding node ID(0),N(node-with-data),IP(127.0.0.1),P(4001),ME,MATR,MELGBL,.
+2015-02-27 11:35:47 INFO	Starting data processor ...
+2015-02-27 11:35:47 INFO	Cluster is ready to accept new nodes. Current node ID : 0
+2015-02-27 11:35:47 INFO	running synchronizer
+2015-02-27 11:35:47 DEBUG	Routing port 8087 route /_nodes/nodeId for all cores.
+2015-02-27 11:35:47 INFO	[1, 0, 0]
+2015-02-27 11:35:47 DEBUG	Routing port 8087 route /_cluster/stats for all cores.
+2015-02-27 11:35:47 DEBUG	Routing port 8087 route /_debug/stats for all cores.
+2015-02-27 11:35:47 DEBUG	Routing port 8087 route /_all/search for all cores.
+2015-02-27 11:35:47 DEBUG	Routing port 8087 route /_all/shutdown for all cores.
+2015-02-27 11:35:47 DEBUG	Routing port 8087 route /node_shutdown for all cores.
+2015-02-27 11:35:47 DEBUG	Routing port 8087 route /search to default core __DEFAULTCORE__
+2015-02-27 11:35:47 DEBUG	Routing port 8087 route /suggest to default core __DEFAULTCORE__
+2015-02-27 11:35:47 DEBUG	Routing port 8087 route /info to default core __DEFAULTCORE__
+2015-02-27 11:35:47 DEBUG	Routing port 8087 route /docs to default core __DEFAULTCORE__
+2015-02-27 11:35:47 DEBUG	Routing port 8087 route /update to default core __DEFAULTCORE__
+2015-02-27 11:35:47 DEBUG	Routing port 8087 route /save to default core __DEFAULTCORE__
+2015-02-27 11:35:47 DEBUG	Routing port 8087 route /export to default core __DEFAULTCORE__
+2015-02-27 11:35:47 DEBUG	Routing port 8087 route /resetLogger to default core __DEFAULTCORE__
+2015-02-27 11:35:47 DEBUG	Routing port 8087 route /commit to default core __DEFAULTCORE__
+2015-02-27 11:35:47 DEBUG	Routing port 8087 route /merge to default core __DEFAULTCORE__
+2015-02-27 11:35:47 DEBUG	Routing port 8087 route /aclAttributeRoleReplace to default core __DEFAULTCORE__
+2015-02-27 11:35:47 DEBUG	Routing port 8087 route /aclAttributeRoleDelete to default core __DEFAULTCORE__
+2015-02-27 11:35:47 DEBUG	Routing port 8087 route /aclAttributeRoleAppend to default core __DEFAULTCORE__
+2015-02-27 11:35:47 DEBUG	Routing port 8087 route /aclRecordRoleReplace to default core __DEFAULTCORE__
+2015-02-27 11:35:47 DEBUG	Routing port 8087 route /aclRecordRoleAppend to default core __DEFAULTCORE__
+2015-02-27 11:35:47 DEBUG	Routing port 8087 route /aclRecordRoleDelete to default core __DEFAULTCORE__
+2015-02-27 11:35:47 DEBUG	Routing port 8087 route /bulkLoadRecords to default core __DEFAULTCORE__
+2015-02-27 11:35:47 DEBUG	Routing port 8087 route /bulkLoadRecordAcl to default core __DEFAULTCORE__
+2015-02-27 11:35:47 DEBUG	Routing port 8087 route /bulkLoadAttributeAcl to default core __DEFAULTCORE__
+2015-02-27 11:35:47 DEBUG	Routing port 8087 route /feedback to default core __DEFAULTCORE__
+2015-02-27 11:35:47 DEBUG	Adding port 8087 route /__DEFAULTCORE__/search to core __DEFAULTCORE__
+2015-02-27 11:35:47 DEBUG	Adding port 8087 route /__DEFAULTCORE__/suggest to core __DEFAULTCORE__
+2015-02-27 11:35:47 DEBUG	Adding port 8087 route /__DEFAULTCORE__/info to core __DEFAULTCORE__
+2015-02-27 11:35:47 DEBUG	Adding port 8087 route /__DEFAULTCORE__/docs to core __DEFAULTCORE__
+2015-02-27 11:35:47 DEBUG	Adding port 8087 route /__DEFAULTCORE__/update to core __DEFAULTCORE__
+2015-02-27 11:35:47 DEBUG	Adding port 8087 route /__DEFAULTCORE__/save to core __DEFAULTCORE__
+2015-02-27 11:35:47 DEBUG	Adding port 8087 route /__DEFAULTCORE__/export to core __DEFAULTCORE__
+2015-02-27 11:35:47 DEBUG	Adding port 8087 route /__DEFAULTCORE__/resetLogger to core __DEFAULTCORE__
+2015-02-27 11:35:47 DEBUG	Adding port 8087 route /__DEFAULTCORE__/commit to core __DEFAULTCORE__
+2015-02-27 11:35:47 DEBUG	Adding port 8087 route /__DEFAULTCORE__/merge to core __DEFAULTCORE__
+2015-02-27 11:35:47 DEBUG	Adding port 8087 route /__DEFAULTCORE__/aclAttributeRoleReplace to core __DEFAULTCORE__
+2015-02-27 11:35:47 DEBUG	Adding port 8087 route /__DEFAULTCORE__/aclAttributeRoleDelete to core __DEFAULTCORE__
+2015-02-27 11:35:47 DEBUG	Adding port 8087 route /__DEFAULTCORE__/aclAttributeRoleAppend to core __DEFAULTCORE__
+2015-02-27 11:35:47 DEBUG	Adding port 8087 route /__DEFAULTCORE__/aclRecordRoleReplace to core __DEFAULTCORE__
+2015-02-27 11:35:47 DEBUG	Adding port 8087 route /__DEFAULTCORE__/aclRecordRoleAppend to core __DEFAULTCORE__
+2015-02-27 11:35:47 DEBUG	Adding port 8087 route /__DEFAULTCORE__/aclRecordRoleDelete to core __DEFAULTCORE__
+2015-02-27 11:35:47 DEBUG	Adding port 8087 route /__DEFAULTCORE__/bulkLoadRecords to core __DEFAULTCORE__
+2015-02-27 11:35:47 DEBUG	Adding port 8087 route /__DEFAULTCORE__/bulkLoadRecordAcl to core __DEFAULTCORE__
+2015-02-27 11:35:47 DEBUG	Adding port 8087 route /__DEFAULTCORE__/bulkLoadAttributeAcl to core __DEFAULTCORE__
+2015-02-27 11:35:47 DEBUG	Adding port 8087 route /__DEFAULTCORE__/feedback to core __DEFAULTCORE__
+2015-02-27 11:35:47 INFO	Port 8087 added to HTTP listener for external requests.
+2015-02-27 11:35:47 DEBUG	Routing port 8087 route /_nodes/nodeId for all cores.
+2015-02-27 11:35:47 DEBUG	Routing port 8087 route /_cluster/stats for all cores.
+2015-02-27 11:35:47 DEBUG	Routing port 8087 route /_debug/stats for all cores.
+2015-02-27 11:35:47 DEBUG	Routing port 8087 route /_all/search for all cores.
+2015-02-27 11:35:47 DEBUG	Routing port 8087 route /_all/shutdown for all cores.
+2015-02-27 11:35:47 DEBUG	Routing port 8087 route /node_shutdown for all cores.
+2015-02-27 11:35:47 DEBUG	Routing port 8087 route /search to default core __DEFAULTCORE__
+2015-02-27 11:35:47 DEBUG	Routing port 8087 route /suggest to default core __DEFAULTCORE__
+2015-02-27 11:35:47 DEBUG	Routing port 8087 route /info to default core __DEFAULTCORE__
+2015-02-27 11:35:47 DEBUG	Routing port 8087 route /docs to default core __DEFAULTCORE__
+2015-02-27 11:35:47 DEBUG	Routing port 8087 route /update to default core __DEFAULTCORE__
+2015-02-27 11:35:47 DEBUG	Routing port 8087 route /save to default core __DEFAULTCORE__
+2015-02-27 11:35:47 DEBUG	Routing port 8087 route /export to default core __DEFAULTCORE__
+2015-02-27 11:35:47 DEBUG	Routing port 8087 route /resetLogger to default core __DEFAULTCORE__
+2015-02-27 11:35:47 DEBUG	Routing port 8087 route /commit to default core __DEFAULTCORE__
+2015-02-27 11:35:47 DEBUG	Routing port 8087 route /merge to default core __DEFAULTCORE__
+2015-02-27 11:35:47 DEBUG	Routing port 8087 route /aclAttributeRoleReplace to default core __DEFAULTCORE__
+2015-02-27 11:35:47 DEBUG	Routing port 8087 route /aclAttributeRoleDelete to default core __DEFAULTCORE__
+2015-02-27 11:35:47 DEBUG	Routing port 8087 route /aclAttributeRoleAppend to default core __DEFAULTCORE__
+2015-02-27 11:35:47 DEBUG	Routing port 8087 route /aclRecordRoleReplace to default core __DEFAULTCORE__
+2015-02-27 11:35:47 DEBUG	Routing port 8087 route /aclRecordRoleAppend to default core __DEFAULTCORE__
+2015-02-27 11:35:47 DEBUG	Routing port 8087 route /aclRecordRoleDelete to default core __DEFAULTCORE__
+2015-02-27 11:35:47 DEBUG	Routing port 8087 route /bulkLoadRecords to default core __DEFAULTCORE__
+2015-02-27 11:35:47 DEBUG	Routing port 8087 route /bulkLoadRecordAcl to default core __DEFAULTCORE__
+2015-02-27 11:35:47 DEBUG	Routing port 8087 route /bulkLoadAttributeAcl to default core __DEFAULTCORE__
+2015-02-27 11:35:47 DEBUG	Routing port 8087 route /feedback to default core __DEFAULTCORE__
+2015-02-27 11:35:47 DEBUG	Adding port 8087 route /__DEFAULTCORE__/search to core __DEFAULTCORE__
+2015-02-27 11:35:47 DEBUG	Adding port 8087 route /__DEFAULTCORE__/suggest to core __DEFAULTCORE__
+2015-02-27 11:35:47 DEBUG	Adding port 8087 route /__DEFAULTCORE__/info to core __DEFAULTCORE__
+2015-02-27 11:35:47 DEBUG	Adding port 8087 route /__DEFAULTCORE__/docs to core __DEFAULTCORE__
+2015-02-27 11:35:47 DEBUG	Adding port 8087 route /__DEFAULTCORE__/update to core __DEFAULTCORE__
+2015-02-27 11:35:47 DEBUG	Adding port 8087 route /__DEFAULTCORE__/save to core __DEFAULTCORE__
+2015-02-27 11:35:47 DEBUG	Adding port 8087 route /__DEFAULTCORE__/export to core __DEFAULTCORE__
+2015-02-27 11:35:47 DEBUG	Adding port 8087 route /__DEFAULTCORE__/resetLogger to core __DEFAULTCORE__
+2015-02-27 11:35:47 DEBUG	Adding port 8087 route /__DEFAULTCORE__/commit to core __DEFAULTCORE__
+2015-02-27 11:35:47 DEBUG	Adding port 8087 route /__DEFAULTCORE__/merge to core __DEFAULTCORE__
+2015-02-27 11:35:47 DEBUG	Adding port 8087 route /__DEFAULTCORE__/aclAttributeRoleReplace to core __DEFAULTCORE__
+2015-02-27 11:35:47 DEBUG	Adding port 8087 route /__DEFAULTCORE__/aclAttributeRoleDelete to core __DEFAULTCORE__
+2015-02-27 11:35:47 DEBUG	Adding port 8087 route /__DEFAULTCORE__/aclAttributeRoleAppend to core __DEFAULTCORE__
+2015-02-27 11:35:47 DEBUG	Adding port 8087 route /__DEFAULTCORE__/aclRecordRoleReplace to core __DEFAULTCORE__
+2015-02-27 11:35:47 DEBUG	Adding port 8087 route /__DEFAULTCORE__/aclRecordRoleAppend to core __DEFAULTCORE__
+2015-02-27 11:35:47 DEBUG	Adding port 8087 route /__DEFAULTCORE__/aclRecordRoleDelete to core __DEFAULTCORE__
+2015-02-27 11:35:47 DEBUG	Adding port 8087 route /__DEFAULTCORE__/bulkLoadRecords to core __DEFAULTCORE__
+2015-02-27 11:35:47 DEBUG	Adding port 8087 route /__DEFAULTCORE__/bulkLoadRecordAcl to core __DEFAULTCORE__
+2015-02-27 11:35:47 DEBUG	Adding port 8087 route /__DEFAULTCORE__/bulkLoadAttributeAcl to core __DEFAULTCORE__
+2015-02-27 11:35:47 DEBUG	Adding port 8087 route /__DEFAULTCORE__/feedback to core __DEFAULTCORE__
+2015-02-27 11:35:47 INFO	Port 8087 added to HTTP listener for external requests.
+2015-02-27 11:35:48 SHARDING-STEP	P11285/T8320 || 	LoadBalancer| collecting information.
+2015-02-27 11:35:48 SHARDING-DETAIL	P11285/T8320 || 	NodeAggregator(opid=(0,11))| Sending ShardingLoadBalancingReportRequestMessageType to (0,0) . Consumer is load-balancer. ExpectResponse(YES)
+2015-02-27 11:35:48 SHARDING-DETAIL	P11285/T8320 || 	NodeAggregator| entry
+2015-02-27 11:35:48 SHARDING-DETAIL	P11285/T176 || 	NodeAggregator(opid=(0,11))| Done.
+2015-02-27 11:35:48 SHARDING-STEP	P11285/T176 || 	LoadBalancer| Load information : (0:1)
+2015-02-27 11:35:48 SHARDING-DETAIL	P11285/T176 || 	LoadBalancer| Only this node, checking for assignments.
+2015-02-27 11:35:48 SHARDING-STEP	P11285/T176 || 	LoadBalancer| Load balancer is finalizing.
+2015-02-27 11:35:48 SHARDING-STEP	P11285/T8320 || 	LoadBalancer| collecting information.
+2015-02-27 11:35:48 SHARDING-DETAIL	P11285/T8320 || 	NodeAggregator(opid=(0,13))| Sending ShardingLoadBalancingReportRequestMessageType to (0,0) . Consumer is load-balancer. ExpectResponse(YES)
+2015-02-27 11:35:48 SHARDING-DETAIL	P11285/T8320 || 	NodeAggregator| entry
+2015-02-27 11:35:48 SHARDING-DETAIL	P11285/T2880 || 	NodeAggregator(opid=(0,13))| Done.
+2015-02-27 11:35:48 SHARDING-STEP	P11285/T2880 || 	LoadBalancer| Load information : (0:1)
+2015-02-27 11:35:48 SHARDING-DETAIL	P11285/T2880 || 	LoadBalancer| Only this node, checking for assignments.
+2015-02-27 11:35:48 SHARDING-STEP	P11285/T2880 || 	LoadBalancer| Load balancer is finalizing.
+2015-02-27 11:35:49 SHARDING-STEP	P11285/T8320 || 	LoadBalancer| collecting information.
+2015-02-27 11:35:49 SHARDING-DETAIL	P11285/T8320 || 	NodeAggregator(opid=(0,15))| Sending ShardingLoadBalancingReportRequestMessageType to (0,0) . Consumer is load-balancer. ExpectResponse(YES)
+2015-02-27 11:35:49 SHARDING-DETAIL	P11285/T8320 || 	NodeAggregator| entry
+2015-02-27 11:35:49 SHARDING-DETAIL	P11285/T176 || 	NodeAggregator(opid=(0,15))| Done.
+2015-02-27 11:35:49 SHARDING-STEP	P11285/T176 || 	LoadBalancer| Load information : (0:1)
+2015-02-27 11:35:49 SHARDING-DETAIL	P11285/T176 || 	LoadBalancer| Only this node, checking for assignments.
+2015-02-27 11:35:49 SHARDING-STEP	P11285/T176 || 	LoadBalancer| Load balancer is finalizing.
+2015-02-27 11:35:49 SHARDING-STEP	P11285/T8320 || 	LoadBalancer| collecting information.
+2015-02-27 11:35:49 SHARDING-DETAIL	P11285/T8320 || 	NodeAggregator(opid=(0,17))| Sending ShardingLoadBalancingReportRequestMessageType to (0,0) . Consumer is load-balancer. ExpectResponse(YES)
+2015-02-27 11:35:49 SHARDING-DETAIL	P11285/T8320 || 	NodeAggregator| entry
+2015-02-27 11:35:49 SHARDING-DETAIL	P11285/T2880 || 	NodeAggregator(opid=(0,17))| Done.
+2015-02-27 11:35:49 SHARDING-STEP	P11285/T2880 || 	LoadBalancer| Load information : (0:1)
+2015-02-27 11:35:49 SHARDING-DETAIL	P11285/T2880 || 	LoadBalancer| Only this node, checking for assignments.
+2015-02-27 11:35:49 SHARDING-STEP	P11285/T2880 || 	LoadBalancer| Load balancer is finalizing.
+2015-02-27 11:35:50 SHARDING-STEP	P11285/T8320 || 	LoadBalancer| collecting information.
+2015-02-27 11:35:50 SHARDING-DETAIL	P11285/T8320 || 	NodeAggregator(opid=(0,19))| Sending ShardingLoadBalancingReportRequestMessageType to (0,0) . Consumer is load-balancer. ExpectResponse(YES)
+2015-02-27 11:35:50 SHARDING-DETAIL	P11285/T8320 || 	NodeAggregator| entry
+2015-02-27 11:35:50 SHARDING-DETAIL	P11285/T176 || 	NodeAggregator(opid=(0,19))| Done.
+2015-02-27 11:35:50 SHARDING-STEP	P11285/T176 || 	LoadBalancer| Load information : (0:1)
+2015-02-27 11:35:50 SHARDING-DETAIL	P11285/T176 || 	LoadBalancer| Only this node, checking for assignments.
+2015-02-27 11:35:50 SHARDING-STEP	P11285/T176 || 	LoadBalancer| Load balancer is finalizing.
+2015-02-27 11:35:50 SHARDING-STEP	P11285/T8320 || 	LoadBalancer| collecting information.
+2015-02-27 11:35:50 SHARDING-DETAIL	P11285/T8320 || 	NodeAggregator(opid=(0,21))| Sending ShardingLoadBalancingReportRequestMessageType to (0,0) . Consumer is load-balancer. ExpectResponse(YES)
+2015-02-27 11:35:50 SHARDING-DETAIL	P11285/T8320 || 	NodeAggregator| entry
+2015-02-27 11:35:50 SHARDING-DETAIL	P11285/T2880 || 	NodeAggregator(opid=(0,21))| Done.
+2015-02-27 11:35:50 SHARDING-STEP	P11285/T2880 || 	LoadBalancer| Load information : (0:1)
+2015-02-27 11:35:50 SHARDING-DETAIL	P11285/T2880 || 	LoadBalancer| Only this node, checking for assignments.
+2015-02-27 11:35:50 SHARDING-STEP	P11285/T2880 || 	LoadBalancer| Load balancer is finalizing.
+2015-02-27 11:35:51 SHARDING-STEP	P11285/T8320 || 	LoadBalancer| collecting information.
+2015-02-27 11:35:51 SHARDING-DETAIL	P11285/T8320 || 	NodeAggregator(opid=(0,23))| Sending ShardingLoadBalancingReportRequestMessageType to (0,0) . Consumer is load-balancer. ExpectResponse(YES)
+2015-02-27 11:35:51 SHARDING-DETAIL	P11285/T8320 || 	NodeAggregator| entry
+2015-02-27 11:35:51 SHARDING-DETAIL	P11285/T176 || 	NodeAggregator(opid=(0,23))| Done.
+2015-02-27 11:35:51 SHARDING-STEP	P11285/T176 || 	LoadBalancer| Load information : (0:1)
+2015-02-27 11:35:51 SHARDING-DETAIL	P11285/T176 || 	LoadBalancer| Only this node, checking for assignments.
+2015-02-27 11:35:51 SHARDING-STEP	P11285/T176 || 	LoadBalancer| Load balancer is finalizing.
+2015-02-27 11:35:51 SHARDING-STEP	P11285/T8320 || 	LoadBalancer| collecting information.
+2015-02-27 11:35:51 SHARDING-DETAIL	P11285/T8320 || 	NodeAggregator(opid=(0,25))| Sending ShardingLoadBalancingReportRequestMessageType to (0,0) . Consumer is load-balancer. ExpectResponse(YES)
+2015-02-27 11:35:51 SHARDING-DETAIL	P11285/T8320 || 	NodeAggregator| entry
+2015-02-27 11:35:51 SHARDING-DETAIL	P11285/T2880 || 	NodeAggregator(opid=(0,25))| Done.
+2015-02-27 11:35:51 SHARDING-STEP	P11285/T2880 || 	LoadBalancer| Load information : (0:1)
+2015-02-27 11:35:51 SHARDING-DETAIL	P11285/T2880 || 	LoadBalancer| Only this node, checking for assignments.
+2015-02-27 11:35:51 SHARDING-STEP	P11285/T2880 || 	LoadBalancer| Load balancer is finalizing.
+2015-02-27 11:35:51 SHARDING-STEP	P11285/T4800 || 	Starting transaction insert-update-command
+2015-02-27 11:35:51 DEBUG	[Warning] Wrong value setting for roleId. There is no such attribute roleId.
+
+2015-02-27 11:35:51 DEBUG	Please set it to IGNORE in the configure file if you don't need it.
+2015-02-27 11:35:51 SHARDING-DETAIL	P11285/T4800 || 	NodeAggregator(opid=(0,29))| Sending (0,0) to ShardingWriteCommand2PCMessageType . Consumer is partition-writer. ExpectResponse(YES)
+2015-02-27 11:35:51 SHARDING-DETAIL	P11285/T4800 || 	NodeAggregator| entry
+2015-02-27 11:35:51 DEBUG	Create Analyzer object for thread = -1879050496 
+2015-02-27 11:35:51 SHARDING-DETAIL	P11285/T176 || 	NodeAggregator(opid=(0,29))| Done.
+2015-02-27 11:35:51 SHARDING-DETAIL	P11285/T176 || 	LockNotif| PrimaryKey writerAgent((0,28)), pid(), B(1), R(1)
+2015-02-27 11:35:51 SHARDING-DETAIL	P11285/T176 || 	AtomicRelease| starts. Consumer is partition-writer
+2015-02-27 11:35:51 SHARDING-DETAIL	P11285/T176 || 	NodeIterator(opid=(0,30))| Participants : 0
+2015-02-27 11:35:51 SHARDING-DETAIL	P11285/T176 || 	NodeIterator(opid=(0,30))| Request(ShardingLockMessageType) Response(ShardingLockACKMessageType) - Consumer is AtomicRelease
+2015-02-27 11:35:51 SHARDING-DETAIL	P11285/T176 || 	NodeIterator(opid=(0,30))| : asking the next node : (0,0)
+2015-02-27 11:35:51 SHARDING-STEP	P11285/T2880 || 	LockManager| resolving RELEASE request : B(1), R(1), I(0), batchType(pk), ,ACk will go to 0
+2015-02-27 11:35:51 SHARDING-DETAIL	P11285/T176 || 	NodeIterator(opid=(0,30))| Done. 
+2015-02-27 11:35:51 SHARDING-DETAIL	P11285/T176 || 	AtomicRelease| ends ...
+2015-02-27 11:35:51 SHARDING-STEP	P11285/T4800 || 	Starting transaction insert-update-command
+2015-02-27 11:35:51 DEBUG	[Warning] Wrong value setting for roleId. There is no such attribute roleId.
+
+2015-02-27 11:35:51 DEBUG	Please set it to IGNORE in the configure file if you don't need it.
+2015-02-27 11:35:51 SHARDING-DETAIL	P11285/T4800 || 	NodeAggregator(opid=(0,34))| Sending (0,0) to ShardingWriteCommand2PCMessageType . Consumer is partition-writer. ExpectResponse(YES)
+2015-02-27 11:35:51 SHARDING-DETAIL	P11285/T4800 || 	NodeAggregator| entry
+2015-02-27 11:35:51 DEBUG	Create Analyzer object for thread = -1887443200 
+2015-02-27 11:35:51 SHARDING-DETAIL	P11285/T8640 || 	CORE(N0_0) | Merge, updateHistogram : 0. Node name :  , Explanation : result of initial shard builder, indexDirectory : ./upsert_batch//SRCH2Cluster/node-with-data/__DEFAULTCORE__/N0_0 with 10 records. .
+2015-02-27 11:35:51 SHARDING-DETAIL	P11285/T2880 || 	NodeAggregator(opid=(0,34))| Done.
+2015-02-27 11:35:51 DEBUG	SortnMerge: | 1 | 1 
+2015-02-27 11:35:51 SHARDING-DETAIL	P11285/T2880 || 	LockNotif| PrimaryKey writerAgent((0,33)), pid(), B(1), R(1)
+2015-02-27 11:35:51 SHARDING-DETAIL	P11285/T2880 || 	AtomicRelease| starts. Consumer is partition-writer
+2015-02-27 11:35:51 SHARDING-DETAIL	P11285/T2880 || 	NodeIterator(opid=(0,35))| Participants : 0
+2015-02-27 11:35:51 SHARDING-DETAIL	P11285/T2880 || 	NodeIterator(opid=(0,35))| Request(ShardingLockMessageType) Response(ShardingLockACKMessageType) - Consumer is AtomicRelease
+2015-02-27 11:35:51 SHARDING-DETAIL	P11285/T2880 || 	NodeIterator(opid=(0,35))| : asking the next node : (0,0)
+2015-02-27 11:35:51 SHARDING-STEP	P11285/T176 || 	LockManager| resolving RELEASE request : B(1), R(1), I(0), batchType(pk), ,ACk will go to 0
+2015-02-27 11:35:51 SHARDING-DETAIL	P11285/T2880 || 	NodeIterator(opid=(0,35))| Done. 
+2015-02-27 11:35:51 SHARDING-DETAIL	P11285/T2880 || 	AtomicRelease| ends ...
+2015-02-27 11:35:52 SHARDING-STEP	P11285/T8320 || 	LoadBalancer| collecting information.
+2015-02-27 11:35:52 SHARDING-DETAIL	P11285/T8320 || 	NodeAggregator(opid=(0,37))| Sending ShardingLoadBalancingReportRequestMessageType to (0,0) . Consumer is load-balancer. ExpectResponse(YES)
+2015-02-27 11:35:52 SHARDING-DETAIL	P11285/T8320 || 	NodeAggregator| entry
+2015-02-27 11:35:52 SHARDING-DETAIL	P11285/T176 || 	NodeAggregator(opid=(0,37))| Done.
+2015-02-27 11:35:52 SHARDING-STEP	P11285/T176 || 	LoadBalancer| Load information : (0:1)
+2015-02-27 11:35:52 SHARDING-DETAIL	P11285/T176 || 	LoadBalancer| Only this node, checking for assignments.
+2015-02-27 11:35:52 SHARDING-STEP	P11285/T176 || 	LoadBalancer| Load balancer is finalizing.
+2015-02-27 11:35:52 SHARDING-STEP	P11285/T8320 || 	LoadBalancer| collecting information.
+2015-02-27 11:35:52 SHARDING-DETAIL	P11285/T8320 || 	NodeAggregator(opid=(0,39))| Sending ShardingLoadBalancingReportRequestMessageType to (0,0) . Consumer is load-balancer. ExpectResponse(YES)
+2015-02-27 11:35:52 SHARDING-DETAIL	P11285/T8320 || 	NodeAggregator| entry
+2015-02-27 11:35:52 SHARDING-DETAIL	P11285/T2880 || 	NodeAggregator(opid=(0,39))| Done.
+2015-02-27 11:35:52 SHARDING-STEP	P11285/T2880 || 	LoadBalancer| Load information : (0:1)
+2015-02-27 11:35:52 SHARDING-DETAIL	P11285/T2880 || 	LoadBalancer| Only this node, checking for assignments.
+2015-02-27 11:35:52 SHARDING-STEP	P11285/T2880 || 	LoadBalancer| Load balancer is finalizing.
+2015-02-27 11:35:53 SHARDING-STEP	P11285/T8320 || 	LoadBalancer| collecting information.
+2015-02-27 11:35:53 SHARDING-DETAIL	P11285/T8320 || 	NodeAggregator(opid=(0,41))| Sending ShardingLoadBalancingReportRequestMessageType to (0,0) . Consumer is load-balancer. ExpectResponse(YES)
+2015-02-27 11:35:53 SHARDING-DETAIL	P11285/T8320 || 	NodeAggregator| entry
+2015-02-27 11:35:53 SHARDING-DETAIL	P11285/T176 || 	NodeAggregator(opid=(0,41))| Done.
+2015-02-27 11:35:53 SHARDING-STEP	P11285/T176 || 	LoadBalancer| Load information : (0:1)
+2015-02-27 11:35:53 SHARDING-DETAIL	P11285/T176 || 	LoadBalancer| Only this node, checking for assignments.
+2015-02-27 11:35:53 SHARDING-STEP	P11285/T176 || 	LoadBalancer| Load balancer is finalizing.
+2015-02-27 11:35:53 SHARDING-STEP	P11285/T208 || 	Starting transaction read-command
+2015-02-27 11:35:53 DEBUG	checking for docid parameter
+2015-02-27 11:35:53 DEBUG	docid parameter not specified
+2015-02-27 11:35:53 DEBUG	checking for fuzzy parameter
+2015-02-27 11:35:53 DEBUG	fuzzy parameter not specified
+2015-02-27 11:35:53 DEBUG	parsing the main query.
+2015-02-27 11:35:53 DEBUG	inside localParameterParser parsing the localparameters in the input string december
+2015-02-27 11:35:53 DEBUG	no localparameter info to parse in the input string. returning
+2015-02-27 11:35:53 DEBUG	returning from localParameterParser
+2015-02-27 11:35:53 DEBUG	inside term parser.
+2015-02-27 11:35:53 DEBUG	input received is december
+2015-02-27 11:35:53 DEBUG	no fieldFilter present in query, looking into localparameter for field filter
+2015-02-27 11:35:53 DEBUG	inside populateFieldFilterUsingLp
+2015-02-27 11:35:53 DEBUG	returning from populateFieldFilterUsingLp
+2015-02-27 11:35:53 DEBUG	Remove december,input modified to: 
+2015-02-27 11:35:53 DEBUG	indide populateRawKeywords, parsing for raw keywords
+2015-02-27 11:35:53 DEBUG	inside setInQueryParametersIfNotSet
+2015-02-27 11:35:53 DEBUG	parameter not in parametersInQuery, setting it.
+2015-02-27 11:35:53 DEBUG	returning from setInQueryParametersIfNotSet
+2015-02-27 11:35:53 DEBUG	raw keyword found: december
+2015-02-27 11:35:53 DEBUG	returning from populateRawKeywords
+2015-02-27 11:35:53 DEBUG	boost value is not specified, using the lp value or -1
+2015-02-27 11:35:53 DEBUG	fuzzy value is not specified, use 0
+2015-02-27 11:35:53 DEBUG	inside setSimilarityThresholdInContainer
+2015-02-27 11:35:53 DEBUG	Similarity threshold is not specified, use 1
+2015-02-27 11:35:53 DEBUG	returning from the termParser.
+2015-02-27 11:35:53 DEBUG	inside clearMainQueryParallelVectorsIfNeeded().
+2015-02-27 11:35:53 DEBUG	keywordSimilarityThreshold paralel vector cleared.
+2015-02-27 11:35:53 DEBUG	keywordBoostLevel paralel vector cleared.
+2015-02-27 11:35:53 DEBUG	keywordPrefixComplete paralel vector cleared.
+2015-02-27 11:35:53 DEBUG	fieldFilter and fieldFilterOps paralel vector cleared.
+2015-02-27 11:35:53 DEBUG	isPhraseKeyword paralel vector cleared.
+2015-02-27 11:35:53 DEBUG	returning from clearMainQueryParallelVectorsIfNeeded().
+2015-02-27 11:35:53 DEBUG	indide debugQueryParser function
+2015-02-27 11:35:53 DEBUG	returning from debugQueryParser function
+2015-02-27 11:35:53 DEBUG	inside fieldListParser function
+2015-02-27 11:35:53 DEBUG	returning from fieldListParser function
+2015-02-27 11:35:53 DEBUG	inside startOffsetParameterParser function
+2015-02-27 11:35:53 DEBUG	returning from startOffsetParameterParser function
+2015-02-27 11:35:53 DEBUG	inside numberOfResultsParser function
+2015-02-27 11:35:53 DEBUG	returning from numberOfResultsParser function
+2015-02-27 11:35:53 DEBUG	inside timeAllowedParameterParser function
+2015-02-27 11:35:53 DEBUG	returning from timeAllowedParameterParser function
+2015-02-27 11:35:53 DEBUG	inside omitHeaderParameterParser function
+2015-02-27 11:35:53 DEBUG	returning from omitHeaderParameterParser function
+2015-02-27 11:35:53 DEBUG	inside responseWriteTypeParameterParser function
+2015-02-27 11:35:53 DEBUG	returning from responseWriteTypeParameterParser function
+2015-02-27 11:35:53 DEBUG	inside filterQueryParameterParser function
+2015-02-27 11:35:53 DEBUG	returning from filterQueryParameterParser function
+2015-02-27 11:35:53 DEBUG	inside queryFieldBoostParser function
+2015-02-27 11:35:53 DEBUG	returning from quertFieldBoostParser function
+2015-02-27 11:35:53 DEBUG	inside lengthBoostParser function
+2015-02-27 11:35:53 DEBUG	returnig from lengthBoostParser function
+2015-02-27 11:35:53 DEBUG	inside prefixMatchPenaltyParser function
+2015-02-27 11:35:53 DEBUG	returning from prefixMatchPenaltyParser function
+2015-02-27 11:35:53 DEBUG	inside gepParser function
+2015-02-27 11:35:53 DEBUG	inside geoParser, checking for geo parameter
+2015-02-27 11:35:53 DEBUG	returning from geoParser
+2015-02-27 11:35:53 DEBUG	inside extractSearchType function
+2015-02-27 11:35:53 DEBUG	returning from extractSearchType
+2015-02-27 11:35:53 DEBUG	checking for acl-id parameter
+2015-02-27 11:35:53 DEBUG	acl-id parameter not specified
+2015-02-27 11:35:53 DEBUG	inside facetParser function
+2015-02-27 11:35:53 DEBUG	returning from facetParser function
+2015-02-27 11:35:53 DEBUG	inside sortParser function
+2015-02-27 11:35:53 DEBUG	returning from sortParser function
+2015-02-27 11:35:53 DEBUG	Create Analyzer object for thread = -1375783168 
+2015-02-27 11:35:53 SHARDING-DETAIL	P11285/T208 || 	NodeAggregator(opid=(0,43))| Sending (0,0) to ShardingSearchCommandMessageType . Consumer is read-command. ExpectResponse(YES)
+2015-02-27 11:35:53 SHARDING-DETAIL	P11285/T208 || 	NodeAggregator| entry
+2015-02-27 11:35:53 DEBUG	Query Results internal created.
+2015-02-27 11:35:53 DEBUG	Query Results internal initialized.
+2015-02-27 11:35:53 SHARDING-DETAIL	P11285/T2880 || 	NodeAggregator(opid=(0,43))| Done.
+2015-02-27 11:35:53 INFO	ip: 127.0.0.1, port: 37929 GET query: search?q=december, searcher_time: 2 ms, payload_access_time: 0 ms
+2015-02-27 11:35:53 SHARDING-STEP	P11285/T208 || 	Starting transaction insert-update-command
+2015-02-27 11:35:53 DEBUG	[Warning] Wrong value setting for roleId. There is no such attribute roleId.
+
+2015-02-27 11:35:53 DEBUG	Please set it to IGNORE in the configure file if you don't need it.
+2015-02-27 11:35:53 DEBUG	[Warning] Wrong value setting for roleId. There is no such attribute roleId.
+
+2015-02-27 11:35:53 DEBUG	Please set it to IGNORE in the configure file if you don't need it.
+2015-02-27 11:35:53 DEBUG	[Warning] Wrong value setting for roleId. There is no such attribute roleId.
+
+2015-02-27 11:35:53 DEBUG	Please set it to IGNORE in the configure file if you don't need it.
+2015-02-27 11:35:53 DEBUG	[Warning] Wrong value setting for roleId. There is no such attribute roleId.
+
+2015-02-27 11:35:53 DEBUG	Please set it to IGNORE in the configure file if you don't need it.
+2015-02-27 11:35:53 SHARDING-DETAIL	P11285/T208 || 	NodeAggregator(opid=(0,47))| Sending (0,0) to ShardingWriteCommand2PCMessageType . Consumer is partition-writer. ExpectResponse(YES)
+2015-02-27 11:35:53 SHARDING-DETAIL	P11285/T208 || 	NodeAggregator| entry
+2015-02-27 11:35:53 DEBUG	Create Analyzer object for thread = -1879050496 
+2015-02-27 11:35:53 DEBUG	Query results are being destroyed in factory destructor.
+2015-02-27 11:35:53 SHARDING-DETAIL	P11285/T176 || 	NodeAggregator(opid=(0,47))| Done.
+2015-02-27 11:35:53 SHARDING-DETAIL	P11285/T8640 || 	CORE(N0_0) | Merge, updateHistogram : 0. Node name :  , Explanation : result of initial shard builder, indexDirectory : ./upsert_batch//SRCH2Cluster/node-with-data/__DEFAULTCORE__/N0_0 with 10 records. .
+2015-02-27 11:35:53 DEBUG	SortnMerge: | 1 | 2 
+2015-02-27 11:35:53 DEBUG	SortnMerge: | 2 | 2 
+2015-02-27 11:35:53 DEBUG	SortnMerge: | 1 | 2 
+2015-02-27 11:35:53 SHARDING-DETAIL	P11285/T176 || 	LockNotif| PrimaryKey writerAgent((0,46)), pid(), B(1), R(1)
+2015-02-27 11:35:53 SHARDING-DETAIL	P11285/T176 || 	AtomicRelease| starts. Consumer is partition-writer
+2015-02-27 11:35:53 SHARDING-DETAIL	P11285/T176 || 	NodeIterator(opid=(0,48))| Participants : 0
+2015-02-27 11:35:53 SHARDING-DETAIL	P11285/T176 || 	NodeIterator(opid=(0,48))| Request(ShardingLockMessageType) Response(ShardingLockACKMessageType) - Consumer is AtomicRelease
+2015-02-27 11:35:53 SHARDING-DETAIL	P11285/T176 || 	NodeIterator(opid=(0,48))| : asking the next node : (0,0)
+2015-02-27 11:35:53 SHARDING-STEP	P11285/T2880 || 	LockManager| resolving RELEASE request : B(1), R(1), I(0), batchType(pk), ,ACk will go to 0
+2015-02-27 11:35:53 SHARDING-DETAIL	P11285/T176 || 	NodeIterator(opid=(0,48))| Done. 
+2015-02-27 11:35:53 SHARDING-DETAIL	P11285/T176 || 	AtomicRelease| ends ...
+2015-02-27 11:35:53 SHARDING-STEP	P11285/T8320 || 	LoadBalancer| collecting information.
+2015-02-27 11:35:53 SHARDING-DETAIL	P11285/T8320 || 	NodeAggregator(opid=(0,50))| Sending ShardingLoadBalancingReportRequestMessageType to (0,0) . Consumer is load-balancer. ExpectResponse(YES)
+2015-02-27 11:35:53 SHARDING-DETAIL	P11285/T8320 || 	NodeAggregator| entry
+2015-02-27 11:35:53 SHARDING-DETAIL	P11285/T2880 || 	NodeAggregator(opid=(0,50))| Done.
+2015-02-27 11:35:53 SHARDING-STEP	P11285/T2880 || 	LoadBalancer| Load information : (0:1)
+2015-02-27 11:35:53 SHARDING-DETAIL	P11285/T2880 || 	LoadBalancer| Only this node, checking for assignments.
+2015-02-27 11:35:53 SHARDING-STEP	P11285/T2880 || 	LoadBalancer| Load balancer is finalizing.
+2015-02-27 11:35:54 SHARDING-STEP	P11285/T8320 || 	LoadBalancer| collecting information.
+2015-02-27 11:35:54 SHARDING-DETAIL	P11285/T8320 || 	NodeAggregator(opid=(0,52))| Sending ShardingLoadBalancingReportRequestMessageType to (0,0) . Consumer is load-balancer. ExpectResponse(YES)
+2015-02-27 11:35:54 SHARDING-DETAIL	P11285/T8320 || 	NodeAggregator| entry
+2015-02-27 11:35:54 SHARDING-DETAIL	P11285/T176 || 	NodeAggregator(opid=(0,52))| Done.
+2015-02-27 11:35:54 SHARDING-STEP	P11285/T176 || 	LoadBalancer| Load information : (0:1)
+2015-02-27 11:35:54 SHARDING-DETAIL	P11285/T176 || 	LoadBalancer| Only this node, checking for assignments.
+2015-02-27 11:35:54 SHARDING-STEP	P11285/T176 || 	LoadBalancer| Load balancer is finalizing.
+2015-02-27 11:35:54 SHARDING-STEP	P11285/T8320 || 	LoadBalancer| collecting information.
+2015-02-27 11:35:54 SHARDING-DETAIL	P11285/T8320 || 	NodeAggregator(opid=(0,54))| Sending ShardingLoadBalancingReportRequestMessageType to (0,0) . Consumer is load-balancer. ExpectResponse(YES)
+2015-02-27 11:35:54 SHARDING-DETAIL	P11285/T8320 || 	NodeAggregator| entry
+2015-02-27 11:35:54 SHARDING-DETAIL	P11285/T2880 || 	NodeAggregator(opid=(0,54))| Done.
+2015-02-27 11:35:54 SHARDING-STEP	P11285/T2880 || 	LoadBalancer| Load information : (0:1)
+2015-02-27 11:35:54 SHARDING-DETAIL	P11285/T2880 || 	LoadBalancer| Only this node, checking for assignments.
+2015-02-27 11:35:54 SHARDING-STEP	P11285/T2880 || 	LoadBalancer| Load balancer is finalizing.
+2015-02-27 11:35:54 SHARDING-STEP	P11285/T208 || 	Starting transaction read-command
+2015-02-27 11:35:54 DEBUG	checking for docid parameter
+2015-02-27 11:35:54 DEBUG	docid parameter not specified
+2015-02-27 11:35:54 DEBUG	checking for fuzzy parameter
+2015-02-27 11:35:54 DEBUG	fuzzy parameter not specified
+2015-02-27 11:35:54 DEBUG	parsing the main query.
+2015-02-27 11:35:54 DEBUG	inside localParameterParser parsing the localparameters in the input string wonderful
+2015-02-27 11:35:54 DEBUG	no localparameter info to parse in the input string. returning
+2015-02-27 11:35:54 DEBUG	returning from localParameterParser
+2015-02-27 11:35:54 DEBUG	inside term parser.
+2015-02-27 11:35:54 DEBUG	input received is wonderful
+2015-02-27 11:35:54 DEBUG	no fieldFilter present in query, looking into localparameter for field filter
+2015-02-27 11:35:54 DEBUG	inside populateFieldFilterUsingLp
+2015-02-27 11:35:54 DEBUG	returning from populateFieldFilterUsingLp
+2015-02-27 11:35:54 DEBUG	Remove wonderful,input modified to: 
+2015-02-27 11:35:54 DEBUG	indide populateRawKeywords, parsing for raw keywords
+2015-02-27 11:35:54 DEBUG	inside setInQueryParametersIfNotSet
+2015-02-27 11:35:54 DEBUG	parameter not in parametersInQuery, setting it.
+2015-02-27 11:35:54 DEBUG	returning from setInQueryParametersIfNotSet
+2015-02-27 11:35:54 DEBUG	raw keyword found: wonderful
+2015-02-27 11:35:54 DEBUG	returning from populateRawKeywords
+2015-02-27 11:35:54 DEBUG	boost value is not specified, using the lp value or -1
+2015-02-27 11:35:54 DEBUG	fuzzy value is not specified, use 0
+2015-02-27 11:35:54 DEBUG	inside setSimilarityThresholdInContainer
+2015-02-27 11:35:54 DEBUG	Similarity threshold is not specified, use 1
+2015-02-27 11:35:54 DEBUG	returning from the termParser.
+2015-02-27 11:35:54 DEBUG	inside clearMainQueryParallelVectorsIfNeeded().
+2015-02-27 11:35:54 DEBUG	keywordSimilarityThreshold paralel vector cleared.
+2015-02-27 11:35:54 DEBUG	keywordBoostLevel paralel vector cleared.
+2015-02-27 11:35:54 DEBUG	keywordPrefixComplete paralel vector cleared.
+2015-02-27 11:35:54 DEBUG	fieldFilter and fieldFilterOps paralel vector cleared.
+2015-02-27 11:35:54 DEBUG	isPhraseKeyword paralel vector cleared.
+2015-02-27 11:35:54 DEBUG	returning from clearMainQueryParallelVectorsIfNeeded().
+2015-02-27 11:35:54 DEBUG	indide debugQueryParser function
+2015-02-27 11:35:54 DEBUG	returning from debugQueryParser function
+2015-02-27 11:35:54 DEBUG	inside fieldListParser function
+2015-02-27 11:35:54 DEBUG	returning from fieldListParser function
+2015-02-27 11:35:54 DEBUG	inside startOffsetParameterParser function
+2015-02-27 11:35:54 DEBUG	returning from startOffsetParameterParser function
+2015-02-27 11:35:54 DEBUG	inside numberOfResultsParser function
+2015-02-27 11:35:54 DEBUG	returning from numberOfResultsParser function
+2015-02-27 11:35:54 DEBUG	inside timeAllowedParameterParser function
+2015-02-27 11:35:54 DEBUG	returning from timeAllowedParameterParser function
+2015-02-27 11:35:54 DEBUG	inside omitHeaderParameterParser function
+2015-02-27 11:35:54 DEBUG	returning from omitHeaderParameterParser function
+2015-02-27 11:35:54 DEBUG	inside responseWriteTypeParameterParser function
+2015-02-27 11:35:54 DEBUG	returning from responseWriteTypeParameterParser function
+2015-02-27 11:35:54 DEBUG	inside filterQueryParameterParser function
+2015-02-27 11:35:54 DEBUG	returning from filterQueryParameterParser function
+2015-02-27 11:35:54 DEBUG	inside queryFieldBoostParser function
+2015-02-27 11:35:54 DEBUG	returning from quertFieldBoostParser function
+2015-02-27 11:35:54 DEBUG	inside lengthBoostParser function
+2015-02-27 11:35:54 DEBUG	returnig from lengthBoostParser function
+2015-02-27 11:35:54 DEBUG	inside prefixMatchPenaltyParser function
+2015-02-27 11:35:54 DEBUG	returning from prefixMatchPenaltyParser function
+2015-02-27 11:35:54 DEBUG	inside gepParser function
+2015-02-27 11:35:54 DEBUG	inside geoParser, checking for geo parameter
+2015-02-27 11:35:54 DEBUG	returning from geoParser
+2015-02-27 11:35:54 DEBUG	inside extractSearchType function
+2015-02-27 11:35:54 DEBUG	returning from extractSearchType
+2015-02-27 11:35:54 DEBUG	checking for acl-id parameter
+2015-02-27 11:35:54 DEBUG	acl-id parameter not specified
+2015-02-27 11:35:54 DEBUG	inside facetParser function
+2015-02-27 11:35:54 DEBUG	returning from facetParser function
+2015-02-27 11:35:54 DEBUG	inside sortParser function
+2015-02-27 11:35:54 DEBUG	returning from sortParser function
+2015-02-27 11:35:54 SHARDING-DETAIL	P11285/T208 || 	NodeAggregator(opid=(0,56))| Sending (0,0) to ShardingSearchCommandMessageType . Consumer is read-command. ExpectResponse(YES)
+2015-02-27 11:35:54 SHARDING-DETAIL	P11285/T208 || 	NodeAggregator| entry
+2015-02-27 11:35:54 DEBUG	Query Results internal created.
+2015-02-27 11:35:54 DEBUG	Query Results internal initialized.
+2015-02-27 11:35:54 SHARDING-DETAIL	P11285/T176 || 	NodeAggregator(opid=(0,56))| Done.
+2015-02-27 11:35:54 INFO	ip: 127.0.0.1, port: 37931 GET query: search?q=wonderful, searcher_time: 2 ms, payload_access_time: 0 ms
+2015-02-27 11:35:55 SHARDING-STEP	P11285/T8320 || 	LoadBalancer| collecting information.
+2015-02-27 11:35:55 SHARDING-DETAIL	P11285/T8320 || 	NodeAggregator(opid=(0,58))| Sending ShardingLoadBalancingReportRequestMessageType to (0,0) . Consumer is load-balancer. ExpectResponse(YES)
+2015-02-27 11:35:55 SHARDING-DETAIL	P11285/T8320 || 	NodeAggregator| entry
+2015-02-27 11:35:55 SHARDING-DETAIL	P11285/T2880 || 	NodeAggregator(opid=(0,58))| Done.
+2015-02-27 11:35:55 SHARDING-STEP	P11285/T2880 || 	LoadBalancer| Load information : (0:1)
+2015-02-27 11:35:55 SHARDING-DETAIL	P11285/T2880 || 	LoadBalancer| Only this node, checking for assignments.
+2015-02-27 11:35:55 SHARDING-STEP	P11285/T2880 || 	LoadBalancer| Load balancer is finalizing.
+2015-02-27 11:35:55 SHARDING-STEP	P11285/T8320 || 	LoadBalancer| collecting information.
+2015-02-27 11:35:55 SHARDING-DETAIL	P11285/T8320 || 	NodeAggregator(opid=(0,60))| Sending ShardingLoadBalancingReportRequestMessageType to (0,0) . Consumer is load-balancer. ExpectResponse(YES)
+2015-02-27 11:35:55 SHARDING-DETAIL	P11285/T8320 || 	NodeAggregator| entry
+2015-02-27 11:35:55 SHARDING-DETAIL	P11285/T176 || 	NodeAggregator(opid=(0,60))| Done.
+2015-02-27 11:35:55 SHARDING-STEP	P11285/T176 || 	LoadBalancer| Load information : (0:1)
+2015-02-27 11:35:55 SHARDING-DETAIL	P11285/T176 || 	LoadBalancer| Only this node, checking for assignments.
+2015-02-27 11:35:55 SHARDING-STEP	P11285/T176 || 	LoadBalancer| Load balancer is finalizing.
+2015-02-27 11:35:56 SHARDING-STEP	P11285/T8320 || 	LoadBalancer| collecting information.
+2015-02-27 11:35:56 SHARDING-DETAIL	P11285/T8320 || 	NodeAggregator(opid=(0,62))| Sending ShardingLoadBalancingReportRequestMessageType to (0,0) . Consumer is load-balancer. ExpectResponse(YES)
+2015-02-27 11:35:56 SHARDING-DETAIL	P11285/T8320 || 	NodeAggregator| entry
+2015-02-27 11:35:56 SHARDING-DETAIL	P11285/T2880 || 	NodeAggregator(opid=(0,62))| Done.
+2015-02-27 11:35:56 SHARDING-STEP	P11285/T2880 || 	LoadBalancer| Load information : (0:1)
+2015-02-27 11:35:56 SHARDING-DETAIL	P11285/T2880 || 	LoadBalancer| Only this node, checking for assignments.
+2015-02-27 11:35:56 SHARDING-STEP	P11285/T2880 || 	LoadBalancer| Load balancer is finalizing.
+2015-02-27 11:35:56 SHARDING-STEP	P11285/T8320 || 	LoadBalancer| collecting information.
+2015-02-27 11:35:56 SHARDING-DETAIL	P11285/T8320 || 	NodeAggregator(opid=(0,64))| Sending ShardingLoadBalancingReportRequestMessageType to (0,0) . Consumer is load-balancer. ExpectResponse(YES)
+2015-02-27 11:35:56 SHARDING-DETAIL	P11285/T8320 || 	NodeAggregator| entry
+2015-02-27 11:35:56 SHARDING-DETAIL	P11285/T176 || 	NodeAggregator(opid=(0,64))| Done.
+2015-02-27 11:35:56 SHARDING-STEP	P11285/T176 || 	LoadBalancer| Load information : (0:1)
+2015-02-27 11:35:56 SHARDING-DETAIL	P11285/T176 || 	LoadBalancer| Only this node, checking for assignments.
+2015-02-27 11:35:56 SHARDING-STEP	P11285/T176 || 	LoadBalancer| Load balancer is finalizing.
+2015-02-27 11:35:57 SHARDING-STEP	P11285/T8320 || 	LoadBalancer| collecting information.
+2015-02-27 11:35:57 SHARDING-DETAIL	P11285/T8320 || 	NodeAggregator(opid=(0,66))| Sending ShardingLoadBalancingReportRequestMessageType to (0,0) . Consumer is load-balancer. ExpectResponse(YES)
+2015-02-27 11:35:57 SHARDING-DETAIL	P11285/T8320 || 	NodeAggregator| entry
+2015-02-27 11:35:57 SHARDING-DETAIL	P11285/T2880 || 	NodeAggregator(opid=(0,66))| Done.
+2015-02-27 11:35:57 SHARDING-STEP	P11285/T2880 || 	LoadBalancer| Load information : (0:1)
+2015-02-27 11:35:57 SHARDING-DETAIL	P11285/T2880 || 	LoadBalancer| Only this node, checking for assignments.
+2015-02-27 11:35:57 SHARDING-STEP	P11285/T2880 || 	LoadBalancer| Load balancer is finalizing.
+2015-02-27 11:35:57 SHARDING-STEP	P11285/T8320 || 	LoadBalancer| collecting information.
+2015-02-27 11:35:57 SHARDING-DETAIL	P11285/T8320 || 	NodeAggregator(opid=(0,68))| Sending ShardingLoadBalancingReportRequestMessageType to (0,0) . Consumer is load-balancer. ExpectResponse(YES)
+2015-02-27 11:35:57 SHARDING-DETAIL	P11285/T8320 || 	NodeAggregator| entry
+2015-02-27 11:35:57 SHARDING-DETAIL	P11285/T176 || 	NodeAggregator(opid=(0,68))| Done.
+2015-02-27 11:35:57 SHARDING-STEP	P11285/T176 || 	LoadBalancer| Load information : (0:1)
+2015-02-27 11:35:57 SHARDING-DETAIL	P11285/T176 || 	LoadBalancer| Only this node, checking for assignments.
+2015-02-27 11:35:57 SHARDING-STEP	P11285/T176 || 	LoadBalancer| Load balancer is finalizing.
+2015-02-27 11:35:57 INFO	Stopping server.
+2015-02-27 11:35:57 INFO	Thread = <2919184128> stopped
+2015-02-27 11:35:57 INFO	Thread = <2902398720> stopped
+2015-02-27 11:35:58 SHARDING-STEP	P11285/T8320 || 	LoadBalancer| collecting information.
+2015-02-27 11:35:58 SHARDING-DETAIL	P11285/T8320 || 	NodeAggregator(opid=(0,70))| Sending ShardingLoadBalancingReportRequestMessageType to (0,0) . Consumer is load-balancer. ExpectResponse(YES)
+2015-02-27 11:35:58 SHARDING-DETAIL	P11285/T8320 || 	NodeAggregator| entry
+2015-02-27 11:35:58 SHARDING-DETAIL	P11285/T208 || 	NodeAggregator(opid=(0,70))| Done.
+2015-02-27 11:35:58 SHARDING-STEP	P11285/T208 || 	LoadBalancer| Load information : (0:1)
+2015-02-27 11:35:58 SHARDING-DETAIL	P11285/T208 || 	LoadBalancer| Only this node, checking for assignments.
+2015-02-27 11:35:58 SHARDING-STEP	P11285/T208 || 	LoadBalancer| Load balancer is finalizing.
+2015-02-27 11:35:58 INFO	Thread = <2986325760> stopped
+2015-02-27 11:35:58 INFO	Thread = <2977933056> stopped
+2015-02-27 11:35:58 INFO	Thread = <2969540352> stopped
+2015-02-27 11:35:58 SHARDING-STEP	P11285/T8320 || 	LoadBalancer| collecting information.
+2015-02-27 11:35:58 SHARDING-DETAIL	P11285/T8320 || 	NodeAggregator(opid=(0,72))| Sending ShardingLoadBalancingReportRequestMessageType to (0,0) . Consumer is load-balancer. ExpectResponse(YES)
+2015-02-27 11:35:58 SHARDING-DETAIL	P11285/T8320 || 	NodeAggregator| entry
+2015-02-27 11:35:58 SHARDING-DETAIL	P11285/T9136 || 	NodeAggregator(opid=(0,72))| Done.
+2015-02-27 11:35:58 SHARDING-STEP	P11285/T9136 || 	LoadBalancer| Load information : (0:1)
+2015-02-27 11:35:58 SHARDING-DETAIL	P11285/T9136 || 	LoadBalancer| Only this node, checking for assignments.
+2015-02-27 11:35:58 SHARDING-STEP	P11285/T9136 || 	LoadBalancer| Load balancer is finalizing.
+2015-02-27 11:35:59 SHARDING-STEP	P11285/T8320 || 	LoadBalancer| collecting information.
+2015-02-27 11:35:59 SHARDING-DETAIL	P11285/T8320 || 	NodeAggregator(opid=(0,74))| Sending ShardingLoadBalancingReportRequestMessageType to (0,0) . Consumer is load-balancer. ExpectResponse(YES)
+2015-02-27 11:35:59 SHARDING-DETAIL	P11285/T8320 || 	NodeAggregator| entry
+2015-02-27 11:35:59 SHARDING-DETAIL	P11285/T6432 || 	NodeAggregator(opid=(0,74))| Done.
+2015-02-27 11:35:59 SHARDING-STEP	P11285/T6432 || 	LoadBalancer| Load information : (0:1)
+2015-02-27 11:35:59 SHARDING-DETAIL	P11285/T6432 || 	LoadBalancer| Only this node, checking for assignments.
+2015-02-27 11:35:59 SHARDING-STEP	P11285/T6432 || 	LoadBalancer| Load balancer is finalizing.
+2015-02-27 11:35:59 INFO	SM-M0 master stepping down ...
+2015-02-27 11:35:59 INFO	synch thread stopped.
+2015-02-27 11:35:59 INFO	Server stopped successfully
