@@ -82,7 +82,8 @@ void UnicastDiscoveryService::sendJoinRequest(const string& knownHost, unsigned 
     message.interfaceNumericAddress = getTransport()->getPublishedInterfaceNumericAddr();
     message.internalCommunicationPort = getTransport()->getCommunicationPort();
 
-    unsigned byteToCopy = this->clusterIdentifier.size() > 99 ? 99 : this->clusterIdentifier.size();
+    unsigned byteToCopy = this->clusterIdentifier.size() > DISCOVERY_CLUSTER_IDENT_SIZE - 1 ?
+    		DISCOVERY_CLUSTER_IDENT_SIZE - 1 : this->clusterIdentifier.size();
     strncpy(message._clusterIdent, this->clusterIdentifier.c_str(), byteToCopy);
     message._clusterIdent[byteToCopy] = '\0';
 
@@ -129,25 +130,12 @@ void UnicastDiscoveryService::openListeningChannel(){
 	BoostUDP::endpoint hostEndPoint(IpAddress::from_string(this->matchedKnownHostIp), portToBind);
 
     /*
-     *  Bind the socket to ip:port
+     *  Bind the socket to ip:port. If the binding to given port is not successful then the next
+     *  port will be tried. listen_endpoint will contain the port to which binding was actually done.
      */
-    tryNextPort:
-    boost::system::error_code ec;
-    discoverySocket->bind(hostEndPoint, ec);
-    if(ec){
-        ++portToBind;
-        hostEndPoint.port(portToBind);
-        if (portToBind < this->matchedKnownHostPort + 100) {
-            goto tryNextPort;
-        } else {
-        	Logger::console("%s", ec.message().c_str());
-            Logger::console("unable to bind to any port in range [%d : %d]", this->matchedKnownHostPort,
-                    this->matchedKnownHostPort + 100);
-            // cannot proceed without discovery.
-            throw std::runtime_error(ec.message());
-        }
-    }
-    this->discoveryPort = portToBind;
+    bindToAvailablePort(*discoverySocket, hostEndPoint);
+
+    this->discoveryPort = hostEndPoint.port();
 
     Logger::console("Discovery UDP listen socket binding done on %d", portToBind);
 
@@ -205,7 +193,7 @@ void UnicastDiscoveryService::initialDiscoveryHandler(const boost::system::error
 				Logger::console("Race to become master detected !!");
 				if ( shouldYield(message.interfaceNumericAddress, message.internalCommunicationPort)){
 					Logger::console("Yielding to other node");
-					yieldingToOtherNode = true;
+					yieldingToAnotherNode = true;
 				} else {
 					// if not yielding then ask others to yield.
 					DiscoveryMessage yeildMessage;
@@ -215,7 +203,8 @@ void UnicastDiscoveryService::initialDiscoveryHandler(const boost::system::error
 					yeildMessage.masterNodeId = -1;
 					yeildMessage.nodeId = -1;
 
-					unsigned byteToCopy = clusterIdentifier.size() > 99 ? 99 : clusterIdentifier.size();
+					unsigned byteToCopy = clusterIdentifier.size() > DISCOVERY_CLUSTER_IDENT_SIZE - 1 ?
+							DISCOVERY_CLUSTER_IDENT_SIZE - 1 : clusterIdentifier.size();
 					strncpy(yeildMessage._clusterIdent, clusterIdentifier.c_str(), byteToCopy);
 					yeildMessage._clusterIdent[byteToCopy] = '\0';
 
@@ -241,7 +230,7 @@ void UnicastDiscoveryService::initialDiscoveryHandler(const boost::system::error
 			 *  Got yield message form other node. Obey.
 			 */
 			Logger::console("Yielding to other node");
-			yieldingToOtherNode = true;
+			yieldingToAnotherNode = true;
 			break;
 		}
 		default:
@@ -250,7 +239,7 @@ void UnicastDiscoveryService::initialDiscoveryHandler(const boost::system::error
 		} // switch(message.type)
 	} // else
 
-	if (yieldingToOtherNode || masterDetected) {
+	if (yieldingToAnotherNode || masterDetected) {
 		networkService.stop();
 	}
 }
@@ -267,7 +256,7 @@ void UnicastDiscoveryService::discoverCluster() {
     memset(messageTempBuffer, 0, sizeOfMessage);
 
     startDiscovery:
-    yieldingToOtherNode = false;
+    yieldingToAnotherNode = false;
     masterDetected = false;
 
     /*
@@ -306,7 +295,7 @@ void UnicastDiscoveryService::discoverCluster() {
     	networkService.reset();
 
     	// If master was detected or Node is yielding to other node in discovery race, exit the loop
-    	if (masterDetected || yieldingToOtherNode)
+    	if (masterDetected || yieldingToAnotherNode)
     		break;
 
     	// also check whether timeout occurred..if yes then exit.
@@ -317,7 +306,7 @@ void UnicastDiscoveryService::discoverCluster() {
 
     // Restart discovery process after waiting if there are other nodes in discovery race.
     // It is probable that one of the node will become master till then.
-	if (yieldingToOtherNode) {
+	if (yieldingToAnotherNode) {
 		sleep(DISCOVERY_TIMEOUT);
 		goto startDiscovery;
 	}
@@ -344,11 +333,11 @@ void UnicastDiscoveryService::discoverCluster() {
 // Used only for the master node because master node handles all discovery request
 void * unicastDiscoveryListner(void *arg) {
 	UnicastDiscoveryService *discovery = (UnicastDiscoveryService *) arg;
-	discovery->postDiscoveryListner();
+	discovery->postDiscoveryListener();
 	return NULL;
 }
 
-void UnicastDiscoveryService::postDiscoveryListner() {
+void UnicastDiscoveryService::postDiscoveryListener() {
 
 	// Make the listening socket blocking now.
 	asio::socket_base::non_blocking_io command(false);
@@ -399,7 +388,8 @@ void UnicastDiscoveryService::postDiscoveryListner() {
                     ackMessage.masterNodeId = getSyncManager()->getCurrentNodeId();
                     ackMessage.nodeId = getSyncManager()->getNextNodeId();
                     ackMessage.ackMessageIdentifier = message.internalCommunicationPort;
-                    unsigned byteToCopy = clusterIdentifier.size() > 99 ? 99 : clusterIdentifier.size();
+                    unsigned byteToCopy = clusterIdentifier.size() > DISCOVERY_CLUSTER_IDENT_SIZE - 1 ?
+                    		DISCOVERY_CLUSTER_IDENT_SIZE - 1 : clusterIdentifier.size();
                     strncpy(ackMessage._clusterIdent, clusterIdentifier.c_str(), byteToCopy);
                     ackMessage._clusterIdent[byteToCopy] = '\0';
                     ackMessage.serialize(ackMessageTempBuffer);

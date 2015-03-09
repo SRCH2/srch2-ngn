@@ -2,7 +2,7 @@
  * DicoveryManager.cpp
  *
  *  Created on: Apr 24, 2014
- *      Author: srch2
+ *      Author: Surendra
  */
 
 #include "DiscoveryManager.h"
@@ -40,7 +40,7 @@ int sendUDPPacketToDestination(BoostUDP::socket& sendSocket, const char *buffer,
 	if (byteSent < bufferSize) {
 	    Logger::sharding(Logger::Warning,"Discovery | %d bytes was sent instead of expected %d bytes. This datagram is lost.", byteSent, bufferSize );
 		// incomplete read : this datagram is lost, return to caller to handle next one
-		return 1; // come back
+		return 1;
 	}
 	ASSERT(bufferSize == byteSent);
 	return 0;
@@ -52,18 +52,23 @@ void DiscoveryService::init() {
 
     openSendingChannel();
 
-    // start a thread to listen for incoming data packet.
     discoverCluster();
 
-    if (isCurrentNodeMaster())
+    if (isCurrentNodeMaster()) {
+    	// start a new thread to accept new nodes to cluster.
     	startDiscoveryThread();
+    }
 }
 
 void DiscoveryService::reInit() {
+
+	ASSERT(isCurrentNodeMaster());
+
 	openListeningChannel();
 
 	openSendingChannel();
 
+	// start a new thread to accept new nodes to cluster.
 	startDiscoveryThread();
 }
 
@@ -74,6 +79,32 @@ bool DiscoveryService::isLoopbackMessage(DiscoveryMessage &msg){
 
 bool DiscoveryService::isCurrentClusterMessage(DiscoveryMessage &msg) {
 	return (string(msg._clusterIdent).compare(this->clusterIdentifier) == 0);
+}
+
+/*
+ * Bind the socket to ip:port. If port is not available then try the next "scanRange" (default = 100)
+ * ports for availability. Throw error if the port binding is unsuccessful.
+ */
+void DiscoveryService::bindToAvailablePort(BoostUDP::socket& listenSocket, BoostUDP::endpoint& listen_endpoint, short scanRange) {
+	short requestedPort = listen_endpoint.port();
+	short portToBind = requestedPort;
+	while(1) {
+		boost::system::error_code errCode;
+		listenSocket.bind(listen_endpoint, errCode);
+		if(errCode){
+			++portToBind;
+			if (portToBind <  requestedPort + scanRange) {
+				listen_endpoint.port(portToBind);
+			} else {
+
+				Logger::console("unable to bind to any port in range [%d : %d]", requestedPort,
+						requestedPort + scanRange);
+				throw std::runtime_error(errCode.message());
+			}
+		} else {
+			break; // exit while loop when bind is successful
+		}
+	}
 }
 
 } /* namespace sharding */

@@ -46,7 +46,7 @@ public:
 			string serializedCluster = syncManager.serializeClusterNodes();
 			Message * replyMessage = MessageAllocator().allocateMessage(serializedCluster.size());
 			replyMessage->setType(ClusterInfoReplyMessageType);
-			replyMessage->setDiscoveryMask();
+			replyMessage->setDiscoveryMask(); // set the required bit to indicate that this is a discovery message
 			char * replyMessageBody = replyMessage->getMessageBody();
 			memcpy(replyMessageBody, serializedCluster.c_str(), serializedCluster.size());
 			syncManager.transport.sendMessage(replyNodeId, replyMessage);

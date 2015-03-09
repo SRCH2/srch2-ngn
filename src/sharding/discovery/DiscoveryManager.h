@@ -53,6 +53,9 @@ static const int DISCOVERY_TIMEOUT = 6;
 static const int DISCOVERY_RETRY_COUNT = 3;
 static const int DISCOVERY_RETRY_TIMEOUT = 2;
 
+// Cluster Identifier Max Size
+static const int DISCOVERY_CLUSTER_IDENT_SIZE = 100;
+
 /*
  *  Discovery message structure. Contains information required for initial
  *  discovery of nodes.
@@ -64,7 +67,7 @@ struct DiscoveryMessage {
 	NodeId nodeId;                       // New remote node's Id. To be filled by master and sent to remote node on discovery
 	NodeId masterNodeId;                 // Master's Id. To be filled by master and sent to remote node on discovery
 	uint32_t ackMessageIdentifier;       // To be used for ACK messages only by master (in multicast discovery)
-	char _clusterIdent[100];             // cluster name ( upto 100 chars)
+	char _clusterIdent[DISCOVERY_CLUSTER_IDENT_SIZE];             // cluster name ( upto 100 chars)
 
 	DiscoveryMessage(){
 		this->type = 0;
@@ -73,7 +76,7 @@ struct DiscoveryMessage {
 		this->nodeId = 0;
 		this->masterNodeId = 0;
 		this->ackMessageIdentifier = 0;
-		memset(this->_clusterIdent, 0 , 100);
+		memset(this->_clusterIdent, 0 , DISCOVERY_CLUSTER_IDENT_SIZE);
 	}
 	DiscoveryMessage(const DiscoveryMessage & right){
 		this->type = right.type;
@@ -82,7 +85,7 @@ struct DiscoveryMessage {
 		this->nodeId = right.nodeId;
 		this->masterNodeId = right.masterNodeId;
 		this->ackMessageIdentifier = right.ackMessageIdentifier;
-		memcpy(this->_clusterIdent, right._clusterIdent , 100);
+		memcpy(this->_clusterIdent, right._clusterIdent , DISCOVERY_CLUSTER_IDENT_SIZE);
 	}
 	DiscoveryMessage & operator=(const DiscoveryMessage & right){
 		if(this == &right){
@@ -100,7 +103,7 @@ struct DiscoveryMessage {
 		numberOfBytes += srch2::util::getNumberOfBytesFixedTypes(nodeId) ;
 		numberOfBytes += srch2::util::getNumberOfBytesFixedTypes(masterNodeId) ;
 		numberOfBytes += srch2::util::getNumberOfBytesFixedTypes(ackMessageIdentifier) ;
-		numberOfBytes += 100;
+		numberOfBytes += DISCOVERY_CLUSTER_IDENT_SIZE;
 		return numberOfBytes;
 	}
 
@@ -112,8 +115,8 @@ struct DiscoveryMessage {
 		buffer = srch2::util::serializeFixedTypes(nodeId, buffer);
 		buffer = srch2::util::serializeFixedTypes(masterNodeId, buffer);
 		buffer = srch2::util::serializeFixedTypes(ackMessageIdentifier, buffer);
-		memcpy(buffer, _clusterIdent, 100);
-		buffer = ((char *)buffer) + 100;
+		memcpy(buffer, _clusterIdent, DISCOVERY_CLUSTER_IDENT_SIZE);
+		buffer = ((char *)buffer) + DISCOVERY_CLUSTER_IDENT_SIZE;
 		return buffer;
 	}
 	// deserialize this class from the "buffer"
@@ -124,8 +127,8 @@ struct DiscoveryMessage {
 		buffer = srch2::util::deserializeFixedTypes(buffer ,nodeId);
 		buffer = srch2::util::deserializeFixedTypes(buffer ,masterNodeId);
 		buffer = srch2::util::deserializeFixedTypes(buffer ,ackMessageIdentifier);
-		memcpy(_clusterIdent, buffer, 100);
-		buffer = ((char *)buffer) + 100;
+		memcpy(_clusterIdent, buffer, DISCOVERY_CLUSTER_IDENT_SIZE);
+		buffer = ((char *)buffer) + DISCOVERY_CLUSTER_IDENT_SIZE;
 		return buffer;
 	}
 };
@@ -158,7 +161,7 @@ public:
 	// Entry point for discovery module. It should be called to initiate discovery.
 	void init();
 
-	// Re start discovery in case of master failure.
+	// Restart discovery in case of master failure.
 	void reInit();
 
 	// stop Master node's discovery thread on engine's shutdown.
@@ -187,6 +190,10 @@ protected:
 	SyncManager *getSyncManager() { return  syncManager; }
 
 	TransportManager *getTransport() { return  syncManager->getTransport(); }
+
+	// Bind the socket to ip:port. If port is not available then try the next "scanRange" (default = 100)
+	// ports for availability. Throw error if the port binding is unsuccessful.
+	void bindToAvailablePort(BoostUDP::socket& listenSocket, BoostUDP::endpoint& listen_endpoint, short scanRange = 100);
 
 	/* -------------------------------------------------------------------------
 	 * APIs to be implemented by derived class
@@ -268,7 +275,7 @@ void * multicastListener(void * arg);
 class MulticastDiscoveryService : public DiscoveryService{
 	friend void * multicastListener(void * arg);
 public:
-	MulticastDiscoveryService(MulticastDiscoveryConfig config, SyncManager *syncManager);
+	MulticastDiscoveryService(const MulticastDiscoveryConfig& config, SyncManager *syncManager);
 
 private:
 
@@ -302,9 +309,9 @@ private:
 	void timeoutHandler(const boost::system::error_code& errCode);
 
 	// Only called by a master node. This method handles all the discovery
-	// request from the other nodes. It is blocking API and should run in
+	// requests from the other nodes. It is blocking API and should run in
 	// a separate thread.
-	void postDiscoveryListner();
+	void postDiscoveryListener();
 
 	void postDiscoveryReadHandler(const boost::system::error_code&, std::size_t);
 
@@ -350,7 +357,7 @@ private:
 
 	// Flag to indicate whether a current node should yield to another node in a
 	// race to become master. (i.e multiple node started simultaneously)
-	bool yieldingToOtherNode;
+	bool yieldingToAnotherNode;
 
 	// variable stores ip/port info of a sender (remote node)
 	BoostUDP::endpoint senderEndPoint;
@@ -394,6 +401,8 @@ struct UnicastDiscoveryConfig {
 };
 
 void * unicastDiscoveryListner(void *arg);
+
+// default port for unicast discovery if not specified by user.
 const unsigned unicastDiscoveryDefaultPort = 4000;
 
 /*
@@ -424,7 +433,7 @@ private:
 	// Only called by a master node. This method handles all the discovery
 	// request from the other nodes. It is blocking API and should run in
 	// a separate thread.
-	void postDiscoveryListner();
+	void postDiscoveryListener();
 
 	// open listen and send channel for unicast discovery. Basically creates socket
 	void openListeningChannel();
@@ -458,7 +467,7 @@ private:
 	std::string matchedKnownHostIp;
 	unsigned matchedKnownHostPort;
 
-	// Actual port to which the discovery socket is binded. It can be
+	// Actual port to which the discovery socket is bound. It can be
 	// different from matchedKnownHostPort when there are multiple nodes
 	// running on a same machine (host).
 	unsigned discoveryPort;
@@ -475,8 +484,8 @@ private:
 	bool masterDetected;
 
 	// Flag to indicate whether a current node should yield to another node in a
-	// race to become master. (i.e multiple node started simultaneously)
-	bool yieldingToOtherNode;
+	// race to become master. (i.e multiple nodes started simultaneously)
+	bool yieldingToAnotherNode;
 
 	// variable stores ip/port info of a sender (remote node)
 	BoostUDP::endpoint senderEndPoint;

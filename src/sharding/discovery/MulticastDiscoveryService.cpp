@@ -15,12 +15,13 @@ using namespace srch2::util;
 namespace srch2 {
 namespace httpwrapper {
 
-MulticastDiscoveryService::MulticastDiscoveryService(MulticastDiscoveryConfig config,
+MulticastDiscoveryService::MulticastDiscoveryService(const MulticastDiscoveryConfig& config,
         SyncManager *syncManager): DiscoveryService(syncManager, config.clusterName), discoveryConfig(config),
         		timer(networkService), intialDiscoveryPhase(true) {
     // throws exception if validation failed.
     validateConfigSettings(discoveryConfig);
 
+    // If numeric IP address is 0 ( i.e "0.0.0.0"), then get the actual address from the transport Manager.
     if (this->hostIPAddrNumeric == 0) {
         this->hostIPAddrNumeric = getTransport()->getPublishedInterfaceNumericAddr();
     }
@@ -99,24 +100,13 @@ void MulticastDiscoveryService::openListeningChannel(){
 			IpAddress::from_string(discoveryConfig.hostIpAddressForMulticast), portToBind);
 
     /*
-     *  Bind the socket to ip:port
+     *  Bind the socket to ip:port. If the binding to given port is not successful then the next
+     *  port will be tried. listen_endpoint will contain the port to which binding was actually done.
      */
-tryNextPort:
-	boost::system::error_code errCode;
-	listenSocket->bind(listen_endpoint, errCode);
-    if(errCode){
-        ++portToBind;
-        if (portToBind < discoveryConfig.multicastPort + 100) {
-        	listen_endpoint.port(portToBind);
-            goto tryNextPort;
-        } else {
 
-            Logger::console("unable to bind to any port in range [%d : %d]", discoveryConfig.multicastPort,
-                    discoveryConfig.multicastPort + 100);
-            throw std::runtime_error(errCode.message());
-        }
-    }
-   discoveryConfig.multicastPort = portToBind;
+    bindToAvailablePort(*listenSocket, listen_endpoint);
+
+    discoveryConfig.multicastPort = listen_endpoint.port();
 
     /*
      *  Join multcast group. Both interface address and multicast address are required
@@ -135,7 +125,7 @@ void MulticastDiscoveryService::openSendingChannel(){
 
     /*
      *  Prepare send socket's data structures.
-     *  Note: We are using different socket for sending multicast because standard
+     *  Note: We are using a different socket for sending multicast because standard
      *  (RFC 1122 [Braden 1989]) forbids the use of same socket for sending/receiving
      *  IP datagram packets - Richard Steven's UNP book.
      */
@@ -240,7 +230,7 @@ void MulticastDiscoveryService::initialDiscoveryHandler(const boost::system::err
 				Logger::debug("Race to become master detected !!");
 				if ( shouldYield(message.interfaceNumericAddress, message.internalCommunicationPort)){
 						Logger::debug("Yielding to other node");
-						yieldingToOtherNode = true;
+						yieldingToAnotherNode = true;
 						yieldNodeSet.insert(NodeEndPoint(message.interfaceNumericAddress, message.internalCommunicationPort));
 				}
 			}
@@ -254,7 +244,7 @@ void MulticastDiscoveryService::initialDiscoveryHandler(const boost::system::err
 
 	}
 
-	if (!masterDetected && !yieldingToOtherNode) {
+	if (!masterDetected && !yieldingToAnotherNode) {
 		// register again for async read
 		listenSocket->async_receive_from(asio::buffer(messageTempBuffer, message.getNumberOfBytes()),
 	    			senderEndPoint, boost::bind(&MulticastDiscoveryService::discoveryReadHandler, this, _1, _2));
@@ -288,7 +278,7 @@ void MulticastDiscoveryService::discoverCluster() {
     memset(messageTempBuffer, 0, sizeOfMessage);
 
     startDiscovery:
-    yieldingToOtherNode = false;
+    yieldingToAnotherNode = false;
     masterDetected = false;
 
     /*
@@ -306,7 +296,7 @@ void MulticastDiscoveryService::discoverCluster() {
     	networkService.run();
     	networkService.reset();
 
-    	if (masterDetected || yieldingToOtherNode) {
+    	if (masterDetected || yieldingToAnotherNode) {
     		break;  // exit while loop
     	}
 
@@ -315,7 +305,7 @@ void MulticastDiscoveryService::discoverCluster() {
     	}
     }
 
-    if (yieldingToOtherNode) {
+    if (yieldingToAnotherNode) {
     	sleep(DISCOVERY_TIMEOUT);
     	goto startDiscovery;
     }
@@ -343,7 +333,7 @@ void MulticastDiscoveryService::discoverCluster() {
 void * multicastListener(void * arg) {
 
     MulticastDiscoveryService * discovery = (MulticastDiscoveryService *) arg;
-    discovery->postDiscoveryListner();
+    discovery->postDiscoveryListener();
     return NULL;
 }
 
@@ -378,6 +368,9 @@ void MulticastDiscoveryService::postDiscoveryReadHandler(const boost::system::er
 			case DISCOVERY_JOIN_CLUSTER_REQ:
 			{
 				Logger::console("Got cluster joining request from %s : %d", senderEndPoint.address().to_string().c_str(), senderEndPoint.port());
+				/*
+				 *  Prepare ack message by populating master's information and send it to multicast address.
+				 */
 				DiscoveryMessage ackMessage;
 				ackMessage.type = DISCOVERY_JOIN_CLUSTER_ACK;
 				ackMessage.interfaceNumericAddress = getTransport()->getPublishedInterfaceNumericAddr();
@@ -387,7 +380,8 @@ void MulticastDiscoveryService::postDiscoveryReadHandler(const boost::system::er
 				short remoteNodePort = message.internalCommunicationPort;
 				ackMessage.ackMessageIdentifier = remoteNodePort;
 
-				unsigned byteToCopy = clusterIdentifier.size() > 99 ? 99 : clusterIdentifier.size();
+				unsigned byteToCopy = clusterIdentifier.size() > DISCOVERY_CLUSTER_IDENT_SIZE - 1 ?
+						DISCOVERY_CLUSTER_IDENT_SIZE - 1 : clusterIdentifier.size();
 				strncpy(ackMessage._clusterIdent, clusterIdentifier.c_str(), byteToCopy);
 				ackMessage._clusterIdent[byteToCopy] = '\0';
 
@@ -436,7 +430,7 @@ void MulticastDiscoveryService::postDiscoveryReadHandler(const boost::system::er
 
 }
 
-void MulticastDiscoveryService::postDiscoveryListner() {
+void MulticastDiscoveryService::postDiscoveryListener() {
 
     DiscoveryMessage message;
     std::size_t sizeOfMessage = message.getNumberOfBytes();
@@ -446,6 +440,9 @@ void MulticastDiscoveryService::postDiscoveryListner() {
     	networkService.reset();
     	listenSocket->async_receive_from(asio::buffer(messageTempBuffer, sizeOfMessage),
     			senderEndPoint, boost::bind(&MulticastDiscoveryService::discoveryReadHandler, this, _1, _2));
+    	// _1, _2 indicates that the callback function that we are binding to takes two arguments.
+    	// Later on the boost's internal layer will call the callback with two arguments.
+    	// read about boost::bind at http://www.radmangames.com/programming/how-to-use-boost-bind
     }
 
     listenSocket->close();
@@ -463,7 +460,8 @@ void MulticastDiscoveryService::sendJoinRequest() {
     message.interfaceNumericAddress =  getTransport()->getPublishedInterfaceNumericAddr();
     message.internalCommunicationPort = getTransport()->getCommunicationPort();
 
-    unsigned byteToCopy = this->clusterIdentifier.size() > 99 ? 99 : this->clusterIdentifier.size();
+    unsigned byteToCopy = this->clusterIdentifier.size() > DISCOVERY_CLUSTER_IDENT_SIZE - 1 ?
+    		DISCOVERY_CLUSTER_IDENT_SIZE -1 : this->clusterIdentifier.size();
     strncpy(message._clusterIdent, this->clusterIdentifier.c_str(), byteToCopy);
     message._clusterIdent[byteToCopy] = '\0';
 
