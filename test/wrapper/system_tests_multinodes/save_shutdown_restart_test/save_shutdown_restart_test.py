@@ -8,11 +8,15 @@ import test_lib
 
 def testSaveShutdownRestart(binary_path):
     #Start the engine server
-    binary= [ binary_path, './save_shutdown_restart_test/conf.xml', './save_shutdown_restart_test/conf-A.xml', './save_shutdown_restart_test/conf-B.xml' ]
+    binary= [ binary_path, './save_shutdown_restart_test/conf-1.xml', './save_shutdown_restart_test/conf-2.xml', './save_shutdown_restart_test/conf-3.xml' ]
 
     serverHandle = test_lib.startServer(binary)
     if serverHandle == None:
         return -1
+
+    #Load initial data
+    dataFile = './save_shutdown_restart_test/data.json'
+    test_lib.loadIntialData(dataFile)
 
     #save the index
     

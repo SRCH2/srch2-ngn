@@ -72,16 +72,34 @@ def prepareQuery(queryKeywords, fuzzy):
     ##################################
     return query
     
-
+def loadIntialData(dataFile, core):
+    f = open(dataFile)
+    records  = f.readlines()
+    f.close()
+    for rec in records:
+        print '-------------------------------------------------'
+        response = test_lib.insertRequest(rec, core)
+        print response
+    return
 
 def testMultipleCores(queriesAndResultsPath, queriesAndResultsPath2, binary_path):
     #Start the engine server
-    args = [ binary_path, './multicore/conf-multicore.xml','./multicore/conf-multicore-A.xml','./multicore/conf-multicore-B.xml' ]
+    args = [ binary_path, './multicore/conf-multicore-1.xml','./multicore/conf-multicore-2.xml','./multicore/conf-multicore-3.xml' ]
 
     serverHandle = test_lib.startServer(args)
     if serverHandle == None:
         return -1
     failCount = 0
+
+    loadIntialData('./multicore/core1/movie-data.json', 'core1')
+    loadIntialData('./multicore/core2/stackoverflow-data-100.json', 'core2')
+    loadIntialData('./multicore/core3/business-directory-data.json', 'core3')
+    loadIntialData('./multicore/core4/movie-data.json', 'core4')
+    loadIntialData('./multicore/coreGeo/data.json', 'coreGeo')
+
+    print ' ********   waiting for merge to finish ********* '
+    time.sleep(20)
+    print ' ********     Running Test cases   ********* '
 
     #######################################
     # Basic multi-core functional testing #

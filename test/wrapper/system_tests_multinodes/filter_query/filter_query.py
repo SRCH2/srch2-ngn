@@ -65,11 +65,15 @@ def prepareQuery(queryKeywords):
 
 def testFilterQuery(queriesAndResultsPath, binary_path):
     # Start the engine server
-    args = [ binary_path, './filter_query/conf.xml', './filter_query/conf-A.xml', './filter_query/conf-B.xml' ]
+    args = [ binary_path, './filter_query/conf-1.xml', './filter_query/conf-2.xml', './filter_query/conf-3.xml' ]
 
     serverHandle = test_lib.startServer(args)
     if serverHandle == None:
         return -1
+
+    #Load initial data
+    dataFile = './filter_query/data.json'
+    test_lib.loadIntialData(dataFile)
 
     #construct the query
 

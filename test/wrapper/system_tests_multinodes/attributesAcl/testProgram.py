@@ -1,5 +1,5 @@
 # Automated test script to start engine, fire queryes and verify results
-import sys, shutil, urllib2, json, time, subprocess, os, commands, signal
+import sys, shutil, urllib2, json, time, subprocess, os, commands, signal, traceback
 
 sys.path.insert(0, 'srch2lib')
 import test_lib
@@ -14,20 +14,22 @@ def checkResult(query, responseJson,resultValue):
 #        print key, value
     isPass=1
     if  len(responseJson) == len(resultValue):
+        returnedRecIds = []
         for i in range(0, len(resultValue)):
+            returnedRecIds.append(responseJson[i]['record_id'])
+        if (sorted(returnedRecIds) != sorted(resultValue)):
             #print response_json['results'][i]['record']['id']
-            if responseJson[i]['record_id'] !=  resultValue[i]:
-                isPass=0
-                print query + redColor + ' test failed' + endColor
-                print 'query results||given results'
-                print 'number of results:'+str(len(responseJson))+'||'+str(len(resultValue))
-                for i in range(0, len(responseJson)):
-                    print responseJson[i]['record_id']+'||'+resultValue[i]
-                break
+            isPass=0
+            print query + redColor + ' test failed' + endColor
+            print 'query results||expected results'
+            print 'number of results:'+str(len(responseJson))+'||'+str(len(resultValue))
+            for i in range(0, len(responseJson)):
+                print responseJson[i]['record_id']+'||'+resultValue[i]
+            
     else:
         isPass=0
         print query + redColor + ' test failed' + endColor
-        print 'query results||given results'
+        print 'query results||expected results'
         print 'number of results:'+str(len(responseJson))+'||'+str(len(resultValue))
         maxLen = max(len(responseJson),len(resultValue))
         for i in range(0, maxLen):
@@ -109,13 +111,7 @@ def prepareQuery(queryKeywords):
             query=query+queryKeywords[i]+'%20AND%20'
     return query
     
-def test(queriesAndResultsPath, binary_path, configFilePath):
-    #Start the engine server
-    args = [ binary_path, '--config-file=' + configFilePath]
-
-    serverHandle = test_lib.startServer(args, 30)
-    if serverHandle == None:
-        return -1
+def test(queriesAndResultsPath):
 
     #construct the query
     failCount = 0
@@ -162,40 +158,204 @@ def test(queriesAndResultsPath, binary_path, configFilePath):
             else:
                 failCount += checkResult(prepareQuery(queryValue), response_json['results'], resultValue )
 
-    test_lib.kill9Server(serverHandle)
     print '=============================='
     return failCount
 
+def startCluster(binary_path, configs, nullFd = None):
+    #Start the engine server
+    args = [binary_path] + configs
+    serverHandle = test_lib.startServer(args, redirectFd=nullFd)
+    return serverHandle
+
+def loadInitialData(dataFile, corename = '') :
+    test_lib.bulkLoadRequest(dataFile, 'D',  corename)
+
+def loadInitialData_API(dataFile, corename = ''):
+    f = open(dataFile)
+    records  = f.readlines()
+    f.close()
+    print '-------------------------------------------------'
+    print 'loading data'
+    for rec in records: 
+        if len(rec) == 0 or rec[0] == '#' or rec[0] == '[' or rec[0] == ']':
+            continue
+        if corename == '':
+            query = 'http://localhost:8087/docs'
+        else:
+            query = 'http://localhost:8087/' + corename + '/docs'
+
+        payload = rec.strip('\n')
+        try:
+            request = urllib2.Request(query, data=payload)
+            request.get_method = lambda: 'PUT'
+            opener = urllib2.build_opener(urllib2.HTTPHandler)
+            url = opener.open(request)
+            #print url.read()
+        except urllib2.HTTPError as e:
+            print e.read()
+        #response = test_lib.insertRequest(rec, corename)
+        #print response
+    return 0
+
+
+def loadAcl(aclFile, corename = ''):
+    test_lib.bulkLoadRequest(aclFile, 'A',  corename)
+
+def loadAcl_Api(aclFile, corename = ''):
+    f = open(aclFile)
+    records  = f.readlines()
+    f.close()
+    for rec in records:
+        if len(rec) == 0:
+            continue
+        if rec[0] == '#' or rec[0] == '[' or rec[0] == ']':
+            continue
+     
+        print '-------------------------------------------------'
+        if corename == '':
+            query = 'http://localhost:8087/aclAttributeRoleAppend'
+        else:
+            query = 'http://localhost:8087/' + corename + '/aclAttributeRoleAppend'
+
+        payload = rec.strip('\n')
+        print query + "-X PUT -d '" + payload + "'"
+        try:
+            request = urllib2.Request(query, data=payload)
+            request.get_method = lambda: 'PUT'
+            opener = urllib2.build_opener(urllib2.HTTPHandler)
+            url = opener.open(request)
+        except urllib2.HTTPError as e:
+            print e.read()
+            return 1
+    return 0
+
+
+def checkIfNodeReady(nodeCount):
+    url = 'http://localhost:8087/info'
+    try:
+        rs = urllib2.urlopen(url).read();
+        response = json.loads(rs)
+        if response["nodes"]["count"] == nodeCount:
+            print rs
+            return True
+        else:
+            return False
+    except urllib2.HTTPError as e:
+        return False
+
 if __name__ == '__main__':      
     
-    if(os.path.exists("./attributesAcl/SRCH2Cluster")):
-        shutil.rmtree("./attributesAcl/SRCH2Cluster")
+    currDir = os.path.abspath(".")
+    
     if(os.path.exists("./SRCH2Cluster")):
         shutil.rmtree("./SRCH2Cluster")
+
     exitCode = 0
     binary_path = sys.argv[1]
+    
+    #NullDeviceFd = open(os.devnull, 'wb')
+    NullDeviceFd = None 
+
+    confFiles = [ './attributesAcl/config/conf-test1-nodeA.xml', './attributesAcl/config/conf-test1-nodeB.xml', './attributesAcl/config/conf-test1-nodeC.xml' ]
+    serverHandle = startCluster(binary_path, confFiles,  NullDeviceFd);
+    while checkIfNodeReady(3) == False:
+        print ' cluster is not ready ...waiting'
+        time.sleep(10)
+    print 'wait for load balancing'
+    time.sleep(60)  # time for loadbalancing
+    loadInitialData(currDir + '/attributesAcl/test1-data.json')
+    loadAcl(currDir + '/attributesAcl/test1-acl.json')
+    
+    time.sleep(30)  # let the merge happen
     queriesAndResultsPath = './attributesAcl/testCases.txt'
-    #exitCode = test(queriesAndResultsPath, binary_path , './attributesAcl/conf.xml')
-    #time.sleep(5)
-    if(os.path.exists("./attributesAcl/SRCH2Cluster")):
-        shutil.rmtree("./attributesAcl/SRCH2Cluster")
-    if(os.path.exists("./SRCH2Cluster")):
-        shutil.rmtree("./SRCH2Cluster")
-    queriesAndResultsPath = './attributesAcl/testCasesMultiCore.txt'
-    #exitCode |= test(queriesAndResultsPath, binary_path, './attributesAcl/conf-multicore.xml')
-    #time.sleep(5)
-    if(os.path.exists("./attributesAcl/SRCH2Cluster")):
-        shutil.rmtree("./attributesAcl/SRCH2Cluster")
-    if(os.path.exists("./SRCH2Cluster")):
-        shutil.rmtree("./SRCH2Cluster")
-    queriesAndResultsPath = './attributesAcl/testCasesFilterSortFacetQuery.txt'
-    exitCode |= test(queriesAndResultsPath, binary_path , './attributesAcl/conf2.xml')
+    try:
+        #print ''
+        exitCode = test(queriesAndResultsPath)
+    except Exception as e:
+        print("-"*60)
+        traceback.print_exc(file=sys.stdout)
+        print("-"*60)
+        exitCode = 1
+    test_lib.kill9Server(serverHandle)
     time.sleep(5)
-    if(os.path.exists("./attributesAcl/SRCH2Cluster")):
-        shutil.rmtree("./attributesAcl/SRCH2Cluster")
+    
     if(os.path.exists("./SRCH2Cluster")):
         shutil.rmtree("./SRCH2Cluster")
+    
+    confFiles = ['./attributesAcl/config/conf-test2-nodeA.xml', './attributesAcl/config/conf-test2-nodeB.xml', './attributesAcl/config/conf-test2-nodeC.xml']
+    serverHandle = startCluster(binary_path, confFiles, NullDeviceFd);
+    while checkIfNodeReady(3) == False:
+        print ' cluster is not ready ...waiting'
+        time.sleep(10)
+    print 'load balancing  ...waiting'
+    time.sleep(80)
+    loadInitialData(currDir + '/attributesAcl/stackoverflow/stackoverflow-data-100.json', 'stackoverflow')
+    loadInitialData(currDir + '/attributesAcl/worldbank/world_bank.json', 'worldbank')
+    loadAcl(currDir + '/attributesAcl/stackoverflow/acl-stackoverflow.json', 'stackoverflow')
+    loadAcl(currDir + '/attributesAcl/worldbank/acl-worldbank.json', 'worldbank')
+    time.sleep(60)  # let the merge happen    
+    print '-------------------------------------------------'
+    queriesAndResultsPath = './attributesAcl/testCasesMultiCore.txt'
+    try:
+        exitCode |= test(queriesAndResultsPath)
+    except :
+        print("-"*60)
+        traceback.print_exc(file=sys.stdout)
+        print("-"*60)
+        exitCode = 1
+    test_lib.kill9Server(serverHandle)
+    time.sleep(5)
+    
+    if(os.path.exists("./SRCH2Cluster")):
+        shutil.rmtree("./SRCH2Cluster")
+
+	confFiles = [ './attributesAcl/config/conf-test3-nodeA.xml', './attributesAcl/config/conf-test3-nodeB.xml', './attributesAcl/config/conf-test3-nodeC.xml' ]    
+    serverHandle = startCluster(binary_path, confFiles , NullDeviceFd);
+    while checkIfNodeReady(3) == False:
+        print ' cluster is not ready ...waiting'
+        time.sleep(10)
+    print 'load balancing  ...waiting'
+    time.sleep(70)
+    loadInitialData(currDir + '/attributesAcl/worldbank/world_bank.json')
+    loadAcl(currDir + '/attributesAcl/test3-acl.json')
+    #os._exit(exitCode)
+    print '-------------------------------------------------'
+    time.sleep(20)  # let the merge happen    
+    queriesAndResultsPath = './attributesAcl/testCasesFilterSortFacetQuery.txt'
+    try:
+        exitCode |= test(queriesAndResultsPath)
+    except Exception as e:
+        print("-"*60)
+        traceback.print_exc(file=sys.stdout)
+        print("-"*60)
+        exitCode = 1
+    test_lib.kill9Server(serverHandle)
+    time.sleep(5)
+
+    if(os.path.exists("./SRCH2Cluster")):
+        shutil.rmtree("./SRCH2Cluster")
+    
+    confFiles = ['./attributesAcl/config/conf-test4-nodeA.xml', './attributesAcl/config/conf-test4-nodeB.xml', './attributesAcl/config/conf-test4-nodeC.xml' ]
+    serverHandle = startCluster(binary_path, confFiles, NullDeviceFd);
+    while checkIfNodeReady(3) == False:
+        print ' cluster is not ready ...waiting'
+        time.sleep(10)
+    print 'load balancing  ...waiting'
+    time.sleep(70)
+    loadInitialData(currDir + '/attributesAcl//test4-data.json')
+    loadAcl(currDir + '/attributesAcl/test4-acl.json')
+    print '-------------------------------------------------'
+    time.sleep(20)  # let the merge happen    
     queriesAndResultsPath = './attributesAcl/testCasesFilterSortFacetQueryWithSwitch.txt'
-    exitCode |= test(queriesAndResultsPath, binary_path , './attributesAcl/conf3.xml')
+    try:
+        exitCode |= test(queriesAndResultsPath)
+    except Exception as e:
+        print("-"*60)
+        traceback.print_exc(file=sys.stdout)
+        print("-"*60)
+        exitCode = 1
+    test_lib.kill9Server(serverHandle)
+    if NullDeviceFd:
+        NullDeviceFd.close()
     os._exit(exitCode)
 

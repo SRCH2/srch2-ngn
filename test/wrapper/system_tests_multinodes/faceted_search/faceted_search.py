@@ -109,11 +109,15 @@ def prepareQuery(queryKeywords, facetedFields):
 
 def testFacetedSearch(f_in , f_facet, binary_path):
     # Start the engine server
-    args = [ binary_path, './faceted_search/conf.xml', './faceted_search/conf-A.xml','./faceted_search/conf-B.xml' ]
+    args = [ binary_path, './faceted_search/conf-1.xml', './faceted_search/conf-2.xml','./faceted_search/conf-3.xml' ]
 
     serverHandle = test_lib.startServer(args)
     if serverHandle == None:
         return -1
+
+    #Load initial data
+    dataFile = './faceted_search/newData.json'
+    test_lib.loadIntialData(dataFile)
 
     #parse used to extract facet fields from input
     facet_parser= argparse.ArgumentParser()

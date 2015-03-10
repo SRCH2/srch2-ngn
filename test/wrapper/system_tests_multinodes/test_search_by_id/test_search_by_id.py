@@ -57,6 +57,10 @@ def testNewFeatures( binary_path):
     if serverHandle == None:
         return -1
 
+    #Load initial data
+    dataFile = './test_search_by_id/sample-data.json'
+    test_lib.loadIntialData(dataFile)
+
     ## first look for id=2
     print "#1: search for id=2 and should find it"
     query = 'docid=2'    

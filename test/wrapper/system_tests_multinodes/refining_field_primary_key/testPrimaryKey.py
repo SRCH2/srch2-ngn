@@ -71,11 +71,15 @@ def prepareQuery(queryKeywords):
 
 def testRefiningPrimaryKey(queriesAndResultsPath, binary_path):
     #Start the engine server
-    args = [ binary_path, './refining_field_primary_key/conf.xml','./refining_field_primary_key/conf-A.xml' ,'./refining_field_primary_key/conf-B.xml'  ]
+    args = [ binary_path, './refining_field_primary_key/conf-A.xml','./refining_field_primary_key/conf-B.xml' ,'./refining_field_primary_key/conf-C.xml'  ]
 
     serverHandle = test_lib.startServer(args)
     if serverHandle == None:
         return -1
+
+    #Load initial data
+    dataFile = './refining_field_primary_key/data.json'
+    test_lib.loadIntialData(dataFile)
 
     #construct the query
     failCount = 0
@@ -99,10 +103,15 @@ def testRefiningPrimaryKey(queriesAndResultsPath, binary_path):
 
 def testSearchablePrimaryKey(queriesAndResultsPath, binary_path):
     #Start the engine server
-    args = [ binary_path, './refining_field_primary_key/conf1.xml','./refining_field_primary_key/conf1-A.xml','./refining_field_primary_key/conf1-B.xml' ]
+    args = [ binary_path, './refining_field_primary_key/conf-1.xml','./refining_field_primary_key/conf-2.xml','./refining_field_primary_key/conf-3.xml' ]
 
-    print 'starting engine: ' + args[0] + ' ' + args[1]
     serverHandle = test_lib.startServer(args)
+    if serverHandle == None:
+        return -1
+
+    #Load initial data
+    dataFile = './refining_field_primary_key/data.json'
+    test_lib.loadIntialData(dataFile)
 
     #construct the query
     failCount = 0

@@ -255,6 +255,290 @@ sleep 3
 rm -fr SRCH2Cluster
 test_case "empty record boost field" "python ./empty_recordBoostField/empty_recordBoostField.py $SRCH2_ENGINE ./empty_recordBoostField/queriesAndResults.txt"
 
+sleep 3
+rm -fr SRCH2Cluster
+test_case "refining attribute type" "python ./refining_attr_type/refining_attr_type.py $SRCH2_ENGINE"
+
+sleep 3
+rm -fr SRCH2Cluster
+test_case "empty_index" "python ./empty_index/empty_index.py $SRCH2_ENGINE"
+
+sleep 3
+rm -fr SRCH2Cluster
+test_case "authorization" "python ./authorization/authorization-2node.py $SRCH2_ENGINE ./authorization/queriesAndResults.txt"
+
+sleep 3
+rm -fr SRCH2Cluster
+test_case "fuzzy_Attribute_Based_Search_Geo" "python ./fuzzy_attribute_based_search_geo/fuzzy_Attribute_Based_Search_Geo.py $SRCH2_ENGINE ./fuzzy_attribute_based_search_geo/queriesAndResults.txt"
+
+sleep 3
+rm -fr SRCH2Cluster
+test_case "run engine with missing parameters from config file" "python ./missing_parameters_from_cm/missingParameters_config.py $SRCH2_ENGINE ./missing_parameters_from_cm/queriesAndResults.txt"
+
+sleep 3
+rm -fr SRCH2Cluster
+test_case "term type" "python ./term_type/term_type.py $SRCH2_ENGINE ./term_type/queriesAndResults.txt"
+
+sleep 3
+rm -fr SRCH2Cluster
+test_case "test field list parameter in query" "python ./test_fieldList_inQuery/test_fieldList.py $SRCH2_ENGINE ./test_fieldList_inQuery/queriesAndResults.txt"
+
+sleep 3
+rm -fr SRCH2Cluster
+test_case "test loading different schema" "python ./test_load_diff_schema/test_load_diff_schema.py $SRCH2_ENGINE"
+
+sleep 3
+rm -fr SRCH2Cluster
+test_case "test_search_by_id" "python ./test_search_by_id/test_search_by_id.py $SRCH2_ENGINE" 
+
+#TODO: Config file is not set correctly
+sleep 3
+rm -fr ./multicore/SRCH2Cluster
+rm -f ./multicore/core?/*.idx ./multicore/core?/srch2-log.txt
+test_case "multicore" "python ./multicore/multicore.py $SRCH2_ENGINE ./multicore/queriesAndResults.txt ./multicore/queriesAndResults2.txt"
+rm -rf data/ multicore/core?/*.idx
+
+# Failed
+sleep 3
+rm -rf ./data/feedback/*
+test_case "User feedback" "python ./feedback/testProgram.py $SRCH2_ENGINE"
+
+# Failed
+sleep 3
+rm -fr SRCH2Cluster
+test_case "fuzzy_M1" "python ./fuzzy_m1/fuzzy_M1.py $SRCH2_ENGINE ./fuzzy_m1/queriesAndResults.txt"
+
+# Core dump
+sleep 3
+rm -fr SRCH2Cluster
+test_case "date and time implementation" "python ./date_time_new_features_test/date_time_new_features_test.py $SRCH2_ENGINE ./date_time_new_features_test/queriesAndResults.txt"
+
+# Failed
+sleep 3
+rm -fr SRCH2Cluster
+test_case "analyzer end to end" "python ./analyzer_exact_a1/analyzer_exact_A1.py $SRCH2_ENGINE ./analyzer_exact_a1/queriesAndResults.txt"
+
+# Failed
+sleep 3
+rm -fr SRCH2Cluster
+test_case "fuzzy_Attribute_Based_Search" "python ./fuzzy_attribute_based_search/fuzzy_Attribute_Based_Search.py $SRCH2_ENGINE ./fuzzy_attribute_based_search/queriesAndResults.txt"
+
+# Failed jamshid https://srch2inc.atlassian.net/browse/SRCN-500
+sleep 3
+rm -fr SRCH2Cluster
+test_case "faceted search" "python ./faceted_search/faceted_search.py '--srch' $SRCH2_ENGINE '--qryNrslt' ./faceted_search/queriesAndResults.txt '--frslt' ./faceted_search/facetResults.txt"
+
+# Assert failed
+sleep 3
+rm -fr SRCH2Cluster
+test_case "test Chinese" "python ./chinese/chinese_analyzer.py $SRCH2_ENGINE"
+
+# Assert failed
+sleep 3
+test_case "test query parser split" "python query_parser_split/query_parser_split.py $SRCH2_ENGINE query_parser_split/queryResults.txt"
+
+# Failed, No datasource found
+sleep 3
+rm -fr SRCH2Cluster
+rm ./attributesAcl/stackoverflow/indexes/*
+rm ./attributesAcl/worldbank/indexes/*
+test_case "attributes ACL" "python ./attributesAcl/testProgram.py $SRCH2_ENGINE"
+
+# Failed, No datasource found
+sleep 3
+rm -fr SRCH2Cluster
+rm -rf access_control/*Data
+test_case "record-based-ACL" "python ./recordAcl/record-based-ACL.py $SRCH2_ENGINE ./recordAcl/queriesAndResults.txt"
+
+# Failed, No datasource found
+sleep 3
+rm -fr SRCH2Cluster
+test_case "reassignid-during-delete" " python reassignid-during-delete/reassignid-during-delete.py $SRCH2_ENGINE reassignid-during-delete/stackoverflow-100.json"
+
+# qf disabled for now - will fail until we integrate with Jamshid's boolean expression changes
+test_case "qf_dynamic_ranking" "python ./qf_dynamic_ranking/qf_dynamic_ranking.py $SRCH2_ENGINE ./qf_dynamic_ranking/queriesAndResults.txt"
+#printTestBanner "$test_id"
+
+# Failed
+sleep 3
+rm -fr SRCH2Cluster
+test_case "primary key - refining field" "python ./refining_field_primary_key/testPrimaryKey.py $SRCH2_ENGINE ./refining_field_primary_key/queriesAndResults.txt"
+
+# Failed
+sleep 3
+rm -fr SRCH2Cluster
+#test_case "validate json response" "python ./json_response/json_response_format_test.py $SRCH2_ENGINE"
+
+# Failed, jamshid https://srch2inc.atlassian.net/browse/SRCN-501
+sleep 3
+rm -fr SRCH2Cluster
+test_case "filter query" "python ./filter_query/filter_query.py $SRCH2_ENGINE ./filter_query/queriesAndResults.txt ./filter_query/facetResults.txt"
+
+# Failed
+sleep 3
+rm -fr SRCH2Cluster
+test_case "exact_Attribute_Based_Search_Geo" "python ./exact_attribute_based_search_geo/exact_Attribute_Based_Search_Geo.py $SRCH2_ENGINE ./exact_attribute_based_search_geo/queriesAndResults.txt"
+
+# Failed
+sleep 3
+rm -fr SRCH2Cluster
+test_case "positional ranking in phrase search" "python ./positionalRanking_phraseSearch/positionalRanking.py $SRCH2_ENGINE ./positionalRanking_phraseSearch/queries.txt"
+
+# Failed, jamshid, https://srch2inc.atlassian.net/browse/SRCN-499
+sleep 3
+rm -fr SRCH2Cluster
+test_case "multi valued attribute" "python ./test_multi_valued_attributes/test_multi_valued_attributes.py '--srch2' $SRCH2_ENGINE '--qryNrslt' \
+./test_multi_valued_attributes/queriesAndResults.txt '--frslt' ./test_multi_valued_attributes/facetResults.txt"
+
+# Failed
+sleep 3
+rm -fr SRCH2Cluster
+test_case "exact_Attribute_Based_Search" "python ./exact_attribute_based_search/exact_Attribute_Based_Search.py $SRCH2_ENGINE ./exact_attribute_based_search/queriesAndResults.txt"
+
+# Failed
+sleep 3
+rm -fr SRCH2Cluster
+test_case "save_shutdown_restart" "python ./save_shutdown_restart_test/save_shutdown_restart_test.py $SRCH2_ENGINE" 
+
+# Failed
+sleep 3
+rm -fr SRCH2Cluster
+rm -fr reset_logger/SRCH2Cluster
+rm -fr reset_logger/logs
+test_case "reset logger" "python ./reset_logger/test_reset_logger.py $SRCH2_ENGINE"
+rm -rf data/ *.idx reset_logger/indexes
+
+# Failed, index folder changed
+sleep 3
+rm -fr SRCH2Cluster
+test_case "test trie shrinking" " python ./shrinking_trie/shrinking_trie.py $SRCH2_ENGINE"
+
+#TODO: failed, jamshid, https://srch2inc.atlassian.net/browse/SRCN-510
+sleep 4
+rm -fr SRCH2Cluster
+test_case "test_solr_compatible_query_syntax" "python ./test_solr_compatible_query_syntax/test_solr_compatible_query_syntax.py $SRCH2_ENGINE \
+    ./test_solr_compatible_query_syntax/queriesAndResults.txt ./test_solr_compatible_query_syntax/facetResults.txt"
+
+#TODO: Failed. surendra https://srch2inc.atlassian.net/browse/SRCN-498
+#Only start 1 node
+sleep 3
+rm -fr SRCH2Cluster
+#test_case "synonyms" "python ./synonyms/synonyms.py $SRCH2_ENGINE" 
+
+#TODO: Failed, surendra, https://srch2inc.atlassian.net/browse/SRCN-497
+#Only start 1 node
+sleep 3
+rm -fr SRCH2Cluster
+#test_case "highlighter" "python ./highlight/highlight.py $SRCH2_ENGINE ./highlight/queries.txt"
+
+#TODO: failed, Jamshid, https://srch2inc.atlassian.net/browse/SRCN-513
+sleep 3
+rm -fr SRCH2Cluster
+test_case "sort filter" "python ./sort_filter/sort_filter.py $SRCH2_ENGINE ./sort_filter/queriesAndResults.txt ./sort_filter/facetResults.txt" 
+
+#TODO: failed, surendra, https://srch2inc.atlassian.net/browse/SRCN-502
+sleep 3
+rm -fr SRCH2Cluster
+rm -fr upsert_batch/SRCH2Cluster
+test_case "batch upsert" "python ./upsert_batch/test_upsert_batch.py $SRCH2_ENGINE" 
+rm -rf data/ *.idx upsert_batch/indexes upsert_batch/*.idx upsert_batch/indexes/*.idx
+
+#TODO: failed
+sleep 3
+rm -fr SRCH2Cluster
+rm -fr upsert_batch/SRCH2Cluster
+test_case "batch insert" "python ./upsert_batch/test_insert_batch.py $SRCH2_ENGINE"
+rm -rf data/ upsert_batch/*.idx upsert_batch/indexes/*.idx
+
+#TODO: failed
+sleep 3
+rm -fr SRCH2Cluster
+rm -f ./multiport/core?/*.idx ./multiport/core?/srch2-log.txt
+test_case "multiport" "python ./multiport/multiport.py $SRCH2_ENGINE ./multiport/queriesAndResults.txt"
+rm -rf data/ multiport/core?/*.idx
+
+#TODO: failed
+#Only start 1 node
+sleep 3
+rm -fr SRCH2Cluster
+#test_case "heart_beat_test"  "python ./heartbeat/heart_beat.py $SRCH2_ENGINE"
+
+
+
+#TODO: disabled for now
+#sleep 3
+#test_case "adapter_mysql" "python ./adapter_mysql/adapter_mysql.py $SRCH2_ENGINE \
+#    ./adapter_sqlite/testCreateIndexes_sql.txt ./adapter_sqlite/testCreateIndexes.txt \
+#    ./adapter_sqlite/testRunListener_sql.txt ./adapter_sqlite/testRunListener.txt \
+#    ./adapter_sqlite/testOfflineLog_sql.txt ./adapter_sqlite/testOfflineLog.txt" \
+#    255 "-- SKIPPED: Cannot connect to the MySQL. Check if MySQL is installed and the account info is correct in the conf.xml."
+
+#sleep 3
+#test_case "adapter_mysql_recover" "python ./adapter_mysql/adapter_mysql_recover.py $SRCH2_ENGINE \
+#    ./adapter_sqlite/testCreateIndexes_sql.txt ./adapter_sqlite/testCreateIndexes.txt \
+#    ./adapter_sqlite/testRunListener_sql.txt ./adapter_sqlite/testRunListener.txt \
+#    ./adapter_sqlite/testOfflineLog_sql.txt ./adapter_sqlite/testOfflineLog.txt" \
+#    255 "-- SKIPPED: Cannot connect to the MySQL. Check if MySQL is installed and the account info is correct in the conf.xml."
+
+#sleep 3
+
+#test_case "adapter_sqlite" "python ./adapter_sqlite/adapter_sqlite.py $SRCH2_ENGINE \
+#    ./adapter_sqlite/testCreateIndexes_sql.txt ./adapter_sqlite/testCreateIndexes.txt \
+#    ./adapter_sqlite/testRunListener_sql.txt ./adapter_sqlite/testRunListener.txt \
+#    ./adapter_sqlite/testOfflineLog_sql.txt ./adapter_sqlite/testOfflineLog.txt" \
+#    255 "-- SKIPPED: Cannot connect to the Sqlite. Check if sqlite3 is installed."
+
+#sleep 3
+
+#test_case "adapter_sqlite_recover" "python ./adapter_sqlite/adapter_sqlite_recover.py $SRCH2_ENGINE \
+#    ./adapter_sqlite/testCreateIndexes_sql.txt ./adapter_sqlite/testCreateIndexes.txt \
+#    ./adapter_sqlite/testRunListener_sql.txt ./adapter_sqlite/testRunListener.txt \
+#    ./adapter_sqlite/testOfflineLog_sql.txt ./adapter_sqlite/testOfflineLog.txt" \
+#    255 "-- SKIPPED: Cannot connect to the Sqlite. Check if sqlite3 is installed."
+
+
+#sleep 3
+
+#test_case "adapter_sqlserver" "python ./adapter_sqlserver/adapter_sqlserver.py $SRCH2_ENGINE \
+#    ./adapter_sqlserver/testCreateIndexes_sql.txt ./adapter_sqlite/testCreateIndexes.txt \
+#    ./adapter_sqlite/testRunListener_sql.txt ./adapter_sqlite/testRunListener.txt \
+#    ./adapter_sqlite/testOfflineLog_sql.txt ./adapter_sqlite/testOfflineLog.txt" \
+#    255 "-- SKIPPED: Cannot connect to the SQL Server. Check if SQL Server driver is installed and the account info is correct in the conf.xml."
+
+#sleep 3
+
+#test_case "adapter_sqlserver_recover" "python ./adapter_sqlserver/adapter_sqlserver_recover.py $SRCH2_ENGINE \
+#    ./adapter_sqlserver/testCreateIndexes_sql.txt ./adapter_sqlite/testCreateIndexes.txt \
+#    ./adapter_sqlite/testRunListener_sql.txt ./adapter_sqlite/testRunListener.txt \
+#    ./adapter_sqlite/testOfflineLog_sql.txt ./adapter_sqlite/testOfflineLog.txt" \
+#    255 "-- SKIPPED: Cannot connect to the SQL Server. Check if SQL Server driver is installed and the account info is correct in the conf.xml."
+
+# The following cases may not run on Mac, so we put them to the end
+#
+#if [ $os != "$macName" ];then
+#    test_case "high_insert" "./high_insert_test/autotest.sh $SRCH2_ENGINE" 
+#else
+#    echo "-- IGNORING high_insert test on $macName" >> ${output}
+#fi
+
+#sleep 3
+#rm -fr SRCH2Cluster
+#test_case "adapter_mongo" "python ./adapter_mongo/adapter_mongo.py $SRCH2_ENGINE \
+#    ./adapter_mongo/testCreateIndexes_sql.txt ./adapter_mongo/testCreateIndexes.txt \
+#    ./adapter_mongo/testRunListener_sql.txt ./adapter_mongo/testRunListener.txt \
+#    ./adapter_mongo/testOfflineLog_sql.txt ./adapter_mongo/testOfflineLog.txt" \
+#    255 "-- SKIPPED: Cannot connect to the MongoDB. \
+#    Check instructions in the file db_connectors/mongo/readme.txt. "
+
+#sleep 3
+#rm -fr SRCH2Cluster
+#test_case "adapter_mongo_recover" "python ./adapter_mongo/adapter_mongo_recover.py  $SRCH2_ENGINE \
+#    ./adapter_mongo/testCreateIndexes_sql.txt ./adapter_mongo/testCreateIndexes.txt \
+#    ./adapter_mongo/testRunListener_sql.txt ./adapter_mongo/testRunListener.txt \
+#    ./adapter_mongo/testOfflineLog_sql.txt ./adapter_mongo/testOfflineLog.txt" \
+#    255 "-- SKIPPED: Cannot connect to the MongoDB. \
+#    Check instructions in the file db_connectors/mongo/readme.txt. "
+
 # server is a little slow to exit for reset_logger, causing the server in statemedia's first test (write_correctness)
 # to fail to bind the port, hanging the test script, so wait just a sec here
 #sleep 2

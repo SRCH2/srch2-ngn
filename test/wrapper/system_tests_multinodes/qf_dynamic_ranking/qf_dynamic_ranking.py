@@ -106,11 +106,15 @@ def prepareQuery(queryKeywords, boostValue):
 
 def testQF(queriesAndResultsPath, binary_path):
     #Start the engine server
-    args = [ binary_path, '--config-file=./qf_dynamic_ranking/conf.xml' ]
+    args = [ binary_path, './qf_dynamic_ranking/conf-1.xml', './qf_dynamic_ranking/conf-2.xml', './qf_dynamic_ranking/conf-3.xml']
 
     serverHandle = test_lib.startServer(args)
     if serverHandle == None:
         return -1
+
+    #Load initial data
+    dataFile = './qf_dynamic_ranking/data.json'
+    test_lib.loadIntialData(dataFile)
 
     #construct the query
     failCount = 0

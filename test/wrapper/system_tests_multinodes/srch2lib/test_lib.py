@@ -268,6 +268,20 @@ def insertRequest(record, coreName = ''):
     except urllib2.HTTPError as e:
         return json.loads(e.read())
 
+#Send insert request to the engine with Oauth
+#return the response in json format
+def insertRequestWithOauth(record, oauth, coreName = ''):
+    hostUrl = getHostUrl(coreName)
+    url = hostUrl + '/docs?OAuth=' + oauth
+    try:
+        opener = urllib2.build_opener(urllib2.HTTPHandler)
+        request = urllib2.Request(url, record)
+        request.get_method = lambda: 'PUT'
+        #printLog('query : ' + str(url) + ' record : ' + str(record))
+        return json.loads( opener.open(request).read())
+    except urllib2.HTTPError as e:
+        return json.loads(e.read())
+
 #Send update request to the engine
 #return the response in json format
 def updateRequeset(record, coreName = ''):

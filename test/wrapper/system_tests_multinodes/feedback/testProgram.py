@@ -1,13 +1,15 @@
 # Automated test script to start engine, fire queries and verify results
 # This test case tests feedback ranking by sending a record as a feedback for a query
 # and then verifying whether the record is ranked higher for the same query in a next search.
+# Number of nodes : 3 , Primary shards = 4 , replica = 2
 #
 import sys, urllib2, json, time, subprocess, os, commands, signal
 
 sys.path.insert(0, 'srch2lib')
 import test_lib
 
-port = '8087'
+# port at index i belong to node i
+NodeExternalPorts = ['8087', '8088', '8089']
 
 greenColor = "\x1B[32;40m"
 redColor = "\x1B[31;40m"
@@ -63,15 +65,16 @@ def prepareQuery(queryKeywords):
         else:
             query=query+queryKeywords[i]+'%20AND%20'
     return query
-    
-def test(queriesAndResultsPath, binary_path, configFilePath):
+
+#setup cluster 
+def startCluster(binary_path, configFilePaths):
     #Start the engine server
-    args = [ binary_path, '--config-file=' + configFilePath]
+    args = [ binary_path] + configFilePaths 
+    print 'starting engines: '
+    serverHandles = test_lib.startServer(args)
+    return serverHandles
 
-    print 'starting engine: ' + args[0] + ' ' + args[1]
-    serverHandle = test_lib.startServer(args)
-
-    #test_lib.pingServer(port, 'q=garbage', 30)
+def runTest(queriesAndResultsPath):
 
     #construct the query
     failCount = 0
@@ -85,19 +88,24 @@ def test(queriesAndResultsPath, binary_path, configFilePath):
             continue
         #get the query keyword and results
         value=line.split('||')
-        if len(value) < 2:
+        if len(value) < 3:
             continue # ignore bad line
+
+        nodeToSendReq = int(value[1])  # 0 , 1 , 2 etc
+        assert nodeToSendReq < len(NodeExternalPorts)
+        port = NodeExternalPorts[nodeToSendReq]
+
         if value[0] == 'W':
             # sleep between test cases for merge process to finish.
             sleepTime = value[1]
             time.sleep(float(sleepTime))
         elif value[0] == 'C':
             # the line is command query (feedback)
-            command = value[1]
-            payload = value[2]
+            command = value[2]
+            payload = value[3]
             coreName = ''
-            if len(value) > 3:
-                coreName = value[3].strip('\n').strip()
+            if len(value) > 4:
+                coreName = value[4].strip('\n').strip()
 
             if coreName == "":
                 query='http://localhost:' + port + '/' + command
@@ -116,11 +124,11 @@ def test(queriesAndResultsPath, binary_path, configFilePath):
             time.sleep(1)
         else:
             # the line is a search query
-            queryValue=value[1].split()
-            resultValue=(value[2]).split()
+            queryValue=value[2].split()
+            resultValue=(value[3]).split()
             coreName = ''
-            if len(value) > 3:
-                coreName = value[3].strip('\n').strip()
+            if len(value) > 4:
+                coreName = value[4].strip('\n').strip()
 
             #construct the query
             if coreName == '':
@@ -136,13 +144,37 @@ def test(queriesAndResultsPath, binary_path, configFilePath):
             #check the result
             failCount += checkResult(query, response_json['results'], resultValue )
 
-    test_lib.killServer(serverHandle)
     print '=============================='
     return failCount
 
+def loadIntialData(dataFile):
+    f = open(dataFile)
+    records  = f.readlines()
+    f.close()
+    for rec in records:
+        print '-------------------------------------------------'
+        response = test_lib.insertRequest(rec)
+        print response
+    return
+
 if __name__ == '__main__':      
     binary_path = sys.argv[1]
+    #1. Start cluster
+    serverHandleList = startCluster(binary_path , ['./feedback/conf-1.xml', './feedback/conf-2.xml', './feedback/conf-3.xml'])
+
+    #2. Load initial data
+    dataFile = './feedback/data.json'
+    loadIntialData(dataFile)
+    print ' ********   waiting for merge to finish ********* '
+    time.sleep(20)
+    print ' ********     Running Test cases   ********* '
     queriesAndResultsPath = './feedback/testCases.txt'
-    exitCode = test(queriesAndResultsPath, binary_path , './feedback/conf.xml')
+    exitCode = 0
+    #3. Run test cases
+    try:
+        exitCode = runTest(queriesAndResultsPath)
+    except:
+        exitCode = 1
+    test_lib.kill9Server(serverHandleList)
     os._exit(exitCode)
 

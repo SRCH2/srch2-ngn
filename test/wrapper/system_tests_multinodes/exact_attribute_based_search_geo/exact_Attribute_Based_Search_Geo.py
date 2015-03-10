@@ -73,11 +73,15 @@ def prepareQuery(queryKeywords,ct_lat,ct_long,ct_radius):
 
 def testExactAttributeBasedSearchGeo(queriesAndResultsPath, binary_path):
     # Start the engine server
-    args = [ binary_path, './exact_attribute_based_search_geo/conf.xml', './exact_attribute_based_search_geo/conf-A.xml', './exact_attribute_based_search_geo/conf-B.xml']
+    args = [ binary_path, './exact_attribute_based_search_geo/conf-1.xml', './exact_attribute_based_search_geo/conf-2.xml', './exact_attribute_based_search_geo/conf-3.xml']
 
     serverHandle = test_lib.startServer(args)
     if serverHandle == None:
         return -1
+
+    #Load initial data
+    dataFile = './exact_attribute_based_search_geo/data.json'
+    test_lib.loadIntialData(dataFile)
 
     #construct the query
     failCount = 0

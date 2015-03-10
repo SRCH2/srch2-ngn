@@ -89,6 +89,10 @@ def testNewFeatures(queriesAndResultsPath,facetResultsPath, binary_path):
     if serverHandle == None:
         return -1
 
+    #Load initial data
+    dataFile = './test_solr_compatible_query_syntax/sample-data.json'
+    test_lib.loadIntialData(dataFile)
+
     # get facet correct result from file
     f_facet = open(facetResultsPath , 'r')
     facetResultValue = []

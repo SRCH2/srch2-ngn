@@ -245,9 +245,14 @@ def testShutDownResponds():
 if __name__ == '__main__':
     binary_path = sys.argv[1]
 
-    serverHandle = test_lib.startServer([binary_path, './json_response/conf.xml','./json_response/conf-A.xml','./json_response/conf-B.xml']) 
+    serverHandle = test_lib.startServer([binary_path, './json_response/conf-1.xml','./json_response/conf-2.xml','./json_response/conf-3.xml']) 
     if serverHandle == None:
         os._exit(-1)
+
+    #Load initial data
+    dataFile = './exact_a1/data.json'
+    test_lib.loadIntialData(dataFile)
+
     exit_code = 0;
     try :
         if  testSearchResponds() and \

@@ -7,8 +7,6 @@ import sys, urllib2, json, time, subprocess, os, commands, signal
 sys.path.insert(0, 'srch2lib')
 import test_lib
 
-port = '8087'
-
 #Function of checking the results
 def checkResult(query, responseJson,resultValue):
 #    for key, value in responseJson:
@@ -73,6 +71,10 @@ def testFieldList(queriesAndResultsPath, args):
     serverHandle = test_lib.startServer(args)
     if serverHandle == None:
         return -1
+
+    #Load initial data
+    dataFile = './test_fieldList_inQuery/data.json'
+    test_lib.loadIntialData(dataFile)
 
     #construct the query
     failCount = 0

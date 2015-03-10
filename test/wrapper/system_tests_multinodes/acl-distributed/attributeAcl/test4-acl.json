@@ -1,3 +1,0 @@
-#acl for world-bank data
-# role-value , attributes,
-{ "attributes": ["balance", "eyeColor", "age" ], "roleId": ["superman"]}

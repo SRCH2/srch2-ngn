@@ -15,6 +15,9 @@ class logTester():
         self.serverHandle = test_lib.startServer(self.args);
         if self.serverHandle == None:
             return -1
+        #Load initial data
+        dataFile = './reset_logger/stack-overflow-sample.json'
+        test_lib.loadIntialData(dataFile)
 
     #fire a single query
     def fireQuery(self, query):

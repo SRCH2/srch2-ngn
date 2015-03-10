@@ -6,6 +6,24 @@
 -->
  
 <config>
+    <cluster-name>SRCH2Cluster</cluster-name>
+
+    <node-name>node1</node-name>
+    
+    <discovery>
+        <ping-interval>2</ping-interval>
+        <ping-timeout>8</ping-timeout>
+        <retry-count>10</retry-count>
+    </discovery>
+    <transport>
+        <port>4095</port>
+        <ipaddress>127.0.0.1</ipaddress>
+    </transport>
+    <listeningHostname>127.0.0.1</listeningHostname>
+    <listeningPort>8087</listeningPort>
+    <core-number_of_shards>4</core-number_of_shards>
+    <core-number_of_replicas>2</core-number_of_replicas>
+
     <srch2Home>./</srch2Home>
   
     <licenseFile>../conf/srch2_license_key.txt</licenseFile>
@@ -16,14 +34,6 @@
          
         Hostname and port number of the server. Make sure the port is open.
     -->
-    <listeningHostname>127.0.0.1</listeningHostname>
-    <listeningPort>8087</listeningPort>
-    <transport>
-        <port>4001</port>
-        <ipaddress>127.0.0.1</ipaddress>
-    </transport>
-    <wellknownhosts>127.0.0.1:54000</wellknownhosts>
-    <node-name>node-with-data</node-name>
  
     <!--
         Index Directoy Path
@@ -41,7 +51,6 @@
         Path for a data file to be loaded. The file must be in the json format.
         REQUIRED, when "index-load-or-create" is set to 0.
     -->
-    <dataFile>./test_fieldList_inQuery/data.json</dataFile>
      
     <!--
 	Maximum Number of Threads
@@ -274,7 +283,7 @@
             The number of write operations after which newly inserted/deleted records are merged into the indexes.
         -->
         <mergePolicy>
-          <mergeEveryNSeconds>10</mergeEveryNSeconds>
+          <mergeEveryNSeconds>2</mergeEveryNSeconds>
           <mergeEveryMWrites>100</mergeEveryMWrites>
         </mergePolicy>
               

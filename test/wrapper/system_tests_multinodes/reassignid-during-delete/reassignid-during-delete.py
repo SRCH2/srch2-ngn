@@ -9,42 +9,26 @@ import sys, urllib2, json, os, shutil
 sys.path.insert(0, 'srch2lib')
 import test_lib
 
-port = '7049'
-
 #add an record
 def addRecord(record):
-    addQuery='http://localhost:' + str(port) + '/docs'
-    try:
-        opener = urllib2.build_opener(urllib2.HTTPHandler)
-        request = urllib2.Request(addQuery, record)
-        request.get_method = lambda: 'PUT'
-        return json.loads( opener.open(request).read())
-    except urllib2.HTTPError as e:
-        return json.loads(e.read())
+    test_lib.insertRequest(record)
 
 #delete an record
 def deleteRecord(id):
-    deleteQuery='http://localhost:' + str(port) + '/docs?id='+id
-    try:
-        opener = urllib2.build_opener(urllib2.HTTPHandler)
-        request = urllib2.Request(deleteQuery, '')
-        request.get_method = lambda: 'DELETE'
-        return json.loads(opener.open(request).read())
-    except urllib2.HTTPError as e:
-        return json.loads(e.read())
+    test_lib.deleteRequest('id='+id)
 
 def testReassignId(binary_path,jsonRecordsPath):
     #Start the engine server
-    args = [ binary_path, '--config-file=./reassignid-during-delete/srch2-config.xml' ]
+    args = [ binary_path, './reassignid-during-delete/conf-1.xml', './reassignid-during-delete/conf-2.xml', './reassignid-during-delete/conf-3.xml' ]
 
-    if test_lib.confirmPortAvailable(port) == False:
-        print 'Port ' + str(port) + ' already in use - aborting'
+    serverHandle = test_lib.startServer(args)
+    if serverHandle == None:
         return -1
 
-    print 'starting engine: ' + args[0] + ' ' + args[1]
-    serverHandle = test_lib.startServer(args)
+    #Load initial data
+    dataFile = './reassignid-during-delete/stackoverflow-100.json.json'
+    test_lib.loadIntialData(dataFile)
 
-    test_lib.pingServer(port)
     #load record
     f_test = open(jsonRecordsPath,'r')
     jsonRecords = json.loads(f_test.read())

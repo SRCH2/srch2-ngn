@@ -13,22 +13,21 @@ import test_lib
 reload(sys) #reload default decoder   
 sys.setdefaultencoding('utf-8') 
 
-port = '8087'
 totalFailCount = 0
 
 #Start the SRCH2 engine.
 def startSrch2Engine():
 	global serverHandle
 	#Start the engine server
-        args = [binary_path , '--config-file=query_parser_split/conf.xml']
+        args = [binary_path , './query_parser_split/conf-1.xml', './query_parser_split/conf-2.xml', './query_parser_split/conf-3.xml']
 
-        if test_lib.confirmPortAvailable(port) == False:
-                print 'Port' + str(port) + ' already in use -aborting '
-                return -1
+	serverHandle = test_lib.startServer(args)
+	if serverHandle == None:
+		return -1
 
-        print 'starting engine: ' + args[0] + ' ' + args[1]
-        serverHandle = test_lib.startServer(args)
-        test_lib.pingServer(port)
+	#Load initial data
+	dataFile = './query_parser_split/data.json'
+	test_lib.loadIntialData(dataFile)
 
 #Shut down the srch2 engine
 def shutdownSrch2Engine():
@@ -38,7 +37,7 @@ def shutdownSrch2Engine():
 
 #prepare the query based on the valid syntax
 def prepareQuery(queryKeywords):
-        query = 'http://localhost:' + port + '/search?'
+        query = ''
         # prepare the main query part
         query = query + 'q='
         # keywords section
@@ -66,11 +65,9 @@ def compareResults(testQueriesPath):
                 
                 #Construct the query
                 query = prepareQuery(queryValue)
-
+                response_json = test_lib.searchRequest(query)
                 #Execute the query
 		#print query
-                response = urllib2.urlopen(query).read()
-                response_json = json.loads(response)
 
                 #Check the result
                 failCount += checkResult(query, response_json['results'],resultValue)

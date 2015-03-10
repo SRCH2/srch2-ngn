@@ -8,11 +8,16 @@ import test_lib
 
 def testEmptyIndex(binary_path):
     #Start the engine server
-    args = [ binary_path, './empty_index/conf.xml', './empty_index/conf-A.xml', './empty_index/conf-B.xml' ]
+    args = [ binary_path, './empty_index/conf-1.xml', './empty_index/conf-2.xml', './empty_index/conf-3.xml' ]
 
     serverHandle = test_lib.startServer(args)
     if serverHandle == None:
         return -1
+
+    #Load initial data
+    dataFile = './empty_index/data.json'
+    test_lib.loadIntialData(dataFile)
+
     #add an record
     record = '{"id":"1234", "name":"Toy Story", "category":"shop"}'
     jsonResponse = test_lib.insertRequest(record)

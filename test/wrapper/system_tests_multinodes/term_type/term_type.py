@@ -76,6 +76,10 @@ def testTermType(queriesAndResultsPath, args):
 	if serverHandle == None:
 		return -1
 
+	#Load initial data
+	dataFile = './term_type/data.json'
+	test_lib.loadIntialData(dataFile)
+
 	#construct the query
 	failCount = 0
 	f_in = open(queriesAndResultsPath, 'r')
@@ -102,9 +106,9 @@ if __name__ == '__main__':
     binary_path = sys.argv[1]    
     queriesAndResultsPath = sys.argv[2]  
   
-    exitCode = testTermType(queriesAndResultsPath, [ binary_path, './term_type/conf.xml', './term_type/conf-A.xml', './term_type/conf-B.xml'])
+    exitCode = testTermType(queriesAndResultsPath, [ binary_path, './term_type/conf-1.xml', './term_type/conf-2.xml', './term_type/conf-3.xml'])
     time.sleep(5)
     print '--------Term type test  for attribute_based_search--------------'  
-    exitCode += testTermType(queriesAndResultsPath, [ binary_path, './term_type/conf_for_attribute_based_search.xml', './term_type/conf_for_attribute_based_search-A.xml', './term_type/conf_for_attribute_based_search-B.xml' ])
+    exitCode += testTermType(queriesAndResultsPath, [ binary_path, './term_type/conf_for_attribute_based_search-1.xml', './term_type/conf_for_attribute_based_search-2.xml', './term_type/conf_for_attribute_based_search-3.xml' ])
     os._exit(exitCode)
 

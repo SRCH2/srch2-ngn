@@ -74,9 +74,14 @@ if __name__ == '__main__':
     datadir = './data/chinese'
     if os.path.isdir(datadir): shutil.rmtree(datadir) 
 
-    serverHandle = test_lib.startServer([binary_path, './chinese/conf.xml','./chinese/conf-A.xml','./chinese/conf-B.xml'])
+    serverHandle = test_lib.startServer([binary_path, './chinese/conf-1.xml','./chinese/conf-2.xml','./chinese/conf-3.xml'])
     if serverHandle == None:
         os._exit(-1)
+
+    #Load initial data
+    dataFile = './chinese/data.json'
+    test_lib.loadIntialData(dataFile)
+
     exit_code = 0
 
     try:

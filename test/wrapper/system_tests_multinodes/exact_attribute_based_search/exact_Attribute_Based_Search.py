@@ -74,6 +74,10 @@ def testExactAttributeBasedSearch(queriesAndResultsPath, args):
     if serverHandle == None:
         return -1
 
+    #Load initial data
+    dataFile = './fuzzy_attribute_based_search/data.json'
+    test_lib.loadIntialData(dataFile)
+
     #construct the query
     failCount = 0
     f_in = open(queriesAndResultsPath, 'r')
@@ -100,10 +104,12 @@ if __name__ == '__main__':
     binary_path = sys.argv[1]
     queriesAndResultsPath = sys.argv[2]
 
-    args = [ binary_path, './exact_attribute_based_search/conf.xml', './exact_attribute_based_search/conf-A.xml', './exact_attribute_based_search/conf-B.xml']
+    args = [ binary_path, './exact_attribute_based_search/conf-1.xml', './exact_attribute_based_search/conf-2.xml', './exact_attribute_based_search/conf-3.xml']
+
     exitCode = testExactAttributeBasedSearch(queriesAndResultsPath, args)
     time.sleep(5) # give first server time to shutdown
-    args = [ binary_path, './exact_attribute_based_search/conf_w_positional_info.xml', './exact_attribute_based_search/conf_w_positional_info-A.xml', './exact_attribute_based_search/conf_w_positional_info-B.xml']
+    args = [ binary_path, './exact_attribute_based_search/conf_w_positional_info-1.xml', './exact_attribute_based_search/conf_w_positional_info-2.xml', './exact_attribute_based_search/conf_w_positional_info-3.xml']
+
     exitCode += testExactAttributeBasedSearch(queriesAndResultsPath, args)
 
     os._exit(exitCode)

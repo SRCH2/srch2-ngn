@@ -93,10 +93,21 @@ def prepareQuery(queryKeywords):
     ##################################
     return query
 
+def loadIntialData(dataFile, authKey):
+    f = open(dataFile)
+    records  = f.readlines()
+    f.close()
+    for rec in records:
+        print '-------------------------------------------------'
+        response = test_lib.insertRequestWithOauth(rec, authKey)
+        print response
+    return
+
+
 #This function queries the engine    
 def testRelaxedConfig(queriesAndResultsPath, binary_path, authKey):
     #Start the engine server
-    args = [ binary_path, '--config-file=./missing_parameters_from_cm/conf.xml']
+    args = [ binary_path, './missing_parameters_from_cm/conf.xml', './missing_parameters_from_cm/conf-2.xml', './missing_parameters_from_cm/conf-3.xml']
 
     if confirmPortAvailable(port, authKey) == False:
         print 'Port ' + str(port) + ' already in use - aborting'
@@ -105,6 +116,15 @@ def testRelaxedConfig(queriesAndResultsPath, binary_path, authKey):
     print 'starting engine: ' + args[0] + ' ' + args[1]
     serverHandle = test_lib.startServer(args)
     pingServer( port, authKey)
+
+    #Load initial data
+    dataFile = './missing_parameters_from_cm/data.json'
+    loadIntialData(dataFile, authKey)
+
+    print ' ********   waiting for merge to finish ********* '
+    time.sleep(20)
+    print ' ********     Running Test cases   ********* '
+
     #construct the query
     failCount = 0
     f_in = open(queriesAndResultsPath, 'r')

@@ -68,11 +68,15 @@ def prepareQuery(queryKeywords):
 
 def testFuzzyAttributeBasedSearch(queriesAndResultsPath, binary_path):
     # Start the engine server
-    args = [ binary_path, './fuzzy_attribute_based_search/conf.xml', './fuzzy_attribute_based_search/conf-A.xml', './fuzzy_attribute_based_search/conf-B.xml']
+    args = [ binary_path, './fuzzy_attribute_based_search/conf-1.xml', './fuzzy_attribute_based_search/conf-2.xml', './fuzzy_attribute_based_search/conf-3.xml']
 
     serverHandle = test_lib.startServer(args)
     if serverHandle == None:
         return -1
+
+    #Load initial data
+    dataFile = './fuzzy_attribute_based_search/data.json'
+    test_lib.loadIntialData(dataFile)
 
     #construct the query
     failCount = 0

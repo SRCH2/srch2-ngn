@@ -6,6 +6,24 @@
 -->
  
 <config>
+    <cluster-name>SRCH2Cluster</cluster-name>
+
+    <node-name>node2</node-name>
+    
+    <discovery>
+        <ping-interval>2</ping-interval>
+        <ping-timeout>8</ping-timeout>
+        <retry-count>10</retry-count>
+    </discovery>
+    <transport>
+        <port>4096</port>
+        <ipaddress>127.0.0.1</ipaddress>
+    </transport>
+    <listeningHostname>127.0.0.1</listeningHostname>
+    <listeningPort>8088</listeningPort>
+    <core-number_of_shards>4</core-number_of_shards>
+    <core-number_of_replicas>2</core-number_of_replicas>
+
     <!--
         SRCH2 Home directory 
         Required
@@ -39,8 +57,6 @@
          
         Hostname and port number of the server. Make sure the port is open.
     -->
-    <listeningHostname>127.0.0.1</listeningHostname>
-    <listeningPort>8088</listeningPort>
  
     <!--
         Index Directoy Path
@@ -58,13 +74,6 @@
         Path for a data file to be loaded. The file must be in the json format.
         REQUIRED, when "index-load-or-create" is set to 0.
     -->
-    <transport>
-        <port>4002</port>
-        <ipaddress>127.0.0.1</ipaddress>
-    </transport>
-    <dataFile>./empty.json</dataFile>
-    <node-name>node-A</node-name>
-    <wellknownhosts>127.0.0.1:54000</wellknownhosts>
      
     <!--
 	Maximum Number of Threads
@@ -295,7 +304,7 @@
             The number of write operations after which newly inserted/deleted records are merged into the indexes.
         -->
         <mergePolicy>
-          <mergeEveryNSeconds>10</mergeEveryNSeconds>
+          <mergeEveryNSeconds>2</mergeEveryNSeconds>
           <mergeEveryMWrites>100</mergeEveryMWrites>
         </mergePolicy>
      

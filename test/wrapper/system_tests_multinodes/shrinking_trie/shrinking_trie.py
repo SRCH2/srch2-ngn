@@ -21,15 +21,15 @@ binary_path = None
 def startSrch2Engine():
 	global serverHandle
 	#Start the engine server
-        args = [binary_path , '--config-file=shrinking_trie/conf.xml']
+        args = [binary_path , './shrinking_trie/conf-1.xml', './shrinking_trie/conf-2.xml', './shrinking_trie/conf-3.xml']
 
-        if test_lib.confirmPortAvailable(port) == False:
-                print 'Port' + str(port) + ' already in use -aborting '
+        serverHandle = test_lib.startServer(args)
+        if serverHandle == None:
                 return -1
 
-        print 'starting engine: ' + args[0] + ' ' + args[1]
-        serverHandle = test_lib.startServer(args)
-        test_lib.pingServer(port)
+	#Load initial data
+        dataFile = './shrinking_trie/data.json'
+        test_lib.loadIntialData(dataFile)
 
 #Shut down the srch2 engine
 def shutdownSrch2Engine():

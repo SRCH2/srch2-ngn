@@ -31,6 +31,10 @@ class InsertTester:
         if self.serverHandle == None:
             return -1
 
+        #Load initial data
+	dataFile = './upsert_batch/pre_10.json'
+	test_lib.loadIntialData(dataFile)
+
     def killServer(self):
         """
         kills the server

@@ -6,8 +6,12 @@
 # 1. Start the engine with binary path and config files
 #    Pass the binary path and config files in a list
 #    For example: 
+#       To start 3 nodes: 
 #         args = [ binary_path, './attributes/conf-A.xml', './attributes/conf-B.xml', './attributes/conf-C.xml', './attributes/conf-D.xml' ]
-#         serverHandleList = test_lib.startServer(args)
+#         serverHandleList = test_lib.startServer(args, True)
+#       To start 1 node:
+#         args = [ binary_path, './attributes/conf-A.xml', './attributes/conf-B.xml', './attributes/conf-C.xml', './attributes/conf-D.xml' ]
+#         serverHandleList = test_lib.startServer(args, False)
 #    The "startServer" function will call the "confirmAllUrlAvailable" and "pingAllServers" automatically.
 #
 # 2. Prepare queries and send them to the engine.
@@ -40,10 +44,15 @@ hostUrlList = None
 # Non-blocking (background process)
 # argList is an array - argList[0] is the path to the server
 # Remaining elements are server parameters such as --config-file=
-def startServer(argList, pingTimeout = 15, redirectFd = None):
+def startServer(argList, isMultiNode = True , pingTimeout = 15, redirectFd = None):
     if len(argList) < 2:
         printLog('Missing args to start the engine!')
         return None
+
+    # Only load the first config file.
+    if isMultiNode == False:
+        argList = argList[:2]
+
     populateHostUrlList(argList)
     if confirmAllUrlAvailable() == False:
         return None

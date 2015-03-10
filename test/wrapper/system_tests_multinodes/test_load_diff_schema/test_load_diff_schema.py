@@ -21,6 +21,10 @@ def startSrch2Engine(args):
 	if serverHandle == None:
 		return -1
 
+	#Load initial data
+	dataFile = './test_load_diff_schema/data.json'
+	test_lib.loadIntialData(dataFile)
+
 #Shut down the srch2 engine
 def shutdownSrch2Engine():
 	global serverHandle

@@ -106,7 +106,11 @@ if __name__ == '__main__':
         shutil.rmtree("data")
     #Start the test cases
     binary_path = sys.argv[1]
-    startSrch2Engine([binary_path , 'refining_attr_type/conf.xml', 'refining_attr_type/conf-A.xml','refining_attr_type/conf-B.xml'])
+    startSrch2Engine([binary_path , 'refining_attr_type/conf-1.xml', 'refining_attr_type/conf-2.xml','refining_attr_type/conf-3.xml'])
+    #Load initial data
+    dataFile = './refining_attr_type/data.json'
+    test_lib.loadIntialData(dataFile)
+
     testRefiningAttrType('refining_attr_type/queriesAndResults.txt')
     shutdownSrch2Engine()
     time.sleep(2) # sleep to wait for the engine to shutdown
