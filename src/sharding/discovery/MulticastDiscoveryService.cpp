@@ -15,19 +15,19 @@ using namespace srch2::util;
 namespace srch2 {
 namespace httpwrapper {
 
-MulticastDiscoveryService::MulticastDiscoveryService(const MulticastDiscoveryConfig& config,
+MulticastDiscoveryService::MulticastDiscoveryService(const MulticastDiscoverySetting& config,
         SyncManager *syncManager): DiscoveryService(syncManager, config.clusterName), discoveryConfig(config),
         		timer(networkService), intialDiscoveryPhase(true) {
     // throws exception if validation failed.
-    validateConfigSettings(discoveryConfig);
+	validateSetting(discoveryConfig);
 
     // If numeric IP address is 0 ( i.e "0.0.0.0"), then get the actual address from the transport Manager.
     if (this->hostIPAddrNumeric == 0) {
-        this->hostIPAddrNumeric = getTransport()->getPublishedInterfaceNumericAddr();
+        this->hostIPAddrNumeric = getTransportManager()->getPublishedInterfaceNumericAddr();
     }
 }
 
-void MulticastDiscoveryService::validateConfigSettings(MulticastDiscoveryConfig& discoveryConfig) {
+void MulticastDiscoveryService::validateSetting(MulticastDiscoverySetting& discoveryConfig) {
 
     boost::system::error_code errCode;
     IpAddress multiCastAddress = IpAddress::from_string(discoveryConfig.multiCastAddress, errCode);
@@ -175,7 +175,7 @@ void MulticastDiscoveryService::initialDiscoveryHandler(const boost::system::err
 	if (errCode) {
 		if (errCode == asio::error::try_again) {
 			// register again for async read
-			listenSocket->async_receive_from(asio::buffer(messageTempBuffer, message.getNumberOfBytes()),
+			listenSocket->async_receive_from(asio::buffer(messageBuffer, message.getNumberOfBytes()),
 				    			senderEndPoint, boost::bind(&MulticastDiscoveryService::discoveryReadHandler, this, _1, _2));
 			return;
 		}
@@ -187,12 +187,12 @@ void MulticastDiscoveryService::initialDiscoveryHandler(const boost::system::err
 
 	if (bytes_transferred < message.getNumberOfBytes()) {
 		// register again for async read
-		listenSocket->async_receive_from(asio::buffer(messageTempBuffer, message.getNumberOfBytes()),
+		listenSocket->async_receive_from(asio::buffer(messageBuffer, message.getNumberOfBytes()),
 						    			senderEndPoint, boost::bind(&MulticastDiscoveryService::discoveryReadHandler, this, _1, _2));
 		return;
 	}
 
-	message.deserialize(messageTempBuffer);
+	message.deserialize(messageBuffer);
 	// ignore looped back messages.
 	if (isLoopbackMessage(message)) {
 		Logger::debug("loopback message ...continuing");
@@ -207,7 +207,7 @@ void MulticastDiscoveryService::initialDiscoveryHandler(const boost::system::err
 			 *   Master node is detected. Stop listening to discovery.
 			 *   Start SM messaging with master to get nodeIds and other cluster related info.
 			 */
-			if (message.ackMessageIdentifier == getTransport()->getCommunicationPort()) {
+			if (message.ackMessageIdentifier == getTransportManager()->getCommunicationPort()) {
 				masterDetected = true;
 				Logger::console("Master node = %d found !", message.masterNodeId);
 	            syncManager->addNodeToAddressMappping(message.masterNodeId, message.interfaceNumericAddress, message.internalCommunicationPort);
@@ -246,7 +246,7 @@ void MulticastDiscoveryService::initialDiscoveryHandler(const boost::system::err
 
 	if (!masterDetected && !yieldingToAnotherNode) {
 		// register again for async read
-		listenSocket->async_receive_from(asio::buffer(messageTempBuffer, message.getNumberOfBytes()),
+		listenSocket->async_receive_from(asio::buffer(messageBuffer, message.getNumberOfBytes()),
 	    			senderEndPoint, boost::bind(&MulticastDiscoveryService::discoveryReadHandler, this, _1, _2));
 	} else {
 		networkService.stop();
@@ -274,8 +274,8 @@ void MulticastDiscoveryService::discoverCluster() {
     unsigned sizeOfMessage = message.getNumberOfBytes();
     // temp buffer of this message, we first read bytes into
     // this buffer and then deserialize it into message
-    messageTempBuffer = new char[sizeOfMessage];
-    memset(messageTempBuffer, 0, sizeOfMessage);
+    messageBuffer = new char[sizeOfMessage];
+    memset(messageBuffer, 0, sizeOfMessage);
 
     startDiscovery:
     yieldingToAnotherNode = false;
@@ -290,7 +290,7 @@ void MulticastDiscoveryService::discoverCluster() {
     timer.expires_from_now(boost::posix_time::seconds(DISCOVERY_RETRY_TIMEOUT));
 
     while(true) {
-    	listenSocket->async_receive_from(asio::buffer(messageTempBuffer, sizeOfMessage),
+    	listenSocket->async_receive_from(asio::buffer(messageBuffer, sizeOfMessage),
     			senderEndPoint, boost::bind(&MulticastDiscoveryService::discoveryReadHandler, this, _1, _2));
     	timer.async_wait(boost::bind(&MulticastDiscoveryService::timeoutHandler, this, _1));
     	networkService.run();
@@ -345,13 +345,13 @@ void MulticastDiscoveryService::postDiscoveryReadHandler(const boost::system::er
 
 	if (errCode) {
 		Logger::error("%s", errCode.message().c_str());
-		listenSocket->async_receive_from(asio::buffer(messageTempBuffer, message.getNumberOfBytes()),
+		listenSocket->async_receive_from(asio::buffer(messageBuffer, message.getNumberOfBytes()),
 	    			senderEndPoint, boost::bind(&MulticastDiscoveryService::discoveryReadHandler, this, _1, _2));
 		return;
 	}
 
 	if (byteRead == sizeOfMessage) {
-		message.deserialize(messageTempBuffer);
+		message.deserialize(messageBuffer);
 		// ignore looped back messages.
 		if (isLoopbackMessage(message)) {
 			Logger::debug("loopback message ...continuing");;
@@ -373,8 +373,8 @@ void MulticastDiscoveryService::postDiscoveryReadHandler(const boost::system::er
 				 */
 				DiscoveryMessage ackMessage;
 				ackMessage.type = DISCOVERY_JOIN_CLUSTER_ACK;
-				ackMessage.interfaceNumericAddress = getTransport()->getPublishedInterfaceNumericAddr();
-				ackMessage.internalCommunicationPort = getTransport()->getCommunicationPort();
+				ackMessage.interfaceNumericAddress = getTransportManager()->getPublishedInterfaceNumericAddr();
+				ackMessage.internalCommunicationPort = getTransportManager()->getCommunicationPort();
 				ackMessage.masterNodeId = syncManager->getCurrentNodeId();
 
 				short remoteNodePort = message.internalCommunicationPort;
@@ -425,7 +425,7 @@ void MulticastDiscoveryService::postDiscoveryReadHandler(const boost::system::er
 		}
 	}
 
-	listenSocket->async_receive_from(asio::buffer(messageTempBuffer, message.getNumberOfBytes()),
+	listenSocket->async_receive_from(asio::buffer(messageBuffer, message.getNumberOfBytes()),
     			senderEndPoint, boost::bind(&MulticastDiscoveryService::discoveryReadHandler, this, _1, _2));
 
 }
@@ -438,7 +438,7 @@ void MulticastDiscoveryService::postDiscoveryListener() {
     while(!shutdown) {
     	networkService.run();
     	networkService.reset();
-    	listenSocket->async_receive_from(asio::buffer(messageTempBuffer, sizeOfMessage),
+    	listenSocket->async_receive_from(asio::buffer(messageBuffer, sizeOfMessage),
     			senderEndPoint, boost::bind(&MulticastDiscoveryService::discoveryReadHandler, this, _1, _2));
     	// _1, _2 indicates that the callback function that we are binding to takes two arguments.
     	// Later on the boost's internal layer will call the callback with two arguments.
@@ -447,7 +447,7 @@ void MulticastDiscoveryService::postDiscoveryListener() {
 
     listenSocket->close();
     sendSocket->close();
-	delete [] messageTempBuffer;
+	delete [] messageBuffer;
 
 }
 
@@ -457,8 +457,8 @@ void MulticastDiscoveryService::sendJoinRequest() {
     char * messageTempBuffer = new char[sizeOfMessage];
     memset(messageTempBuffer, 0, sizeOfMessage);
     message.type = DISCOVERY_JOIN_CLUSTER_REQ;
-    message.interfaceNumericAddress =  getTransport()->getPublishedInterfaceNumericAddr();
-    message.internalCommunicationPort = getTransport()->getCommunicationPort();
+    message.interfaceNumericAddress =  getTransportManager()->getPublishedInterfaceNumericAddr();
+    message.internalCommunicationPort = getTransportManager()->getCommunicationPort();
 
     unsigned byteToCopy = this->clusterIdentifier.size() > DISCOVERY_CLUSTER_IDENT_SIZE - 1 ?
     		DISCOVERY_CLUSTER_IDENT_SIZE -1 : this->clusterIdentifier.size();
@@ -489,15 +489,15 @@ void MulticastDiscoveryService::sendJoinRequest() {
 }
 
 bool MulticastDiscoveryService::shouldYield(unsigned senderIp, unsigned senderPort) {
-	Logger::debug("S %u:%u, C %u:%u", senderIp, senderPort, getTransport()->getPublishedInterfaceNumericAddr(), getTransport()->getCommunicationPort());
-    if (senderIp > getTransport()->getPublishedInterfaceNumericAddr()) {
+	Logger::debug("S %u:%u, C %u:%u", senderIp, senderPort, getTransportManager()->getPublishedInterfaceNumericAddr(), getTransportManager()->getCommunicationPort());
+    if (senderIp > getTransportManager()->getPublishedInterfaceNumericAddr()) {
         return true;
-    }else if ( (senderIp == getTransport()->getPublishedInterfaceNumericAddr() )
-            && (senderPort > getTransport()->getCommunicationPort())) {
+    }else if ( (senderIp == getTransportManager()->getPublishedInterfaceNumericAddr() )
+            && (senderPort > getTransportManager()->getCommunicationPort())) {
         return true;
     }
     return false;
 }
 
-} /* namespace sharding */
+} /* namespace httpwrapper */
 } /* namespace srch2 */

@@ -16,18 +16,18 @@ using namespace std;
 namespace srch2 {
 namespace httpwrapper {
 
-UnicastDiscoveryService::UnicastDiscoveryService(UnicastDiscoveryConfig& config,
+UnicastDiscoveryService::UnicastDiscoveryService(UnicastDiscoverySetting& config,
         SyncManager *syncManager): DiscoveryService(syncManager, config.clusterName), discoveryConfig(config) {
     matchedKnownHostIp = "";
     // throws exception if validation failed.
-    validateConfigSettings(discoveryConfig);
+    validateSetting(discoveryConfig);
 }
 
-void UnicastDiscoveryService::validateConfigSettings(UnicastDiscoveryConfig& config) {
+void UnicastDiscoveryService::validateSetting(UnicastDiscoverySetting& config) {
 
     // validate IPs of known Hosts
     std::vector<HostAndPort> knownHostsValidatedAddresses;
-    const vector<string>& allIpAddresses = getTransport()->getAllInterfacesIpAddress();
+    const vector<string>& allIpAddresses = getTransportManager()->getAllInterfacesIpAddress();
     for (unsigned i = 0; i < discoveryConfig.knownHosts.size(); ++i) {
     	boost::system::error_code errCode;
     	IpAddress networkIpAddress = IpAddress::from_string(discoveryConfig.knownHosts[i].ipAddress, errCode);
@@ -65,7 +65,7 @@ void UnicastDiscoveryService::validateConfigSettings(UnicastDiscoveryConfig& con
     }
 
     if (this->matchedKnownHostIp == "") {
-        matchedKnownHostIp = getTransport()->getPublisedInterfaceAddress();
+        matchedKnownHostIp = getTransportManager()->getPublisedInterfaceAddress();
         matchedKnownHostPort = unicastDiscoveryDefaultPort;
     }
 
@@ -79,8 +79,8 @@ void UnicastDiscoveryService::sendJoinRequest(const string& knownHost, unsigned 
     char * messageTempBuffer = new char[sizeOfMessage];
     memset(messageTempBuffer, 0, sizeOfMessage);
     message.type = DISCOVERY_JOIN_CLUSTER_REQ;
-    message.interfaceNumericAddress = getTransport()->getPublishedInterfaceNumericAddr();
-    message.internalCommunicationPort = getTransport()->getCommunicationPort();
+    message.interfaceNumericAddress = getTransportManager()->getPublishedInterfaceNumericAddr();
+    message.internalCommunicationPort = getTransportManager()->getCommunicationPort();
 
     unsigned byteToCopy = this->clusterIdentifier.size() > DISCOVERY_CLUSTER_IDENT_SIZE - 1 ?
     		DISCOVERY_CLUSTER_IDENT_SIZE - 1 : this->clusterIdentifier.size();
@@ -153,7 +153,7 @@ void UnicastDiscoveryService::initialDiscoveryHandler(const boost::system::error
 		}
 	}
 	DiscoveryMessage message;
-	message.deserialize(messageTempBuffer);
+	message.deserialize(messageBuffer);
 	// ignore looped back messages.
 	if (isLoopbackMessage(message)) {
 		Logger::debug("Loopback message...continuing");
@@ -169,7 +169,7 @@ void UnicastDiscoveryService::initialDiscoveryHandler(const boost::system::error
 			/*
 			 *   Master node is detected. Stop discovery.
 			 */
-			if (message.ackMessageIdentifier == getTransport()->getCommunicationPort()) {
+			if (message.ackMessageIdentifier == getTransportManager()->getCommunicationPort()) {
 				masterDetected = true;
 				getSyncManager()->addNodeToAddressMappping(message.masterNodeId, message.interfaceNumericAddress,
 						message.internalCommunicationPort);
@@ -198,8 +198,8 @@ void UnicastDiscoveryService::initialDiscoveryHandler(const boost::system::error
 					// if not yielding then ask others to yield.
 					DiscoveryMessage yeildMessage;
 					yeildMessage.type = DISCOVERY_JOIN_CLUSTER_YIELD;
-					yeildMessage.interfaceNumericAddress = getTransport()->getPublishedInterfaceNumericAddr();
-					yeildMessage.internalCommunicationPort = getTransport()->getCommunicationPort();
+					yeildMessage.interfaceNumericAddress = getTransportManager()->getPublishedInterfaceNumericAddr();
+					yeildMessage.internalCommunicationPort = getTransportManager()->getCommunicationPort();
 					yeildMessage.masterNodeId = -1;
 					yeildMessage.nodeId = -1;
 
@@ -252,8 +252,8 @@ void UnicastDiscoveryService::discoverCluster() {
 
     DiscoveryMessage message;
     unsigned sizeOfMessage = message.getNumberOfBytes();
-    messageTempBuffer = new char[sizeOfMessage];
-    memset(messageTempBuffer, 0, sizeOfMessage);
+    messageBuffer = new char[sizeOfMessage];
+    memset(messageBuffer, 0, sizeOfMessage);
 
     startDiscovery:
     yieldingToAnotherNode = false;
@@ -278,7 +278,7 @@ void UnicastDiscoveryService::discoverCluster() {
     	// Work1: non blocking wait for data on the socket. When the data arrives "initialDiscoveryHandler" will be called
     	// Event: Data arrival on socket
     	// Handler: initialDiscoveryHandler
-    	discoverySocket->async_receive_from(asio::buffer(messageTempBuffer, sizeOfMessage),
+    	discoverySocket->async_receive_from(asio::buffer(messageBuffer, sizeOfMessage),
     			senderEndPoint, boost::bind(&UnicastDiscoveryService::initialDiscoveryHandler, this, _1, _2));
 
     	// Work2: non blocking wait for timeout. When the Timeout happens "timeoutHandler" will be called
@@ -326,7 +326,7 @@ void UnicastDiscoveryService::discoverCluster() {
     	getSyncManager()->setMasterNodeId(masterNodeID);
     }
 
-	delete [] messageTempBuffer;
+	delete [] messageBuffer;
 	return;
 }
 
@@ -345,15 +345,15 @@ void UnicastDiscoveryService::postDiscoveryListener() {
 
     DiscoveryMessage message;
     unsigned sizeOfMessage = message.getNumberOfBytes();
-    messageTempBuffer = new char[sizeOfMessage];
-    memset(messageTempBuffer, 0, sizeOfMessage);
+    messageBuffer = new char[sizeOfMessage];
+    memset(messageBuffer, 0, sizeOfMessage);
 
     boost::system::error_code errCode;
 
     while(!shutdown) {
 
     	std::size_t byteRead = discoverySocket->receive_from(
-    			boost::asio::buffer(messageTempBuffer, sizeOfMessage), senderEndPoint, 0, errCode);
+    			boost::asio::buffer(messageBuffer, sizeOfMessage), senderEndPoint, 0, errCode);
 
     	if (errCode) {
     		Logger::error("%s", errCode.message().c_str());
@@ -361,7 +361,7 @@ void UnicastDiscoveryService::postDiscoveryListener() {
     	}
 
         if (byteRead == sizeOfMessage) {
-            message.deserialize(messageTempBuffer);
+            message.deserialize(messageBuffer);
             if (isLoopbackMessage(message)) {
                 continue;
             } if (!isCurrentClusterMessage(message)) {
@@ -383,8 +383,8 @@ void UnicastDiscoveryService::postDiscoveryListener() {
                     unsigned sizeOfAckMessage = ackMessage.getNumberOfBytes();
                     char * ackMessageTempBuffer = new char[sizeOfAckMessage];
                     ackMessage.type = DISCOVERY_JOIN_CLUSTER_ACK;
-                    ackMessage.interfaceNumericAddress = getTransport()->getPublishedInterfaceNumericAddr();
-                    ackMessage.internalCommunicationPort = getTransport()->getCommunicationPort();
+                    ackMessage.interfaceNumericAddress = getTransportManager()->getPublishedInterfaceNumericAddr();
+                    ackMessage.internalCommunicationPort = getTransportManager()->getCommunicationPort();
                     ackMessage.masterNodeId = getSyncManager()->getCurrentNodeId();
                     ackMessage.nodeId = getSyncManager()->getNextNodeId();
                     ackMessage.ackMessageIdentifier = message.internalCommunicationPort;
@@ -420,11 +420,11 @@ void UnicastDiscoveryService::postDiscoveryListener() {
         } // if (byteRead == sizeOfMessage) , message receivied completely.
     }
     discoverySocket->close();
-    delete [] messageTempBuffer;
+    delete [] messageBuffer;
 }
 
 bool UnicastDiscoveryService::shouldYield(unsigned senderIp, unsigned senderPort) {
-    if (senderIp > getTransport()->getPublishedInterfaceNumericAddr()) {
+    if (senderIp > getTransportManager()->getPublishedInterfaceNumericAddr()) {
         return true;
     }
     return false;

@@ -73,8 +73,8 @@ void DiscoveryService::reInit() {
 }
 
 bool DiscoveryService::isLoopbackMessage(DiscoveryMessage &msg){
-	return (msg.interfaceNumericAddress == getTransport()->getPublishedInterfaceNumericAddr() &&
-			msg.internalCommunicationPort == getTransport()->getCommunicationPort());
+	return (msg.interfaceNumericAddress == getTransportManager()->getPublishedInterfaceNumericAddr() &&
+			msg.internalCommunicationPort == getTransportManager()->getCommunicationPort());
 }
 
 bool DiscoveryService::isCurrentClusterMessage(DiscoveryMessage &msg) {

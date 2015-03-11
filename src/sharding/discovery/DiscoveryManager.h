@@ -41,6 +41,10 @@ static const int16_t DISCOVERY_JOIN_CLUSTER_ACK_REPLY = 0x3;
 
 /*
  *  Helper APIs for UDP sockets
+ *  Send UDP packet to a destination "destinationAddress" via "sendSocket".
+ *  Return status 0 : Success
+ *  Return status 1 : Could not send completely because socket was busy. Try again.
+ *  Return status -1: Socket error.
  */
 int sendUDPPacketToDestination(BoostUDP::socket& sendSocket, const char *buffer, std::size_t bufferSize,
 		const BoostUDP::endpoint& destinationAddress);
@@ -153,10 +157,10 @@ struct NodeEndPoint {
 class DiscoveryService{
 
 public:
-	DiscoveryService(SyncManager *syncManager, const string& clusterIdent) {
+	DiscoveryService(SyncManager *syncManager, const string& clusterIdentifier) {
 		this->syncManager = syncManager;
 		this->shutdown = false;
-		this->clusterIdentifier = clusterIdent;
+		this->clusterIdentifier = clusterIdentifier;
 	}
 	// Entry point for discovery module. It should be called to initiate discovery.
 	void init();
@@ -189,7 +193,7 @@ protected:
 
 	SyncManager *getSyncManager() { return  syncManager; }
 
-	TransportManager *getTransport() { return  syncManager->getTransport(); }
+	TransportManager *getTransportManager() { return  syncManager->getTransportManager(); }
 
 	// Bind the socket to ip:port. If port is not available then try the next "scanRange" (default = 100)
 	// ports for availability. Throw error if the port binding is unsuccessful.
@@ -227,10 +231,10 @@ protected:
 	// keep a mapping of a host(node) to NodeId.
 	std::map<NodeEndPoint, NodeId> nodeToNodeIdMap;
 
-	// Boost network service which does all the low level socket stuff
+	// flag to indicate whether we should stop discovery service. Used when the engine is exiting.
 	bool shutdown;
 
-	// Boost network service which does all the low level socket stuff
+	// name of the cluster.
 	string clusterIdentifier;
 
 	SyncManager *syncManager;
@@ -239,7 +243,7 @@ protected:
 /*
  *  Multicast discovery related Data structures and Class
  */
-struct MulticastDiscoveryConfig{
+struct MulticastDiscoverySetting{
 
 	// IP address of Multicast Group. e.g 224.1.1.2
 	std::string multiCastAddress;
@@ -267,6 +271,7 @@ struct MulticastDiscoveryConfig{
 	}
 };
 
+// Entry point for multicast Listener thread.
 void * multicastListener(void * arg);
 
 /*
@@ -275,11 +280,11 @@ void * multicastListener(void * arg);
 class MulticastDiscoveryService : public DiscoveryService{
 	friend void * multicastListener(void * arg);
 public:
-	MulticastDiscoveryService(const MulticastDiscoveryConfig& config, SyncManager *syncManager);
+	MulticastDiscoveryService(const MulticastDiscoverySetting& config, SyncManager *syncManager);
 
 private:
 
-	std::string getMultiCastAddressStr() {
+	std::string getMultiCastAddress() {
 		return discoveryConfig.multiCastAddress;
 	}
 	unsigned getMulticastPort() {
@@ -300,6 +305,7 @@ private:
 	// All socket calls in this function are asynchronous with callbacks.
 	void discoverCluster();
 
+	// callback handler for discovery phase.
 	void discoveryReadHandler(const boost::system::error_code&, std::size_t);
 
 	// callback handler for initial discovery phase.
@@ -308,18 +314,19 @@ private:
 	// callback handler for initial discovery timeout.
 	void timeoutHandler(const boost::system::error_code& errCode);
 
-	// Only called by a master node. This method handles all the discovery
-	// requests from the other nodes. It is blocking API and should run in
-	// a separate thread.
+	// Only called by a master node after the node elect itself as a master. This method
+	// handles all the discovery requests from the other nodes. It is blocking API
+	// and should run in a separate thread.
 	void postDiscoveryListener();
 
+	// callback handler for post-discovery phase (after the master is elected).
 	void postDiscoveryReadHandler(const boost::system::error_code&, std::size_t);
 
 	// Send multicast request to join the cluster.
 	void sendJoinRequest();
 
 	// Verify whether the IP addresses are valid and some other misc checks.
-	void validateConfigSettings(MulticastDiscoveryConfig& config);
+	void validateSetting(MulticastDiscoverySetting& config);
 
 	// Decide whether a current node should yield to another node in a
 	// race to become master. (i.e multiple node started simultaneously).
@@ -333,7 +340,7 @@ private:
 	 * Data members
 	 * -------------------------------------------------------------------------
 	 */
-	MulticastDiscoveryConfig discoveryConfig;
+	MulticastDiscoverySetting discoveryConfig;
 
 	// numeric representation of multicast IP address
 	unsigned long multiCastIPAddrNumeric;
@@ -350,7 +357,7 @@ private:
 	pthread_t multicastListenerThread;
 
 	// Buffer used for storing discovery message
-	char * messageTempBuffer;
+	char * messageBuffer;
 
 	// Flag to indicate whether a master/cluster was found during the discovery.
 	bool masterDetected;
@@ -367,11 +374,14 @@ private:
 	std::set<NodeEndPoint> yieldNodeSet;
 
 	// timer object to set/handle timeout
-    asio::deadline_timer timer;
+	asio::deadline_timer timer;
 
-    unsigned retryCount;
+	// keeps track of retry done to detect a master in a cluster.
+	unsigned retryCount;
 
-    bool intialDiscoveryPhase;
+	// It is a flag to indicate whether the node is in a initial discovery phase ( detecting master)
+	// or in a post discovery phase ( detecting incoming nodes as a master).
+	bool intialDiscoveryPhase;
 
 
 };
@@ -387,7 +397,7 @@ struct HostAndPort {
 	std::string ipAddress;
 	unsigned port;
 };
-struct UnicastDiscoveryConfig {
+struct UnicastDiscoverySetting {
 	std::vector<HostAndPort> knownHosts;
 	std::string clusterName;
 	// only for debug
@@ -411,7 +421,7 @@ const unsigned unicastDiscoveryDefaultPort = 4000;
 class UnicastDiscoveryService : public DiscoveryService{
 	friend void * unicastDiscoveryListner(void * arg);
 public:
-	UnicastDiscoveryService(UnicastDiscoveryConfig& config, SyncManager *syncManager);
+	UnicastDiscoveryService(UnicastDiscoverySetting& config, SyncManager *syncManager);
 
 private:
 
@@ -430,9 +440,9 @@ private:
 	// callback handler for initial discovery timeout.
 	void timeoutHandler(const boost::system::error_code& errCode);
 
-	// Only called by a master node. This method handles all the discovery
-	// request from the other nodes. It is blocking API and should run in
-	// a separate thread.
+	// Only called by a master node after the node elect itself as a master. This method
+	// handles all the discovery request from the other nodes. It is blocking API and
+	// should run in a separate thread.
 	void postDiscoveryListener();
 
 	// open listen and send channel for unicast discovery. Basically creates socket
@@ -444,7 +454,7 @@ private:
 	void sendJoinRequest(const std::string& knownHost, unsigned port);
 
 	// Validate IP addresses and other misc checks
-	void validateConfigSettings(UnicastDiscoveryConfig& config);
+	void validateSetting(UnicastDiscoverySetting& config);
 
 	// Decide whether a current node should yield to another node in a
 	// race to become master. (i.e multiple node started simultaneously).
@@ -459,7 +469,7 @@ private:
 	 * -------------------------------------------------------------------------
 	 */
 	// store Unicast discovery configuration.
-	UnicastDiscoveryConfig discoveryConfig;
+	UnicastDiscoverySetting discoveryConfig;
 
 	// if the current node is one of the known hosts mentioned in the config file
 	// then these variables store IP and port information to be used in discovery
@@ -476,7 +486,7 @@ private:
 	BoostUDP::socket *discoverySocket;
 
 	// Buffer used for storing discovery message
-	char * messageTempBuffer;
+	char * messageBuffer;
 
 	pthread_t unicastListenerThread;
 
