@@ -47,7 +47,7 @@ SyncManager::SyncManager(ConfigManager& cm, TransportManager& tm) :
 	this->uniqueNodeId = 0;
 	this->stopSynchManager = false;
 
-	UnicastDiscoveryConfig unicastdiscoverConf;
+	UnicastDiscoverySetting unicastdiscoverConf;
 	const vector<std::pair<string, unsigned > >& wellknownHosts = config.getWellKnownHosts();
 	for (unsigned i = 0; i < wellknownHosts.size(); ++i) {
 		unicastdiscoverConf.knownHosts.push_back(HostAndPort(wellknownHosts[i].first,wellknownHosts[i].second));
@@ -59,7 +59,7 @@ SyncManager::SyncManager(ConfigManager& cm, TransportManager& tm) :
 		discoveryMgr = new  UnicastDiscoveryService(unicastdiscoverConf, this);
 	} else {
 
-		MulticastDiscoveryConfig multicastdiscoverConf;
+		MulticastDiscoverySetting multicastdiscoverConf;
 		multicastdiscoverConf.clusterName = config.getClusterName();
 		multicastdiscoverConf.multicastPort = config.getMulticastDiscovery().getPort();
 		multicastdiscoverConf.multiCastAddress = config.getMulticastDiscovery().getGroupAddress();
