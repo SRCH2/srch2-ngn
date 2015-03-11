@@ -1,0 +1,14 @@
+#comments are allowed with '#' at begining.
+#Format : { "attributes": ["field1", "field2"], "roleId" : ["1234", "1245"]}  
+[
+{"attributes": ["attr1", "attr6", "attr3"], "roleId" : ["100"] }, 
+{"attributes": ["attr6"], "roleId" : ["101"] }, 
+{"attributes": ["attr8", "attr7"], "roleId" : ["102"] }, 
+{"attributes": ["attr8", "attr2", "attr6"], "roleId" : ["103"] }, 
+#below is a duplicate acl entry, will be merged with the previous one.
+{"attributes": ["attr4"], "roleId" : ["103"] }, 
+#below are the bad examples which will be ignored. 
+{"attributes": ["invalid attr name"], "roleId" : ["110"] }, 
+{"attributes": [""], "roleId" : ["111"] }, 
+{"attributes": [ "attr1", ], "roleId" : [""] }
+]
