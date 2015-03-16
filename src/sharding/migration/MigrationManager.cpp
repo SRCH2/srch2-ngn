@@ -995,7 +995,7 @@ void MigrationManager::openTCPReceiveChannel(int& tcpSocket , short& receivePort
 	receivePort = MM_MIGRATION_PORT_START;
 	addr.sin_port = htons(receivePort);
 	tryNextPort:
-	if( bind(tcpSocket, (struct sockaddr *) &addr, sizeof(sockaddr_in)) < 0) {
+	if( ::bind(tcpSocket, (struct sockaddr *) &addr, sizeof(sockaddr_in)) < 0) {
 		++receivePort;
 		if (receivePort < MM_MIGRATION_PORT_START + 100) {
 			addr.sin_port = htons(receivePort);
@@ -1072,7 +1072,7 @@ void MigrationManager::openReceiveChannel(int& udpSocket , short& receivePort) {
 	receivePort = MM_MIGRATION_PORT_START;
 	addr.sin_port = htons(receivePort);
 tryNextPort:
-	if( bind(udpSocket, (struct sockaddr *) &addr, sizeof(sockaddr_in)) < 0){
+	if( ::bind(udpSocket, (struct sockaddr *) &addr, sizeof(sockaddr_in)) < 0){
 		++receivePort;
 		if (receivePort < MM_MIGRATION_PORT_START + 100) {
 			addr.sin_port = htons(receivePort);

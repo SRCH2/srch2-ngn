@@ -2,7 +2,7 @@
  * DicoveryManager.cpp
  *
  *  Created on: Apr 24, 2014
- *      Author: srch2
+ *      Author: Surendra
  */
 
 #include "DiscoveryManager.h"
@@ -21,106 +21,90 @@ using namespace srch2::util;
 namespace srch2 {
 namespace httpwrapper {
 
+int sendUDPPacketToDestination(BoostUDP::socket& sendSocket, const char *buffer, std::size_t bufferSize,
+		const BoostUDP::endpoint& destinationAddress) {
 
-int readUDPPacketWithSenderInfo(int listenSocket, char *buffer, unsigned bufferSize, int flag,
-		 struct sockaddr_in& senderAddress) {
+	boost::system::error_code ec;
 
-	unsigned int senderAddressLen = sizeof(senderAddress);
+	std::size_t byteSent = sendSocket.send_to(boost::asio::buffer(buffer, bufferSize), destinationAddress, MSG_DONTWAIT, ec);
 
-	int status = recvfrom(listenSocket, buffer, bufferSize, flag,
-			(struct sockaddr *)&senderAddress, &senderAddressLen);
-
-	if (status == -1) {
-		if(errno == EAGAIN || errno == EWOULDBLOCK) {
-			//perror("Recv");
-			ASSERT(flag != 0);
+	if (ec) {
+		if(ec.value() == asio::error::try_again) {
 			return 1;
 		} else {
-			perror("Discovery : Error while reading data from UDP socket : ");
+			Logger::console("[Discovery]: %s", ec.message().c_str());
 			return -1;
 		}
 	}
-	if (static_cast<unsigned>(status) < bufferSize) {
-	    Logger::sharding(Logger::Warning,"Discovery | %d bytes was read instead of expected %d bytes.", status, bufferSize );
+
+	if (byteSent < bufferSize) {
+	    Logger::sharding(Logger::Warning,"Discovery | %d bytes was sent instead of expected %d bytes. This datagram is lost.", byteSent, bufferSize );
 		// incomplete read : this datagram is lost, return to caller to handle next one
 		return 1;
 	}
-
+	ASSERT(bufferSize == byteSent);
 	return 0;
 }
 
-int readUDPPacketWithSenderInfo(int listenSocket, char *buffer, unsigned bufferSize,
-		struct sockaddr_in& senderAddress)
-{
-	// blocking API,
-	return readUDPPacketWithSenderInfo(listenSocket, buffer, bufferSize, 0, senderAddress);
+void DiscoveryService::init() {
+
+    openListeningChannel();
+
+    openSendingChannel();
+
+    discoverCluster();
+
+    if (isCurrentNodeMaster()) {
+    	// start a new thread to accept new nodes to cluster.
+    	startDiscoveryThread();
+    }
 }
 
-int sendUDPPacketToDestination(int sendSocket, char *buffer, unsigned bufferSize,
-		struct sockaddr_in& destinationAddress) {
+void DiscoveryService::reInit() {
 
-	int status = sendto(sendSocket, buffer, bufferSize, MSG_DONTWAIT,
-			(const sockaddr *)&destinationAddress, sizeof(destinationAddress));
+	ASSERT(isCurrentNodeMaster());
 
-	if (status == -1) {
-		if(errno == EAGAIN || errno == EWOULDBLOCK) {
-			//perror("Send");'
-			return 1;
-		} else {
-			perror("Discovery : Error while sending data from UDP socket : ");
-			return -1;
-		}
-	}
+	openListeningChannel();
 
-	if (static_cast<unsigned>(status) < bufferSize) {
-	    Logger::sharding(Logger::Warning,"Discovery | %d bytes was sent instead of expected %d bytes. This datagram is lost.", status, bufferSize );
-		// incomplete read : this datagram is lost, return to caller to handle next one
-		return 1; // come back
-	}
-	//Logger::console("UDP multicast data send");
-	ASSERT(bufferSize == status);
-	return 0;
+	openSendingChannel();
 
-}
-int checkSocketIsReady(int socket, bool checkForRead, unsigned waitTime) {
-	/*
-	 *  Prepare data structure for select system call.
-	 *  http://man7.org/linux/man-pages/man2/select.2.html
-	 */
-	fd_set selectSet;
-	timeval waitTimeout;
-	waitTimeout.tv_sec = waitTime;
-	waitTimeout.tv_usec = 0;
-	FD_ZERO(&selectSet);
-	FD_SET(socket, &selectSet);
-
-
-	/*
-	 *   Wait until timeout = 1sec or until socket is ready for read/write. (whichever occurs first)
-	 *   see select man page : http://linux.die.net/man/2/select
-	 */
-	int result = 0;
-	if (checkForRead) {
-		// pass select set to read argument
-		result = select(socket + 1, &selectSet, NULL, NULL, &waitTimeout);
-	} else {
-		// pass select set to write argument
-		result = select(socket + 1, NULL, &selectSet, NULL, &waitTimeout);
-	}
-	if (result == -1) {
-		perror("error while waiting for a socket to become available for read/write!");
-		return -1;
-	}
-	return FD_ISSET(socket,&selectSet) ? 1 : 0;
+	// start a new thread to accept new nodes to cluster.
+	startDiscoveryThread();
 }
 
 bool DiscoveryService::isLoopbackMessage(DiscoveryMessage &msg){
-	return (msg.interfaceNumericAddress == getTransport()->getPublishedInterfaceNumericAddr() &&
-			msg.internalCommunicationPort == getTransport()->getCommunicationPort());
+	return (msg.interfaceNumericAddress == getTransportManager()->getPublishedInterfaceNumericAddr() &&
+			msg.internalCommunicationPort == getTransportManager()->getCommunicationPort());
 }
 
 bool DiscoveryService::isCurrentClusterMessage(DiscoveryMessage &msg) {
 	return (string(msg._clusterIdent).compare(this->clusterIdentifier) == 0);
+}
+
+/*
+ * Bind the socket to ip:port. If port is not available then try the next "scanRange" (default = 100)
+ * ports for availability. Throw error if the port binding is unsuccessful.
+ */
+void DiscoveryService::bindToAvailablePort(BoostUDP::socket& listenSocket, BoostUDP::endpoint& listen_endpoint, short scanRange) {
+	short requestedPort = listen_endpoint.port();
+	short portToBind = requestedPort;
+	while(1) {
+		boost::system::error_code errCode;
+		listenSocket.bind(listen_endpoint, errCode);
+		if(errCode){
+			++portToBind;
+			if (portToBind <  requestedPort + scanRange) {
+				listen_endpoint.port(portToBind);
+			} else {
+
+				Logger::console("unable to bind to any port in range [%d : %d]", requestedPort,
+						requestedPort + scanRange);
+				throw std::runtime_error(errCode.message());
+			}
+		} else {
+			break; // exit while loop when bind is successful
+		}
+	}
 }
 
 } /* namespace sharding */

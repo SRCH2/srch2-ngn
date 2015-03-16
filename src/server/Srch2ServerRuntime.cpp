@@ -521,7 +521,7 @@ int Srch2ServerRuntime::bindSocket(const char * hostname, unsigned short port) {
 			host->h_length);
 	addr.sin_port = htons(port);
 
-	r = bind(nfd, (struct sockaddr*) &addr, sizeof(addr));
+	r = ::bind(nfd, (struct sockaddr*) &addr, sizeof(addr));
 	if (r < 0)
 		return -1;
 	r = listen(nfd, 10240);

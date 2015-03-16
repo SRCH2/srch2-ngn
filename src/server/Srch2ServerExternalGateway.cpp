@@ -194,7 +194,7 @@ void Srch2ServerGateway::cb_globalOperations(struct evhttp_request * req, void *
     		cb_notfound(req, NULL);
     		break;
     	}
-    } catch (exception& e){
+    } catch (std::exception& e){
     	Logger::error(e.what());
     	srch2http::Srch2ServerRuntime::handleException(req);
     }
@@ -207,7 +207,7 @@ void Srch2ServerGateway::cb_notfound(evhttp_request *req, void *arg)
 			"application/json; charset=UTF-8");
 	try {
 		evhttp_send_reply(req, HTTP_NOTFOUND, "Not found", NULL);
-	} catch (exception& e) {
+	} catch (std::exception& e) {
 		// exception caught
 		Logger::error(e.what());
 		srch2http::Srch2ServerRuntime::handleException(req);
@@ -220,7 +220,7 @@ void Srch2ServerGateway::cb_wrongauthorizationkey(evhttp_request *req, void *arg
             "application/json; charset=UTF-8");
     try {
         evhttp_send_reply(req, HTTP_BADREQUEST, "Wrong authorization key", NULL);
-    } catch (exception& e) {
+    } catch (std::exception& e) {
         // exception caught
         Logger::error(e.what());
         Srch2ServerRuntime::handleException(req);

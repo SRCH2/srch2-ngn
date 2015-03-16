@@ -147,7 +147,7 @@ public:
 
 	MulticastDiscovery(){
 		port = 54000;
-		ttl = 2;
+		ttl = 30;
 		groupAddress = "224.2.2.10";
 		ipAddress = "0.0.0.0";
 	}
