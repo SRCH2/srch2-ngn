@@ -210,8 +210,7 @@ void MulticastDiscoveryService::initialDiscoveryHandler(const boost::system::err
 			if (message.ackMessageIdentifier == getTransportManager()->getCommunicationPort()) {
 				masterDetected = true;
 				Logger::console("Master node = %d found !", message.masterNodeId);
-	            syncManager->addNodeToAddressMappping(message.masterNodeId, message.interfaceNumericAddress, message.internalCommunicationPort);
-	            syncManager->setCurrentNodeId(message.nodeId);
+	            syncManager->storeMasterConnectionInfo(message.interfaceNumericAddress, message.internalCommunicationPort);
 	            syncManager->setMasterNodeId(message.masterNodeId);
 			}
 			break;
@@ -385,17 +384,6 @@ void MulticastDiscoveryService::postDiscoveryReadHandler(const boost::system::er
 				strncpy(ackMessage._clusterIdent, clusterIdentifier.c_str(), byteToCopy);
 				ackMessage._clusterIdent[byteToCopy] = '\0';
 
-				NodeEndPoint hostEndPoint = NodeEndPoint(message.interfaceNumericAddress, remoteNodePort);
-				if (nodeToNodeIdMap.find(hostEndPoint) != nodeToNodeIdMap.end()) {
-					ackMessage.nodeId = nodeToNodeIdMap[hostEndPoint];
-				} else {
-					ackMessage.nodeId = syncManager->getNextNodeId();
-					nodeToNodeIdMap.insert(make_pair(hostEndPoint, ackMessage.nodeId));
-					// also write this node to local nodes copy.
-					//        				Node node("", , remoteNodePort, true);
-					//        				syncManager->addNewNodeToLocalCopy(node);
-				}
-
 				char * ackMessageTempBuffer = new char[sizeOfMessage];
 				memset(ackMessageTempBuffer, 0, sizeOfMessage);
 
@@ -411,7 +399,6 @@ void MulticastDiscoveryService::postDiscoveryReadHandler(const boost::system::er
 				if (sendStatus == 1) {
 					goto tryAckAgain;
 				}
-				syncManager->addNodeToAddressMappping(ackMessage.nodeId, message.interfaceNumericAddress, message.internalCommunicationPort);
 
 				delete [] ackMessageTempBuffer;
 				Logger::debug("Ack Sent !!");

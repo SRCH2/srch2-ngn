@@ -136,12 +136,9 @@ typedef std::pair<sockaddr_in, NodeId> ConnectionInfo;
 class ConnectionMap {
 	// this map is from nodeID to Connection class
 	std::map<NodeId, Connection> nodeConnectionMap;
-	Node currentNode;
 	// destinations and nodeConnectionMap are changed by multiple threads
 	mutable boost::shared_mutex _access;
 public:
-	void setCurrentNode(Node& node) { currentNode = node; }
-	Node& getCurrentNode() { return currentNode; }
 	void addNodeConnection(NodeId, int);
 	Connection& getConnection(NodeId);
 	bool isConnectionExist(NodeId);

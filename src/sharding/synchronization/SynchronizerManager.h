@@ -2,7 +2,7 @@
  * SynchronizerManager.h
  *
  *  Created on: Apr 20, 2014
- *      Author: srch2
+ *      Author: Surendra
  */
 
 #ifndef __SHARDING_SYNCHRONIZERMANAGER_H__
@@ -11,6 +11,7 @@
 #include "configuration/ConfigManager.h"
 #include "transport/TransportManager.h"
 #include "sharding/sharding/ShardManager.h"
+#include "SMCallBackHandler.h"
 #include <utility>
 #include <queue>
 #include "util/Assert.h"
@@ -26,15 +27,25 @@ using namespace std;
 namespace srch2 {
 namespace httpwrapper {
 
-#define FETCH_UNSIGNED(x) *((unsigned *)(x))
-#define MSG_QUEUE_ARRAY_SIZE 1024
-
+typedef boost::asio::ip::tcp BoostTCP;
+typedef boost::asio::ip::address_v4 IpAddress;
 
 static const char OPS_DELETE_NODE = 1;
 
+struct MasterReplyInfo {
+	u_int32_t masterNodeId;
+	u_int32_t receiverNodeId;
+	u_int32_t nodesCountInCluster;
+	char masterNodeName[1024];
+};
+
+struct ClusterReplyInfo {
+	u_int32_t numericIpAddress;
+	u_int32_t port;
+};
+
 class SMCallBackHandler;
 class MessageHandler;
-class DiscoveryCallBack;
 class DiscoveryService;
 
 class NodeComparator {
@@ -59,7 +70,7 @@ void *bootSynchronizer(void *arg) ;
 class SyncManager {
 	friend class ClientMessageHandler;
 	friend class MasterMessageHandler;
-	friend class DiscoveryCallBack;
+	friend void* listenForIncomingConnection(void* arg);
 public:
 	/*
 	 *  Initialize internal state.
@@ -83,7 +94,7 @@ public:
 	void startDiscovery();
 
 	/*
-	 *  Return nodeId for the new node in cluster.
+	 *  node id sequence generator used by master node to assign ids to each new node joining the cluster.
 	 */
 	unsigned getNextNodeId();
 
@@ -93,10 +104,8 @@ public:
 
 	void setMasterNodeId(unsigned id) { masterNodeId = id;	}
 
-	void addNodeToAddressMappping(unsigned id, unsigned interfaceNumericAddress,
+	void storeMasterConnectionInfo( unsigned interfaceNumericAddress,
 			short internalCommunicationPort);
-
-	bool getDestinatioAddressByNodeId(unsigned id, struct sockaddr_in& destinationAddress);
 
 	bool isThisNodeMaster() { return isCurrentNodeMaster; }
 
@@ -115,36 +124,44 @@ public:
 
 	void addNewNodeToLocalCopy(const Node& node);
 
-private:
-	///
-	///  Private member functions start here.
-	///
-	/*
-	 *  Join existing cluster once the master is determined and current node id is received.
-	 *
-	 *  Called from :1.  Discovery Phase  2. Master relection phase.
-	 */
-	void joinExistingCluster(const Node& node, bool isDiscoveryPhase = false);
-
-	NodeId getNextMasterEligbleNode();
-
 	/*
 	 *   fetch timeout interval for SM messages.
 	 */
 	unsigned getTimeout() { return pingTimeout; }
 
-	//void refresh() {};
-	//unsigned findNextEligibleMaster();
+
+private:
+	///
+	///  Private member functions start here.
+	///
+
+	NodeId getNextMasterEligbleNode();
+
 	/*
 	 *   Send heartbeat request to all nodes in cluster
 	 */
-	void sendHeartBeatToAllNodesInCluster();
+	void sendHeartBeatToAllNodesInCluster(Message *message);
 
 	/*
 	 *   Wrapper around TM route function. Sets SM flag
 	 */
 	void route(NodeId node, Message *msg);
 
+	// connect with remote node and return a socket
+	BoostTCP::socket * setupConnectionWithRemoteNode(unsigned remoteNodeIpNumber, short remoteNodePort);
+
+	// get current node id and cluster information ( list of ip:port of other nodes) from master node.
+	void initialHandshakeWithMasterNode(BoostTCP::socket& endPoint,
+			ClusterReplyInfo *&nodesIpPortList, unsigned& nodesInCluster, string& masterNodeName);
+
+	// send current node's information to remote node and fetch remote node's information to complete the connection.
+	void initialHandshakeWithRemoteNode(BoostTCP::socket& endPoint, NodeInfo & remoteNodeInfo);
+
+	// non-master node calls this function to complete the TCP connections with all nodes in cluster.
+	void setupConnectionWithClusterNodes();
+
+	// accept TCP connection from other nodes.
+	void acceptConnectionFromNewNode();
 
 	///
 	///  Private member variables start here.
@@ -152,126 +169,47 @@ private:
 
 	bool isCurrentNodeMaster;
 	unsigned currentNodeId;
-	unsigned pingInterval;
-	unsigned pingTimeout;
 	unsigned masterNodeId;
+
+	// heartbeat related parameter.
+	unsigned pingInterval;  // interval gap between heartbeat
+	unsigned pingTimeout;   // max time before heartbeat should be detected
+
+
 	TransportManager& transport;
 	SMCallBackHandler *callBackHandler;
 	MessageHandler *messageHandler;
 	ConfigManager& config;
 	DiscoveryService *discoveryMgr;
-	DiscoveryCallBack  *discoveryCallBack;
-	unsigned nodeIds;
-	bool configUpdatesDone;
-	// Node identifier sequence.
-	unsigned uniqueNodeId;
-	std::map<NodeId, struct sockaddr_in>  nodeToAddressMap;
+
+	// Node id sequence.(Starts with 0)
+	unsigned uniqueNodeIdSequence;
+
+	struct MasterConnectionInfo {
+		unsigned ipAddress;
+		unsigned port;
+	} masterConnectionInfo;
+
+	// flag to stop SM on node shutdown.
 	bool stopSynchManager;
-	boost::mutex localNodesCopyMutex;
+
+	// stores nodes information of the cluster
 	vector<Node> localNodesCopy;
+	boost::mutex localNodesCopyMutex;
+
+	// keep track of nodes not reachable on node failure.
 	vector<Node> unreachableNodes;
+
+	// flag to indicate whether the master node can see more than N/2 nodes in cluster.
 	bool hasMajority;
-	string serializeClusterNodes(){
-		localNodesCopyMutex.lock();
-		stringstream ss;
-		unsigned localCopySize = localNodesCopy.size();
-	    ss.write((const char *)&localCopySize, sizeof(unsigned));
-		for(vector<Node>::iterator nodeItr = localNodesCopy.begin(); nodeItr != localNodesCopy.end(); ++nodeItr){
-	        unsigned nodeSize = nodeItr->serialize().size();
-		    ss.write((const char *)&nodeSize, sizeof(unsigned));
-			ss << nodeItr->serialize();
-		}
-		localNodesCopyMutex.unlock();
-		return ss.str();
-	}
+
+	BoostNetworkService networkIoService;
+
+	// temporary map of nodeid -> socket ...will be moved to TM
+	map<unsigned, BoostTCP::socket *> nodeToSocketMap;
 };
 
-class SMCallBackHandler : public CallBackHandler{
-public:
-	/*
-	 *   The function gets Message form TM and process it based on the message type.
-	 *
-	 *   1. Master heart beat message is stored with it arrival timestamp.
-	 *   2. Client message is stored in a per message queue array.
-	 *
-	 */
-	bool resolveMessage(Message * msg, NodeId node);
-
-	/*
-	 *  Constructor
-	 */
-	SMCallBackHandler(bool isMaster);
-
-	/*
-	 *  Remove message from node's queue.
-	 */
-	void removeMessageFromQueue(unsigned nodeId);
-
-	/*
-	 *  Remove message from node's queue.
-	 */
-	void getHeartBeatMessages(Message**msg);
-
-	/*
-	 *  Get heartbeat message's timestamp.
-	 */
-	std::time_t getHeartBeatMessageTime();
-
-	void setHeartBeatMessageTime(std::time_t time);
-
-	/*
-	 *   Get queued message from a given node's queue
-	 */
-	void getQueuedMessages(Message**inputMessage, unsigned nodeId);
-
-private:
-	bool isMaster;
-	// Last timestamp when heartbeat message was recieved from master
-	std::time_t heartbeatMessageTimeEntry;
-	// should keep the latest one only.
-	Message* heartbeatMessage;
-	boost::mutex hbLock;
-public:
-	// per Client entry
-	struct MessageQ{
-		std::queue<Message *> messageQueue;
-		boost::mutex qGuard;
-	} messageQArray[MSG_QUEUE_ARRAY_SIZE];
-
-	MessageAllocator msgAllocator;
-};
-
-/*
- *   The abstract class which provides a general interface for handling
- *   messages.
- */
-class MessageHandler {
-public:
-	MessageHandler(SyncManager* sm) { _syncMgrObj = sm; }
-
-	/*
-	 *   Any kind of failure should be handled in this function.
-	 */
-	virtual void handleFailure(Message *message) = 0;
-	/*
-	 *   Timeout case should be handled in this function.
-	 */
-	virtual void handleTimeOut(Message *message)  = 0;
-	/*
-	 *   Success case should be handled in this function.
-	 */
-	virtual void handleMessage(Message *message)  = 0;
-	/*
-	 *   The function should handle main logic of processing
-	 *   messages delivered by TM.
-	 */
-	virtual void lookForCallbackMessages(SMCallBackHandler*) = 0;
-
-	virtual ~MessageHandler() {}
-protected:
-	SyncManager *_syncMgrObj;
-};
-
+// Different states of non-master node
 enum ClientNodeState {
 	SM_MASTER_AVAILABLE,
 	SM_MASTER_UNAVAILABLE,
@@ -280,6 +218,11 @@ enum ClientNodeState {
 	SM_ELECTED_AS_MASTER
 };
 
+class MessageHandler {
+public:
+	virtual void lookForCallbackMessages(SMCallBackHandler*) = 0;
+	virtual ~MessageHandler() {}
+};
 /*
  *   This class implements the client node's message handling
  */
@@ -291,14 +234,6 @@ public:
 	 *   messages delivered by TM.
 	 */
 	void lookForCallbackMessages(SMCallBackHandler*);
-
-	void handleFailure(Message *message) {
-		ASSERT(false);
-	}
-
-	virtual void handleTimeOut(Message *message);
-
-	virtual void handleMessage(Message *message) ;
 
 private:
 
@@ -318,38 +253,30 @@ private:
 	NodeId expectedMasterNodeId;
 	std::string masterUnavailbleReason;
 	unsigned proposalInitationTime;
+
+	SyncManager *_syncMgrObj;
 };
 
 class MasterMessageHandler : public MessageHandler{
 public:
-	MasterMessageHandler(SyncManager *sm): MessageHandler(sm) { stopMessageHandler = false; }
+	MasterMessageHandler(SyncManager *sm): _syncMgrObj(sm) { stopMessageHandler = false; }
 	/*
 	 *   The function should handle main logic of processing
 	 *   messages delivered by TM.
 	 */
 	void lookForCallbackMessages(SMCallBackHandler*);
 
-	void handleFailure(Message *message) {
-		ASSERT(false);
-	}
-	virtual void handleTimeOut(Message *message) {
-		ASSERT(false);
-	}
-
-	virtual void handleMessage(Message *message);
-
 	void stopMasterMessageHandler() { stopMessageHandler = true; }
 
 private:
 
 	bool stopMessageHandler;
-	void updateNodeInCluster(Message *message);
 	void handleNodeFailure(NodeId nodeId);
 	// key = Node id , Value = Latest time when message was received from this node.
 	boost::unordered_map<unsigned, unsigned>  perNodeTimeStampEntry;
-
+	SyncManager *_syncMgrObj;
 };
 
-} /* namespace instantsearch */
+} /* namespace httpwrapper */
 } /* namespace srch2 */
-#endif /* SYNCHRONIZERMANAGER_H_ */
+#endif /* __SHARDING_SYNCHRONIZERMANAGER_H__ */

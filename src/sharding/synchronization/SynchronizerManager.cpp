@@ -2,7 +2,7 @@
  * SynchronizerManager.cpp
  *
  *  Created on: Apr 20, 2014
- *      Author: srch2
+ *      Author: Surendra
  */
 
 #include <arpa/inet.h>
@@ -13,13 +13,13 @@
 
 #include "SynchronizerManager.h"
 #include "transport/TransportHelper.h"
-#include "discovery/DiscoveryCallBack.h"
 #include "discovery/DiscoveryManager.h"
 #include "sharding/sharding/metadata_manager/Cluster_Writeview.h"
 
 namespace srch2 {
 namespace httpwrapper {
 
+// Start synchronization Manager heart beat detection logic in a separate thread.
 void * bootSynchronizer(void *arg) {
 	SyncManager * obj = (SyncManager *)arg;
 	if (!obj) {
@@ -41,24 +41,24 @@ SyncManager::SyncManager(ConfigManager& cm, TransportManager& tm) :
 	this->currentNodeId = -1;
 	this->messageHandler = NULL;
 	this->callBackHandler = NULL;
-	this->discoveryCallBack = NULL;
-	this->nodeIds = 0;
-	this->configUpdatesDone = false;
-	this->uniqueNodeId = 0;
+	this->uniqueNodeIdSequence = 0;
 	this->stopSynchManager = false;
+	this->hasMajority = true;
 
 	UnicastDiscoverySetting unicastdiscoverConf;
+	// first check whether Unicast discovery is specified in the config file.
 	const vector<std::pair<string, unsigned > >& wellknownHosts = config.getWellKnownHosts();
 	for (unsigned i = 0; i < wellknownHosts.size(); ++i) {
 		unicastdiscoverConf.knownHosts.push_back(HostAndPort(wellknownHosts[i].first,wellknownHosts[i].second));
 	}
+	// if unicast discovery is set then use unicast discovery as a mode of discovery
 	if (unicastdiscoverConf.knownHosts.size() > 0) {
 		unicastdiscoverConf.clusterName = config.getClusterName();
 		unicastdiscoverConf.print();
 
 		discoveryMgr = new  UnicastDiscoveryService(unicastdiscoverConf, this);
 	} else {
-
+		// Otherwise, get multicast config settings and use multicast discovery as a mode of discovery.
 		MulticastDiscoverySetting multicastdiscoverConf;
 		multicastdiscoverConf.clusterName = config.getClusterName();
 		multicastdiscoverConf.multicastPort = config.getMulticastDiscovery().getPort();
@@ -78,154 +78,345 @@ SyncManager::~SyncManager() {
 
 void * dispatchMasterMessageHandler(void *arg);
 
+// Run in new thread to accept TCP connection from new nodes.
+void* listenForIncomingConnection(void* arg) {
+	SyncManager *syncManager = (SyncManager *) arg;
+	syncManager->acceptConnectionFromNewNode();
+	return NULL;
+}
+
+// The functions first discovers the cluster and then the node joins the cluster.
 void SyncManager::startDiscovery() {
 
-	boost::unique_lock<boost::shared_mutex> xLock;
-	Cluster_Writeview * clusterWriteView = ShardManager::getWriteview_write(xLock);
-
-	SP(ClusterNodes_Writeview) nodesWriteview = ShardManager::getNodesWriteview_write();
-	ASSERT(nodesWriteview->getTotalNumberOfNodes() == 0);
-
-	Logger::console("running discovery");
-
-	/*
-	 *  start Listening/Accepting to new connection from other nodes. This has to be done
-	 *  first so that we reserve the port. This port needs to be communicated to other nodes
-	 *  during discovery so that can send connection request.
-	 */
-
+	Logger::console("[discovery] started ...");
+	// start discovery manager to detect the cluster.
 	discoveryMgr->init();
 
-	isCurrentNodeMaster = (masterNodeId == currentNodeId);
+	// after discovery is done there could be two scenarios
+	// 1. current node is a master node
+	// 2. current node found the master/cluster
 
-	clusterWriteView->setCurrentNodeId(currentNodeId);
-	nodesWriteview.reset();
-	nodesWriteview = ShardManager::getNodesWriteview_write();
-	// Also notify shard manager to update its current node id
-	ShardManager::getShardManager()->updateCurrentNodeId(clusterWriteView);
-
-
+	// create a node object for current node
 	Node node(config.getCurrentNodeName(), transport.getPublisedInterfaceAddress(), transport.getCommunicationPort(), true);
 	node.thisIsMe = true;
-	node.setId(this->currentNodeId);
-	node.setMaster(this->currentNodeId == this->masterNodeId);
+	node.setMaster(isCurrentNodeMaster);
 
-	localNodesCopyMutex.lock();
-	localNodesCopy.push_back(node);
-	localNodesCopyMutex.unlock();
+	if (isCurrentNodeMaster) {
+		node.setId(this->currentNodeId);
+		// Add new node in CM
+		SP(ClusterNodes_Writeview) nodesWriteview = ShardManager::getNodesWriteview_write();
+		ASSERT(nodesWriteview->getTotalNumberOfNodes() == 0);
+		nodesWriteview->addNode(node);
+		nodesWriteview->setNodeState(node.getId(), ShardingNodeStateArrived);
+		nodesWriteview.reset();
 
-	// Add new node in CM
-	nodesWriteview->addNode(node);
-	nodesWriteview->setNodeState(node.getId(), ShardingNodeStateArrived);
-	nodesWriteview.reset();
+	} else {
 
-	// Pass this node to transport manager's connection map object.
-	transport.getConnectionMap().setCurrentNode(node);
+		// if this node is not master then
+		// 1. Connect to master, get its nodeId, and fetch the cluster information.
+		// 2. Connect with other nodes in the cluster.
+		setupConnectionWithClusterNodes();
 
-	discoveryCallBack =  new DiscoveryCallBack(*this);
-    transport.registerCallbackHandlerForDiscovery(discoveryCallBack);
-
-	pthread_t listenThread;
-	pthread_create(&listenThread, NULL, listenForIncomingConnection, &transport);
-	// give thread id to transport manger so that it can reap it later.
-	transport.setListeningThread(listenThread);
-
-	xLock.unlock();
-
-	if (!isCurrentNodeMaster) {
-		joinExistingCluster(node, true /*true = discovery phase*/);
-	}
-
-	localNodesCopyMutex.lock();
-	std::sort(localNodesCopy.begin(), localNodesCopy.end(), NodeComparator());
-	localNodesCopyMutex.unlock();
-
-}
-
-void SyncManager::joinExistingCluster(const Node& node, bool isDiscoveryPhase) {
-	/*
-	 * if this node is not master then
-	 * 1. Connect to master and fetch all cluster information.
-	 * 2. Connect with other nodes in the cluster.
-	 */
-	sockaddr_in destinationAddress;
-	bool status = getDestinatioAddressByNodeId(masterNodeId, destinationAddress);
-	if (status == false) {
-		Logger::console("Master node %d destination address is not found", masterNodeId);
-		exit(-1); // TODO : we need error handling here ...
-	}
-	NodeInfo masterNodeInfo;
-	if (sendConnectionRequest(&transport, masterNodeId, masterNodeInfo, node, destinationAddress)) {
-		std::string masterIp(inet_ntoa(destinationAddress.sin_addr));
-		string masterNodeName = string(masterNodeInfo.nodeName);
-		Node masterNode(masterNodeName , masterIp, ntohs(destinationAddress.sin_port), false);
-		masterNode.setId(this->masterNodeId);
-		masterNode.setMaster(true);
-
-		if (isDiscoveryPhase){
-			// if discovery phase then write to CM directly. There is no shard manager yet.
-			SP(ClusterNodes_Writeview) nodesWriteview = ShardManager::getNodesWriteview_write();
-			nodesWriteview->addNode(masterNode);
-			// Todo : move this inside addNode call above.
-			nodesWriteview->setNodeState(masterNode.getId(), ShardingNodeStateArrived);
-		} else {
-			Logger::console("shard Manager Notified of new master");
-			// else notify shard manager
-		}
+		// Add new node to CM
+		node.setId(this->currentNodeId);
+		SP(ClusterNodes_Writeview) nodesWriteview = ShardManager::getNodesWriteview_write();
+		nodesWriteview->addNode(node);
+		nodesWriteview->setNodeState(node.getId(), ShardingNodeStateArrived);
+		nodesWriteview.reset();
 
 		localNodesCopyMutex.lock();
-		localNodesCopy.push_back(masterNode);
+		std::sort(localNodesCopy.begin(), localNodesCopy.end(), NodeComparator());
 		localNodesCopyMutex.unlock();
 	}
-	// use transport manager to fetch cluster state
-	configUpdatesDone = false;
-	Message *msg = MessageAllocator().allocateMessage(sizeof(NodeId));
-	msg->setType(ClusterInfoRequestMessageType);
-	if (isDiscoveryPhase) {
-		msg->setDiscoveryMask();
-	} else {
-		msg->setMask(0);
-	}
-	char * body = msg->getMessageBody();
-	*(unsigned *)body = currentNodeId;
-	transport.sendMessage(masterNodeId, msg);
-	MessageAllocator().deallocateByMessagePointer(msg);
 
-	// Wait till we get reply from master.
-	int retryCount = 10;
-	while(!__sync_val_compare_and_swap(&configUpdatesDone, true, true) && retryCount) {
-		sleep(1);
-		--retryCount;
-	}
-	if (configUpdatesDone == false) {
-		// master did not respond. Retun false. Let the caller handle the situation.
-		Logger::error("Cluster Information not received from master!!");
-		return;
-	}
-	// At this stage the cluster info is available to this node.
+	// start a thread to accept TCP connection from other nodes.
+	pthread_t listenThread;
+	pthread_create(&listenThread, NULL, listenForIncomingConnection, this);
+	// give the thread id to transport manger so that it stop the thread during the engine shutdown.
+	transport.setListeningThread(listenThread);
 
-	localNodesCopyMutex.lock();
-	vector<Node> localCopy = localNodesCopy;
-	localNodesCopyMutex.unlock();
-	for (unsigned i = 0 ; i < localCopy.size(); ++i) {
-		unsigned destinationNodeId = localCopy[i].getId();
-		if ( destinationNodeId >= currentNodeId || destinationNodeId == masterNodeId) {
-			continue;
-		}
-		inet_aton(localCopy[i].getIpAddress().c_str(), &destinationAddress.sin_addr);
-		destinationAddress.sin_port = htons(localCopy[i].getPortNumber());
-		NodeInfo destinationNodeInfo;
-		if (!sendConnectionRequest(&transport, destinationNodeId, destinationNodeInfo, node, destinationAddress)) {
-			Logger::console( "Could not connect to the node %d", destinationNodeId);
-			//TODO:
-		}
-	}
+	// Notify shard manager to update its current node id
+	boost::unique_lock<boost::shared_mutex> xLock;
+	Cluster_Writeview * clusterWriteView = ShardManager::getWriteview_write(xLock);
+	clusterWriteView->setCurrentNodeId(currentNodeId);
+	ShardManager::getShardManager()->updateCurrentNodeId(clusterWriteView);
+	xLock.unlock();
+
 }
 
+// connect with remote node and return a socket
+BoostTCP::socket * SyncManager::setupConnectionWithRemoteNode(unsigned remoteNodeIpNumber, short remoteNodePort) {
+
+	BoostTCP::socket * newEndPointPtr = new BoostTCP::socket(networkIoService);
+	BoostTCP::socket& newEndPoint = *newEndPointPtr;
+	newEndPoint.open(BoostTCP::v4());
+
+	std::string remoteNodeIp;
+	TransportUtil::getIpAddressFromNumber(remoteNodeIpNumber, remoteNodeIp);
+
+	Logger::console("Trying to connect to %s:%d", remoteNodeIp.c_str(), remoteNodePort);
+
+	TCPConnectHandler connectHandler(networkIoService, newEndPoint);
+	connectHandler.connectWithTimeout(IpAddress::from_string(remoteNodeIp), remoteNodePort);
+
+	return newEndPointPtr;
+}
+
+// get current node id and cluster information ( list of ip:port of other nodes) from master node.
+void SyncManager::initialHandshakeWithMasterNode(BoostTCP::socket& endPoint, ClusterReplyInfo *&nodesIpPortList,
+		unsigned& nodesInCluster, string& masterNodeName) {
+
+	NodeInfo currentNodeInfo;
+	currentNodeInfo.nodeId = currentNodeId;
+	currentNodeInfo.ipaddress = transport.getPublishedInterfaceNumericAddr();
+	currentNodeInfo.communicationPort =  transport.getCommunicationPort();
+	memcpy(currentNodeInfo.nodeName, config.getCurrentNodeName().c_str(), config.getCurrentNodeName().size());
+
+	TCPBlockingSender blockingSender(networkIoService, endPoint);
+	blockingSender.sendData((char *)&currentNodeInfo, sizeof(NodeInfo));
+
+	// Fetch current node id and total nodes in cluster
+	MasterReplyInfo masterReply;
+	TCPBlockingReceiver blockingReceiver(networkIoService, endPoint);
+	blockingReceiver.receiveData((char *)&masterReply, sizeof(MasterReplyInfo));
+
+	if (masterReply.masterNodeId != masterNodeId) {
+		Logger::console("connected to invalid master node = %d", masterReply.masterNodeId);
+		throw runtime_error("");
+	}
+
+	currentNodeId = masterReply.receiverNodeId;
+	nodesInCluster = masterReply.nodesCountInCluster;
+	masterNodeName = string(masterReply.masterNodeName);
+
+	nodesIpPortList = NULL;
+	if (nodesInCluster) {
+		unsigned sizeOfClusterReplyMessage = nodesInCluster * sizeof(ClusterReplyInfo);
+		nodesIpPortList = new ClusterReplyInfo[sizeOfClusterReplyMessage];
+		// Fetch list of ip:port of cluster nodes
+		blockingReceiver.receiveData((char *)nodesIpPortList, sizeOfClusterReplyMessage);
+	}
+
+	unsigned fd = endPoint.native();
+	fcntl(fd, F_SETFL, O_NONBLOCK);
+	Logger::console("Adding node = %d to known connection", masterNodeId);
+	transport.getConnectionMap().addNodeConnection(masterNodeId, fd);
+	// add event to event base to start listening on this socket
+	Connection *conn = &(transport.getConnectionMap().getConnection(masterNodeId));
+	transport.registerEventListenerForSocket(fd, conn);
+}
+
+// send current node's information to remote node and fetch remote node's information to complete the connection.
+void SyncManager::initialHandshakeWithRemoteNode(BoostTCP::socket& endPoint, NodeInfo & remoteNodeInfo) {
+
+	NodeInfo currentNodeInfo;
+	currentNodeInfo.nodeId = currentNodeId;
+	currentNodeInfo.ipaddress = transport.getPublishedInterfaceNumericAddr();
+	currentNodeInfo.communicationPort =  transport.getCommunicationPort();
+	memcpy(currentNodeInfo.nodeName, config.getCurrentNodeName().c_str(), config.getCurrentNodeName().size());
+
+	TCPBlockingSender blockingSender(networkIoService, endPoint);
+	blockingSender.sendData((char *)&currentNodeInfo, sizeof(NodeInfo));
+
+	TCPBlockingReceiver blockingReceiver(networkIoService, endPoint);
+	blockingReceiver.receiveData((char *)&remoteNodeInfo, sizeof(NodeInfo));
+
+	unsigned destinationNodeId = remoteNodeInfo.nodeId;
+	ASSERT(destinationNodeId < currentNodeInfo.nodeId);
+
+	if (transport.getConnectionMap().isConnectionExist(destinationNodeId)) {
+		Logger::console("Connection to node id = %d already exist", destinationNodeId);
+		return;
+	}
+
+	unsigned fd = endPoint.native();
+	fcntl(fd, F_SETFL, O_NONBLOCK);
+	Logger::console("Adding node = %d to known connection", destinationNodeId);
+	transport.getConnectionMap().addNodeConnection(destinationNodeId, fd);
+	// add event to event base to start listening on this socket
+	Connection *conn = &(transport.getConnectionMap().getConnection(destinationNodeId));
+	transport.registerEventListenerForSocket(fd, conn);
+
+}
+
+// If a node is not a master node then setup connection with cluster nodes.
+void SyncManager::setupConnectionWithClusterNodes() {
+
+	if (transport.getConnectionMap().isConnectionExist(masterNodeId)) {
+		Logger::console("Connection to master node id = %d already exist", masterNodeId);
+		return ;
+	}
+
+	//1. First setup TCP connection with master node
+	BoostTCP::socket * masterEndPoint = setupConnectionWithRemoteNode(
+			masterConnectionInfo.ipAddress, masterConnectionInfo.port);
+
+	unsigned nonMasterNodesInCluster;
+	ClusterReplyInfo *nodesIpPortList = NULL;
+	string masterNodeName;
+
+	//2. get current node's id and other nodes ip:port information
+	initialHandshakeWithMasterNode(*masterEndPoint, nodesIpPortList, nonMasterNodesInCluster, masterNodeName);
+
+	nodeToSocketMap[masterNodeId] = masterEndPoint;
+
+
+	std::string masterIpAddress;
+	TransportUtil::getIpAddressFromNumber(masterConnectionInfo.ipAddress, masterIpAddress);
+
+	Node masterNode(masterNodeName , masterIpAddress, masterConnectionInfo.port, false);
+	masterNode.setId(this->masterNodeId);
+	masterNode.setMaster(true);
+	//3. Add master node to SM's local copy of node information.
+	addNewNodeToLocalCopy(masterNode);
+
+	//4. Also add master node to CM
+	{
+		// if discovery phase then write to CM directly. There is no shard manager yet.
+		SP(ClusterNodes_Writeview) nodesWriteview = ShardManager::getNodesWriteview_write();
+		nodesWriteview->addNode(masterNode);
+		nodesWriteview->setNodeState(masterNode.getId(), ShardingNodeStateArrived);
+	}
+
+	//5. If there are other nodes in cluster other than master, then setup tcp connection with other nodes
+	if (nonMasterNodesInCluster) {
+
+		for (unsigned i = 0; i < nonMasterNodesInCluster; ++i) {
+			NodeInfo remoteNodeInfo;
+			// setup TCP connection with non-master remote node
+			BoostTCP::socket *nodeEndPoint = setupConnectionWithRemoteNode(nodesIpPortList[i].numericIpAddress,
+					nodesIpPortList[i].port);
+
+			// fetch remote node information
+			initialHandshakeWithRemoteNode(*nodeEndPoint, remoteNodeInfo);
+
+			unsigned destinationNodeId = remoteNodeInfo.nodeId;
+			nodeToSocketMap[destinationNodeId] = nodeEndPoint;
+
+			std::string nodeIpAddr;
+			TransportUtil::getIpAddressFromNumber(remoteNodeInfo.ipaddress, nodeIpAddr);
+
+			// Add node to SM's local copy of node information
+			Node remoteNode(remoteNodeInfo.nodeName, nodeIpAddr , remoteNodeInfo.communicationPort, false);
+			remoteNode.setId(remoteNodeInfo.nodeId);
+			addNewNodeToLocalCopy(remoteNode);
+
+			//Also add master node to CM
+			SP(ClusterNodes_Writeview) nodesWriteview = ShardManager::getNodesWriteview_write();
+			nodesWriteview->addNode(remoteNode);
+			nodesWriteview->setNodeState(remoteNode.getId(), ShardingNodeStateArrived);
+		}
+	}
+
+	delete[] nodesIpPortList;
+}
+
+// Accept connection from new node. It is a blocking function and should be called in a new thread.
+void SyncManager::acceptConnectionFromNewNode() {
+
+	BoostTCP::endpoint listenEndPoint(
+			IpAddress::from_string(transport.getPublisedInterfaceAddress()), transport.getCommunicationPort());
+
+	BoostNetworkService listenerService;
+	BoostTCP::acceptor connectionAcceptor(listenerService);
+	connectionAcceptor.open(listenEndPoint.protocol());
+	connectionAcceptor.set_option(BoostTCP::acceptor::reuse_address(true));
+
+	connectionAcceptor.bind(listenEndPoint);
+	connectionAcceptor.listen();
+	while(!stopSynchManager) {
+
+		// newEndPointPtr is a socket to hold new connection request.
+		BoostTCP::socket * newEndPointPtr = new BoostTCP::socket(listenerService);
+		BoostTCP::socket& newEndPoint = *newEndPointPtr;
+
+		// block and wait for new connection.
+		connectionAcceptor.accept(newEndPoint);
+
+		NodeInfo remoteNodeInfo;
+
+		// read remote node information
+		TCPBlockingReceiver blockingReceiver(listenerService, newEndPoint);
+		blockingReceiver.receiveData((char *)&remoteNodeInfo, sizeof(NodeInfo));
+
+		unsigned remoteNodeID = remoteNodeInfo.nodeId;
+		if (isCurrentNodeMaster) {
+			// It he accepting node is master node then
+			// 1. generate and send new node's id along with count of nodes (excluding master) in cluster
+			// 2. send ip:port list of nodes in cluster other than master node.
+			localNodesCopyMutex.lock();
+
+			remoteNodeID = getNextNodeId();
+
+			MasterReplyInfo reply;
+			memset((char *)&reply, 0, sizeof(MasterReplyInfo));
+			reply.masterNodeId = currentNodeId;
+			const string& masterNodeName =  config.getCurrentNodeName();
+			memcpy(reply.masterNodeName,masterNodeName.c_str(), masterNodeName.length());
+			reply.nodesCountInCluster = localNodesCopy.size();
+			reply.receiverNodeId = remoteNodeID;
+
+			TCPBlockingSender blockingSender(listenerService, newEndPoint);
+			blockingSender.sendData((char *)&reply, sizeof(MasterReplyInfo));
+
+			if (localNodesCopy.size() > 0) {
+				unsigned sizeOfClusterReplyMessage = localNodesCopy.size()  * sizeof(ClusterReplyInfo);
+				ClusterReplyInfo * nodesIpPortList = new ClusterReplyInfo[sizeOfClusterReplyMessage];
+
+				for (unsigned i = 0; i < localNodesCopy.size(); ++i) {
+					nodesIpPortList[i].numericIpAddress =  IpAddress::from_string(localNodesCopy[i].getIpAddress()).to_ulong();
+					nodesIpPortList[i].port = localNodesCopy[i].getPortNumber();
+				}
+
+				blockingSender.sendData((char *)nodesIpPortList, sizeOfClusterReplyMessage);
+
+				delete[] nodesIpPortList;
+			}
+			localNodesCopyMutex.unlock();
+		} else {
+
+			// It he accepting node is not a  master node then send the current node's information back.
+			NodeInfo currentNodeInfo;
+			currentNodeInfo.ipaddress = transport.getPublishedInterfaceNumericAddr();
+			currentNodeInfo.communicationPort =  transport.getCommunicationPort();
+			currentNodeInfo.nodeId = currentNodeId;
+			const string& currentNodeName =  config.getCurrentNodeName();
+			memcpy(currentNodeInfo.nodeName, currentNodeName.c_str(), currentNodeName.length());
+
+			TCPBlockingSender blockingSender(listenerService, newEndPoint);
+			blockingSender.sendData((char *)& currentNodeInfo, sizeof(NodeInfo));
+		}
+
+		string remoteNodeIpAddr;
+		TransportUtil::getIpAddressFromNumber(remoteNodeInfo.ipaddress, remoteNodeIpAddr);
+		string remoteNodeName = string(remoteNodeInfo.nodeName);
+
+		Node remoteNode(remoteNodeName , remoteNodeIpAddr, remoteNodeInfo.communicationPort, false);
+		remoteNode.setId(remoteNodeID);
+		remoteNode.setMaster(false);
+
+		// add to a local copy
+		addNewNodeToLocalCopy(remoteNode);
+
+		unsigned fd = newEndPointPtr->native();
+		transport.getConnectionMap().acceptConnection(fd, remoteNodeID);
+		// add event to event base to start listening on this socket
+		Connection *conn = &(transport.getConnectionMap().getConnection(remoteNodeID));
+		transport.registerEventListenerForSocket(fd, conn);
+
+		nodeToSocketMap[remoteNodeID] = newEndPointPtr;
+
+		// notify ShardManger. Do not write directly to cluster write view.
+		ShardManager::getShardManager()->resolveSMNodeArrival(remoteNode);
+	}
+	connectionAcceptor.close();
+}
+
+// Helper function to add node to SM's local copy
 void SyncManager::addNewNodeToLocalCopy(const Node& newNode) {
 	localNodesCopyMutex.lock();
 	localNodesCopy.push_back(newNode);
-	Logger::console("[%d, %d, %d]", localNodesCopy.size(), masterNodeId, currentNodeId);
+	Logger::console("[%d, %d, %d]", localNodesCopy.size() + 1, masterNodeId, currentNodeId);
 	localNodesCopyMutex.unlock();
 }
 
@@ -233,7 +424,7 @@ void SyncManager::run(){
 	Logger::console("running synchronizer");
 	{
 		localNodesCopyMutex.lock();
-		Logger::console("[%d, %d, %d]", localNodesCopy.size(),
+		Logger::console("[%d, %d, %d]", localNodesCopy.size() + 1,
 				masterNodeId, currentNodeId);
 		localNodesCopyMutex.unlock();
 	}
@@ -247,9 +438,6 @@ void SyncManager::run(){
 	/*
 	 *  2. Depending upon whether the current node is master or client , the SM will
 	 *     perform different duties.
-	 *
-	 *     Note: the node can change from master to client or vice-versa during cluster
-	 *     life cycle.
 	 */
 	while(!stopSynchManager) {
 		if (isCurrentNodeMaster) {
@@ -262,17 +450,26 @@ void SyncManager::run(){
 			 */
 			pthread_t masterCbHandlerThread;
 			pthread_create(&masterCbHandlerThread,  NULL, dispatchMasterMessageHandler, messageHandler);
-			while(!stopSynchManager) {
-				sendHeartBeatToAllNodesInCluster();
+
+			MessageAllocator msgAllocator = MessageAllocator();
+			Message * heartBeatMessage = msgAllocator.allocateMessage(sizeof(NodeId));
+			heartBeatMessage->setType(HeartBeatMessageType);
+			heartBeatMessage->setBodyAndBodySize(&currentNodeId, sizeof(NodeId));
+
+			while(isCurrentNodeMaster) {
+				sendHeartBeatToAllNodesInCluster(heartBeatMessage);
 				if (!hasMajority) {
 					//stepDown
 					isCurrentNodeMaster = false;
 					// stop the discovery thread
 					discoveryMgr->stopDiscovery();
-					break;
+				} else {
+					sleep(pingInterval);
 				}
-				sleep(pingInterval);
 			}
+
+			msgAllocator.deallocateByMessagePointer(heartBeatMessage);
+
 			((MasterMessageHandler *)messageHandler)->stopMasterMessageHandler();
 			pthread_join(masterCbHandlerThread, NULL);
 			Logger::console("SM-M%d master stepping down ...", currentNodeId);
@@ -288,7 +485,7 @@ void SyncManager::run(){
 				sleep(pingInterval);
 				if (isCurrentNodeMaster) { // if this node get elected as leader.
 					localNodesCopyMutex.lock();
-					this->uniqueNodeId = localNodesCopy.back().getId() + 1;
+					this->uniqueNodeIdSequence = localNodesCopy.back().getId() + 1;
 					localNodesCopyMutex.unlock();
 					break;
 				}
@@ -298,6 +495,7 @@ void SyncManager::run(){
 	}
 }
 
+// Get the node id of a node which is next in line to become master.
 NodeId SyncManager::getNextMasterEligbleNode() {
 
 	localNodesCopyMutex.lock();
@@ -316,41 +514,28 @@ NodeId SyncManager::getNextMasterEligbleNode() {
 	return -1;
 }
 
+// node id sequence generator used by master node to assign ids to
+// each new node joining the cluster.
 unsigned SyncManager::getNextNodeId() {
 	if (isCurrentNodeMaster)
-		return __sync_fetch_and_add(&uniqueNodeId, 1);
+		// atomically increase the node id count by 1
+		return __sync_fetch_and_add(&uniqueNodeIdSequence, 1);
 	else {
 		ASSERT(false);
-		return uniqueNodeId;
+		return uniqueNodeIdSequence;
 	}
 }
 
-void SyncManager::addNodeToAddressMappping(unsigned id, unsigned interfaceNumericAddress,
+void SyncManager::storeMasterConnectionInfo(unsigned interfaceNumericAddress,
 		short internalCommunicationPort ) {
-	struct sockaddr_in destinationAddress;
-	memset(&destinationAddress, 0, sizeof(destinationAddress));
-	destinationAddress.sin_addr.s_addr = interfaceNumericAddress;
-	destinationAddress.sin_family = AF_INET;
-	destinationAddress.sin_port = htons(internalCommunicationPort);
-	nodeToAddressMap[id] = destinationAddress;
-}
-
-bool SyncManager::getDestinatioAddressByNodeId(unsigned id, struct sockaddr_in& address) {
-	if (nodeToAddressMap.count(id) > 0) {
-		address = nodeToAddressMap[id];
-		return true;
-	}
-	return false;
+	masterConnectionInfo.ipAddress = interfaceNumericAddress;
+	masterConnectionInfo.port = internalCommunicationPort;
 }
 
 /*
  *   Send HeartBeat request to all the clients in the cluster.
  */
-void SyncManager::sendHeartBeatToAllNodesInCluster() {
-	MessageAllocator msgAllocator = MessageAllocator();
-	Message * heartBeatMessage = msgAllocator.allocateMessage(sizeof(NodeId));
-	heartBeatMessage->setType(HeartBeatMessageType);
-	heartBeatMessage->setBodyAndBodySize(&currentNodeId, sizeof(NodeId));
+void SyncManager::sendHeartBeatToAllNodesInCluster(Message * heartBeatMessage) {
 
 	localNodesCopyMutex.lock();
 	for(vector<Node>::iterator nodeItr = localNodesCopy.begin(); nodeItr != localNodesCopy.end(); ++nodeItr){
@@ -361,7 +546,6 @@ void SyncManager::sendHeartBeatToAllNodesInCluster() {
 		route( nodeItr->getId(), heartBeatMessage);
 	}
 	localNodesCopyMutex.unlock();
-	msgAllocator.deallocateByMessagePointer(heartBeatMessage);
 }
 
 void SyncManager::route(NodeId node, Message *msg) {
@@ -371,136 +555,10 @@ void SyncManager::route(NodeId node, Message *msg) {
 }
 
 ///
-///   SM Handler implementation start here.
-///
-
-/*
- *  Constructor
- */
-SMCallBackHandler::SMCallBackHandler(bool isMaster) {
-	this->isMaster = isMaster;
-	heartbeatMessageTimeEntry = time(NULL);
-	msgAllocator = MessageAllocator();
-    heartbeatMessage = msgAllocator.allocateMessage(sizeof(NodeId));
-
-}
-/*
- *   The function gets Message form TM and process it based on the message type.
- *
- *   1. Master heart beat message is stored with it arrival timestamp.
- *   2. Client message is stored in a per message queue array.
- *
- */
-bool SMCallBackHandler::resolveMessage(Message *message, NodeId node){
-	switch(message->getType()){
-	case HeartBeatMessageType:
-	{
-		if (!isMaster) {
-			Logger::debug("SM-CB-getting heart-beat request from node %d", node);
-			boost::mutex::scoped_lock lock(hbLock);
-			heartbeatMessageTimeEntry = time(NULL);
-			memcpy(heartbeatMessage, message, sizeof(Message) + sizeof(NodeId));
-		} else {
-			//cout << "Master should not receive heat beat request" << endl;
-			ASSERT(false);
-		}
-		break;
-	}
-	case ClusterUpdateMessageType:
-	case ClientStatusMessageType:
-	case LeaderElectionAckMessageType:
-	case LeaderElectionProposalMessageType:
-	{
-		if (message->getBodySize() >= sizeof(NodeId)) {
-			unsigned nodeId = FETCH_UNSIGNED(message->getMessageBody());
-			/*
-			 *  We have an array of message queues. Each nodes is assigned its
-			 *  queue base on its nodeId ( nodeId % array_size). Once the node
-			 *  gets its queue, we append its message to the queue so that it
-			 *  can be processed by master's message handler.
-			 */
-			unsigned idx = nodeId % MSG_QUEUE_ARRAY_SIZE;
-			Message * msg = msgAllocator.allocateMessage(message->getBodySize());
-			memcpy(msg, message, sizeof(Message) + message->getBodySize());
-			boost::mutex::scoped_lock lock(messageQArray[idx].qGuard);
-			messageQArray[idx].messageQueue.push(msg);
-
-		} else {
-			Logger::warn("SM-CB: Incomplete message received!!");
-			ASSERT(false);
-		}
-		break;
-	}
-	default:
-		if (message->getBodySize() >= sizeof(NodeId)) {
-			unsigned nodeId = FETCH_UNSIGNED(message->getMessageBody());
-			Logger::warn("SM-CB: Bad message type received from node = %d", nodeId) ;
-		}
-		break;
-	}
-	return true;
-}
-
-/*
- *  Fetch heartbeat message from SMcallback Handler.
- */
-void SMCallBackHandler::getHeartBeatMessages(Message**msg) {
-	boost::mutex::scoped_lock lock(hbLock);
-	*msg = msgAllocator.allocateMessage(sizeof(NodeId));
-	memcpy(*msg, heartbeatMessage, sizeof(Message) + sizeof(NodeId));
-}
-
-/*
- *  Fetch recent heartbeat message's timestamp.
- */
-std::time_t  SMCallBackHandler::getHeartBeatMessageTime(){
-	boost::mutex::scoped_lock lock(hbLock);
-	std::time_t copy = heartbeatMessageTimeEntry;
-	return copy;
-}
-
-void SMCallBackHandler::setHeartBeatMessageTime(std::time_t time){
-	boost::mutex::scoped_lock lock(hbLock);
-	heartbeatMessageTimeEntry = time;
-}
-
-void SMCallBackHandler::getQueuedMessages(Message**inputMessage, unsigned masterNodeId){
-
-	*inputMessage = NULL;
-	unsigned index = masterNodeId % MSG_QUEUE_ARRAY_SIZE;
-	if (this->messageQArray[index].messageQueue.size() > 0) {
-		Message * queuedMessage = this->messageQArray[index].messageQueue.front();
-		*inputMessage = msgAllocator.allocateMessage(queuedMessage->getBodySize());
-		memcpy(*inputMessage, queuedMessage, sizeof(Message) + queuedMessage->getBodySize());
-		removeMessageFromQueue(masterNodeId);
-	}
-}
-
-/*
- *  Remove the processed message from Node's queue
- */
-void SMCallBackHandler::removeMessageFromQueue(unsigned nodeId)
-{
-	unsigned idx = nodeId % MSG_QUEUE_ARRAY_SIZE;
-	Message *ptr = NULL;
-	std::queue<Message *> & ref = messageQArray[idx].messageQueue;
-	{
-		// x-auto-lock
-		boost::mutex::scoped_lock lock(messageQArray[idx].qGuard);
-		if (ref.size()) {
-			ptr = ref.front();
-			ref.pop();
-		}
-	}
-	if (ptr)
-		msgAllocator.deallocateByMessagePointer(ptr);
-}
-
-///
 ///  ClientMessageHandler logic begins here.
 ///
 
-ClientMessageHandler::ClientMessageHandler(SyncManager* sm): MessageHandler(sm) {
+ClientMessageHandler::ClientMessageHandler(SyncManager* sm): _syncMgrObj(sm) {
 	nodeState = SM_MASTER_AVAILABLE;
 	itselfInitiatedMasterElection = false;
 	cMessageAllocator = MessageAllocator();
@@ -536,7 +594,7 @@ void ClientMessageHandler::lookForCallbackMessages(SMCallBackHandler* callBackHa
 			 */
 			Message * message;
 			callBackHandler->getHeartBeatMessages(&message);
-			handleMessage(message);
+			processHeartBeat(message);
 			cMessageAllocator.deallocateByMessagePointer(message);
 
 			// check for any cluster updates from master
@@ -591,7 +649,7 @@ void ClientMessageHandler::lookForCallbackMessages(SMCallBackHandler* callBackHa
 		_syncMgrObj->masterNodeId = _syncMgrObj->currentNodeId;
 		_syncMgrObj->isCurrentNodeMaster = true;
 		_syncMgrObj->localNodesCopyMutex.lock();
-		Logger::console("[%d, %d, %d]", _syncMgrObj->localNodesCopy.size(),
+		Logger::console("[%d, %d, %d]", _syncMgrObj->localNodesCopy.size() + 1,
 				_syncMgrObj->masterNodeId, _syncMgrObj->currentNodeId);
 		_syncMgrObj->localNodesCopyMutex.unlock();
 		_syncMgrObj->discoveryMgr->reInit();
@@ -626,7 +684,7 @@ void ClientMessageHandler::lookForCallbackMessages(SMCallBackHandler* callBackHa
 				this->nodeState = SM_MASTER_AVAILABLE;
 				cMessageAllocator.deallocateByMessagePointer(message);
 				_syncMgrObj->localNodesCopyMutex.lock();
-				Logger::console("[%d, %d, %d]", _syncMgrObj->localNodesCopy.size(),
+				Logger::console("[%d, %d, %d]", _syncMgrObj->localNodesCopy.size() + 1,
 							_syncMgrObj->masterNodeId, _syncMgrObj->currentNodeId);
 				_syncMgrObj->localNodesCopyMutex.unlock();
 				callBackHandler->setHeartBeatMessageTime(time(NULL));
@@ -664,7 +722,7 @@ void ClientMessageHandler::handleNodeFailure(NodeId nodeId) {
 			break;
 		}
 	}
-	Logger::console("[%d, %d, %d]", _syncMgrObj->localNodesCopy.size(),
+	Logger::console("[%d, %d, %d]", _syncMgrObj->localNodesCopy.size() + 1,
 				_syncMgrObj->masterNodeId, _syncMgrObj->currentNodeId);
 	_syncMgrObj->localNodesCopyMutex.unlock();
 }
@@ -837,40 +895,9 @@ void ClientMessageHandler::processHeartBeat(Message *message) {
 	msgAllocator.deallocateByMessagePointer(heartBeatResponse);
 }
 
-void ClientMessageHandler::handleTimeOut(Message *message) {
-
-}
-
-void ClientMessageHandler::handleMessage(Message *message) {
-	switch(message->getType()) {
-	case HeartBeatMessageType:
-		processHeartBeat(message);
-		break;
-	default:
-		break;
-	}
-}
-
 ///
 ///   MasterMessageHandler (Master Node's message handler) logic begins here.
 ///
-void MasterMessageHandler::updateNodeInCluster(Message *message) {
-	if (message->getBodySize() < sizeof(NodeId))
-		return;
-
-	unsigned nodeId = FETCH_UNSIGNED(message->getMessageBody());
-	if (message->getBodySize() == sizeof(NodeId))
-	{
-		Logger::debug("SM-M%d-node %d state is same since last heartbeat!",
-				_syncMgrObj->currentNodeId, nodeId);
-		return;
-	}
-	/*  TODO V1
-	 * 1. Deserialize node
-	 * 2. fetch node from cluster, update and store it back in cluster.
-	 */
-	Logger::debug("cluster node %d updated", nodeId);
-}
 
 void MasterMessageHandler::handleNodeFailure(NodeId nodeId) {
 
@@ -921,7 +948,7 @@ void MasterMessageHandler::handleNodeFailure(NodeId nodeId) {
 	MessageAllocator().deallocateByMessagePointer(removeNodeMessage);
 
 
-	Logger::console("[%d, %d, %d]", nodes.size(),
+	Logger::console("[%d, %d, %d]", nodes.size() + 1,
 			_syncMgrObj->masterNodeId, _syncMgrObj->currentNodeId);
 
 }
@@ -936,7 +963,6 @@ void * dispatchMasterMessageHandler(void *arg) {
 void MasterMessageHandler::lookForCallbackMessages(SMCallBackHandler* /*not used*/) {
 	SMCallBackHandler* callBackHandler  = _syncMgrObj->callBackHandler;
 
-	boost::shared_ptr<const ClusterResourceMetadata_Readview> clusterReadview;
 
 	while(!stopMessageHandler) {
 		_syncMgrObj->localNodesCopyMutex.lock();
@@ -972,7 +998,6 @@ void MasterMessageHandler::lookForCallbackMessages(SMCallBackHandler* /*not used
 						Logger::debug("SM-M%d-Message from active node %d",
 								_syncMgrObj->currentNodeId, msgNodeId);
 						(*iter).second = time(0);
-						handleMessage(msg);
 					} else {
 						Logger::debug("SM-M%d-new node = %d found!!..start book keeping",
 													_syncMgrObj->currentNodeId, nodeId);
@@ -1026,14 +1051,4 @@ void MasterMessageHandler::lookForCallbackMessages(SMCallBackHandler* /*not used
 	}
 }
 
-void MasterMessageHandler::handleMessage(Message *message) {
-	switch(message->getType()) {
-	case ClientStatusMessageType:
-		updateNodeInCluster(message);
-		break;
-	default:
-		Logger::debug("unknown message type");
-		ASSERT(false);
-	}
-}
 }} // srch2::httpwrapper

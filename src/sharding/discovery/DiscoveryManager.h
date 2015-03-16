@@ -28,9 +28,6 @@ using namespace boost;
 namespace srch2 {
 namespace httpwrapper {
 
-typedef asio::ip::udp BoostUDP;
-typedef asio::ip::address_v4 IpAddress;
-
 /*
  *  Discovery message flags used for identifying message type
  */
@@ -68,7 +65,7 @@ struct DiscoveryMessage {
 	int16_t type;                        // message identifier
 	uint32_t interfaceNumericAddress;    // IP address of sender (unsigned format)
 	uint32_t internalCommunicationPort;  // Port of sender used for TM communication.
-	NodeId nodeId;                       // New remote node's Id. To be filled by master and sent to remote node on discovery
+	//NodeId nodeId;                       // New remote node's Id. To be filled by master and sent to remote node on discovery
 	NodeId masterNodeId;                 // Master's Id. To be filled by master and sent to remote node on discovery
 	uint32_t ackMessageIdentifier;       // To be used for ACK messages only by master (in multicast discovery)
 	char _clusterIdent[DISCOVERY_CLUSTER_IDENT_SIZE];             // cluster name ( upto 100 chars)
@@ -77,7 +74,7 @@ struct DiscoveryMessage {
 		this->type = 0;
 		this->interfaceNumericAddress = 0;
 		this->internalCommunicationPort = 0;
-		this->nodeId = 0;
+//		this->nodeId = 0;
 		this->masterNodeId = 0;
 		this->ackMessageIdentifier = 0;
 		memset(this->_clusterIdent, 0 , DISCOVERY_CLUSTER_IDENT_SIZE);
@@ -86,7 +83,7 @@ struct DiscoveryMessage {
 		this->type = right.type;
 		this->interfaceNumericAddress = right.interfaceNumericAddress;
 		this->internalCommunicationPort = right.internalCommunicationPort;
-		this->nodeId = right.nodeId;
+//		this->nodeId = right.nodeId;
 		this->masterNodeId = right.masterNodeId;
 		this->ackMessageIdentifier = right.ackMessageIdentifier;
 		memcpy(this->_clusterIdent, right._clusterIdent , DISCOVERY_CLUSTER_IDENT_SIZE);
@@ -104,7 +101,7 @@ struct DiscoveryMessage {
 		numberOfBytes += srch2::util::getNumberOfBytesFixedTypes(type) ;
 		numberOfBytes += srch2::util::getNumberOfBytesFixedTypes(interfaceNumericAddress) ;
 		numberOfBytes += srch2::util::getNumberOfBytesFixedTypes(internalCommunicationPort) ;
-		numberOfBytes += srch2::util::getNumberOfBytesFixedTypes(nodeId) ;
+//		numberOfBytes += srch2::util::getNumberOfBytesFixedTypes(nodeId) ;
 		numberOfBytes += srch2::util::getNumberOfBytesFixedTypes(masterNodeId) ;
 		numberOfBytes += srch2::util::getNumberOfBytesFixedTypes(ackMessageIdentifier) ;
 		numberOfBytes += DISCOVERY_CLUSTER_IDENT_SIZE;
@@ -116,7 +113,7 @@ struct DiscoveryMessage {
 		buffer = srch2::util::serializeFixedTypes(type, buffer);
 		buffer = srch2::util::serializeFixedTypes(interfaceNumericAddress, buffer);
 		buffer = srch2::util::serializeFixedTypes(internalCommunicationPort, buffer);
-		buffer = srch2::util::serializeFixedTypes(nodeId, buffer);
+//		buffer = srch2::util::serializeFixedTypes(nodeId, buffer);
 		buffer = srch2::util::serializeFixedTypes(masterNodeId, buffer);
 		buffer = srch2::util::serializeFixedTypes(ackMessageIdentifier, buffer);
 		memcpy(buffer, _clusterIdent, DISCOVERY_CLUSTER_IDENT_SIZE);
@@ -128,7 +125,7 @@ struct DiscoveryMessage {
 		buffer = srch2::util::deserializeFixedTypes(buffer ,type);
 		buffer = srch2::util::deserializeFixedTypes(buffer ,interfaceNumericAddress);
 		buffer = srch2::util::deserializeFixedTypes(buffer ,internalCommunicationPort);
-		buffer = srch2::util::deserializeFixedTypes(buffer ,nodeId);
+//		buffer = srch2::util::deserializeFixedTypes(buffer ,nodeId);
 		buffer = srch2::util::deserializeFixedTypes(buffer ,masterNodeId);
 		buffer = srch2::util::deserializeFixedTypes(buffer ,ackMessageIdentifier);
 		memcpy(_clusterIdent, buffer, DISCOVERY_CLUSTER_IDENT_SIZE);

@@ -454,20 +454,28 @@ TransportManager::TransportManager(vector<struct event_base *>& bases, Transport
 
 void TransportManager::validateTransportConfig(TransportConfig& config) {
 
-	struct in_addr ipAddress;
-	/*
-	 * convert to numerical form in network byte order (big endian).
-	 */
-	if (inet_aton(config.interfaceAddress.c_str(), &ipAddress) == 0) {
-		std::stringstream ss;
-		ss << " Invalid Interface Address = " << config.interfaceAddress;
-		throw std::runtime_error(ss.str());
+//	struct in_addr ipAddress;
+//	/*
+//	 * convert to numerical form in network byte order (big endian).
+//	 */
+//	if (inet_aton(config.interfaceAddress.c_str(), &ipAddress) == 0) {
+//		std::stringstream ss;
+//		ss << " Invalid Interface Address = " << config.interfaceAddress;
+//		throw std::runtime_error(ss.str());
+//	}
+//	in_addr_t interfaceNumericAddr = ipAddress.s_addr;
+	boost::system::error_code error;
+	IpAddress internalCommunicationAddress = IpAddress::from_string(config.interfaceAddress, error);
+	if (error) {
+		Logger::console("Invalid ip address provided in <transport> tag");
+		throw std::runtime_error(error.message());
 	}
-	in_addr_t interfaceNumericAddr = ipAddress.s_addr;
+
+	unsigned interfaceNumericAddr = internalCommunicationAddress.to_ulong();
 
 	fetchAllInterfacesIpAddress(allInterfaceIpAddresses);
 
-	if (interfaceNumericAddr == INADDR_ANY) {  // 0.0.0.0
+	if (interfaceNumericAddr == IpAddress::any().to_ulong() && allInterfaceIpAddresses.size() > 0) {  // 0.0.0.0
 		/*
 		 *  If the user has provided only a generic address ( 0.0.0.0) in the config file then
 		 *  we should pick an interface address which should be published to other nodes for
@@ -477,34 +485,15 @@ void TransportManager::validateTransportConfig(TransportConfig& config) {
 		 *  be fine.
 		 */
 
-		if (allInterfaceIpAddresses.size() > 0) {
-			// pick the first interface which is up for internal communication
-			this->publisedInterfaceAddress = allInterfaceIpAddresses[0];
+		// pick the first interface which is up for internal communication
+		this->publisedInterfaceAddress = allInterfaceIpAddresses[0];
+		this->publishedInterfaceNumericAddr = IpAddress::from_string(publisedInterfaceAddress, error).to_ulong();
+		if (error) {
+			throw std::runtime_error(error.message());
 		}
-		memset(&ipAddress, 0, sizeof(ipAddress));
-		if (inet_aton(this->publisedInterfaceAddress.c_str(), &ipAddress) == 0) {
-			std::stringstream ss;
-			ss << "Unable to find valid interface address for this node."
-					<< " Please specify non-generic IP address in <transport> tag.\n";
-			Logger::console(ss.str().c_str());
-			throw std::runtime_error(ss.str());
-		}
-		this->publishedInterfaceNumericAddr = ipAddress.s_addr;
-
-//<<<<<<< HEAD
 	} else {
 		this->publisedInterfaceAddress = config.interfaceAddress;
 		this->publishedInterfaceNumericAddr = interfaceNumericAddr;
-//=======
-//	if (routeMap.begin()!= routeMap.end()) {
-//		unsigned currNodeSocketReadBuffer;
-//		socklen_t size = sizeof(unsigned);
-//		getsockopt(routeMap.begin()->second.fd, SOL_SOCKET, SO_RCVBUF, &socketReadBuffer,
-//				&size);
-//		getsockopt(routeMap.begin()->second.fd, SOL_SOCKET, SO_SNDBUF, &socketSendBuffer,
-//						&size);
-//		Logger::console("SO_RCVBUF = %d, SO_SNDBUF = %d", socketReadBuffer, socketSendBuffer);
-//>>>>>>> sharding-v0-integration
 	}
 }
 
