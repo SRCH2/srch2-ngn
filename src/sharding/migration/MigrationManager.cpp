@@ -1100,7 +1100,7 @@ int MigrationManager::openTCPSendChannel(unsigned remoteAddr, short remotePort) 
 	struct sockaddr_in destinationAddress;
 	memset(&destinationAddress, 0, sizeof(destinationAddress));
 	destinationAddress.sin_family = AF_INET;
-	destinationAddress.sin_addr.s_addr = remoteAddr;
+	destinationAddress.sin_addr.s_addr = htonl(remoteAddr);
 	destinationAddress.sin_port = htons(remotePort);
 
 	int status = connect(tcpSocket, (struct sockaddr *)&destinationAddress, sizeof(destinationAddress));
