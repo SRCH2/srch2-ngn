@@ -171,9 +171,8 @@ void UnicastDiscoveryService::initialDiscoveryHandler(const boost::system::error
 			 */
 			if (message.ackMessageIdentifier == getTransportManager()->getCommunicationPort()) {
 				masterDetected = true;
-				getSyncManager()->addNodeToAddressMappping(message.masterNodeId, message.interfaceNumericAddress,
+				getSyncManager()->storeMasterConnectionInfo(message.interfaceNumericAddress,
 						message.internalCommunicationPort);
-				getSyncManager()->setCurrentNodeId(message.nodeId);
 				getSyncManager()->setMasterNodeId(message.masterNodeId);
 				Logger::console("Master detected at node = %d", message.masterNodeId);
 			}
@@ -201,7 +200,6 @@ void UnicastDiscoveryService::initialDiscoveryHandler(const boost::system::error
 					yeildMessage.interfaceNumericAddress = getTransportManager()->getPublishedInterfaceNumericAddr();
 					yeildMessage.internalCommunicationPort = getTransportManager()->getCommunicationPort();
 					yeildMessage.masterNodeId = -1;
-					yeildMessage.nodeId = -1;
 
 					unsigned byteToCopy = clusterIdentifier.size() > DISCOVERY_CLUSTER_IDENT_SIZE - 1 ?
 							DISCOVERY_CLUSTER_IDENT_SIZE - 1 : clusterIdentifier.size();
@@ -386,7 +384,7 @@ void UnicastDiscoveryService::postDiscoveryListener() {
                     ackMessage.interfaceNumericAddress = getTransportManager()->getPublishedInterfaceNumericAddr();
                     ackMessage.internalCommunicationPort = getTransportManager()->getCommunicationPort();
                     ackMessage.masterNodeId = getSyncManager()->getCurrentNodeId();
-                    ackMessage.nodeId = getSyncManager()->getNextNodeId();
+
                     ackMessage.ackMessageIdentifier = message.internalCommunicationPort;
                     unsigned byteToCopy = clusterIdentifier.size() > DISCOVERY_CLUSTER_IDENT_SIZE - 1 ?
                     		DISCOVERY_CLUSTER_IDENT_SIZE - 1 : clusterIdentifier.size();
@@ -404,8 +402,8 @@ void UnicastDiscoveryService::postDiscoveryListener() {
                         goto tryAckAgain;
                     }
                     if (sendStatus == 0) {
-                    	getSyncManager()->addNodeToAddressMappping(ackMessage.nodeId, message.interfaceNumericAddress,
-                    			message.internalCommunicationPort);
+                    	//getSyncManager()->addNodeToAddressMappping(ackMessage.nodeId, message.interfaceNumericAddress,
+                    	//		message.internalCommunicationPort);
                     }
                     delete [] ackMessageTempBuffer;
                     break;

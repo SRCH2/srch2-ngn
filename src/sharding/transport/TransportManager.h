@@ -10,8 +10,16 @@
 #include "MessageAllocator.h"
 #include "CallbackHandler.h"
 #include <boost/thread.hpp>
+
+#include "boost/asio.hpp"
+
 namespace srch2 {
 namespace httpwrapper {
+
+typedef boost::asio::ip::udp BoostUDP;
+typedef boost::asio::ip::address_v4 IpAddress;
+typedef boost::asio::ip::tcp BoostTCP;
+typedef boost::asio::io_service BoostNetworkService;
 
 typedef std::vector<event_base*> EventBases;
 typedef std::vector<Node *> Nodes;
@@ -240,7 +248,7 @@ private:
 
 	string publisedInterfaceAddress;
 
-	in_addr_t publishedInterfaceNumericAddr;
+	unsigned publishedInterfaceNumericAddr;
 };
 }}
 

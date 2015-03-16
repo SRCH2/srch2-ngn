@@ -8,177 +8,272 @@
 namespace srch2 {
 namespace httpwrapper {
 
-bool sendGreeting(int fd, bool greeted, const NodeInfo& node);
-int recieveGreeting(int fd, NodeInfo& nodeInfo, bool noTimeout = false);
-
-void* listenForIncomingConnection(void* arg) {
-	TransportManager *transport = (TransportManager *) arg;
-	const Node& currentNode =  transport->getConnectionMap().getCurrentNode();
-
-	hostent *host = gethostbyname(currentNode.getIpAddress().c_str());
-	if (!host) {
-		perror("gethostbyname ");
-		exit(-1);
+class TransportUtil {
+public:
+	static void getIpAddressFromNumber(unsigned ipNumber, string& ipAddress) {
+		struct in_addr address;
+		address.s_addr = htonl(ipNumber);
+		ipAddress = string(inet_ntoa((address)));
 	}
 
-	int fd;
-	if((fd = socket(AF_INET, SOCK_STREAM, 0)) < 0) {
-		perror("listening socket failed to init");
-		exit(-1);
+};
+
+class TCPConnectHandler
+{
+public:
+
+	TCPConnectHandler(BoostNetworkService& ios,
+			BoostTCP::socket& socket)
+    : io_service_(ios),
+      timer_(ios),
+      socket_(socket), cancelTimeout(false) { }
+
+	void connectWithTimeout(IpAddress remoteAddress, short remotePort, short timeout = 30) {
+	    timer_.expires_from_now(boost::posix_time::seconds(timeout));
+		socket_.async_connect(
+	        BoostTCP::endpoint(remoteAddress, remotePort),
+	        boost::bind(&TCPConnectHandler::handleConnect, this, _1, remoteAddress, remotePort));
+	    timer_.async_wait(boost::bind(&TCPConnectHandler::handleTimeout, this, remoteAddress, remotePort));
+	    io_service_.run_one();
+	    io_service_.reset();
+	    timer_.cancel();
+	    io_service_.run_one();
+	    io_service_.reset();
 	}
-
-	const int optVal = 1;
-	setsockopt(fd, SOL_SOCKET, SO_REUSEADDR, (void*) &optVal, sizeof(optVal));
-
-	unsigned listeningPort = currentNode.getPortNumber();
-
-	struct sockaddr_in routeAddress;
-	memset(&routeAddress, 0, sizeof(routeAddress));
-	routeAddress.sin_family = AF_INET;
-	memcpy(&routeAddress.sin_addr, host->h_addr, host->h_length);
-	routeAddress.sin_port = htons(listeningPort);
-
-	if(bind(fd, (struct sockaddr*) &routeAddress, sizeof(routeAddress)) < 0) {
-		Logger::console("Failed to bind to TCP port [%d]", listeningPort);
-		perror("");
-		close(fd);
-		exit(-1);
-	}
-
-	// listen for incoming connection with upto 20 connection in queue.
-	if(listen(fd, 20) == -1) {
-		close(fd);
-		perror("listening socket failed start");
-		exit(-1);
-	}
-
-	fd_set checkConnect;
-	timeval timeout;
-	while(!transport->isShuttingDown()) {
-
-		FD_ZERO(&checkConnect);
-		FD_SET(fd, &checkConnect);
-		timeout.tv_sec = 1;
-		timeout.tv_usec = 0;
-		if(select(fd+1, &checkConnect, NULL, NULL, &timeout) !=1)
-			continue;
-
-		struct sockaddr_in addr;
-		socklen_t addrlen = sizeof(sockaddr_in);
-		memset(&addr, 0,sizeof(sockaddr_in));
-		int newfd;
-		if((newfd = accept(fd, (sockaddr*) &addr, &addrlen)) != -1) {
-			NodeId remoteNodeId;
-			NodeInfo remoteNodeInfo;
-			NodeInfo currentNodeInfo = {currentNode.getId(), 0, currentNode.getPortNumber()};
-			memcpy(currentNodeInfo.nodeName, currentNode.getName().c_str(), currentNode.getName().size());
-			if((remoteNodeId = recieveGreeting(newfd, remoteNodeInfo)) == -1) {
-				sendGreeting(newfd, false, currentNodeInfo);
-				close(newfd);
-				return false;
-			}
-			if (transport->getConnectionMap().isConnectionExist(remoteNodeId)) {
-				sendGreeting(newfd, false, currentNodeInfo);
-				close(newfd);
-				return false;
-			}
-			if(!sendGreeting(newfd, true, currentNodeInfo)) {
-				close(newfd);
-				return false;
-			}
-
-			transport->getConnectionMap().acceptConnection(newfd, remoteNodeId);
-
-			// add event to event base.
-			Connection *conn = &(transport->getConnectionMap().getConnection(remoteNodeId));
-			transport->registerEventListenerForSocket(newfd, conn);
-
-
-			char ipbuf[INET_ADDRSTRLEN+1] = {0};
-			struct in_addr remoteIpAddr;
-			remoteIpAddr.s_addr = remoteNodeInfo.ipaddress;
-			inet_ntop(AF_INET, (const void *)&remoteIpAddr, ipbuf, INET_ADDRSTRLEN+1);
-
-			Node node(remoteNodeInfo.nodeName, ipbuf, remoteNodeInfo.communicationPort, false);
-			node.setId(remoteNodeId);
-			string serlializedNode = node.serialize();
-			Message * msg = MessageAllocator().allocateMessage(serlializedNode.size());
-			msg->setType(NewNodeNotificationMessageType);
-			char * msgBody = msg->getMessageBody();
-			memcpy(msgBody,serlializedNode.c_str(), serlializedNode.size());
-			transport->getDiscoveryHandler()->resolveMessage(msg, /*not used */0);
-			MessageAllocator().deallocateByMessagePointer(msg);
+	void handleConnect(const boost::system::error_code& err, IpAddress& remoteAddress, short remotePort)
+	{
+		io_service_.stop();
+		cancelTimeout = true;
+		if (err)
+		{
+			Logger::error("Could not connect to %s:%d", remoteAddress.to_string().c_str(), remotePort);
+			throw runtime_error("");
 		}
 	}
 
-	shutdown(fd, SHUT_RDWR);
-	close(fd);
-	return NULL;
-}
-
-/*
- *   Every time a new node is detected send connection request.
- */
-bool sendConnectionRequest(TransportManager *transport, unsigned destinationNodeId, NodeInfo & remoteNodeInfo,
-		const Node& currentNode, struct sockaddr_in destinationAddress) {
-
-	if (transport->getConnectionMap().isConnectionExist(destinationNodeId)) {
-		Logger::console("Connection to node id = %d already exist", destinationNodeId);
-		return false;
+	void handleTimeout(IpAddress& remoteAddress, short remotePort)
+	{
+		if (!cancelTimeout) {
+			io_service_.stop();
+			socket_.close();
+			Logger::error("Could not connect to %s:%d", remoteAddress.to_string().c_str(), remotePort);
+			throw runtime_error("");
+		}
 	}
 
-	while(1) {
-		int fd = socket(AF_INET, SOCK_STREAM, 0);
-		if(fd < 0)
-			continue;
-		if(connect(fd, (struct sockaddr*) &destinationAddress, sizeof (destinationAddress)) == -1) {
-			if(errno == ECONNREFUSED) {
-				close(fd);
-				fd = -1;
-			} else {
-				Logger::console("Connection to node id = %d failed", destinationNodeId);
-				perror("");
-				exit(-1);
-			}
-		}
-		if(fd == -1) {
-			sleep(1);
-			continue;
-		}
-		struct in_addr currentAddr;
-		inet_aton(currentNode.getIpAddress().c_str(), &currentAddr);
-		NodeInfo currentNodeInfo = {currentNode.getId(), currentAddr.s_addr, currentNode.getPortNumber()};
-		memcpy(currentNodeInfo.nodeName, currentNode.getName().c_str(), currentNode.getName().size());
-//		NodeInfo remoteNodeInfo;
-		trySendingAgain:  // label
-		if (!sendGreeting(fd, true, currentNodeInfo)){
-			close(fd);
-			continue;
-		}
-		NodeId remoteNodeId = recieveGreeting(fd, remoteNodeInfo, true);
+private:
+	BoostNetworkService& io_service_;
+	boost::asio::deadline_timer timer_;
+	BoostTCP::socket& socket_;
+	bool cancelTimeout;
+};
 
-		if (remoteNodeId == -1) {
-			goto trySendingAgain;
-		}
-		if (remoteNodeId != destinationNodeId) {
-			close(fd);
-			Logger::console("wrong destination address for node %d", destinationNodeId);
-			return false;
-		}
-		/*
-		 * On successful connection we use this file descriptor for future communication.
-		 * Also make it non-blocking
-		 */
-		fcntl(fd, F_SETFL, O_NONBLOCK);
-		Logger::console("Adding node = %d to known connection", destinationNodeId);
-		transport->getConnectionMap().addNodeConnection(destinationNodeId, fd);
-		// add event to event base to start listening on this socket
-		Connection *conn = &(transport->getConnectionMap().getConnection(destinationNodeId));
-		transport->registerEventListenerForSocket(fd, conn);
-		return true;
+class TCPBlockingReceiver {
+
+public:
+	TCPBlockingReceiver(BoostNetworkService& ios,
+			BoostTCP::socket& socket)
+	: _netIoService(ios), _sendSocket(socket), _messageBuffer(NULL), _messageSize(0), cancelTimeOut(false) { }
+
+	void receiveData(char *messageBuffer, unsigned messageSize, unsigned timeout = 30) {
+
+		_messageBuffer= messageBuffer;
+		_messageSize = messageSize;
+
+		BoostNetworkService timerIoService;
+		boost::asio::deadline_timer _timer(_netIoService);
+		_timer.expires_from_now(boost::posix_time::seconds(timeout));
+		_timer.async_wait(boost::bind(&TCPBlockingReceiver::handleTimeout, this));
+
+		_sendSocket.async_receive(boost::asio::buffer(_messageBuffer, _messageSize),
+				boost::bind(&TCPBlockingReceiver::handleReceive, this, _1, _2));
+		_netIoService.run_one();
+		_netIoService.reset();
+		_timer.cancel();
+		_netIoService.run_one();  // let the timeout handler run.
+		_netIoService.reset();
 	}
 
-	return true;
-}
+	void handleReceive(const boost::system::error_code& error, std::size_t bytesReceived)  {
+
+		if (bytesReceived  == 0 && error && boost::asio::error::try_again != error.value()) {
+			_netIoService.stop();
+			Logger::console("%s", error.message().c_str());
+			throw runtime_error("");
+		} else if (bytesReceived < _messageSize){
+			Logger::console("TCPBlockingReceiver:  incomplete message received..retrying %d/%d", bytesReceived, _messageSize);
+			_messageSize -= bytesReceived;
+			_messageBuffer += bytesReceived;
+			_sendSocket.async_receive(boost::asio::buffer(_messageBuffer, _messageSize),
+							boost::bind(&TCPBlockingReceiver::handleReceive, this, _1, _2));
+		} else {
+			ASSERT(bytesReceived == _messageSize);
+			Logger::error("receive complete data on a TCP socket");
+			cancelTimeOut = true;
+			_netIoService.stop();
+		}
+	}
+
+	void handleTimeout() {
+		if (!cancelTimeOut) {
+			_netIoService.stop();
+			Logger::error("Could not completely receive data on a TCP socket");
+			throw runtime_error("");
+		}
+	}
+
+	BoostNetworkService& _netIoService;
+	BoostTCP::socket& _sendSocket;
+	char *_messageBuffer;
+	unsigned _messageSize;
+	bool cancelTimeOut;
+};
+
+class TCPBlockingSender {
+
+public:
+	TCPBlockingSender(BoostNetworkService& ios,
+			BoostTCP::socket& socket)
+	: _netIoService(ios), _sendSocket(socket), _messageBuffer(NULL), _messageSize(0), cancelTimeOut(false) { }
+
+	void sendData(char *messageBuffer, unsigned messageSize, unsigned timeout = 30) {
+
+		_messageBuffer= messageBuffer;
+		_messageSize = messageSize;
+
+		boost::asio::deadline_timer _timer(_netIoService);
+		_timer.expires_from_now(boost::posix_time::seconds(timeout));
+		_timer.async_wait(boost::bind(&TCPBlockingSender::handleTimeout, this));
+		_sendSocket.async_send(boost::asio::buffer(_messageBuffer, _messageSize),
+				boost::bind(&TCPBlockingSender::handleSend, this, _1, _2));
+		_netIoService.run_one();
+		_netIoService.reset();
+		_timer.cancel();
+		_netIoService.run_one(); // let the timeout handler run.
+		_netIoService.reset();
+	}
+
+private:
+	void handleSend(const boost::system::error_code& error, std::size_t bytesTransferred)  {
+
+		if (bytesTransferred  == 0 && error && boost::asio::error::try_again != error.value()) {
+			_netIoService.stop();
+			Logger::console("%s", error.message().c_str());
+			throw runtime_error("");
+		} else if (bytesTransferred < _messageSize){
+			Logger::console("TCPBlockingSender:  incomplete message sent..retrying %d/%d", bytesTransferred, _messageSize);
+			_messageSize -= bytesTransferred;
+			_messageBuffer += bytesTransferred;
+			_sendSocket.async_send(boost::asio::buffer(_messageBuffer, _messageSize),
+							boost::bind(&TCPBlockingSender::handleSend, this, _1, _2));
+		} else {
+			ASSERT(bytesTransferred == _messageSize);
+			Logger::error("sent complete data on a TCP socket");
+			cancelTimeOut = true;
+			_netIoService.stop();
+		}
+	}
+
+	void handleTimeout() {
+		if (!cancelTimeOut) {
+			_netIoService.stop();
+			Logger::error("Could not completely send data on a TCP socket");
+			throw runtime_error("");
+		}
+	}
+
+	BoostNetworkService& _netIoService;
+	BoostTCP::socket& _sendSocket;
+	char *_messageBuffer;
+	unsigned _messageSize;
+	bool cancelTimeOut;
+};
+
+//class Transportv2 {
+//
+//public:
+//	Transportv2() {
+//
+//	}
+//
+//	void send(NodeId nodeId, Message *message) {
+//		// copy message
+//		unsigned bodySize = message->getBodySize();
+//		Message * copyMessage = MessageAllocator().allocateMessage(bodySize);
+//		memcpy(copyMessage, message, sizeof(Message) + bodySize);
+//
+//		senderLock.lock();
+//		// get socket for this nodeId
+//		BoostTCP::socket * endpoint = getSocketForNode(nodeId);
+//		if (endpoint == NULL) {
+//			MessageAllocator().deallocateByMessagePointer(copyMessage);
+//			senderLock.unlock();
+//			return;
+//		}
+//		senderLock.unlock();
+//	//	sendMessageQueue.put(copyMessage, endpoint, nodeId);
+//
+//	}
+//
+//	BoostTCP::socket * getSocketForNode(unsigned nodeId) {
+//		map<unsigned, BoostTCP::socket *>::iterator iter =  nodeToSocketMap.find(nodeId);
+//		if (iter != nodeToSocketMap.end()){
+//			return iter->second;
+//		} else {
+//			return NULL;
+//		}
+//	}
+//
+//private:
+//	void flushMessages() {
+//		if (sendMessageQueue.size()) {
+//			MessageInfo msgInfo = sendMessageQueue.pop();
+//			if (msgInfo.message != NULL && msgInfo.endPoint != NULL) {
+//
+//			}
+//		}
+//	}
+//	BoostNetworkService& _netIoService;
+//	BoostTCP::socket& _sendSocket;
+//	char *_messageBuffer;
+//	unsigned _messageSize;
+//	bool cancelTimeOut;
+//
+//	struct MessageInfo {
+//		Message * message;
+//		BoostTCP::socket * endPoint;
+//		unsigned nodeId;
+//	};
+//	struct MessageQueue{
+//		std::queue<MessageInfo> _mesgQueue;
+//		boost::mutex _queueGuard;
+//		void put(Message *message, BoostTCP::socket *endPoint, NodeId nodeId) {
+//			_queueGuard.lock();
+//			MessageInfo msgInfo = {message, endPoint, nodeId};
+//			_mesgQueue.push(msgInfo);
+//			_queueGuard.unlock();
+//		}
+//		MessageInfo pop() {
+//			_queueGuard.lock();
+//			MessageInfo msgInfo = { NULL, NULL, 0};
+//			if (_mesgQueue.size())
+//				msgInfo = _mesgQueue.front();
+//			_mesgQueue.pop();
+//			_queueGuard.unlock();
+//			return msgInfo;
+//		}
+//
+//		unsigned size() {
+//			_queueGuard.lock();
+//			unsigned size = _mesgQueue.size();
+//			_mesgQueue.pop();
+//			_queueGuard.unlock();
+//			return size;
+//		}
+//	} sendMessageQueueArray[MSG_QUEUE_ARRAY_SIZE];
+//
+//	map<unsigned, BoostTCP::socket *> nodeToSocketMap;
+//	boost::mutex senderLock;
+//};
 
 }}
