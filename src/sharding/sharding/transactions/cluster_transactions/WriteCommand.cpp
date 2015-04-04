@@ -11,7 +11,9 @@ using namespace std;
 namespace srch2 {
 namespace httpwrapper {
 
-PartitionWriter::PartitionWriter(const ClusterPID & pid, // we will use ClusterPID() for the case of node shards
+// Note: we will use ClusterPID() for the case of node shards
+//       ClusterPID() == (-1,-1,-1)
+PartitionWriter::PartitionWriter(const ClusterPID & pid,
 		const ClusterRecordOperation_Type & insertUpdateDelete,
 		vector<RecordWriteOpHandle *> & records, const vector<NodeTargetShardInfo> & targets,
 		ConsumerInterface * consumer):ProducerInterface(consumer),
@@ -36,8 +38,8 @@ SP(Transaction) PartitionWriter::getTransaction(){
 void PartitionWriter::produce(){
 	/*
 	 * 0. check if we should start (targets and records should not be empty.)
-	 * 1. if cluster shards : call lock();
-	 * 2. if node shards : call performWrite()
+	 * 1. if cluster shards, we need distributed concurrency control so : call lock();
+	 * 2. if node shards, only this node can write to the shard so we can directly : call performWrite()
 	 */
 	if(targets.empty()){
 		// we should not do anything.
@@ -53,11 +55,14 @@ void PartitionWriter::produce(){
 	}
 	if(this->clusterOrNodeFlag){
 		// case of cluster shard core write request
+		// so pid must not be equal to ClusterPID()
 		if(pid == ClusterPID()){
 			finalize(false, HTTP_Json_General_Error);
 			ASSERT(false);
 			return;
 		}
+		// For example for the case of record insertion, acquire X locks on
+		// primary keys on the host nodes of all replicas
 		lock();
 	}else{
 		// case of node shard core write request
@@ -73,45 +78,49 @@ void PartitionWriter::produce(){
 void PartitionWriter::lock(){
 	// 1. initializing lock related members
 	// sort the records based on primary key
+	// Note: list of primary keys must be sorted alphabetically
+	//       to avoid two separate lists of records get stuck in a
+	//       a deadlock at the host nodes lock managers.
 	std::sort(records.begin(), records.end(), RecordComparator());
 	// prepare the list of primary keys
 	vector<string> primaryKeys;
 	for(unsigned i = 0 ; i < records.size(); ++i){
 		primaryKeys.push_back(records.at(i)->getPrimaryKey());
 	}
+	// locker object to perform the distributed lock request
 	locker = new AtomicLock(primaryKeys, currentOpId, pid, this);
-	// 2.
-	// b. go over all partitions and start atomic lock and set the current operation
 	currentStep = StepLock;
-	locker->produce(); // this line will definitely lead to leaving this thread.
-
-	// release the shard manager lock (automatic)
+	locker->produce();
 }
 
 /*
- * Consume used for sharded case, PID is passed through the argument which tells us for which
- *  partition this callback is.
+ * Consume used for cluster shard case, the lock operation is finished and we can use the result.
  */
 void PartitionWriter::consume(bool granted, const ClusterPID & pid){
-	ASSERT(pid == this->pid); // TODO : pid argument must be removed later ...
+	ASSERT(pid == this->pid);
 	switch (currentStep) {
 		case StepLock:
 			if(granted){
+				// primary key locks are granted
 				ask2PC();
 			}else{
+				// the partition is locked and not ready to accepts any write operations
+				// so we abort
 				finalize(false, HTTP_Json_Partition_Is_Locked);
 			}
 			break;
 		case StepRelease:
 			if(granted){
-				// Done
+				// primary key locks are released, we are done.
 				finalize(false, HTTP_Json_General_Error);
 			}else{
+				// release must never be rejected
 				ASSERT(false);
 				finalize(false, HTTP_Json_General_Error);
 			}
 			break;
 		default:
+			// we should not reach this method for any other steps of the process
 			ASSERT(false);
 			finalize(false, HTTP_Json_General_Error);
 			break;
@@ -119,37 +128,52 @@ void PartitionWriter::consume(bool granted, const ClusterPID & pid){
 }
 
 
-void PartitionWriter::ask2PC(){ // calls sendWriteCommand with 'false' argument indicating ask phase of 2PC
+void PartitionWriter::ask2PC(){
 	if(! validateAndFixTargets()){
 		finalize(false, HTTP_Json_No_Data_Shard_Available_For_Write);
 		return;
 	}
 	currentStep = StepAsk2PC;
+
+	// start the ask phase of 2PC
 	sendWriteCommand(WriteNotificationModeAsk2PC);
 }
 
 void PartitionWriter::processAsk2PCResponse(map<NodeId, SP(ShardingNotification) > & _replies){
 
+	// iterate on the nodes and check each reply to check which nodes
+	// confirmed which record for the first phase of 2PC.
+
+	// map will summarize result of 2PC ASK phase for each key which is a primary key
 	map<string, bool > conjuncted2PCStatusValue;
 	for(map<NodeId, SP(ShardingNotification) >::iterator nodeItr = _replies.begin(); nodeItr != _replies.end(); ++nodeItr){
 		SP(Write2PCNotification::ACK) ack = boost::dynamic_pointer_cast<Write2PCNotification::ACK>(nodeItr->second);
+		// map from a primary key to a list of results corresponding to all replicas
 		map<string, vector<Write2PCNotification::ACK::ShardResult *> > & shardResults = ack->getResults();
+
+		// iterate on records and check the 2PC ask phase answer for each record
 		for(unsigned recIdx = 0; recIdx < records.size(); ++recIdx){
 			RecordWriteOpHandle * recordHandle = records.at(recIdx);
 			const string & primaryKey = recordHandle->getPrimaryKey();
+
+			// is there actually any answer given for this record?
 			if(shardResults.find(primaryKey) == shardResults.end()){
 				ASSERT(false);
 				recordHandle->addMessage(NULL, HTTP_Json_General_Error);
 				conjuncted2PCStatusValue[primaryKey] = false;
 			}else{
 				vector<Write2PCNotification::ACK::ShardResult *> & primaryKeyShardResults = shardResults[primaryKey];
+				// all replicas that will have to accept this primary key must confirm
+				// AND the answers
 				for(unsigned i = 0; i < primaryKeyShardResults.size(); ++i){
 					Write2PCNotification::ACK::ShardResult * pkShardResultIth = primaryKeyShardResults.at(i);
 					if(conjuncted2PCStatusValue.find(primaryKey) == conjuncted2PCStatusValue.end()){
 						conjuncted2PCStatusValue[primaryKey] = pkShardResultIth->statusValue;
 					}else{
+						// AND
 						conjuncted2PCStatusValue[primaryKey] = conjuncted2PCStatusValue[primaryKey] && pkShardResultIth->statusValue;
 					}
+					// Also store the produced messages in this phase
 					for(unsigned mIdx = 0 ; mIdx < pkShardResultIth->messageCodes.size(); ++mIdx){
 						recordHandle->addMessage(pkShardResultIth->shardId, pkShardResultIth->messageCodes.at(mIdx));
 					}
@@ -170,10 +194,15 @@ void PartitionWriter::processAsk2PCResponse(map<NodeId, SP(ShardingNotification)
 			recordsMap[pkItr->first]->finalize(false);
 		}
 	}
+
+	// now we move to the write phase. If no record
+	// has passed the ASK phase, it will be detected in performWrite
+	// and the task will be finalized w/o doing more distributed process
 	performWrite();
 }
 
-void PartitionWriter::performWrite(){ // calls sendWriteCommand with 'true' argument indicating write perform phase
+// calls sendWriteCommand with WriteNotificationModePerformWrite argument indicating write perform phase
+void PartitionWriter::performWrite(){
 	if(! validateAndFixTargets()){
 		finalize(false, HTTP_Json_No_Data_Shard_Available_For_Write);
 		return;
@@ -182,6 +211,11 @@ void PartitionWriter::performWrite(){ // calls sendWriteCommand with 'true' argu
 	sendWriteCommand(WriteNotificationModePerformWrite);
 }
 
+
+/*
+ * Processes the actual write command responses and saves the status of each record write operation
+ * to be reported to the user of this module.
+ */
 void PartitionWriter::processWriteResponse(map<NodeId, SP(ShardingNotification) > & _replies){
 	map<string, bool > conjuncted2PCStatusValue;
 	for(map<NodeId, SP(ShardingNotification) >::iterator nodeItr = _replies.begin(); nodeItr != _replies.end(); ++nodeItr){
@@ -199,6 +233,8 @@ void PartitionWriter::processWriteResponse(map<NodeId, SP(ShardingNotification) 
 				vector<Write2PCNotification::ACK::ShardResult *> & primaryKeyShardResults = shardResults[primaryKey];
 				for(unsigned i = 0; i < primaryKeyShardResults.size(); ++i){
 					Write2PCNotification::ACK::ShardResult * pkShardResultIth = primaryKeyShardResults.at(i);
+
+					// AND the result of all replicas
 					if(conjuncted2PCStatusValue.find(primaryKey) == conjuncted2PCStatusValue.end()){
 						conjuncted2PCStatusValue[primaryKey] = pkShardResultIth->statusValue;
 					}else{
@@ -222,7 +258,6 @@ void PartitionWriter::processWriteResponse(map<NodeId, SP(ShardingNotification) 
 		recordsMap[pkItr->first]->finalize(pkItr->second);
 	}
 
-	// now release the records
 	if(! validateAndFixTargets()){
 		finalize(false, HTTP_Json_No_Data_Shard_Available_For_Write);
 		return;
@@ -236,6 +271,8 @@ void PartitionWriter::processWriteResponse(map<NodeId, SP(ShardingNotification) 
 		this->getConsumer()->getTransaction();
 		ASSERT(false);
 	}
+
+	// write is done, release primary key locks
 	releaser = new AtomicRelease(primaryKeys, currentOpId, pid, this);
 	currentStep = StepRelease;
 	releaser->produce();
@@ -245,6 +282,8 @@ void PartitionWriter::processWriteResponse(map<NodeId, SP(ShardingNotification) 
 /*
  * When all reply notifications resulted from call to sendWriteCommnad
  * reach to this node and ConcurrentNotifOperation
+ * In fact the replies coming to this callback are either for the ASK phase
+ * of 2PC or for the 'write' phase.
  */
 void PartitionWriter::end(map<NodeId, SP(ShardingNotification) > & replies){
 	if(replies.empty()){
@@ -290,7 +329,13 @@ string PartitionWriter::getName() const {
 }
 
 
+/*
+ * Based on the current step, prepares either ASK notifications or
+ * WRITE notifications with sufficient information and sends it to all
+ * involved nodes.
+ */
 void PartitionWriter::sendWriteCommand(WriteNotificationMode mode){
+
 	vector<RecordWriteOpHandle *> * recordsToPass = NULL;
 	vector<RecordWriteOpHandle *> successful2PCRecords;
 	if(mode == WriteNotificationModeAsk2PC){
@@ -493,7 +538,9 @@ WriteCommand::~WriteCommand(){
 	}
 }
 
+// start the write operation
 void WriteCommand::produce(){
+	// is there anything to work with?
 	if(records.empty()){
 		finalize();
 		return;
@@ -501,24 +548,31 @@ void WriteCommand::produce(){
 	// 1. first check if core is cluster core or node core
 	if(coreInfo->isDistributedCore()){
 		// cluster core
-		// partition the records and prepare the PartitionWriters
+		// partition the records and prepare the PartitionWriter objects
+		// to be used.
 		if(! partitionRecords()){
+			// Something went wrong in the partitioning process, abort.
 			finalize();
 			return;
 		}
 		// check if we are done, return.
-		// it is possible because all records may have some problem and nothing be appropriate
+		// it is possible because all records may have some problem and nothing be left
 		// for continuing ...
+		// For example in a bulk record insertion, maybe the host partition of all given records
+		// is not available and insert must be rejected for all records.
 		if(tryFinalize()){
 			finalize();
 			return;
 		}
 		// start writers
 		if(partitionWriters.empty()){
+			// We should never reach here, but just in case ...
 			ASSERT(false);
 			finalize();
 			return;
 		}
+
+		// iterate on partitions and start PartitionWriter objects
 		for(map<ClusterPID, PartitionWriter * >::iterator pItr = partitionWriters.begin();
 				pItr != partitionWriters.end(); ++pItr){
 			pItr->second->produce();
@@ -532,6 +586,7 @@ void WriteCommand::produce(){
 			if(! recItr->second->isWorkDone()){
 				recordsVector.push_back(recItr->second);
 			}else{
+				// The record item must not be done at this point, we have just started.
 				ASSERT(false);
 			}
 		}
@@ -545,25 +600,35 @@ void WriteCommand::produce(){
 		}
 		CorePartitioner * partitioner = new CorePartitioner(corePartContainer);
 		vector<NodeTargetShardInfo> targets;
+
+		// for the case of node shards, we pass 0 for the hash-key (this value is not used in this case)
 		partitioner->getAllWriteTargets(0,ShardManager::getCurrentNodeId(), targets);
 		this->nodeWriter = new PartitionWriter(ClusterPID(), insertUpdateDelete, recordsVector, targets, this);
+
+		// start the submodule to perform the write operation on the local shard of this node.
 		this->nodeWriter->produce();
 	}
 }
 
 // coming back from cluster shard write operations
 void WriteCommand::consume(const ClusterPID & pid){
+
+	// if a PartitionWriter object gets back to this module,
+	// we must have that PartitionWriter object in partitionWriters
 	if(partitionWriters.find(pid) == partitionWriters.end()){
 		ASSERT(false);
 	}else{
+		// done, move it to the finished writers map.
 		finishedPartitionWriters[pid] = partitionWriters[pid];
 		partitionWriters.erase(pid);
 	}
-//	delete partitionWriters[pid];
+	// did all parition writers finish?
 	if(partitionWriters.empty()){
 		finalize();
 		return;
 	}
+
+	// Check all records to see if there is any record not ready to be finalized
 	tryFinalize();
 }
 
@@ -572,18 +637,28 @@ void WriteCommand::consume(){
 	finalize();
 }
 
+/*
+ * Group the given record items based on their host partition and prepare the
+ * partition writer objects.
+ */
 bool WriteCommand::partitionRecords(){
+
+	// Access the container of all partitions of the data source (core) on which this write operation must be performed.
 	const CorePartitionContianer * corePartContainer = clusterReadview->getPartitioner(coreInfo->getCoreId());
 	if(corePartContainer == NULL){
 		ASSERT(false);
 		return false;
 	}
 
+	// Get the partitioner object for the data source into which the given records should be written.
 	CorePartitioner * partitioner = new CorePartitioner(corePartContainer);
 
-
+	// For each partition, prepare a list of records that fall into that partition
+	// as well as the list of targets that cover that partition (i.e. cover all replicas of that patition)
 	map<ClusterPID, vector<RecordWriteOpHandle *> > partitionedRecords;
 	map<ClusterPID, vector<NodeTargetShardInfo> > partitionTargets;
+
+	// iterate on records and assign it to one parition group
 	for(map<string, RecordWriteOpHandle *>::iterator recItr = records.begin(); recItr != records.end(); ++recItr){
 
 		if(recItr->second == NULL){
@@ -596,6 +671,7 @@ bool WriteCommand::partitionRecords(){
 		RecordWriteOpHandle * recordHandle = recItr->second;
 
 		vector<NodeTargetShardInfo> targets;
+		// prepare the list of targets that involved in a write operation (basically all replicas)
 		partitioner->getAllWriteTargets(partitioner->hashDJB2(primaryKey.c_str()),
 				ShardManager::getCurrentNodeId(), targets);
 
@@ -606,6 +682,7 @@ bool WriteCommand::partitionRecords(){
         	continue;
 		}
 
+		// decide the partition into which this record falls
 		ClusterPID pid;
 		if(! partitioner->getClusterPartitionId(primaryKey, pid)){
 			ASSERT(false);
@@ -613,6 +690,8 @@ bool WriteCommand::partitionRecords(){
 			return false;
 		}
 
+		// If a replica of this partition is for example being copied, the partition is not
+		// available for write operations and the following if statement is for checking that.
 		if(corePartContainer->getClusterPartition(pid.partitionId)->isPartitionLocked()){
 			// partition is locked, so we cannot write into it.
         	recordHandle->addMessage(NULL, HTTP_Json_Partition_Is_Locked);
@@ -620,14 +699,18 @@ bool WriteCommand::partitionRecords(){
         	continue;
 		}
 
+		// remember the target
 		if(partitionTargets.find(pid) == partitionTargets.end()){
 			partitionTargets[pid] = targets;
 		}
 		if(partitionedRecords.find(pid) == partitionedRecords.end()){
 			partitionedRecords[pid] = vector<RecordWriteOpHandle *>();
 		}
+		// add record to the list of records of partition pid.
 		partitionedRecords[pid].push_back(recItr->second);
 	}
+
+
 	// move on all partitions and create the writers
 	for(map<ClusterPID, vector<RecordWriteOpHandle *> >::iterator pItr = partitionedRecords.begin();
 			pItr != partitionedRecords.end(); ++pItr){
@@ -644,15 +727,20 @@ bool WriteCommand::partitionRecords(){
 bool WriteCommand::tryFinalize(){
 	for(map<string, RecordWriteOpHandle *>::iterator recItr = records.begin();
 			recItr != records.end(); ++recItr){
+		// if there is still any record not ready to be finalized, return false;
 		if(! recItr->second->isWorkDone()){
 			return false;
 		}
 	}
+
+	// all records are done, call finalize.
 	finalize();
 	return true;
 }
 
 void WriteCommand::finalize(){
+	// If this method is called while some records are still not done,
+	// we must first finalize those records by just using a failure message for them.
 	for(map<string, RecordWriteOpHandle *>::iterator recItr = records.begin();
 			recItr != records.end(); ++recItr){
 		if(! recItr->second->isWorkDone()){
@@ -667,6 +755,7 @@ void WriteCommand::finalize(){
 		results[recItr->first] = recItr->second->isSuccessful();
 		messageCodes[recItr->first] = recItr->second->getMessageCodes();
 	}
+	// return the outcome to the called of this module.
 	this->getConsumer()->consume(results, messageCodes);
 }
 
