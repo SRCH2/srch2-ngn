@@ -2,7 +2,6 @@
  * QuadTree.h
  *
  *  Created on: Jul 1, 2014
- *      Author: mahdi
  */
 
 #ifndef __QUADTREE_H__

@@ -2,7 +2,6 @@
  * QuadTreeNode.cpp
  *
  *  Created on: Jul 1, 2014
- *      Author: mahdi
  */
 
 #include <geo/QuadTreeNode.h>
