@@ -2,13 +2,11 @@
  * StemmerFilter.h
  *
  *  Created on: Jun 7, 2013
- *      Author: iman
  */
 
 #ifndef __CORE_ANALYZER_STEMMERFILTER_H__
 #define __CORE_ANALYZER_STEMMERFILTER_H__
 
-// TODO: jamshid fix the macros all over the code
 #define TRUE 1
 #define FALSE 0
 

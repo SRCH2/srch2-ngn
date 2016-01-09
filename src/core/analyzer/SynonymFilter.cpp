@@ -1,10 +1,7 @@
-// $Id: StopFilter.cpp 3074 2013-21-06 22:26:36Z iman $
-
 /*
  * SynonymFilter.cpp
  *
  *  Created on: Jun 21, 2013
- *      Author: iman
  */
 
 /*

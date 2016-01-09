@@ -1,5 +1,3 @@
-//$Id$
-
 #ifndef __CORE_ANALYZER_DICTIONARY_H__
 #define __CORE_ANALYZER_DICTIONARY_H__
 

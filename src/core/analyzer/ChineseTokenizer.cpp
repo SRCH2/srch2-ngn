@@ -1,4 +1,3 @@
-//$Id$
 #include "ChineseTokenizer.h"
 #include "AnalyzerContainers.h"
 #include <utility>  // std::pair

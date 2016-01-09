@@ -1,5 +1,3 @@
-// $Id: Normalizer.cpp 3074 2012-12-06 22:26:36Z oliverax $
-
 /*
  * The Software is made available solely for use according to the License Agreement. Any reproduction
  * or redistribution of the Software not in accordance with the License Agreement is expressly prohibited
@@ -61,7 +59,6 @@ void Normalizer::normalize(std::vector<std::string> &inputWords) const
         return;
 
     unsigned input_size = inputWords.size();
-    //std::cout<<"input_size: "<<input_size<<std::endl;
     for(i=0; i<input_size-1; i++)
     {
         currentLookup = inputWords[i];
@@ -69,7 +66,6 @@ void Normalizer::normalize(std::vector<std::string> &inputWords) const
 
         if(it != walMartDictionary.end())//match - only for the current word
         {
-            //std::cout<<(*it).second<<std::endl;
             inputWords.push_back((*it).second);
         }
 
@@ -80,9 +76,7 @@ void Normalizer::normalize(std::vector<std::string> &inputWords) const
 
             if(it != walMartDictionary.end())// match
             {
-                //std::cout<<currentLookup<<std::endl;
                 inputWords.push_back(currentLookup);
-                //std::cout<<(*it).second<<std::endl;
                 inputWords.push_back((*it).second);
 
             }

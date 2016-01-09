@@ -1,5 +1,3 @@
-//$Id$
-
 #include "Dictionary.h"
 #include <utility>
 #include "util/Logger.h"
@@ -104,9 +102,9 @@ short Dictionary::unscrambleShort(short oldShort){
   return oldShort ^ SCRAMBLE_SHORT_MASK;
 }
 
-  // main idea: to protect these words and frequencies, we scramble
-  // the strings and frequencies using an XOR operation with a mask.
-  // The masks are known only by us.
+// main idea: to protect these words and frequencies, we scramble
+// the strings and frequencies using an XOR operation with a mask.
+// The masks are known only by us.
 bool Dictionary::saveDict(const string &dictFilePath){
     FILE *fp;
     fp = fopen(dictFilePath.c_str(), "w+b");

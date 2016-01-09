@@ -2,7 +2,6 @@
  * StopFilter.h
  *
  *  Created on: Jun 21, 2013
- *      Author: iman
  */
 
 #ifndef __CORE_ANALYZER_STOPFILTER_H__

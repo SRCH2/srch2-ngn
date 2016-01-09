@@ -2,7 +2,6 @@
  * NonAlphaNumericFilter.h
  *
  *  Created on: Nov 13, 2013
- *      Author: sbisht
  */
 
 #ifndef __CORE_ANALYZER_NONALPHANUMERICFILTER_H__

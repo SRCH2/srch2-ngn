@@ -1,4 +1,3 @@
-// $Id: Normalizer.h 3294 2013-05-01 03:45:51Z jiaying $
 /*
  * The Software is made available solely for use according to the License Agreement. Any reproduction
  * or redistribution of the Software not in accordance with the License Agreement is expressly prohibited
@@ -37,7 +36,6 @@ namespace srch2
 namespace instantsearch
 {
 
-//typedef std::tr1::unordered_map<std::string, std::string> MyMap;
 typedef std::map<std::string, std::string> MyMap;
 
 class Normalizer

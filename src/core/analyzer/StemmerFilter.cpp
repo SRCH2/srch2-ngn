@@ -1,11 +1,8 @@
-// $Id: StemmerFilter.cpp 3074 2012-12-06 22:26:36Z iman $
-
 /*
  *
  * StemmerFilter.cpp
  *
  *  Created on: Jun 7, 2013
- *      Author: iman
  */
 
 /*

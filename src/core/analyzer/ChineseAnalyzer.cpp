@@ -1,5 +1,3 @@
-//$Id$
-
 #include "ChineseAnalyzer.h"
 #include "ChineseTokenizer.h"
 #include "LowerCaseFilter.h"
