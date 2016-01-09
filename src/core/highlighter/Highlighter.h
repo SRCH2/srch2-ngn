@@ -1,9 +1,7 @@
-//$Id: $
 /*
  * Highlighter.h
  *
  *  Created on: Jan 9, 2014
- *      Author: Surendra Bisht
  */
 
 #ifndef HIGHLIGHTER_H_

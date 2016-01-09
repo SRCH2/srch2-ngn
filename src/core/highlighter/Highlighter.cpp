@@ -1,9 +1,7 @@
-//$Id: $
 /*
  * Highlighter.cpp
  *
  *  Created on: Jan 9, 2014
- *      Author: Surendra Bisht
  */
 
 #include "Highlighter.h"
