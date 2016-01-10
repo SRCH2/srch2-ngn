@@ -2,7 +2,6 @@
  * PhraseSearchFilter.cpp
  *
  *  Created on: Sep 9, 2013
- *      Author: sbisht
  */
 
 #include "PhraseSearchFilter.h"

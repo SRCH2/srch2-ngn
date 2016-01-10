@@ -1,9 +1,7 @@
-//$ID$
 /*
  * PhraseSearchFilter.h
  *
  *  Created on: Sep 9, 2013
- *      Author: sbisht
  */
 
 #ifndef __CORE_POSTPROCESSING_PHRASESEARCHFILTER_H__
