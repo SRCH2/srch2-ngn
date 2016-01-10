@@ -2,7 +2,6 @@
  * Serializer.cpp
  *
  *  Created on: Oct 9, 2013
- *      Author: Surendra
  */
 
 #include "Serializer.h"

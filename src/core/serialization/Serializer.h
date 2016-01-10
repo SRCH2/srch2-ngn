@@ -2,7 +2,6 @@
  * Serializer.h
  *
  *  Created on: Oct 9, 2013
- *      Author: srch2
  */
 
 #ifndef __CORE_SERIALIZATION_SERIALIZER_H__
