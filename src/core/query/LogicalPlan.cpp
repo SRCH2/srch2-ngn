@@ -1,7 +1,4 @@
-
-
 #include "instantsearch/LogicalPlan.h"
-
 #include "util/Assert.h"
 #include "operation/HistogramManager.h"
 #include "instantsearch/ResultsPostProcessor.h"

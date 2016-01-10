@@ -1,5 +1,3 @@
-// $Id: QueryResultsInternal.cpp 3513 2013-06-29 00:27:49Z jamshid.esmaelnezhad $
-
 /*
  * The Software is made available solely for use according to the License Agreement. Any reproduction
  * or redistribution of the Software not in accordance with the License Agreement is expressly prohibited
@@ -19,11 +17,9 @@
 
 #include "QueryResultsInternal.h"
 #include "operation/TermVirtualList.h"
-//#include "index/Trie.h"
 #include "operation/QueryEvaluatorInternal.h"
 #include "util/Logger.h"
 #include <instantsearch/Query.h>
-//#include <instantsearch/Term.h>
 #include <sstream>
 
 using std::vector;
@@ -147,8 +143,6 @@ void QueryResultsInternal::fillVisitedList(set<unsigned> &visitedList) {
 }
 
 void QueryResultsInternal::finalizeResults(const ForwardIndex *forwardIndex) {
-//    bool descending = (this->query->getSortableAttributeIdSortOrder()
-//            == srch2::instantsearch::SortOrderDescending);
 	bool descending = true; // Since we deleted order parameter in configuration but we didn't delete the usage in the code,
 								// we change this place to always use descending which means higher scores first.
 

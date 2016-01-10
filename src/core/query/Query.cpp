@@ -1,6 +1,3 @@
-
-// $Id: Query.cpp 3513 2013-06-29 00:27:49Z jamshid.esmaelnezhad $
-
 /*
  * The Software is made available solely for use according to the License Agreement. Any reproduction
  * or redistribution of the Software not in accordance with the License Agreement is expressly prohibited
@@ -19,8 +16,6 @@
  */
 
 #include <vector>
-//#include <instantsearch/Query.h>
-//#include <instantsearch/Term.h>
 #include <instantsearch/Ranker.h>
 #include "util/Logger.h"
 #include <string>
@@ -190,7 +185,6 @@ Query::Query(QueryType type, const Ranker *ranker)
 {
     impl->type = type;
     impl->terms = new vector<Term* >();
-    //impl->ranker = new Ranker(ranker);
 }
 
 Query::~Query()
