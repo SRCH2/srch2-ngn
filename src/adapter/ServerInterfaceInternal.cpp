@@ -2,7 +2,6 @@
  * ServerInterfaceInternal.cpp
  *
  *  Created on: Jun 9, 2014
- *      Author: Chen Liu at SRCH2
  */
 
 #include <cstdlib>

@@ -2,7 +2,6 @@
  * DataConnectorThread.cpp
  *
  *  Created on: Jun 24, 2014
- *      Author: Chen Liu at SRCH2
  */
 
 #include <dlfcn.h>

@@ -1,8 +1,3 @@
-
-/*
- * Copyright 2010 SRCH2 Inc. All rights reserved
- */
-
 #ifndef __DATACONNECTOR_H__
 #define __DATACONNECTOR_H__
 
