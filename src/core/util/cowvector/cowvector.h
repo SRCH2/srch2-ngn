@@ -1,5 +1,3 @@
-//$Id: cowvector.h 3456 2013-06-14 02:11:13Z jiaying $
-
 /*
  * The Software is made available solely for use according to the License Agreement. Any reproduction
  * or redistribution of the Software not in accordance with the License Agreement is expressly prohibited
@@ -145,7 +143,8 @@ public:
             }
             array<T>* acopy = new array<T>(capacity);
             memcpy(acopy->extent, m_array->extent, this->size()*sizeof(T));
-            // If the flag is false, then this array could be used by readers, so we don't free the space. We set the flag to "true" so that next time we reallocate the space, we need to release the space.
+            // If the flag is false, then this array could be used by readers, so we don't free
+            // the space. We set the flag to "true" so that next time we reallocate the space, we need to release the space.
             if(this->getNeedToFreeArray() == false) {
                 this->setNeedToFreeArray(true);
             }
