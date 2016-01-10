@@ -1,5 +1,3 @@
-
-// $Id: cowvector_S16.h 3456 2013-06-14 02:11:13Z jiaying $
 #ifndef __COWVECTOR_S16__
 #define __COWVECTOR_S16__
 

@@ -1,5 +1,3 @@
-
-// $Id: S16.h 3410 2013-06-05 12:58:08Z jiaying $
 #ifndef __S_16_H__
 #define __S_16_H__
 
