@@ -1,5 +1,4 @@
 #include "PhysicalOperatorsHelper.h"
-
 #include "instantsearch/Term.h"
 #include "operation/ActiveNode.h"
 #include "operation/QueryEvaluatorInternal.h"
@@ -18,7 +17,8 @@ namespace instantsearch {
  * the record contains a term or not.
  */
 
-bool verifyByRandomAccessHelper(QueryEvaluatorInternal * queryEvaluator, PrefixActiveNodeSet *prefixActiveNodeSet, Term * term, PhysicalPlanRandomAccessVerificationParameters & parameters){
+bool verifyByRandomAccessHelper(QueryEvaluatorInternal * queryEvaluator, PrefixActiveNodeSet *prefixActiveNodeSet,
+		Term * term, PhysicalPlanRandomAccessVerificationParameters & parameters){
 	const vector<unsigned>& termSearchableAttributeIdToFilterTermHits = term->getAttributesToFilter();
 	// assume the iterator returns the ActiveNodes in the increasing order based on edit distance
 
@@ -52,7 +52,6 @@ bool verifyByRandomAccessHelper(QueryEvaluatorInternal * queryEvaluator, PrefixA
 						parameters.prefixMatchPenalty , term->getSimilarityBoost() * term->getBoost()) ;
 				parameters.staticTermRecordScore = termRecordStaticScore ;
 				parameters.termTypes.push_back(term->getTermType());
-				// parameters.positionIndexOffsets ????
 				return true;
 			}
 		}
@@ -91,7 +90,6 @@ bool verifyByRandomAccessHelper(QueryEvaluatorInternal * queryEvaluator, PrefixA
 						parameters.prefixMatchPenalty , term->getSimilarityBoost() * term->getBoost()) ;
 				parameters.staticTermRecordScore = termRecordStaticScore ;
 				parameters.termTypes.push_back(term->getTermType());
-				// parameters.positionIndexOffsets ????
 				return true;
 			}
 		}
@@ -139,7 +137,8 @@ bool verifyByRandomAccessOrHelper(PhysicalPlanOptimizationNode * node, PhysicalP
 }
 
 // this function used in verifyByrandomAccess functions of GeoNearestNeighborOperator, GeoSimpleScanOperator and RandomAccessVerificationGeoOperator
-bool verifyByRandomAccessGeoHelper(PhysicalPlanRandomAccessVerificationParameters & parameters, QueryEvaluatorInternal * queryEvaluator, Shape* queryShape, unsigned &latOffset, unsigned &longOffset){
+bool verifyByRandomAccessGeoHelper(PhysicalPlanRandomAccessVerificationParameters & parameters,
+		QueryEvaluatorInternal * queryEvaluator, Shape* queryShape, unsigned &latOffset, unsigned &longOffset){
 	// 1- get the forwardlist to get the location of the record from it
 	bool valid = false;
 	const ForwardList* forwardList = queryEvaluator->indexReadToken.getForwardList(parameters.recordToVerify->getRecordId(),valid);

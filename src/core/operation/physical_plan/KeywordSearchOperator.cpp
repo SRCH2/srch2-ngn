@@ -1,8 +1,5 @@
-
-
 #include "KeywordSearchOperator.h"
 #include "../QueryEvaluatorInternal.h"
-//#include <gperftools/profiler.h>
 #include "FeedbackRankingOperator.h"
 
 namespace srch2 {

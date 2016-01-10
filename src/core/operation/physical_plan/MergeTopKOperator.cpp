@@ -1,4 +1,3 @@
-
 #include "PhysicalOperators.h"
 #include "MergeTopKOperator.h"
 #include "operation/QueryEvaluatorInternal.h"

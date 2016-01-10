@@ -1,4 +1,3 @@
-
 #include "PhysicalOperators.h"
 
 using namespace std;

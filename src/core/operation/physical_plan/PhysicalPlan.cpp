@@ -1,4 +1,3 @@
-
 #include "PhysicalPlan.h"
 #include "operation/QueryEvaluatorInternal.h"
 #include "util/QueryOptimizerUtil.h"
@@ -14,7 +13,8 @@ namespace instantsearch {
 // match the input properties of another one.
 bool IteratorProperties::isMatchAsInputTo(const IteratorProperties & prop , IteratorProperties & reason){
 	bool result = true;
-	for(vector<PhysicalPlanIteratorProperty>::const_iterator property = prop.properties.begin(); property != prop.properties.end() ; ++property){
+	for(vector<PhysicalPlanIteratorProperty>::const_iterator property = prop.properties.begin();
+			property != prop.properties.end() ; ++property){
 		if(find(this->properties.begin(),this->properties.end(), *property) == this->properties.end()){
 			reason.addProperty(*property);
 			result = false;
@@ -59,67 +59,51 @@ PhysicalPlanOptimizationNode * PhysicalPlanOptimizationNode::getParent(){
 
 void PhysicalPlanOptimizationNode::printSubTree(unsigned indent){
 	PhysicalPlanNodeType type = getType();
-	//srch2::util::QueryOptimizerUtil::printIndentations(indent);
 	switch (type) {
 		case PhysicalPlanNode_SortById:
 			Logger::info("[SortByID]");
-//			cout << "[SortByID]" << endl;
 			break;
 		case PhysicalPlanNode_SortByScore:
 			Logger::info("[SortByScore]");
-//			cout << "[SortByScore]" << endl;
 			break;
 		case PhysicalPlanNode_MergeTopK:
 			Logger::info("[AND TopK]");
-//			cout << "[AND TopK]" << endl;
 			break;
 		case PhysicalPlanNode_MergeSortedById:
 			Logger::info("[AND SortedByID]");
-//			cout << "[AND SortedByID]" << endl;
 			break;
 		case PhysicalPlanNode_MergeByShortestList:
 			Logger::info("[AND ShortestList]");
-//			cout << "[AND ShortestList]" << endl;
 			break;
 		case PhysicalPlanNode_UnionSortedById:
 			Logger::info("[OR SortedByID]");
-//			cout << "[OR SortedByID]" << endl;
 			break;
 		case PhysicalPlanNode_UnionLowestLevelTermVirtualList:
 			Logger::info("[TVL]");
-//			cout << "[TVL]" << endl;
 			break;
 		case PhysicalPlanNode_UnionLowestLevelSimpleScanOperator:
 			Logger::info("[SCAN]");
-//			cout << "[SCAN]" << endl;
 			break;
 		case PhysicalPlanNode_GeoNearestNeighbor:
 			Logger::info("[GEO NearestNeighbor]");
-//			cout << "[GEO NearestNeighbor]" << endl;
 			break;
 		case PhysicalPlanNode_GeoSimpleScan:
 			Logger::info("[GEO SimpleScan]");
-//			cout << "[GEO SimpleScan]" << endl;
 			break;
 		case PhysicalPlanNode_RandomAccessGeo:
 			Logger::info("[R.A.GEO]");
-//			cout << "[R.A.GEO]" << endl;
 			break;
 		case PhysicalPlanNode_RandomAccessTerm:
 			Logger::info("[TERM]" );
-//			cout << "[TERM]" << endl;
 			break;
 		case PhysicalPlanNode_RandomAccessAnd:
 			Logger::info("[R.A.AND]");
-//			cout << "[R.A.AND]" << endl;
 			break;
 		case PhysicalPlanNode_RandomAccessOr:
 			Logger::info("[R.A.OR]");
-//			cout << "[R.A.OR]" << endl;
 			break;
 		case PhysicalPlanNode_RandomAccessNot:
 			Logger::info("[R.A.NOT]");
-//			cout << "[R.A.NOT]" << endl;
 			break;
 		default:
 			Logger::info("Somthing else");
@@ -145,14 +129,6 @@ PhysicalPlan::~PhysicalPlan(){
 }
 
 
-
-//ForwardIndex * PhysicalPlan::getForwardIndex(){
-//	return this->queryEvaluator->getForwardIndex();
-//}
-//
-//const InvertedIndex * PhysicalPlan::getInvertedIndex(){
-//	return this->queryEvaluator->getInvertedIndex();
-//}
 
 PhysicalPlanNode * PhysicalPlan::getPlanTree(){
 	return this->tree;

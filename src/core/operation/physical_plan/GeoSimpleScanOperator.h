@@ -2,7 +2,6 @@
  * GeoSimpleScanOperator.h
  *
  *  Created on: Jul 9, 2014
- *      Author: mahdi
  */
 
 #ifndef __GEOSIMPLESCANOPERATOR_H__

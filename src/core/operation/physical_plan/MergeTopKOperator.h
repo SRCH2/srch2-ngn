@@ -1,4 +1,3 @@
-
 /*
  * The Software is made available solely for use according to the License Agreement. Any reproduction
  * or redistribution of the Software not in accordance with the License Agreement is expressly prohibited
@@ -183,9 +182,7 @@ private:
 	 * This vector keeps all the records that have been visited so far (including
 	 * the returned ones and the candidates and even those records which are not verified)
 	 */
-//	vector<unsigned> visitedRecords; // TODO :  THIS MIGHT BE A BOTTLENECK, maybe we should change it to hash table ?
-
-	boost::unordered_set<unsigned> visitedRecords;
+	boost::unordered_set<unsigned> visitedRecords; // TODO :  THIS MIGHT BE A BOTTLENECK, maybe we should change it to hash table ?
 
 	/*
 	 * This variable is true unless one of the children lists become empty

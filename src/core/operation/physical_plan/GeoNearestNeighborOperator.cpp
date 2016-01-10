@@ -2,7 +2,6 @@
  * GeoNearestNeighborOperator.cpp
  *
  *  Created on: Jul 11, 2014
- *      Author: mahdi
  */
 #include "GeoNearestNeighborOperator.h"
 #include "PhysicalOperatorsHelper.h"

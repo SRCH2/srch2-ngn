@@ -2,7 +2,6 @@
  * FeedbackRankingOperator.cpp
  *
  *  Created on: Oct 21, 2014
- *      Author: Surendra
  */
 
 #include "FeedbackRankingOperator.h"

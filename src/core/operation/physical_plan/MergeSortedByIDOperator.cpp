@@ -1,4 +1,3 @@
-
 #include "PhysicalOperators.h"
 #include "PhysicalOperatorsHelper.h"
 

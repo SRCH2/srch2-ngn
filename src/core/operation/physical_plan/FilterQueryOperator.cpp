@@ -1,5 +1,3 @@
-
-
 #include "FilterQueryOperator.h"
 #include "PhysicalOperators.h"
 #include "instantsearch/ResultsPostProcessor.h"

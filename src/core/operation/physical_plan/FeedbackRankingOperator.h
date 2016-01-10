@@ -2,7 +2,6 @@
  * FeedbackRankingOperator.h
  *
  *  Created on: Oct 21, 2014
- *      Author: srch2
  */
 
 #ifndef __FEEDBACKRANKINGOPERATOR_H__

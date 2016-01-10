@@ -1,4 +1,3 @@
-
 /*
  * The Software is made available solely for use according to the License Agreement. Any reproduction
  * or redistribution of the Software not in accordance with the License Agreement is expressly prohibited
@@ -20,7 +19,6 @@
 #define __WRAPPER_PHYSICALPLAN_H__
 
 #include <vector>
-
 #include "instantsearch/Constants.h"
 #include "index/ForwardIndex.h"
 #include "index/Trie.h"
@@ -317,8 +315,6 @@ public:
 	~PhysicalPlan();
 
 
-//	ForwardIndex * getForwardIndex();
-//	const InvertedIndex * getInvertedIndex();
 	PhysicalPlanNode * getPlanTree();
 	void setPlanTree(PhysicalPlanNode * tree);
 	Ranker * getRanker();

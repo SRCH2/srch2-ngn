@@ -2,7 +2,6 @@
  * RandomAccessVerificationGeoOperator.cpp
  *
  *  Created on: Jul 18, 2014
- *      Author: mahdi
  */
 
 #include "PhysicalOperators.h"

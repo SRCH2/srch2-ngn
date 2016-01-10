@@ -1,4 +1,3 @@
-
 #include "PhysicalOperators.h"
 #include "UnionLowestLevelTermVirtualListOperator.h"
 #include "UnionLowestLevelSimpleScanOperator.h"

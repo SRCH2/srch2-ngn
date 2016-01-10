@@ -30,7 +30,6 @@ bool PhraseSearchOperator::open(QueryEvaluatorInternal * queryEvaluatorInternal,
 			const string& keywordString = phraseSearchInfo.phraseKeyWords[j];
 			const TrieNode *trieNode = queryEvaluatorInternal->indexReadToken.getTrieNodeFromUtf8String(keywordString);
 			if (trieNode == NULL){
-				//Logger::warn("keyword = '%s' of a phrase query was not found!", keywordString.c_str());
 				phraseErr = true;
 				return false;
 			}

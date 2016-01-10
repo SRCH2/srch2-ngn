@@ -2,7 +2,6 @@
  * GeoNearestNeighborOperator.h
  *
  *  Created on: Jul 9, 2014
- *      Author: mahdi
  */
 
 #ifndef __GEONEARESTNEIGHBOROPERATOR_H__
