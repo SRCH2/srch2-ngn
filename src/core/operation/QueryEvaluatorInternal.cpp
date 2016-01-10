@@ -1,4 +1,3 @@
-
 /*
  * The Software is made available solely for use according to the License Agreement. Any reproduction
  * or redistribution of the Software not in accordance with the License Agreement is expressly prohibited
@@ -469,8 +468,6 @@ boost::shared_ptr<PrefixActiveNodeSet> QueryEvaluatorInternal::computeActiveNode
     unsigned keywordLength = charTypeKeyword.size();
     ASSERT(keywordLength > 0);
 
-    //std::cout << "Keyword:" << *keyword;
-
     // We group the active trie nodes based on their edit distance to the term prefix
 
     // 1. Get the longest prefix that has active nodes
@@ -481,7 +478,6 @@ boost::shared_ptr<PrefixActiveNodeSet> QueryEvaluatorInternal::computeActiveNode
     int cacheResponse = 0 ; // this->cacheManager->getActiveNodesCache()->findLongestPrefixActiveNodes(term, initialPrefixActiveNodeSet); //initialPrefixActiveNodeSet is Busy
 
     if ( cacheResponse == 0) { // NO CacheHit,  response = 0
-        //std::cout << "|NO Cache|" << std::endl;;
         // No prefix has a cached TermActiveNode Set. Create one for the empty std::string "".
         initialPrefixActiveNodeSet.reset(new PrefixActiveNodeSet(this->indexReadToken.trieRootNodeSharedPtr,
         		term->getThreshold(), this->getSchema()->getSupportSwapInEditDistance()));
@@ -497,8 +493,6 @@ boost::shared_ptr<PrefixActiveNodeSet> QueryEvaluatorInternal::computeActiveNode
         boost::shared_ptr<PrefixActiveNodeSet> newPrefixActiveNodeSet = prefixActiveNodeSet->computeActiveNodeSetIncrementally(additionalCharacter);
 
         prefixActiveNodeSet = newPrefixActiveNodeSet;
-
-        //std::cout << "Cache Set:" << *(prefixActiveNodeSet->getPrefix()) << std::endl;
 
         if (iter >= 2 && (cacheResponse != -1)) { // Cache not busy and keywordLength is at least 2.
             prefixActiveNodeSet->prepareForIteration(); // this is the last write operation on prefixActiveNodeSet

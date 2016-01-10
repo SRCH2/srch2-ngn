@@ -1,6 +1,3 @@
-
-// $Id: TermVirtualList.h 3490 2013-06-25 00:57:57Z jamshid.esmaelnezhad $
-
 /*
  * The Software is made available solely for use according to the License Agreement. Any reproduction
  * or redistribution of the Software not in accordance with the License Agreement is expressly prohibited
@@ -24,9 +21,7 @@
 #include "ActiveNode.h"
 #include "index/InvertedIndex.h"
 #include <instantsearch/Term.h>
-//#include <instantsearch/Query.h>
 #include <instantsearch/Ranker.h>
-
 #include <string>
 #include <vector>
 #include <queue>
@@ -143,17 +138,6 @@ public:
     }
     bool getMaxScore(float & score);
     unsigned getVirtualListTotalLength();
-    /*unsigned getVirtualListTotalLength() {
-        unsigned totalLen = 0;
-        for (unsigned i=0; i<itemsHeap.size(); i++)
-        {
-            unsigned invId = itemsHeap[i]->invertedListId;
-            unsigned itemLen = invertedIndex->getInvertedListSize_ReadView(invId);
-            totalLen += itemLen;
-        }
-        return totalLen;
-    }*/
-
     bool isTermVirtualListDisabled();
     float getScoreOfTopRecordWhenListIsDisabled();
 
@@ -180,7 +164,6 @@ public:
     // the maximum score of leaf nodes to be used in topK
     float maxScoreForBitSetCase;
 
-    //
     float topRecordScoreWhenListIsDisabled;
 private:
 

@@ -1,6 +1,3 @@
-
-// $Id: ActiveNode.h 3456 2013-06-14 02:11:13Z jiaying $
-
 /*
  * The Software is made available solely for use according to the License Agreement. Any reproduction
  * or redistribution of the Software not in accordance with the License Agreement is expressly prohibited
@@ -141,8 +138,6 @@ public:
         pan.differ = 0; // |p_{x+1}-p_i|
         pan.editdistanceofPrefix = 0;
         _addPAN(root, pan);
-        //if (editDistanceThreshold > 0)
-        //    addTrieNodesUpToDepth(root, editDistanceThreshold, 0);
     };
 
     virtual ~PrefixActiveNodeSet() {
@@ -217,7 +212,6 @@ public:
     // Deprecated due to removal of TrieNode->getParent() pointers.
     void getComputedSimilarPrefixes(const Trie *trie, std::vector<std::string> &similarPrefixes);
 
-    //typedef std::vector<TrieNode* > TrieNodeSet;
     std::vector<TrieNodeSet> *getTrieNodeSetVector() {
 
         // compute it only if necessary
@@ -282,10 +276,6 @@ private:
             this->trieNodeSetVector[i].clear();
 
         // go over the map to populate the vectors.
-        /*for (std::map<const TrieNode*, unsigned >::iterator mapIterator = trieNodeDistanceMap.begin();
-                mapIterator != trieNodeDistanceMap.end(); mapIterator ++) {
-            this->trieNodeSetVector[mapIterator->second].push_back(mapIterator->first);
-        }*/
 
         for (std::map<const TrieNode*, PivotalActiveNode >::iterator mapIterator = PANMap.begin();
                 mapIterator != PANMap.end(); mapIterator ++) {
@@ -573,7 +563,6 @@ public:
     }
 
     bool isDone() {
-        //if (cursor >= leafNodesVector.size())
         if (cursor == leafNodesWithinDistance.end())
             return true;
         return false;

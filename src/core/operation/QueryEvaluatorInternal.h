@@ -1,4 +1,3 @@
-
 /*
  * The Software is made available solely for use according to the License Agreement. Any reproduction
  * or redistribution of the Software not in accordance with the License Agreement is expressly prohibited
@@ -93,9 +92,6 @@ public:
 
     // for retrieving only one result by having the primary key
     void search(const std::string & primaryKey, QueryResults *queryResults) ;
-
-    /// Added for stemmer
-    //virtual int searchWithStemmer(const Query *query, QueryResults *queryResults, const int nextK = 0, bool &isStemmed) = 0;
 
     /// Get the in memory data stored with the record in the forwardindex. Access through the internal recordid.
     StoredRecordBuffer getInMemoryData_Safe(unsigned internalRecordId) const ;

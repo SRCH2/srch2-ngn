@@ -1,9 +1,7 @@
-// $Id$
 /*
  * PhraseSearch.cpp
  *
  *  Created on: Sep 2, 2013
- *      Author: sbisht
  */
 
 #include "PhraseSearcher.h"
@@ -353,7 +351,6 @@ unsigned PhraseSearcher::getEditDistance_DL(const vector<string>& src,
         costTable[i] = columnSize + rowSize + 1;
         costTable[columnSize + i] = i - 1;
     }
-    //printCostTable(costTable, rowSize, columnSize);
     for (unsigned i = 2; i < rowSize; ++i) {
         lastColMatched = 0;
         for (unsigned j = 2; j < columnSize; ++j) {
@@ -381,7 +378,6 @@ unsigned PhraseSearcher::getEditDistance_DL(const vector<string>& src,
                                             std::min(costInsert, costDelete)), costSubstitute);
         }
         lastRowMap[src[i - 2]] = (short)i;
-        //printMap(lastRowMap);
     }
     //printCostTable(costTable, rowSize, columnSize);
     unsigned editDistance = costTable[(rowSize - 1) * columnSize + (columnSize - 1)];

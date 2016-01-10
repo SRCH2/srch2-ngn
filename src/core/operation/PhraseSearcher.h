@@ -3,7 +3,6 @@
  * PhraseSearch.h
  *
  *  Created on: Sep 2, 2013
- *      Author: sbisht
  */
 
 #ifndef __CORE_OPERATION_PHRASESEARCH_H__

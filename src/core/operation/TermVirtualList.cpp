@@ -1,6 +1,3 @@
-
-// $Id: TermVirtualList.cpp 3490 2013-06-25 00:57:57Z jamshid.esmaelnezhad $
-
 /*
  * The Software is made available solely for use according to the License Agreement. Any reproduction
  * or redistribution of the Software not in accordance with the License Agreement is expressly prohibited
@@ -258,8 +255,6 @@ TermVirtualList::TermVirtualList(const InvertedIndex* invertedIndex,  const Forw
                 depthInitializeBitSet(trieNode, editDistance, panDistance, term->getThreshold());
             }
 
-            //cout << "term count:" << numberOfLeafNodes << endl;
-            //cout << "record count:" << totalInveretListLength  << endl;
             bitSetIter = bitSet.iterator();
         } else {
             cursorVector.reserve(iter.size());

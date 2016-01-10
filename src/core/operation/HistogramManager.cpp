@@ -1,5 +1,3 @@
-
-
 #include "HistogramManager.h"
 
 namespace srch2
@@ -27,7 +25,6 @@ void HistogramManager::annotate(LogicalPlan * logicalPlan){
 
     HistogramManager::allocateLogicalPlanNodeAnnotations(logicalPlan->getTree());
 
-	// TODO : Jamshid change the name of it ...
 	annotateWithActiveNodeSets(logicalPlan->getTree(), logicalPlan->isFuzzy());
 
 	annotateWithEstimatedProbabilitiesAndNumberOfResults(logicalPlan->getTree(), logicalPlan->isFuzzy());
@@ -336,7 +333,6 @@ boost::shared_ptr<PrefixActiveNodeSet> HistogramManager::computeActiveNodeSet(Te
 
         prefixActiveNodeSet = newPrefixActiveNodeSet;
 
-        //std::cout << "Cache Set:" << *(prefixActiveNodeSet->getPrefix()) << std::endl;
 
         if (iter >= 2 && (cacheResponse != -1)) { // Cache not busy and keywordLength is at least 2.
         	prefixActiveNodeSet->prepareForIteration(); // this is the last write operation on prefixActiveNodeSet

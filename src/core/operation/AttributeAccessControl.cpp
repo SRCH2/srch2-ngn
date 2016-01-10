@@ -2,7 +2,6 @@
  * AccessControl.cpp
  *
  *  Created on: Aug 18, 2014
- *      Author: Surendra
  */
 
 #include "AttributeAccessControl.h"
@@ -94,10 +93,6 @@ void  AttributeAccessControl::_bulkLoadAttributeAclCSV(const std::string& aclLoa
 		const_cast<AttributeAccessControl *>(this)->appendToAcl(roleValue, searchableAttrIdsList, refiningAttrIdsList);
 	}
 
-//	cout << "bulk load done" << endl ;
-//	stringstream ss;
-//	toString(ss);
-//	cout << ss.str() << endl;
 }
 /*
  *   This API loads acl JSON file and should be called during engine's boot up.
@@ -180,10 +175,6 @@ void  AttributeAccessControl::_bulkLoadAttributeAclJSON(const std::string& aclLo
 			Logger::info(response.asCString());
 		}
 	}
-//	cout << "bulk load done" << endl ;
-//	stringstream ss;
-//	toString(ss);
-//	cout << ss.str() << endl;
 }
 /*
  *   Helper API to handle a single ACL operation. (insert, delete, or append)
@@ -407,9 +398,6 @@ bool  AttributeAccessControl::processAclRequest( vector<string>& fieldTokens,
 				boost::algorithm::trim(roleValueTokens[i]);
 				const_cast<AttributeAccessControl *>(this)->deleteFromAcl(roleValueTokens[i], searchableAttrIdsList, refiningAttrIdsList);
 			}
-//			stringstream ss;
-//			toString(ss);
-//			cout << ss.str() << endl;
 			break;
 		}
 		case ACL_APPEND:
@@ -419,9 +407,6 @@ bool  AttributeAccessControl::processAclRequest( vector<string>& fieldTokens,
 				boost::algorithm::trim(roleValueTokens[i]);
 				const_cast<AttributeAccessControl *>(this)->appendToAcl(roleValueTokens[i], searchableAttrIdsList, refiningAttrIdsList);
 			}
-//			stringstream ss;
-//			toString(ss);
-//			cout << ss.str() << endl;
 			break;
 		}
 		default:

@@ -1,6 +1,3 @@
-
-// $Id: IndexData.h 3480 2013-06-19 08:00:34Z iman $
-
 /*
  * The Software is made available solely for use according to the License Agreement. Any reproduction
  * or redistribution of the Software not in accordance with the License Agreement is expressly prohibited
@@ -66,15 +63,9 @@
 #include <instantsearch/Record.h>
 #include <instantsearch/Constants.h>
 
-//#include "index/IndexUtil.h"
 #include "index/Trie.h"
-//#include "index/InvertedIndex.h"
 #include "index/ForwardIndex.h"
 #include "geo/QuadTree.h"
-//#include "record/AnalyzerInternal.h"
-//#include "record/SchemaInternal.h"
-//#include "license/LicenseVerifier.h"
-//#include "operation/Cache.h"
 #include "util/RankerExpression.h"
 
 #include <string>
@@ -440,14 +431,6 @@ public:
     }
 
     void printNumberOfBytes() const;
-    // Surendra: this function is not used anywhere. It creates unnecessary dependency on
-    // Trie, InvertedIndex, and ForwardIndex. If you use to wish this. Please move it to the cpp file
-    /*void print_Index() const
-    {
-        this->trie->print_Trie();
-        this->invertedIndex->print_test();
-        this->forwardIndex->print_test();
-    }*/
 
     void reassignKeywordIds();
     void changeKeywordIdsOnForwardLists(const map<TrieNode *, unsigned> &trieNodeIdMapper,

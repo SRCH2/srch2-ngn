@@ -1,6 +1,3 @@
-
-// $Id: IndexerInternal.h 3490 2013-06-25 00:57:57Z jamshid.esmaelnezhad $
-
 /*
  * The Software is made available solely for use according to the License Agreement. Any reproduction
  * or redistribution of the Software not in accordance with the License Agreement is expressly prohibited
@@ -44,13 +41,11 @@ class GlobalCache;
 
 struct IndexHealthInfo
 {
-    //std::string lastWriteTimeString;
     std::string lastMergeTimeString;
     unsigned doc_count;
 
     IndexHealthInfo()
     {
-        //this->notifyWrite();
         this->getLatestHealthInfo(0);
     }
 
@@ -60,13 +55,6 @@ struct IndexHealthInfo
         strftime (buffer,80,"%x %X",timenow);
         in = string(buffer);
     }
-
-    /*void notifyWrite()
-    {
-        time_t timer = time(NULL);
-        struct std::tm* timenow = gmtime(&timer);
-        IndexHealthInfo::getString(timenow, this->lastWriteTimeString);
-    }*/
 
     void getLatestHealthInfo(unsigned doc_count)
     {

@@ -1,6 +1,3 @@
-
-// $Id: Cache.cpp 3456 2013-06-14 02:11:13Z jiaying $
-
 /*
  * The Software is made available solely for use according to the License Agreement. Any reproduction
  * or redistribution of the Software not in accordance with the License Agreement is expressly prohibited
@@ -84,7 +81,6 @@ int ActiveNodesCache::setPrefixActiveNodeSet(boost::shared_ptr<PrefixActiveNodeS
 	std::stringstream ss ;
 	ss << prefixActiveNodeSet->getEditDistanceThreshold();
 	std::string exactOrFuzzy = ss.str();
-//	std::string exactOrFuzzy =  prefixActiveNodeSet->getEditDistanceThreshold() == 0?"0":"1";
 	string key = getUtf8String(*prefix) + "$" + exactOrFuzzy;
 	this->cacheContainer->put(key , prefixActiveNodeSet);
 	return 1;

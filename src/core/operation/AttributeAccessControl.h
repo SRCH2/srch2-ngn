@@ -2,7 +2,6 @@
  * AccessControl.h
  *
  *  Created on: Aug 18, 2014
- *      Author: Surendra
  */
 
 #ifndef __CORE_OPERATION_ACCESSCONTROL_H__
@@ -129,9 +128,6 @@ private:
     template<class Archive>
     void serialize(Archive & ar, const unsigned int version) {
     	ar & attributeAclMap;
-//    	stringstream ss;
-//    	toString(ss);
-//    	cout << ss.str() << endl;
     }
 };
 

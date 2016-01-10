@@ -1,5 +1,3 @@
-//$Id: IndexerInternal.cpp 3456 2013-06-14 02:11:13Z jiaying $
-
 /*
  * The Software is made available solely for use according to the License Agreement. Any reproduction
  * or redistribution of the Software not in accordance with the License Agreement is expressly prohibited
@@ -284,7 +282,6 @@ IndexReaderWriter::IndexReaderWriter(IndexMetaData* indexMetaData)
     		indexMetaData->maxCountOfFeedbackQueries, this);
     this->userFeedbackIndex->load(indexMetaData->directoryName);
     this->initIndexReaderWriter(indexMetaData);
-    //this->startMergerThreads();
 }
 
 void IndexReaderWriter::initIndexReaderWriter(IndexMetaData* indexMetaData)
@@ -332,17 +329,9 @@ void * dispatchMergeWorkerThread(void *arg) {
 	IndexData * index = (IndexData *)info->index;
 	pthread_mutex_lock(&info->perThreadMutex);
 	// Atomically set the flag to True
-	// __sync_or_and_fetch(&info->workerReady, true) is equivalent to
-	// info->workerReady |= true
 	// Details: https://gcc.gnu.org/onlinedocs/gcc-4.1.2/gcc/Atomic-Builtins.html
 	__sync_or_and_fetch(&info->workerReady, true); 
 
-	// __sync_bool_compare_and_swap(&info->stopExecuting, true, true) 
-	//  is equivalent to 
-	//  if (info->stopExecuting == true) 
-	//  	{  info->stopExecuting = true; return true } 
-	//  else 
-	//      { return false }
 	//  Note: swap part is redundant ( There is no atomic compare only API from gcc)
 	//  Details: https://gcc.gnu.org/onlinedocs/gcc-4.1.2/gcc/Atomic-Builtins.html
 	while(!__sync_bool_compare_and_swap(&info->stopExecuting, true, true)) {
@@ -432,8 +421,6 @@ void IndexReaderWriter::startMergeThreadLoop()
       return;
     }
 
-    //createAndStartMergeWorkerThreads();
-
     /*
      *  Initialize condition variable for the first time before loop starts.
      */
@@ -461,25 +448,6 @@ void IndexReaderWriter::startMergeThreadLoop()
     }
     pthread_cond_destroy(&countThresholdConditionVariable);
 
-    // signal all worker threads to stop
-//    unsigned mergeWorkersCount = this->index->invertedIndex->mergeWorkersCount;
-//	MergeWorkersThreadArgs *mergeWorkersArgs = this->index->invertedIndex->mergeWorkersArgs;
-//    for (unsigned i = 0; i < mergeWorkersCount; ++i) {
-//    	pthread_mutex_lock(&mergeWorkersArgs[i].perThreadMutex);
-//    	__sync_or_and_fetch(&mergeWorkersArgs[i].stopExecuting, true); // set flag to true atomically
-//    	pthread_cond_signal(&mergeWorkersArgs[i].waitConditionVar);
-//    	pthread_mutex_unlock(&mergeWorkersArgs[i].perThreadMutex);
-//    }
-//    // make sure all worker threads are stopped.
-//    for (unsigned i = 0; i < mergeWorkersCount; ++i) {
-//    	pthread_join(mergerWorkerThreads[i], NULL);
-//    	// release resources when worker thread is gone.
-//    	pthread_mutex_destroy(&mergeWorkersArgs[i].perThreadMutex);
-//    	pthread_cond_destroy(&mergeWorkersArgs[i].waitConditionVar);
-//    }
-    // free allocate memory
-//    delete[] mergerWorkerThreads;
-//    delete[] this->index->invertedIndex->mergeWorkersArgs;
 
     pthread_mutex_unlock(&lockForWriters);
     return;
