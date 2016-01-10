@@ -1,5 +1,3 @@
-//Author: RJ Atwal
-
 #include "RecordSerializer.h"
 #include "Assert.h"
 #include <cstring>

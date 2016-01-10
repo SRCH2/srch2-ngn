@@ -2,7 +2,6 @@
  * mypthread.h
  *
  *  Created on: Jun 11, 2013
- *      Author: sina
  */
 
 #ifndef MYPTHREAD_H_

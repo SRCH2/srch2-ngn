@@ -1,6 +1,4 @@
-//$Id$
 #include "Logger.h"
-
 #include <cstdarg>
 #include <cstring>
 #include <ctime>

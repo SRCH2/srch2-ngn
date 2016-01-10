@@ -1,11 +1,7 @@
-
-// $Id: encoding.cpp 3341 2013-05-14 12:56:33Z jiaying $
-
 //
 // encoding.cpp
 //
 //  Created on: 2013-4-6
-//      Author: Jiaying
 //
 
 #include "encoding.h"

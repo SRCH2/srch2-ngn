@@ -1,9 +1,7 @@
-//$Id$
 /*
  * ULEB128.h
  *
  *  Created on: Sep 2, 2013
- *      Author: sbisht
  */
 
 #ifndef __CORE_UTIL_ULEB128_H__

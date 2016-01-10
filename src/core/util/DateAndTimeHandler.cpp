@@ -1,6 +1,3 @@
-
-
-
 #include "DateAndTimeHandler.h"
 #include "instantsearch/DateTime.h"
 #include <iostream>

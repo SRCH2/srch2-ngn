@@ -2,7 +2,6 @@
  * RecordSerializerUtil.cpp
  *
  *  Created on: Feb 28, 2014
- *      Author: srch2
  */
 
 #include "RecordSerializerUtil.h"

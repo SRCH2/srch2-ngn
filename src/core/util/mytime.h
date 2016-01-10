@@ -2,7 +2,6 @@
  * mytime.h
  *
  *  Created on: Jun 11, 2013
- *      Author: sina
  */
 
 #ifndef MYTIME_H_

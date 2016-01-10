@@ -1,5 +1,3 @@
-// $Id: doxygen_EXAMPLE.h 580 2010-10-19 01:49:32Z vijay $
-
 /*
  * The Software is made available solely for use according to the License Agreement. Any reproduction
  * or redistribution of the Software not in accordance with the License Agreement is expressly prohibited

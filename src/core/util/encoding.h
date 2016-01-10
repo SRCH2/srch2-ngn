@@ -2,7 +2,6 @@
  * encoding.h
  *
  *  Created on: 2013-4-6
- *      Author: Jiaying
  */
 
 #ifndef ENCODING_H_

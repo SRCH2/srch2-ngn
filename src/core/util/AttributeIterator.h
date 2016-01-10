@@ -1,5 +1,3 @@
-// $Id: AttributeIterator.h 2013-12-01 RJ $
-
 /*
  * The Software is made available solely for use according to the License Agreement. Any reproduction
  * or redistribution of the Software not in accordance with the License Agreement is expressly prohibited

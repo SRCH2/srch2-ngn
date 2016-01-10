@@ -1,5 +1,3 @@
-
-// $Id: S16.cpp 3410 2013-06-05 12:58:08Z jiaying $
 #include "util/cowvector/compression/S16.h"
 
 const unsigned S16::big_directory[][S16::MAX_COL] =

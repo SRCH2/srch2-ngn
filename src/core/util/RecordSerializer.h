@@ -1,5 +1,3 @@
-//Author: RJ Atwal
-
 #ifndef __RECORD_SERIALIZER_H__
 #define __RECORD_SERIALIZER_H__
 

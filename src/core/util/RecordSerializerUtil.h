@@ -2,7 +2,6 @@
  * RecordSerializerUtil.h
  *
  *  Created on: Feb 28, 2014
- *      Author: srch2
  */
 
 #ifndef __RECORDSERIALIZERUTIL_H__
