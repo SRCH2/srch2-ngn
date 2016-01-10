@@ -2,7 +2,6 @@
  * AnalyzerFactory.cpp
  *
  *  Created on: Aug 21, 2013
- *      Author: sbisht
  */
 
 #include "AnalyzerFactory.h"

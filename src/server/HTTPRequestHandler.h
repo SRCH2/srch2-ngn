@@ -1,5 +1,3 @@
-//$Id: HTTPResponse.h 3513 2013-06-29 00:27:49Z jamshid.esmaelnezhad $
-
 #ifndef __WRAPPER_HTTPREQUESTHANDLER_H__
 #define __WRAPPER_HTTPREQUESTHANDLER_H__
 

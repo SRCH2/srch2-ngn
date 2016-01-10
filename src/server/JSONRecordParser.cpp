@@ -1,6 +1,3 @@
-
-// $Id: JSONRecordParser.cpp 3513 2013-06-29 00:27:49Z jamshid.esmaelnezhad $
-
 #include <iostream>
 #include <sstream>
 #include <fstream>
@@ -1032,7 +1029,6 @@ bool JSONRecordParser::getJsonValueDateAndTime(const Json::Value &jsonValue,
 // get the double from a json value based on a key value.  Check the type first before
 // calling "asDouble()" to deal with the case where the input data was not formatted
 // properly.
-// Written by CHENLI
 bool JSONRecordParser::getJsonValueDouble(const Json::Value &jsonValue,
         const std::string &key, double &doubleValue, const string& configName) {
     if (!jsonValue.isMember(key)) {

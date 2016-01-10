@@ -1,5 +1,3 @@
-//$Id: Srch2Server.h 3456 2013-06-14 02:11:13Z jiaying $
-
 #ifndef _HTTPSERVERUTIL_H_
 #define _HTTPSERVERUTIL_H_
 

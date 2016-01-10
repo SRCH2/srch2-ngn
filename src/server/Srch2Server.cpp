@@ -1,5 +1,3 @@
-//$Id: Srch2Server.cpp 3456 2013-06-14 02:11:13Z jiaying $
-
 #include <syslog.h>
 #include "Srch2Server.h"
 #include "util/RecordSerializerUtil.h"

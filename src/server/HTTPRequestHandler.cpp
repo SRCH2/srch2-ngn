@@ -1,5 +1,3 @@
-//$Id: HTTPRequestHandler.cpp 3513 2013-06-29 00:27:49Z jamshid.esmaelnezhad $
-
 #include <sys/time.h>
 #include <boost/algorithm/string.hpp>
 #include <iostream>
@@ -383,9 +381,6 @@ boost::shared_ptr<Json::Value> HTTPRequestHandler::printResults(evhttp_request *
     (*root)["offset"] = start;
     (*root)["limit"] = end - start;
 
-//    if (queryPlan.getSearchType() == GetAllResultsSearchType
-//            || queryPlan.getSearchType() == GeoSearchType) // facet output must be added here.
-//                    {
     (*root)["results_found"] = resultFound;
 
     long int estimatedNumberOfResults = queryResults->getEstimatedNumberOfResults();
@@ -402,8 +397,6 @@ boost::shared_ptr<Json::Value> HTTPRequestHandler::printResults(evhttp_request *
     if(queryResults->isResultsApproximated() == true){
         (*root)["result_set_approximation"] = true;
     }
-
-//    }
 
     const std::map<std::string, std::pair< FacetType , std::vector<std::pair<std::string, float> > > > * facetResults =
             queryResults->getFacetResults();
@@ -1694,10 +1687,7 @@ boost::shared_ptr<Json::Value> HTTPRequestHandler::doSearchOneCore(evhttp_reques
     	paramContainer.hasRoleCore = true;
     }
 
-//    string decodedUri;
-//    decodeAmpersand(req->uri, strlen(req->uri), decodedUri);
     evhttp_parse_query(req->uri, headers);
-    //cout << "Query: " << req->uri << endl;
     // simple example for query is : q={boost=2}name:foo~0.5 AND bar^3*&fq=name:"John"
     //1. first create query parser to parse the url
     QueryParser qp(*headers, &paramContainer);
@@ -1856,7 +1846,6 @@ boost::shared_ptr<Json::Value> HTTPRequestHandler::doSearchOneCore(evhttp_reques
 //    unsigned printTime = (tend.tv_sec - tstart2.tv_sec) * 1000
 //            + (tend.tv_nsec - tstart2.tv_nsec) / 1000000;
 //    printTime -= (validatorTime + rewriterTime + executionTime + parserTime);
-//    cout << "Times : " << parserTime << "\t" << validatorTime << "\t" << rewriterTime << "\t" << executionTime << "\t" << printTime << endl;
     // 6. delete allocated structures
     // Free the objects
     delete finalResults;

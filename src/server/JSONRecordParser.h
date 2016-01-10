@@ -1,5 +1,3 @@
-//$Id: JSONRecordParser.h 3456 2013-06-14 02:11:13Z jiaying $
-
 #ifndef _DAEMONDATASOURCE_H_
 #define _DAEMONDATASOURCE_H_
 

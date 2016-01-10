@@ -1,5 +1,3 @@
-//$Id: IndexWriteUtil.h 3456 2013-06-14 02:11:13Z jiaying $
-
 #ifndef _INDEXWRITEUTIL_H_
 #define _INDEXWRITEUTIL_H_
 

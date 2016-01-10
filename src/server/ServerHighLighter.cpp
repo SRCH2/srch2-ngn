@@ -2,7 +2,6 @@
  * ServerHighLighter.cpp
  *
  *  Created on: Jan 27, 2014
- *      Author: srch2
  */
 
 #include "ServerHighLighter.h"

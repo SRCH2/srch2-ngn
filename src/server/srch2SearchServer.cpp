@@ -1,16 +1,3 @@
-// $Id: chat.cpp 1217 2011-06-15 20:59:17Z srch2.vijay $
-/*
- * This file is part of the Mongoose project, http://code.google.com/p/mongoose
- * It implements an online chat server. For more details,
- * see the documentation on the project web site.
- * To test the application,
- *  1. type "make" in the directory where this file lives
- *  2. point your browser to http://127.0.0.1:8081
- *
- * NOTE(lsm): this file follows Google style, not BSD style as the rest of
- * Mongoose code.
- */
-
 #include <stdio.h>
 #include <stdlib.h>
 #include <errno.h>

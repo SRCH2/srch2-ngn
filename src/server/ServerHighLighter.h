@@ -2,7 +2,6 @@
  * ServerHighLighter.h
  *
  *  Created on: Jan 27, 2014
- *      Author: srch2
  */
 
 #ifndef SERVERHIGHLIGHTER_H_

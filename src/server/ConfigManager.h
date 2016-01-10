@@ -1,5 +1,3 @@
-//$Id: ConfigManager.h 2013-07-5 02:11:13Z iman $
-
 #ifndef __WRAPPER__SRCH2SERVERCONG_H__
 #define __WRAPPER__SRCH2SERVERCONG_H__
 #include "util/xmlParser/pugixml.hpp"
@@ -185,10 +183,6 @@ private:
     float defaultSpatialQueryBoundingBox;
 
     string attributeStringForMySQLQuery;
-
-    //vector<string> searchableAttributes;
-
-    //vector<unsigned> attributesBoosts;
 
     int ordering;
     //string httpServerDocumentRoot;

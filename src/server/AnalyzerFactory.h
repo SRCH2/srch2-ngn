@@ -2,7 +2,6 @@
  * AnalyzerFactory.h
  *
  *  Created on: Aug 21, 2013
- *      Author: sbisht
  */
 
 #ifndef __WRAPPER_ANALYZERFACTORY_H_
