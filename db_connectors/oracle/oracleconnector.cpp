@@ -1,7 +1,3 @@
-/*
- * Copyright 2010 SRCH2 Inc. All rights reserved
- */
-
 #include <cstring>
 #include "oracleconnector.h"
 #include <stdlib.h>

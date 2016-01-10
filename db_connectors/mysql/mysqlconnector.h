@@ -2,7 +2,6 @@
  * mysqlconnector.h
  *
  *  Created on: Sep 16, 2014
- *      Author: Chen Liu liu@srch2.com
  */
 
 #ifndef __MYSQLCONNECTOR_H__

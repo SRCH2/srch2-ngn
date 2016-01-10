@@ -2,7 +2,6 @@
  * sqlserverconnector.cpp
  *
  *  Created on: Oct 9, 2014
- *      Author: Chen Liu liu@srch2.com
  */
 
 #include "sqlserverconnector.h"

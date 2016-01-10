@@ -2,7 +2,6 @@
  * sqlserverconnector.h
  *
  *  Created on: Oct 9, 2014
- *      Author: Chen Liu liu@srch2.com
  */
 
 #ifndef __SQLSERVERCONNECTOR_H__

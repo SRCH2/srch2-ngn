@@ -2,7 +2,6 @@
  * mysqlEventHandler.h
  *
  *  Created on: Sep 17, 2014
- *      Author: Chen Liu liu@srch2.com
  */
 
 #ifndef __MYSQLEVENTHANDLER_H__

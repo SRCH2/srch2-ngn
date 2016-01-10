@@ -2,7 +2,6 @@
  * mysqlconnector.cpp
  *
  *  Created on: Sep 16, 2014
- *      Author: Chen Liu liu@srch2.com
  */
 
 #include <stdlib.h>

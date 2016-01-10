@@ -2,7 +2,6 @@
  * mysqlEventHandler.cpp
  *
  *  Created on: Sep 17, 2014
- *      Author: Chen Liu liu@srch2.com
  *
  *  This piece of code is modified from the web site: (mysql-replication-listener example code)
  *  http://bazaar.launchpad.net/~mysql/mysql-replication-listener/trunk/files/head:/examples/mysql2lucene/

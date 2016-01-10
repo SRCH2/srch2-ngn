@@ -2,7 +2,6 @@
  * sqliteconnector.h
  *
  *  Created on: Jul 3, 2014
- *      Author: Chen Liu at SRCH2
  */
 
 #ifndef __SQLITECONNECTOR_H__
