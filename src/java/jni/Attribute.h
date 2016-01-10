@@ -1,15 +1,7 @@
 #ifndef __ATTRIBUTE_H__
 #define __ATTRIBUTE_H__
 
-/*****************************************************************************
- *                                                                           *
- *              AUTHOR : RJ ATWAL                                            *
- *                                                                           *
- *                                                                           * 
-  ****************************************************************************/
-
 #include<jni.h>
-
 #include "AttributeString.h"
 
 namespace JNIClass {

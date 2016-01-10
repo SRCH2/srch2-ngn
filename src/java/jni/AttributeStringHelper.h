@@ -1,13 +1,6 @@
 #ifndef __ATTRIBUTE_STRING_H__
 #define __ATTRIBUTE_STRING_H__
 
-/*********************6********************************************************
- *                                                                           *
- *              AUTHOR : RJ ATWAL                                            *
- *                                                                           *
- *                                                                           * 
-  ****************************************************************************/
-
 #include<string>
 #include "util/utf8/unchecked.h"
 #include "util/utf16/utf16.h"
