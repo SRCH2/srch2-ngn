@@ -1,11 +1,3 @@
-
-/*****************************************************************************
- *                                                                           *
- *              AUTHOR : RJ ATWAL                                            *
- *                                                                           *
- *                                                                           * 
-  ****************************************************************************/
-
 package com.srch2;
 
 public class RefiningFloat implements RefiningFloatInterface {
