@@ -1,6 +1,3 @@
-
-// $Id: Score.h 2013-06-19 02:11:13Z Jamshid $
-
 /*
  * The Software is made available solely for use according to the License Agreement. Any reproduction
  * or redistribution of the Software not in accordance with the License Agreement is expressly prohibited
