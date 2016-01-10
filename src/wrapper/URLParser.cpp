@@ -1,5 +1,3 @@
-//$Id: URLParser.cpp 3513 2013-06-29 00:27:49Z jamshid.esmaelnezhad $
-
 #include "URLParser.h"
 
 namespace srch2

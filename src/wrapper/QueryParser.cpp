@@ -1626,7 +1626,7 @@ void QueryParser::geoParser() {
 					radiusParamTemp);
 		}
 	}
-	// TODO : Jamshid : if only a subset of values are provided errosr ....
+	// TODO : if only a subset of values are provided error ....
 	Logger::debug("returning from geoParser");
 }
 void QueryParser::extractSearchType() {
@@ -1638,7 +1638,7 @@ void QueryParser::extractSearchType() {
      *  set the parametersInQuery.
      */
 // if serachType mentioned in queryParameter use that.
-	// TODO : Jamshid : make these constants....
+	// TODO : make these constants....
     const string getAllType = "getAll";
     const string topKType = "topK";
     Logger::debug("inside extractSearchType function");

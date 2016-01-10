@@ -1,4 +1,3 @@
-
 #ifndef __REGEX_CONSTANTS__
 #define __REGEX_CONSTANTS__
 

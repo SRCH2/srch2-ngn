@@ -1,5 +1,3 @@
-// $Id$ 07/11/13 Jamshid
-
 /*
  * The Software is made available solely for use according to the License Agreement. Any reproduction
  * or redistribution of the Software not in accordance with the License Agreement is expressly prohibited
@@ -18,7 +16,7 @@
  */
 
 #ifndef _WRAPPER_QUERYPARSER_H__
-#define _WRAPPER_QUERYPARSER_H__ // TODO: two underscores
+#define _WRAPPER_QUERYPARSER_H__
 #include<cassert>
 #include <boost/algorithm/string.hpp>
 #include <boost/regex.hpp>

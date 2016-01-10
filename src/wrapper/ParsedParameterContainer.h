@@ -1,5 +1,3 @@
-//$Id: ResultsPostProcessor.h 3456 2013-06-26 02:11:13Z Jamshid $
-
 /*
  * The Software is made available solely for use according to the License Agreement. Any reproduction
  * or redistribution of the Software not in accordance with the License Agreement is expressly prohibited
@@ -144,13 +142,11 @@ public:
 	TermIntermediateStructure * termIntermediateStructure;
 	GeoIntermediateStructure * geoIntermediateStructure;
 
-//	static int objectCount;
 	ParseTreeNode(	LogicalPlanNodeType type,	ParseTreeNode * parent){
 	 this->type = type;
 	 this->parent = parent;
 	 this->termIntermediateStructure = NULL;
 	 this->geoIntermediateStructure  = NULL;
-//	 objectCount++;
 	}
     ~ParseTreeNode(){
 		for(vector<ParseTreeNode *>::iterator child = children.begin() ; child != children.end() ; ++child){
@@ -163,7 +159,6 @@ public:
 		if(geoIntermediateStructure  != NULL){
 			delete geoIntermediateStructure;
 		}
-//		objectCount--;
 	}
 
 	string indentation(unsigned indent){
