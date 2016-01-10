@@ -2,7 +2,6 @@
  * QueryIndex.cpp
  *
  *  Created on: Oct 20, 2014
- *      Author: Surendra
  */
 
 #include "FeedbackIndex.h"

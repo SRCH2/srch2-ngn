@@ -1,6 +1,3 @@
-
-// $Id: InvertedIndex.h 3490 2013-06-25 00:57:57Z jamshid.esmaelnezhad $
-
 /*
  * The Software is made available solely for use according to the License Agreement. Any reproduction
  * or redistribution of the Software not in accordance with the License Agreement is expressly prohibited
@@ -25,7 +22,6 @@
 #include "util/cowvector/cowvector.h"
 #include "index/ForwardIndex.h"
 
-//#include <instantsearch/Schema.h>
 #include <instantsearch/Ranker.h>
 #include "util/Assert.h"
 #include "util/Logger.h"
@@ -130,7 +126,6 @@ private:
 
 public:
 
-    //CowInvertedList *invList;
     cowvector<unsigned> *invList;
 
     InvertedListContainer() // TODO for serialization. Remove dependency
@@ -246,9 +241,12 @@ public:
      *
      */
 
-    /* Gets the @param invertedListElement in the @param invertedList. Internally, we first get the sub-sequence of invertedIndexVector represented by
-     * [invertedList.offset,invertedList.currentHitCount] and return the InvertedListElement at invertedList.offset + cursor.
-     * We make assertions to check if offset, offset + currentHitCount is within getTotalLengthOfInvertedLists(). Also, assert to check if currentHitCount > cursor.
+    /* Gets the @param invertedListElement in the @param invertedList. Internally,
+     * we first get the sub-sequence of invertedIndexVector represented by
+     * [invertedList.offset,invertedList.currentHitCount] and return the
+     * InvertedListElement at invertedList.offset + cursor.
+     * We make assertions to check if offset, offset + currentHitCount is within
+     * getTotalLengthOfInvertedLists(). Also, assert to check if currentHitCount > cursor.
      */
     void getInvertedListReadView(shared_ptr<vectorview<InvertedListContainerPtr> > & invertedListDirectoryReadView,
     		const unsigned invertedListId, shared_ptr<vectorview<unsigned> >& readview) const;

@@ -1,6 +1,3 @@
-
-// $Id: Trie.h 3456 2013-06-14 02:11:13Z jiaying $
-
 /*
  * The Software is made available solely for use according to the License Agreement. Any reproduction
  * or redistribution of the Software not in accordance with the License Agreement is expressly prohibited
@@ -20,13 +17,6 @@
 
 #ifndef __TRIE_H__
 #define __TRIE_H__
-
-///@file Trie.cpp
-///@brief Trie and TrieNode Implementation
-
-//#include "index.h"
-
-//#include <algorithm/ActiveNode.h>
 
 #include <boost/serialization/vector.hpp>
 #include <boost/archive/binary_oarchive.hpp>
@@ -82,7 +72,7 @@ public:
     unsigned maxId;
 
     Prefix() {}
-    // TODO suggested by Jianfeng, if Prefix doesn't have any subclass, we might don't need virtual here
+    // TODO if Prefix doesn't have any subclass, we might don't need virtual here
     //      can save some space
     virtual ~Prefix() {};
     Prefix(unsigned inputMinId, unsigned inputMaxId):minId(inputMinId),maxId(inputMaxId) {}
@@ -142,7 +132,8 @@ public:
 	float probabilityValue;
 	// The path from root to this trie node gives the query keyword. For example : "you"
 	const TrieNode * queryTermNode;
-	// The path from root to this trie node gives the prefix which is the completed suggestion of query keyword. For example "your" for query "you"
+	// The path from root to this trie node gives the prefix which is the completed suggestion
+	// of query keyword. For example "your" for query "you"
 	const TrieNode * suggestedCompleteTermNode;
 	SuggestionInfo(unsigned distance,
 			float probabilityValue,
@@ -420,7 +411,8 @@ public:
     		float initValue = -1,
     		half initValueFromArgForMaxScore = (half)0);
 
-    // this function uses a weighted DFS (which means children are visited based on their histogramValue) and collects all frontier terminal nodes in its way.
+    // this function uses a weighted DFS (which means children are visited based on their
+    // histogramValue) and collects all frontier terminal nodes in its way.
     // stopping condition is that the number of terminal nodes are >= numberOfSuggestionsToReturn
     void findMostPopularSuggestionsInThisSubTrie(const TrieNode * suggestionActiveNode, unsigned ed, std::vector<SuggestionInfo > & suggestions,
        		const int numberOfSuggestionsToFind = 10) const;

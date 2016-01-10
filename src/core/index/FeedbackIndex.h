@@ -2,7 +2,6 @@
  * QueryIndex.h
  *
  *  Created on: Oct 20, 2014
- *      Author: Surendra
  */
 
 #ifndef __CORE_INDEX_FEEDBACKINDEX_H__
