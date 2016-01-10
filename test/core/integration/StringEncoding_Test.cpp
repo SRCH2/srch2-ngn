@@ -1,6 +1,3 @@
-
-// $Id: StringEncoding_Test.cpp 3456 2013-06-14 02:11:13Z jiaying $
-
 #include <instantsearch/Analyzer.h>
 #include "operation/IndexerInternal.h"
 #include <instantsearch/IndexSearcher.h>

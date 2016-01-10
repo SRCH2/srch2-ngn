@@ -1,6 +1,3 @@
-
-// $Id: BuildIndexesForIntegrationTest.cpp 3097 2012-12-19 00:55:28Z oliverax $
-
 /*
  * The Software is made available solely for use according to the License Agreement. Any reproduction
  * or redistribution of the Software not in accordance with the License Agreement is expressly prohibited

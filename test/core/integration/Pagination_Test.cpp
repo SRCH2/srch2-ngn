@@ -1,5 +1,3 @@
-//$Id: RankingAfterNewRecordInserted_Test.cpp -1   $
-
 // This test will first build an index with 4809 records, commit, then insert one more record.
 // After that, the test will query a keyword in the inserted record to see if top10 results is consistent with top25 results.
 // The insert record should appear in both top10 and top25 results.

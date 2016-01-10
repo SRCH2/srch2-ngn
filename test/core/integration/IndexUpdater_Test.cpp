@@ -1,6 +1,3 @@
-
-// $Id: IndexUpdater_Test.cpp 3513 2013-06-29 00:27:49Z jamshid.esmaelnezhad $
-
 /*
  * The Software is made available solely for use according to the License Agreement. Any reproduction
  * or redistribution of the Software not in accordance with the License Agreement is expressly prohibited
@@ -502,7 +499,7 @@ void test3()
 }
 
 
-//Deserialise Index "A". Delete a record. Test. Serialise
+//Deserialize Index "A". Delete a record. Test. Serialize
 void test4()
 {
     // create an index searcher
@@ -562,7 +559,7 @@ void test4()
     delete index;
 }
 
-//Deserialise Index "A". Add the deleted record in test3(). Test. Serialise
+//Deserialize Index "A". Add the deleted record in test3(). Test. Serialize
 void test5()
 {
     // create an index searcher
@@ -1168,25 +1165,25 @@ int main(int argc, char **argv)
 
     cout << INDEX_DIR << endl;
 
-    //Create Index "A". Deserialise "A". Update Index "A". Search "A". Serialize "A"
+    //Create Index "A". Deserialize "A". Update Index "A". Search "A". Serialize "A"
     // Testing IndexerInternal constructor
     test1();
     cout << "test1 passed" << endl;
 
-    //Deserialise "A" from test1. Update Index "A". Search "A" and then, save "A"
+    //Deserialize "A" from test1. Update Index "A". Search "A" and then, save "A"
     //Testing Indexer::load(...) and Indexer::save(...)
     test2();
     cout << "test2 passed" << endl;
 
-    //Deserialise Index "A". Add duplicate records. Test. Serialise
+    //Deserialize Index "A". Add duplicate records. Test. Serialize
     test3();
     cout << "test3 passed" << endl;
 
-    //Deserialise Index "A". Delete a record. Test. Serialise
+    //Deserialize Index "A". Delete a record. Test. Serialize
     test4();
     cout << "test4 passed" << endl;
 
-    //Deserialise Index "A". Add the deleted record in test3(). Test. Serialise
+    //Deserialize Index "A". Add the deleted record in test3(). Test. Serialize
     test5();
     cout << "test5 passed" << endl;
 
@@ -1214,7 +1211,7 @@ int main(int argc, char **argv)
     test11();
     cout << "test11 passed" << endl;
 
-    cout<<"Index updater tests Succesful!!"<<endl;
+    cout<<"Index updater tests Successful!!"<<endl;
 
     return 0;
 }

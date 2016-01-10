@@ -1,5 +1,5 @@
 //TODO: uncomment this files functions before using this test case.
-// Now some functions are commented to make compile the code before adding new geo search design.
+// now some functions are commented to make compile the code before adding new geo search design.
 #ifndef __MAPSEARCHTESTHELPER_H__
 #define __MAPSEARCHTESTHELPER_H__
 

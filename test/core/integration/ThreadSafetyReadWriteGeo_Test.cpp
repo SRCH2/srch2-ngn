@@ -2,7 +2,6 @@
  * ThreadSafetyReadWriteGeo_Test.cpp
  *
  *  Created on: Aug 7, 2014
- *      Author: mahdi
  */
 #include <instantsearch/Analyzer.h>
 #include "operation/IndexerInternal.h"

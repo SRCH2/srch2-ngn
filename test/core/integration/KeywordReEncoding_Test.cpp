@@ -1,6 +1,3 @@
-
-// $Id: KeywordReEncoding_Test.cpp 3490 2013-06-25 00:57:57Z jamshid.esmaelnezhad $
-
 /*
  * The Software is made available solely for use according to the License Agreement. Any reproduction
  * or redistribution of the Software not in accordance with the License Agreement is expressly prohibited
@@ -21,7 +18,7 @@
 //
 // This test is to test the engine's capabilities to reassign ids to keywords when
 // we cannot assign an integer id to a new keyword based on the ids of its adjacent
-// neightbors.
+// neighbors.
 //
 
 #include <instantsearch/Analyzer.h>

@@ -1,5 +1,3 @@
-//$Id: Scoring_Test.cpp 2988 2012-11-29 01:21:15Z oliverax $
-
 #include <instantsearch/Analyzer.h>
 #include <instantsearch/Indexer.h>
 #include <instantsearch/Query.h>

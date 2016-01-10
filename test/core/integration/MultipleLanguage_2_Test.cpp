@@ -2,7 +2,6 @@
  * MultipleLanguage_2_Test.cpp
  *
  *  Created on: Oct 3, 2013
- *      Author: srch2
  */
 #include <instantsearch/Analyzer.h>
 #include "operation/IndexerInternal.h"

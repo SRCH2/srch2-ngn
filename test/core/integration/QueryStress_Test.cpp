@@ -1,7 +1,3 @@
-
-// $Id: QueryStress_Test.cpp 3490 2013-06-25 00:57:57Z jamshid.esmaelnezhad $
-
-
 #include <instantsearch/Analyzer.h>
 #include <instantsearch/Indexer.h>
 #include <instantsearch/QueryEvaluator.h>

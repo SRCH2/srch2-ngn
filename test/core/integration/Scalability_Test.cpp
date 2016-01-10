@@ -1,5 +1,3 @@
-//$Id: Scalability_Test.cpp 3529 2013-07-02 10:56:21Z jiaying $
-
 #include <instantsearch/Analyzer.h>
 #include <instantsearch/Indexer.h>
 #include <instantsearch/QueryEvaluator.h>

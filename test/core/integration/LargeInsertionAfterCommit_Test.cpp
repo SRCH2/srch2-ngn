@@ -1,5 +1,3 @@
-//$Id: LargeInsertionAfterCommit_Test.cpp 3490 2013-06-25 00:57:57Z jamshid.esmaelnezhad $
-
 // This test case will insert a large amount of records after the index is committed,
 // then try to search each inserted record.
 

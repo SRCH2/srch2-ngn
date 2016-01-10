@@ -1,5 +1,3 @@
-// $Id: NormalizerIntegration_Test.cpp 3456 2013-06-14 02:11:13Z jiaying $
-
 #include <instantsearch/Analyzer.h>
 #include <instantsearch/Indexer.h>
 #include <instantsearch/IndexSearcher.h>
