@@ -2,7 +2,6 @@
  * CustomizableJsonWriter.h
  *
  *  Created on: Nov 18, 2013
- *      Author: Xin Wang
  */
 
 #ifndef __WRAPPER_UTIL_CUSTOMIZABLEJSONWRITER_H__

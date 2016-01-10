@@ -2,7 +2,6 @@
  * CustomizableJsonWriter.cpp
  *
  *  Created on: Nov 18, 2013
- *      Author: Xin Wang
  */
 
 #include <util/CustomizableJsonWriter.h>
