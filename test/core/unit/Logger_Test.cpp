@@ -1,5 +1,3 @@
-// $Id$
-
 #include <cstdio>
 #include <cstring>
 #include <cassert>

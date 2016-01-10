@@ -1,5 +1,3 @@
-//$Id: PositionIndex_Test.cpp 3456 2013-06-14 02:11:13Z jiaying $
-
 #include "util/Assert.h"
 #include <iostream>
 #include <functional>

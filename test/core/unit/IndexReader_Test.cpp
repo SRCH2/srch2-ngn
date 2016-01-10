@@ -1,5 +1,3 @@
-//$Id: IndexReader_Test.cpp 3456 2013-06-14 02:11:13Z jiaying $
-
 #include "operation/IndexerInternal.h"
 #include "index/Trie.h"
 #include "instantsearch/Schema.h"

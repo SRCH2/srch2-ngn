@@ -2,7 +2,6 @@
  * NewQuadTree_Test.cpp
  *
  *  Created on: Jul 2, 2014
- *      Author: mahdi
  */
 
 

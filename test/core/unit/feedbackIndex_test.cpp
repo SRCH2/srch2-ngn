@@ -2,7 +2,6 @@
  * feedbackIndex_test.cpp
  *
  *  Created on: Oct 29, 2014
- *      Author: sbisht
  */
 
 #include "index/FeedbackIndex.h"

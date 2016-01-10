@@ -2,7 +2,6 @@
  * ULEB128_Test.cpp
  *
  *  Created on: Sep 13, 2013
- *      Author: sbisht
  */
 #include "util/ULEB128.h"
 #include <cassert>

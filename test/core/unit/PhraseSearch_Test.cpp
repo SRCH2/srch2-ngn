@@ -1,9 +1,7 @@
-//$Id: $
 /*
  * pharseSearchTest.cpp
  *
  *  Created on: Aug 19, 2013
- *      Author: sbisht
  */
 
 #include <vector>

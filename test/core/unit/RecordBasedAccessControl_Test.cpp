@@ -2,7 +2,6 @@
  * RecordBaseAccessControl_Test.cpp
  *
  *  Created on: Aug 28, 2014
- *      Author: mahdi
  */
 
 #include <string>

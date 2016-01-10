@@ -2,7 +2,6 @@
  * QuadTree_Test.cpp
  *
  *  Created on: Jul 8, 2014
- *      Author: mahdi
  */
 
 /*

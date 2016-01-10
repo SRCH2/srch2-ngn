@@ -1,4 +1,3 @@
-// $Id$
 #include "analyzer/Normalizer.h"
 #include <string.h>
 #include <stdio.h>
@@ -32,15 +31,6 @@ void testNormalizer()
     normalizer_handler->normalize(tokens);
 
     assert(tokens.size()==11);
-    // Two new words for wal mart and Two new words for star bucks (walmart,wal-mart,starbucks,star-bucks)
-/*
-
-	for(std::vector<string>::iterator it = tokens.begin(); it != tokens.end();++it)
-	{
-		cout << "Normalized Token:  "<< *it <<  endl;
-	}
-
-*/
 
 }
 

@@ -1,9 +1,7 @@
-//$Id: $
 /*
  * Highlighter_Test.cpp
  *
  *  Created on: Jan 19, 2014
- *      Author: surendra bisht
  */
 #include <vector>
 #include <string>

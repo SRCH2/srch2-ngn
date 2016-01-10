@@ -1,5 +1,3 @@
-// $Id: Analyzer_Test.cpp 3456 2013-06-14 02:11:13Z iman $
-
 /*
  * The Software is made available solely for use according to the License Agreement. Any reproduction
  * or redistribution of the Software not in accordance with the License Agreement is expressly prohibited
