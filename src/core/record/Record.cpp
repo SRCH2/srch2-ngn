@@ -1,6 +1,3 @@
-
-// $Id: Record.cpp 3513 2013-06-29 00:27:49Z jamshid.esmaelnezhad $
-
 /*
  * The Software is made available solely for use according to the License Agreement. Any reproduction
  * or redistribution of the Software not in accordance with the License Agreement is expressly prohibited
@@ -246,11 +243,6 @@ void Record::setPrimaryKey(const string &primaryKey)
     ///if primaryKeyAttributeId is -1, there is no primaryKey in AttributeMap of schema,i.e primaryKey was not made searchable.
     if (primaryKeyAttributeId >= 0)
     {
-        //int to string
-        //std::string s;
-        //std::stringstream out;
-        //out << primaryKey;
-        //std::string primaryKeyStringValue = out.str();
         this->setSearchableAttributeValue(primaryKeyAttributeId, impl->primaryKey);
     }
 }
@@ -286,11 +278,6 @@ void Record::setInMemoryData(const void * ptr, unsigned len) {
 	memcpy(impl->inMemoryStoredRecord, ptr, len);
 	impl->inMemoryStoredRecordLen = len;
 }
-
-//void Record::setInMemoryData(const std::string &inMemoryRecordString)
-//{
-//    impl->inMemoryRecordString = inMemoryRecordString;
-//}
 
 StoredRecordBuffer Record::getInMemoryData() const
 {
