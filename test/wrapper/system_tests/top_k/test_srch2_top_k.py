@@ -1,10 +1,6 @@
 #!/usr/bin/env python
 
-# File: test_srch2_top_k_pagination.py
-# Author: contact@srch2.com
-# Retrieves JSON response using
-# Srch2-base-search-url for a given query.
-# 
+
 # 1) Test order. For example:
 # JSON A:
 # 1 - a - 0.9 

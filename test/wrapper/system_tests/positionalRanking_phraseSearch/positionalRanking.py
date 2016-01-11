@@ -1,4 +1,3 @@
-# Author: Prateek Verma
 # Date: September 30th 2014
 # 
 # This test is used for testing positional ranking in phrase search queries

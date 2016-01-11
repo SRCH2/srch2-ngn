@@ -511,27 +511,8 @@ test_case "adapter_mongo_recover" "python ./adapter_mongo/adapter_mongo_recover.
     255 "-- SKIPPED: Cannot connect to the MongoDB. \
     Check instructions in the file db_connectors/mongo/readme.txt. "
 
-# server is a little slow to exit for reset_logger, causing the server in statemedia's first test (write_correctness)
-# to fail to bind the port, hanging the test script, so wait just a sec here
 sleep 2
-rm -rf data/tests_used_for_statemedia
-if [ $HAVE_NODE -gt 0 ]; then
 
-    if [ $HAVE_RUBY -eq 0 ]; then
-	echo "-- ruby NOT INSTALLED - SKIPPING large_insertion component of ${test_id}" >> ${output}
-    fi
-
-    if [ `uname -s` != 'Darwin' ]; then
-        test_case "tests_used_for_statemedia" "NODECMD=${NODE_CMD:-node} ./tests_used_for_statemedia/autotest.sh $SRCH2_ENGINE" 
-    else
-        echo "-- IGNORING tests_used_for_statemedia on MacOS"
-    fi
-else
-    echo "-- node.js NOT INSTALLED - SKIPPING: ${test_id}" >> ${output}
-fi
-# TODO - hack until we figure out why tests_used_for_statemedia/large_insertion_test/large_insertion_test.rb
-# won't run and tests_used_for_statemedia/update_endpoint_test
-#echo "-- IGNORING FAILURE: $test_id" >> ${output}
 rm -rf data/ *.idx
 
 # clear the output directory. First make sure that we are in correct directory
