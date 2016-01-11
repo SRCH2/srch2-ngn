@@ -1,6 +1,4 @@
 
-# $Id$
-
 #Reference:http://www.mail-archive.com/cmake@cmake.org/msg21493.html
 ##############
 

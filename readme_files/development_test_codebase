@@ -1,0 +1,90 @@
+This page assumes you have setup the development environment (either on Linux or MacOS).
+
+Getting and Building the Code
+
+    git clone git@bitbucket.org:srch2inc/srch2-ngn.git
+
+Install packages needed for building the engine.
+
+    cd /path/to/srch2-engine
+
+    sh runme-to-init-env.sh
+
+NOTE: If you faced errors while compiling the code, read the following instructions:
+
+    Your compiler may not support "-Wno-implicit". To fix it, you can remove it from "CMakeLists.txt".
+    Your compiler may not find "libdl.a" in "/usr/lib/". It might be in "/usr/lib32". To fix it, you can copy "/usr/lib32/libdl.a" into "/usr/lib".
+    When compiling "jsoncpp-src-0.5.0/libs", there would generate a folder called "linux-gcc-4.7" (4.7 is supposed to be your gcc version), but if your gcc is not 4.7, say it is 4.7.2, the compiler will not find the folder "linux-gcc-4.7". To fix it, you can copy "linux-gcc-4.7" to "linux-gcc-4.7.2".
+
+NOTE: If you have already the "build" folder, please remove it before using runme-to-init-env.sh file.
+
+The runme-to-init-env.sh script will start to build the engine in the end automatically. After the command finished, you can find the binary files in the build folder. The executable is located under src/server and other test binaries are also included in the build folder.
+
+If you see an error "Unable to find the requested Boost libraries.  Boost version: 1.46.1", run the following command:
+
+ 
+
+    sudo apt-get install libboost1.46-all-dev
+
+ 
+Run ctest
+
+Goto the build folder and type ctest . This will execute the contained tests in the build folder.
+Building in Debug Mode
+
+By default, the code is compiled in release mode which does not have debug options and asserts. For development purposes, you have to compile it in debug mode. So go to "build" folder and run the following command:
+
+    cmake -DBUILD_RELEASE=OFF ..
+
+This command creates the makefiles and you can use the command "make" in "build" folder to compile the code.
+
+NOTE: you can find more about building options in the more building options section
+Development with Eclipse
+
+NOTE: You have to follow "building in debug mode" section before going through this section. 
+
+Download and run the latest stable version of Eclipse CDT at http://www.eclipse.org/cdt/downloads.php.  Make sure that you download the correct 32 or 64 bit eclipse CDT.  You can check the version of Ubuntu using the following command : "uname -a"
+
+Run another script to prepare the codebase for Eclipse.
+
+    sh eclipse-bootstrap.sh
+
+Import SRCH2 project in Eclipse.
+
+    File -> Import -> General -> Existing Projects into Workspace -> Next -> Browse -> "srch2-engine" folder -> OK
+
+    Right click the SRCH2 project, click "Properties" -> "C/C++ Make Project".  
+
+        In the "Build Directory" field, append "/build" to the default path.
+        Change the "Build command" variable to : /usr/bin/make -C [ProjectLoc]/build, where "[ProjectLoc]" is the root of the source code.
+        Clear the field for "Build (Incremental Build)". (It is "all" by default and you have to make it empty.)
+
+
+Go to a terminal, go to the build folder, then type in the following:
+
+    cmake -DBUILD_RELEASE=OFF ..
+
+
+After making some changes, "Refresh" on Eclipse.  Then press "Ctr-B" to build the engine.
+
+ 
+
+More Building Options
+
+To change back to release mode:
+
+    cmake -DBUILD_RELEASE=ON ..
+
+Check out here for more build options.
+
+For fresh build , you could choose to parallelize the build process using following command
+
+make -jN ( where N is the number of cores/cpu on your machine)
+
+Note: The build dependencies are not setup properly for parallel build. You would see an error while running a parallel build. There are few workarounds which are mentioned below.
+~/srch2-engine/build$ cmake ..
+~/srch2-engine/build$ make -j 4; make
+or
+~/srch2-engine/build$cmake ..
+~/srch2-engine/build$make srch2_instantsearch/fast -j4   ( Builds core srch2 library in parallel. /FAST option skips dependencies check)
+~/srch2/build$make -j4                                  ( Builds again the whole stuff in parallel. Core library is already built in previous step )

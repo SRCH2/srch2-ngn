@@ -1,0 +1,69 @@
+This is what we need to do:
+Step 1. Clone the srch2-ngn repository on you local system. Go to https://bitbucket.org/???????. Click the "Clone" button.  Copy the command and run it on the local machine.
+Step 2.
+
+    checkout your branch
+        git checkout <branchname>    
+            The git checkout command lets you navigate between the branches. Read more about git checkout
+    now you can do the changes to your branch. Once you are done with your changes you need to merge this branch with your master branch. Follow the following commands
+        git checkout master
+            this will switch your working copy to match with the master branch.
+    git merge <branchname>
+        this will merge your branch into the master branch. If you see conflicts, you will have to resolve them. Don't forget to stage the resolved files for the next commit.  use following command to stage the files
+    git add .
+        '.' will stage all the files for the next commit, you may also use git add <filename> if you want to stage specific files only. Once you are ready write the following command
+    git commit -m "enter your merge message here"
+    compile your code and make sure it is working. Once this step is done follow the next step.
+    git push
+        push your changes to the repository
+
+Step 3.
+
+    create a pull request. Read here to know about pull request
+
+        the master in the srch2-ngn repository might have changed during the time you were working on your fork. Make sure you have merged the changes from the srch2-ngn before creating the pull request.
+        please make sure to add reviewers. This is important to do the code review. 
+
+Step 4.
+The developer managing the  srch2-ngn repository will review your changes and will merge the changes. If everything works fine he will accept the pull request.
+Congratulations. You are done.
+Keep reading to add SSH for Git. 
+Setting SSH for Git on Mac/Linux
+
+This will tell you how to use secure shell (SSH) to communicate with the Bitbucket server and avoid having to manually type a password every time.
+
+Also check the following page  https://confluence.atlassian.com/pages/viewpage.action?pageId=270827678&src=email titled "Set up SSH for Git and Mercurial on Mac OSX/Linux."
+Steps:
+
+    ensure you have ssh installed. open terminal and enter
+
+ 
+
+ssh -v
+
+ 
+
+    If you have ssh installed, go to the next step. If you don't have ssh installed, install it now.
+    List the contents of your ~/.ssh directory
+    If you have defined a default identity, you'll see the two id_* files:
+
+ls -a ~/.ssh
+.        ..        id_rsa        id_rsa.pub    known_hosts
+
+    if you don't see id_rsa and id_rsa.pub then go to the url (https://confluence.atlassian.com/pages/viewpage.action?pageId=270827678#SetupSSHforGitandMercurialonMacOSX%2FLinux-Step3.Setupyourdefaultidentity) and follow the instructions of "Step 3" on that page. Then go to the next step
+    log into Bitbucket website and  go to  avatar > Manage Account   (avatar is your image on the top right corner).
+    Click SSH keys, The SSH Keys page displays. It shows a list of any existing keys. Then, below that, a dialog for labeling and entering a new key.
+    In your terminal enter following and copy the contents of your public key file
+
+ 
+
+cat ~/.ssh/id_rsa.pub
+
+    Back in your browser, enter a Label for your new key, for example, Default public key and Paste the copied public key into the SSH Key field
+
+    add the key
+    Step 7. Change your repo from HTTPS to the SSH protocol
+
+    The URL you use for a repo depends on which protocol you are using, HTTPS or SSH.  The Bitbucket repository Overview page has a quick way for you to see these URLS for the srch2-ngn  repo.  On the repo's Overview page look for the Clone button. 
+
+    change the url from https to ssh and use this new url for all future purposes.
