@@ -1,6 +1,3 @@
-//
-////$Id: IndexSearcherInternal_Test.cpp 3490 2013-06-25 00:57:57Z jamshid.esmaelnezhad $
-//
 #include "operation/QueryEvaluatorInternal.h"
 #include "operation/IndexerInternal.h"
 #include "util/Assert.h"
@@ -288,19 +285,6 @@ bool checkResults(QueryResults *queryResults, vector<unsigned> *resultSet)
 
         queryResults->getMatchingKeywords(resultCounter, matchingKeywords);
         queryResults->getEditDistances(resultCounter, editDistances);
-
-//        Logger::info("\nResult-(%d) RecordId: %s\tScore: %s",
-//        		resultCounter,
-//        		queryResults->getRecordId(resultCounter).c_str() ,
-//        		queryResults->getResultScoreString(resultCounter).c_str());
-//
-//        Logger::info("\nMatching Keywords:");
-//
-//        unsigned counter = 0;
-//        for(vector<string>::iterator iter = matchingKeywords.begin(); iter != matchingKeywords.end(); iter++, counter++ )
-//        {
-//        	Logger::info("\t%s %d", (*iter).c_str(), editDistances.at(counter));
-//        }
 
         if (resultSet->at(resultCounter)
                 != atoi(queryResults->getRecordId(resultCounter).c_str())) {
@@ -601,173 +585,8 @@ void Test_Sort_Filter(QueryEvaluator *queryEvaluator) {
 
     delete query;
     delete queryResults;
-//    delete queryResults1;
-//    delete queryResults2;
-
 }
 
-//void Test_Expression_Filter(IndexSearcherInternal *indexSearcherInternal){
-//
-//    std::vector<unsigned> resultSet0 , resultSet01, resultSet02, resultSet03,  resultSet1, resultSet2, resultSetEmpty;
-//
-//    // query = "pionn", citation < 7
-//    resultSet0.push_back(1003);
-//    resultSet0.push_back(1005);
-//    resultSet0.push_back(1006);
-//
-//    // query = "pionn", price < 8
-//    resultSet01.push_back(1005);
-//    resultSet01.push_back(1006);
-//    resultSet01.push_back(1007);
-//
-//    // query = "pionn", class < D
-//    resultSet02.push_back(1003);
-//    resultSet02.push_back(1005);
-//    resultSet02.push_back(1006);
-//
-//
-//
-//
-//    int resultCount = 10;
-//    // create a query
-//    Query *query = new Query(srch2is::TopKQuery);
-//    string keywords[3] = {
-//            "pionn","fllio","shiii"
-//    };
-//
-//
-//
-//
-//
-//
-//
-//    cout<<"\n***PREFIX FUZZY***\nQuery:";
-//
-//    // query = "pionn", citation < 7
-//    TermType type = PREFIX;
-//    cout<<keywords[0]<< "\n";
-//    Term *term0 = FuzzyTerm::create(keywords[0], type, 1, 1, 2);
-//    query->add(term0);
-//
-//
-//	ResultsPostProcessorPlan * plan = NULL;
-//	plan = new ResultsPostProcessorPlan();
-//	NonSearchableAttributeExpressionFilter * expressionFilter = new NonSearchableAttributeExpressionFilter();
-//	// these two line must be changed by setting something like an expression folder in filter
-//	expressionFilter->attributeName = "citation";
-//	Score se7en;
-//	se7en.setScore((unsigned)7);
-//	expressionFilter->attributeValue = se7en;
-//
-//	plan->addFilterToPlan(expressionFilter);
-//	query->setPostProcessingPlan(plan);
-//
-//
-//
-//
-//    QueryResults *queryResults = new QueryResults(new QueryResultFactory(),indexSearcherInternal, query);
-//    indexSearcherInternal->search(query, queryResults, resultCount);
-//
-//
-//    QueryResults *queryResultsAfterFilter = applyFilter(queryResults,indexSearcherInternal,query);
-//
-//
-//    ASSERT(checkResults(queryResultsAfterFilter, &resultSet0));
-//
-//    ////////////////////////////////////////////////////
-//    // query = "pionn", price < 8
-//	plan = NULL;
-//	plan = new ResultsPostProcessorPlan();
-//	expressionFilter = new NonSearchableAttributeExpressionFilter();
-//	// these two line must be changed by setting something like an expression folder in filter
-//	expressionFilter->attributeName = "price";
-//	Score eig8t;
-//	eig8t.setScore((float)8);
-//	expressionFilter->attributeValue = eig8t;
-//
-//	plan->addFilterToPlan(expressionFilter);
-//	query->setPostProcessingPlan(plan);
-//
-//
-//
-//
-//    queryResults = new QueryResults(new QueryResultFactory(),indexSearcherInternal, query);
-//    indexSearcherInternal->search(query, queryResults, resultCount);
-//
-//
-//    queryResultsAfterFilter = applyFilter(queryResults,indexSearcherInternal,query);
-//
-//    ASSERT(checkResults(queryResultsAfterFilter, &resultSet01));
-//
-//
-//    ////////////////////////////////////////////////////////
-//
-//    // query = "pionn", class < D
-//	plan = NULL;
-//	plan = new ResultsPostProcessorPlan();
-//	expressionFilter = new NonSearchableAttributeExpressionFilter();
-//	// these two line must be changed by setting something like an expression folder in filter
-//	expressionFilter->attributeName = "class";
-//	Score D;
-//	D.setScore("D");
-//	expressionFilter->attributeValue = D;
-//
-//	plan->addFilterToPlan(expressionFilter);
-//	query->setPostProcessingPlan(plan);
-//
-//
-//
-//    queryResults = new QueryResults(new QueryResultFactory(),indexSearcherInternal, query);
-//    indexSearcherInternal->search(query, queryResults, resultCount);
-//
-//    queryResultsAfterFilter = applyFilter(queryResults,indexSearcherInternal,query);
-//
-//    ASSERT(checkResults(queryResultsAfterFilter, &resultSet02));
-//
-//    ///////////////////////////////////////////////////////////
-//
-//
-//    // test with empty results
-//    type = PREFIX;
-//    cout<<"keywordwhichisnotinresults"<< "\n";
-//
-//
-//    Term *term1 = FuzzyTerm::create("keywordwhichisnotinresults", type, 1, 1, 2);
-//    query->add(term1);
-//
-//
-//	plan = NULL;
-//	plan = new ResultsPostProcessorPlan();
-//	expressionFilter = new NonSearchableAttributeExpressionFilter();
-//	// these two line must be changed by setting something like an expression folder in filter
-//	expressionFilter->attributeName = "citation";
-//	se7en.setScore((unsigned)7);
-//	expressionFilter->attributeValue = se7en;
-//
-//	plan->addFilterToPlan(expressionFilter);
-//	query->setPostProcessingPlan(plan);
-//
-//
-//
-//
-//    queryResults = new QueryResults(new QueryResultFactory(),indexSearcherInternal, query);
-//    indexSearcherInternal->search(query, queryResults, resultCount);
-//
-//
-//    queryResultsAfterFilter = applyFilter(queryResults,indexSearcherInternal,query);
-//
-//    ASSERT(checkResults(queryResultsAfterFilter, &resultSetEmpty));
-//
-//
-//
-//    delete query;
-//    delete queryResults;
-////    delete queryResults1;
-////    delete queryResults2;
-//
-//}
-//
-//
 void Test_FacetedSearch_Filter(QueryEvaluator *queryEvaluator) {
 
     std::vector<unsigned> resultSet0, resultSet01, resultSet02, resultSet03,
@@ -975,9 +794,7 @@ void Searcher_Tests() {
     QueryEvaluator * queryEvaluator = new QueryEvaluator(indexer, &runtimeParameters);
     Logger::info("Test 1");
     Test_Sort_Filter(queryEvaluator);
-//	std::cout << "test2" << std::endl;
-//	Test_Expression_Filter(indexSearcherInternal);
-    Logger::info("Test 3");
+    Logger::info("Test 2");
     Test_FacetedSearch_Filter(queryEvaluator);
 
     delete indexer;

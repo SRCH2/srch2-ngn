@@ -1,5 +1,3 @@
-//$Id: Daemon.cpp 1280 2011-07-06 17:13:55Z srch2.vijay $
-
 #include "ConfReader.h"
 #include "JSON.h"
 #include "DaemonDataSource.h"

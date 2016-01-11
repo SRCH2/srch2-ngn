@@ -2,7 +2,6 @@
  * JSONValueObjectToRecord_Test.cpp
  *
  *  Created on: Aug 1, 2014
- *      Author: Chen Liu liu@srch2.com
  */
 
 /*

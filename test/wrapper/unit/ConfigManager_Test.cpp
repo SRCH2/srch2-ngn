@@ -1,13 +1,8 @@
-/*
- * ConfigManager_Test.cpp
- *
- *  Created on: Jul 17, 2014
- *      Author: prateek
- */
-
 /**
- * This test case tests schema section of the config file. Checks if it works for various combination and number of searchable, refining, and indexed fields.
- * It checks for invalid boost, invalid record boost field and all possible combinations for character offset/positionalIndex and field based search.
+ * This test case tests schema section of the config file. Checks if it works for various
+ * combination and number of searchable, refining, and indexed fields.
+ * It checks for invalid boost, invalid record boost field and all possible combinations
+ * for character offset/positionalIndex and field based search.
  *
  * The conf-logging.xml file has log tag outside core, it enables testing of global log tag.
  */
