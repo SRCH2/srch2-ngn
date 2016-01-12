@@ -154,7 +154,8 @@ void testChineseAnalyzer(const string &dataDir){
     vectorString.push_back("chinese");
     vectorString.push_back("ㄓㄠ");
 
-    vectorString.push_back("我是");
+    vectorString.push_back("我");
+    vectorString.push_back("是");
     vectorString.push_back("一个");
     vectorString.push_back("中国人");
     vectorString.push_back("上海");
@@ -167,7 +168,9 @@ void testChineseAnalyzer(const string &dataDir){
     vectorString.push_back("１０");
     vectorString.push_back("号");
     vectorString.push_back("起");
-    vectorString.push_back("一票制");
+    vectorString.push_back("一");
+    vectorString.push_back("票");
+    vectorString.push_back("制");
     vectorString.push_back("朱");
     vectorString.push_back("镕");
     vectorString.push_back("基");
@@ -450,7 +453,7 @@ void testStopFilter(string dataDir) {
     vectorString.push_back("here");
     vectorString.push_back("is");
     vectorString.push_back("set");
-    vectorString.push_back("我的");
+    vectorString.push_back("我");
     vectorString.push_back("不");
     vectorString.push_back("过滤");
     vectorString.push_back("这个");
@@ -461,6 +464,7 @@ void testStopFilter(string dataDir) {
         vector<CharType> charVector;
         charVector = tokenStream->getProcessedToken();
         charTypeVectorToUtf8String(charVector, src);
+        cout << src << endl;
         ASSERT(vectorString[i] == src);
         i++;
     }

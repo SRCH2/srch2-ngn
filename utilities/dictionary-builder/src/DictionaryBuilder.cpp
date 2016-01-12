@@ -10,7 +10,6 @@
  *       Revision:  none
  *       Compiler:  gcc
  *
- *         Author:  Jianfeng (), jianfengjia@srch2.com
  *   Organization:  SRCH2.com
  *
  * =====================================================================================

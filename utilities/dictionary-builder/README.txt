@@ -1,6 +1,5 @@
 
 #Introduction
-Jianfeng Jia and Chen Li
 Sept. 2014
 
 This utility tool converts a text file with word frequencies to
@@ -45,5 +44,5 @@ words and their scores for the use of dynamic programming algorithm.
 For each word (w), we use the following formula to calculate the
 log-value:
 ```
-log-value(w) = log(0.985, probability(w))
+log-value(w) = log(0.9, probability(w))
 ```
