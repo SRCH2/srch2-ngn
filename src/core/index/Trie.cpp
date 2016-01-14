@@ -1217,12 +1217,12 @@ void Trie::pushNeighborsForMoreSpace(const unsigned iter, map<TrieNode *, unsign
     // We will store all the TrieNodes that we need to reassign Ids in reassignRange
     vector<TrieNode *> reassignRange;
 
-    // Jamshid : Includes the newly inserted TrieNode , after finding the range completely the first and the last
+    // Includes the newly inserted TrieNode , after finding the range completely the first and the last
     // one are non-temperoray ids. Except for the case where the current node is already on the leftmost/rightmost position
     // in the trie
     reassignRange.push_back(trieNodesToReassign[iter].getLastTrieNode());
 
-    // Jamshid : Starting from the newly inserted TrieNode,
+    // Starting from the newly inserted TrieNode,
     // keep moving and including leftward until we reach a node not with a temporary reassigned id
     // TODO why do we check for temporary ids on the left ? Because we move from left to right and we shouldn't
     // see any temporary ids on the left (pro : it makes it symmetric)

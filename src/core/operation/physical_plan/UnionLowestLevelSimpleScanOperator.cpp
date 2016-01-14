@@ -208,7 +208,7 @@ PhysicalPlanRecordItem * UnionLowestLevelSimpleScanOperator::getNext(const Physi
             this->invertedListDistances.at(this->invertedListOffset),
             term->getKeyword()->size(),
             isPrefixMatch,
-            params.prefixMatchPenalty , term->getSimilarityBoost())/*added by Jamshid*/*term->getBoost());
+            params.prefixMatchPenalty , term->getSimilarityBoost())*term->getBoost());
     // static score
     newItem->setRecordStaticScore(termRecordStaticScore);
     // attributeBitmap

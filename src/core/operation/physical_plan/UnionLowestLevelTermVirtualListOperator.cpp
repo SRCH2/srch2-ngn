@@ -196,7 +196,7 @@ PhysicalPlanRecordItem * UnionLowestLevelTermVirtualListOperator::getNext(const 
                             currentHeapMax->ed,
                             term->getKeyword()->size(),
                             currentHeapMax->isPrefixMatch,
-                            this->prefixMatchPenalty , term->getSimilarityBoost())/*added by Jamshid*/*term->getBoost();
+                            this->prefixMatchPenalty , term->getSimilarityBoost())*term->getBoost();
                 currentHeapMax->termRecordStaticScore = termRecordStaticScore;
                 currentHeapMax->attributeIdsList = matchedAttributeIdsList;
                 currentHeapMax->positionIndexOffset = keywordOffset;
