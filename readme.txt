@@ -50,7 +50,7 @@ debug mode. So go to "build/" folder and run the following command:
 
    shell> cmake -DBUILD_RELEASE=OFF ..
 
-  To compile it using the debug mode:
+  To compile it using the release mode:
 
    shell> cmake -DBUILD_RELEASE=ON ..
 
