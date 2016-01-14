@@ -8,7 +8,7 @@ Step 2.
     sh ./runme-to-init-env.sh
 
 It will compile related libraries and build the engine. 
-After the command finished, you can find the binary files in the "build/" folder. 
+After the command is finished, you can find the binary files in the "build/" folder. 
 The executable is located under src/server and other test binaries are also 
 included in the "build/" folder. If you have already the "build/" folder, please 
 remove it before using runme-to-init-env.sh file.
@@ -38,14 +38,9 @@ Step 3. Run ctest
 
   It will execute the contained tests in the build folder.
 
-Step 4. Run system test cases:
-
-     shell> cd test/wrapper/system_tests
-     shell> ./runme.sh
-
-Step 5. (Optional) Changing the compiling mode: 
-By default, the code is compiled in release mode which does not have debug 
-options and asserts. For development purposes, you have to compile it in 
+Step 4. (Optional) Changing the compiling mode: 
+By default, the code is compiled in the release mode, which does not have debug 
+options and asserts. For development purposes, you have to compile it in the
 debug mode. So go to "build/" folder and run the following command:
 
    shell> cmake -DBUILD_RELEASE=OFF ..
@@ -54,8 +49,9 @@ debug mode. So go to "build/" folder and run the following command:
 
    shell> cmake -DBUILD_RELEASE=ON ..
 
-Step 6. (Optional) Importing the source code as a project into Eclipse.
-After installing Eclipse CDT, using the following command creates the
+Step 5. (Optional) Importing the source code as a project into Eclipse.
+
+After installing Eclipse CDT, using the following shell command to create the
 necessary files to be able to import the codebase as an existing project into Eclipse.
 
    shell> cmake -G "Eclipse CDT4 - Unix Makefiles" -DCMAKE_BUILD_TYPE=Debug . 
