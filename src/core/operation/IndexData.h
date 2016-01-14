@@ -92,7 +92,7 @@ namespace srch2
 namespace instantsearch
 {
 /*
- *  Surendra: These are forward declaration of required classes and typedefs.
+ *  These are forward declaration of required classes and typedefs.
  *  It would be nice to move them to a separate forward declaration header file
  */
 class InvertedIndex;
