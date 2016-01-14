@@ -15,7 +15,7 @@ ENDIF()
 INCLUDE_DIRECTORIES(. "${CMAKE_BINARY_DIR}/include" ${Boost_INCLUDE_DIRS} ${CMAKE_SOURCE_DIR} ${CMAKE_SOURCE_DIR}/thirdparty/json/jsoncpp-src/include)
 
 
-#CHENLI: generating a shared library if needed.
+# generating a shared library if needed.
 IF (BUILD_STATIC OR BUILD_SERVER OR ANDROID_SERVER)
   ADD_LIBRARY(srch2_core STATIC ${SRCH2_LIB_SRC} )
 ELSE (BUILD_STATIC)

@@ -117,7 +117,7 @@ public:
     static const char *index_merge_url;
     static const char *index_stop_url;
     static const char *ajax_reply_start;
-    //	static const char *ajax_search_pass; // CHENLI
+    //	static const char *ajax_search_pass;
     static const char *ajax_search_fail;
     static const char *ajax_insert_pass;
     static const char *ajax_insert_fail;

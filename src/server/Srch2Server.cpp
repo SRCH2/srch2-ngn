@@ -65,7 +65,6 @@ const char *HTTPServerEndpoints::index_stop_url = "/srch2/stop";
  "Content-Type: application/x-javascript\r\n"
  "\r\n";*/
 
-// CHENLI
 /*const char *HTTPServerEndpoints::ajax_search_pass =
  "HTTP/1.1 200 OK\r\n"
  "Cache: no-cache\r\n"

@@ -820,7 +820,7 @@ public:
     bool hasAccessToForwardList(shared_ptr<vectorview<ForwardListPtr> > & forwardListDirectoryReadView,
     		unsigned recordId, string &roleId);
 
-    //ForwardList *getForwardListToChange(unsigned recordId, bool &valid); // CHENLI
+    //ForwardList *getForwardListToChange(unsigned recordId, bool &valid);
     ForwardList *getForwardList_ForCommit(unsigned recordId);
 
     //ForwardListElement *getForwardListElementByOffset(unsigned forwardIndexOffset);

@@ -1880,7 +1880,7 @@ unsigned Trie::ifBreakOldParentPrefix(const std::vector<CharType> &keyword, vect
             node = node->getChild(childPosition);
             Prefix newPrefix(node->getMinId(), node->getMaxId());
             if (oldParentOrSelfAndAncs->size() == 0 || oldParentOrSelfAndAncs->back() != newPrefix)
-                oldParentOrSelfAndAncs->push_back(newPrefix);  // CHEN: Add the current prefix to the vector
+                oldParentOrSelfAndAncs->push_back(newPrefix);  // Add the current prefix to the vector
             ++charTypeIterator;
         } else
             break; // Found the first trie node that needs to add a new child node
