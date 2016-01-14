@@ -54,3 +54,8 @@ debug mode. So go to "build/" folder and run the following command:
 
    shell> cmake -DBUILD_RELEASE=ON ..
 
+Step 6. (Optional) Importing the source code as a project into Eclipse.
+After installing Eclipse CDT, using the following command creates the
+necessary files to be able to import the codebase as an existing project into Eclipse.
+
+   shell> cmake -G "Eclipse CDT4 - Unix Makefiles" -DCMAKE_BUILD_TYPE=Debug . 
