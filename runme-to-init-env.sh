@@ -6,10 +6,11 @@
 echo "Install required libraries..."
 
 #CENTOS
-sudo yum install gcc make gcc-c++ cmake kernel-devel libevent-devel openssl-devel boost-devel boost-static
-sudo yum install libboost-dev libboost-filesystem-dev libboost-program-options-dev libboost-regex-dev libboost-thread-dev libboost-serialization-dev libboost-system-dev mysql-devel python-devel unixodbc unixodbc-devel
+#sudo yum install gcc make gcc-c++ cmake kernel-devel libevent-devel openssl-devel boost-devel boost-static
+#sudo yum install libboost-dev libboost-filesystem-dev libboost-program-options-dev libboost-regex-dev libboost-thread-dev libboost-serialization-dev libboost-system-dev mysql-devel python-devel unixodbc unixodbc-devel
 
 #UBUNTU
+sudo apt-get update
 sudo apt-get install gcc make cmake build-essential cpp libevent-dev libssl-dev
 sudo apt-get install libboost-dev libboost-filesystem-dev libboost-program-options-dev libboost-regex-dev libboost-thread-dev libboost-serialization-dev libboost-system-dev libmysqlclient-dev python-dev unixodbc unixodbc-dev
 
