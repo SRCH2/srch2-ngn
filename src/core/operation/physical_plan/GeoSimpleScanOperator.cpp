@@ -28,7 +28,6 @@
  * GeoSimpleScanOperator.cpp
  *
  *  Created on: Jul 10, 2014
- *      Author: mahdi
  */
 
 #include "GeoSimpleScanOperator.h"
