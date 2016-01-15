@@ -1,27 +1,36 @@
-/* $Id$
+/*
+ * Copyright (c) 2016, SRCH2
+ * All rights reserved.
+ * 
+ * Redistribution and use in source and binary forms, with or without
+ * modification, are permitted provided that the following conditions are met:
+ *    * Redistributions of source code must retain the above copyright
+ *      notice, this list of conditions and the following disclaimer.
+ *    * Redistributions in binary form must reproduce the above copyright
+ *      notice, this list of conditions and the following disclaimer in the
+ *      documentation and/or other materials provided with the distribution.
+ *    * Neither the name of the SRCH2 nor the
+ *      names of its contributors may be used to endorse or promote products
+ *      derived from this software without specific prior written permission.
+ * 
+ * THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS" AND
+ * ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE IMPLIED
+ * WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE ARE
+ * DISCLAIMED. IN NO EVENT SHALL SRCH2 BE LIABLE FOR ANY
+ * DIRECT, INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES
+ * (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES;
+ * LOSS OF USE, DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND
+ * ON ANY THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
+ * (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
+ * SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
+ */
+/*
  *
  * Trie.cpp
  *
  *  Created on: 2013-4-6
- *      Author: Jiaying Wang
  */
 
-/*
- * The Software is made available solely for use according to the License Agreement. Any reproduction
- * or redistribution of the Software not in accordance with the License Agreement is expressly prohibited
- * by law, and may result in severe civil and criminal penalties. Violators will be prosecuted to the
- * maximum extent possible.
- *
- * THE SOFTWARE IS WARRANTED, IF AT ALL, ONLY ACCORDING TO THE TERMS OF THE LICENSE AGREEMENT. EXCEPT
- * AS WARRANTED IN THE LICENSE AGREEMENT, SRCH2 INC. HEREBY DISCLAIMS ALL WARRANTIES AND CONDITIONS WITH
- * REGARD TO THE SOFTWARE, INCLUDING ALL IMPLIED WARRANTIES AND CONDITIONS OF MERCHANTABILITY, FITNESS
- * FOR A PARTICULAR PURPOSE, TITLE AND NON-INFRINGEMENT.  IN NO EVENT SHALL SRCH2 INC. BE LIABLE FOR ANY
- * SPECIAL, INDIRECT OR CONSEQUENTIAL DAMAGES OR ANY DAMAGES WHATSOEVER RESULTING FROM LOSS OF USE, DATA
- * OR PROFITS, WHETHER IN AN ACTION OF CONTRACT, NEGLIGENCE OR OTHER ACTION, ARISING OUT OF OR IN CONNECTION
- * WITH THE USE OR PERFORMANCE OF SOFTWARE.
-
- * Copyright 2010 SRCH2 Inc. All rights reserved
- */
 
 #include "index/Trie.h"
 #include "util/Logger.h"
@@ -114,15 +123,9 @@ TrieNode::TrieNode(const TrieNode *src, bool isCopy)
 
 TrieNode::~TrieNode()
 {
-    /*for (unsigned childIterator = 0; childIterator < this->getChildrenCount(); childIterator++ )
-    {
-        delete this->getChild(childIterator);
-    }*/
-
     this->childrenPointerList.clear();
     this->leftMostDescendant = NULL;
     this->rightMostDescendant = NULL;
-    //this->parent = NULL;
 }
 
 
@@ -460,7 +463,7 @@ void Trie::addKeyword_SetPrevIdNexIdByPathTrace(vector<TrieNode* > &pathTrace,
     TrieNode* nextNode = NULL;
     TrieNodePath currentTnp(&pathTrace);
 
-    // Jamshid : It means we are passed the load phase. we are doing incremental update
+    // It means we are passed the load phase. we are doing incremental update
     if (this->commited) {
         // Find previous and next keyword id to assign a id to the current keyword.
         // Note: getPreviousKeywordId and getNextKeywordId are not symmetric.
@@ -804,7 +807,6 @@ unsigned Trie::addKeyword_ThreadSafe(const std::vector<CharType> &keyword,
     // we need to use oldToNewTrieNodeMap to map trie nodes on its PathTrace to the
     // corresponding newly cloned trie nodes, so that the old trie nodes can be
     // freed in the read view.
-    // TODO what is the logic behind oldToNewTrieNodeMap and this function ? ???????????
     remapPathForTrieNodesToReassign(oldToNewTrieNodeMap);
 
     //return invertedListOffset and keywordId
@@ -1212,15 +1214,15 @@ void Trie::pushNeighborsForMoreSpace(const unsigned iter, map<TrieNode *, unsign
     TrieNodePath leftSide;
     TrieNodePath rightSide;
 
-    // Jamshid : We will store all the TrieNodes that we need to reassign Ids in reassignRange
+    // We will store all the TrieNodes that we need to reassign Ids in reassignRange
     vector<TrieNode *> reassignRange;
 
-    // Jamshid : Includes the newly inserted TrieNode , after finding the range completely the first and the last
+    // Includes the newly inserted TrieNode , after finding the range completely the first and the last
     // one are non-temperoray ids. Except for the case where the current node is already on the leftmost/rightmost position
     // in the trie
     reassignRange.push_back(trieNodesToReassign[iter].getLastTrieNode());
 
-    // Jamshid : Starting from the newly inserted TrieNode,
+    // Starting from the newly inserted TrieNode,
     // keep moving and including leftward until we reach a node not with a temporary reassigned id
     // TODO why do we check for temporary ids on the left ? Because we move from left to right and we shouldn't
     // see any temporary ids on the left (pro : it makes it symmetric)
@@ -1244,7 +1246,7 @@ void Trie::pushNeighborsForMoreSpace(const unsigned iter, map<TrieNode *, unsign
         //printTriePath(rightSide.path);
     }
 
-    // Jamshid : Based on the current TrieNodes in reassignRange, we tell if reassigning Ids to them
+    // Based on the current TrieNodes in reassignRange, we tell if reassigning Ids to them
     // can make the Id space sparse enough.
     // If yes, we do the reassignment; if no, we include more neighbor TrieNodes into the range
     while (needToReassignMore(reassignRange[0], reassignRange[reassignRange.size()-1], reassignRange.size(), trieNodeIdMapper)) {
@@ -1287,7 +1289,7 @@ void Trie::reassignKeywordIds(map<TrieNode *, unsigned> &trieNodeIdMapper)
     // We generate the mapper in three steps:
 
     // step 1: sort trieNodesToReassign based on their string values
-    // Jamshid : TrieNodesToReassign stores all the TrieNodes we need to reassign Ids
+    // TrieNodesToReassign stores all the TrieNodes we need to reassign Ids
     // along with the paths from the Trie's root.
     // We sort them based on the TrieNode encoding order.
     // alphabetical order
@@ -1299,7 +1301,7 @@ void Trie::reassignKeywordIds(map<TrieNode *, unsigned> &trieNodeIdMapper)
     // entire left side, we will then try to push right
     for (unsigned iter = 0; iter < trieNodesToReassign.size(); iter ++) {
         printTriePath(trieNodesToReassign[iter].path);
-        // Jamshid : the reason to have this condition : if we don't have room on left, we push to the right and some
+        // the reason to have this condition : if we don't have room on left, we push to the right and some
         // new trie nodes in right also might obtain their id, so it is possible to visit a new trie node in this vector
         // that already has an id
         // Note : the mapper might also store some old nodes which are pushed to one of the directions.
@@ -1800,10 +1802,6 @@ void Trie::getAncestorPrefixes(const Prefix &prefix, std::vector<Prefix> &ancest
             if ( !(prefix.minId == node->getMinId() && prefix.maxId == node->getMaxId()) ) {
                 ancestorPrefixes.push_back( Prefix(node->getMinId(), node->getMaxId()) );
                 if (!ancestorPrefixes.back().isAncestor(prefix)) {
-                    // for (int i=0; i<ancestorPrefixes.size();i++)
-                    //cout << ancestorPrefixes[i].minId << " " << ancestorPrefixes[i].maxId << endl;
-
-                    //cout << "---" << prefix.minId << " " << prefix.maxId << endl;
                     ASSERT(false);
                 }
             } else
@@ -1882,10 +1880,10 @@ unsigned Trie::ifBreakOldParentPrefix(const std::vector<CharType> &keyword, vect
             node = node->getChild(childPosition);
             Prefix newPrefix(node->getMinId(), node->getMaxId());
             if (oldParentOrSelfAndAncs->size() == 0 || oldParentOrSelfAndAncs->back() != newPrefix)
-                oldParentOrSelfAndAncs->push_back(newPrefix);  // CHEN: Add the current prefix to the vector
+                oldParentOrSelfAndAncs->push_back(newPrefix);  // Add the current prefix to the vector
             ++charTypeIterator;
         } else
-            break; // CHEN: Found the first trie node that needs to add a new child node
+            break; // Found the first trie node that needs to add a new child node
     }
 
     if (node->getChildrenCount() == 1)
@@ -1894,22 +1892,22 @@ unsigned Trie::ifBreakOldParentPrefix(const std::vector<CharType> &keyword, vect
         hadExactlyOneChild = false;
 
     if (charTypeIterator == cleanedString.end()) // it's an existing internal trie node turned into a terminal trie node
-        return 1;  // CHEN: It's an existing keyword.  Breaking from left
+        return 1;  // It's an existing keyword.  Breaking from left
 
     if (keyword.size() == 1 // a new one-letter-word, no parent to break
             || oldParentOrSelfAndAncs->size() == 0) // a new trie branch
-        return 0;  // CHEN: Didn't break the interval
+        return 0;  // Didn't break the interval
 
     if (node->getChildrenCount() == 0) // append an existing leaf trie node
-        return 2; // CHEN: Added a new keyword
+        return 2; // Added a new keyword
 
     if (!node->isTerminalNode() // only if the old parent is not a terminal node can the new node possibly break from left
             && ((CharType) *charTypeIterator) < node->getChild(0)->getCharacter())
-        return 1; // CHEN: Breaking from left
+        return 1; // Breaking from left
     if (((CharType) *charTypeIterator) > node->getChild(node->getChildrenCount()-1)->getCharacter())
-        return 2; // CHEN: Breaking from right
+        return 2; // Breaking from right
 
-    return 0; // CHEN: Didn't break the interval
+    return 0; // Didn't break the interval
 }
 
 void Trie::getPrefixFromKeywordId(unsigned keywordId, Prefix &prefix) const
@@ -2060,7 +2058,6 @@ void Trie::getPrefixString(const TrieNode* rootReadView, const TrieNode* trieNod
         // not found in the read view of the trie. Instead it's found in the write view.
 	// The bug is still not fixed yet.  For now, we want to do defensive
 	// programming by returning an empty string.
-	// TODO: Fix the hidden bug later!!!
 	if (nodeIter == NULL || ( nodeIter != NULL && nodeIter->getDepth() > prefix_node_depth )) {
 	  in.clear();
 	  return;

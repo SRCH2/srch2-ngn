@@ -1,20 +1,28 @@
-// $Id: IndexData.cpp 3480 2013-06-19 08:00:34Z iman $
-
 /*
- * The Software is made available solely for use according to the License Agreement. Any reproduction
- * or redistribution of the Software not in accordance with the License Agreement is expressly prohibited
- * by law, and may result in severe civil and criminal penalties. Violators will be prosecuted to the
- * maximum extent possible.
- *
- * THE SOFTWARE IS WARRANTED, IF AT ALL, ONLY ACCORDING TO THE TERMS OF THE LICENSE AGREEMENT. EXCEPT
- * AS WARRANTED IN THE LICENSE AGREEMENT, SRCH2 INC. HEREBY DISCLAIMS ALL WARRANTIES AND CONDITIONS WITH
- * REGARD TO THE SOFTWARE, INCLUDING ALL IMPLIED WARRANTIES AND CONDITIONS OF MERCHANTABILITY, FITNESS
- * FOR A PARTICULAR PURPOSE, TITLE AND NON-INFRINGEMENT.  IN NO EVENT SHALL SRCH2 INC. BE LIABLE FOR ANY
- * SPECIAL, INDIRECT OR CONSEQUENTIAL DAMAGES OR ANY DAMAGES WHATSOEVER RESULTING FROM LOSS OF USE, DATA
- * OR PROFITS, WHETHER IN AN ACTION OF CONTRACT, NEGLIGENCE OR OTHER ACTION, ARISING OUT OF OR IN CONNECTION
- * WITH THE USE OR PERFORMANCE OF SOFTWARE.
-
- * Copyright 2010 SRCH2 Inc. All rights reserved
+ * Copyright (c) 2016, SRCH2
+ * All rights reserved.
+ * 
+ * Redistribution and use in source and binary forms, with or without
+ * modification, are permitted provided that the following conditions are met:
+ *    * Redistributions of source code must retain the above copyright
+ *      notice, this list of conditions and the following disclaimer.
+ *    * Redistributions in binary form must reproduce the above copyright
+ *      notice, this list of conditions and the following disclaimer in the
+ *      documentation and/or other materials provided with the distribution.
+ *    * Neither the name of the SRCH2 nor the
+ *      names of its contributors may be used to endorse or promote products
+ *      derived from this software without specific prior written permission.
+ * 
+ * THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS" AND
+ * ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE IMPLIED
+ * WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE ARE
+ * DISCLAIMED. IN NO EVENT SHALL SRCH2 BE LIABLE FOR ANY
+ * DIRECT, INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES
+ * (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES;
+ * LOSS OF USE, DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND
+ * ON ANY THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
+ * (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
+ * SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  */
 
 #include "IndexData.h"
@@ -631,7 +639,6 @@ INDEXWRITE_RETVAL IndexData::finishBulkLoad() {
 		this->forwardIndex->commit();
 		this->trie->commit();
 		this->quadTree->commit();
-		//this->trie->print_Trie();
 		const vector<unsigned> *oldIdToNewIdMapVector =
 				this->trie->getOldIdToNewIdMapVector();
 
@@ -656,7 +663,6 @@ INDEXWRITE_RETVAL IndexData::finishBulkLoad() {
 					this->schemaInternal, newKeywordIdKeywordOffsetTriple);
 		}
 		this->forwardIndex->finalCommit();
-//        this->forwardIndex->print_size();
 
 		this->invertedIndex->setForwardIndex(this->forwardIndex);
 		this->invertedIndex->finalCommit();
@@ -691,7 +697,6 @@ INDEXWRITE_RETVAL IndexData::_merge(CacheManager *cache, bool updateHistogram) {
 	// struct timespec tend;
 	// clock_gettime(CLOCK_REALTIME, &tend);
 	// unsigned time = (tend.tv_sec - tstart.tv_sec) * 1000 + (tend.tv_nsec - tstart.tv_nsec) / 1000000;
-	// cout << time << "-trie merge" << endl;
 
 	this->forwardIndex->merge();
 	if (this->forwardIndex->hasDeletedRecords()) {
@@ -739,7 +744,7 @@ INDEXWRITE_RETVAL IndexData::_merge(CacheManager *cache, bool updateHistogram) {
 		// clock_gettime(CLOCK_REALTIME, &tend);
 		// unsigned time = (tend.tv_sec - tstart.tv_s ec) * 1000 +
 		// (double) (tend.tv_nsec - tstart.tv_nsec) / (double)1000000L;
-		// cout << "Commit phase: time spent to reassign keyword IDs in the forward index (ms): " << time << endl;
+		// Commit phase: time spent to reassign keyword IDs in the forward index (ms): ==>> time
 	}
 
 	this->trie->merge(invertedIndex, this->forwardIndex,
@@ -793,8 +798,6 @@ void IndexData::reassignKeywordIds() {
 		node->setId(newKeywordId); // set the new keyword Id
 	}
 
-	// TODO: change it to an unordered set
-	//std::unordered_set<unsigned> processedRecordIds; // keep track of records that have been converted
 	map<unsigned, unsigned> processedRecordIds; // keep track of records that have been converted
 
 	// Now we have the ID mapper.  We want to go through the trie nodes one by one.
@@ -808,7 +811,7 @@ void IndexData::reassignKeywordIds() {
 }
 
 /*
- * Jamshid : uses the id mapped to replace old ids to new ids in forward list.
+ * Uses the id mapped to replace old ids to new ids in forward list.
  * since we use inverted index to go through all records of a keyword it is possible to visit a record more than once
  * so we use processedRecordIds to remember what records have been reassigned.
  */
@@ -831,7 +834,7 @@ void IndexData::changeKeywordIdsOnForwardLists(
 		unsigned invertedListId = node->getInvertedListOffset();
 		// change the keywordId for a given invertedListId. "node" (leafnode) has a new keywordId
 		keywordIDsWriteView->at(invertedListId) = node->getId();
-		// Jamshid : since it happens after the commit of other index structures it uses read view
+		// Since it happens after the commit of other index structures it uses read view
 		shared_ptr<vectorview<unsigned> > readview;
 		shared_ptr<vectorview<InvertedListContainerPtr> > invertedListDirectoryReadView;
 		this->invertedIndex->getInvertedIndexDirectory_ReadView(

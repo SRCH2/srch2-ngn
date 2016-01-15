@@ -1,21 +1,28 @@
-
-// $Id: IndexData.h 3480 2013-06-19 08:00:34Z iman $
-
 /*
- * The Software is made available solely for use according to the License Agreement. Any reproduction
- * or redistribution of the Software not in accordance with the License Agreement is expressly prohibited
- * by law, and may result in severe civil and criminal penalties. Violators will be prosecuted to the
- * maximum extent possible.
- *
- * THE SOFTWARE IS WARRANTED, IF AT ALL, ONLY ACCORDING TO THE TERMS OF THE LICENSE AGREEMENT. EXCEPT
- * AS WARRANTED IN THE LICENSE AGREEMENT, SRCH2 INC. HEREBY DISCLAIMS ALL WARRANTIES AND CONDITIONS WITH
- * REGARD TO THE SOFTWARE, INCLUDING ALL IMPLIED WARRANTIES AND CONDITIONS OF MERCHANTABILITY, FITNESS
- * FOR A PARTICULAR PURPOSE, TITLE AND NON-INFRINGEMENT.  IN NO EVENT SHALL SRCH2 INC. BE LIABLE FOR ANY
- * SPECIAL, INDIRECT OR CONSEQUENTIAL DAMAGES OR ANY DAMAGES WHATSOEVER RESULTING FROM LOSS OF USE, DATA
- * OR PROFITS, WHETHER IN AN ACTION OF CONTRACT, NEGLIGENCE OR OTHER ACTION, ARISING OUT OF OR IN CONNECTION
- * WITH THE USE OR PERFORMANCE OF SOFTWARE.
-
- * Copyright 2010 SRCH2 Inc. All rights reserved
+ * Copyright (c) 2016, SRCH2
+ * All rights reserved.
+ * 
+ * Redistribution and use in source and binary forms, with or without
+ * modification, are permitted provided that the following conditions are met:
+ *    * Redistributions of source code must retain the above copyright
+ *      notice, this list of conditions and the following disclaimer.
+ *    * Redistributions in binary form must reproduce the above copyright
+ *      notice, this list of conditions and the following disclaimer in the
+ *      documentation and/or other materials provided with the distribution.
+ *    * Neither the name of the SRCH2 nor the
+ *      names of its contributors may be used to endorse or promote products
+ *      derived from this software without specific prior written permission.
+ * 
+ * THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS" AND
+ * ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE IMPLIED
+ * WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE ARE
+ * DISCLAIMED. IN NO EVENT SHALL SRCH2 BE LIABLE FOR ANY
+ * DIRECT, INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES
+ * (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES;
+ * LOSS OF USE, DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND
+ * ON ANY THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
+ * (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
+ * SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  */
 
 /*
@@ -66,15 +73,9 @@
 #include <instantsearch/Record.h>
 #include <instantsearch/Constants.h>
 
-//#include "index/IndexUtil.h"
 #include "index/Trie.h"
-//#include "index/InvertedIndex.h"
 #include "index/ForwardIndex.h"
 #include "geo/QuadTree.h"
-//#include "record/AnalyzerInternal.h"
-//#include "record/SchemaInternal.h"
-//#include "license/LicenseVerifier.h"
-//#include "operation/Cache.h"
 #include "util/RankerExpression.h"
 
 #include <string>
@@ -91,7 +92,7 @@ namespace srch2
 namespace instantsearch
 {
 /*
- *  Surendra: These are forward declaration of required classes and typedefs.
+ *  These are forward declaration of required classes and typedefs.
  *  It would be nice to move them to a separate forward declaration header file
  */
 class InvertedIndex;
@@ -440,14 +441,6 @@ public:
     }
 
     void printNumberOfBytes() const;
-    // Surendra: this function is not used anywhere. It creates unnecessary dependency on
-    // Trie, InvertedIndex, and ForwardIndex. If you use to wish this. Please move it to the cpp file
-    /*void print_Index() const
-    {
-        this->trie->print_Trie();
-        this->invertedIndex->print_test();
-        this->forwardIndex->print_test();
-    }*/
 
     void reassignKeywordIds();
     void changeKeywordIdsOnForwardLists(const map<TrieNode *, unsigned> &trieNodeIdMapper,

@@ -40,17 +40,6 @@ do
 	continue
     fi
 
-    # --upload option: Upload output file to dashboard server
-    # This curl command uses Content-Type: multipart/form-data
-    if [ "$1" = '--upload' ]; then
-	if [ "$output" = '/dev/tty' ]; then
-	    output="report-`date +%F-%R`-${machine}-${os}.html"
-	fi
-	upload="curl -F \"uploadedfile=@${output}\" \"http://dilbert.calit2.uci.edu/CDash-2-0-2/system_tests_submit.php\""
-	shift
-	continue
-    fi
-
     echo "$0: Unrecognized option: $1"
     break;
 done
@@ -80,7 +69,7 @@ function printTestBanner {
     if [ "$html" -gt 0 ]; then
 	html_pre='<h4>'
 	html_post='</h4>'
-	html_results_link_pre="<a href=\"#${testName}\">"
+	html_results_link_pre="<a href=\"\#${testName}\">"
 	html_results_link_post='</a>'
 	html_results_anchor="<a name=\"${testName}\"></a>"
 	totalLength=$((${totalLength} + ${#html_pre} + ${#html_post} + ${#html_results_link_pre} + ${#html_results_link_post}))
@@ -104,7 +93,7 @@ function printTestBanner {
 
 # Clear output file if file was specified
 if [ -f "$output" ]; then
-    rm -f "$output"
+    rm -rf "$output"
 fi
 
 # setup some common HTML highlighting
@@ -135,28 +124,8 @@ else
     echo "WARNING: Could not find ruby, which some tests require.  Try: sudo apt-get install ruby1.9.1" >> ${output}
 fi
 
-# Test for node.js framework
-echo 'Checking node nodejs executable' >> system_test.log 2>&1
-nodejs --version >> system_test.log 2>&1
-if [ $? -eq 0 ]; then
-    HAVE_NODE=1
-    NODE_CMD=nodejs
-else
-    # maybe it's called just node, but need to test due to another package with the same name
-    echo 'Checking for nodejs executable as just node' >> system_test.log 2>&1
-    NODE_TEST=`node -e 'console.log(1);'` 2>> system_test.log
-    node --version >> system_test.log 2>&1
-    if [ $? -eq 0 ] && [ "${NODE_TEST:-0}" -eq 1 ]; then
-	HAVE_NODE=1
-	NODE_CMD=node
-    else
-	HAVE_NODE=0
-	echo "WARNING: Could not find node (node.js), which some tests require.  Try: sudo apt-get install nodejs" >> ${output}
-    fi
-fi
-
 # We remove the old indexes, if any, before doing the test.
-rm -rf data/ *.idx
+rm -rf data/*.idx
 
 # This is the general test case function.
 # Normally it takes 2 arguments, but sometimes it can also 4 arguments:
@@ -184,9 +153,9 @@ function test_case(){
             fi
         else
             echo "${html_fail_pre}FAILED: $test_id${html_fail_post}" >> ${output}
-            if [ $force -eq 0 ]; then
-                exit 255
-            fi
+#            if [ $force -eq 0 ]; then
+#                exit 255
+#            fi
         fi
     else
         echo "-- PASSED: $test_id" >> ${output}
@@ -209,12 +178,12 @@ rm -rf ./data/feedback/*
 test_case "User feedback" "python ./feedback/testProgram.py $SRCH2_ENGINE"
 sleep 3
 
-rm ./attributesAcl/stackoverflow/indexes/*
-rm ./attributesAcl/worldbank/indexes/*
+rm -rf ./attributesAcl/stackoverflow/indexes/*
+rm -rf ./attributesAcl/worldbank/indexes/*
 test_case "attributes ACL" "python ./attributesAcl/testProgram.py $SRCH2_ENGINE"
 sleep 3
 
-rm ./attributes/indexes/*
+rm -rf ./attributes/indexes/*
 test_case "lot of attributes" "python ./attributes/attributes.py $SRCH2_ENGINE" 
 
 sleep 3
@@ -360,13 +329,13 @@ rm -rf data/ upsert_batch/*.idx upsert_batch/indexes/*.idx
 
 sleep 3
 
-rm -f ./multicore/core?/*.idx ./multicore/core?/srch2-log.txt
+rm -rf ./multicore/core?/*.idx ./multicore/core?/srch2-log.txt
 test_case "multicore" "python ./multicore/multicore.py $SRCH2_ENGINE ./multicore/queriesAndResults.txt ./multicore/queriesAndResults2.txt"
 rm -rf data/ multicore/core?/*.idx
 
 sleep 3
 
-rm -f ./multiport/core?/*.idx ./multiport/core?/srch2-log.txt
+rm -rf ./multiport/core?/*.idx ./multiport/core?/srch2-log.txt
 test_case "multiport" "python ./multiport/multiport.py $SRCH2_ENGINE ./multiport/queriesAndResults.txt"
 rm -rf data/ multiport/core?/*.idx
 
@@ -511,27 +480,8 @@ test_case "adapter_mongo_recover" "python ./adapter_mongo/adapter_mongo_recover.
     255 "-- SKIPPED: Cannot connect to the MongoDB. \
     Check instructions in the file db_connectors/mongo/readme.txt. "
 
-# server is a little slow to exit for reset_logger, causing the server in statemedia's first test (write_correctness)
-# to fail to bind the port, hanging the test script, so wait just a sec here
 sleep 2
-rm -rf data/tests_used_for_statemedia
-if [ $HAVE_NODE -gt 0 ]; then
 
-    if [ $HAVE_RUBY -eq 0 ]; then
-	echo "-- ruby NOT INSTALLED - SKIPPING large_insertion component of ${test_id}" >> ${output}
-    fi
-
-    if [ `uname -s` != 'Darwin' ]; then
-        test_case "tests_used_for_statemedia" "NODECMD=${NODE_CMD:-node} ./tests_used_for_statemedia/autotest.sh $SRCH2_ENGINE" 
-    else
-        echo "-- IGNORING tests_used_for_statemedia on MacOS"
-    fi
-else
-    echo "-- node.js NOT INSTALLED - SKIPPING: ${test_id}" >> ${output}
-fi
-# TODO - hack until we figure out why tests_used_for_statemedia/large_insertion_test/large_insertion_test.rb
-# won't run and tests_used_for_statemedia/update_endpoint_test
-#echo "-- IGNORING FAILURE: $test_id" >> ${output}
 rm -rf data/ *.idx
 
 # clear the output directory. First make sure that we are in correct directory

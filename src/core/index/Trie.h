@@ -1,32 +1,34 @@
-
-// $Id: Trie.h 3456 2013-06-14 02:11:13Z jiaying $
-
 /*
- * The Software is made available solely for use according to the License Agreement. Any reproduction
- * or redistribution of the Software not in accordance with the License Agreement is expressly prohibited
- * by law, and may result in severe civil and criminal penalties. Violators will be prosecuted to the
- * maximum extent possible.
- *
- * THE SOFTWARE IS WARRANTED, IF AT ALL, ONLY ACCORDING TO THE TERMS OF THE LICENSE AGREEMENT. EXCEPT
- * AS WARRANTED IN THE LICENSE AGREEMENT, SRCH2 INC. HEREBY DISCLAIMS ALL WARRANTIES AND CONDITIONS WITH
- * REGARD TO THE SOFTWARE, INCLUDING ALL IMPLIED WARRANTIES AND CONDITIONS OF MERCHANTABILITY, FITNESS
- * FOR A PARTICULAR PURPOSE, TITLE AND NON-INFRINGEMENT.  IN NO EVENT SHALL SRCH2 INC. BE LIABLE FOR ANY
- * SPECIAL, INDIRECT OR CONSEQUENTIAL DAMAGES OR ANY DAMAGES WHATSOEVER RESULTING FROM LOSS OF USE, DATA
- * OR PROFITS, WHETHER IN AN ACTION OF CONTRACT, NEGLIGENCE OR OTHER ACTION, ARISING OUT OF OR IN CONNECTION
- * WITH THE USE OR PERFORMANCE OF SOFTWARE.
-
- * Copyright 2010 SRCH2 Inc. All rights reserved
+ * Copyright (c) 2016, SRCH2
+ * All rights reserved.
+ * 
+ * Redistribution and use in source and binary forms, with or without
+ * modification, are permitted provided that the following conditions are met:
+ *    * Redistributions of source code must retain the above copyright
+ *      notice, this list of conditions and the following disclaimer.
+ *    * Redistributions in binary form must reproduce the above copyright
+ *      notice, this list of conditions and the following disclaimer in the
+ *      documentation and/or other materials provided with the distribution.
+ *    * Neither the name of the SRCH2 nor the
+ *      names of its contributors may be used to endorse or promote products
+ *      derived from this software without specific prior written permission.
+ * 
+ * THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS" AND
+ * ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE IMPLIED
+ * WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE ARE
+ * DISCLAIMED. IN NO EVENT SHALL SRCH2 BE LIABLE FOR ANY
+ * DIRECT, INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES
+ * (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES;
+ * LOSS OF USE, DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND
+ * ON ANY THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
+ * (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
+ * SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
+ */
+/*
  */
 
 #ifndef __TRIE_H__
 #define __TRIE_H__
-
-///@file Trie.cpp
-///@brief Trie and TrieNode Implementation
-
-//#include "index.h"
-
-//#include <algorithm/ActiveNode.h>
 
 #include <boost/serialization/vector.hpp>
 #include <boost/archive/binary_oarchive.hpp>
@@ -82,7 +84,7 @@ public:
     unsigned maxId;
 
     Prefix() {}
-    // TODO suggested by Jianfeng, if Prefix doesn't have any subclass, we might don't need virtual here
+    // TODO if Prefix doesn't have any subclass, we might don't need virtual here
     //      can save some space
     virtual ~Prefix() {};
     Prefix(unsigned inputMinId, unsigned inputMaxId):minId(inputMinId),maxId(inputMaxId) {}
@@ -142,7 +144,8 @@ public:
 	float probabilityValue;
 	// The path from root to this trie node gives the query keyword. For example : "you"
 	const TrieNode * queryTermNode;
-	// The path from root to this trie node gives the prefix which is the completed suggestion of query keyword. For example "your" for query "you"
+	// The path from root to this trie node gives the prefix which is the completed suggestion
+	// of query keyword. For example "your" for query "you"
 	const TrieNode * suggestedCompleteTermNode;
 	SuggestionInfo(unsigned distance,
 			float probabilityValue,
@@ -420,7 +423,8 @@ public:
     		float initValue = -1,
     		half initValueFromArgForMaxScore = (half)0);
 
-    // this function uses a weighted DFS (which means children are visited based on their histogramValue) and collects all frontier terminal nodes in its way.
+    // this function uses a weighted DFS (which means children are visited based on their
+    // histogramValue) and collects all frontier terminal nodes in its way.
     // stopping condition is that the number of terminal nodes are >= numberOfSuggestionsToReturn
     void findMostPopularSuggestionsInThisSubTrie(const TrieNode * suggestionActiveNode, unsigned ed, std::vector<SuggestionInfo > & suggestions,
        		const int numberOfSuggestionsToFind = 10) const;

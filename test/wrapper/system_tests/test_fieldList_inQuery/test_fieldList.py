@@ -1,6 +1,7 @@
 #this test is used for checking field list parameter specified in the query.
 #using: python ./test_fieldList_inQuery/test_fieldList.py $SRCH2_ENGINE ./test_fieldList_inQuery/queriesAndResults.txt
-#We check it by specifying the field list in the query and comparing the returned response with the expected result. The expected result contain only those field which we mention in the query.
+#We check it by specifying the field list in the query and comparing the returned response with the expected result.
+# The expected result contain only those field which we mention in the query.
 
 import sys, urllib2, json, time, subprocess, os, commands, signal
 

@@ -1,4 +1,3 @@
-# @author: Surnedra
 # This program recursively parses all C++ header and code file in a 
 # given directory and extract their depencencies on each other.
 # The dependency info is stored in a text file in a format that is 
