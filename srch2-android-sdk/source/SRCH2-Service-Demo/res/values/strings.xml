@@ -1,0 +1,20 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+
+    <string name="app_name">SRCH2</string>
+    <string name="action_settings">Settings</string>
+    <string name="errortoast">Hello world!</string>
+    <string name="hello_world">Error detected!</string>
+
+    <string name="debug_crash_dialog_title">Ahh bits bytes and tear!</string>
+    <string name="debug_crash_dialog_text">There was a sausage and mash. Just deal with it?</string>
+    
+    <string name="crash_dialog_title">Uh oh</string>
+    <string name="crash_dialog_text">The app is misbehaving. \nWould you like to contribute an anoynmous crash report so that we can get things working smoothly? </string>
+    <string name="crash_dialog_comment_prompt">Any comments or what you were doing will help: </string>
+    
+    
+    
+    
+    
+</resources>
