@@ -1,6 +1,3 @@
-
-//$Id: ConfigManager.h 2013-07-5 02:11:13Z iman $
-
 #include "ConfigManager.h"
 
 #include <algorithm>

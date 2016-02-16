@@ -1,6 +1,3 @@
-
-// $Id$
-
 #ifndef __CONFIGMANAGER_H__
 #define __CONFIGMANAGER_H__
 
