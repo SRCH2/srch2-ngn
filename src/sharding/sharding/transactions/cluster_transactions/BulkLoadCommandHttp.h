@@ -2,7 +2,6 @@
  * BulkLoadHttpCommand.h
  *
  *  Created on: Nov 11, 2014
- *      Author: srch2
  */
 
 #ifndef __SHARDING_SHARDING_BULK_LOAD_COMMAND_HTTP_H__

@@ -2,7 +2,6 @@
  * UserFeedbackCommandHttp.h
  *
  *  Created on: Jan 12, 2015
- *      Author: srch2
  */
 
 #ifndef __SHARDING_USERFEEDBACKCOMMANDHTTP_H__

@@ -2,7 +2,6 @@
  * AggregateSortOperator.cpp
  *
  *  Created on: Aug 6, 2014
- *      Author: mahdi
  */
 
 #include "AggregateSortOperator.h"

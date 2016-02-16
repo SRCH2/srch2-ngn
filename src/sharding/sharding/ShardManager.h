@@ -1,4 +1,3 @@
-// Author : Jamshid
 #ifndef __SHARDING_SHARDING_SHARDMANAGER_H__
 #define __SHARDING_SHARDING_SHARDMANAGER_H__
 

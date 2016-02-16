@@ -2,7 +2,6 @@
  * ClusterPhysicalPlan.h
  *
  *  Created on: Aug 6, 2014
- *      Author: mahdi
  */
 
 #ifndef CLUSTERPHYSICALPLAN_H_

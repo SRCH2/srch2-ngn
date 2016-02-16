@@ -1,4 +1,3 @@
-// Author : Jamshid
 #include "ShardManager.h"
 
 
