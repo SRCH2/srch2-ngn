@@ -2,7 +2,6 @@
  * DicoveryManager.cpp
  *
  *  Created on: Apr 24, 2014
- *      Author: Surendra
  */
 
 #include "DiscoveryManager.h"

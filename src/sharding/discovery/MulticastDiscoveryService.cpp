@@ -2,7 +2,6 @@
  * MulticastDiscoveryService.cpp
  *
  *  Created on: Jun 28, 2014
- *      Author: Surendra
  */
 #include "DiscoveryManager.h"
 #include <util/Logger.h>

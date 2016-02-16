@@ -2,7 +2,6 @@
  * UnicastDiscoveryService.cpp
  *
  *  Created on: Jun 26, 2014
- *      Author: Surendra
  */
 #include "DiscoveryManager.h"
 #include <vector>
