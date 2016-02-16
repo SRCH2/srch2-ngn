@@ -2,7 +2,6 @@
  * SMCallBackHandler.h
  *
  *  Created on: Mar 15, 2015
- *      Author: Surendra
  */
 
 #ifndef __SHARDING_SMCALLBACKHANDLER_H__

@@ -2,7 +2,6 @@
  * SMCallBackHandler.cpp
  *
  *  Created on: Mar 15, 2015
- *      Author: Surendra
  */
 
 #include "SMCallBackHandler.h"

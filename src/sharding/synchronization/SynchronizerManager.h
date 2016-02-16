@@ -2,7 +2,6 @@
  * SynchronizerManager.h
  *
  *  Created on: Apr 20, 2014
- *      Author: Surendra
  */
 
 #ifndef __SHARDING_SYNCHRONIZERMANAGER_H__
