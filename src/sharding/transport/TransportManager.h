@@ -1,5 +1,3 @@
-// author RJ/Surendra/Jamshid
-
 #ifndef __TRANSPORT_MANAGER_H__
 #define  __TRANSPORT_MANAGER_H__
 

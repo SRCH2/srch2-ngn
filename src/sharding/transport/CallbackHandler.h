@@ -1,4 +1,3 @@
-// authors : RJ
 #ifndef __CALLBACK_HANDLER_H__
 #define __CALLBACK_HANDLER_H__
 

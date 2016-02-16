@@ -1,6 +1,3 @@
-//
-////$Id: IndexSearcherInternal_Test.cpp 3490 2013-06-25 00:57:57Z jamshid.esmaelnezhad $
-//
 #include "operation/QueryEvaluatorInternal.h"
 #include "operation/IndexerInternal.h"
 #include "util/Assert.h"
