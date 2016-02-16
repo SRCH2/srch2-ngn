@@ -2,7 +2,6 @@
  * MigrationManager.cpp
  *
  *  Created on: Jul 1, 2014
- *      Author: srch2
  */
 
 #include "MigrationManager.h"

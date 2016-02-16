@@ -2,7 +2,6 @@
  * MigrationManager.h
  *
  *  Created on: Jul 1, 2014
- *      Author: srch2
  */
 
 #ifndef __MIGRATION_MIGRATIONMANAGER_H__
