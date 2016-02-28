@@ -1,0 +1,6 @@
+new AND york||1 2
+york||1 2
+"ny university"||1
+"new york university"||
+"new york state"||1
+"big apple"||1 2

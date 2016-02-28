@@ -1,0 +1,14 @@
+liverpool, pool, the reds, scouser, lfc
+manchester united, manu, red devil
+southampton, saints
+PSG, Paris Saint Germain, Paris Saint-Germain
+chelsea, cfc
+Brendan Rodgers, BR
+RMC, Real madrid
+Angel Di Maria, Di Maria
+steven gerrard, stevieg
+Arsenal, gunners
+#
+# below are synonym for another test case
+#
+ny, new york, big apple

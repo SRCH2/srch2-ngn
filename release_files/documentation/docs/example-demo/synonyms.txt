@@ -1,0 +1,8 @@
+#1. explicit synonym rule : Tokens on LHS will be replaced with tokens on RHS ( "expand" flag is ignored)
+nyc=>new york city, new york
+jvm=> java virtual machine
+cent os, federo => linux
+#2. equivalent synonym rule 
+ipad, i-pad, tablet
+#   if expand == true, then the rule is treated as "ipad, i-pad, tablet" => "ipad, i-pad, tablet"
+#   if expand == false, then the rule is treated as "i-pad, tablet" => "ipad"

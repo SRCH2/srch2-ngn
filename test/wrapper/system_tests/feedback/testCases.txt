@@ -1,0 +1,74 @@
+# Case 1 : search query
+S||ser||97 64 77 68 3 40 48 51 84 20
+
+# update feedback for case1 query
+C||feedback||{ "query" : "ser", "recordId" : "64" }
+
+# sleep for 3 seconds for merge
+W||3
+
+# case 2: repeat case 1 again. Now feedback record = 64 should be ranked higher (rank = 1) than before (rank = 2). 
+S||ser||64 97 77 68 3 40 48 51 84 20
+
+# case 3:  search for multi word queries
+S||Goods Garden||6 44 66
+
+# update feedback for case 3 query
+C||feedback||{ "query" : "Goods AND Garden", "recordId" : "66" }
+
+# case 4:  search for case 3 again. Feedback record = 66 score increased but it is still less than score of record 44 .
+S||Goods Garden||6 44 66
+
+# update feedback for case 3 query multiple times
+C||feedback||[{ "query" : "Goods AND Garden", "recordId" : "66" }, { "query" : "Goods AND Garden", "recordId" : "66" }]
+C||feedback||[{ "query" : "Goods AND Garden", "recordId" : "66" }, { "query" : "Goods AND Garden", "recordId" : "66" }]
+C||feedback||[{ "query" : "Goods AND Garden", "recordId" : "66" }, { "query" : "Goods AND Garden", "recordId" : "66" }]
+C||feedback||[{ "query" : "Goods AND Garden", "recordId" : "66" }, { "query" : "Goods AND Garden", "recordId" : "66" }]
+C||feedback||[{ "query" : "Goods AND Garden", "recordId" : "66" }, { "query" : "Goods AND Garden", "recordId" : "66" }]
+C||feedback||[{ "query" : "Goods AND Garden", "recordId" : "66" }, { "query" : "Goods AND Garden", "recordId" : "66" }]
+C||feedback||[{ "query" : "Goods AND Garden", "recordId" : "66" }, { "query" : "Goods AND Garden", "recordId" : "66" }]
+C||feedback||[{ "query" : "Goods AND Garden", "recordId" : "66" }, { "query" : "Goods AND Garden", "recordId" : "66" }]
+
+# sleep for 3 seconds for merge
+W||3
+
+# case 5:  search for case 3 again. Now feedback record = 66 has higher score than score of record 44 .
+S||Goods Garden||6 66 44
+
+# case 6: search for multi word queries
+S||Personal Services||29 36 10 37 13 52 8
+
+# update feedback for case 6 query
+C||feedback||{ "query" : "Personal AND Services", "recordId" : "10" }
+
+# sleep for 3 seconds for merge
+W||3
+
+# case 7: search for case 5  again. Now record 10 should be ranked higher than record =36
+S||Personal Services||10 29 36 37 13 52 8
+
+#case 8: test OR query
+S||service%20OR%20trades||48 92 38 56 97 31 11 64 99 77
+
+# update feedback for case 8 query
+C||feedback||{ "query" : "service OR trades", "recordId" : "38" }
+
+# sleep for 3 seconds for merge
+W||3
+
+# case 9: repeat case 8 query. Record 38 should be boosted.
+S||service%20OR%20trades||38 48 92 56 97 31 11 64 99 77
+
+
+#case 10: test complex query with OR and AND => (Personal AND Services) OR (service AND trades)
+S||%28Personal%20AND%20Services%29%20OR%20%28service%20AND%20trades%29||48 29 92 36 38 10 37 13 56 52
+
+# update feedback for case 10 query
+C||feedback||{ "query" : "(Personal AND Services) OR (service AND trades)", "recordId" : "92" }
+
+# sleep for 3 seconds for merge
+W||3
+
+# case 11: repeat case 10 query. Record 92 should be boosted.
+S||%28Personal%20AND%20Services%29%20OR%20%28service%20AND%20trades%29||92 48 29 36 38 10 37 13 56 52
+

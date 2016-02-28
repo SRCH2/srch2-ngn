@@ -1,0 +1,3 @@
+
+ * Added an SDK to support external data connectors.  Added an Oracle connector.
+  See (documentation/docs/connectors.mkd for details.

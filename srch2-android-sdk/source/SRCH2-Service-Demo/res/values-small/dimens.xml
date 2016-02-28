@@ -1,0 +1,4 @@
+<resources>
+    <dimen name="tutorial_title_size">24sp</dimen>
+    <dimen name="tutorial_subtitle_size">18sp</dimen>
+</resources>

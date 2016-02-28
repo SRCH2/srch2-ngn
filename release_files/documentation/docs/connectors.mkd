@@ -1,0 +1,1387 @@
+#Database Connectors
+
+##1. Overview
+
+The SRCH2 engine provides connectors for
+[MySQL](http://www.mysql.com/), [SQLite](http://www.sqlite.org/),
+[SQL Server](http://www.microsoft.com/en-us/server-cloud/products/sql-server/), and
+[Oracle](http://www.oracle.com/technetwork/indexes/downloads/index.html), and
+[MongoDB](http://www.mongodb.org/).  Notice that a SRCH2 instance can
+have multiple data sources ("cores" as described in
+[here](configuration.mkd#12-cores-optional)). Each core can be a JSON
+file, a MySQL table, a SQLite table, a SQL Server table, an Oracle
+table, or a MongoDB table.  Each SRCH2 connector for a
+database builds indexes for the records in the table,  and
+periodically checks data updates to incrementally maintain the
+indexes.
+
+A connector for a data source can make sure all the record operations
+(insert/delete/update) at the source are sent to the
+SRCH2 engine so that the engine can find the latest results at the
+source.
+
+##2. Search in MySQL
+
+This section describes how to use SRCH2 to do text search on
+[MySQL](http://www.mysql.com/).  The following figure illustrates how
+a SRCH2 connector interacts with a MySQL table.  In the configuration
+file of SRCH2, a user specifies a MySQL data source with information
+such as host name, port number, and table name.  The SRCH2 engine will
+load the MySQL connector (as a shared library called
+"libmysqlConnector"), which will read the records from the table, and
+insert the records into the SRCH2 engine.  In addition, the connector
+is using [MySQL Replication
+Listener](https://launchpad.net/mysql-replication-listener) to
+retrieve information about the changes (insert, delete, and update)
+from the binlog.  It will send these changes to the SRCH2 engine to
+change the indexes.
+
+<span ><center><img style="float: center" width="60%" src="../images/mysql-connector.png" /></center></span>
+
+###2.1. Setup MySQL
+
+####2.1.1. Follow the instructions at [here](http://dev.mysql.com/doc/refman/5.7/en/installing.html) to install MySQL:
+
+For Ubuntu:
+```
+shell> sudo apt-get install mysql-server
+```
+For MAC OS, please follow the instructions at [here](http://dev.mysql.com/doc/refman/5.5/en/macosx-installation-pkg.html).
+
+Notice that the [MySQL Replication
+Listener](https://launchpad.net/mysql-replication-listener) works with
+a MySQL server running with the [Binary
+Log](http://dev.mysql.com/doc/refman/5.0/en/binary-log.html) mode
+enabled. The MySQL host specified in the configuration file should be
+the primary of the replica set.
+
+
+####2.1.2. To enable [BinaryLog](http://dev.mysql.com/doc/refman/5.0/en/binary-log.html) (needed only once):
+
+For MAC OS, if the file <tt>/etc/my.cnf</tt> does not exist, run the following commands:
+```
+shell> cd /usr/local/mysql/support-files/
+shell> sudo cp my-huge.cnf /etc/my.cnf
+```
+For both platforms, find the following lines in the [my.cnf](http://dev.mysql.com/doc/refman/5.1/en/option-files.html) file.
+```
+#server-id               = 1
+#log_bin                 = /var/log/mysql/mysql-bin.log
+```
+Change them to:
+
+```
+server-id               = 1
+log_bin                 = /var/log/mysql/mysql-bin.log
+binlog-format	        = ROW
+```
+
+
+####2.1.3. Stop/start the mysql service:
+
+For Ubuntu:
+```
+shell> sudo /etc/init.d/mysql stop
+shell> sudo /etc/init.d/mysql start
+```
+For MAC OS:
+```
+shell> sudo /usr/local/mysql/support-files/mysql.server stop 
+shell> sudo /usr/local/mysql/support-files/mysql.server start
+```
+####2.1.4.Reset the row-based binlog:
+```
+shell> mysql -u root -p
+mysql> reset master;
+```
+
+Check binlog status:
+```
+mysql> show variables like 'binlog_format';
+mysql> show master status;
+mysql> show binlog events;
+```
+These commands will show the status of the binlog.
+
+###2.2. Populate MySQL
+
+Download a <a href=../example-demo/company-data.csv>sample data file</a> with company information to a local folder. Run the following MySQL command to insert those records into a table called "COMPANY" in a database called "demo".
+
+```
+shell> mysql -u root -p
+mysql> CREATE DATABASE IF NOT EXISTS demo;
+mysql> USE demo;
+mysql> CREATE TABLE COMPANY(
+   ID INT PRIMARY KEY NOT NULL,
+   NAME TEXT NOT NULL,
+   AGE INT NOT NULL,
+   ADDRESS CHAR(50),
+   SALARY REAL
+);
+mysql> exit;
+shell> mv company-data.csv COMPANY.csv
+shell> mysqlimport -u root -p --fields-terminated-by=',' --local demo COMPANY.csv
+```
+To check if the data has been loaded, run following command:
+```
+shell> mysql -u root -p
+mysql> USE demo;
+mysql> SELECT * FROM COMPANY;
+
+| ID | NAME  | AGE | ADDRESS    | SALARY |
+|  1 | Paul  |  32 | California |  20000 |
+|  2 | Allen |  25 | Texas      |  15000 |
+|  3 | Teddy |  23 | Norway     |  20000 |
+|  4 | Mark  |  25 | Rich-Mond  |  65000 |
+|  5 | David |  27 | Texas      |  85000 |
+|  6 | Kim   |  22 | South-Hall |  45000 |
+
+```
+As shown above, there should be six records in the "COMPANY" table.
+
+###2.3. Configure SRCH2
+
+Download a sample <a href="../example-demo/srch2-config-mysql.xml">configuration file</a> for the SRCH2 engine.  Find the following lines inside the <i>config</i> element to specify information about this MySQL data source:
+ 
+```
+    <dataSourceType>2</dataSourceType>
+    <dbParameters>
+        <dbSharedLibraryPath>db_connectors/</dbSharedLibraryPath>
+        <dbSharedLibraryName>libmysqlConnector</dbSharedLibraryName>
+        <dbKeyValues>
+            <dbKeyValue key="host" value="127.0.0.1" />
+            <dbKeyValue key="port" value="3306" />
+            <dbKeyValue key="dbName" value="demo" />
+            <dbKeyValue key="user" value="root" />
+            <dbKeyValue key="password" value="" />
+            <dbKeyValue key="tableName" value="COMPANY" />
+            <dbKeyValue key="logName" value="mysql-bin" />
+            <dbKeyValue key="listenerWaitTime" value="3" />
+        </dbKeyValues>
+    </dbParameters>
+```
+
+These parameters are similar to those used in the MongoDB connector.  Notice that the engine requires a shared library
+called "libmysqlConnector" for MySQL, which is included in the package.  Change the parameters if needed.  Make sure that you have also set the "srch2Home" variable in the SRCH2 configuration file. All other paths mentioned in the configuration file are relative to the "srch2Home" folder.
+
+###2.4. Start SRCH2 Engine
+
+Go to the install folder of SRCH2 and run the following:
+
+```
+ /home/joe/srch2/example-demo> ../bin/srch2-engine --config-file=./srch2-config-mysql.xml
+```
+
+The engine will use a MySQL connector to read the data from the MySQL
+database, build indexes, and wait for queries. It also starts a thread
+that listens to the latest changes from the database by using MySQL
+Replication Listener and add these changes to its indexes. 
+
+###2.5. Search
+
+In a terminal, run the following command:
+
+```
+shell> curl "http://127.0.0.1:8081/search?q=paul"
+```
+You should see a record with the keyword "Paul".
+
+###2.6. Insert a Record
+
+In the MySQL shell, run the following command to insert a new record.
+```
+shell> mysql -u root -p
+mysql> USE demo;
+mysql> INSERT INTO COMPANY (ID,NAME,AGE,ADDRESS,SALARY) VALUES (7, 'Joe', 20, 'Nevada', 15000.00 );
+```
+
+Wait for about 4 seconds for the SRCH2 server to save the change. Do the search query:
+```
+shell> curl "http://127.0.0.1:8081/search?q=joe"
+```
+The search engine should return this newly inserted record. 
+
+###2.7. Update a Record
+
+We want to update Kim's address from "South-Hall" to "Texas" by running the following command:
+```
+mysql> UPDATE COMPANY SET ADDRESS = 'Texas' WHERE ID = 6;
+```
+
+Wait for about 4 seconds for the SRCH2 server to save the change, then do the search query:
+```
+shell> curl "http://127.0.0.1:8081/search?q=kim"
+```
+The SRCH2 engine should be able to return this updated record, with "Texas" as the <i>ADDRESS</i> value.
+
+###2.8. Delete a Record
+
+Run the following command in the MySQL shell to delete the updated record:
+```
+mysql> DELETE FROM COMPANY WHERE ID = 6;
+```
+
+Again, wait for about 4 seconds for the SRCH2 server to save the change, then do the above search query:
+
+```
+shell> curl "http://127.0.0.1:8081/search?q=Kim"
+```
+The SRCH2 engine should not return the deleted record.
+
+
+##3. Search in SQLite
+
+This section explains how to use SRCH2 to do text search on [SQLite](http://www.sqlite.org/).  The following diagram explains
+the architecture, which is similar to the way SRCH2 interacts with MongoDB.  The main difference is that 
+we use SQLite triggers to keep track of changes to a SQLite table, and add the corresponding change records to a log table.
+Again, the SRCH2 engine periodically accesses this log table to retrieve the information about data changes, and updates
+the indexes accordingly.
+
+<span ><center><img style="float: center" width="60%" src="../images/sqlite-connector.png" /></center></span>
+
+###3.1. Install SQLite
+
+If you have not installed SQLite, follow the instructions at [here](http://www.sqlite.org/download.html) to
+install it.  The following commands are for Ubuntu:
+
+```
+shell> mkdir ~/sqlite
+shell> cd ~/sqlite
+shell> wget http://www.sqlite.org/2014/sqlite-autoconf-3080500.tar.gz 
+shell> tar xvfz sqlite-autoconf-*.tar.gz
+shell> cd sqlite-autoconf-*
+shell> ./configure 
+shell> make
+shell> sudo make install
+```
+
+###3.2. Populate a SQLite Table
+
+Download a <a href=../example-demo/company-data.csv>sample data file</a> with company information to a local folder. Run the following SQLite command to insert those records into a table called "COMPANY" in a database called "demo".
+
+```
+shell> sqlite3 <srch2Home>/demo.db
+sqlite> CREATE TABLE COMPANY(
+   ID INT PRIMARY KEY NOT NULL,
+   NAME TEXT NOT NULL,
+   AGE INT NOT NULL,
+   ADDRESS CHAR(50),
+   SALARY REAL
+);
+sqlite> .separator ","
+sqlite> .import company-data.csv COMPANY
+```
+To check if the data has been loaded, run following command:
+```
+sqlite> SELECT * FROM COMPANY;
+
+| ID | NAME  | AGE | ADDRESS    | SALARY |
+|  1 | Paul  |  32 | California |  20000 |
+|  2 | Allen |  25 | Texas      |  15000 |
+|  3 | Teddy |  23 | Norway     |  20000 |
+|  4 | Mark  |  25 | Rich-Mond  |  65000 |
+|  5 | David |  27 | Texas      |  85000 |
+|  6 | Kim   |  22 | South-Hall |  45000 |
+```
+As shown above, there should be six records in the "COMPANY" table.
+
+###3.3. Configure SRCH2
+
+Download a sample <a href="../example-demo/srch2-config-sqlite.xml">configuration file</a> for the SRCH2 engine.  Find the following lines inside the <i>config</i> element to specify information about this SQLite data source:
+ 
+```
+   <dataSourceType>2</dataSourceType>
+    <dbParameters>
+        <dbSharedLibraryPath>db_connectors/</dbSharedLibraryPath>
+        <dbSharedLibraryName>libsqliteConnector</dbSharedLibraryName>
+        <dbKeyValues>
+            <dbKeyValue key="db" value="demo.db" />
+            <dbKeyValue key="dbPath" value="." />
+            <dbKeyValue key="tableName" value="COMPANY" />
+            <dbKeyValue key="listenerWaitTime" value="3" />
+        </dbKeyValues>
+    </dbParameters>
+```
+
+These parameters are similar to those used in the MongoDB connector.  Notice that the engine requires a shared library
+called "libsqliteConnector" for SQLite, which is included in the package.  Change the parameters if needed.  Make sure that you have also set the "srch2Home" variable in the SRCH2 configuration file. All other paths mentioned in the configuration file are relative to the "srch2Home" folder.
+
+###3.4. Start SRCH2 Engine
+
+Go to the install folder of SRCH2 and run the following:
+
+```
+ /home/joe/srch2/example-demo> ../bin/srch2-engine --config-file=./srch2-config-sqlite.xml
+```
+
+The engine should read the data from the SQLite instance, build indexes, and wait for queries. It also starts a thread that periodically pulls latest changes from SQLite (as specified by the "listenerWaitTime" parameter) and add these changes to its search indexes.
+
+###3.5. Search
+
+In a terminal, run the following command:
+
+```
+shell> curl "http://127.0.0.1:8081/search?q=paul"
+```
+You should see a record with the keyword "Paul".
+
+###3.6. Insert a Record
+
+In the SQLite shell, run the following command to insert a new record.
+```
+shell> sqlite3 <srch2Home>/demo.db
+sqlite> INSERT INTO COMPANY (ID,NAME,AGE,ADDRESS,SALARY) VALUES (7, 'Joe', 20, 'Nevada', 15000.00 );
+```
+
+Wait for about 4 seconds for the SRCH2 server to pull the change. Do the search query:
+```
+shell> curl "http://127.0.0.1:8081/search?q=joe"
+```
+The search engine should return this newly inserted record. 
+
+###3.7. Update a Record
+
+We want to update Kim's address from "South-Hall" to "Texas" by running the following command:
+```
+sqlite> UPDATE COMPANY SET ADDRESS = 'Texas' WHERE ID = 6;
+```
+
+Wait for about 4 seconds for the SRCH2 server to pull the change, then do the search query:
+```
+shell> curl "http://127.0.0.1:8081/search?q=kim"
+```
+The SRCH2 engine should be able to return this updated record, with "Texas" as the <i>ADDRESS</i> value.
+
+###3.8. Delete a Record
+
+Run the following command in the SQLite shell to delete the updated record:
+```
+sqlite> DELETE FROM COMPANY WHERE ID = 6;
+```
+
+Again, wait for about 4 seconds for the SRCH2 server to pull the change, then do the above search query:
+
+```
+shell> curl "http://127.0.0.1:8081/search?q=Kim"
+```
+The SRCH2 engine should not return the record that we just deleted.
+
+##4. Search in MS SQL Server (Linux Only)
+
+This section describes how to use SRCH2 to do text search on
+[SQL Server](http://www.microsoft.com/en-us/server-cloud/products/sql-server/).The following figure illustrates how
+a SRCH2 connector interacts with a SQL Server table.  In the configuration
+file of SRCH2, a user specifies a SQL Server data source with information
+such as host name, database name, and table name.  The SRCH2 engine will
+load the SQL Server connector (as a shared library called
+"libsqlserverConnector"), which will read the records from the table, and
+insert the records into the SRCH2 engine. 
+
+<span ><center><img style="float: center" width="60%" src="../images/sqlserver-connector.png" /></center></span>
+
+###4.1. Setup SQL Server Driver for Linux
+
+- For Redhat and SUSE linux distributions:  Follow the instructions at
+  [here](http://msdn.microsoft.com/en-us/library/hh568451%28v=sql.110%29.aspx)
+  to install SQL Server Driver.  Notice that Microsoft officially
+  supports RedHat Linux and SUSE Linux only.  For other Linux distributions,
+  we need to do extra steps.
+
+- For Ubuntu and CentOS: Run the <a
+href="../example-demo/srch2-install-sqlserver-odbc-linux.sh">script</a>
+to install the required packages and
+setup the SQL Server Driver for Linux:
+```
+shell> ./srch2-install-sqlserver-odbc-linux.sh
+```
+
+You can skip the rest of Section 4.1, which describes the details of
+this shell script.
+
+####4.1.1. To install unixODBC (ODBC Driver Manager for Linux) :
+```
+shell> wget ftp://ftp.unixodbc.org/pub/unixODBC/unixODBC-2.3.2.tar.gz
+shell> tar -xvf unixODBC-2.3.2.tar.gz
+shell> cd unixODBC-2.3.2
+```
+Open the file "configure" and search for the line  
+```
+LIB_VERSION="2:0:0"
+```
+
+It's the version of the unixODBC library. Change it to 
+```
+LIB_VERSION="1:0:0"
+```
+
+Then run the following commands to install unixODBC:
+```
+shell> ./configure --disable-gui --disable-drivers --enable-iconv --with-iconv-char-enc=UTF8 --with-iconv-ucode-enc=UTF16LE
+shell> make
+shell> sudo make install
+```
+####4.1.2. To install MS ODBC Driver 11 for SQL Server for Linux:
+
+Install the driver for "RedHat5 Linux" from the website
+[here](http://www.microsoft.com/en-us/download/details.aspx?id=36437). In
+particular: 
+
+```
+shell> wget http://download.microsoft.com/download/B/C/D/BCDD264C-7517-4B7D-8159-C99FC5535680/RedHat5/msodbcsql-11.0.2270.0.tar.gz
+shell> tar -xvf msodbcsql*.tar.gz
+shell> cd msodbcsql*
+shell> cd lib64
+shell> ldd libmsodbcsql* | grep -i "not found"
+```
+
+It shows the missing libraries. The next step is to install
+these missing libraries. The general approach is to enter the
+library name in the [Ubuntu Package Search](http://packages.ubuntu.com/) 
+or use [Synaptic](http://www.nongnu.org/synaptic/).
+
+For instance, suppose the following three libraries are missing:
+```
+libcrypto.so.6
+libssl.so.6
+libodbcinst.so.1
+```
+
+To install the first two, download and install the package libssl-dev for Ubuntu or openssl-devel for CentOS.  
+For CentOS 64bit, run the following commands :
+```
+shell> sudo yum install openssl-devel
+shell> sudo ln -s /usr/lib64/libssl.so /usr/lib64/libssl.so.6
+shell> sudo ln -s /usr/lib64/libcrypto.so /usr/lib64/libcrypto.so.6
+```
+For Ubuntu 64bit, run the following commands :
+```
+shell> sudo apt-get install libssl-dev 
+shell> sudo ln -s /usr/lib/x86_64-linux-gnu/libssl.so /usr/lib/x86_64-linux-gnu/libssl.so.6
+shell> sudo ln -s /usr/lib/x86_64-linux-gnu/libcrypto.so /usr/lib/x86_64-linux-gnu/libcrypto.so.6
+```
+
+To find the libodbcinst.so.1, add a file "unixODBC-2.3.2.conf" including 
+the path ```/usr/loacl/lib``` to the folder "/etc/ld.so.conf.d/":
+```
+shell> sudo sh -c "echo /usr/local/lib > /etc/ld.so.conf.d/unixODBC-2.3.2.conf"
+shell> sudo ldconfig
+```
+Once all the dependencies are met, run the following command to install the the MS SQL Server Driver
+and add the info to the file "/usr/local/etc/odbcinst.ini" : 
+```
+shell> sudo bash ./install.sh install --force
+shell> sudo sh -c "echo [ODBC Driver 11 for SQL Server] > /usr/local/etc/odbcinst.ini"
+shell> sudo sh -c "echo Driver=$MSSQLDIR/lib64/libmsodbcsql-11.0.so.2270.0 >> /usr/local/etc/odbcinst.ini"
+shell> sudo sh -c "echo Threading=1 >> /usr/local/etc/odbcinst.ini"
+shell> sudo sh -c "echo UsageCount=5 >> /usr/local/etc/odbcinst.ini"
+```
+In particular, ```$MSSQLDIR``` is the path of the folder ```msodbcsql-11.0.2270.0```.  
+
+To test the installation, run the following command to try to
+connect a Microsoft SQL Server on a Windows server:
+```
+shell> sqlcmd -S [MSSERVER-HOST]" -U admin 
+[TYPE IN ADMIN PASSWORD]
+```
+
+###4.2. Populate SQL Server
+
+Log in with the administrator account or run the following commands on
+windows to create an account called ```srch2``` for database ```demo```:
+
+```
+sql@admin 1> CREATE LOGIN srch2 WITH PASSWORD = 'srch2'
+sql@admin 2> go
+sql@admin 1> CREATE DATABASE demo
+sql@admin 2> go
+sql@admin 1> USE demo
+sql@admin 2> go
+sql@admin 1> CREATE USER srch2 FOR LOGIN srch2
+sql@admin 2> go
+sql@admin 1> GRANT ALTER,CONTROL TO srch2
+sql@admin 2> go
+sql@admin 1> use master
+sql@admin 2> go
+sql@admin 1> GRANT CREATE ANY DATABASE to srch2
+sql@admin 2> go
+```
+
+Log in with the demo account ```srch2``` on the Linux machine.
+
+Create a table called ```COMPANY``` and enable its "[Change
+Tracking](http://msdn.microsoft.com/en-us/library/bb933875.aspx)"
+feature for the database ```demo``` and table ```COMPANY```: 
+
+```
+shell> sqlcmd -S [MSSERVER-HOST] -U srch2 -P srch2
+1> USE demo
+2> go
+1> CREATE TABLE COMPANY(ID CHAR(50) PRIMARY KEY NOT NULL, NAME CHAR(50) NOT NULL, AGE CHAR(50) NOT NULL, ADDRESS CHAR(50), SALARY CHAR(50))
+2> go
+1> ALTER DATABASE demo
+2> SET CHANGE_TRACKING = ON
+3> (CHANGE_RETENTION = 2 DAYS, AUTO_CLEANUP = ON)
+4> go
+1> ALTER TABLE COMPANY
+2> ENABLE CHANGE_TRACKING
+3> WITH (TRACK_COLUMNS_UPDATED = ON)
+4> go
+```
+
+Insert sample data into the table COMPANY using the following commands:
+
+```
+1> INSERT INTO COMPANY (ID,NAME,AGE,ADDRESS,SALARY) VALUES (1, 'Paul', 32, 'California', 20000.00 )
+2> INSERT INTO COMPANY (ID,NAME,AGE,ADDRESS,SALARY) VALUES (2, 'Allen', 25, 'Texas', 15000.00 )
+3> INSERT INTO COMPANY (ID,NAME,AGE,ADDRESS,SALARY) VALUES (3, 'Teddy', 23, 'Norway', 20000.00 )
+4> INSERT INTO COMPANY (ID,NAME,AGE,ADDRESS,SALARY) VALUES (4, 'Mark', 25, 'Rich-Mond ', 65000.00 )
+5> INSERT INTO COMPANY (ID,NAME,AGE,ADDRESS,SALARY) VALUES (5, 'David', 27, 'Texas', 85000.00 )
+6> INSERT INTO COMPANY (ID,NAME,AGE,ADDRESS,SALARY) VALUES (6, 'Kim', 22, 'South-Hall', 45000.00 )
+7> go
+```
+
+Later we can drop the user, table, and database using the following commands:
+```
+sql@admin 1> IF EXISTS (SELECT * FROM sys.database_principals WHERE name = N'srch2') DROP USER [srch2]
+sql@admin 2> go
+sql@admin 1> DROP TABLE COMPANY
+sql@admin 2> go
+sql@admin 1> DROP DATABASE demo
+sql@admin 2> go
+```
+
+To check if the data has been loaded, run following commands:
+```
+1> SELECT * FROM COMPANY
+2> go
+
+| ID | NAME  | AGE | ADDRESS    | SALARY |
+|  1 | Paul  |  32 | California |  20000 |
+|  2 | Allen |  25 | Texas      |  15000 |
+|  3 | Teddy |  23 | Norway     |  20000 |
+|  4 | Mark  |  25 | Rich-Mond  |  65000 |
+|  5 | David |  27 | Texas      |  85000 |
+|  6 | Kim   |  22 | South-Hall |  45000 |
+
+```
+As shown above, there should be six records in the COMPANY table.
+
+###4.3. Configure SRCH2
+
+Download a sample <a href="../example-demo/srch2-config-sqlserver.xml">configuration file</a> for the SRCH2 engine.  Find the following lines inside the <i>config</i> element to specify information about this SQL Server data source:
+ 
+```
+    <dataSourceType>2</dataSourceType>
+    <dbParameters>
+        <dbSharedLibraryPath>db_connectors/</dbSharedLibraryPath>
+        <dbSharedLibraryName>libsqlserverConnector</dbSharedLibraryName>
+        <dbKeyValues>
+            <dbKeyValue key="dataSource" value="ODBC Driver 11 for SQL Server" />
+            <dbKeyValue key="server" value="MSSERVER-HOST" />
+            <dbKeyValue key="user" value="srch2" />
+            <dbKeyValue key="dbName" value="demo" />
+            <dbKeyValue key="password" value="srch2" />
+            <dbKeyValue key="tableName" value="COMPANY" />
+            <dbKeyValue key="listenerWaitTime" value="3" />
+            <dbKeyValue key="sqlServerMaxColumnLength" value="1024" />
+        </dbKeyValues>
+    </dbParameters>
+```
+
+These parameters are similar to those used in other connectors. 
+The ```dataSource``` is the name of MS SQL Server Driver name in the
+file ```/usr/local/etc/odbcinst.ini```. 
+The ```sqlServerMaxColumnLength``` is the max length of the column in the table attribute.
+For a string longer than this limit, the engine will ignore the characters after the limit.
+For example, consider a table that is created by the following query:
+```
+CREATE TABLE COMPANY(ID CHAR(10) PRIMARY KEY NOT NULL, NAME CHAR(50) NOT NULL, AGE INT NOT NULL, ADDRESS CHAR(250), SALARY REAL)
+```
+Then a recommended value for ```sqlServerMaxColumnLength``` is 250, which is the maximal length of an attribute. 
+If this parameter is not specified, the engine will use 1024 as the default value.  
+
+Notice that the engine requires a shared library
+called "libsqlserverConnector" for SQL Server, which is included in
+the package.  Change the parameters if needed.  Make sure that you
+have also set the "srch2Home" variable in the SRCH2 configuration
+file. All other paths mentioned in the configuration file are relative
+to the "srch2Home" folder. 
+
+###4.4. Start SRCH2 Engine
+
+Go to the install folder of SRCH2 and run the following:
+
+```
+ /home/joe/srch2/example-demo> ../bin/srch2-engine --config-file=./srch2-config-sqlserver.xml
+```
+
+The engine will use a SQL Server connector to read the data from the SQL Server
+database, build indexes, and wait for queries. It also starts a thread
+that listens to the latest changes from the database and adds these changes to its indexes. 
+
+###4.5. Search
+
+In a terminal, run the following command:
+
+```
+shell> curl "http://127.0.0.1:8081/search?q=paul"
+```
+You should see a record with the keyword "Paul".
+
+###4.6. Insert a Record
+
+In the SQL Server shell, run the following command to insert a new record.
+```
+shell> sqlcmd -S [MSSERVER-HOST] -U srch2 -P srch2
+1> USE demo
+2> go
+1> INSERT INTO COMPANY (ID,NAME,AGE,ADDRESS,SALARY) VALUES (7, 'Joe', 20, 'Nevada', 15000.00 )
+2> go
+```
+
+Wait for about 4 seconds for the SRCH2 server to save the change. Do the search query:
+```
+shell> curl "http://127.0.0.1:8081/search?q=joe"
+```
+The search engine should return this newly inserted record. 
+
+###4.7. Update a Record
+
+We want to update Kim's address from "South-Hall" to "Texas" by running the following command:
+```
+1> UPDATE COMPANY SET ADDRESS = 'Texas' WHERE ID = 6
+2> go
+```
+
+Wait for about 4 seconds for the SRCH2 server to save the change, then do the search query:
+```
+shell> curl "http://127.0.0.1:8081/search?q=kim"
+```
+The SRCH2 engine should be able to return this updated record, with "Texas" as the <i>ADDRESS</i> value.
+
+###4.8. Delete a Record
+
+Run the following command in the SQL Server shell to delete the updated record:
+```
+1> DELETE FROM COMPANY WHERE ID = 6
+2> go
+```
+
+Again, wait for about 4 seconds for the SRCH2 server to save the change, then do the above search query:
+
+```
+shell> curl "http://127.0.0.1:8081/search?q=Kim"
+```
+The SRCH2 engine should not return the deleted record.
+
+##5. Search in MongoDB
+
+This section describes how to use SRCH2 to do text search on [MongoDB](http://www.mongodb.org/).  The following figure illustrates how
+a SRCH2 connector interacts with a MongoDB table.  In the configuration file of SRCH2, a user specifies a MongoDB data source with 
+information such as host name, port number, and table name.  The SRCH2 engine will load the MongoDB connector (as a shared library called "libmongodbConnector"), which 
+will read the records from the table, and insert the records into the SRCH2 engine.  In addition, the connector has a thread
+that periodically accesses the "oplog" of MongoDB to retrieve information about the changes (insert, delete, and update).  It
+will send these changes to the SRCH2 engine to modify the indexes.  The frequency of accessing the log can also be specified in the
+configuration file.
+
+<span ><center><img style="float: center" width="60%" src="../images/mongodb-connector.png" /></center></span>
+
+###5.1. Install MongoDB
+
+Follow the instructions at [here](http://docs.mongodb.org/manual/installation/) to install MongoDB. The following instructions
+are for Ubuntu:
+
+```
+shell> sudo apt-key adv --keyserver hkp://keyserver.ubuntu.com:80 --recv 7F0CEB10
+shell> echo 'deb http://downloads-distro.mongodb.org/repo/ubuntu-upstart dist 10gen' | sudo tee /etc/apt/sources.list.d/mongodb.list
+shell> sudo apt-get update
+shell> sudo apt-get install mongodb-org
+shell> sudo service mongod stop
+shell> mkdir -p ~/tmp/mongodb/db0
+shell> mongod --port 27017 --dbpath ~/tmp/mongodb/db0 --replSet rs0
+```
+
+Notice that the SRCH2 engine works with a MongoDB server running with the [replication mode](http://docs.mongodb.org/manual/tutorial/convert-standalone-to-replica-set/) enabled. The MongoDB host specified in the configuration file should be the primary of the replica set.  The SRCH2 engine collects incremental inserts/deletes/updates on MongoDB from its oplog.
+
+Use another terminal to run the following commands to initialize mongodb (needed only once):
+
+```
+shell> mongo
+mongo> rs.initiate()
+```
+
+These commands will start the mongodb engine with the replication mode enabled. 
+
+###5.2. Populate MongoDB
+
+Download a <a href=../example-demo/movie-data.json>sample data file</a> with movie information to a local folder. Run the following MongoDB command to insert those records into a collection (table) called "movies" in a database called "demo".
+
+```
+shell> mongoimport --db demo --collection movies --type json --file movie-data.json 
+```
+To check if the data has been loaded, run following commands:
+
+```
+shell> mongo
+mongodb> use demo
+mongodb> db.movies.find().count()
+```
+
+There should be 243 movies in the "movies" collection.
+
+###5.3. Configure SRCH2
+
+Download a sample <a href="../example-demo/srch2-config-mongo.xml">configuration file</a> for the SRCH2 engine.  Find the following lines inside the <i>config</i> element to specify information about this MongoDB data source:
+ 
+```
+    <dataSourceType>2</dataSourceType>
+    <dbParameters>
+        <dbSharedLibraryPath>db_connectors/</dbSharedLibraryPath>
+        <dbSharedLibraryName>libmongodbConnector</dbSharedLibraryName>
+        <dbKeyValues>
+            <dbKeyValue key="host" value="127.0.0.1" />
+            <dbKeyValue key="port" value="27017" />
+            <dbKeyValue key="db" value="demo" />
+            <dbKeyValue key="collection" value="movies" />
+            <dbKeyValue key="listenerWaitTime" value="3" />
+        </dbKeyValues>
+    </dbParameters>
+```
+
+Most parameters are self-explanatory.  The "dataSourceType" value "2" indicates that this core is
+an external data source.  The "listenerWaitTime" value specifies how often (in seconds)
+the SRCH2 engine checks the latest changes from the MongoDB oplog.  The MongoDB connector is implemented 
+as a shared library specified by the parameters "dbSharedLibraryPath" and "dbSharedLibraryName", which is included in the package and loaded by the main SRCH2 engine.
+
+Change the parameters if needed.  Make sure that you have also set the "srch2Home" variable in the SRCH2 configuration file. All other paths mentioned in the configuration file are relative to the "srch2Home" folder.
+
+###5.4. Start SRCH2 Engine
+
+Go to the install folder of SRCH2 and run the following:
+
+```
+ /home/joe/srch2/example-demo> ../bin/srch2-engine --config-file=./srch2-config-mongo.xml
+```
+
+The engine will use a MongoDB connector to read the data from the MongoDB table, build indexes, and wait for queries. It also starts a thread that periodically pulls latest changes from MongoDB (as specified by the "listenerWaitTime" parameter) and add these changes to its indexes.  
+
+###5.5. Search
+
+In a shell terminal, run the following command:
+
+```
+shell> curl "http://127.0.0.1:8081/search?q=terminator"
+```
+You should see the records with the keyword "terminator".
+
+###5.6. Insert a Record
+
+In the MongoDB client, run the following command to insert a new record.
+```
+shell> mongo
+mongodb> use demo
+mongodb> db.movies.find().count()
+mongodb> db.movies.insert(
+{
+"trailer_url" : "http://www.youtube.com/watch?v=QHhZK-g7wHo",
+"title" : "Terminator 3: Rise of the Machines",
+"director" : "James Cameron",
+"year" : NumberLong(2003),
+"banner_url" : "http://ia.media-imdb.com/images/M/MV5BMTk5NzM1ODgyN15BMl5BanBnXkFtZTcwMzA5MjAzMw@@._V1_SY317_CR0,0,214,317_.jpg",
+"id" : NumberLong(765006),
+"genre" : "drama"
+});
+```
+
+Th last command inserts a new record into MongoDB.  Wait for about 4 seconds for the SRCH2 server to pull the change. Do the above search query again. The search engine should return this newly inserted record.  Notice that the wait time depends upon your configuration such as [listenerWaitTime](configuration.mkd#63-database-required-if-datasourcetype-is-2) and [merge policy](configuration.mkd#103-merge-policy-optional).  It is suggested to wait for "listenerWaitTime + mergeEveryNSeconds" seconds.
+
+###5.7. Update a Record
+
+The record we inserted has a wrong director "James Cameron." The correct director is "Jonathan Mostow". To fix the error, run the following command in the MongoDB shell to update the record:
+```
+mongodb> db.movies.update( { id: 765006 },
+{
+$set: { director: "Jonathan Mostow" },
+});
+```
+
+Wait for about 4 seconds for the SRCH2 server to pull the change, then do the above search query again. The SRCH2 engine should be able to return this updated record, with "Jonathan Mostow" as the <i>director</i> value.
+
+###5.8. Delete a Record
+
+Run the following command in the MongoDB shell to delete the updated record:
+```
+mongodb> db.movies.remove({"id" : 765006 });
+```
+
+Again, wait for about 4 seconds for the SRCH2 server to pull the change, then do the above search query again. The SRCH2 engine should not return the record that we just deleted.
+
+Besides MySQL, SQLite, SQL Server, and MongoDB, we are developing connectors for
+other data sources.
+
+##6. Data Connector SDK
+
+###6.1. Overview
+
+The SRCH2 data connector SDK allows a programmer to write a customized
+adapter/connector for a new data source.  The connector is written in
+C++, and compiled to a shared library (a ```.so``` file), which can
+be loaded by the SRCH2 engine dynamically.  The SRCH2 engine reads a section of
+parameters for the data source, including the name of its shared
+library.  Then the engine loads this library dynamically and passes the
+information about the data source to the library, which returns
+an object called ```DataConnector```.  This object fetches data
+records and updates from the source, and sends them (using a
+```ServerInterface``` object) to the SRCH2 engine for indexing.
+We will explain the details next.
+
+<span><center><img style="float: center" width="60%" src="../images/connector-SDK.png" /></center></span> 
+
+####6.1.1. Step 1: Retrieve information about data source from config file
+
+For each data source, the configuration file for the SRCH2 engine
+needs to have a section with parameters about this source, such as
+its host name, user name, password, and how often the connector needs
+to fetch new changes from the source.  In the first step, the SRCH2
+engine reads the information in this section, which becomes available for
+the connector.
+
+Here is an example section for an Oracle connector:
+
+```
+<dataSourceType>2</dataSourceType>
+<dbParameters>
+    <dbSharedLibraryPath>./build/</dbSharedLibraryPath>
+    <dbSharedLibraryName>liboracleConnector</dbSharedLibraryName>
+    <dbKeyValues>
+        <dbKeyValue key="dataSource" value="ORACLE" />
+        <dbKeyValue key="server" value="127.0.0.1" />
+        <dbKeyValue key="user" value="cdcsub" />
+        <dbKeyValue key="password" value="cdcsub" />
+        <dbKeyValue key="ownerName" value="cdcpub" />
+        <dbKeyValue key="tableName" value="COMPANY" />
+        <dbKeyValue key="changeTableName" value="COMPANY_CT" />
+        <dbKeyValue key="listenerWaitTime" value="3" />
+        <dbKeyValue key="oracleMaxColumnLength" value="50" />
+    <dbKeyValues>
+</dbParameters>
+```
+
+The following is the meaning of the parameters:
+
+ - ```<dataSourceType>```:  It specifies the type of the data source:
+"1" means a JSON data file, and "2" means a data source 
+accessible through a connector.
+
+ - ```<dbSharedLibraryPath>```: It specifies the relative path 
+ of the shared library location with respect to the ```srch2Home``` folder.
+
+ - ```<dbSharedLibraryName>```: It specifies the file name of the shared library
+   (without the ```.so``` extension).
+
+ - ```<dbKeyValues>```:  It includes data source parameters
+ as key-value pairs.  These values are available to the connector,
+ which can retrieve each value by calling a function ```int
+ configLookUp(const std::string& key, std::string & value)```.
+
+
+After the engine reads the information from the section, it 
+creates a ```ServerInterface``` for this source. It then creates a separate
+thread for the connector of this data source, and loads the corresponding
+shared library.
+
+####6.1.2. Step 2: Engine calls DataConnector->create()  
+
+The engine calls the ```create()``` function inside the shared
+library, which will return a ```DataConnector``` object for the
+engine to use to interact with the data source.
+
+####6.1.3. Step 3: Engine calls DataConnector->init(ServerInterface)  
+
+The SRCH2 engine calls the ```init()``` function of the
+```DataConnector``` object, which does initilization tasks for the
+source.  For instance, if the data source is a database, this function
+should establish a connection to the database.
+
+####6.1.4. Step 4: Engine calls DataConnector->createNewIndexes()   
+
+The engine calls the ```createNewIndexes()``` of the
+```DataConnector``` object.  This function is supposed to fetch
+records from the data source, and insert these records to the SRCH2
+indexes using the ```ServerInterface``` object.
+ 
+####6.1.5. Step 5: Engine calls DataConnector->runListener()  
+
+After building the indexes, the engine calls the ```runListener()```
+function, which is supposed to periodically access the source to
+retrieve record inserts/deletes/updates, possibly from logs if the
+source is a database.  This function calls the
+corresponding functions (```insert()```, ```delete()```,
+```update()```) of the ```ServerInterface``` object to modify the 
+indexes in the engine.  Notice that the connector can retrieve from
+the engine parameters about this source, such as how often it needs to
+access the data source for changes.
+
+####6.1.6. Step 6: Engine calls destroy()  
+
+When the engine is shutting down, it will call the
+```destroy()``` function to remove the ```DataConnnector``` object for this
+source.
+
+###6.2. DataConnector Interface
+
+A database connector for the engine should implement the interface provided
+in the ```DataConnector``` abstract class.
+
+```
+class DataConnector {
+public:
+    virtual ~DataConnector() {};
+    virtual int init(ServerInterface *serverInterface) = 0;
+    virtual int runListener() = 0;
+    virtual int createNewIndexes() = 0;
+    virtual void saveLastAccessedLogRecordTime() = 0;
+};
+```
+
+In the SRCH2 engine, the ```DataConnector``` object is used as follows.
+
+```
+open shared library
+
+IF (init(serverInterface) = 0) THEN
+    IF (need to create new indexes from scratch) THEN 
+        IF (createNewIndexes() = 0) THEN
+            runListener()
+
+close shared library
+```
+
+Next we explain the expected behavior of each function.
+
+
+####6.2.1. Initialize the Source
+
+```
+virtual int init(ServerInterface *serverInterface) = 0;
+```
+
+The function is called once when the connector is loaded by the engine.
+All the initialization tasks should be done here, e.g., retrieving from the
+configuration file those parameters related to this source and using them to connect
+to the source.
+
+ - Parameters:  
+    -  ```serverInterface```: It is provided by the engine, and can
+      be used by the connector to interact with the engine.
+
+ - Return value:  
+    - ```0```: The initialization process succeeded.
+    - Otherwise: It failed.
+
+####6.2.2. Create New Indexes
+
+```
+virtual int createNewIndexes() = 0;
+```
+
+This function is called by the engine if there is no index 
+found in the folder ```dataDir``` when the connector starts.
+The function should fetch the data from the source and
+insert them to the engine.
+
+ - Return value:  
+    - ```0```: success. The engine will try to start the listener.  
+    - Otherwise: failed. The engine will close the connector.
+
+####6.2.3. Run Listener
+
+```
+virtual int runListener() = 0;
+```
+
+This function should periodically pull data changes from the source, and
+it should keep running until the data connector is destroyed.
+When this function returns, the SRCH2 engine will close the data connector.
+
+####6.2.4. Save Last Accessed Log Record Timestamp
+
+```
+virtual void saveLastAccessedLogRecordTime() = 0;
+```
+
+This function is called when the engine is saving
+the indexes to disk. The data connector should also save the timestamp so that
+the next time the engine starts, the connector can ignore the
+previous executed log events.
+
+###6.3. Server Interface 
+
+The abstract class ```ServerInterface``` provides an interface 
+for an external data connector to interact with the engine.  We
+explain this interface next.
+
+####6.3.1. Insert Record
+
+```
+virtual int insertRecord(const std::string& jsonString) = 0;
+```  
+
+This function inserts a record (in JSON format)
+of this source to the SRCH2 indexes.
+
+ - Parameters:   
+     - ```jsonString``` : A JSON format string.
+
+ - Return value:   
+    - ```0```: success;
+    - Otherwise: failed.
+
+Notice that this function accepts a single JSON string, and does not
+accept a string of a JSON array.
+  
+####6.3.2. Delete Record
+```
+virtual int deleteRecord(const std::string& primaryKey) = 0;
+```
+
+This function deletes a record with a specified primary key from the
+SRCH2 indexes for this source.
+
+ - Parameters:  
+    - ```primaryKey```: A string as the primary key of a record to
+      be deleted.
+
+ - Return value:   
+    - ```0```: success;
+    - Otherwise : failed.
+
+####6.3.3. Update Record
+```
+virtual int updateRecord(const std::string& oldPk,
+            const std::string& jsonString) = 0;
+```    
+
+This function takes the old primary key of a record as an input and
+ updates it in the engine with a new record passed as a JSON format string.
+
+ - Parameters:   
+    - ```oldPk```: The old primary key of the updated record.  
+    - ```jsonString```:  The new record as a JSON string.
+
+ - Return value:  
+    - ```0```: success;
+    - Otherwise: failed.
+
+####6.3.4. Configuration Parameter Lookup
+```
+virtual int configLookUp(const std::string& key, std::string & value) = 0;
+```     
+
+This function supports a key-based lookup for a parameter for the
+connector, as specified in the ```dbKeyValues``` section
+in the configuration file.
+
+ - Parameters:  
+    - ```key```: A key defined in the config file;
+    - ```value```: The corresponding value.
+
+ - Return value:  
+    - ```0``` : success  
+    - ```-1``` : value not found, and the ```value``` will be empty.
+
+####6.3.5. Shared Library Functions
+
+```
+  typedef DataConnector* create_t();
+  typedef void destroy_t(DataConnector*);
+```
+
+These two C APIs are used by the SRCH2 engine to create/delete the instance
+in the shared library. The engine calls ```create()``` to get the connector and calls
+```destroy()``` to delete it.  The following two functions must be provided in the connector
+implementation so that the SRCH2 engine
+can start and destroy the data connector accordingly.
+
+```
+extern "C" DataConnector* create() {
+    return new YourDBConnector;
+}
+
+extern "C" void destroy(DataConnector* p) {
+    delete p;
+}
+```
+
+###6.4. An Example Connector for Oracle
+
+We provide an example connector for an Oracle database to illustrate
+how the connector SDK works.  Follow these steps to run this connector.
+
+###6.4.1 Install Oracle
+
+Download and install [Oracle database](https://www.oracle.com/database/index.html).
+
+###6.4.2 Install Connector Package
+
+Download the [Oracle connector package](../example-demo/connector/oracleConnector.tar.gz).
+
+```
+shell> tar -xvf oracleConnector.tar.gz
+``` 
+
+b) Run the script to install JSONCpp and unixODBC.  Make sure you have
+python installed before running the script.
+```
+shell> cd oracleConnector
+shell> sudo sh setup.sh
+```
+
+c) Add the Oracle driver to unixODBC. Add the Oracle library to the system library path.
+Make sure the library path is correct.
+
+```
+shell> sudo sh -c "echo /u01/app/oracle/product/11.2.0/dbhome_1/lib/ > /etc/ld.so.conf.d/oracle.conf"
+shell> sudo ldconfig
+```
+
+
+Run the following command to locate the unixODBC config file ```odbcinst.ini```:
+
+```
+shell> odbcinst -j
+```
+
+Add the following lines at the end of the unixODBC config file```odbcinst.ini```.
+Make sure the ```Driver``` path is correct.
+
+```
+[ORACLE]
+Description = Oracle ODBC Connection
+Driver      = /u01/app/oracle/product/11.2.0/dbhome_1/lib/libsqora.so.11.1
+Threading               = 1
+UsageCount              = 1
+```
+
+Check the dependency of the file
+/u01/app/oracle/product/11.2.0/dbhome_1/lib/libsqora.so.11.1 :
+```
+shell> ldd /u01/app/oracle/product/11.2.0/dbhome_1/lib/libsqora.so.11.1
+```
+
+If "libodbcinst.so.1" is not found, create a soft link for it:
+
+```
+shell> find / -name "libodbcinst.so"
+Go to library path
+shell> ln -s libodbcinst.so libodbcinst.so.1 
+```
+
+d) Compile the Oracle connector:
+```
+shell> cd oracleConnector
+shell> mkdir build
+shell> cd build
+shell> cmake ..
+shell> make
+```
+
+You should see the file ```liboracleConnector.so``` under the ```build``` folder.
+
+###6.4.3 Setup the user and table in Oracle
+
+a) Set up the demo user and table in the Oracle database:
+
+```
+shell> sqlplus / as sysdba
+SQL> startup
+SQL> create tablespace ts_cdcpub datafile '/tmp/cdcpubdata.dbf' size 100m;
+SQL> CREATE USER cdcpub IDENTIFIED BY cdcpub DEFAULT TABLESPACE ts_cdcpub
+QUOTA UNLIMITED ON SYSTEM
+QUOTA UNLIMITED ON SYSAUX;
+SQL> GRANT DBA TO cdcpub;
+
+SQL> conn cdcpub/cdcpub
+SQL> CREATE USER cdcsub IDENTIFIED BY cdcsub DEFAULT TABLESPACE ts_cdcpub;
+SQL> GRANT CREATE TABLE TO cdcsub;
+SQL> GRANT CREATE SESSION TO cdcsub;
+SQL> GRANT CREATE VIEW TO cdcsub;
+SQL> GRANT UNLIMITED TABLESPACE TO cdcsub;
+
+SQL> CREATE TABLE cdcpub.COMPANY(
+ID INT PRIMARY KEY NOT NULL, 
+NAME VARCHAR2 (50) NOT NULL, 
+AGE INT NOT NULL, 
+ADDRESS VARCHAR2 (50), 
+SALARY REAL) ;
+```
+
+Run the following command to create a change set 'cdcset' for the
+change table 'COMPANY_CT':
+
+```
+SQL> BEGIN
+DBMS_CDC_PUBLISH.CREATE_CHANGE_SET(
+change_set_name => 'cdcset',
+description => 'Change set for srch2 test',
+change_source_name => 'SYNC_SOURCE');
+END;
+/
+```
+
+Run the following command to create a change table 'COMPANY_CT' to
+keep track of the updates from the 'COMPANY' table:
+
+```
+SQL> BEGIN
+DBMS_CDC_PUBLISH.CREATE_CHANGE_TABLE(
+owner => 'cdcpub',
+change_table_name => 'COMPANY_CT',
+change_set_name => 'cdcset',
+source_schema => 'cdcpub',
+source_table => 'COMPANY',
+column_type_list => 'ID INT, 
+NAME VARCHAR2 (50), 
+AGE INT, 
+ADDRESS VARCHAR2 (50), 
+SALARY REAL ',
+capture_values => 'both',
+rs_id => 'y',
+row_id => 'n',
+user_id => 'n',
+timestamp => 'n',
+object_id => 'n',
+source_colmap => 'y',
+target_colmap => 'y',
+DDL_MARKERS=>'n',
+options_string => 'TABLESPACE ts_cdcpub');
+END;
+/
+```
+
+Grant privileges:
+```
+SQL> GRANT ALL ON cdcpub.COMPANY TO cdcsub;
+SQL> GRANT ALL ON cdcpub.COMPANY_CT TO cdcsub;
+```
+
+Insert records:
+
+```
+SQL> INSERT INTO COMPANY (ID,NAME,AGE,ADDRESS,SALARY)VALUES (1, 'Paul', 32, 'California', 20000.00 );
+SQL> INSERT INTO COMPANY (ID,NAME,AGE,ADDRESS,SALARY)VALUES (2, 'Allen', 25, 'Texas', 15000.00 );
+SQL> INSERT INTO COMPANY (ID,NAME,AGE,ADDRESS,SALARY)VALUES (3, 'Teddy', 23, 'Norway', 20000.00 );
+SQL> INSERT INTO COMPANY (ID,NAME,AGE,ADDRESS,SALARY) VALUES (4, 'Mark', 25, 'Rich-Mond ', 65000.00 );
+SQL> INSERT INTO COMPANY (ID,NAME,AGE,ADDRESS,SALARY) VALUES (5, 'David', 27, 'Texas', 85000.00 );
+SQL> INSERT INTO COMPANY (ID,NAME,AGE,ADDRESS,SALARY) VALUES (6, 'Kim', 22, 'South-Hall', 45000.00 );
+SQL> commit;
+SQL> SELECT * FROM COMPANY;
+```
+
+###6.4.4 Run the engine with the connector
+
+a) Start the srch2 engine with the Oracle connector. Make sure the
+<srch2Home> and <dbSharedLibraryPath> in the config is correct.
+
+```
+shell> path/srch2-engine --config-file=./srch2-config-oracle.xml
+```
+
+To check the result, open another terminal and run the command below.
+```
+shell> curl "http://127.0.0.1:8081/search?q=paul"
+```
+
+You should see the record with the keyword "paul".
+
+b) Make changes to the table.  Run the following command to insert a
+new record.
+
+```
+SQL> INSERT INTO COMPANY (ID,NAME,AGE,ADDRESS,SALARY) VALUES (7, 'Joe', 20, 'Nevada', 15000.00 );
+SQL> commit;
+```
+Wait for about 4 seconds for the SRCH2 server to save the change. Do the search query:
+```
+shell> curl "http://127.0.0.1:8081/search?q=joe"
+```
+The search engine should return this newly inserted record.   
+
+We want to update Kim's address from "South-Hall" to "Texas" by
+running the following command:
+
+```
+SQL> UPDATE COMPANY SET ADDRESS = 'Texas' WHERE ID = 6;
+SQL> commit;
+```
+
+To check the update, run the curl command:
+```
+
+shell> curl "http://127.0.0.1:8081/search?q=kim"
+
+```
+The SRCH2 engine should be able to return this updated record, with "Texas" as the ADDRESS value.  
+
+Run the following command in the Oracle shell to delete the updated record:
+```
+SQL> DELETE FROM COMPANY WHERE ID = 6;
+SQL> commit;
+```
+
+Again, wait for about 4 seconds for the SRCH2 server to save the change, then do the search query:
+
+```
+shell> curl "http://127.0.0.1:8081/search?q=Kim"
+```
+
+The SRCH2 engine should not return the deleted record.
+
+###6.4.5 (Optional) Remove the demo user and table
+
+If you need to remove the demo user and table, run the following:
+
+```
+SQL> conn cdcpub/cdcpub
+SQL> BEGIN
+EXECUTE IMMEDIATE 'drop user cdcsub';
+EXCEPTION
+WHEN OTHERS THEN NULL;
+END;
+/
+
+SQL> BEGIN
+BEGIN
+DBMS_CDC_PUBLISH.DROP_CHANGE_TABLE('cdcpub','COMPANY_CT','Y');
+END;
+EXCEPTION
+WHEN OTHERS THEN NULL;
+END;
+/
+
+SQL> BEGIN
+BEGIN
+DBMS_CDC_PUBLISH.DROP_CHANGE_SET('cdcset');
+END;
+EXCEPTION
+WHEN OTHERS THEN NULL;
+END;
+/
+
+SQL> BEGIN
+EXECUTE IMMEDIATE 'DROP TABLE CDCPUB.COMPANY';
+EXCEPTION
+WHEN OTHERS THEN NULL;
+END;
+/
+
+SQL> conn / as sysdba
+SQL> DROP USER CDCPUB CASCADE;
+SQL> DROP TABLESPACE ts_cdcpub INCLUDING CONTENTS AND DATAFILES;
+```
+
+Congratulations!  You have successfully compiled and run the Oracle connector to
+interact with the SRCH2 engine!
+
+For more information about how the connector is written, please refer
+to its source code.

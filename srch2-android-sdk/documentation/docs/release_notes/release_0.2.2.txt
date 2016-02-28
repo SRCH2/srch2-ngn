@@ -1,0 +1,9 @@
+*------------------------------------------------------------------
+*  RELEASE NOTES Version Beta
+*  Date: Tue Sep 16 15:05:31 PDT 2014
+*------------------------------------------------------------------
+
++ Replace the new Geo search engine.
++ Add SQLite support.
+
+

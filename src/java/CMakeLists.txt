@@ -1,0 +1,21 @@
+FILE(GLOB BUILD_FILE sdk/build.xml)
+
+MESSAGE("${CMAKE_CURRENT_SOURCE_DIR}")
+MESSAGE("${SDK_FILES}")
+
+IF(BUILD_STATIC)
+  SET(DEBUG "true")
+ELSE()
+  SET(DEBUG "false")
+ENDIF()
+
+FIND_PACKAGE(Java)
+ADD_CUSTOM_TARGET(ant_build ALL)
+ADD_CUSTOM_COMMAND(TARGET ant_build
+    COMMAND ant
+    ARGS -buildfile ${BUILD_FILE}
+    ARGS -Dsrcdir=com/srch2
+    ARGS -Dtmpdir=${CMAKE_CURRENT_BINARY_DIR}
+    ARGS -Doutfile=${CMAKE_CURRENT_BINARY_DIR}/Srch2SDK.jar
+    ARGS -Ddebug=${DEBUG}
+    )

@@ -1,0 +1,1304 @@
+<html xmlns="http://www.w3.org/1999/xhtml" xmlns:html="http://www.w3.org/1999/xhtml"><head><meta http-equiv="Content-Type" content="text/html; charset=UTF-8">
+<title>ReleaseOne – bimaple-root</title>
+<style type="text/css">
+           body { background: #fff; color: #000; margin: 10px; padding: 0; }
+body, th, td {
+ font: normal 13px Verdana,Arial,'Bitstream Vera Sans',Helvetica,sans-serif;
+}
+h1, h2, h3, h4 {
+ font-family: Arial,Verdana,'Bitstream Vera Sans',Helvetica,sans-serif;
+ font-weight: bold;
+ letter-spacing: -0.018em;
+ page-break-after: avoid;
+}
+h1 { font-size: 19px; margin: .15em 1em 0.5em 0 }
+h2 { font-size: 16px }
+h3 { font-size: 14px }
+hr { border: none;  border-top: 1px solid #ccb; margin: 2em 0 }
+address { font-style: normal }
+img { border: none }
+
+.underline { text-decoration: underline }
+ol.loweralpha { list-style-type: lower-alpha }
+ol.upperalpha { list-style-type: upper-alpha }
+ol.lowerroman { list-style-type: lower-roman }
+ol.upperroman { list-style-type: upper-roman }
+ol.arabic     { list-style-type: decimal }
+
+/* Link styles */
+:link, :visited {
+ text-decoration: none;
+ color: #b00;
+ border-bottom: 1px dotted #bbb;
+}
+:link:hover, :visited:hover { background-color: #eee; color: #555 }
+h1 :link, h1 :visited ,h2 :link, h2 :visited, h3 :link, h3 :visited,
+h4 :link, h4 :visited, h5 :link, h5 :visited, h6 :link, h6 :visited {
+ color: inherit;
+}
+.trac-rawlink { border-bottom: none }
+
+/* Heading anchors */
+.anchor:link, .anchor:visited {
+ border: none;
+ color: #d7d7d7;
+ font-size: .8em;
+ vertical-align: text-top;
+}
+* > .anchor:link, * > .anchor:visited {
+ visibility: hidden;
+}
+h1:hover .anchor, h2:hover .anchor, h3:hover .anchor,
+h4:hover .anchor, h5:hover .anchor, h6:hover .anchor {
+ visibility: visible;
+}
+
+@media screen {
+ a.ext-link .icon {
+  background: url(extlink.gif) center center no-repeat;
+  padding-left: 12px;
+ }
+ a.mail-link .icon {
+  background: url(envelope.png) center center no-repeat;
+  padding-left: 14px;
+ }
+}
+
+/* Forms */
+input, textarea, select { margin: 2px }
+input, select { vertical-align: middle }
+input[type=button], input[type=submit], input[type=reset] {
+ background: #eee;
+ color: #222;
+ border: 1px outset #ccc;
+ padding: .1em .5em;
+}
+input[type=button]:hover, input[type=submit]:hover, input[type=reset]:hover {
+ background: #ccb;
+}
+input[type=button][disabled], input[type=submit][disabled],
+input[type=reset][disabled] {
+ background: #f6f6f6;
+ border-style: solid;
+ color: #999;
+}
+input[type=text], input.textwidget, textarea { border: 1px solid #d7d7d7 }
+input[type=text], input.textwidget { padding: .25em .5em }
+input[type=text]:focus, input.textwidget:focus, textarea:focus {
+ border: 1px solid #886;
+}
+option { border-bottom: 1px dotted #d7d7d7 }
+fieldset { border: 1px solid #d7d7d7; padding: .5em; margin: 1em 0 }
+form p.hint, form span.hint { color: #666; font-size: 85%; font-style: italic; margin: .5em 0;
+  padding-left: 1em;
+}
+fieldset.iefix {
+  background: transparent;
+  border: none;
+  padding: 0;
+  margin: 0;
+}
+* html fieldset.iefix { width: 98% }
+fieldset.iefix p { margin: 0 }
+legend { color: #999; padding: 0 .25em; font-size: 90%; font-weight: bold }
+label.disabled { color: #d7d7d7 }
+.buttons { margin: .5em .5em .5em 0 }
+.buttons form, .buttons form div { display: inline }
+.buttons input { margin: 1em .5em .1em 0 }
+.inlinebuttons input { 
+ font-size: 70%;
+ border-width: 1px;
+ border-style: dotted;
+ margin: 0 .1em;
+ padding: 0.1em;
+ background: none;
+}
+
+/* Header */
+#header hr { display: none }
+#header h1 { margin: 1.5em 0 -1.5em; }
+#header img { border: none; margin: 0 0 -3em }
+#header :link, #header :visited, #header :link:hover, #header :visited:hover {
+ background: transparent;
+ color: #555;
+ margin-bottom: 2px;
+ border: none;
+}
+#header h1 :link:hover, #header h1 :visited:hover { color: #000 }
+
+/* Quick search */
+#search {
+ clear: both;
+ font-size: 10px;
+ height: 2.2em;
+ margin: 0 0 1em;
+ text-align: right;
+}
+#search input { font-size: 10px }
+#search label { display: none }
+
+/* Navigation */
+.nav h2, .nav hr { display: none }
+.nav ul { font-size: 10px; list-style: none; margin: 0; text-align: right }
+.nav li {
+ border-right: 1px solid #d7d7d7;
+ display: inline;
+ padding: 0 .75em;
+ white-space: nowrap;
+}
+.nav li.last { border-right: none }
+
+/* Main navigation bar */
+#mainnav {
+ background: #f7f7f7 url(topbar_gradient.png) 0 0;
+ border: 1px solid #000;
+ font: normal 10px verdana,'Bitstream Vera Sans',helvetica,arial,sans-serif;
+ margin: .66em 0 .33em;
+ padding: .2em 0;
+}
+#mainnav li { border-right: none; padding: .25em 0 }
+#mainnav :link, #mainnav :visited {
+ background: url(dots.gif) 0 0 no-repeat;
+ border-right: 1px solid #fff;
+ border-bottom: none;
+ border-left: 1px solid #555;
+ color: #000;
+ padding: .2em 20px;
+}
+* html #mainnav :link, * html #mainnav :visited { background-position: 1px 0 }
+#mainnav :link:hover, #mainnav :visited:hover {
+ background-color: #ccc;
+ border-right: 1px solid #ddd;
+}
+#mainnav .active :link, #mainnav .active :visited {
+ background: #333 url(topbar_gradient2.png) 0 0 repeat-x;
+ border-top: none;
+ border-right: 1px solid #000;
+ color: #eee;
+ font-weight: bold;
+}
+#mainnav .active :link:hover, #mainnav .active :visited:hover {
+ border-right: 1px solid #000;
+}
+
+/* Context-dependent navigation links */
+#ctxtnav { height: 1em }
+#ctxtnav li ul {
+ background: #f7f7f7;
+ color: #ccc;
+ border: 1px solid;
+ padding: 0;
+ display: inline;
+ margin: 0;
+}
+#ctxtnav li li { padding: 0; }
+#ctxtnav li li :link, #ctxtnav li li :visited { padding: 0 1em }
+#ctxtnav li li :link:hover, #ctxtnav li li :visited:hover {
+ background: #bba;
+ color: #fff;
+}
+
+/* Alternate links */
+#altlinks { clear: both; text-align: center }
+#altlinks h3 { font-size: 12px; letter-spacing: normal; margin: 0 }
+#altlinks ul { list-style: none; margin: 0; padding: 0 0 1em }
+#altlinks li {
+ border-right: 1px solid #d7d7d7;
+ display: inline;
+ font-size: 11px;
+ line-height: 1.5;
+ padding: 0 1em;
+ white-space: nowrap;
+}
+#altlinks li.last { border-right: none }
+#altlinks li :link, #altlinks li :visited {
+ background-repeat: no-repeat;
+ color: #666;
+ border: none;
+ padding: 0 0 2px;
+}
+#altlinks li a.ics { background-image: url(ics.png); padding-left: 22px }
+#altlinks li a.rss { background-image: url(feed.png); padding-left: 20px }
+
+/* Footer */
+#footer {
+  clear: both;
+  color: #bbb;
+  font-size: 10px;
+  border-top: 1px solid;
+  height: 31px;
+  padding: .25em 0;
+}
+#footer :link, #footer :visited { color: #bbb; }
+#footer hr { display: none }
+#footer #tracpowered { border: 0; float: left }
+#footer #tracpowered:hover { background: transparent }
+#footer p { margin: 0 }
+#footer p.left {
+  float: left;
+  margin-left: 1em;
+  padding: 0 1em;
+  border-left: 1px solid #d7d7d7;
+  border-right: 1px solid #d7d7d7;
+}
+#footer p.right {
+  float: right;
+  text-align: right;
+}
+
+#content { padding-bottom: 2em; position: relative }
+
+#help {
+ clear: both;
+ color: #999;
+ font-size: 90%;
+ margin: 1em;
+ text-align: right;
+}
+#help :link, #help :visited { cursor: help }
+#help hr { display: none }
+
+/* Page preferences form */
+#prefs {
+ background: #f7f7f0;
+ border: 1px outset #998;
+ float: right;
+ font-size: 9px;
+ padding: .8em;
+ position: relative;
+ margin: 0 1em 1em;
+}
+* html #prefs { width: 26em } /* Set width only for IE */
+#prefs input, #prefs select { font-size: 9px; vertical-align: middle }
+#prefs fieldset {
+ background: transparent;
+ border: none;
+ margin: .5em;
+ padding: 0;
+}
+#prefs fieldset legend {
+ background: transparent;
+ color: #000;
+ font-size: 9px;
+ font-weight: normal;
+ margin: 0 0 0 -1.5em;
+ padding: 0;
+}
+#prefs .buttons { text-align: right }
+
+/* Version information (browser, wiki, attachments) */
+#info {
+ margin: 1em 0 0 0;
+ background: #f7f7f0;
+ border: 1px solid #d7d7d7;
+ border-collapse: collapse;
+ border-spacing: 0;
+ clear: both;
+ width: 100%;
+}
+#info th, #info td { font-size: 85%; padding: 2px .5em; vertical-align: top }
+#info th { font-weight: bold; text-align: left; white-space: nowrap }
+#info td.message { width: 100% }
+#info .message ul { padding: 0; margin: 0 2em }
+#info .message p { margin: 0; padding: 0 }
+
+/* Wiki */
+.wikipage { padding-left: 18px }
+.wikipage h1, .wikipage h2, .wikipage h3 { margin-left: -18px }
+
+a.missing:link, a.missing:visited, a.missing, span.missing,
+a.forbidden, span.forbidden { color: #998 }
+a.missing:hover { color: #000 }
+a.closed:link, a.closed:visited, span.closed { text-decoration: line-through }
+
+/* User-selectable styles for blocks */
+.important {
+ background: #fcb;
+ border: 1px dotted #d00;
+ color: #500;
+ padding: 0 .5em 0 .5em;
+ margin: .5em;
+}
+
+dl.wiki dt { font-weight: bold }
+dl.compact dt { float: left; padding-right: .5em }
+dl.compact dd { margin: 0; padding: 0 }
+
+pre.wiki, pre.literal-block {
+ background: #f7f7f7;
+ border: 1px solid #d7d7d7;
+ margin: 1em 1.75em;
+ padding: .25em;
+ overflow: auto;
+}
+
+blockquote.citation { 
+ margin: -0.6em 0;
+ border-style: solid; 
+ border-width: 0 0 0 2px; 
+ padding-left: .5em;
+ border-color: #b44; 
+}
+.citation blockquote.citation { border-color: #4b4; }
+.citation .citation blockquote.citation { border-color: #44b; }
+.citation .citation .citation blockquote.citation { border-color: #c55; }
+
+table.wiki {
+ border: 2px solid #ccc;
+ border-collapse: collapse;
+ border-spacing: 0;
+}
+table.wiki td { border: 1px solid #ccc;  padding: .1em .25em; }
+
+.wikitoolbar {
+ margin-top: 0.3em;
+ margin-left: 2px;
+ border: solid #d7d7d7;
+ border-width: 1px 1px 1px 0;
+ height: 18px;
+ width: 234px;
+}
+.wikitoolbar :link, .wikitoolbar :visited {
+ background: transparent url(edit_toolbar.png) no-repeat;
+ border: 1px solid #fff;
+ border-left-color: #d7d7d7;
+ cursor: default;
+ display: block;
+ float: left;
+ width: 24px;
+ height: 16px;
+}
+.wikitoolbar :link:hover, .wikitoolbar :visited:hover {
+ background-color: transparent;
+ border: 1px solid #fb2;
+}
+.wikitoolbar a#em { background-position: 0 0 }
+.wikitoolbar a#strong { background-position: 0 -16px }
+.wikitoolbar a#heading { background-position: 0 -32px }
+.wikitoolbar a#link { background-position: 0 -48px }
+.wikitoolbar a#code { background-position: 0 -64px }
+.wikitoolbar a#hr { background-position: 0 -80px }
+.wikitoolbar a#np { background-position: 0 -96px }
+.wikitoolbar a#br { background-position: 0 -112px }
+.wikitoolbar a#img { background-position: 0 -128px }
+
+/* Styles for the form for adding attachments. */
+#attachment .field { margin-top: 1.3em }
+#attachment label { padding-left: .2em }
+#attachment fieldset { margin-top: 2em }
+#attachment fieldset .field { float: left; margin: 0 1em .5em 0 }
+#attachment .options { float: left; padding: 0 0 1em 1em }
+#attachment br { clear: left }
+.attachment #preview { margin-top: 1em }
+
+/* Styles for the list of attachments. */
+#attachments { border: 1px outset #996; padding: 1em }
+#attachments .attachments { margin-left: 2em; padding: 0 }
+#attachments dt { display: list-item; list-style: square; }
+#attachments dd { font-style: italic; margin-left: 0; padding-left: 0; }
+
+/* Styles for tabular listings such as those used for displaying directory
+   contents and report results. */
+table.listing {
+ clear: both;
+ border-bottom: 1px solid #d7d7d7;
+ border-collapse: collapse;
+ border-spacing: 0;
+ margin-top: 1em;
+ width: 100%;
+}
+table.listing th { text-align: left; padding: 0 1em .1em 0; font-size: 12px }
+table.listing thead { background: #f7f7f0 }
+table.listing thead th {
+ border: 1px solid #d7d7d7;
+ border-bottom-color: #999;
+ font-size: 11px;
+ font-weight: bold;
+ padding: 2px .5em;
+ vertical-align: bottom;
+}
+table.listing thead th :link:hover, table.listing thead th :visited:hover {
+ background-color: transparent;
+}
+table.listing thead th a { border: none; padding-right: 12px }
+table.listing th.asc a, table.listing th.desc a { font-weight: bold }
+table.listing th.asc a, table.listing th.desc a {
+ background-position: 100% 50%;
+ background-repeat: no-repeat;
+}
+table.listing th.asc a { background-image: url(asc.png) }
+table.listing th.desc a { background-image: url(desc.png) }
+table.listing tbody td, table.listing tbody th {
+ border: 1px dotted #ddd;
+ padding: .3em .5em;
+ vertical-align: top;
+}
+table.listing tbody td a:hover, table.listing tbody th a:hover {
+ background-color: transparent;
+}
+table.listing tbody tr { border-top: 1px solid #ddd }
+table.listing tbody tr.even { background-color: #fcfcfc }
+table.listing tbody tr.odd { background-color: #f7f7f7 }
+table.listing tbody tr:hover { background: #eed !important }
+table.listing tbody tr.focus { background: #ddf !important }
+
+/* Styles for the page history table
+   (extends the styles for "table.listing") */
+#fieldhist td { padding: 0 .5em }
+#fieldhist td.date, #fieldhist td.diff, #fieldhist td.version,
+#fieldhist td.author {
+ white-space: nowrap;
+}
+#fieldhist td.version { text-align: center }
+#fieldhist td.comment { width: 100% }
+
+/* Auto-completion interface */
+.suggestions { background: #fff; border: 1px solid #886; color: #222; }
+.suggestions ul {
+  font-family: sans-serif;
+  max-height: 20em;
+  min-height: 3em;
+  list-style: none;
+  margin: 0;
+  overflow: auto;
+  padding: 0;
+  width: 440px;
+}
+* html .suggestions ul { height: 10em; }
+.suggestions li { background: #fff; cursor: pointer; padding: 2px 5px }
+.suggestions li.selected { background: #b9b9b9 }
+
+/* Styles for the error page (and rst errors) */
+#content.error .message, div.system-message {
+ background: #fdc;
+ border: 2px solid #d00;
+ color: #500;
+ padding: .5em;
+ margin: 1em 0;
+}
+#content.error div.message pre, div.system-message pre {
+  margin-left: 1em;
+  overflow: hidden;
+  white-space: normal;
+}
+div.system-message p { margin: 0; }
+div.system-message p.system-message-title { font-weight: bold; }
+
+#warning.system-message { background: #ffb; border: 1px solid #000; }
+#warning.system-message li { list-style-type: square; }
+
+#notice.system-message { background: #dfd; border: 1px solid #000; }
+#notice.system-message li { list-style-type: square; }
+
+#content.error form.newticket { display: inline; }
+#content.error form.newticket textarea { display: none; }
+
+#content.error #systeminfo { margin: 1em; width: auto; }
+#content.error #systeminfo th { font-weight: bold; text-align: right; }
+
+#content.error #traceback { margin-left: 1em; }
+#content.error #traceback :link, #content.error #traceback :visited {
+  border: none;
+}
+#content.error #tbtoggle { font-size: 80%; }
+#content.error #traceback div { margin-left: 1em; }
+#content.error #traceback h3 { font-size: 95%; margin: .5em 0 0; }
+#content.error #traceback :link var, #content.error #traceback :visited var {
+  font-family: monospace;
+  font-style: normal;
+  font-weight: bold;
+}
+#content.error #traceback span.file { color: #666; font-size: 85%; }
+#content.error #traceback ul { list-style: none; margin: .5em 0; padding: 0; }
+#content.error #traceback ol {
+  border: 1px dotted #d7d7d7;
+  color: #999;
+  font-size: 85%;
+  line-height: 1;
+  margin: .5em 0;
+}
+#content.error #traceback ol li { white-space: pre; }
+#content.error #traceback ol li.current { background: #e6e6e6; color: #333; }
+#content.error #traceback ol li code { color: #666; }
+#content.error #traceback ol li.current code { color: #000; }
+#content.error #traceback table { margin: .5em 0 1em;  }
+#content.error #traceback th, #content.error #traceback td {
+  font-size: 85%; padding: 1px;
+}
+#content.error #traceback th var {
+  font-family: monospace;
+  font-style: normal;
+}
+#content.error #traceback td code { white-space: pre; }
+#content.error #traceback pre { font-size: 95%; }
+
+#content .paging { margin: 0 0 2em; padding: .5em 0 0;
+  font-size: 85%; line-height: 2em; text-align: center;
+}
+#content .paging .current { 
+  padding: .1em .3em;
+  border: 1px solid #333;
+  background: #999; color: #fff; 
+}
+
+#content .paging :link, #content .paging :visited {
+  padding: .1em .3em;
+  border: 1px solid #666;
+  background: transparent; color: #666;
+}
+#content .paging :link:hover, #content .paging :visited:hover {
+  background: #999; color: #fff;  border-color: #333;
+}
+#content .paging .previous a, 
+#content .paging .next a {
+  font-size: 150%; font-weight: bold; border: none;
+}
+#content .paging .previous a:hover,
+#content .paging .next a:hover {
+  background: transparent; color: #666;
+}
+
+#content h2 .numresults { color: #666; font-size: 90%; }
+
+/* Styles for search word highlighting */
+@media screen {
+ .searchword0 { background: #ff9 }
+ .searchword1 { background: #cfc }
+ .searchword2 { background: #cff }
+ .searchword3 { background: #ccf }
+ .searchword4 { background: #fcf }
+}
+
+@media print {
+ #header, #altlinks, #footer, #help { display: none }
+ .nav, form, .buttons form, form .buttons, form .inlinebuttons,
+ .noprint, .trac-rawlink {
+   display: none;
+ }
+ form.printableform { display: block }
+}
+
+          </style>
+          </head><body><p><a href="http://www.bimaple.com/downloads/">Back to Bimaple-downloads page.</a></p><hr></hr><div class="wikipage searchable">
+<h1 id="Introduction">Introduction</h1>
+<p><strong>Bimaple One</strong> (B1) is an instant fuzzy search
+server. It provides the following features:</p>
+<ol>
+<li>Instant Search</li>
+<li>Fuzzy Search</li>
+<li>"Just works" packaging</li>
+</ol>
+<p>The main focus of this release is the “Just works” packaging. B1
+packs a powerful instant fuzzy search library inside a native
+lightweight HTTP server. It is designed to work as a search wrapper
+over a mysql database table and requires very minimal configuration
+to set up.<br></br>
+B1 release package consists of<br></br></p>
+<ol>
+<li><i>bimaple-search-server</i> - Instant fuzzy search HTTP
+server</li>
+<li><i>conf.ini</i> - config file to setup the above daemon.</li>
+<li><i>games.csv</i> - Example datafile to demo a
+bimaple-search-server usage.</li>
+</ol>
+<p>This document is organised as follows:</p>
+<ol>
+<li>Core concepts</li>
+<li>Installation</li>
+<li>Configuration</li>
+<li>REST API
+specification</li>
+<li>Example</li>
+<li>Contact/Community</li>
+</ol>
+<p>To test out the bimaple-search-server using the example
+datafile, start at section 5.</p>
+<h1 id="a1.CoreConcepts">1. Core Concepts</h1>
+<h2 id="a1.1InstantSearch">1.1 Instant Search</h2>
+<p>B1 is designed to efficiently execute the full-text prefix
+queries on a text data collection, with interactive search times
+typically within 100ms. The traditional instant search interfaces
+fall within the following two approaches.</p>
+<ul>
+<li>Query log based Instant search: These systems depend on
+querylog to bootstrap the search index. Given a prefix, these
+systems take the most popular complete query to do the search.</li>
+<li>Prefix based Auto-completion: These systems depend on a
+pre-built suggestion dictionary to complete a prefix keyword query
+to a complete keyword query and then do the search.</li>
+</ul>
+<p>B1 takes neither of these approaches, giving an unique approach
+to the instant search. B1 doesnot depend on any querylog or
+suggestion dictionary to bootstrap the search like current instant
+search engines. In B1, every keystroke starts a prefix search on
+the entire data and all the results with that particular prefix are
+returned. For example, a query like “star” will return all the
+results with “star” prefix in them, i.e “starbucks”, ”starwars”,
+”starlight”, etc.</p>
+<h2 id="a1.2FuzzySearch">1.2 Fuzzy Search</h2>
+<p>Another unique feature of B1 is the fuzzy search. In fuzzy
+search, when searching for the relevant records, the system also
+tries to ﬁnd those records that include words that are similar to
+the keywords in the query, even if they do not match exactly. For
+example, for a query like "Giradelli", the B1 finds the records
+with the keyword "ghirardelli". This instant and on the fly
+correction for typos and spelling mistakes make B1 a ideal search
+engine to use for mobile search experiences, where search queries
+are mistyped commonly and also, character by character feedback is
+highly desired.</p>
+<h1 id="a2.Installation">2. Installation</h1>
+<ul>
+<li>Download the binary from <a class="ext-link" href="http://www.bimaple.com/downloads"><span class="icon"></span>http://www.bimaple.com/downloads</a></li>
+<li>Currently, we support 32bit and 64bit versions of the following
+platforms
+<ul>
+<li>CentOS 5.6</li>
+<li>Ubuntu 10.04</li>
+</ul>
+</li>
+<li>Please contact us for support on other platforms.</li>
+<li>Download and install MySQL from <a class="ext-link" href="http://www.mysql.com"><span class="icon"></span>http://www.mysql.com</a></li>
+</ul>
+<h1 id="a3.Configuration">3. Configuration</h1>
+<h2 id="a3.1Indexing">3.1 Indexing</h2>
+<p>B1 index consists of a set of structured records each of which
+has the same set of attributes. This model is very convenient to
+use with SQL, where each row corresponds to a document and each
+column corresponds to an attribute. Moreover, most of the companies
+that need a search functionality have a database back-end to have
+at least one consistent copy of the data. So, B1 is designed to act
+as a search layer over the database.</p>
+<h3 id="a3.1.1CreateSaveLoadIndex">3.1.1 Create/Save/Load
+Index</h3>
+<p>For simplicity, the current release works with MySQL. The B1
+configuration file has the options to set the MySQL variables. As a
+running example, we will go through setting up a simple B1 search
+for a dataset consisting of Video Game records.<br></br>
+First, the MySQL variables like host, username, password, database
+and table-name must be set. Note that the values in the
+configuration file must be changed based on your local MySQL
+settings:</p>
+<pre class="wiki">
+#MySQL options
+sql-host=localhost
+sql-user=username
+sql-pass=password
+sql-db=test
+sql-table-name=games
+</pre>
+<p>B1 supports creating a new index, or loading from an already
+saved index. In our example, we create the index from scratch from
+a MySQL table.</p>
+<pre class="wiki">
+# 0 - Load from index-dir directly, skip creating an index initially.
+# 1 - Create the index-dir from scratch
+index-load-or-create=1
+</pre>
+<h4 id="DefiningSchema-Attributes">Defining Schema -
+Attributes</h4>
+<p>Each document can have can have at most 255 attributes. It can
+be of three types:</p>
+<ul>
+<li>PrimaryKey: Each record is identified by a unique 4-byte
+unsigned integer.</li>
+<li>SearchableAttribute: Attribute with full-text information. No
+limit on the length of the text. This field is full-text indexed.
+Also, PrimaryKey can be used as a searchableAttribute. Each
+SearchableAttribute can be given a Attribute-Boost, which defines
+the importance of a record, which is in turn used in the
+ranking.</li>
+<li>SortableAttribute: Attribute with document-related numerical
+values. This is not full-text indexed but stored in index for
+processing/sorting search results. A SortableAttribute can be
+either a Float value or a unsigned value. If the SortableAttribute
+is not specified for a document, it defaults to a value set in
+configuration file.
+<ul>
+<li>Float</li>
+<li>Unsigned</li>
+</ul>
+</li>
+</ul>
+<ul>
+<li>Example</li>
+</ul>
+<p>For example, consider a collection of customer records with the
+following schema:</p>
+<pre class="wiki">
+[gameid]: PrimaryKey
+[GameName, Assesment]: SearchableAttribute[[BR]]
+[TotalViews, ViewsPerDay]: SortableAttribute[[BR]]
+</pre>
+<pre class="wiki">
+primary-key=gameid
+
+#0 if the primary key is NOT searchable, 1 else
+is-primary-key-searchable=1
+
+# Attributes that can be used to perform text search in the collection
+attributes-search=GameName, Assesment
+
+# Attributes that can be used to sort the results
+attributes-sort=TotalViews, ViewsPerDay
+
+# The types of attributes that can be used to sort the result, 0 if unsigned, 1 if float
+attributes-sort-type=0,0
+
+attributes-sort-default-value=0,0
+
+# Specify a boost value for each attribute you want to search on other than the primary key
+# Don't need to specify for primary key if it is set to be searchable. The default boost for primary key is the maximum boost
+attribute-boosts=2,2
+</pre>
+<h4 id="LoadingdatafromMySQL">Loading data from MySQL</h4>
+<p>Initially, the data is loaded from MySQL table to the indexer.
+Internally, the indexer executes the following select query on the
+MySQL table to gets all the records to be indexed.</p>
+<pre class="wiki">
+# MySQL query to get all records at index time, generated internally.
+# select $(primary-key),$(attributes-search),$(attributes-sort) from ${sql-table-name};
+# select gameid, GameName, Assesment, TotalViews, ViewsPerDay from Games;
+</pre>
+<h3 id="a3.1.2UpdateIndex">3.1.2 Update Index</h3>
+<p>B1 supports insertion, updation and deletion on the records in
+the live index. The index updates are instantly reflected in the
+search results of queries executed after the update. Index updating
+can be executed by issuing POST commands through the REST API. Look
+into the index API specification below for more details. For each
+Index updating command, first the Bimaple Index is updated and then
+the record updates are applied to the MySQL table. To change a
+record that is already in index, it must be first deleted and then,
+the updated record must be added.</p>
+<ul>
+<li>Insert:</li>
+</ul>
+<p>In our running example, consider a new record to be
+inserted:</p>
+<pre class="wiki">
+999, Fancy Game, 98765, 56789, FA-Class
+</pre>
+<p>The HTTP POST request on the B1 server is</p>
+<pre class="wiki">
+POST /bimaple/index/insert/
+HOST: http://localhost:8081
+{
+   \"gameid\" : \"999\",
+   \"GameName\" : \"Fancy Game\",
+   \"TotalViews\" : \"98765\",
+   \"ViewsPerDay\" : \"56789\",
+   \"Assessment\" : \"FA-Class\"
+} 
+</pre>
+<p>Here is the equivalent curl command:</p>
+<pre class="wiki">
+curl -d "{\"gameid\" : \"999\",\"GameName\" : \"Fancy Game\",\"TotalViews\" : \"98765\",\"ViewsPerDay\" : \"56789\",\"Assessment\" : \"FA-Class\"}" http://localhost:8081/bimaple/index/insert
+</pre>
+<ul>
+<li>Delete:</li>
+</ul>
+<p>In our running example, consider a new record to be deleted:</p>
+<pre class="wiki">
+POST /bimaple/index/delete
+HOST: http://localhost:8081
+{
+    \"gameid\"  : \"1234\"
+}
+</pre>
+<p>Here is the equivalent curl command:</p>
+<pre class="wiki">
+curl -d "{\"gameid\"  : \"1234\"}" http://localhost:8081/bimaple/index/delete
+</pre>
+<ul>
+<li>Save:</li>
+</ul>
+<p>To save the changes on the index files to the disk, use the
+following HTTP POST request.</p>
+<pre class="wiki">
+POST /bimaple/index/save
+HOST: http://localhost:8081
+""
+</pre>
+<p>Here is the equivalent curl command:</p>
+<pre class="wiki">
+curl -d "" http://localhost:8081/bimaple/index/save
+</pre>
+<h2 id="a3.2Searching">3.2 Searching</h2>
+<p>Search requests can be executed by issuing GET commands to the
+REST API. More explanation is given in REST API
+specification.</p>
+<h2 id="a3.3ResultFormatting">3.3 Result Formatting</h2>
+<p>For each result hit, four record specific parameters are
+returned by the searcher.</p>
+<ul>
+<li>RecordID - The PrimaryKey Attribute specified in the
+configuration file.</li>
+<li>MatchingKeywordPrefix - The Matching keyword prefix in the
+record that corresponds to the search keyword prefix.</li>
+<li>Edit distance: The edit distance between the matching keyword
+prefix and the search keyword prefix.</li>
+<li>Score: The score of the particular record hit.</li>
+</ul>
+<p>The returned search responses encode these parameters in JSON
+format. In addition to these parameters, the search server can be
+configured to return the record data from the MySQL. This record
+data is retrieved from the MySQL using the following configuration
+option:</p>
+<pre class="wiki">
+# Search time - Attributes to retrieve for search hits
+search-response-format=1
+mysql-retrieve-attributes=gameid,GameName,Assessment,TotalViews,ViewsPerDay
+</pre>
+<p>The corresponding MySQL query used internally.</p>
+<pre class="wiki">
+select $(mysql-retrieve-attributes) from ${mysql-table-name} where ${primary-key} = ${search-results};
+</pre>
+<pre class="wiki">
+EXAMPLE RESPONSES:
+
+TYPE1:
+{"searcher_time":0,"results":[{ "record_id":104091386,"score":0,"edit_dist":["0"], "matching_prefix":["sim"]}
+
+TYPE2:
+{"searcher_time":0,"results":[{ "score":0,"edit_dist":["0"], "matching_prefix":["sim"], "record":["104091386","-2.580889","1.131409","Simard Automotive","~ alternator replacing service~ alternator repairing center~ auto tune up~...hot pot~~"]}], "mysql_time":272}
+</pre>
+<h1 id="a4.RESTAPIspecification">4. REST API specification</h1>
+<h2 id="a4.1SearchAPI">4.1 Search API</h2>
+<table border="2" cellpadding="6" cellspacing="0">
+<tbody>
+<tr>
+<th>
+<p><b>URL Parameter</b></p>
+</th>
+<th>
+<p><b>Description</b></p>
+</th>
+<th>
+<p><b>Values</b></p>
+</th>
+<th></th>
+</tr>
+<tr>
+<td>
+<p class="c11 c1"><span>type</span></p>
+</td>
+<td class="c16">
+<p class="c11 c1"><span>Searcher type - TopK or
+RetrieveAll</span></p>
+</td>
+<td class="c2">
+<p class="c11 c1"><span>bool</span></p>
+</td>
+<td class="c14">
+<p class="c3 c1 c11"></p>
+</td>
+</tr>
+<tr>
+<td class="c2">
+<p class="c11 c1"><span>q</span></p>
+</td>
+<td class="c16">
+<p class="c11 c1"><span>Query with delimiter ‘+’</span></p>
+</td>
+<td class="c2">
+<p class="c11 c1"><span>QueryString</span></p>
+</td>
+<td class="c14">
+<p class="c3 c11 c1"></p>
+</td>
+</tr>
+<tr>
+<td class="c2">
+<p class="c11 c1"><span>termtypes</span></p>
+</td>
+<td class="c16">
+<p class="c1"><span>Complete or prefix query term (0 or
+1)</span></p>
+<p class="c1"><span>Example: 0+0+1 for three term query “ bike shop
+newy” represents</span></p>
+<p class="c1"><span>bike - Complete Query
+Term</span></p>
+<p class="c1"><span>shop - Compete Query Term</span></p>
+<p class="c1"><span>newy - Prefix Query Term</span></p>
+</td>
+<td class="c2">
+<p class="c11 c1"><span>bitvector</span></p>
+</td>
+<td class="c14">
+<p class="c3 c11 c1"></p>
+</td>
+</tr>
+<tr>
+<td class="c2">
+<p class="c11 c1"><span>termboosts</span></p>
+</td>
+<td class="c16">
+<p class="c1"><span>Boost value for each query term. Used in
+ranking to give importance to query terms.</span></p>
+<p class="c1"><span>Example: 10+10+40 for three term query “ bike
+shop newy” represents importance of the last keyword
+term.</span></p>
+</td>
+<td class="c2">
+<p class="c11 c1"><span>Array of Integers</span></p>
+</td>
+<td class="c14">
+<p class="c3 c11 c1"></p>
+</td>
+</tr>
+<tr>
+<td class="c2">
+<p class="c11 c1"><span>fuzzy</span></p>
+</td>
+<td class="c16">
+<p class="c11 c1"><span>Fuzzy matching can be set to on and
+off.</span></p>
+</td>
+<td class="c2">
+<p class="c11 c1"><span>bool</span></p>
+</td>
+<td class="c14">
+<p class="c3 c11 c1"></p>
+</td>
+</tr>
+<tr>
+<td class="c2">
+<p class="c11 c1"><span>simboost</span></p>
+</td>
+<td class="c16">
+<p class="c11 c1"><span>A boost value to be given to all exact
+match search results over fuzzy match search results.</span></p>
+</td>
+<td class="c2">
+<p class="c11 c1"><span>integer</span></p>
+</td>
+<td class="c14">
+<p class="c3 c11 c1"></p>
+</td>
+</tr>
+<tr>
+<td class="c2">
+<p class="c11 c1"><span>filter</span></p>
+</td>
+<td class="c16">
+<p class="c11 c1"><span>Filter the search results, so that only
+results with query keywords occuring in the particular searchable
+attribute are retrieved.</span></p>
+</td>
+<td class="c2">
+<p class="c11 c1"><span>SearchFieldID integer</span></p>
+</td>
+<td class="c14">
+<p class="c3 c11 c1"></p>
+</td>
+</tr>
+<tr>
+<td class="c2">
+<p class="c11 c1"><span>start</span></p>
+</td>
+<td class="c16">
+<p class="c11 c1"><span>Start index of the result hits.</span></p>
+</td>
+<td class="c2">
+<p class="c11 c1"><span>integer</span></p>
+</td>
+<td class="c14">
+<p class="c3 c11 c1"></p>
+</td>
+</tr>
+<tr>
+<td class="c2">
+<p class="c11 c1"><span>limit</span></p>
+</td>
+<td class="c16">
+<p class="c11 c1"><span>Number of results to be
+retrieved.</span></p>
+<p class="c11 c1"><span>The parameters start and limit can be used
+to easily page through the results. For example, if it is required
+to retrieve 20-30 records, then start=20 and limit=10.</span></p>
+</td>
+<td class="c2">
+<p class="c11 c1"><span>integer</span></p>
+</td>
+<td class="c14">
+<p class="c3 c11 c1"></p>
+</td>
+</tr>
+<tr>
+<td class="c2">
+<p class="c11 c1"><span>sortby</span></p>
+</td>
+<td class="c16">
+<p class="c11 c1"><span>Sort the search results based on the
+SortableAttributeID. This parameter can be used only with
+RetrieveALL searcher mode.</span></p>
+</td>
+<td class="c2">
+<p class="c11 c1"><span>SortFieldID integer</span></p>
+</td>
+<td class="c14">
+<p class="c3 c11 c1"></p>
+</td>
+</tr>
+<tr>
+<td class="c2">
+<p class="c11 c1"><span>order</span></p>
+</td>
+<td class="c16">
+<p class="c11 c1"><span>Ordering of the search results. Can be made
+to be Ascending or Descending.</span></p>
+<p class="c11 c1"><span>0 - Descending</span></p>
+<p class="c11 c1"><span>1- Ascending </span></p>
+</td>
+<td class="c2">
+<p class="c11 c1"><span>bool</span></p>
+</td>
+<td class="c14">
+<p class="c3 c11 c1"></p>
+</td>
+</tr>
+</tbody>
+</table>
+<h3 id="Note">Note</h3>
+<ol>
+<li>TopK or RetrieveAll: TopK is very efficient and fast. Results
+are sorted by the internal record score. It cannot sort the results
+based on SortableAttributes. RetrieveAll response time depends on
+the size of result hits. If the search query has 100000 result
+hits, retrieving all those results will give non-instant response
+time. But, RetrieveAll searcher can sort the result hits based on
+multiple SortableAttributes.
+<pre class="wiki">
+EXAMPLES Search API:
+TODO
+</pre></li>
+<li>The REST API requires the parameter “q” and all the other
+parameters are optional. If the optional parameters are not set in
+the URL, they fall back to default values set in the configuration
+file.
+<pre class="wiki">
+#-----------------
+# Searcher daemon options
+#-----------------
+# delimiter used to separate the settings for each keywords
+delimiter=+
+
+#0 if topk, 1 if advanced
+default-searcher-type=1
+
+#0 if exact term, 1 if fuzzy term
+default-fuzzy-query-term-type=0
+
+#0 if complete term, 1 if prefix term
+default-query-term-type=0
+
+#Default query term boost
+default-query-term-boost=100
+
+#Default query term similarity boostBay
+default-query-term-similarity-boost=100
+
+#Default attribute to filter query term
+default-attribute-to-filter-query-term=-1
+
+# Number of results to retrieve
+default-results-to-retrieve=10
+
+# Id of attribute used to sort
+default-attribute-to-sort=0
+
+# Sort order, 0 is Ascending, 1 is Descending
+default-order=1
+</pre></li>
+</ol>
+<h2 id="a4.2BimapleHTTPSearcherconfiguration">4.2 Bimaple HTTP
+Searcher configuration</h2>
+<p>The Bimaple Search server packs a lightweight http server that
+can handle HTML files. The path to the frontend HTML files should
+be specified in the configuration file.</p>
+<pre class="wiki">
+#--------------------
+# HTTP server options
+#-------------------- 
+# Document-root. Make sure the server has read privileges are set on this folder
+document-root=/home/oliverax/newBimapleBase/bimaple-root/codebase/atlantis/trunk/wrapper/html
+
+# ports to listen. Make sure these are open. To access over internet, these ports must be open for outside traffic.
+listening-port=8081
+</pre>
+<h2 id="a4.3Errormessages">4.3 Error messages</h2>
+<ol>
+<li>Search error response</li>
+</ol>
+<pre class="wiki">
+HTTP/1.1 400 Bad Request
+Cache: no-cache
+Content-Type: application/x-javascript
+        
+$ErrorMessage
+</pre>
+<p>Reasons: The search query url doesn’t meet the specific format.
+For example, if the query doesn’t have any search keywords, the
+number of TermTypes?
+doesn't match the number of the search keywords, etc.</p>
+<ol start="2">
+<li>Insert error responses:</li>
+</ol>
+<pre class="wiki">
+HTTP/1.1 400 Bad Request
+Cache: no-cache
+Content-Type: application/x-javascript
+
+$ErrorMessage
+</pre>
+<p>Reason: The delete query url doesn’t meet the specific
+format</p>
+<pre class="wiki">
+HTTP/1.1 403 Forbidden
+Cache: no-cache
+Content-Type: application/x-javascript
+
+$ErrorMessage
+</pre>
+<p>Reason: The record with same primary key already exists</p>
+<pre class="wiki">
+HTTP/1.1 500 Internal Server Error
+Cache: no-cache
+Content-Type: application/x-javascript
+
+$ErrorMessage
+</pre>
+<p>Reason: MySQL server error</p>
+<ol start="3">
+<li>Delete error responses:</li>
+</ol>
+<pre class="wiki">
+HTTP/1.1 400 Bad Request
+Cache: no-cache
+Content-Type: application/x-javascript
+        
+$ErrorMessage
+</pre>
+<p>Reason: The delete query url doesn’t meet the specific fomat</p>
+<pre class="wiki">
+HTTP/1.1 500 Internal Server Error
+Cache: no-cache
+Content-Type: application/x-javascript
+
+$ErrorMessage
+</pre>
+<p>Reason: MySQL server error</p>
+<h1 id="a5.Example">5. Example</h1>
+<p>To show how easily you can use our package to build and use an
+index system, we have a example data file games.csv comes with our
+package.</p>
+<ul>
+<li>The data in games.csv comes from one of Factual.com datasets:
+WikipediaWikiProject_Video_games_Popular_pages_List.</li>
+<li>This dataset has five attributes: gameid, GameName, TotalViews,
+ViewsPerDay and Assessment.</li>
+<li>The conf.ini file that comes with the package is already set up
+to demo the server built on this dataset.</li>
+</ul>
+<blockquote>
+<p>Now we show you how to use the files in our package to quickly
+build and use a index system.</p>
+</blockquote>
+<h2 id="a5.1SetupMySQL">5.1 Set up MySQL</h2>
+<ol>
+<li>Make sure your MySQL server process is up and has a database
+named “test”. Change the sql-db option in conf.ini to match your
+database name.</li>
+</ol>
+<ol start="2">
+<li>Log into your MySQL server, create a table named “games”
+<pre class="wiki">
+CREATE TABLE IF NOT EXISTS `games`(`gameid` int(11) NOT NULL, `GameName` TEXT, `TotalViews` INT, `ViewsPerDay` INT, `Assessment` TEXT, PRIMARY KEY (`gameid`) );
+</pre></li>
+<li>Load the data in our csv file, games.csv into this table using
+the following command.
+<pre class="wiki">
+load data local infile '/path-to-the-directory/games.csv' into table games fields terminated by ',';
+</pre></li>
+<li>In the conf.ini file, the following settings must be changed
+based on your local settings.
+<ul>
+<li>MySQL options : The MySQL server specific settings like host,
+username, password, databasename and tablename.</li>
+<li>index-dir-path: Path to the directory, where the index files
+are to be stored.</li>
+<li>document-root: Path to the directory with the html frontend
+files. The example html files to setup the demo are given with the
+package.</li>
+<li>listening-port: Port to setup the bimaple http search
+server.</li>
+</ul>
+</li>
+</ol>
+<h2 id="a5.2Setuptheserver">5.2 Set up the server</h2>
+<ol>
+<li>Run the following commands:</li>
+</ol>
+<pre class="wiki">
+chmod 777 bimaple-search-server
+conf_file=conf.ini ./bimaple-search-server
+</pre>
+<p>If you got error message like this:</p>
+<pre class="wiki">
+Fail to connect to database: Can't connect to local MySQL server through socket '/var/run/mysqld/mysqld.sock' (2)
+</pre>
+<p>Please try the following command to setup a symbolic link to the
+actual MySQL socket file:</p>
+<pre class="wiki">
+ln -s /var/lib/mysql/mysql.sock /var/run/mysqld/mysqld.sock
+</pre>
+<pre class="wiki">
+ln -s {your_local_mysqld_socket_file} {mysql_socket_file_that_bimaple_server_looks for}
+</pre>
+<p>Location of the MySQL socket file can be found specified in the
+MySQL configuration file, which is normally located in
+/etc/my.conf</p>
+<ol start="2">
+<li>After you see the “Bimaple server started on port
+${listening-port}, press enter to quit.” message, the server is
+alive</li>
+</ol>
+<h2 id="a5.3Searchthedata">5.3 Search the data</h2>
+<ol>
+<li>Open any browser and go to <a class="ext-link" href="http://localhost:8081"><span class="icon"></span>http://localhost:8081</a>. Now you should see
+the the server’s front-end</li>
+<li>Type in something to search, like “sim” and you should be able
+to see the results</li>
+</ol>
+<h2 id="a5.4Updatethedata">5.4 Update the data</h2>
+<ol>
+<li>For example, if you want to insert a new record:</li>
+</ol>
+<pre class="wiki">
+999, Fancy Game, 98765, 56789, FA-Class
+</pre>
+<p>Just open an terminal and run the following command:</p>
+<pre class="wiki">
+curl -d "{\"gameid\" : \"999\",\"GameName\" : \"Fancy Game\",\"TotalViews\" : \"98765\",\"ViewsPerDay\" : \"56789\",\"Assessment\" : \"FA-Class\"}" http://localhost:8081/bimaple/index/insert
+</pre>
+<p>To save the changes on the index files to the disk:</p>
+<pre class="wiki">
+curl -d "" http://localhost:8081/bimaple/index/save
+</pre>
+<ol start="2">
+<li>If you want to delete a record with primary key 55, which is
+the record with gameid 55 here, just run the following
+command:</li>
+</ol>
+<pre class="wiki">
+curl -d "{\"gameid\" : \"55\"}" http://localhost:8081/bimaple/index/delete
+</pre>
+<p>Again, to save the changes on the index files to the disk:</p>
+<pre class="wiki">
+curl -d "" http://localhost:8081/bimaple/index/save
+</pre>
+<h1 id="a6.ContactCommunity">6. Contact/Community</h1>
+<p>Bimaple is a startup in sunny Southern California. Bimaple’s
+technologies were born out of academic research at UC Irvine.
+Please contact us at <a class="mail-link" href="mailto:contact@bimaple.com"><span class="icon"></span>contact@bimaple.com</a> for any questions,
+feedback or just to say a hi!</p>
+</div><div class="footer"><hr></hr><p><a href="http://www.bimaple.com/downloads/">Back to Bimaple-downloads page.</a></p></div></body></html>

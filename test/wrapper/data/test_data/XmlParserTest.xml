@@ -1,0 +1,24 @@
+<xml>
+    <srchEngine name="SRCH2" year="2008">
+        <fuzzy support="true">
+        </fuzzy>
+        <attributeSearch support="true">
+        </attributeSearch>
+        <penaltyField support="true">
+        </penaltyField>
+        <cache support="false">
+        </cache>
+        <threads>8</threads>
+    </srchEngine>
+    <srchEngine name="SOLR" year="2001">
+        <fuzzy support="true">
+        </fuzzy>
+        <attributeSearch support="true">
+        </attributeSearch>
+        <penaltyField support="false">
+        </penaltyField>
+        <cache support="true">
+        </cache>
+        <threads>10</threads>
+    </srchEngine>
+</xml>

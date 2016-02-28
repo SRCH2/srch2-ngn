@@ -1,0 +1,19 @@
+<project default="jar">
+  <property name="output.dir" location="."/>
+  <property name="tmpdir" location="."/>
+  <property name="srcdir" location="com/srch2"/>
+  <property name="outfile" location="Srch2SDK.java"/>
+  <property name="debug" value="off"/>
+
+  <echo message="${tmpdir}"/>
+  <mkdir dir="${tmpdir}/build_dir"/>
+  <target name="compile">
+    <javac includeAntRuntime="false" verbose="true"
+      debug="${debug}"
+      srcdir="${srcdir}" destdir="${tmpdir}/build_dir"/>
+  </target>
+  <target name="jar" depends="compile">
+    <jar destfile="${outfile}" basedir="${tmpdir}/build_dir"/>
+  </target>
+</project>
+

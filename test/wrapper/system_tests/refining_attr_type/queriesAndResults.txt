@@ -1,0 +1,8 @@
+maxint||int_value||2147483647
+minint||int_value||-2147483648
+maxlong||long_value||9223372036854775807
+minlong||long_value||-9223372036854775808
+maxfloat||float_value||3.40282e+38
+minfloat||float_value||1.17549e-38
+maxdouble||double_value||1.79769e+308
+mindouble||double_value||2.22507e-308

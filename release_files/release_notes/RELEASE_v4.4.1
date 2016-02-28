@@ -1,0 +1,36 @@
+ *------------------------------------------------------------------
+ *  RELEASE NOTES Version 4.4.1
+ *  Date: September 07, 2014 
+ *------------------------------------------------------------------
+
+ New features:
+
+ * Implemented native support for access control on search results. 
+   Access control is of two types : a) record-based and b) attribute-based.
+   
+   For more information please refer to srch2's documentaton (http://srch2.com/releases/4.4.1/docs/acl/)
+
+ * Implemented db connectors for mongoDb and SQLite as shared libraries which 
+   can be loaded into the engine on demand via config file settings.
+   
+   For more information please refer to srch2's documentaton (http://srch2.com/releases/4.4.1/docs/databases/)
+
+ * Implemented support for field list "fl" in the query to allow the users to
+   customize the fields returned in the search response. 
+   
+   For more information please refer to srch2's documentaton (http://srch2.com/releases/4.4.1/docs/restful-search/#63-fl-field-list-parameter)
+
+ * Expaned supported field types. Now the engine allows following types -
+   text, integer, long, float, double, time, location_longitude (geo search only),
+   and location_latitude (geo search only).
+
+ * Added capabilities of boolean expressions, faceted search, filtering, and sorting to geo search.
+
+ * Optimized geo search.
+
+ Bug fixes:
+
+ * HTTP response from the engine is a valid JSON. 
+ * Added disk space check before creating indexes. 
+ * Improved sanity check of configuration file.
+ * multiple cores can use the same log file

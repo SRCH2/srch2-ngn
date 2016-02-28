@@ -1,0 +1,31 @@
+<LinearLayout 
+    xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:tools="http://schemas.android.com/tools"
+    android:id="@+id/root_container"
+    android:orientation="vertical"
+    android:layout_width="match_parent"
+    android:layout_height="match_parent"
+    tools:context="com.srch2.android.http.app.demo.MainActivity" >
+        
+ 	<com.srch2.android.http.app.demo.InstantSearchEditText
+        android:id="@+id/et_search_input"
+        android:layout_width="match_parent"
+        android:layout_height="40dp"
+        android:layout_marginLeft="3dp"
+        android:layout_marginRight="3dp"
+        android:layout_marginTop="3dp"
+        android:focusable="true"
+        android:focusableInTouchMode="true"
+        android:gravity="center_vertical"
+        android:hint="What are you searching for?"
+        android:imeOptions="flagNoFullscreen"
+        android:inputType="textPersonName"
+        android:paddingLeft="3dp"
+        android:paddingRight="2dp" />
+
+ 	<ListView
+ 	    android:id="@+id/lv_search_results"
+ 	    android:layout_width="match_parent"
+        android:layout_height="match_parent" />
+</LinearLayout>
+
