@@ -1,0 +1,5 @@
+34c34,35
+<         || defined(_GLIBCXX__PTHREADS)
+---
+>         || defined(_GLIBCXX__PTHREADS) \
+>         || defined(_GLIBCXX_HAS_GTHREADS) 
