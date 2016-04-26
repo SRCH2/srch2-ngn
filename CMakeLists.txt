@@ -62,7 +62,7 @@ IF(COMMAND cmake_policy)
 ENDIF(COMMAND cmake_policy)
 
 ##SET this option to "on", if you want detailed makefile execution
-SET(VERBOSE OFF CACHE BOOL "Build verbose makefiles and output. Default ON")
+SET(VERBOSE OFF CACHE BOOL "Build verbose makefiles and output. Default OFF")
 SET(CMAKE_VERBOSE_MAKEFILE ${VERBOSE})
 SET(BUILD_STATIC OFF CACHE BOOL "Build Srch2 static library and binary. Default OFF")
 SET(BUILD_JNI OFF CACHE BOOL
@@ -84,6 +84,8 @@ ENDIF()
 SET(ANDROID_SERVER OFF CACHE BOOL "Build srch2-server for android. Default OFF")
 IF(ANDROID)
     SET(BUILD_STATIC OFF)
+    SET(CMAKE_EXE_LINKER_FLAGS "${CMAKE_EXE_LINKER_FLAGS} -pie")
+    SET(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -fpie")
     IF (ANDROID_SERVER)
        SET(BUILD_SERVER ON)
     ELSE()

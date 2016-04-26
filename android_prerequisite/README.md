@@ -19,7 +19,7 @@ mkdir build
 android-cmake ..
 ```
 
-or build srch2 standalone server for android. Make sure you have build thirdparty depenenencies 
+or build srch2 standalone server for android. Make sure you have built the thirdparty depenenencies 
 using "thirdparty-build-android.sh" in the thirdparty folder
 
 cd <trunk_root>

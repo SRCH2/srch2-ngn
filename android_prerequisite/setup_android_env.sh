@@ -62,7 +62,7 @@ OPENSSL_HOME="$ANDROID_INSTALL_DIR/openssl-android"
 if [ ! -d $OPENSSL_HOME ];then
     git clone https://github.com/guardianproject/openssl-android.git $OPENSSL_HOME
     cd $OPENSSL_HOME
-    # Change the version of 4.* into the exist one by checking 
+    # Change the version of 4.* into the existing one by checking 
     # $ANDROID_NDK_HOME/toolchain/*-androideabi-4.*
     $ANDROID_NDK_HOME/ndk-build NDK_TOOLCHAIN_VERSION=4.9
     cp -r libs/armeabi/*.so $ANDROID_STANDALONE_TOOLCHAIN/user/lib/
@@ -74,6 +74,7 @@ if grep -q $ANDTOOLCHAIN $HOME/.bashrc;
 then
     echo "skip alias"
 else
+    # env required for android-cmake
     echo "export ANDROID_STANDALONE_TOOLCHAIN=$ANDROID_INSTALL_DIR/android-toolchain-arm-$API_LEVEL" >> $HOME/.bashrc
     echo "alias android-cmake='cmake -DCMAKE_TOOLCHAIN_FILE=$CMAKE_TOOLCHAIN -DLIBRARY_OUTPUT_PATH_ROOT=.'" >> $HOME/.bashrc
 fi
