@@ -5,6 +5,18 @@ compiler:
     - gcc
 
 before_install:
+    - wget http://www.cmake.org/files/v2.8/cmake-2.8.10.tar.gz
+    - tar xf cmake-2.8.10.tar.gz
+    - cd cmake-2.8.10
+
+install:
+    - sudo apt-get install -qq libcurl3-dev
+    - ./bootstrap --system-curl
+    - make
+    - sudo make install
+    - which cmake
+    - cmake --version
+    - cd ..
     - sudo apt-get update -qq
     - sudo apt-get install -qq gcc make cmake build-essential cpp libevent-dev libssl-dev
     - sudo apt-get install -qq libboost-dev libboost-filesystem-dev libboost-program-options-dev libboost-regex-dev libboost-thread-dev libboost-serialization-dev libboost-system-dev libmysqlclient-dev python-dev unixodbc unixodbc-dev
