@@ -71,7 +71,7 @@ SET(BUILD_SERVER ON CACHE BOOL
     "Build the Srch2Server executable. Defaults to ON")
 SET(BUILD_RELEASE ON CACHE BOOL "Build Release. Default ON")
 SET(BUILD_TEST ON CACHE BOOL "Build tests. Default ON")
-SET(BUILD_UTILITY OFF CACHE BOOL "Build utilities. Default OFF")
+SET(BUILD_UTILITY ON CACHE BOOL "Build utilities. Default ON")
 #SET(CMAKE_CXX_FLAGS_RELEASE "") 
 IF(CMAKE_SIZEOF_VOID_P EQUAL 8)
     SET(BUILD64BIT ON CACHE BOOL "Building for 64 bit platform")
