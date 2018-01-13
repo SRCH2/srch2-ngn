@@ -691,12 +691,8 @@ INDEXWRITE_RETVAL IndexData::_merge(CacheManager *cache, bool updateHistogram) {
 	if (!this->mergeRequired)
 		return OP_FAIL;
 
-	// struct timespec tstart;
-	// clock_gettime(CLOCK_REALTIME, &tstart);
-
-	// struct timespec tend;
-	// clock_gettime(CLOCK_REALTIME, &tend);
-	// unsigned time = (tend.tv_sec - tstart.tv_sec) * 1000 + (tend.tv_nsec - tstart.tv_nsec) / 1000000;
+	 struct timespec tstart;
+	 clock_gettime(CLOCK_REALTIME, &tstart);
 
 	this->forwardIndex->merge();
 	if (this->forwardIndex->hasDeletedRecords()) {
@@ -707,12 +703,22 @@ INDEXWRITE_RETVAL IndexData::_merge(CacheManager *cache, bool updateHistogram) {
 		this->forwardIndex->freeSpaceOfDeletedRecords();
 	}
 
+	 struct timespec tend;
+	 clock_gettime(CLOCK_REALTIME, &tend);
+	 unsigned time = (tend.tv_sec - tstart.tv_sec) * 1000 + (tend.tv_nsec - tstart.tv_nsec) / 1000000;
+	 cout << time << "\t";
+
+
+	 clock_gettime(CLOCK_REALTIME, &tstart);
 	//if (this->invertedIndex->mergeWorkersCount <= 1) {
 		this->invertedIndex->merge( this->rankerExpression,
 				this->writeCounter->getNumberOfDocuments(), this->schemaInternal, this->trie);
 	//} else {
 	//	this->invertedIndex->parallelMerge();
 	//}
+	clock_gettime(CLOCK_REALTIME, &tend);
+	time = (tend.tv_sec - tstart.tv_sec) * 1000 + (tend.tv_nsec - tstart.tv_nsec) / 1000000;
+	cout << time << "\t";
 
 	// Since trie is the entry point of every search, trie merge should be done after all other merges.
 	// If forwardIndex or invertedIndex is merged before trie, then users can see an inconsistent state of
@@ -736,7 +742,11 @@ INDEXWRITE_RETVAL IndexData::_merge(CacheManager *cache, bool updateHistogram) {
 		boost::unique_lock<boost::shared_mutex> lock(
 				globalRwMutexForReadersWriters);
 
+		 clock_gettime(CLOCK_REALTIME, &tstart);
 		this->reassignKeywordIds();
+		clock_gettime(CLOCK_REALTIME, &tend);
+		time = (tend.tv_sec - tstart.tv_sec) * 1000 + (tend.tv_nsec - tstart.tv_nsec) / 1000000;
+		cout << time << "\t";
 
 		lock.unlock();
 
@@ -747,9 +757,13 @@ INDEXWRITE_RETVAL IndexData::_merge(CacheManager *cache, bool updateHistogram) {
 		// Commit phase: time spent to reassign keyword IDs in the forward index (ms): ==>> time
 	}
 
+	 clock_gettime(CLOCK_REALTIME, &tstart);
 	this->trie->merge(invertedIndex, this->forwardIndex,
 			this->forwardIndex->getTotalNumberOfForwardLists_ReadView(),
 			updateHistogram);
+	clock_gettime(CLOCK_REALTIME, &tend);
+	time = (tend.tv_sec - tstart.tv_sec) * 1000 + (tend.tv_nsec - tstart.tv_nsec) / 1000000;
+	cout << time << endl;
 
     // If some leaf nodes have an empty inverted list, we need to get rid of them
     if (this->trie->getEmptyLeafNodeIdSize() > 0) {

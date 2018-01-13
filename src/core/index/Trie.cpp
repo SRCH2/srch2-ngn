@@ -1223,7 +1223,7 @@ void Trie::pushNeighborsForMoreSpace(const unsigned iter, map<TrieNode *, unsign
     reassignRange.push_back(trieNodesToReassign[iter].getLastTrieNode());
 
     // Starting from the newly inserted TrieNode,
-    // keep moving and including leftward until we reach a node not with a temporary reassigned id
+    // keep moving and including leftward until we reach a node with a non-temporary reassigned id
     // TODO why do we check for temporary ids on the left ? Because we move from left to right and we shouldn't
     // see any temporary ids on the left (pro : it makes it symmetric)
     bool leftAvailable = getLeftTnp(trieNodesToReassign[iter], leftSide);
@@ -1236,7 +1236,7 @@ void Trie::pushNeighborsForMoreSpace(const unsigned iter, map<TrieNode *, unsign
     }
 
     // Starting from the newly inserted TrieNode,
-    // keep moving and including rightward until we reach a node not with a temporary reassigned id
+    // keep moving and including rightward until we reach a node with a non-temporary reassigned id
     bool rightAvailable = getRightTnp(trieNodesToReassign[iter], rightSide);
     if (rightAvailable) {
         reassignRange.push_back(rightSide.getLastTrieNode());
@@ -1289,7 +1289,7 @@ void Trie::reassignKeywordIds(map<TrieNode *, unsigned> &trieNodeIdMapper)
     // We generate the mapper in three steps:
 
     // step 1: sort trieNodesToReassign based on their string values
-    // TrieNodesToReassign stores all the TrieNodes we need to reassign Ids
+    // trieNodesToReassign stores all the TrieNodes we need to reassign Ids
     // along with the paths from the Trie's root.
     // We sort them based on the TrieNode encoding order.
     // alphabetical order
